@@ -17,7 +17,18 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private completion source verification",
-  allowedFlags: ["--require-approved"],
+  allowedFlags: [
+    "--require-approved",
+    "--simulate-missing-expected-decision-id",
+    "--simulate-duplicate-expected-decision-id",
+    "--simulate-wrong-expected-decision-choice",
+  ],
+  testOnlyFlags: [
+    "--simulate-missing-expected-decision-id",
+    "--simulate-duplicate-expected-decision-id",
+    "--simulate-wrong-expected-decision-choice",
+  ],
+  testOnlyEnv: "CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION",
 });
 
 function readJson(relativePath) {
@@ -82,6 +93,63 @@ if (!hasFlag("--require-approved")) {
 }
 
 const manifest = readJson("docs/ui/completion-source.manifest.json");
+if (hasFlag("--simulate-missing-expected-decision-id") && Array.isArray(manifest.expectedDecisionIds)) {
+  manifest.expectedDecisionIds = manifest.expectedDecisionIds.filter((id) => id !== "initial_scope");
+}
+if (hasFlag("--simulate-duplicate-expected-decision-id") && Array.isArray(manifest.expectedDecisionIds) && manifest.expectedDecisionIds[0]) {
+  manifest.expectedDecisionIds = [...manifest.expectedDecisionIds, manifest.expectedDecisionIds[0]];
+}
+if (hasFlag("--simulate-wrong-expected-decision-choice") && Array.isArray(manifest.expectedDecisions) && manifest.expectedDecisions[0]) {
+  manifest.expectedDecisions[0] = {
+    ...manifest.expectedDecisions[0],
+    choice: "Wrong choice",
+  };
+}
+const decisionVerification = readJson("docs/ui/decision-verification.json");
+const decisions = Array.isArray(decisionVerification.decisions) ? decisionVerification.decisions : [];
+const decisionsById = new Map(decisions.map((decision) => [decision.id, decision]));
+const expectedDecisionIds = Array.isArray(manifest.expectedDecisionIds) ? manifest.expectedDecisionIds : [];
+const expectedDecisions = Array.isArray(manifest.expectedDecisions)
+  ? manifest.expectedDecisions
+  : expectedDecisionIds.map((id) => ({ id }));
+const expectedDecisionIdSet = new Set(expectedDecisionIds);
+if (!Number.isInteger(manifest.expectedDecisionCount) || manifest.expectedDecisionCount <= 0) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisionCount must be a positive integer");
+}
+if (expectedDecisionIds.length !== manifest.expectedDecisionCount) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisionIds must contain expectedDecisionCount entries");
+}
+if (expectedDecisions.length !== manifest.expectedDecisionCount) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisions must contain expectedDecisionCount entries");
+}
+if (expectedDecisionIdSet.size !== expectedDecisionIds.length) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisionIds must not contain duplicate decisions");
+}
+if (expectedDecisionIds.length !== decisions.length) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisionIds must mirror decision-verification decisions");
+}
+if (expectedDecisions.length !== decisions.length) {
+  fail("docs/ui/completion-source.manifest.json expectedDecisions must mirror decision-verification decisions");
+}
+for (const [index, decision] of decisions.entries()) {
+  if (expectedDecisionIds[index] !== decision?.id) {
+    fail(`docs/ui/completion-source.manifest.json expectedDecisionIds[${index}] must be ${decision?.id}`);
+  }
+  const expectedDecision = expectedDecisions[index];
+  if (expectedDecision?.id !== decision?.id) {
+    fail(`docs/ui/completion-source.manifest.json expectedDecisions[${index}].id must be ${decision?.id}`);
+  }
+  if (expectedDecision?.choice !== decision?.choice) {
+    fail(`docs/ui/completion-source.manifest.json expectedDecisions[${index}].choice must be ${decision?.choice}`);
+  }
+}
+
+if (errors.length > 0) {
+  console.error("UI private completion source verification failed:");
+  for (const error of errors) console.error(`- ${error}`);
+  process.exit(1);
+}
+
 const goalEnv = manifest.privateGoalFileEnv;
 const sessionEnv = manifest.privateSourceSessionFileEnv;
 const missingEnv = [goalEnv, sessionEnv].filter((envName) => !process.env[envName]);
@@ -98,9 +166,6 @@ const sessionRecords = sessionFile ? parseJsonlRecords(sessionFile, sessionEnv) 
 const normalizedGoalSource = normalizeText(goalSource);
 const normalizedSessionSource = normalizeText(sessionSource);
 const normalizedPreGoalSessionSource = normalizeText(sourceBeforeFirstGoalEvent(sessionRecords));
-const decisionVerification = readJson("docs/ui/decision-verification.json");
-const decisionsById = new Map((decisionVerification.decisions || []).map((decision) => [decision.id, decision]));
-const expectedDecisions = manifest.expectedDecisions || (manifest.expectedDecisionIds || []).map((id) => ({ id }));
 const sourceSessionRequirements = manifest.sourceSessionRequirements || {};
 
 for (const snippet of [

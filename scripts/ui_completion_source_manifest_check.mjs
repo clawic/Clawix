@@ -243,6 +243,7 @@ for (const snippet of [
   "expectedDecisionIds",
   "expectedDecisions",
   "expectedConversationId",
+  "expectedDecisionCount",
   "sourceSessionRequirements",
   "session_meta",
   "event_msg:user_message",
@@ -269,6 +270,28 @@ const unknownFlagResult = spawnSync(
 );
 if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
   fail("scripts/ui_private_completion_source_verify.mjs must reject unknown flags before private source checks");
+}
+for (const [flag, expectedOutput] of [
+  ["--simulate-missing-expected-decision-id", "expectedDecisionIds must contain expectedDecisionCount entries"],
+  ["--simulate-duplicate-expected-decision-id", "expectedDecisionIds must contain expectedDecisionCount entries"],
+  ["--simulate-wrong-expected-decision-choice", "expectedDecisions[0].choice must be"],
+]) {
+  const simulatedResult = spawnSync(
+    process.execPath,
+    [path.join(rootDir, "scripts/ui_private_completion_source_verify.mjs"), "--require-approved", flag],
+    {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION: "1" },
+      encoding: "utf8",
+    },
+  );
+  const simulatedOutput = `${simulatedResult.stdout || ""}${simulatedResult.stderr || ""}`;
+  if (simulatedResult.status === 0 || simulatedResult.status === manifest?.externalPendingExitCode) {
+    fail(`scripts/ui_private_completion_source_verify.mjs must fail before EXTERNAL PENDING for ${flag}`);
+  }
+  if (!simulatedOutput.includes(expectedOutput)) {
+    fail(`scripts/ui_private_completion_source_verify.mjs ${flag} output must include ${expectedOutput}`);
+  }
 }
 
 if (errors.length > 0) {
