@@ -41,6 +41,12 @@ function read(relativePath) {
   if (args.has("--simulate-missing-performance-flow") && relativePath === "skills/ui-performance-budget/SKILL.md") {
     content = content.replace("sidebar lag", "sidebar responsiveness");
   }
+  if (args.has("--simulate-missing-agents-skill") && relativePath === "AGENTS.md") {
+    content = content.replace("visual-regression", "visual-check");
+  }
+  if (args.has("--simulate-missing-sync-skill") && relativePath === "scripts/check-clawjs-skills-sync.mjs") {
+    content = content.replaceAll("\"ui-performance-budget\"", "\"ui-performance\"");
+  }
   return content;
 }
 
@@ -63,6 +69,34 @@ function requireFrontmatterName(file, name) {
   requireSnippet(file, "description:");
   requireSnippet(file, "keywords:");
 }
+
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStringSet(values, label, expectedValues) {
+  const seen = requireUniqueStrings(values, label);
+  const expected = new Set(expectedValues);
+  for (const value of seen) {
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
+const expectedSkillNames = ["ui-canon-review", "ui-implementation", "visual-regression", "ui-performance-budget"];
 
 const skillContracts = [
   {
@@ -125,13 +159,35 @@ const skillContracts = [
   },
 ];
 
-const skillNames = new Set();
+if (args.has("--simulate-duplicate-skill-name")) {
+  skillContracts.push({ ...skillContracts[0], file: "skills/ui-implementation/SKILL.md" });
+}
+if (args.has("--simulate-duplicate-skill-file")) {
+  skillContracts.push({ ...skillContracts[1], name: "ui-implementation-copy" });
+}
+if (args.has("--simulate-extra-skill-contract")) {
+  skillContracts.push({ file: "skills/style-apply/SKILL.md", name: "style-apply", snippets: [] });
+}
+
+requireExactStringSet(
+  skillContracts.map((contract) => contract.name),
+  "UI skill contract names",
+  expectedSkillNames,
+);
+requireUniqueStrings(
+  skillContracts.map((contract) => contract.file),
+  "UI skill contract files",
+);
+
 for (const contract of skillContracts) {
-  if (skillNames.has(contract.name)) fail(`skill contract name ${contract.name} must be unique`);
-  skillNames.add(contract.name);
   requireFrontmatterName(contract.file, contract.name);
   scanForPrivateContent(contract.file);
   for (const snippet of contract.snippets) requireSnippet(contract.file, snippet);
+}
+
+for (const skillName of expectedSkillNames) {
+  requireSnippet("AGENTS.md", skillName);
+  requireSnippet("scripts/check-clawjs-skills-sync.mjs", `"${skillName}"`);
 }
 
 if (errors.length > 0) {
