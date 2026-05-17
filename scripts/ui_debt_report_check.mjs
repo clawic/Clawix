@@ -168,6 +168,12 @@ if (args.has("--simulate-debt-decision-missing-baseline") && debtStrategyDecisio
 if (args.has("--simulate-debt-decision-missing-audit") && debtStrategyDecision) {
   debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== auditPath);
 }
+if (args.has("--simulate-debt-decision-missing-evidence-plan") && debtStrategyDecision) {
+  debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_plan_check.mjs");
+}
+if (args.has("--simulate-debt-decision-missing-evidence-verifier") && debtStrategyDecision) {
+  debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_verify.mjs");
+}
 if (args.has("--simulate-debt-decision-missing-private-verifier") && debtStrategyDecision) {
   debtStrategyDecision.blockingVerifiers = debtStrategyDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_debt_audit_verify.mjs");
 }
@@ -270,6 +276,8 @@ if (!debtStrategyDecision) {
     auditPath,
     "scripts/ui_debt_report_check.mjs",
     "scripts/ui_debt_audit_manifest_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
     "scripts/ui_private_debt_audit_verify.mjs",
   ]) {
     if (!publicEvidence.has(evidencePath)) {
