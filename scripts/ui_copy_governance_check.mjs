@@ -92,6 +92,12 @@ requireFields(copyInventory, copyPath, [
 if (args.has("--simulate-copy-decision-missing-inventory") && copyGovernanceDecision) {
   copyGovernanceDecision.publicEvidence = copyGovernanceDecision.publicEvidence.filter((evidencePath) => evidencePath !== copyPath);
 }
+if (args.has("--simulate-copy-decision-missing-evidence-plan") && copyGovernanceDecision) {
+  copyGovernanceDecision.publicEvidence = copyGovernanceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_plan_check.mjs");
+}
+if (args.has("--simulate-copy-decision-missing-evidence-verifier") && copyGovernanceDecision) {
+  copyGovernanceDecision.publicEvidence = copyGovernanceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_verify.mjs");
+}
 if (args.has("--simulate-copy-decision-missing-private-verifier") && copyGovernanceDecision) {
   copyGovernanceDecision.blockingVerifiers = copyGovernanceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_copy_verify.mjs");
 }
@@ -242,6 +248,8 @@ if (!copyGovernanceDecision) {
     "docs/ui/visible-surfaces.inventory.json",
     copyPath,
     "scripts/ui_copy_governance_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
     "scripts/ui_private_copy_verify.mjs",
   ]) {
     if (!publicEvidence.has(evidencePath)) {
