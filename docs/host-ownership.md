@@ -64,6 +64,21 @@ host performs those actions:
 - `Claw.app` when using the standalone framework host.
 - Clawix when using the embedded Clawix host.
 
+Within Clawix, native permission state, prompts, and System Settings routing go
+through `NativeMacPermissionBroker`. Feature code such as dictation, QuickAsk,
+screen tools, and future Mac actions must not call TCC/AX/IOKit permission
+APIs directly.
+
+Executable Mac control actions use `NativeMacActionBroker` as the Clawix
+signed-host boundary for planning, host policy, command execution, and audit.
+`NativeMacActionWire` is the JSON contract boundary that maps broker plans and
+receipts to the framework/host shape consumed by bridge, API, MCP, and CLI
+adapters. The first brokered slice covers Wi-Fi, windows, and Shortcuts;
+feature code should add capability adapters there instead of spawning
+`networksetup`, `shortcuts`, or AppleScript directly. Temporary native action
+exceptions live in `docs/native-action-broker-allowlist.json` with owner,
+reason, migration target, and expiry.
+
 The transport contract is the v1 host command contract. XPC is the final macOS
 transport. Unix socket and HTTP transports are allowed for development, tests,
 fixtures, and fallback behavior.

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "program": "mac-control-plane",
+  "status": "active",
+  "owner": "host-security",
+  "policy": "Native macOS command, AppleScript, and tool execution must live in NativeMacActionBroker unless listed here as a temporary migration exception.",
+  "entries": [
+    {
+      "path": "macos/Sources/Clawix/MacUtilities/MacUtilitiesController.swift",
+      "allowedPatterns": ["appleScript", "pmset", "defaults", "killall"],
+      "ownerArea": "mac-control-plane",
+      "reason": "Legacy Mac Utilities UI still owns several local utility actions while they are migrated into NativeMacActionBroker capability adapters.",
+      "migrationTarget": "NativeMacActionBroker",
+      "expiresAt": "2026-08-15"
+    },
+    {
+      "path": "macos/Sources/Clawix/Dictation/TextInjector.swift",
+      "allowedPatterns": ["appleScript"],
+      "ownerArea": "dictation",
+      "reason": "Dictation text insertion still uses AppleScript fallback after the central permission broker check; migrate injection execution behind the Mac action broker or a dedicated text-injection broker.",
+      "migrationTarget": "NativeMacActionBroker",
+      "expiresAt": "2026-08-15"
+    },
+    {
+      "path": "macos/Sources/Clawix/Dictation/MediaController.swift",
+      "allowedPatterns": ["appleScript"],
+      "ownerArea": "dictation",
+      "reason": "Dictation media controls still use AppleScript for playback state and control; keep registered until a media-control capability adapter exists.",
+      "migrationTarget": "NativeMacActionBroker",
+      "expiresAt": "2026-08-15"
+    },
+    {
+      "path": "macos/Sources/Clawix/Dictation/PlaybackController.swift",
+      "allowedPatterns": ["appleScript"],
+      "ownerArea": "dictation",
+      "reason": "Dictation playback controls still use AppleScript for playback state and control; keep registered until a media-control capability adapter exists.",
+      "migrationTarget": "NativeMacActionBroker",
+      "expiresAt": "2026-08-15"
+    }
+  ]
+}

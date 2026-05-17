@@ -83,6 +83,7 @@ for file in \
   "docs/ui/implementation-phases.manifest.json" \
   "docs/ui/visual-change-proposal.template.md" \
   "docs/ui/inspiration/references.registry.json" \
+  "docs/native-action-broker-allowlist.json" \
   ".github/PULL_REQUEST_TEMPLATE.md" \
   "scripts/naming-shape-check.mjs" \
   "scripts/ui_canon_promotion_check.mjs" \
@@ -128,6 +129,8 @@ for file in \
   "scripts/ui_private_visual_verify.mjs" \
   "scripts/ui_private_drift_verify.mjs" \
   "scripts/ui_private_visual_validation_manifest_check.mjs" \
+  "scripts/native_permission_broker_check.mjs" \
+  "scripts/native_action_broker_check.mjs" \
   "scripts/ui_governance_guard.mjs" \
   "scripts/v1_surface_closure_audit_check.mjs" \
   "scripts/storage_boundary_guard.mjs"
@@ -145,7 +148,17 @@ require_snippet "CLAUDE.md" "docs/vocabulary.md"
 require_snippet "CLAUDE.md" "docs/adr/0001-claw-framework-host-boundary.md"
 require_snippet "AGENTS.md" "docs/decision-map.md"
 require_snippet "AGENTS.md" "docs/adr/0004-source-file-boundaries.md"
+require_snippet "AGENTS.md" "Sensitive native permissions"
 require_snippet "CONSTITUTION.md" "Capabilities are complete only when dual-surfaced"
+require_snippet "docs/host-ownership.md" "NativeMacPermissionBroker"
+require_snippet "docs/host-ownership.md" "NativeMacActionBroker"
+require_snippet "docs/host-ownership.md" "NativeMacActionWire"
+require_snippet "docs/decision-map.md" "scripts/native_permission_broker_check.mjs"
+require_snippet "docs/decision-map.md" "NativeMacActionBrokerTests"
+require_snippet "docs/decision-map.md" "NativeMacActionWire"
+require_snippet "scripts/test.sh" "scripts/native_permission_broker_check.mjs"
+require_snippet "scripts/test.sh" "scripts/native_action_broker_check.mjs"
+require_snippet "docs/native-action-broker-allowlist.json" "NativeMacActionBroker"
 require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"
 require_snippet "docs/adr/0007-dual-human-programmatic-surfaces.md" "MCP is the model-native surface"
 require_snippet "docs/adr/0010-interface-governance.md" "Only explicitly authorized visual lanes"
