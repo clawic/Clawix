@@ -90,9 +90,9 @@ struct ProfileEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if let me = manager.me {
-                    InfoRow(label: "Alias", value: "@" + me.handle.alias)
-                    InfoRow(label: "Fingerprint", value: me.handle.fingerprint)
-                    InfoRow(label: "Root pubkey", value: me.handle.rootPubkey, monospace: true)
+                    ProfileIdentityRow(label: "Alias", value: "@" + me.handle.alias)
+                    ProfileIdentityRow(label: "Fingerprint", value: me.handle.fingerprint)
+                    ProfileIdentityRow(label: "Root pubkey", value: me.handle.rootPubkey, monospace: true)
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("No profile yet").font(.system(size: 13)).foregroundStyle(Palette.textSecondary)
@@ -295,7 +295,7 @@ struct ProfileEditor: View {
     }
 }
 
-private struct InfoRow: View {
+private struct ProfileIdentityRow: View {
     let label: String
     let value: String
     var monospace: Bool = false

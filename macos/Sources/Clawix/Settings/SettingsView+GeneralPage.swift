@@ -233,7 +233,7 @@ struct GeneralPage: View {
                     )
                 )
                 CardDivider()
-                PinsSourceInfoRow()
+                PinsStorageNoticeRow()
             }
 
             HiddenCodexFoldersSection()
@@ -317,7 +317,7 @@ struct GeneralPage: View {
 
 }
 
-struct PinsSourceInfoRow: View {
+struct PinsStorageNoticeRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {

@@ -447,7 +447,7 @@ private struct OpenSourceUrlRow: View {
 
 // MARK: - Per-type overview sections
 
-private struct InfoRow: View {
+private struct EntityAttributeRow: View {
     let label: String
     let value: String
     var body: some View {
@@ -482,15 +482,15 @@ private struct ProductOverview: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
                 if let price = entity.data["price"]?.asNumber {
-                    InfoRow(label: "Price", value: "\(price) \(entity.data["currency"]?.asString ?? "")")
+                    EntityAttributeRow(label: "Price", value: "\(price) \(entity.data["currency"]?.asString ?? "")")
                 }
-                if let stock = entity.data["stock"]?.asString { InfoRow(label: "Stock", value: stock) }
+                if let stock = entity.data["stock"]?.asString { EntityAttributeRow(label: "Stock", value: stock) }
                 if let rating = entity.data["rating"]?.asNumber {
-                    InfoRow(label: "Rating", value: String(format: "%.1f", rating))
+                    EntityAttributeRow(label: "Rating", value: String(format: "%.1f", rating))
                 }
             }
-            if let brand = entity.data["brand"]?.asString { InfoRow(label: "Brand", value: brand) }
-            if let vendor = entity.data["vendor"]?.asString { InfoRow(label: "Vendor", value: vendor) }
+            if let brand = entity.data["brand"]?.asString { EntityAttributeRow(label: "Brand", value: brand) }
+            if let vendor = entity.data["vendor"]?.asString { EntityAttributeRow(label: "Vendor", value: vendor) }
             if let description = entity.data["description"]?.asString { DescriptionBlock(text: description) }
         }
     }
@@ -502,27 +502,27 @@ private struct ListingOverview: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 if let perNight = entity.data["price_per_night"]?.asNumber {
-                    InfoRow(label: "Per night", value: "\(perNight) \(entity.data["currency"]?.asString ?? "")")
+                    EntityAttributeRow(label: "Per night", value: "\(perNight) \(entity.data["currency"]?.asString ?? "")")
                 } else if let price = entity.data["price"]?.asNumber {
-                    InfoRow(label: "Price", value: "\(price) \(entity.data["currency"]?.asString ?? "")")
+                    EntityAttributeRow(label: "Price", value: "\(price) \(entity.data["currency"]?.asString ?? "")")
                 }
                 if let rating = entity.data["rating"]?.asNumber {
-                    InfoRow(label: "Rating", value: String(format: "%.1f", rating))
+                    EntityAttributeRow(label: "Rating", value: String(format: "%.1f", rating))
                 }
                 if let availability = entity.data["availability"]?.asString {
-                    InfoRow(label: "Availability", value: availability)
+                    EntityAttributeRow(label: "Availability", value: availability)
                 }
             }
             if let location = entity.data["location"]?.asObject {
                 let city = location["city"]?.asString
                 let country = location["country"]?.asString
                 if city != nil || country != nil {
-                    InfoRow(label: "Location", value: [city, country].compactMap { $0 }.joined(separator: ", "))
+                    EntityAttributeRow(label: "Location", value: [city, country].compactMap { $0 }.joined(separator: ", "))
                 }
             }
             if let amenities = entity.data["amenities"]?.asArray, !amenities.isEmpty {
                 let names = amenities.compactMap { $0.asString }
-                InfoRow(label: "Amenities", value: names.joined(separator: " · "))
+                EntityAttributeRow(label: "Amenities", value: names.joined(separator: " · "))
             }
             if let description = entity.data["description"]?.asString {
                 DescriptionBlock(text: description)
@@ -536,13 +536,13 @@ private struct ArticleOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let publication = entity.data["publication"]?.asString {
-                InfoRow(label: "Publication", value: publication)
+                EntityAttributeRow(label: "Publication", value: publication)
             }
             if let author = entity.data["author_name"]?.asString {
-                InfoRow(label: "Author", value: author)
+                EntityAttributeRow(label: "Author", value: author)
             }
             if let published = entity.data["published_at"]?.asString {
-                InfoRow(label: "Published", value: published)
+                EntityAttributeRow(label: "Published", value: published)
             }
             if let summary = entity.data["summary"]?.asString {
                 DescriptionBlock(text: summary)
@@ -551,7 +551,7 @@ private struct ArticleOverview: View {
             }
             if let topics = entity.data["topics"]?.asArray, !topics.isEmpty {
                 let names = topics.compactMap { $0.asString }
-                InfoRow(label: "Topics", value: names.joined(separator: ", "))
+                EntityAttributeRow(label: "Topics", value: names.joined(separator: ", "))
             }
         }
     }
@@ -562,10 +562,10 @@ private struct PostOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let handle = entity.data["author_handle"]?.asString {
-                InfoRow(label: "Author", value: "@\(handle)")
+                EntityAttributeRow(label: "Author", value: "@\(handle)")
             }
             if let platform = entity.data["platform"]?.asString {
-                InfoRow(label: "Platform", value: platform.capitalized)
+                EntityAttributeRow(label: "Platform", value: platform.capitalized)
             }
             if let body = entity.data["content_text"]?.asString {
                 DescriptionBlock(text: body)
@@ -601,13 +601,13 @@ private struct VideoOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let channel = entity.data["channel_name"]?.asString {
-                InfoRow(label: "Channel", value: channel)
+                EntityAttributeRow(label: "Channel", value: channel)
             }
             if let duration = entity.data["duration_s"]?.asNumber {
-                InfoRow(label: "Duration", value: formatDuration(Int(duration)))
+                EntityAttributeRow(label: "Duration", value: formatDuration(Int(duration)))
             }
             if let views = entity.data["views"]?.asNumber {
-                InfoRow(label: "Views", value: formatCount(views))
+                EntityAttributeRow(label: "Views", value: formatCount(views))
             }
             if let description = entity.data["description"]?.asString {
                 DescriptionBlock(text: description)
@@ -621,13 +621,13 @@ private struct EpisodeOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let podcast = entity.data["podcast_name"]?.asString {
-                InfoRow(label: "Podcast", value: podcast)
+                EntityAttributeRow(label: "Podcast", value: podcast)
             }
             if let duration = entity.data["duration_s"]?.asNumber {
-                InfoRow(label: "Duration", value: formatDuration(Int(duration)))
+                EntityAttributeRow(label: "Duration", value: formatDuration(Int(duration)))
             }
             if let published = entity.data["published_at"]?.asString {
-                InfoRow(label: "Published", value: published)
+                EntityAttributeRow(label: "Published", value: published)
             }
             if let notes = entity.data["show_notes"]?.asString {
                 DescriptionBlock(text: notes)
@@ -642,13 +642,13 @@ private struct PaperOverview: View {
         VStack(alignment: .leading, spacing: 10) {
             if let authors = entity.data["authors"]?.asArray {
                 let names = authors.compactMap { $0.asString }
-                InfoRow(label: "Authors", value: names.joined(separator: ", "))
+                EntityAttributeRow(label: "Authors", value: names.joined(separator: ", "))
             }
             if let venue = entity.data["venue"]?.asString {
-                InfoRow(label: "Venue", value: venue)
+                EntityAttributeRow(label: "Venue", value: venue)
             }
             if let citations = entity.data["citations"]?.asNumber {
-                InfoRow(label: "Citations", value: formatCount(citations))
+                EntityAttributeRow(label: "Citations", value: formatCount(citations))
             }
             if let abstract = entity.data["abstract"]?.asString {
                 DescriptionBlock(text: abstract)
@@ -670,7 +670,7 @@ private struct ProfileOverview: View {
                 if let posts = entity.data["post_count"]?.asNumber { Metric(label: "Posts", value: posts) }
             }
             if let platform = entity.data["platform"]?.asString {
-                InfoRow(label: "Platform", value: platform.capitalized)
+                EntityAttributeRow(label: "Platform", value: platform.capitalized)
             }
         }
     }
@@ -681,7 +681,7 @@ private struct PlaceOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let address = entity.data["address"]?.asString {
-                InfoRow(label: "Address", value: address)
+                EntityAttributeRow(label: "Address", value: address)
             }
             HStack(spacing: 14) {
                 if let rating = entity.data["rating"]?.asNumber {
@@ -695,7 +695,7 @@ private struct PlaceOverview: View {
                 }
             }
             if let cuisine = entity.data["cuisine"]?.asString {
-                InfoRow(label: "Cuisine", value: cuisine)
+                EntityAttributeRow(label: "Cuisine", value: cuisine)
             }
         }
     }
@@ -717,7 +717,7 @@ private struct ChannelOverview: View {
                 }
             }
             if let language = entity.data["language"]?.asString {
-                InfoRow(label: "Language", value: language)
+                EntityAttributeRow(label: "Language", value: language)
             }
         }
     }
@@ -729,10 +729,10 @@ private struct DocOverview: View {
         VStack(alignment: .leading, spacing: 10) {
             if let breadcrumbs = entity.data["breadcrumbs"]?.asArray {
                 let names = breadcrumbs.compactMap { $0.asString }
-                InfoRow(label: "Section", value: names.joined(separator: " / "))
+                EntityAttributeRow(label: "Section", value: names.joined(separator: " / "))
             }
             if let modified = entity.data["last_modified_at"]?.asString {
-                InfoRow(label: "Last modified", value: modified)
+                EntityAttributeRow(label: "Last modified", value: modified)
             }
             if let text = entity.data["content_text"]?.asString {
                 DescriptionBlock(text: text.prefix(1000).description)
@@ -760,10 +760,10 @@ private struct RepoOverview: View {
                 }
             }
             if let lang = entity.data["primary_language"]?.asString {
-                InfoRow(label: "Language", value: lang)
+                EntityAttributeRow(label: "Language", value: lang)
             }
             if let license = entity.data["license"]?.asString {
-                InfoRow(label: "License", value: license)
+                EntityAttributeRow(label: "License", value: license)
             }
         }
     }
@@ -774,13 +774,13 @@ private struct EventOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let starts = entity.data["starts_at"]?.asString {
-                InfoRow(label: "Starts", value: starts)
+                EntityAttributeRow(label: "Starts", value: starts)
             }
             if let ends = entity.data["ends_at"]?.asString {
-                InfoRow(label: "Ends", value: ends)
+                EntityAttributeRow(label: "Ends", value: ends)
             }
             if let venue = entity.data["location"]?.asString {
-                InfoRow(label: "Venue", value: venue)
+                EntityAttributeRow(label: "Venue", value: venue)
             }
             HStack(spacing: 14) {
                 if let priceMin = entity.data["price_min"]?.asNumber {
@@ -805,13 +805,13 @@ private struct JobOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let company = entity.data["company_name"]?.asString {
-                InfoRow(label: "Company", value: company)
+                EntityAttributeRow(label: "Company", value: company)
             }
             if let location = entity.data["location"]?.asString {
-                InfoRow(label: "Location", value: location)
+                EntityAttributeRow(label: "Location", value: location)
             }
             if let remote = entity.data["remote_policy"]?.asString {
-                InfoRow(label: "Remote", value: remote)
+                EntityAttributeRow(label: "Remote", value: remote)
             }
             HStack(spacing: 14) {
                 if let min = entity.data["salary_min"]?.asNumber {
@@ -852,7 +852,7 @@ private struct ReviewOverview: View {
                 DescriptionBlock(text: text)
             }
             if let author = entity.data["author_name"]?.asString {
-                InfoRow(label: "Author", value: author)
+                EntityAttributeRow(label: "Author", value: author)
             }
         }
     }
@@ -864,7 +864,7 @@ private struct GenericOverview: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(entity.data.keys.sorted()), id: \.self) { key in
                 let value = entity.data[key]
-                InfoRow(label: key, value: previewString(value))
+                EntityAttributeRow(label: key, value: previewString(value))
             }
         }
     }
