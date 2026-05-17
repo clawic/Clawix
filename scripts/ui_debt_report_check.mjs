@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -64,12 +65,35 @@ const requiredEvidence = new Set(["private-baseline", "copy-snapshot", "rendered
 
 const debtPath = "docs/ui/debt.baseline.json";
 const debt = readJson(debtPath);
+if (args.has("--simulate-permissive-debt-action") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = {
+    ...debt.entries[0],
+    allowedAction: "Fix this debt opportunistically from any UI change.",
+  };
+}
+if (args.has("--simulate-duplicate-debt-entry") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries.push({ ...debt.entries[0] });
+}
 const debtEntries = requireArray(debt, debtPath, "entries");
 const debtIds = new Set();
 for (const [index, entry] of debtEntries.entries()) {
   const label = `${debtPath}.entries[${index}]`;
-  requireFields(entry, label, ["id", "scope", "platforms", "status", "reviewAfter", "allowedAction"]);
-  if (entry?.id) debtIds.add(entry.id);
+  requireFields(entry, label, ["id", "scope", "platforms", "reason", "owner", "status", "reviewAfter", "allowedAction"]);
+  if (entry?.id) {
+    if (debtIds.has(entry.id)) fail(`${label}.id duplicates ${entry.id}`);
+    debtIds.add(entry.id);
+  }
+  if (entry.owner !== "interface-governance") fail(`${label}.owner must be interface-governance`);
+  if (entry.status !== "frozen-existing-debt") fail(`${label}.status must be frozen-existing-debt`);
+  if (typeof entry.reason !== "string" || entry.reason.trim().length < 24) {
+    fail(`${label}.reason must explain the existing drift`);
+  }
+  if (!String(entry.allowedAction || "").includes("List and plan cleanup for visual-authorized model")) {
+    fail(`${label}.allowedAction must only allow listing and planning for a visual-authorized model`);
+  }
+  for (const platform of requireArray(entry, label, "platforms")) {
+    if (!requiredPlatforms.has(platform)) fail(`${label}.platforms contains unsupported ${platform}`);
+  }
   if (entry.reviewAfter < today) fail(`${label} expired on ${entry.reviewAfter}`);
 }
 
