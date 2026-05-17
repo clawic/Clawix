@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -58,6 +59,35 @@ function requireRepoReference(reference, label) {
 
 const manifestPath = "docs/ui/implementation-phases.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-missing-allowed-action") && Array.isArray(manifest.nonAuthorizedAllowedActions)) {
+    manifest.nonAuthorizedAllowedActions = manifest.nonAuthorizedAllowedActions.filter((action) => action !== "conceptual-proposal");
+  }
+  if (args.has("--simulate-missing-forbidden-action") && Array.isArray(manifest.nonAuthorizedForbiddenActions)) {
+    manifest.nonAuthorizedForbiddenActions = manifest.nonAuthorizedForbiddenActions.filter((action) => action !== "visual-ui");
+  }
+  if (args.has("--simulate-unknown-phase") && Array.isArray(manifest.phases) && manifest.phases[0]) {
+    manifest.phases[0] = { ...manifest.phases[0], id: "visual-cleanup-now" };
+  }
+  if (args.has("--simulate-wrong-foundation-status") && Array.isArray(manifest.phases) && manifest.phases[0]) {
+    manifest.phases[0] = { ...manifest.phases[0], status: "external-pending" };
+  }
+  if (args.has("--simulate-duplicate-phase") && Array.isArray(manifest.phases) && manifest.phases[0]) {
+    manifest.phases.push({ ...manifest.phases[0] });
+  }
+  if (args.has("--simulate-missing-private-evidence-phase") && Array.isArray(manifest.phases)) {
+    manifest.phases = manifest.phases.filter((phase) => phase.id !== "private-evidence-capture");
+  }
+  if (args.has("--simulate-unsafe-evidence-reference") && Array.isArray(manifest.phases) && manifest.phases[0]) {
+    manifest.phases[0] = {
+      ...manifest.phases[0],
+      evidence: ["/Users/private/ui-evidence.json", ...(manifest.phases[0].evidence || [])],
+    };
+  }
+  if (args.has("--simulate-missing-phase-evidence") && Array.isArray(manifest.phases) && manifest.phases[0]) {
+    manifest.phases[0] = { ...manifest.phases[0], evidence: [] };
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
