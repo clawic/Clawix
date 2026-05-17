@@ -2,11 +2,10 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
-const allowedFlags = new Set(["--require-approved", "--include-pending"]);
-const testOnlyFlags = new Set(["--include-pending"]);
 
 function hasFlag(name) {
   return args.includes(name);
@@ -42,16 +41,11 @@ if (!requireApproved) {
   console.error("UI private visual verification requires --require-approved.");
   process.exit(1);
 }
-for (const arg of args) {
-  if (!allowedFlags.has(arg)) {
-    console.error(`UI private visual verification received unknown flag ${arg}.`);
-    process.exit(1);
-  }
-}
-if (args.some((arg) => testOnlyFlags.has(arg)) && process.env.CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE !== "1") {
-  console.error("UI private visual verification pending evidence flags require CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE=1.");
-  process.exit(1);
-}
+enforcePrivateVerifierArgs(args, {
+  label: "UI private visual verification",
+  allowedFlags: ["--require-approved", "--include-pending"],
+  testOnlyFlags: ["--include-pending"],
+});
 
 const missingRoots = requiredRoots.filter((envName) => !process.env[envName]);
 if (missingRoots.length > 0) {

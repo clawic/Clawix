@@ -373,12 +373,12 @@ const runnerSource = fs.existsSync(path.join(rootDir, "scripts/ui_private_visual
   ? fs.readFileSync(path.join(rootDir, "scripts/ui_private_visual_verify.mjs"), "utf8")
   : "";
 if (!runnerSource) fail("missing scripts/ui_private_visual_verify.mjs");
-for (const snippet of ["--require-approved", "EXTERNAL PENDING", "process.exit(2)", "CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE"]) {
+for (const snippet of ["--require-approved", "EXTERNAL PENDING", "process.exit(2)", "enforcePrivateVerifierArgs"]) {
   if (!runnerSource.includes(snippet)) {
     fail(`scripts/ui_private_visual_verify.mjs must include ${snippet}`);
   }
 }
-for (const snippet of ["docs/ui/private-visual-validation.manifest.json", "requiredRoots", "delegates", "parseDelegate", "allowedFlags"]) {
+for (const snippet of ["docs/ui/private-visual-validation.manifest.json", "requiredRoots", "delegates", "parseDelegate", "enforcePrivateVerifierArgs"]) {
   if (!runnerSource.includes(snippet)) {
     fail(`scripts/ui_private_visual_verify.mjs must derive private validation from ${snippet}`);
   }
@@ -484,6 +484,8 @@ for (const script of [
   }
 }
 for (const script of [
+  "scripts/ui_private_approval_verify.mjs",
+  "scripts/ui_private_visual_verify.mjs",
   "scripts/ui_private_evidence_verify.mjs",
   "scripts/ui_private_baseline_verify.mjs",
   "scripts/ui_private_geometry_verify.mjs",
@@ -496,6 +498,24 @@ for (const script of [
   if (!source.includes("ui_private_verifier_args.mjs") || !source.includes("enforcePrivateVerifierArgs")) {
     fail(`${script} must use ${privateVerifierArgsPath}`);
   }
+  const unknownFlagResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--unknown-flag"], {
+    cwd: rootDir,
+    env: withoutPrivateUiEnv(),
+    encoding: "utf8",
+  });
+  if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
+    fail(`${script} must reject unknown flags before private root checks`);
+  }
+}
+for (const script of [
+  "scripts/ui_private_evidence_verify.mjs",
+  "scripts/ui_private_baseline_verify.mjs",
+  "scripts/ui_private_geometry_verify.mjs",
+  "scripts/ui_private_copy_verify.mjs",
+  "scripts/ui_private_drift_verify.mjs",
+  "scripts/ui_private_debt_audit_verify.mjs",
+  "scripts/ui_private_performance_budget_verify.mjs",
+]) {
   const pendingResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--include-pending"], {
     cwd: rootDir,
     env: withoutPrivateUiEnv(),
@@ -507,14 +527,6 @@ for (const script of [
   }
   if (!pendingOutput.includes("CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE")) {
     fail(`${script} must explain the pending evidence test-only guard`);
-  }
-  const unknownFlagResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--unknown-flag"], {
-    cwd: rootDir,
-    env: withoutPrivateUiEnv(),
-    encoding: "utf8",
-  });
-  if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
-    fail(`${script} must reject unknown flags before private root checks`);
   }
 }
 for (const script of [

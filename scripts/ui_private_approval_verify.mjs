@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
+import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -15,6 +16,11 @@ function fail(message) {
 function hasFlag(name) {
   return args.includes(name);
 }
+
+enforcePrivateVerifierArgs(args, {
+  label: "UI private approval verification",
+  allowedFlags: ["--require-approved"],
+});
 
 function readJsonFile(file, label) {
   if (!fs.existsSync(file)) {

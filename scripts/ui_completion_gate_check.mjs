@@ -324,10 +324,19 @@ for (const snippet of [
   "open decisions",
   "--simulate-no-open-decisions",
   "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
+  "enforcePrivateVerifierArgs",
 ]) {
   if (!privateVerifier.includes(snippet)) {
     fail(`${manifest.privateVerifierScript} must include ${snippet}`);
   }
+}
+const unknownFlagResult = spawnSync(process.execPath, [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--unknown-flag"], {
+  cwd: rootDir,
+  env: withoutPrivateCompletionEnv(),
+  encoding: "utf8",
+});
+if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest.externalPendingExitCode) {
+  fail(`${manifest.privateVerifierScript} must reject unknown flags before private completion checks`);
 }
 
 const decisionVerification = readJson(manifest?.decisionVerificationPath || "docs/ui/decision-verification.json");

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
@@ -252,10 +253,22 @@ for (const snippet of [
   "parseJsonlRecords",
   "recordTypeKey",
   "sourceBeforeFirstGoalEvent",
+  "enforcePrivateVerifierArgs",
 ]) {
   if (!privateVerifier.includes(snippet)) {
     fail(`scripts/ui_private_completion_source_verify.mjs must include ${snippet}`);
   }
+}
+const unknownFlagResult = spawnSync(
+  process.execPath,
+  [path.join(rootDir, "scripts/ui_private_completion_source_verify.mjs"), "--require-approved", "--unknown-flag"],
+  {
+    cwd: rootDir,
+    encoding: "utf8",
+  },
+);
+if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
+  fail("scripts/ui_private_completion_source_verify.mjs must reject unknown flags before private source checks");
 }
 
 if (errors.length > 0) {

@@ -2,11 +2,10 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
-const allowedFlags = new Set(["--require-approved", "--skip-public-prerequisites", "--simulate-no-open-decisions"]);
-const simulationFlags = new Set(["--simulate-no-open-decisions"]);
 
 function hasFlag(name) {
   return args.includes(name);
@@ -41,16 +40,12 @@ if (!hasFlag("--require-approved")) {
   console.error("UI private completion verification requires --require-approved.");
   process.exit(1);
 }
-for (const arg of args) {
-  if (!allowedFlags.has(arg)) {
-    console.error(`UI private completion verification received unknown flag ${arg}.`);
-    process.exit(1);
-  }
-}
-if (args.some((arg) => simulationFlags.has(arg)) && process.env.CLAWIX_UI_ALLOW_COMPLETION_SIMULATION !== "1") {
-  console.error("UI private completion verification simulation flags require CLAWIX_UI_ALLOW_COMPLETION_SIMULATION=1.");
-  process.exit(1);
-}
+enforcePrivateVerifierArgs(args, {
+  label: "UI private completion verification",
+  allowedFlags: ["--require-approved", "--skip-public-prerequisites", "--simulate-no-open-decisions"],
+  testOnlyFlags: ["--simulate-no-open-decisions"],
+  testOnlyEnv: "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
+});
 
 const manifest = readJson("docs/ui/completion-gate.manifest.json");
 runPublicPrerequisites(manifest);

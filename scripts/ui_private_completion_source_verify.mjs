@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -13,6 +14,11 @@ function fail(message) {
 function hasFlag(name) {
   return args.includes(name);
 }
+
+enforcePrivateVerifierArgs(args, {
+  label: "UI private completion source verification",
+  allowedFlags: ["--require-approved"],
+});
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
