@@ -117,6 +117,9 @@ for (const field of [
   }
 }
 const copyKinds = new Set(requireArray(copyInventory, copyPath, "restrictedCopyKinds"));
+if (args.has("--simulate-missing-copy-kind")) {
+  copyKinds.delete("tooltip");
+}
 for (const kind of requiredCopyKinds) {
   if (!copyKinds.has(kind)) fail(`${copyPath}.restrictedCopyKinds must include ${kind}`);
 }
@@ -132,6 +135,9 @@ const requiredEvidence = [
   "approvedScope",
 ];
 const evidence = new Set(requireArray(copyInventory, copyPath, "requiredEvidenceFields"));
+if (args.has("--simulate-missing-required-evidence")) {
+  evidence.delete("copyHierarchyHash");
+}
 for (const field of requiredEvidence) {
   if (!evidence.has(field)) fail(`${copyPath}.requiredEvidenceFields must include ${field}`);
 }
@@ -143,6 +149,12 @@ for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
   if (!pattern) continue;
+  if (args.has("--simulate-missing-pattern-copy-contract") && patternId === "sidebar-row") {
+    delete pattern.copy;
+  }
+  if (args.has("--simulate-invalid-pattern-copy-key") && patternId === "sidebar-row") {
+    pattern.copy = { ...pattern.copy, "Visible Label": true };
+  }
   const copy = pattern.copy;
   if (!copy || typeof copy !== "object" || Array.isArray(copy) || Object.keys(copy).length === 0) {
     fail(`${patternPath}.copy must declare a non-empty copy contract`);
@@ -169,6 +181,18 @@ if (args.has("--simulate-mismatched-copy-snapshot-reference") && Array.isArray(s
   surfaceCoverage.coverage[0] = {
     ...surfaceCoverage.coverage[0],
     copySnapshotReference: `${privateAlias}:surfaces/${surfaceCoverage.coverage[0].platform}/wrong-surface`,
+  };
+}
+if (args.has("--simulate-absolute-copy-snapshot-reference") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
+  surfaceCoverage.coverage[0] = {
+    ...surfaceCoverage.coverage[0],
+    copySnapshotReference: `${privateAlias}:${path.join(path.sep, "tmp", "copy-evidence")}`,
+  };
+}
+if (args.has("--simulate-coverage-missing-copy-hash") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
+  surfaceCoverage.coverage[0] = {
+    ...surfaceCoverage.coverage[0],
+    requiredEvidence: surfaceCoverage.coverage[0].requiredEvidence.filter((field) => field !== "copySnapshotHash"),
   };
 }
 for (const [index, entry] of requireArray(surfaceCoverage, surfaceCoveragePath, "coverage").entries()) {
