@@ -65,6 +65,15 @@ requireFields(registry, registryPath, ["schemaVersion", "policy", "references"])
 if (args.has("--simulate-missing-required-reference") && Array.isArray(registry?.references)) {
   registry.references = registry.references.filter((reference) => reference?.id !== "playwright-snapshots");
 }
+if (args.has("--simulate-canonical-reference") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], canonical: true };
+}
+if (args.has("--simulate-http-reference") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], url: "http://example.invalid/inspiration" };
+}
+if (args.has("--simulate-duplicate-reference-id") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references = [...registry.references, { ...registry.references[0] }];
+}
 
 const policy = String(registry?.policy || "").toLowerCase();
 for (const phrase of ["inspiration", "non-canonical", "explicitly approves", "concepts", "not visual styles", "do not copy"]) {
@@ -118,6 +127,9 @@ const patternRegistry = readJson("docs/ui/pattern-registry/patterns.registry.jso
 for (const patternId of requireArray(patternRegistry, "docs/ui/pattern-registry/patterns.registry.json", "patterns")) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
+  if (args.has("--simulate-external-pattern-reference") && patternId === "sidebar-row" && Array.isArray(pattern?.canonicalReferences)) {
+    pattern.canonicalReferences = [...pattern.canonicalReferences, "https://example.invalid/inspiration"];
+  }
   for (const [index, reference] of requireArray(pattern, patternPath, "canonicalReferences").entries()) {
     if (String(reference).startsWith("http://") || String(reference).startsWith("https://")) {
       fail(`${patternPath}.canonicalReferences[${index}] must not point to an external inspiration URL`);
