@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -132,6 +133,15 @@ const exceptionIds = new Set(requireArray(exceptions, "docs/ui/exceptions.regist
 const inventoryPath = "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
 requireFields(inventory, inventoryPath, ["schemaVersion", "status", "policy", "reviewAfter", "sourceRoots", "coverage"]);
+if (args.has("--simulate-ambiguous-visible-candidate") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage.push({
+    ...inventory.coverage[0],
+    id: "simulated-ambiguous-visible-candidate",
+  });
+}
+if (args.has("--simulate-uncovered-visible-candidate") && Array.isArray(inventory?.coverage)) {
+  inventory.coverage = inventory.coverage.filter((entry) => entry?.id !== "web-components-and-shell");
+}
 if (inventory?.reviewAfter && inventory.reviewAfter < today) {
   fail(`${inventoryPath}.reviewAfter expired on ${inventory.reviewAfter}`);
 }
