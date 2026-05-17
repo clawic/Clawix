@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
+const args = new Set(process.argv.slice(2));
 
 function fail(message) {
   errors.push(message);
@@ -44,20 +45,28 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
-function isPublicSafeReference(value, alias) {
-  if (typeof value !== "string" || !value.startsWith(`${alias}:`)) return false;
+function requirePublicSafeReference(value, alias, label) {
+  if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
+    fail(`${label} must use ${alias}: and must not contain a local path`);
+    return null;
+  }
   const suffix = value.slice(alias.length + 1);
-  return (
-    suffix.length > 0 &&
-    !suffix.startsWith("/") &&
-    !suffix.startsWith("\\") &&
-    !suffix.startsWith("~/") &&
-    !suffix.includes("..") &&
-    !/^[A-Z]:\\/.test(suffix) &&
-    !value.includes("/Users/") &&
-    !value.startsWith("~/") &&
-    !value.startsWith("file://")
-  );
+  if (
+    suffix.length === 0 ||
+    suffix.startsWith("/") ||
+    suffix.startsWith("\\") ||
+    suffix.startsWith("~/") ||
+    suffix.split("/").includes("..") ||
+    suffix.split("/").includes(".") ||
+    /^[A-Z]:\\/.test(suffix) ||
+    value.includes("/Users/") ||
+    value.startsWith("~/") ||
+    value.startsWith("file://")
+  ) {
+    fail(`${label} must use ${alias}: and must not contain a local path`);
+    return null;
+  }
+  return suffix;
 }
 
 const copyPath = "docs/ui/copy.inventory.json";
@@ -156,11 +165,19 @@ const protectedSurfaces = readJson(protectedPath);
 const privateAlias = copyInventory?.privateSnapshotAlias || "";
 const surfaceCoveragePath = copyInventory?.surfaceCoverageSource || "docs/ui/surface-baseline-coverage.manifest.json";
 const surfaceCoverage = readJson(surfaceCoveragePath);
+if (args.has("--simulate-mismatched-copy-snapshot-reference") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
+  surfaceCoverage.coverage[0] = {
+    ...surfaceCoverage.coverage[0],
+    copySnapshotReference: `${privateAlias}:surfaces/${surfaceCoverage.coverage[0].platform}/wrong-surface`,
+  };
+}
 for (const [index, entry] of requireArray(surfaceCoverage, surfaceCoveragePath, "coverage").entries()) {
   const label = `${surfaceCoveragePath}.coverage[${index}]`;
   requireFields(entry, label, ["coverageId", "platform", "copySnapshotReference", "requiredEvidence"]);
-  if (!isPublicSafeReference(entry.copySnapshotReference, privateAlias)) {
-    fail(`${label}.copySnapshotReference must use ${privateAlias}: and must not contain a local path`);
+  const copySnapshotSuffix = requirePublicSafeReference(entry.copySnapshotReference, privateAlias, `${label}.copySnapshotReference`);
+  const expectedCopySnapshotSuffix = `surfaces/${entry.platform}/${entry.coverageId}`;
+  if (copySnapshotSuffix && copySnapshotSuffix !== expectedCopySnapshotSuffix) {
+    fail(`${label}.copySnapshotReference must target ${expectedCopySnapshotSuffix}`);
   }
   const coverageEvidence = new Set(requireArray(entry, label, "requiredEvidence"));
   if (!coverageEvidence.has("copySnapshotHash")) fail(`${label}.requiredEvidence must include copySnapshotHash`);
@@ -168,9 +185,7 @@ for (const [index, entry] of requireArray(surfaceCoverage, surfaceCoveragePath, 
 for (const [index, surface] of requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false }).entries()) {
   const label = `${protectedPath}.surfaces[${index}]`;
   requireFields(surface, label, ["copySnapshotReference", "copySnapshotHash"]);
-  if (!isPublicSafeReference(surface.copySnapshotReference, privateAlias)) {
-    fail(`${label}.copySnapshotReference must use ${privateAlias}: and must not contain a local path`);
-  }
+  requirePublicSafeReference(surface.copySnapshotReference, privateAlias, `${label}.copySnapshotReference`);
   if (typeof surface.copySnapshotHash !== "string" || surface.copySnapshotHash.length < 16) {
     fail(`${label}.copySnapshotHash must record the approved private copy snapshot hash`);
   }
