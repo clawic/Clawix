@@ -123,6 +123,18 @@ if (args.has("--simulate-perf-decision-missing-budget-registry") && perfBudgetSo
 if (args.has("--simulate-perf-decision-missing-private-baselines") && perfBudgetSourceDecision) {
   perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "docs/ui/private-baselines.manifest.json");
 }
+if (args.has("--simulate-perf-decision-missing-visual-validation") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "docs/ui/private-visual-validation.manifest.json");
+}
+if (args.has("--simulate-perf-decision-missing-evidence-plan") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_plan_check.mjs");
+}
+if (args.has("--simulate-perf-decision-missing-evidence-verifier") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_evidence_verify.mjs");
+}
+if (args.has("--simulate-perf-decision-missing-visual-verifier") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "scripts/ui_private_visual_verify.mjs");
+}
 if (args.has("--simulate-perf-decision-missing-private-verifier") && perfBudgetSourceDecision) {
   perfBudgetSourceDecision.blockingVerifiers = perfBudgetSourceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_performance_budget_verify.mjs");
 }
@@ -258,7 +270,10 @@ if (!perfBudgetSourceDecision) {
     privateBaselinesPath,
     "docs/ui/private-visual-validation.manifest.json",
     "scripts/ui_performance_budget_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
     "scripts/ui_private_performance_budget_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
   ]) {
     if (!publicEvidence.has(evidencePath)) {
       fail(`${decisionVerificationPath}.decisions.perf_budget_source.publicEvidence must include ${evidencePath}`);
