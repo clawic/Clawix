@@ -83,6 +83,27 @@ if (args.has("--simulate-completed-cleanup-with-pending-debt") && Array.isArray(
     status: "completed",
   };
 }
+if (args.has("--simulate-missing-queued-debt") && Array.isArray(queue?.items)) {
+  queue.items = queue.items.filter((item) => item?.debtId !== "ui-debt-plan-question-card-raw-visual-values");
+}
+if (args.has("--simulate-wrong-required-model")) {
+  queue.requiredVisualModel = "missing-visual-model";
+}
+if (args.has("--simulate-missing-blocker") && Array.isArray(queue?.v1Delivery?.blockedUntil)) {
+  queue.v1Delivery = {
+    ...queue.v1Delivery,
+    blockedUntil: queue.v1Delivery.blockedUntil.filter((blocker) => blocker !== "copy-snapshot"),
+  };
+}
+if (args.has("--simulate-executable-nonvisual-action") && Array.isArray(queue?.items) && queue.items[0]) {
+  queue.items[0] = { ...queue.items[0], allowedCurrentAction: "Modify presentation now." };
+}
+if (args.has("--simulate-wrong-item-authorization") && Array.isArray(queue?.items) && queue.items[0]) {
+  queue.items[0] = { ...queue.items[0], requiredAuthorization: "any-agent" };
+}
+if (args.has("--simulate-unsupported-platform") && Array.isArray(queue?.items) && queue.items[0]) {
+  queue.items[0] = { ...queue.items[0], platforms: ["visionos"] };
+}
 const debtItems = new Map();
 for (const item of requireArray(debtReport, debtReportPath, "pendingItems")) {
   debtItems.set(item.debtId, item);
