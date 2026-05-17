@@ -43,6 +43,25 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function requireAlias(reference, alias, label) {
   if (typeof reference !== "string" || !reference.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
@@ -70,6 +89,21 @@ const manifest = readJson(manifestPath);
 const decisionVerificationPath = "docs/ui/decision-verification.json";
 const decisionVerification = readJson(decisionVerificationPath);
 const initialScopeDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "initial_scope");
+if (args.has("--simulate-inactive-surface-baseline-manifest") && manifest) {
+  manifest.status = "active";
+}
+if (args.has("--simulate-extra-allowed-baseline-status") && Array.isArray(manifest?.allowedBaselineStatuses)) {
+  manifest.allowedBaselineStatuses.push("captured-without-user-approval");
+}
+if (args.has("--simulate-duplicate-allowed-baseline-status") && Array.isArray(manifest?.allowedBaselineStatuses) && manifest.allowedBaselineStatuses[0]) {
+  manifest.allowedBaselineStatuses.push(manifest.allowedBaselineStatuses[0]);
+}
+if (args.has("--simulate-extra-required-evidence-field") && Array.isArray(manifest?.requiredEvidenceFields)) {
+  manifest.requiredEvidenceFields.push("localScreenshotPath");
+}
+if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(manifest?.requiredEvidenceFields) && manifest.requiredEvidenceFields[0]) {
+  manifest.requiredEvidenceFields.push(manifest.requiredEvidenceFields[0]);
+}
 if (args.has("--simulate-mismatched-surface-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0] = {
     ...manifest.coverage[0],
@@ -93,6 +127,12 @@ if (args.has("--simulate-unsafe-copy-reference") && Array.isArray(manifest?.cove
 }
 if (args.has("--simulate-missing-required-evidence") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0].requiredEvidence = manifest.coverage[0].requiredEvidence.filter((field) => field !== "approvedScope");
+}
+if (args.has("--simulate-extra-entry-required-evidence") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].requiredEvidence.push("localScreenshotPath");
+}
+if (args.has("--simulate-duplicate-entry-required-evidence") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].requiredEvidence.push(manifest.coverage[0].requiredEvidence[0]);
 }
 if (args.has("--simulate-approved-invalid-hash") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0].baselineStatus = "approved";
@@ -130,6 +170,9 @@ requireFields(manifest, manifestPath, [
 if (manifest?.surfaceEvidenceFilename !== "surface-evidence.json") {
   fail(`${manifestPath}.surfaceEvidenceFilename must be surface-evidence.json`);
 }
+if (!["pending-private-capture", "approved-private-capture"].includes(manifest?.status)) {
+  fail(`${manifestPath}.status must be pending-private-capture or approved-private-capture`);
+}
 
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
 if (manifest?.privateBaselineAlias !== privateBaselines?.privateRootAlias) {
@@ -144,8 +187,7 @@ if (manifest?.privateCopyAlias !== copyInventory?.privateSnapshotAlias) {
   fail(`${manifestPath}.privateCopyAlias must match docs/ui/copy.inventory.json`);
 }
 
-const requiredEvidenceFields = new Set(requireArray(manifest, manifestPath, "requiredEvidenceFields"));
-for (const field of [
+const requiredEvidenceFieldValues = [
   "coverageId",
   "platform",
   "privateBaselineReference",
@@ -156,15 +198,23 @@ for (const field of [
   "baselineArtifactHash",
   "approvedByUserAt",
   "approvedScope",
-]) {
-  if (!requiredEvidenceFields.has(field)) fail(`${manifestPath}.requiredEvidenceFields must include ${field}`);
-}
-const allowedStatuses = new Set(requireArray(manifest, manifestPath, "allowedBaselineStatuses"));
+];
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredEvidenceFields"),
+  `${manifestPath}.requiredEvidenceFields`,
+  requiredEvidenceFieldValues,
+);
+const allowedStatuses = requireExactStringSet(
+  requireArray(manifest, manifestPath, "allowedBaselineStatuses"),
+  `${manifestPath}.allowedBaselineStatuses`,
+  ["pending-user-approved-capture", "approved"],
+);
 
 const inventoryPath = manifest?.inventoryPath || "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
 const inventoryById = new Map();
-for (const entry of requireArray(inventory, inventoryPath, "coverage")) {
+for (const [index, entry] of requireArray(inventory, inventoryPath, "coverage").entries()) {
+  if (inventoryById.has(entry.id)) fail(`${inventoryPath}.coverage[${index}].id duplicates ${entry.id}`);
   inventoryById.set(entry.id, entry);
 }
 
@@ -206,10 +256,7 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
   if (copyReferenceSuffix && copyReferenceSuffix !== expectedSurfaceReference) {
     fail(`${label}.copySnapshotReference must target ${expectedSurfaceReference}`);
   }
-  const evidence = new Set(requireArray(entry, label, "requiredEvidence"));
-  for (const field of requiredEvidenceFields) {
-    if (!evidence.has(field)) fail(`${label}.requiredEvidence must include ${field}`);
-  }
+  requireExactStringSet(requireArray(entry, label, "requiredEvidence"), `${label}.requiredEvidence`, requiredEvidenceFieldValues);
   if (entry.baselineStatus === "approved") {
     for (const hashField of ["screenshotHash", "geometryHash", "copySnapshotHash", "baselineArtifactHash"]) {
       requireHash(entry[hashField], `${label}.${hashField}`);
