@@ -50,6 +50,7 @@ function buildApprovalFixture() {
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), "clawix-ui-approval-fixture-"));
   for (const relativePath of [
     "scripts/ui_private_approval_verify.mjs",
+    "scripts/ui_private_verifier_args.mjs",
     "scripts/ui_private_root_contract.mjs",
     "docs/ui/approval-authority.manifest.json",
     "docs/ui/private-visual-validation.manifest.json",
@@ -457,6 +458,99 @@ for (const snippet of [
   "changeBudget does not allow microcopy",
 ]) {
   if (!authorizedBudgetKindScopeOutput.includes(snippet)) fail(`authorized budget-kind-scope failure output is missing: ${snippet}`);
+}
+
+let authorizedDuplicatePatternScopeOutput = "";
+let authorizedDuplicatePatternScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_governance_guard.mjs", "--simulate-unauthorized-visual-diff", "--simulate-duplicate-pattern-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-duplicate-pattern-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  authorizedDuplicatePatternScopeExitCode = error.status || 1;
+  authorizedDuplicatePatternScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+if (authorizedDuplicatePatternScopeExitCode === 0) {
+  fail("simulated visual diff must fail when the approved visual scope has duplicate pattern ids");
+}
+for (const snippet of [
+  "authorized visual/copy/layout source edit missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-duplicate-pattern-scope",
+  "patterns duplicates icon-chip-button",
+]) {
+  if (!authorizedDuplicatePatternScopeOutput.includes(snippet)) {
+    fail(`authorized duplicate-pattern-scope failure output is missing: ${snippet}`);
+  }
+}
+
+let authorizedInvalidBudgetScopeOutput = "";
+let authorizedInvalidBudgetScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_governance_guard.mjs", "--simulate-unauthorized-visual-diff", "--simulate-invalid-budget-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-invalid-budget-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  authorizedInvalidBudgetScopeExitCode = error.status || 1;
+  authorizedInvalidBudgetScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+if (authorizedInvalidBudgetScopeExitCode === 0) {
+  fail("simulated visual diff must fail when the approved visual scope has an invalid change budget");
+}
+for (const snippet of [
+  "authorized visual/copy/layout source edit missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-invalid-budget-scope",
+  "changeBudget.maxFiles must be a positive integer",
+]) {
+  if (!authorizedInvalidBudgetScopeOutput.includes(snippet)) {
+    fail(`authorized invalid-budget-scope failure output is missing: ${snippet}`);
+  }
+}
+
+let authorizedUnsafeFileScopeOutput = "";
+let authorizedUnsafeFileScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_governance_guard.mjs", "--simulate-unauthorized-visual-diff", "--simulate-unsafe-file-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-unsafe-file-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  authorizedUnsafeFileScopeExitCode = error.status || 1;
+  authorizedUnsafeFileScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+if (authorizedUnsafeFileScopeExitCode === 0) {
+  fail("simulated visual diff must fail when the approved visual scope has an unsafe file path");
+}
+for (const snippet of [
+  "authorized visual/copy/layout source edit missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-unsafe-file-scope",
+  "files must use safe repo-relative paths",
+]) {
+  if (!authorizedUnsafeFileScopeOutput.includes(snippet)) {
+    fail(`authorized unsafe-file-scope failure output is missing: ${snippet}`);
+  }
 }
 
 let wrongModelOutput = "";

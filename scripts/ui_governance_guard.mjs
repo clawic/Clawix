@@ -15,6 +15,9 @@ const simulateRevokedVisualScope = process.argv.includes("--simulate-revoked-vis
 const simulateExpiredVisualScope = process.argv.includes("--simulate-expired-visual-scope");
 const simulateBudgetKindVisualScope = process.argv.includes("--simulate-budget-kind-visual-scope");
 const simulateMissingPatternVisualScope = process.argv.includes("--simulate-missing-pattern-visual-scope");
+const simulateDuplicatePatternVisualScope = process.argv.includes("--simulate-duplicate-pattern-visual-scope");
+const simulateInvalidBudgetVisualScope = process.argv.includes("--simulate-invalid-budget-visual-scope");
+const simulateUnsafeFileVisualScope = process.argv.includes("--simulate-unsafe-file-visual-scope");
 const errors = [];
 
 function fail(message) {
@@ -684,6 +687,52 @@ if (simulateMissingPatternVisualScope) {
     },
   ];
 }
+if (simulateDuplicatePatternVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-duplicate-pattern-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      ...simulatedSourceScope,
+      patterns: ["icon-chip-button", "icon-chip-button"],
+      files: ["web/src/simulated-visual-diff.tsx"],
+      changeKinds: ["layout", "microcopy"],
+      changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
+if (simulateInvalidBudgetVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-invalid-budget-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      ...simulatedSourceScope,
+      files: ["web/src/simulated-visual-diff.tsx"],
+      changeKinds: ["layout", "microcopy"],
+      changeBudget: { maxFiles: 0, maxLines: "3", allowedChangeKinds: ["layout", "microcopy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
+if (simulateUnsafeFileVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-unsafe-file-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      ...simulatedSourceScope,
+      files: ["../web/src/simulated-visual-diff.tsx"],
+      changeKinds: ["layout", "microcopy"],
+      changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
 
 function fileMatchesScope(file, scopeFiles = []) {
   return scopeFiles.some((scopeFile) => {
@@ -749,6 +798,36 @@ function isSafePrivateApprovalReference(value) {
   );
 }
 
+function requireScopeStringSet(values, fieldName) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} must declare ${fieldName}` };
+  }
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      return { ok: false, reason: `scope ${requestedVisualScopeId} ${fieldName} must only include non-empty strings` };
+    }
+    if (seen.has(value)) {
+      return { ok: false, reason: `scope ${requestedVisualScopeId} ${fieldName} duplicates ${value}` };
+    }
+    seen.add(value);
+  }
+  return { ok: true, values: seen, list: values };
+}
+
+function isSafeScopeFile(value) {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    !value.startsWith("/") &&
+    !value.startsWith("\\") &&
+    !value.startsWith("~/") &&
+    !value.includes("..") &&
+    !value.includes("\\") &&
+    !value.includes(":")
+  );
+}
+
 function approvedScopeForHits(hits) {
   if (!requestedVisualScopeId) return { ok: false, reason: `${visualScopeEnv}=<approved visual scope id> is required` };
   const scope = (visualScopes?.activeScopes || []).find((candidate) => candidate?.id === requestedVisualScopeId);
@@ -764,19 +843,36 @@ function approvedScopeForHits(hits) {
   const files = new Set(hits.map((hit) => hit.path));
   const changeKinds = new Set(hits.map((hit) => hit.changeKind));
   const hitPlatforms = new Set([...files].map(platformForPath).filter(Boolean));
-  const scopePlatforms = new Set(Array.isArray(scope.platforms) ? scope.platforms : []);
-  const scopeSurfaces = new Set(Array.isArray(scope.surfaces) ? scope.surfaces : []);
-  const scopePatterns = new Set(Array.isArray(scope.patterns) ? scope.patterns : []);
-  const scopeFiles = Array.isArray(scope.files) ? scope.files : [];
-  const scopeChangeKinds = new Set(Array.isArray(scope.changeKinds) ? scope.changeKinds : []);
+  const scopePlatformsResult = requireScopeStringSet(scope.platforms, "platforms");
+  if (!scopePlatformsResult.ok) return scopePlatformsResult;
+  const scopeSurfacesResult = requireScopeStringSet(scope.surfaces, "surfaces");
+  if (!scopeSurfacesResult.ok) return scopeSurfacesResult;
+  const scopePatternsResult = requireScopeStringSet(scope.patterns, "patterns");
+  if (!scopePatternsResult.ok) return scopePatternsResult;
+  const scopeFilesResult = requireScopeStringSet(scope.files, "files");
+  if (!scopeFilesResult.ok) return scopeFilesResult;
+  const scopeChangeKindsResult = requireScopeStringSet(scope.changeKinds, "changeKinds");
+  if (!scopeChangeKindsResult.ok) return scopeChangeKindsResult;
+  const scopePlatforms = scopePlatformsResult.values;
+  const scopeSurfaces = scopeSurfacesResult.values;
+  const scopePatterns = scopePatternsResult.values;
+  const scopeFiles = scopeFilesResult.list;
+  const scopeChangeKinds = scopeChangeKindsResult.values;
   const changeBudget = scope.changeBudget || {};
-  if (scopePlatforms.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare platforms` };
-  if (scopeSurfaces.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare surfaces` };
-  if (scopePatterns.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare patterns` };
-  if (!Array.isArray(changeBudget.allowedChangeKinds)) {
-    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.allowedChangeKinds is required` };
+  for (const scopeFile of scopeFiles) {
+    if (!isSafeScopeFile(scopeFile)) {
+      return { ok: false, reason: `scope ${requestedVisualScopeId} files must use safe repo-relative paths` };
+    }
   }
-  const budgetChangeKinds = new Set(changeBudget.allowedChangeKinds);
+  if (!Number.isInteger(changeBudget.maxFiles) || changeBudget.maxFiles < 1) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.maxFiles must be a positive integer` };
+  }
+  if (!Number.isInteger(changeBudget.maxLines) || changeBudget.maxLines < 1) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.maxLines must be a positive integer` };
+  }
+  const budgetChangeKindsResult = requireScopeStringSet(changeBudget.allowedChangeKinds, "changeBudget.allowedChangeKinds");
+  if (!budgetChangeKindsResult.ok) return budgetChangeKindsResult;
+  const budgetChangeKinds = budgetChangeKindsResult.values;
 
   for (const file of files) {
     if (!fileMatchesScope(file, scopeFiles)) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include ${file}` };
