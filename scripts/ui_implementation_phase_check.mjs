@@ -43,6 +43,32 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStringSet(values, label, expectedValues) {
+  const seen = requireUniqueStrings(values, label);
+  const expected = new Set(expectedValues);
+  for (const value of seen) {
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function requireRepoReference(reference, label) {
   if (typeof reference !== "string" || reference.length === 0) {
     fail(`${label} must be a repo-relative reference`);
@@ -60,11 +86,26 @@ function requireRepoReference(reference, label) {
 const manifestPath = "docs/ui/implementation-phases.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
+  if (args.has("--simulate-inactive-manifest")) {
+    manifest.status = "draft";
+  }
   if (args.has("--simulate-missing-allowed-action") && Array.isArray(manifest.nonAuthorizedAllowedActions)) {
     manifest.nonAuthorizedAllowedActions = manifest.nonAuthorizedAllowedActions.filter((action) => action !== "conceptual-proposal");
   }
+  if (args.has("--simulate-extra-allowed-action") && Array.isArray(manifest.nonAuthorizedAllowedActions)) {
+    manifest.nonAuthorizedAllowedActions.push("style-token-edit");
+  }
+  if (args.has("--simulate-duplicate-allowed-action") && Array.isArray(manifest.nonAuthorizedAllowedActions) && manifest.nonAuthorizedAllowedActions[0]) {
+    manifest.nonAuthorizedAllowedActions.push(manifest.nonAuthorizedAllowedActions[0]);
+  }
   if (args.has("--simulate-missing-forbidden-action") && Array.isArray(manifest.nonAuthorizedForbiddenActions)) {
     manifest.nonAuthorizedForbiddenActions = manifest.nonAuthorizedForbiddenActions.filter((action) => action !== "visual-ui");
+  }
+  if (args.has("--simulate-extra-forbidden-action") && Array.isArray(manifest.nonAuthorizedForbiddenActions)) {
+    manifest.nonAuthorizedForbiddenActions.push("private-evidence-wiring");
+  }
+  if (args.has("--simulate-duplicate-forbidden-action") && Array.isArray(manifest.nonAuthorizedForbiddenActions) && manifest.nonAuthorizedForbiddenActions[0]) {
+    manifest.nonAuthorizedForbiddenActions.push(manifest.nonAuthorizedForbiddenActions[0]);
   }
   if (args.has("--simulate-unknown-phase") && Array.isArray(manifest.phases) && manifest.phases[0]) {
     manifest.phases[0] = { ...manifest.phases[0], id: "visual-cleanup-now" };
@@ -87,6 +128,10 @@ if (manifest) {
   if (args.has("--simulate-missing-phase-evidence") && Array.isArray(manifest.phases) && manifest.phases[0]) {
     manifest.phases[0] = { ...manifest.phases[0], evidence: [] };
   }
+  if (args.has("--simulate-duplicate-phase-evidence") && Array.isArray(manifest.phases)) {
+    const phase = manifest.phases.find((candidate) => Array.isArray(candidate?.evidence) && candidate.evidence[0]);
+    if (phase) phase.evidence.push(phase.evidence[0]);
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -97,14 +142,17 @@ requireFields(manifest, manifestPath, [
   "phases",
 ]);
 
-const allowedActions = new Set(requireArray(manifest, manifestPath, "nonAuthorizedAllowedActions"));
-for (const action of ["governance-manifest", "public-check", "private-verifier", "evidence-wiring", "conceptual-proposal"]) {
-  if (!allowedActions.has(action)) fail(`${manifestPath}.nonAuthorizedAllowedActions must include ${action}`);
-}
-const forbiddenActions = new Set(requireArray(manifest, manifestPath, "nonAuthorizedForbiddenActions"));
-for (const action of ["visual-ui", "copy-ui", "layout-change", "style-token-change", "critical-cleanup-execution"]) {
-  if (!forbiddenActions.has(action)) fail(`${manifestPath}.nonAuthorizedForbiddenActions must include ${action}`);
-}
+if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "nonAuthorizedAllowedActions"),
+  `${manifestPath}.nonAuthorizedAllowedActions`,
+  ["governance-manifest", "public-check", "private-verifier", "evidence-wiring", "conceptual-proposal"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "nonAuthorizedForbiddenActions"),
+  `${manifestPath}.nonAuthorizedForbiddenActions`,
+  ["visual-ui", "copy-ui", "layout-change", "style-token-change", "critical-cleanup-execution"],
+);
 
 const expectedPhases = new Map([
   ["public-governance-foundation", "complete"],
@@ -119,7 +167,9 @@ for (const [index, phase] of requireArray(manifest, manifestPath, "phases").entr
   if (expectedPhases.get(phase.id) !== phase.status) fail(`${label}.status must be ${expectedPhases.get(phase.id)}`);
   if (seen.has(phase.id)) fail(`${label}.id duplicates ${phase.id}`);
   seen.add(phase.id);
-  for (const [evidenceIndex, evidence] of requireArray(phase, label, "evidence").entries()) {
+  const evidenceEntries = requireArray(phase, label, "evidence");
+  requireUniqueStrings(evidenceEntries, `${label}.evidence`);
+  for (const [evidenceIndex, evidence] of evidenceEntries.entries()) {
     requireRepoReference(evidence, `${label}.evidence[${evidenceIndex}]`);
   }
 }
