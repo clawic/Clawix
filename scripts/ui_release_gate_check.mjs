@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -86,6 +87,36 @@ const manifestPath = "docs/ui/gate-surface.manifest.json";
 const manifest = readJson(manifestPath);
 const privateVisualValidationPath = "docs/ui/private-visual-validation.manifest.json";
 const privateVisualValidation = readJson(privateVisualValidationPath);
+if (args.has("--simulate-wrong-external-pending-code") && manifest) {
+  manifest.externalPendingExitCode = 1;
+}
+if (args.has("--simulate-private-command-mismatch") && manifest) {
+  manifest.privateEvidenceCommand = "node scripts/ui_private_visual_verify.mjs";
+}
+if (args.has("--simulate-missing-required-lane") && Array.isArray(manifest?.requiredLanes)) {
+  manifest.requiredLanes = manifest.requiredLanes.filter((lane) => lane !== "release");
+}
+if (args.has("--simulate-missing-release-requirement") && Array.isArray(manifest?.releaseLaneRequires)) {
+  manifest.releaseLaneRequires = manifest.releaseLaneRequires.filter((lane) => lane !== "host");
+}
+if (args.has("--simulate-missing-visual-diff") && Array.isArray(manifest?.publicCiStrategy?.validates)) {
+  manifest.publicCiStrategy.validates = manifest.publicCiStrategy.validates.filter((item) => item !== "visual-diff");
+}
+if (args.has("--simulate-private-roots-allowed") && manifest?.publicCiStrategy) {
+  manifest.publicCiStrategy.forbidsPrivateRoots = false;
+}
+if (args.has("--simulate-missing-diff-base-consumer") && Array.isArray(manifest?.publicCiStrategy?.diffBaseConsumers)) {
+  manifest.publicCiStrategy.diffBaseConsumers = manifest.publicCiStrategy.diffBaseConsumers.filter((script) => script !== "scripts/ui_pattern_mutation_guard.mjs");
+}
+if (args.has("--simulate-unlisted-coverage-script") && manifest?.publicCheckCoverage) {
+  manifest.publicCheckCoverage["release-gate-contract-check"] = ["scripts/missing-release-gate-check.mjs"];
+}
+if (args.has("--simulate-undeclared-public-check-coverage") && manifest?.publicCheckCoverage) {
+  manifest.publicCheckCoverage["simulated-undeclared-check"] = ["scripts/ui_release_gate_check.mjs"];
+}
+if (args.has("--simulate-required-script-uncovered") && Array.isArray(manifest?.requiredPublicCheckScripts)) {
+  manifest.requiredPublicCheckScripts.push("scripts/simulated-uncovered-check.mjs");
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -116,9 +147,21 @@ for (const rootEnv of requireArray(privateVisualValidation, privateVisualValidat
   }
 }
 
-const testScript = read(manifest?.localTestScript || "scripts/test.sh");
-const workflow = read(manifest?.publicWorkflow || ".github/workflows/ui-governance.yml");
+let testScript = read(manifest?.localTestScript || "scripts/test.sh");
+let workflow = read(manifest?.publicWorkflow || ".github/workflows/ui-governance.yml");
 const config = readJson("docs/ui/interface-governance.config.json");
+if (args.has("--simulate-missing-config-public-check") && Array.isArray(config?.publicChecks)) {
+  config.publicChecks = config.publicChecks.filter((check) => check !== "release-gate-contract-check");
+}
+if (args.has("--simulate-missing-test-script-run")) {
+  testScript = testScript.replace(/\n\s*run node "\$ROOT_DIR\/scripts\/ui_release_gate_check\.mjs"/, "");
+}
+if (args.has("--simulate-missing-workflow-run")) {
+  workflow = workflow.replace(/\n\s*run: node scripts\/ui_release_gate_check\.mjs/, "");
+}
+if (args.has("--simulate-private-root-in-workflow")) {
+  workflow += "\n# CLAWIX_UI_PRIVATE_BASELINE_ROOT=/Users/example/private-ui\n";
+}
 scanPublicText(testScript, manifest?.localTestScript || "scripts/test.sh");
 scanPublicText(workflow, manifest?.publicWorkflow || ".github/workflows/ui-governance.yml");
 
