@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -69,6 +70,18 @@ function collectSourceFiles(root, extensions, skippedDirectories) {
 
 const manifestPath = "docs/ui/component-extraction.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest && args.has("--simulate-missing-performance-risk-signal")) {
+  manifest.requiredRiskSignals = manifest.requiredRiskSignals.filter((signal) => signal !== "performance");
+}
+if (manifest && args.has("--simulate-required-policy-local-composition")) {
+  manifest.allowedPolicies = manifest.allowedPolicies.map((policy) => {
+    if (policy.id !== "required") return policy;
+    return {
+      ...policy,
+      allowedApis: [...new Set([...policy.allowedApis, "local-composition"])],
+    };
+  });
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -153,6 +166,15 @@ for (const [index, policy] of requireArray(manifest, manifestPath, "allowedPolic
 const requiredPolicies = ["required", "required-when-repeated-with-state", "allowed", "forbidden"];
 for (const policy of requiredPolicies) {
   if (!policyToApis.has(policy)) fail(`${manifestPath}.allowedPolicies must include ${policy}`);
+}
+for (const policy of ["required", "required-when-repeated-with-state"]) {
+  if (policyToApis.get(policy)?.has("local-composition")) {
+    fail(`${manifestPath}.allowedPolicies.${policy} must not allow local-composition`);
+  }
+}
+const forbiddenPolicyApis = policyToApis.get("forbidden");
+if (forbiddenPolicyApis && (forbiddenPolicyApis.size !== 1 || !forbiddenPolicyApis.has("local-composition"))) {
+  fail(`${manifestPath}.allowedPolicies.forbidden must only allow local-composition`);
 }
 
 const compiledForbiddenSignals = [];
