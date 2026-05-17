@@ -43,6 +43,29 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const [index, value] of values.entries()) {
+    const entryLabel = `${label}[${index}]`;
+    if (typeof value !== "string" || value === "") {
+      fail(`${entryLabel} must be a non-empty string`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${entryLabel} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStrings(values, label, expected) {
+  const actual = requireArray({ values }, label, "values");
+  requireUniqueStrings(actual, `${label}.values`);
+  if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) {
+    fail(`${label} must match ${JSON.stringify(expected)}`);
+  }
+  return new Set(actual);
+}
+
 function requireRepoReference(reference, label) {
   if (typeof reference !== "string" || reference.length === 0) {
     fail(`${label} must be a repo-relative reference`);
@@ -63,17 +86,47 @@ if (manifest) {
   if (args.has("--simulate-wrong-primary-unit")) {
     manifest.primaryUnit = "component";
   }
+  if (args.has("--simulate-inactive-canon-units")) {
+    manifest.status = "draft";
+  }
   if (args.has("--simulate-absolute-pattern-registry")) {
     manifest.patternRegistry = "/Users/private/patterns.registry.json";
+  }
+  if (args.has("--simulate-wrong-promotion-registry")) {
+    manifest.promotionRegistry = "docs/ui/promotions.registry.json";
+  }
+  if (args.has("--simulate-wrong-approval-authority")) {
+    manifest.approvalAuthority = "docs/ui/approval.manifest.json";
   }
   if (args.has("--simulate-missing-allowed-status") && Array.isArray(manifest.allowedUnitStatuses)) {
     manifest.allowedUnitStatuses = manifest.allowedUnitStatuses.filter((status) => status !== "revoked");
   }
+  if (args.has("--simulate-duplicate-allowed-status") && Array.isArray(manifest.allowedUnitStatuses)) {
+    manifest.allowedUnitStatuses = [...manifest.allowedUnitStatuses, manifest.allowedUnitStatuses[0]];
+  }
   if (args.has("--simulate-missing-required-unit-field") && Array.isArray(manifest.requiredUnitFields)) {
     manifest.requiredUnitFields = manifest.requiredUnitFields.filter((field) => field !== "promotionRequired");
   }
+  if (args.has("--simulate-duplicate-required-unit-field") && Array.isArray(manifest.requiredUnitFields)) {
+    manifest.requiredUnitFields = [...manifest.requiredUnitFields, manifest.requiredUnitFields[0]];
+  }
   if (args.has("--simulate-duplicate-unit") && Array.isArray(manifest.units) && manifest.units[0]) {
     manifest.units.push({ ...manifest.units[0] });
+  }
+  if (args.has("--simulate-unknown-unit") && Array.isArray(manifest.units)) {
+    manifest.units.push({
+      id: "sub-pattern",
+      unitKind: "narrower-unit",
+      status: "candidate",
+      source: "docs/ui/pattern-registry/patterns.registry.json",
+      promotionRequired: true,
+    });
+  }
+  if (args.has("--simulate-wrong-unit-source") && Array.isArray(manifest.units) && manifest.units[1]) {
+    manifest.units[1] = { ...manifest.units[1], source: "docs/ui/pattern-registry/patterns.registry.json" };
+  }
+  if (args.has("--simulate-wrong-unit-kind") && Array.isArray(manifest.units) && manifest.units[1]) {
+    manifest.units[1] = { ...manifest.units[1], unitKind: "primary-canon-unit" };
   }
   if (args.has("--simulate-primary-requires-promotion") && Array.isArray(manifest.units) && manifest.units[0]) {
     manifest.units[0] = { ...manifest.units[0], promotionRequired: true };
@@ -97,26 +150,48 @@ requireFields(manifest, manifestPath, [
   "requiredUnitFields",
   "units",
 ]);
+if (manifest?.schemaVersion !== 1) fail(`${manifestPath}.schemaVersion must be 1`);
+if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
 if (manifest?.primaryUnit !== "pattern") fail(`${manifestPath}.primaryUnit must be pattern`);
+if (manifest?.patternRegistry !== "docs/ui/pattern-registry/patterns.registry.json") {
+  fail(`${manifestPath}.patternRegistry must be docs/ui/pattern-registry/patterns.registry.json`);
+}
+if (manifest?.promotionRegistry !== "docs/ui/canon-promotions.registry.json") {
+  fail(`${manifestPath}.promotionRegistry must be docs/ui/canon-promotions.registry.json`);
+}
+if (manifest?.approvalAuthority !== "docs/ui/approval-authority.manifest.json") {
+  fail(`${manifestPath}.approvalAuthority must be docs/ui/approval-authority.manifest.json`);
+}
 for (const field of ["patternRegistry", "promotionRegistry", "approvalAuthority"]) {
   requireRepoReference(manifest?.[field], `${manifestPath}.${field}`);
 }
 
-const statuses = new Set(requireArray(manifest, manifestPath, "allowedUnitStatuses"));
-for (const status of ["candidate", "promoted", "revoked"]) {
-  if (!statuses.has(status)) fail(`${manifestPath}.allowedUnitStatuses must include ${status}`);
-}
-const requiredFields = requireArray(manifest, manifestPath, "requiredUnitFields");
-for (const field of ["id", "unitKind", "status", "source", "promotionRequired"]) {
-  if (!requiredFields.includes(field)) fail(`${manifestPath}.requiredUnitFields must include ${field}`);
-}
+const statuses = requireExactStrings(manifest?.allowedUnitStatuses || [], `${manifestPath}.allowedUnitStatuses`, ["candidate", "promoted", "revoked"]);
+const requiredFields = [...requireExactStrings(
+  manifest?.requiredUnitFields || [],
+  `${manifestPath}.requiredUnitFields`,
+  ["id", "unitKind", "status", "source", "promotionRequired"],
+)];
 
+const expectedUnits = new Map([
+  ["pattern", { unitKind: "primary-canon-unit", status: "promoted", source: "docs/ui/pattern-registry/patterns.registry.json", promotionRequired: false }],
+  ["component", { unitKind: "narrower-unit", status: "candidate", source: "docs/ui/component-extraction.manifest.json", promotionRequired: true }],
+  ["surface", { unitKind: "narrower-unit", status: "candidate", source: "docs/ui/protected-surfaces.registry.json", promotionRequired: true }],
+]);
 const unitsById = new Map();
 for (const [index, unit] of requireArray(manifest, manifestPath, "units").entries()) {
   const label = `${manifestPath}.units[${index}]`;
   requireFields(unit, label, requiredFields);
   if (unitsById.has(unit.id)) fail(`${label}.id duplicates ${unit.id}`);
   unitsById.set(unit.id, unit);
+  const expectedUnit = expectedUnits.get(unit.id);
+  if (!expectedUnit) {
+    fail(`${label}.id is not a governed canon unit`);
+    continue;
+  }
+  for (const field of ["unitKind", "status", "source", "promotionRequired"]) {
+    if (unit[field] !== expectedUnit[field]) fail(`${label}.${field} must be ${expectedUnit[field]}`);
+  }
   if (!statuses.has(unit.status)) fail(`${label}.status is invalid`);
   requireRepoReference(unit.source, `${label}.source`);
   if (unit.id === manifest.primaryUnit && unit.promotionRequired !== false) {
@@ -126,23 +201,66 @@ for (const [index, unit] of requireArray(manifest, manifestPath, "units").entrie
     fail(`${label}.promotionRequired must be true for narrower canon units`);
   }
 }
-for (const requiredUnit of ["pattern", "component", "surface"]) {
+for (const requiredUnit of expectedUnits.keys()) {
   if (!unitsById.has(requiredUnit)) fail(`${manifestPath}.units must include ${requiredUnit}`);
 }
 
 const registry = readJson(manifest?.patternRegistry || "docs/ui/pattern-registry/patterns.registry.json");
+if (registry && args.has("--simulate-registry-wrong-notes-path")) {
+  registry.notesPath = "docs/ui/pattern-registry/notes.md";
+}
+if (registry && args.has("--simulate-registry-missing-platform") && Array.isArray(registry.platforms)) {
+  registry.platforms = registry.platforms.filter((platform) => platform !== "web");
+}
+if (registry && args.has("--simulate-registry-duplicate-pattern") && Array.isArray(registry.patterns) && registry.patterns[0]) {
+  registry.patterns = [...registry.patterns, registry.patterns[0]];
+}
 if (registry && args.has("--simulate-pattern-missing-mutation-class") && Array.isArray(registry.patterns)) {
   registry.patterns = ["sidebar-row", ...registry.patterns.filter((patternId) => patternId !== "sidebar-row")];
 }
+if (registry?.schemaVersion !== 1) fail(`${manifest.patternRegistry}.schemaVersion must be 1`);
+if (registry?.notesPath !== "docs/ui/pattern-registry/patterns/notes.md") {
+  fail(`${manifest.patternRegistry}.notesPath must be docs/ui/pattern-registry/patterns/notes.md`);
+}
+requireRepoReference(registry?.notesPath, `${manifest.patternRegistry}.notesPath`);
+requireExactStrings(registry?.platforms || [], `${manifest.patternRegistry}.platforms`, ["macos", "ios", "android", "web"]);
+const registryPatternIds = requireUniqueStrings(requireArray(registry, manifest.patternRegistry, "patterns"), `${manifest.patternRegistry}.patterns`);
 const governanceConfig = readJson("docs/ui/interface-governance.config.json");
 const allowedMutationClasses = new Set(requireArray(governanceConfig, "docs/ui/interface-governance.config.json", "mutationClasses"));
-for (const patternId of requireArray(registry, manifest.patternRegistry, "patterns")) {
+for (const patternId of registryPatternIds) {
   const pattern = readJson(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json`);
+  if (pattern && args.has("--simulate-pattern-id-mismatch") && patternId === "sidebar-row") {
+    pattern.id = "sidebar-row-copy";
+  }
   if (pattern && args.has("--simulate-pattern-missing-mutation-class") && patternId === "sidebar-row") {
     delete pattern.mutationClass;
   }
   if (pattern && args.has("--simulate-pattern-unknown-mutation-class") && patternId === "sidebar-row") {
     pattern.mutationClass = ["visual-ui", "unknown-ui"];
+  }
+  if (pattern && args.has("--simulate-pattern-duplicate-mutation-class") && patternId === "sidebar-row") {
+    pattern.mutationClass = ["visual-ui", "visual-ui"];
+  }
+  if (pattern && args.has("--simulate-pattern-empty-canonical-references") && patternId === "sidebar-row") {
+    pattern.canonicalReferences = [];
+  }
+  requireFields(pattern, `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`, [
+    "schemaVersion",
+    "id",
+    "status",
+    "platforms",
+    "mutationClass",
+    "canonicalReferences",
+  ]);
+  if (pattern?.schemaVersion !== 1) fail(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json.schemaVersion must be 1`);
+  if (pattern?.id !== patternId) fail(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json.id must match ${patternId}`);
+  for (const platform of requireUniqueStrings(requireArray(pattern, `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`, "platforms"), `docs/ui/pattern-registry/patterns/${patternId}.pattern.json.platforms`)) {
+    if (!["macos", "ios", "android", "web"].includes(platform)) {
+      fail(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json.platforms contains unknown platform ${platform}`);
+    }
+  }
+  for (const [referenceIndex, reference] of requireArray(pattern, `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`, "canonicalReferences").entries()) {
+    requireRepoReference(reference, `docs/ui/pattern-registry/patterns/${patternId}.pattern.json.canonicalReferences[${referenceIndex}]`);
   }
   const mutationClasses = Array.isArray(pattern?.mutationClass)
     ? pattern.mutationClass
@@ -152,7 +270,7 @@ for (const patternId of requireArray(registry, manifest.patternRegistry, "patter
   if (mutationClasses.length === 0) {
     fail(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json.mutationClass must be declared`);
   }
-  for (const mutationClass of mutationClasses) {
+  for (const mutationClass of requireUniqueStrings(mutationClasses, `docs/ui/pattern-registry/patterns/${patternId}.pattern.json.mutationClass`)) {
     if (!allowedMutationClasses.has(mutationClass)) {
       fail(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json.mutationClass contains unknown class ${mutationClass}`);
     }
@@ -173,7 +291,7 @@ for (const [index, promotion] of requireArray(promotions, manifest.promotionRegi
   const label = `${manifest.promotionRegistry}.promotions[${index}]`;
   requireFields(promotion, label, ["patterns", "privateApprovalReference"]);
   for (const patternId of requireArray(promotion, label, "patterns")) {
-    if (!registry.patterns.includes(patternId)) fail(`${label}.patterns references unknown pattern ${patternId}`);
+    if (!registryPatternIds.has(patternId)) fail(`${label}.patterns references unknown pattern ${patternId}`);
   }
 }
 
