@@ -70,8 +70,36 @@ function collectSourceFiles(root, extensions, skippedDirectories) {
 
 const manifestPath = "docs/ui/component-extraction.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest && args.has("--simulate-wrong-minimum-call-sites")) {
+  manifest.minimumCallSites = 1;
+}
 if (manifest && args.has("--simulate-missing-performance-risk-signal")) {
   manifest.requiredRiskSignals = manifest.requiredRiskSignals.filter((signal) => signal !== "performance");
+}
+if (manifest && args.has("--simulate-wrong-mechanical-manifest")) {
+  manifest.mechanicalEquivalence.manifestPath = "docs/ui/missing-mechanical-equivalence.manifest.json";
+}
+if (manifest && args.has("--simulate-missing-mechanical-evidence-field")) {
+  manifest.mechanicalEquivalence.requiredEvidenceFields =
+    manifest.mechanicalEquivalence.requiredEvidenceFields.filter((field) => field !== "approvedScope");
+}
+if (manifest && args.has("--simulate-allowed-api-missing-forbid") && Array.isArray(manifest.allowedApis)) {
+  manifest.allowedApis = manifest.allowedApis.map((api) => {
+    if (api.id !== "limited-slots") return api;
+    return {
+      ...api,
+      forbids: api.forbids.filter((shape) => shape !== "unbounded-prop-bag"),
+    };
+  });
+}
+if (manifest && args.has("--simulate-policy-unknown-api") && Array.isArray(manifest.allowedPolicies)) {
+  manifest.allowedPolicies = manifest.allowedPolicies.map((policy) => {
+    if (policy.id !== "required") return policy;
+    return {
+      ...policy,
+      allowedApis: [...policy.allowedApis, "unbounded-render-hook"],
+    };
+  });
 }
 if (manifest && args.has("--simulate-required-policy-local-composition")) {
   manifest.allowedPolicies = manifest.allowedPolicies.map((policy) => {
@@ -81,6 +109,18 @@ if (manifest && args.has("--simulate-required-policy-local-composition")) {
       allowedApis: [...new Set([...policy.allowedApis, "local-composition"])],
     };
   });
+}
+if (manifest && args.has("--simulate-forbidden-policy-shared-api") && Array.isArray(manifest.allowedPolicies)) {
+  manifest.allowedPolicies = manifest.allowedPolicies.map((policy) => {
+    if (policy.id !== "forbidden") return policy;
+    return {
+      ...policy,
+      allowedApis: [...new Set([...policy.allowedApis, "limited-slots"])],
+    };
+  });
+}
+if (manifest && args.has("--simulate-unsafe-source-root")) {
+  manifest.sourceAudit.roots = ["/tmp/clawix-ui", ...manifest.sourceAudit.roots.slice(1)];
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -199,6 +239,15 @@ for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
   if (!pattern) continue;
+  if (patternId === "sidebar-row" && args.has("--simulate-pattern-unknown-policy")) {
+    pattern.componentExtraction.policy = "optional";
+  }
+  if (patternId === "sidebar-row" && args.has("--simulate-pattern-unknown-api")) {
+    pattern.componentExtraction.api = "unbounded-render-hook";
+  }
+  if (patternId === "sidebar-row" && args.has("--simulate-pattern-missing-state-interaction-risk")) {
+    pattern.componentExtraction.riskSignals = ["geometry"];
+  }
   const extraction = pattern.componentExtraction;
   requireFields(extraction, `${patternPath}.componentExtraction`, ["policy", "api", "riskSignals"]);
   if (!policyToApis.has(extraction?.policy)) {
