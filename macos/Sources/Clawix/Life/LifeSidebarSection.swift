@@ -5,7 +5,7 @@ import SwiftUI
 /// the same compact row style as `SidebarToolsCatalog`.
 struct LifeSidebarSection: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var manager = LifeManager.shared
+    @StateObject private var store = LifeVerticalsStore.shared
     @StateObject private var flags = FeatureFlags.shared
 
     @AppStorage(ClawixPersistentSurfaceKeys.sidebarLifeExpanded, store: SidebarPrefs.store)
@@ -101,8 +101,8 @@ struct LifeSidebarSection: View {
     }
 
     private var visibleVerticals: [LifeRegistryEntry] {
-        let ids = manager.enabledVerticalIds
-        let hidden = manager.hiddenVerticalIds
+        let ids = store.enabledVerticalIds
+        let hidden = store.hiddenVerticalIds
         return ids.compactMap { id in
             guard !hidden.contains(id) else { return nil }
             return LifeRegistry.entry(byId: id, includeDevOnly: flags.developerSurfaces)

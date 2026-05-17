@@ -18,10 +18,10 @@ final class HealthKitBridge: ObservableObject {
     @Published private(set) var lastSyncAt: Date?
     @Published private(set) var authorizationGranted: Bool = false
 
-    private let manager: LifeManager
+    private let store: LifeVerticalsStore
 
-    init(manager: LifeManager = .shared) {
-        self.manager = manager
+    init(store: LifeVerticalsStore = .shared) {
+        self.store = store
     }
 
     /// Ask the user once for read access to every HealthKit type the
@@ -32,10 +32,10 @@ final class HealthKitBridge: ObservableObject {
             lastError = "HealthKit not available on this device"
             return
         }
-        let store = HKHealthStore()
+        let healthStore = HKHealthStore()
         let typesToRead = Self.requestedReadTypes()
         do {
-            try await store.requestAuthorization(toShare: [], read: typesToRead)
+            try await healthStore.requestAuthorization(toShare: [], read: typesToRead)
             authorizationGranted = true
         } catch {
             lastError = "HealthKit authorization failed: \(error.localizedDescription)"
@@ -52,12 +52,12 @@ final class HealthKitBridge: ObservableObject {
     func syncRecent() async {
         #if canImport(HealthKit) && os(iOS)
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        let enabled = manager.enabledVerticalIds
+        let enabled = store.enabledVerticalIds
         for verticalId in enabled {
             guard let entry = LifeRegistry.entry(byId: verticalId),
                   entry.healthkitMapping else { continue }
-            await manager.reloadCatalog(for: verticalId)
-            for variable in manager.state(for: verticalId).catalog {
+            await store.reloadCatalog(for: verticalId)
+            for variable in store.state(for: verticalId).catalog {
                 guard let typeId = variable.healthkitTypeId else { continue }
                 await syncVariable(
                     verticalId: verticalId,
@@ -77,7 +77,7 @@ final class HealthKitBridge: ObservableObject {
         healthkitTypeId: String
     ) async {
         guard let quantityType = Self.makeType(from: healthkitTypeId) else { return }
-        let store = HKHealthStore()
+        let healthStore = HKHealthStore()
         let predicate = HKQuery.predicateForSamples(
             withStart: Date().addingTimeInterval(-30 * 24 * 60 * 60),
             end: nil,
@@ -103,10 +103,10 @@ final class HealthKitBridge: ObservableObject {
                     }
                     continuation.resume(returning: mapped)
                 }
-                store.execute(query)
+                healthStore.execute(query)
             }
             guard !inputs.isEmpty else { return }
-            await manager.bulkUpsertObservations(verticalId: verticalId, inputs: inputs)
+            await store.bulkUpsertObservations(verticalId: verticalId, inputs: inputs)
         } catch {
             lastError = "HealthKit sync \(variable.id) failed: \(error.localizedDescription)"
         }

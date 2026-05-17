@@ -9,8 +9,8 @@ private enum LifePersistentKeys {
 }
 
 @MainActor
-final class LifeManager: ObservableObject {
-    static let shared = LifeManager()
+final class LifeVerticalsStore: ObservableObject {
+    static let shared = LifeVerticalsStore()
 
     @Published private(set) var verticals: [String: LifeVerticalState] = [:]
     @Published private(set) var enabledVerticalIds: [String]
@@ -23,8 +23,8 @@ final class LifeManager: ObservableObject {
 
     init(
         urlSession: URLSession = .shared,
-        hostProvider: @escaping () -> String? = LifeManager.defaultHost,
-        tokenProvider: @escaping () -> String? = LifeManager.defaultToken
+        hostProvider: @escaping () -> String? = LifeVerticalsStore.defaultHost,
+        tokenProvider: @escaping () -> String? = LifeVerticalsStore.defaultToken
     ) {
         self.urlSession = urlSession
         var ports: [String: Int] = [:]
@@ -36,8 +36,8 @@ final class LifeManager: ObservableObject {
         self.portByVertical = ports
         self.hostProvider = hostProvider
         self.tokenProvider = tokenProvider
-        self.enabledVerticalIds = LifeManager.loadEnabledIds()
-        self.hiddenVerticalIds = LifeManager.loadHiddenIds()
+        self.enabledVerticalIds = LifeVerticalsStore.loadEnabledIds()
+        self.hiddenVerticalIds = LifeVerticalsStore.loadHiddenIds()
     }
 
     func state(for verticalId: String) -> LifeVerticalState {
@@ -168,7 +168,7 @@ final class LifeManager: ObservableObject {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200..<300).contains(http.statusCode) else {
             throw NSError(
-                domain: "LifeManager",
+                domain: "LifeVerticalsStore",
                 code: http.statusCode,
                 userInfo: [
                     NSLocalizedDescriptionKey: "HTTP \(http.statusCode) on \(url.absoluteString)"

@@ -5,12 +5,12 @@ import Combine
 /// All verticals share the same daemon authentication: a bearer token
 /// negotiated by the bridge (see `DaemonBridgeClient`).
 @MainActor
-final class LifeManager: ObservableObject {
-    static let shared = LifeManager()
+final class LifeVerticalsStore: ObservableObject {
+    static let shared = LifeVerticalsStore()
 
     @Published private(set) var verticals: [String: LifeVerticalState] = [:]
-    @Published private(set) var enabledVerticalIds: [String] = LifeManager.loadEnabledIds()
-    @Published private(set) var hiddenVerticalIds: Set<String> = LifeManager.loadHiddenIds()
+    @Published private(set) var enabledVerticalIds: [String] = LifeVerticalsStore.loadEnabledIds()
+    @Published private(set) var hiddenVerticalIds: Set<String> = LifeVerticalsStore.loadHiddenIds()
 
     private let urlSession: URLSession
     private let host: String
@@ -20,7 +20,7 @@ final class LifeManager: ObservableObject {
     init(
         urlSession: URLSession = .shared,
         host: String = "127.0.0.1",
-        tokenProvider: @escaping () -> String? = LifeManager.defaultToken
+        tokenProvider: @escaping () -> String? = LifeVerticalsStore.defaultToken
     ) {
         self.urlSession = urlSession
         self.host = host
@@ -181,7 +181,7 @@ final class LifeManager: ObservableObject {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200..<300).contains(http.statusCode) else {
             throw NSError(
-                domain: "LifeManager",
+                domain: "LifeVerticalsStore",
                 code: http.statusCode,
                 userInfo: [
                     NSLocalizedDescriptionKey: "HTTP \(http.statusCode) on \(url.absoluteString)"

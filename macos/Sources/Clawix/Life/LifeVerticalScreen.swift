@@ -27,14 +27,14 @@ struct LifeVerticalScreen: View {
 struct GenericVerticalScreen: View {
     let verticalId: String
 
-    @StateObject private var manager = LifeManager.shared
+    @StateObject private var store = LifeVerticalsStore.shared
     @State private var selectedVariableId: String?
     @State private var newValueText: String = ""
     @State private var newNotesText: String = ""
     @State private var search: String = ""
 
     private var entry: LifeRegistryEntry? { LifeRegistry.entry(byId: verticalId) }
-    private var state: LifeVerticalState { manager.state(for: verticalId) }
+    private var state: LifeVerticalState { store.state(for: verticalId) }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -57,11 +57,11 @@ struct GenericVerticalScreen: View {
     }
 
     private func refresh() async {
-        await manager.reloadCatalog(for: verticalId)
+        await store.reloadCatalog(for: verticalId)
         if selectedVariableId == nil {
             selectedVariableId = state.catalog.first?.id
         }
-        await manager.reloadObservations(for: verticalId, variableId: selectedVariableId)
+        await store.reloadObservations(for: verticalId, variableId: selectedVariableId)
     }
 
     // MARK: - Panes
@@ -178,7 +178,7 @@ struct GenericVerticalScreen: View {
             Spacer()
             Button(action: {
                 Task {
-                    await manager.deleteObservation(
+                    await store.deleteObservation(
                         verticalId: verticalId,
                         observationId: observation.id
                     )
@@ -291,7 +291,7 @@ struct GenericVerticalScreen: View {
     private func select(_ variableId: String) {
         selectedVariableId = variableId
         Task {
-            await manager.reloadObservations(for: verticalId, variableId: variableId)
+            await store.reloadObservations(for: verticalId, variableId: variableId)
         }
     }
 
@@ -321,7 +321,7 @@ struct GenericVerticalScreen: View {
             sessionId: nil,
             externalId: nil
         )
-        await manager.upsertObservation(verticalId: verticalId, input: input)
+        await store.upsertObservation(verticalId: verticalId, input: input)
         newValueText = ""
         newNotesText = ""
     }

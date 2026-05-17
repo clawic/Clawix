@@ -5,7 +5,7 @@ import SwiftUI
 /// verticals grouped by category as a grid of cards.
 struct LifeHomeScreen: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var manager = LifeManager.shared
+    @StateObject private var store = LifeVerticalsStore.shared
     @StateObject private var flags = FeatureFlags.shared
 
     private let columns: [GridItem] = Array(
@@ -28,7 +28,7 @@ struct LifeHomeScreen: View {
                                 .padding(.leading, 4)
                             LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
                                 ForEach(entries) { entry in
-                                    LifeVerticalCard(entry: entry, enabled: manager.enabledVerticalIds.contains(entry.id)) {
+                                    LifeVerticalCard(entry: entry, enabled: store.enabledVerticalIds.contains(entry.id)) {
                                         appState.navigate(to: .lifeVertical(id: entry.id))
                                     }
                                 }

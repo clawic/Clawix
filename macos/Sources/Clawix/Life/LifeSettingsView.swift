@@ -4,7 +4,7 @@ import SwiftUI
 /// reorder the verticals that appear in the sidebar's Life section.
 struct LifeSettingsView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var manager = LifeManager.shared
+    @StateObject private var store = LifeVerticalsStore.shared
     @StateObject private var flags = FeatureFlags.shared
 
     @State private var enabledOrder: [String] = []
@@ -57,7 +57,7 @@ struct LifeSettingsView: View {
         .background(Palette.background)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear {
-            enabledOrder = manager.enabledVerticalIds
+            enabledOrder = store.enabledVerticalIds
         }
     }
 
@@ -71,18 +71,18 @@ struct LifeSettingsView: View {
     }
 
     private func row(for entry: LifeRegistryEntry) -> some View {
-        let isEnabled = manager.enabledVerticalIds.contains(entry.id)
+        let isEnabled = store.enabledVerticalIds.contains(entry.id)
         return HStack(spacing: 10) {
             Toggle("", isOn: Binding(
                 get: { isEnabled },
                 set: { newValue in
-                    var next = manager.enabledVerticalIds
+                    var next = store.enabledVerticalIds
                     if newValue {
                         if !next.contains(entry.id) { next.append(entry.id) }
                     } else {
                         next.removeAll { $0 == entry.id }
                     }
-                    manager.setEnabled(next)
+                    store.setEnabled(next)
                 }
             ))
             .labelsHidden()
