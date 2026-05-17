@@ -73,6 +73,9 @@ const manifest = readJson(manifestPath);
 if (manifest && args.has("--simulate-wrong-minimum-call-sites")) {
   manifest.minimumCallSites = 1;
 }
+if (manifest && args.has("--simulate-inactive-manifest")) {
+  manifest.status = "draft";
+}
 if (manifest && args.has("--simulate-missing-performance-risk-signal")) {
   manifest.requiredRiskSignals = manifest.requiredRiskSignals.filter((signal) => signal !== "performance");
 }
@@ -91,6 +94,22 @@ if (manifest && args.has("--simulate-allowed-api-missing-forbid") && Array.isArr
       forbids: api.forbids.filter((shape) => shape !== "unbounded-prop-bag"),
     };
   });
+}
+if (manifest && args.has("--simulate-extra-allowed-api") && Array.isArray(manifest.allowedApis)) {
+  manifest.allowedApis = [
+    ...manifest.allowedApis,
+    {
+      id: "unbounded-render-hook",
+      shape: "Unsafe render hook that bypasses pattern contracts.",
+      forbids: ["unbounded-prop-bag"],
+    },
+  ];
+}
+if (manifest && args.has("--simulate-duplicate-allowed-api") && Array.isArray(manifest.allowedApis) && manifest.allowedApis[0]) {
+  manifest.allowedApis = [...manifest.allowedApis, { ...manifest.allowedApis[0] }];
+}
+if (manifest && args.has("--simulate-duplicate-policy") && Array.isArray(manifest.allowedPolicies) && manifest.allowedPolicies[0]) {
+  manifest.allowedPolicies = [...manifest.allowedPolicies, { ...manifest.allowedPolicies[0] }];
 }
 if (manifest && args.has("--simulate-policy-unknown-api") && Array.isArray(manifest.allowedPolicies)) {
   manifest.allowedPolicies = manifest.allowedPolicies.map((policy) => {
@@ -134,6 +153,9 @@ requireFields(manifest, manifestPath, [
   "forbiddenApiSignals",
   "sourceAudit",
 ]);
+if (manifest?.status !== "active") {
+  fail(`${manifestPath}.status must be active`);
+}
 
 if (manifest?.minimumCallSites !== 2) {
   fail(`${manifestPath}.minimumCallSites must be 2`);
@@ -181,21 +203,31 @@ for (const field of canonicalMechanicalEvidenceFields) {
   }
 }
 
+const canonicalAllowedApiIds = new Set(["limited-slots", "wrapper-plus-modifier", "local-composition"]);
 const allowedApis = new Set();
 for (const [index, api] of requireArray(manifest, manifestPath, "allowedApis").entries()) {
   const label = `${manifestPath}.allowedApis[${index}]`;
   requireFields(api, label, ["id", "shape", "forbids"]);
+  if (allowedApis.has(api.id)) fail(`${label}.id duplicates ${api.id}`);
   if (api?.id) allowedApis.add(api.id);
+  if (api?.id && !canonicalAllowedApiIds.has(api.id)) fail(`${label}.id is not an approved component API`);
   const forbiddenShapes = new Set(requireArray(api, label, "forbids"));
   if (!forbiddenShapes.has("unbounded-prop-bag")) {
     fail(`${label}.forbids must include unbounded-prop-bag`);
   }
+}
+for (const api of canonicalAllowedApiIds) {
+  if (!allowedApis.has(api)) fail(`${manifestPath}.allowedApis must include ${api}`);
+}
+if (allowedApis.size !== canonicalAllowedApiIds.size) {
+  fail(`${manifestPath}.allowedApis must exactly match approved component APIs`);
 }
 
 const policyToApis = new Map();
 for (const [index, policy] of requireArray(manifest, manifestPath, "allowedPolicies").entries()) {
   const label = `${manifestPath}.allowedPolicies[${index}]`;
   requireFields(policy, label, ["id", "description", "allowedApis"]);
+  if (policyToApis.has(policy.id)) fail(`${label}.id duplicates ${policy.id}`);
   const policyApis = requireArray(policy, label, "allowedApis");
   policyToApis.set(policy.id, new Set(policyApis));
   for (const api of policyApis) {
