@@ -71,6 +71,9 @@ function requirePublicSafeReference(value, alias, label) {
 
 const copyPath = "docs/ui/copy.inventory.json";
 const copyInventory = readJson(copyPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const copyGovernanceDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "copy_governance");
 requireFields(copyInventory, copyPath, [
   "schemaVersion",
   "status",
@@ -85,6 +88,20 @@ requireFields(copyInventory, copyPath, [
   "restrictedCopyKinds",
   "requiredEvidenceFields",
 ]);
+
+if (args.has("--simulate-copy-decision-missing-inventory") && copyGovernanceDecision) {
+  copyGovernanceDecision.publicEvidence = copyGovernanceDecision.publicEvidence.filter((evidencePath) => evidencePath !== copyPath);
+}
+if (args.has("--simulate-copy-decision-missing-private-verifier") && copyGovernanceDecision) {
+  copyGovernanceDecision.blockingVerifiers = copyGovernanceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_copy_verify.mjs");
+}
+if (args.has("--simulate-copy-decision-missing-private-evidence") && copyGovernanceDecision) {
+  copyGovernanceDecision.privateEvidence = [];
+}
+if (args.has("--simulate-copy-decision-premature-complete") && copyGovernanceDecision) {
+  copyGovernanceDecision.status = "verified-complete";
+  copyGovernanceDecision.remaining = [];
+}
 
 const requiredCopyKinds = [
   "visible-name",
@@ -212,6 +229,43 @@ for (const [index, surface] of requireArray(protectedSurfaces, protectedPath, "s
   requirePublicSafeReference(surface.copySnapshotReference, privateAlias, `${label}.copySnapshotReference`);
   if (typeof surface.copySnapshotHash !== "string" || surface.copySnapshotHash.length < 16) {
     fail(`${label}.copySnapshotHash must record the approved private copy snapshot hash`);
+  }
+}
+
+const privateSnapshotAlias = copyInventory?.privateSnapshotAlias || "private-codex-ui-copy-snapshots";
+if (!copyGovernanceDecision) {
+  fail(`${decisionVerificationPath}.decisions must include copy_governance`);
+} else {
+  const publicEvidence = new Set(Array.isArray(copyGovernanceDecision.publicEvidence) ? copyGovernanceDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "docs/ui/interface-governance.config.json",
+    "docs/ui/visible-surfaces.inventory.json",
+    copyPath,
+    "scripts/ui_copy_governance_check.mjs",
+    "scripts/ui_private_copy_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.copy_governance.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = Array.isArray(copyGovernanceDecision.privateEvidence) ? copyGovernanceDecision.privateEvidence : [];
+  if (!privateEvidence.includes(`${privateSnapshotAlias}:surfaces/*`)) {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.privateEvidence must include ${privateSnapshotAlias}:surfaces/*`);
+  }
+  const blockingVerifiers = new Set(Array.isArray(copyGovernanceDecision.blockingVerifiers) ? copyGovernanceDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_copy_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.copy_governance.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (copyInventory?.status !== "approved-private-snapshots" && copyGovernanceDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.status must remain open until private copy snapshots are captured and approved`);
+  }
+  if (copyInventory?.status !== "approved-private-snapshots" && (!Array.isArray(copyGovernanceDecision.remaining) || copyGovernanceDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.remaining must describe pending private copy snapshots`);
   }
 }
 
