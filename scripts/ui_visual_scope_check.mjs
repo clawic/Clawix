@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -84,20 +85,10 @@ function requireIsoDate(value, label) {
   }
 }
 
-const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
-const requiredChangeKinds = new Set([
-  "color",
-  "spacing",
-  "size",
-  "icon",
-  "layout",
-  "animation",
-  "microcopy",
-  "visible-name",
-  "ordering",
-  "hierarchy",
-  "typography",
-]);
+const configPath = "docs/ui/interface-governance.config.json";
+const config = readJson(configPath);
+const requiredPlatforms = new Set(requireArray(config, configPath, "platforms"));
+const requiredChangeKinds = new Set(requireArray(config, configPath, "restrictedChangeKinds"));
 
 const manifestPath = "docs/ui/visual-change-scopes.manifest.json";
 const manifest = readJson(manifestPath);
@@ -105,6 +96,36 @@ const inventoryPath = "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
 const patternRegistryPath = "docs/ui/pattern-registry/patterns.registry.json";
 const patternRegistry = readJson(patternRegistryPath);
+const inventorySurfaceIds = new Set(requireArray(inventory, inventoryPath, "coverage").map((entry) => entry?.id).filter(Boolean));
+const patternIds = new Set(requireArray(patternRegistry, patternRegistryPath, "patterns"));
+if (
+  manifest &&
+  (args.has("--simulate-expired-approved-scope") ||
+    args.has("--simulate-unsupported-platform") ||
+    args.has("--simulate-uncovered-change-budget"))
+) {
+  const [surfaceId] = inventorySurfaceIds;
+  const [patternId] = patternIds;
+  const simulatedScope = {
+    id: "simulated-scope",
+    status: "approved",
+    platforms: args.has("--simulate-unsupported-platform") ? ["visionos"] : ["macos"],
+    surfaces: [surfaceId],
+    patterns: [patternId],
+    files: ["macos/Sources/Clawix/SidebarView.swift"],
+    changeKinds: args.has("--simulate-uncovered-change-budget") ? ["color", "spacing"] : ["color"],
+    changeBudget: {
+      maxFiles: 1,
+      maxLines: 10,
+      allowedChangeKinds: ["color"],
+    },
+    approvedBy: "user",
+    approvedAt: "2026-05-15",
+    expiresAt: args.has("--simulate-expired-approved-scope") ? "2026-01-01" : "2999-12-31",
+    privateApprovalReference: "private-codex-ui-approval:scopes/simulated-scope",
+  };
+  manifest.activeScopes = [...(manifest.activeScopes || []), simulatedScope];
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -141,8 +162,6 @@ for (const field of ["platforms", "surfaces", "patterns", "files", "changeBudget
   if (!requiredApprovalFieldSet.has(field)) fail(`${manifestPath}.requiredApprovalFields must include ${field}`);
 }
 
-const inventorySurfaceIds = new Set(requireArray(inventory, inventoryPath, "coverage").map((entry) => entry?.id).filter(Boolean));
-const patternIds = new Set(requireArray(patternRegistry, patternRegistryPath, "patterns"));
 const scopes = requireArray(manifest, manifestPath, "activeScopes", { nonEmpty: false });
 for (const [index, scope] of scopes.entries()) {
   const label = `${manifestPath}.activeScopes[${index}]`;
