@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -44,10 +45,24 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
-const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
+const configPath = "docs/ui/interface-governance.config.json";
+const config = readJson(configPath);
+const requiredPlatforms = new Set(requireArray(config, configPath, "platforms"));
 const detectorPath = "docs/ui/visual-change-detectors.manifest.json";
 const manifest = readJson(detectorPath);
 const copyInventory = readJson("docs/ui/copy.inventory.json");
+if (manifest && args.has("--simulate-duplicate-detector-id")) {
+  manifest.detectors = [...manifest.detectors, { ...manifest.detectors[0] }];
+}
+if (manifest && args.has("--simulate-unclassified-change-kind")) {
+  manifest.classificationBuckets = manifest.classificationBuckets.map((bucket) => {
+    if (bucket.id !== "presentation") return bucket;
+    return {
+      ...bucket,
+      changeKinds: bucket.changeKinds.filter((kind) => kind !== "typography"),
+    };
+  });
+}
 requireFields(manifest, detectorPath, [
   "schemaVersion",
   "status",
@@ -77,19 +92,7 @@ for (const root of ["macos/Sources", "ios/Sources", "apps/macos/Sources", "apps/
 }
 
 const requiredKinds = new Set(requireArray(manifest, detectorPath, "requiredChangeKinds"));
-for (const kind of [
-  "color",
-  "spacing",
-  "size",
-  "icon",
-  "layout",
-  "animation",
-  "microcopy",
-  "visible-name",
-  "ordering",
-  "hierarchy",
-  "typography",
-]) {
+for (const kind of requireArray(config, configPath, "restrictedChangeKinds")) {
   if (!requiredKinds.has(kind)) fail(`${detectorPath}.requiredChangeKinds must include ${kind}`);
 }
 
@@ -99,12 +102,14 @@ const requiredBuckets = new Map([
   ["hierarchy", ["ordering", "hierarchy"]],
 ]);
 const bucketsById = new Map();
+const bucketCoverage = new Map();
 for (const [index, bucket] of requireArray(manifest, detectorPath, "classificationBuckets").entries()) {
   const label = `${detectorPath}.classificationBuckets[${index}]`;
   requireFields(bucket, label, ["id", "changeKinds"]);
   if (bucket?.id) bucketsById.set(bucket.id, bucket);
   for (const kind of requireArray(bucket, label, "changeKinds")) {
     if (!requiredKinds.has(kind)) fail(`${label}.changeKinds contains unregistered ${kind}`);
+    bucketCoverage.set(kind, [...(bucketCoverage.get(kind) || []), bucket.id]);
   }
 }
 for (const [bucketId, kinds] of requiredBuckets.entries()) {
@@ -118,13 +123,21 @@ for (const [bucketId, kinds] of requiredBuckets.entries()) {
     if (!bucketKinds.has(kind)) fail(`${detectorPath}.classificationBuckets.${bucketId} must include ${kind}`);
   }
 }
+for (const kind of requiredKinds) {
+  const bucketIds = bucketCoverage.get(kind) || [];
+  if (bucketIds.length === 0) fail(`${detectorPath}.classificationBuckets must classify ${kind}`);
+  if (bucketIds.length > 1) fail(`${detectorPath}.classificationBuckets must classify ${kind} exactly once`);
+}
 
 const seenKinds = new Set();
 const seenPlatforms = new Set();
 const detectorPatternsByKind = new Map();
+const detectorIds = new Set();
 for (const [index, detector] of requireArray(manifest, detectorPath, "detectors").entries()) {
   const label = `${detectorPath}.detectors[${index}]`;
   requireFields(detector, label, ["id", "platforms", "changeKind", "pattern", "reason"]);
+  if (detectorIds.has(detector.id)) fail(`${label}.id duplicates ${detector.id}`);
+  detectorIds.add(detector.id);
   if (!requiredKinds.has(detector.changeKind)) fail(`${label}.changeKind is not registered`);
   seenKinds.add(detector.changeKind);
   detectorPatternsByKind.set(
