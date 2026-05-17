@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SearchesTabView: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let onCreate: () -> Void
     @State private var selectedSearchId: String?
 
@@ -15,7 +15,7 @@ struct SearchesTabView: View {
             .frame(maxWidth: .infinity)
             CardDivider()
             SearchDetailPane(
-                manager: manager,
+                store: store,
                 searchId: selectedSearchId
             )
             .frame(width: 360)
@@ -26,7 +26,7 @@ struct SearchesTabView: View {
 
     private var searchListHeader: some View {
         HStack {
-            Text("\(manager.searches.count) saved searches")
+            Text("\(store.searches.count) saved searches")
                 .font(BodyFont.system(size: 12, wght: 500))
                 .foregroundColor(.white.opacity(0.55))
             Spacer()
@@ -47,7 +47,7 @@ struct SearchesTabView: View {
 
     private var searchList: some View {
         Group {
-            if manager.searches.isEmpty {
+            if store.searches.isEmpty {
                 IndexEmptyState(
                     title: "No saved searches",
                     systemImage: "magnifyingglass",
@@ -56,7 +56,7 @@ struct SearchesTabView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(manager.searches) { search in
+                        ForEach(store.searches) { search in
                             SearchRow(
                                 search: search,
                                 isSelected: selectedSearchId == search.id,
@@ -64,14 +64,14 @@ struct SearchesTabView: View {
                                 onRun: {
                                     Task {
                                         do {
-                                            _ = try await manager.runSearch(id: search.id)
+                                            _ = try await store.runSearch(id: search.id)
                                         } catch {
-                                            manager.surfaceActionError(error)
+                                            store.surfaceActionError(error)
                                         }
                                     }
                                 },
                                 onDelete: {
-                                    Task { await manager.deleteSearch(id: search.id) }
+                                    Task { await store.deleteSearch(id: search.id) }
                                 }
                             )
                             CardDivider()
@@ -142,12 +142,12 @@ private struct SearchRow: View {
 }
 
 private struct SearchDetailPane: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let searchId: String?
 
     private var search: ClawJSIndexClient.Search? {
         guard let id = searchId else { return nil }
-        return manager.searches.first { $0.id == id }
+        return store.searches.first { $0.id == id }
     }
 
     var body: some View {
@@ -173,7 +173,7 @@ private struct SearchDetailPane: View {
                                 .lineSpacing(2)
                         }
                         SectionTitle(text: "Recent runs")
-                        let runs = manager.runs.filter { $0.searchId == search.id }
+                        let runs = store.runs.filter { $0.searchId == search.id }
                         if runs.isEmpty {
                             Text("No runs yet.")
                                 .font(BodyFont.system(size: 12, wght: 400))
@@ -275,7 +275,7 @@ struct RunSummaryRow: View {
 }
 
 struct SearchEditorSheet: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let onDismiss: () -> Void
 
     @State private var name: String = ""
@@ -302,7 +302,7 @@ struct SearchEditorSheet: View {
                     ForEach(IndexTypeCatalog.canonicalOrder, id: \.self) { name in
                         Text(IndexTypeCatalog.meta(for: name).displayName).tag(name)
                     }
-                    ForEach(manager.types.filter { !$0.canonical }, id: \.id) { type in
+                    ForEach(store.types.filter { !$0.canonical }, id: \.id) { type in
                         Text(type.name.capitalized).tag(type.name)
                     }
                 }
@@ -373,7 +373,7 @@ struct SearchEditorSheet: View {
             return
         }
         do {
-            _ = try await manager.createSearch(
+            _ = try await store.createSearch(
                 name: name,
                 type: typeName,
                 criteria: parsed,

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RunsTabView: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     @State private var selectedRunId: String?
 
     var body: some View {
@@ -13,7 +13,7 @@ struct RunsTabView: View {
             }
             .frame(maxWidth: .infinity)
             CardDivider()
-            RunDetailPane(manager: manager, runId: selectedRunId)
+            RunDetailPane(store: store, runId: selectedRunId)
                 .frame(width: 380)
                 .background(Color.black.opacity(0.14))
         }
@@ -22,7 +22,7 @@ struct RunsTabView: View {
 
     private var header: some View {
         HStack {
-            Text("\(manager.runs.count) runs")
+            Text("\(store.runs.count) runs")
                 .font(BodyFont.system(size: 12, wght: 500))
                 .foregroundColor(.white.opacity(0.55))
             Spacer()
@@ -32,7 +32,7 @@ struct RunsTabView: View {
 
     private var list: some View {
         Group {
-            if manager.runs.isEmpty {
+            if store.runs.isEmpty {
                 IndexEmptyState(
                     title: "No runs yet",
                     systemImage: "play.circle",
@@ -41,11 +41,11 @@ struct RunsTabView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(manager.runs) { run in
+                        ForEach(store.runs) { run in
                             RunRow(
                                 run: run,
-                                monitorName: manager.monitors.first { $0.id == run.monitorId }?.name,
-                                searchName: manager.searches.first { $0.id == run.searchId }?.name,
+                                monitorName: store.monitors.first { $0.id == run.monitorId }?.name,
+                                searchName: store.searches.first { $0.id == run.searchId }?.name,
                                 isSelected: selectedRunId == run.id,
                                 onSelect: { selectedRunId = run.id }
                             )
@@ -125,7 +125,7 @@ private struct StatusBadge: View {
 }
 
 private struct RunDetailPane: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let runId: String?
 
     @State private var detail: ClawJSIndexClient.RunDetail?
@@ -202,7 +202,7 @@ private struct RunDetailPane: View {
             detail = nil
             loadError = nil
             guard let runId else { return }
-            manager.ensureToken()
+            store.ensureToken()
             do {
                 detail = try await ClawJSIndexClient(bearerToken: ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)).getRun(id: runId)
             } catch {

@@ -1,11 +1,11 @@
 import Combine
 import Foundation
 
-/// State orchestrator for the Index tab. Owns the loopback HTTP client
-/// and exposes `@Published` state SwiftUI binds to. Mirrors
-/// `MemoryManager` / `DatabaseManager` (no master-password lock).
+/// State store for the Index tab. Owns the loopback HTTP client and exposes
+/// `@Published` state SwiftUI binds to. Mirrors the Memory store pattern
+/// without a master-password lock.
 @MainActor
-final class IndexManager: ObservableObject {
+final class IndexStore: ObservableObject {
 
     enum State: Equatable {
         case idle

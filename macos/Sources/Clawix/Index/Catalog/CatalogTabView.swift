@@ -3,7 +3,7 @@ import SwiftUI
 /// Three-pane catalog: Type sidebar (left, 220pt), entity list/grid
 /// (flex), detail pane (right, 380pt). Mirrors `DatabaseScreen` layout.
 struct CatalogTabView: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     @State private var displayMode: DisplayMode = .grid
     @State private var selectedEntityId: String?
     @AppStorage(ClawixPersistentSurfaceKeys.indexCatalogDisplayMode) private var storedDisplayMode: String = DisplayMode.grid.rawValue
@@ -15,17 +15,17 @@ struct CatalogTabView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            TypeSidebar(manager: manager)
+            TypeSidebar(store: store)
                 .frame(width: 220)
                 .background(Color.black.opacity(0.18))
 
             CardDivider()
 
             VStack(spacing: 0) {
-                CatalogToolbar(manager: manager, displayMode: $displayMode)
+                CatalogToolbar(store: store, displayMode: $displayMode)
                 CardDivider()
                 EntityListGrid(
-                    manager: manager,
+                    store: store,
                     displayMode: displayMode,
                     selectedEntityId: $selectedEntityId
                 )
@@ -34,7 +34,7 @@ struct CatalogTabView: View {
 
             CardDivider()
 
-            EntityDetailPane(manager: manager, entityId: selectedEntityId)
+            EntityDetailPane(store: store, entityId: selectedEntityId)
                 .frame(width: 400)
                 .background(Color.black.opacity(0.14))
         }
@@ -51,22 +51,22 @@ struct CatalogTabView: View {
 }
 
 private struct TypeSidebar: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
 
     private var allTotal: Int {
-        manager.typeCounts.values.reduce(0, +)
+        store.typeCounts.values.reduce(0, +)
     }
 
     private var canonicalEntries: [(IndexTypeMeta, Int)] {
         IndexTypeCatalog.canonicalOrder.compactMap { typeName in
-            (IndexTypeCatalog.meta(for: typeName), manager.typeCounts[typeName] ?? 0)
+            (IndexTypeCatalog.meta(for: typeName), store.typeCounts[typeName] ?? 0)
         }
     }
 
     private var customEntries: [(IndexTypeMeta, Int)] {
-        manager.types
+        store.types
             .filter { !$0.canonical }
-            .map { (IndexTypeCatalog.meta(for: $0.name), manager.typeCounts[$0.name] ?? 0) }
+            .map { (IndexTypeCatalog.meta(for: $0.name), store.typeCounts[$0.name] ?? 0) }
     }
 
     var body: some View {
@@ -76,11 +76,11 @@ private struct TypeSidebar: View {
                     title: "All",
                     lucideName: "rectangle.stack",
                     count: allTotal,
-                    isSelected: manager.selectedTypeFilter == nil,
+                    isSelected: store.selectedTypeFilter == nil,
                     accent: .white.opacity(0.7)
                 ) {
-                    manager.selectedTypeFilter = nil
-                    Task { await manager.loadEntities() }
+                    store.selectedTypeFilter = nil
+                    Task { await store.loadEntities() }
                 }
                 .padding(.top, 8)
 
@@ -90,11 +90,11 @@ private struct TypeSidebar: View {
                         title: meta.displayName,
                         lucideName: meta.lucideName,
                         count: count,
-                        isSelected: manager.selectedTypeFilter == meta.typeName,
+                        isSelected: store.selectedTypeFilter == meta.typeName,
                         accent: meta.accent
                     ) {
-                        manager.selectedTypeFilter = meta.typeName
-                        Task { await manager.loadEntities() }
+                        store.selectedTypeFilter = meta.typeName
+                        Task { await store.loadEntities() }
                     }
                 }
 
@@ -105,25 +105,25 @@ private struct TypeSidebar: View {
                             title: meta.displayName,
                             lucideName: meta.lucideName,
                             count: count,
-                            isSelected: manager.selectedTypeFilter == meta.typeName,
+                            isSelected: store.selectedTypeFilter == meta.typeName,
                             accent: meta.accent
                         ) {
-                            manager.selectedTypeFilter = meta.typeName
-                            Task { await manager.loadEntities() }
+                            store.selectedTypeFilter = meta.typeName
+                            Task { await store.loadEntities() }
                         }
                     }
                 }
 
-                if !manager.tags.isEmpty {
+                if !store.tags.isEmpty {
                     CatalogSectionHeader(title: "TAGS")
-                    ForEach(manager.tags) { tag in
+                    ForEach(store.tags) { tag in
                         TagRow(tag: tag)
                     }
                 }
 
-                if !manager.collections.isEmpty {
+                if !store.collections.isEmpty {
                     CatalogSectionHeader(title: "COLLECTIONS")
-                    ForEach(manager.collections) { collection in
+                    ForEach(store.collections) { collection in
                         CollectionRow(collection: collection)
                     }
                 }
@@ -238,7 +238,7 @@ private struct CollectionRow: View {
 }
 
 private struct CatalogToolbar: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     @Binding var displayMode: CatalogTabView.DisplayMode
 
     var body: some View {
@@ -246,7 +246,7 @@ private struct CatalogToolbar: View {
             HStack(spacing: 6) {
                 LucideIcon.auto("magnifyingglass", size: 12)
                     .foregroundColor(.white.opacity(0.5))
-                TextField("", text: $manager.fullTextQuery, prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4)))
+                TextField("", text: $store.fullTextQuery, prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4)))
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 12.5, wght: 400))
                     .foregroundColor(.white.opacity(0.9))
@@ -274,14 +274,14 @@ private struct CatalogToolbar: View {
 }
 
 private struct EntityListGrid: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let displayMode: CatalogTabView.DisplayMode
     @Binding var selectedEntityId: String?
 
     private var filteredEntities: [ClawJSIndexClient.Entity] {
-        let trimmed = manager.fullTextQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return manager.entities }
-        return manager.entities.filter { entity in
+        let trimmed = store.fullTextQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return store.entities }
+        return store.entities.filter { entity in
             let haystack = "\(entity.title ?? "") \(entity.sourceUrl ?? "") \(entity.identityKey)"
             return haystack.localizedCaseInsensitiveContains(trimmed)
         }

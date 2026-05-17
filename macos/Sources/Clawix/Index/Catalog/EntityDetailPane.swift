@@ -5,7 +5,7 @@ import SwiftUI
 /// 15 canonical type renderings via a switch to keep the surface compact
 /// and avoid drift between sibling detail views.
 struct EntityDetailPane: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let entityId: String?
 
     @State private var detail: ClawJSIndexClient.EntityDetailResponse?
@@ -106,7 +106,7 @@ struct EntityDetailPane: View {
         detail = nil
         loadError = nil
         do {
-            detail = try await manager.detail(for: entityId)
+            detail = try await store.detail(for: entityId)
             historyByField = [:]
             activeTab = .overview
         } catch {
@@ -118,7 +118,7 @@ struct EntityDetailPane: View {
         guard let entityId else { return }
         if historyByField[field] != nil { return }
         do {
-            let points = try await manager.history(for: entityId, field: field)
+            let points = try await store.history(for: entityId, field: field)
             historyByField[field] = points
         } catch {
             historyByField[field] = []

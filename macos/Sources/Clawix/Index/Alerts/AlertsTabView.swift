@@ -1,18 +1,18 @@
 import SwiftUI
 
 struct AlertsTabView: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
 
     private var pending: [ClawJSIndexClient.Alert] {
-        manager.alerts.filter { $0.ackAt == nil }
+        store.alerts.filter { $0.ackAt == nil }
     }
     private var acked: [ClawJSIndexClient.Alert] {
-        manager.alerts.filter { $0.ackAt != nil }
+        store.alerts.filter { $0.ackAt != nil }
     }
 
     var body: some View {
         Group {
-            if manager.alerts.isEmpty {
+            if store.alerts.isEmpty {
                 IndexEmptyState(
                     title: "No alerts yet",
                     systemImage: "bell.slash",
@@ -25,7 +25,7 @@ struct AlertsTabView: View {
                             SectionTitle(text: "Pending (\(pending.count))")
                             ForEach(pending) { alert in
                                 AlertRow(alert: alert, entity: entityFor(alert)) {
-                                    Task { await manager.ackAlert(id: alert.id) }
+                                    Task { await store.ackAlert(id: alert.id) }
                                 }
                             }
                         }
@@ -46,7 +46,7 @@ struct AlertsTabView: View {
 
     private func entityFor(_ alert: ClawJSIndexClient.Alert) -> ClawJSIndexClient.Entity? {
         guard let id = alert.entityId else { return nil }
-        return manager.entities.first { $0.id == id }
+        return store.entities.first { $0.id == id }
     }
 }
 

@@ -1430,12 +1430,12 @@ for (const pattern of ["try? await manager.client.createTailnetShare", "try? awa
 }
 
 const indexSearchesSource = read("macos/Sources/Clawix/Index/Searches/SearchesTabView.swift");
-if (indexSearchesSource.includes("try? await manager.runSearch")) {
+if (indexSearchesSource.includes("try? await store.runSearch")) {
   fail("SearchesTabView.swift must surface saved-search run failures");
 }
 
 const indexMonitorsSource = read("macos/Sources/Clawix/Index/Monitors/MonitorsTabView.swift");
-if (indexMonitorsSource.includes("try? await manager.fireMonitor")) {
+if (indexMonitorsSource.includes("try? await store.fireMonitor")) {
   fail("MonitorsTabView.swift must surface monitor fire failures");
 }
 

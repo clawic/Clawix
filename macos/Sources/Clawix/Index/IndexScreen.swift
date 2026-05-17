@@ -20,21 +20,21 @@ enum IndexTab: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct IndexScreen: View {
-    @StateObject private var manager = IndexManager()
+    @StateObject private var store = IndexStore()
     @State private var activeTab: IndexTab = .catalog
     @State private var showCreateSearchSheet = false
 
     var body: some View {
         VStack(spacing: 0) {
             IndexHeaderBar(
-                manager: manager,
+                store: store,
                 activeTab: $activeTab,
                 onCreateSearch: { showCreateSearchSheet = true },
-                onRefresh: { Task { await manager.refresh() } }
+                onRefresh: { Task { await store.refresh() } }
             )
             CardDivider()
             Group {
-                switch manager.state {
+                switch store.state {
                 case .idle, .loading:
                     IndexLoadingView()
                 case .error(let message):
@@ -51,12 +51,12 @@ struct IndexScreen: View {
         }
         .background(Color.black.opacity(0.001))
         .task {
-            if manager.state == .idle {
-                await manager.refresh()
+            if store.state == .idle {
+                await store.refresh()
             }
         }
         .sheet(isPresented: $showCreateSearchSheet) {
-            SearchEditorSheet(manager: manager, onDismiss: { showCreateSearchSheet = false })
+            SearchEditorSheet(store: store, onDismiss: { showCreateSearchSheet = false })
         }
     }
 
@@ -64,15 +64,15 @@ struct IndexScreen: View {
     private var contentForActiveTab: some View {
         switch activeTab {
         case .catalog:
-            CatalogTabView(manager: manager)
+            CatalogTabView(store: store)
         case .searches:
-            SearchesTabView(manager: manager, onCreate: { showCreateSearchSheet = true })
+            SearchesTabView(store: store, onCreate: { showCreateSearchSheet = true })
         case .monitors:
-            MonitorsTabView(manager: manager)
+            MonitorsTabView(store: store)
         case .runs:
-            RunsTabView(manager: manager)
+            RunsTabView(store: store)
         case .alerts:
-            AlertsTabView(manager: manager)
+            AlertsTabView(store: store)
         }
     }
 }
@@ -104,7 +104,7 @@ struct IndexEmptyState: View {
 }
 
 private struct IndexHeaderBar: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     @Binding var activeTab: IndexTab
     let onCreateSearch: () -> Void
     let onRefresh: () -> Void
@@ -118,8 +118,8 @@ private struct IndexHeaderBar: View {
                     Text("Index")
                         .font(BodyFont.system(size: 17, wght: 600))
                         .foregroundColor(.white)
-                    if manager.unreadAlerts > 0 {
-                        Text("\(manager.unreadAlerts)")
+                    if store.unreadAlerts > 0 {
+                        Text("\(store.unreadAlerts)")
                             .font(BodyFont.system(size: 11, wght: 600))
                             .foregroundColor(.black)
                             .padding(.horizontal, 6)
@@ -162,7 +162,7 @@ private struct IndexHeaderBar: View {
             .padding(.top, 12)
 
             HStack {
-                IndexTabBar(activeTab: $activeTab, unreadAlerts: manager.unreadAlerts)
+                IndexTabBar(activeTab: $activeTab, unreadAlerts: store.unreadAlerts)
                 Spacer()
             }
             .padding(.horizontal, 16)

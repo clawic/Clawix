@@ -2,7 +2,7 @@ import Foundation
 import UserNotifications
 
 /// Posts macOS user notifications when Index alerts fire. Subscribes to
-/// the IndexManager's alert stream — when a new alert arrives, it asks
+/// the IndexStore's alert stream — when a new alert arrives, it asks
 /// `UNUserNotificationCenter` to render it. Permission is requested
 /// lazily on first call so the user only sees the prompt after they've
 /// actually used Index. iOS APNs registration is symmetrical: the

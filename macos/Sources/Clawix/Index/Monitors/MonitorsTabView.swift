@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MonitorsTabView: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     @State private var selectedMonitorId: String?
     @State private var showCreateSheet = false
 
@@ -14,19 +14,19 @@ struct MonitorsTabView: View {
             }
             .frame(maxWidth: .infinity)
             CardDivider()
-            MonitorDetailPane(manager: manager, monitorId: selectedMonitorId)
+            MonitorDetailPane(store: store, monitorId: selectedMonitorId)
                 .frame(width: 380)
                 .background(Color.black.opacity(0.14))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showCreateSheet) {
-            MonitorEditorSheet(manager: manager, onDismiss: { showCreateSheet = false })
+            MonitorEditorSheet(store: store, onDismiss: { showCreateSheet = false })
         }
     }
 
     private var header: some View {
         HStack {
-            Text("\(manager.monitors.count) monitors")
+            Text("\(store.monitors.count) monitors")
                 .font(BodyFont.system(size: 12, wght: 500))
                 .foregroundColor(.white.opacity(0.55))
             Spacer()
@@ -47,7 +47,7 @@ struct MonitorsTabView: View {
 
     private var list: some View {
         Group {
-            if manager.monitors.isEmpty {
+            if store.monitors.isEmpty {
                 IndexEmptyState(
                     title: "No monitors yet",
                     systemImage: "clock.arrow.2.circlepath",
@@ -56,18 +56,18 @@ struct MonitorsTabView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(manager.monitors) { monitor in
+                        ForEach(store.monitors) { monitor in
                             MonitorRow(
                                 monitor: monitor,
-                                searchName: manager.searches.first { $0.id == monitor.searchId }?.name ?? monitor.searchId,
+                                searchName: store.searches.first { $0.id == monitor.searchId }?.name ?? monitor.searchId,
                                 isSelected: selectedMonitorId == monitor.id,
                                 onSelect: { selectedMonitorId = monitor.id },
                                 onFire: {
                                     Task {
                                         do {
-                                            _ = try await manager.fireMonitor(id: monitor.id)
+                                            _ = try await store.fireMonitor(id: monitor.id)
                                         } catch {
-                                            manager.surfaceActionError(error)
+                                            store.surfaceActionError(error)
                                         }
                                     }
                                 }
@@ -134,12 +134,12 @@ private struct MonitorRow: View {
 }
 
 private struct MonitorDetailPane: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let monitorId: String?
 
     private var monitor: ClawJSIndexClient.Monitor? {
         guard let id = monitorId else { return nil }
-        return manager.monitors.first { $0.id == id }
+        return store.monitors.first { $0.id == id }
     }
 
     var body: some View {
@@ -167,7 +167,7 @@ private struct MonitorDetailPane: View {
                             }
                         }
                         SectionTitle(text: "Recent runs")
-                        let runs = manager.runs.filter { $0.monitorId == monitor.id }
+                        let runs = store.runs.filter { $0.monitorId == monitor.id }
                         if runs.isEmpty {
                             Text("No runs yet.")
                                 .font(BodyFont.system(size: 12, wght: 400))
@@ -238,7 +238,7 @@ private struct AlertRuleRow: View {
 }
 
 private struct MonitorEditorSheet: View {
-    @ObservedObject var manager: IndexManager
+    @ObservedObject var store: IndexStore
     let onDismiss: () -> Void
 
     @State private var searchId: String = ""
@@ -265,7 +265,7 @@ private struct MonitorEditorSheet: View {
             FormField(label: "Source search") {
                 Picker("", selection: $searchId) {
                     Text("Pick a saved search").tag("")
-                    ForEach(manager.searches) { search in
+                    ForEach(store.searches) { search in
                         Text(search.name).tag(search.id)
                     }
                 }
@@ -336,7 +336,7 @@ private struct MonitorEditorSheet: View {
             return
         }
         do {
-            _ = try await manager.createMonitor(
+            _ = try await store.createMonitor(
                 searchId: searchId,
                 cron: cron,
                 name: name.isEmpty ? nil : name,
