@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import SwiftUI
 
-/// iOS-side mirror of the macOS `ProfileManager`. Owns the HTTP client, holds
+/// iOS-side mirror of the macOS `ProfileSurfaceStore`. Owns the HTTP client, holds
 /// state for the four tab surfaces (Feed / Chats / Marketplace / Profile),
 /// and orchestrates the live refresh cadence.
 @MainActor

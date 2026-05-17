@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct P2PChatScreen: View {
-    @ObservedObject var manager: ProfileManager
+    @ObservedObject var store: ProfileSurfaceStore
     @State private var selectedThreadId: String?
     @State private var messages: [ClawJSProfileClient.ChatMessage] = []
     @State private var draft: String = ""
@@ -14,7 +14,7 @@ struct P2PChatScreen: View {
             detail
         }
         .background(Color.black)
-        .task { await manager.refreshChats() }
+        .task { await store.refreshChats() }
     }
 
     // MARK: - Sidebar
@@ -30,7 +30,7 @@ struct P2PChatScreen: View {
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 1) {
-                    ForEach(manager.chatThreads) { thread in
+                    ForEach(store.chatThreads) { thread in
                         ThreadRow(thread: thread, isSelected: thread.id == selectedThreadId)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -70,7 +70,7 @@ struct P2PChatScreen: View {
 
     private var currentThread: ClawJSProfileClient.ChatThread? {
         guard let id = selectedThreadId else { return nil }
-        return manager.chatThreads.first { $0.id == id }
+        return store.chatThreads.first { $0.id == id }
     }
 
     private func composer(thread: ClawJSProfileClient.ChatThread) -> some View {
@@ -109,7 +109,7 @@ struct P2PChatScreen: View {
 
     private func loadMessages(for thread: ClawJSProfileClient.ChatThread) async {
         do {
-            self.messages = try await manager.loadMessages(peer: thread.peer.handle.fingerprint)
+            self.messages = try await store.loadMessages(peer: thread.peer.handle.fingerprint)
         } catch {
             self.messages = []
         }
@@ -121,7 +121,7 @@ struct P2PChatScreen: View {
         isSending = true
         defer { isSending = false }
         do {
-            let sent = try await manager.sendMessage(peer: thread.peer.handle.fingerprint, body: body)
+            let sent = try await store.sendMessage(peer: thread.peer.handle.fingerprint, body: body)
             self.messages.append(sent)
             self.draft = ""
         } catch {

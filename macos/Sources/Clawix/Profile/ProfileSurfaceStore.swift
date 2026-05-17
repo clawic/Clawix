@@ -5,7 +5,7 @@ import Foundation
 /// surfaces. Owns the HTTP client, publishes state for SwiftUI views, and
 /// schedules background refreshes.
 @MainActor
-final class ProfileManager: ObservableObject {
+final class ProfileSurfaceStore: ObservableObject {
 
     enum LoadState: Equatable {
         case idle

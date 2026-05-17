@@ -6,7 +6,7 @@ import SwiftUI
 ///     what the daemon already produced).
 ///   - Pasting a peer's link and resolving the handle.
 struct PairingScreen: View {
-    @ObservedObject var manager: ProfileManager
+    @ObservedObject var store: ProfileSurfaceStore
     @State private var pastedLink: String = ""
     @State private var resolved: ClawJSProfileClient.Handle?
     @State private var error: String?
@@ -35,7 +35,7 @@ struct PairingScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Your handle").font(.system(size: 12, weight: .semibold)).kerning(-0.2)
                 .foregroundStyle(Palette.textSecondary)
-            if let me = manager.me {
+            if let me = store.me {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("@\(me.handle.alias)").font(.system(size: 16, weight: .semibold)).kerning(-0.2)
                     Text("." + me.handle.fingerprint).font(.system(size: 12, design: .monospaced))
@@ -69,7 +69,7 @@ struct PairingScreen: View {
                 Button("Resolve and add") {
                     Task {
                         do {
-                            let handle = try await manager.pair(link: pastedLink)
+                            let handle = try await store.pair(link: pastedLink)
                             resolved = handle
                             error = nil
                         } catch let err {

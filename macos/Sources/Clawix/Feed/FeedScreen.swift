@@ -15,7 +15,7 @@ enum FeedDisplayMode: String, CaseIterable, RawRepresentable {
 }
 
 struct FeedScreen: View {
-    @ObservedObject var manager: ProfileManager
+    @ObservedObject var store: ProfileSurfaceStore
     @AppStorage(ClawixPersistentSurfaceKeys.feedDisplayMode) private var rawMode: String = FeedDisplayMode.list.rawValue
     @State private var verticalFilter: String?
 
@@ -30,9 +30,9 @@ struct FeedScreen: View {
             content
         }
         .background(Color.black)
-        .task { await manager.bootstrap() }
-        .onChange(of: manager.feedKeywords) { _, _ in
-            Task { await manager.refreshFeed() }
+        .task { await store.bootstrap() }
+        .onChange(of: store.feedKeywords) { _, _ in
+            Task { await store.refreshFeed() }
         }
     }
 
@@ -42,7 +42,7 @@ struct FeedScreen: View {
         HStack(spacing: 12) {
             Text("Feed").font(.system(size: 18, weight: .semibold)).kerning(-0.4)
             Spacer()
-            SearchField(text: $manager.feedKeywords, placeholder: "Search peers, posts, tags")
+            SearchField(text: $store.feedKeywords, placeholder: "Search peers, posts, tags")
                 .frame(width: 280)
             SlidingSegmented(
                 selection: Binding(get: { mode }, set: { rawMode = $0.rawValue }),
@@ -59,7 +59,7 @@ struct FeedScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        switch manager.loadState {
+        switch store.loadState {
         case .idle, .loading:
             VStack { ProgressView() }.frame(maxWidth: .infinity, maxHeight: .infinity)
         case .error(let msg):
@@ -79,7 +79,7 @@ struct FeedScreen: View {
     private var feedList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(manager.feedEntries) { entry in
+                ForEach(store.feedEntries) { entry in
                     FeedCardList(entry: entry).padding(.horizontal, 18).padding(.vertical, 10)
                     Divider().background(Palette.textSecondary.opacity(0.1))
                 }
@@ -91,7 +91,7 @@ struct FeedScreen: View {
     private var feedGrid: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
-                ForEach(manager.feedEntries) { entry in
+                ForEach(store.feedEntries) { entry in
                     FeedCardGrid(entry: entry)
                 }
             }
@@ -103,7 +103,7 @@ struct FeedScreen: View {
     private var feedStory: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(manager.feedEntries) { entry in
+                ForEach(store.feedEntries) { entry in
                     FeedCardStory(entry: entry)
                 }
             }

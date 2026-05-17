@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ProfileEditor: View {
-    @ObservedObject var manager: ProfileManager
+    @ObservedObject var store: ProfileSurfaceStore
     @State private var selectedTab: Tab = .identity
     @State private var mnemonicShown: String?
     @State private var actionError: String?
@@ -31,7 +31,7 @@ struct ProfileEditor: View {
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color.black)
-        .task { await manager.bootstrap() }
+        .task { await store.bootstrap() }
     }
 
     // MARK: - Header
@@ -39,7 +39,7 @@ struct ProfileEditor: View {
     private var header: some View {
         HStack(spacing: 12) {
             Text("Profile").font(.system(size: 18, weight: .semibold)).kerning(-0.4)
-            if let me = manager.me {
+            if let me = store.me {
                 Text("@\(me.handle.alias).\(me.handle.fingerprint)")
                     .font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
             }
@@ -89,7 +89,7 @@ struct ProfileEditor: View {
     private var identityTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                if let me = manager.me {
+                if let me = store.me {
                     ProfileIdentityRow(label: "Alias", value: "@" + me.handle.alias)
                     ProfileIdentityRow(label: "Fingerprint", value: me.handle.fingerprint)
                     ProfileIdentityRow(label: "Root pubkey", value: me.handle.rootPubkey, monospace: true)
@@ -107,7 +107,7 @@ struct ProfileEditor: View {
                             Button("Generate profile") {
                                 Task {
                                     await runAction {
-                                        let response = try await manager.initProfile(alias: newAlias, mnemonic: nil)
+                                        let response = try await store.initProfile(alias: newAlias, mnemonic: nil)
                                         mnemonicShown = response.mnemonic
                                     }
                                 }
@@ -147,7 +147,7 @@ struct ProfileEditor: View {
                     Button("Apply") {
                         Task {
                             await runAction {
-                                try await manager.renameHandle(to: newAlias)
+                                try await store.renameHandle(to: newAlias)
                             }
                         }
                     }
@@ -184,7 +184,7 @@ struct ProfileEditor: View {
                     Button("Create group") {
                         Task {
                             await runAction {
-                                try await manager.createGroup(id: newGroupId)
+                                try await store.createGroup(id: newGroupId)
                             }
                         }
                     }
@@ -195,7 +195,7 @@ struct ProfileEditor: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.red)
                 }
-                ForEach(manager.groups) { g in
+                ForEach(store.groups) { g in
                     GroupRow(group: g)
                 }
             }
@@ -209,11 +209,11 @@ struct ProfileEditor: View {
     private var blocksTab: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(manager.ownBlocks) { block in
+                ForEach(store.ownBlocks) { block in
                     BlockRow(block: block, onDelete: {
                         Task {
                             await runAction {
-                                try await manager.deleteBlock(block.blockId)
+                                try await store.deleteBlock(block.blockId)
                             }
                         }
                     })
@@ -223,7 +223,7 @@ struct ProfileEditor: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.red)
                 }
-                if manager.ownBlocks.isEmpty {
+                if store.ownBlocks.isEmpty {
                     Text("No blocks yet.").font(.system(size: 13)).foregroundStyle(Palette.textSecondary)
                 }
             }

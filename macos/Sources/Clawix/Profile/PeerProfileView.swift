@@ -2,7 +2,7 @@ import SwiftUI
 
 struct PeerProfileView: View {
     let peer: ClawJSProfileClient.PeerDirectoryEntry
-    @ObservedObject var manager: ProfileManager
+    @ObservedObject var store: ProfileSurfaceStore
 
     var body: some View {
         ScrollView {
@@ -50,7 +50,7 @@ struct PeerProfileView: View {
     private var feedSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Visible blocks").font(.system(size: 13, weight: .semibold)).kerning(-0.2)
-            let entries = manager.feedEntries.filter { $0.owner.handle.fingerprint == peer.handle.fingerprint }
+            let entries = store.feedEntries.filter { $0.owner.handle.fingerprint == peer.handle.fingerprint }
             if entries.isEmpty {
                 Text("Nothing visible at your current audience tier.")
                     .font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
