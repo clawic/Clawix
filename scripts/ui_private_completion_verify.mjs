@@ -48,8 +48,22 @@ enforcePrivateVerifierArgs(args, {
     "--simulate-no-open-decisions",
     "--simulate-missing-decision-blocker",
     "--simulate-stale-decision-blocker",
+    "--simulate-verified-complete-with-remaining",
+    "--simulate-verified-complete-with-private-evidence",
+    "--simulate-open-decision-without-private-evidence",
+    "--simulate-open-decision-without-blocking-verifier",
+    "--simulate-open-decision-without-remaining",
   ],
-  testOnlyFlags: ["--simulate-no-open-decisions", "--simulate-missing-decision-blocker", "--simulate-stale-decision-blocker"],
+  testOnlyFlags: [
+    "--simulate-no-open-decisions",
+    "--simulate-missing-decision-blocker",
+    "--simulate-stale-decision-blocker",
+    "--simulate-verified-complete-with-remaining",
+    "--simulate-verified-complete-with-private-evidence",
+    "--simulate-open-decision-without-private-evidence",
+    "--simulate-open-decision-without-blocking-verifier",
+    "--simulate-open-decision-without-remaining",
+  ],
   testOnlyEnv: "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
 });
 
@@ -64,10 +78,58 @@ if (hasFlag("--simulate-stale-decision-blocker") && Array.isArray(privateVisualV
   privateVisualValidation.decisionBlockers = [...privateVisualValidation.decisionBlockers, "simulated_stale_decision"];
 }
 const decisions = decisionVerification.decisions || [];
+const firstOpenDecision = decisions.find((decision) => decision?.status === "open");
+const firstVerifiedDecision = decisions.find((decision) => decision?.status === "verified-complete");
+if (hasFlag("--simulate-verified-complete-with-remaining") && firstVerifiedDecision) {
+  firstVerifiedDecision.remaining = ["Simulated remaining work."];
+}
+if (hasFlag("--simulate-verified-complete-with-private-evidence") && firstVerifiedDecision) {
+  firstVerifiedDecision.privateEvidence = ["private-codex-ui-baselines:simulated"];
+}
+if (hasFlag("--simulate-open-decision-without-private-evidence") && firstOpenDecision) {
+  firstOpenDecision.privateEvidence = [];
+}
+if (hasFlag("--simulate-open-decision-without-blocking-verifier") && firstOpenDecision) {
+  firstOpenDecision.blockingVerifiers = [];
+}
+if (hasFlag("--simulate-open-decision-without-remaining") && firstOpenDecision) {
+  firstOpenDecision.remaining = [];
+}
 for (const decision of decisions) {
   if (!["open", "verified-complete"].includes(decision?.status)) {
     console.error(`UI private completion verification found unsupported decision status for ${decision?.id || "unknown"}.`);
     process.exit(1);
+  }
+  const remaining = Array.isArray(decision.remaining) ? decision.remaining : [];
+  const privateEvidence = Array.isArray(decision.privateEvidence) ? decision.privateEvidence : [];
+  const blockingVerifiers = Array.isArray(decision.blockingVerifiers) ? decision.blockingVerifiers : [];
+  if (decision.status === "open") {
+    if (remaining.length === 0) {
+      console.error(`UI private completion verification requires open decision ${decision.id} to list remaining work.`);
+      process.exit(1);
+    }
+    if (privateEvidence.length === 0) {
+      console.error(`UI private completion verification requires open decision ${decision.id} to list private evidence aliases.`);
+      process.exit(1);
+    }
+    if (blockingVerifiers.length === 0) {
+      console.error(`UI private completion verification requires open decision ${decision.id} to list blocking private verifiers.`);
+      process.exit(1);
+    }
+  }
+  if (decision.status === "verified-complete") {
+    if (remaining.length > 0) {
+      console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no remaining work.`);
+      process.exit(1);
+    }
+    if (privateEvidence.length > 0) {
+      console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no private evidence blockers.`);
+      process.exit(1);
+    }
+    if (blockingVerifiers.length > 0) {
+      console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no blocking private verifiers.`);
+      process.exit(1);
+    }
   }
 }
 const actualOpenDecisions = decisions.filter((decision) => decision.status === "open");

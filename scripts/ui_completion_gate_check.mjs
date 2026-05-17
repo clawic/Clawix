@@ -324,6 +324,8 @@ for (const snippet of [
   "open decisions",
   "decisionBlockers",
   "--simulate-no-open-decisions",
+  "--simulate-verified-complete-with-remaining",
+  "--simulate-open-decision-without-private-evidence",
   "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
   "enforcePrivateVerifierArgs",
 ]) {
@@ -411,6 +413,31 @@ if (openDecisions.length > 0) {
   }
   if (!staleBlockerOutput.includes("stale private visual decisionBlocker") || !staleBlockerOutput.includes("simulated_stale_decision")) {
     fail(`${manifest.privateVerifierScript} must explain stale private decisionBlockers`);
+  }
+
+  for (const [flag, expectedOutput] of [
+    ["--simulate-open-decision-without-private-evidence", "open decision initial_scope to list private evidence aliases"],
+    ["--simulate-open-decision-without-blocking-verifier", "open decision initial_scope to list blocking private verifiers"],
+    ["--simulate-open-decision-without-remaining", "open decision initial_scope to list remaining work"],
+    ["--simulate-verified-complete-with-remaining", "verified-complete decision canonical_source to have no remaining work"],
+    ["--simulate-verified-complete-with-private-evidence", "verified-complete decision canonical_source to have no private evidence blockers"],
+  ]) {
+    const malformedDecisionResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", flag, "--skip-public-prerequisites"],
+      {
+        cwd: rootDir,
+        env: { ...withoutPrivateCompletionEnv(), CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1" },
+        encoding: "utf8",
+      },
+    );
+    const malformedDecisionOutput = `${malformedDecisionResult.stdout || ""}${malformedDecisionResult.stderr || ""}`;
+    if (malformedDecisionResult.status === 0 || malformedDecisionResult.status === manifest.externalPendingExitCode) {
+      fail(`${manifest.privateVerifierScript} must fail before EXTERNAL PENDING for ${flag}`);
+    }
+    if (!malformedDecisionOutput.includes(expectedOutput)) {
+      fail(`${manifest.privateVerifierScript} ${flag} output must include ${expectedOutput}`);
+    }
   }
 }
 
