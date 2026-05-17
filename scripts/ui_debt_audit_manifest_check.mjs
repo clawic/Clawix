@@ -143,6 +143,16 @@ if (manifest) {
       requiredEvidence: [...manifest.entries[0].requiredEvidence, manifest.entries[0].requiredEvidence[0]],
     };
   }
+  if (args.has("--simulate-approved-manifest-with-pending-entry")) {
+    manifest.status = "audited-approved";
+  }
+  if (args.has("--simulate-pending-manifest-with-all-approved") && Array.isArray(manifest.entries)) {
+    manifest.status = "pending-private-visual-inventory";
+    manifest.entries = manifest.entries.map((entry) => ({
+      ...entry,
+      auditStatus: "audited-approved",
+    }));
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -225,6 +235,8 @@ for (const coverage of requireArray(surfaceCoverage, manifest?.surfaceCoverageSo
 }
 
 const auditDebtIds = new Set();
+let auditedEntryCount = 0;
+let pendingAuditEntryCount = 0;
 for (const [index, entry] of requireArray(manifest, manifestPath, "entries").entries()) {
   const label = `${manifestPath}.entries[${index}]`;
   requireFields(entry, label, [
@@ -248,10 +260,19 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "entries").ent
     fail(`${label}.surfaceCoverageId must map the debt entry in ${manifest?.surfaceCoverageSource}`);
   }
   if (!auditStatuses.has(entry.auditStatus)) fail(`${label}.auditStatus is invalid`);
+  if (entry.auditStatus === "audited-approved") auditedEntryCount += 1;
+  if (entry.auditStatus === "pending-private-visual-inventory") pendingAuditEntryCount += 1;
   assertPublicSafeReference(entry.privateDebtAuditReference, manifest?.privateDebtAuditAlias, `${label}.privateDebtAuditReference`);
   requireExactStringSet(requireArray(entry, label, "requiredEvidence"), `${label}.requiredEvidence`, [...requiredEvidence]);
   if (auditDebtIds.has(entry.debtId)) fail(`${label}.debtId must be unique`);
   auditDebtIds.add(entry.debtId);
+}
+
+if (manifest?.status === "audited-approved" && pendingAuditEntryCount > 0) {
+  fail(`${manifestPath}.status cannot be audited-approved while ${pendingAuditEntryCount} debt audit entries are pending`);
+}
+if (manifest?.status === "pending-private-visual-inventory" && auditDebtIds.size > 0 && auditedEntryCount === auditDebtIds.size) {
+  fail(`${manifestPath}.status must be audited-approved when all debt audit entries are approved`);
 }
 
 for (const debtId of debtById.keys()) {
