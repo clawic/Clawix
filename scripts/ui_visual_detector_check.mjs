@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_DETECTOR_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -224,6 +226,37 @@ if (args.has("--simulate-missing-governance-guard-platform-scope")) {
 for (const snippet of ["platformForPath", "detector.platforms.includes(platform)", "--simulate-cross-platform-visual-diff"]) {
   if (!governanceGuardSource.includes(snippet)) {
     fail(`scripts/ui_governance_guard.mjs must enforce detector platform scoping via ${snippet}`);
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-unsafe-source-root", "sourceRoots[0] must be a safe relative path"],
+    ["--simulate-missing-required-source-root", "sourceRoots must include web/src"],
+    ["--simulate-missing-required-change-kind", "requiredChangeKinds must include typography"],
+    ["--simulate-missing-classification-bucket", "classificationBuckets must include hierarchy"],
+    ["--simulate-unregistered-bucket-kind", "changeKinds contains unregistered shadow"],
+    ["--simulate-duplicate-bucket-kind", "classificationBuckets must classify color exactly once"],
+    ["--simulate-unclassified-change-kind", "classificationBuckets must classify typography"],
+    ["--simulate-missing-detector-kind", "detectors must cover spacing"],
+    ["--simulate-unsupported-detector-platform", "platforms contains unsupported visionos"],
+    ["--simulate-invalid-detector-regex", "pattern is not a valid regex"],
+    ["--simulate-unknown-copy-kind", "must declare copy detector signals for confirmation-text"],
+    ["--simulate-missing-governance-guard-platform-scope", "ui_governance_guard.mjs must enforce detector platform scoping"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_VISUAL_DETECTOR_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when visual detector evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
   }
 }
 
