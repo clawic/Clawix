@@ -6,6 +6,7 @@ import { privateRootAliasEntries } from "./ui_private_root_contract.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
+const args = new Set(process.argv.slice(2));
 
 function fail(message) {
   errors.push(message);
@@ -153,6 +154,14 @@ requireFields(decisionVerification, decisionPath, [
   "decisions",
 ]);
 
+if (args.has("--simulate-open-decision-without-private-blockers")) {
+  const openDecision = decisionVerification?.decisions?.find((decision) => decision?.status === "open");
+  if (openDecision) {
+    delete openDecision.privateEvidence;
+    delete openDecision.blockingVerifiers;
+  }
+}
+
 if (decisionVerification?.conversationId !== "019e2b5e-fe48-7231-8e13-49411999b001") {
   fail(`${decisionPath}.conversationId must stay pinned to the source conversation`);
 }
@@ -251,6 +260,7 @@ for (const [index, decision] of decisions.entries()) {
     fail(`${label} must be verified-complete when no remaining work is listed`);
   }
   if (decision.status === "open") {
+    requireFields(decision, label, ["privateEvidence", "blockingVerifiers"]);
     for (const [evidenceIndex, evidence] of requireArray(decision, label, "privateEvidence").entries()) {
       if (!isPrivateEvidenceReference(evidence)) {
         fail(`${label}.privateEvidence[${evidenceIndex}] must be a public-safe private evidence alias reference`);
