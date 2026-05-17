@@ -39,6 +39,15 @@ function read(relativePath) {
   if (args.has("--simulate-readme-missing-private-visual-verify") && relativePath === "docs/ui/README.md") {
     content = content.replaceAll("ui_private_visual_verify.mjs --require-approved", "ui_private_visual_verify.mjs");
   }
+  if (args.has("--simulate-readme-missing-pattern-registry") && relativePath === "docs/ui/README.md") {
+    content = content.replaceAll("pattern-registry/", "pattern-library/");
+  }
+  if (args.has("--simulate-readme-missing-failure-diagnostics") && relativePath === "docs/ui/README.md") {
+    content = content.replaceAll("scripts/ui_visual_guard_failure_check.mjs", "scripts/ui_visual_guard_check.mjs");
+  }
+  if (args.has("--simulate-decision-map-missing-interface-governance") && relativePath === "docs/decision-map.md") {
+    content = content.replaceAll("## Interface governance", "## Interface checks");
+  }
   return content;
 }
 
@@ -51,6 +60,7 @@ function requireSnippet(relativePath, snippet) {
 
 const requiredDocs = [
   "docs/adr/0010-interface-governance.md",
+  "docs/decision-map.md",
   "STYLE.md",
   "STANDARDS.md",
   "PERF.md",
@@ -107,12 +117,36 @@ for (const snippet of [
 
 for (const snippet of [
   "docs/ui/debt-baseline.*",
+  "pattern-registry/",
+  "visible-surfaces.inventory.json",
+  "visual-change-detectors.manifest.json",
+  "visual-model-allowlist.manifest.json",
+  "visual-change-scopes.manifest.json",
+  "debt.baseline.json",
+  "debt-baseline.manifest.json",
+  "protected-surfaces.registry.json",
+  "inspiration/",
+  "performance-budgets.registry.json",
+  "private-baselines.manifest.json",
+  "scripts/ui_pattern_mutation_guard.mjs",
+  "scripts/ui_visual_guard_failure_check.mjs",
   "private-visual-validation.manifest.json",
   "visual-change-proposal.template.md",
   "ui_private_approval_verify.mjs --require-approved",
   "ui_private_visual_verify.mjs --require-approved",
 ]) {
   requireSnippet("docs/ui/README.md", snippet);
+}
+
+for (const snippet of [
+  "## Interface governance",
+  "pattern registry plus references and contracts",
+  "Existing visual drift is frozen in a debt baseline",
+  "Approved visual surfaces are protected/frozen",
+  "visual/copy/layout decisions",
+  "performance-budgets.registry.json",
+]) {
+  requireSnippet("docs/decision-map.md", snippet);
 }
 
 if (errors.length > 0) {
