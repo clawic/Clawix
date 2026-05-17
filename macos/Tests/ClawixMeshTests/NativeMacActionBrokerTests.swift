@@ -198,8 +198,14 @@ final class RecordingMacActionRunner: NativeMacActionCommandRunning {
         var arguments: [String]
     }
 
+    struct NativeCall: Equatable {
+        var action: String
+        var arguments: [String]
+    }
+
     private(set) var processCalls: [ProcessCall] = []
     private(set) var appleScriptCalls: [String] = []
+    private(set) var nativeCalls: [NativeCall] = []
 
     func runProcess(_ executable: String, arguments: [String]) throws -> String {
         processCalls.append(ProcessCall(executable: executable, arguments: arguments))
@@ -208,6 +214,11 @@ final class RecordingMacActionRunner: NativeMacActionCommandRunning {
 
     func runAppleScript(_ source: String) throws -> String {
         appleScriptCalls.append(source)
+        return "ok"
+    }
+
+    func runNative(_ action: String, arguments: [String]) throws -> String {
+        nativeCalls.append(NativeCall(action: action, arguments: arguments))
         return "ok"
     }
 }
