@@ -129,24 +129,73 @@ for (const field of [
   if (!requiredExceptionFieldSet.has(field)) fail(`${registryPath}.requiredExceptionFields must include ${field}`);
 }
 
+function simulatedException(overrides = {}) {
+  return {
+    id: "simulated-ui-exception",
+    status: "active",
+    scope: "simulated",
+    platforms: ["macos"],
+    owner: "ui-governance-self-test",
+    approvedBy: "user",
+    approvedAt: "2026-05-17",
+    reason: "Synthetic fixture for UI exception contract enforcement.",
+    createdAt: "2026-05-17",
+    reviewAfter: "2026-08-15",
+    expiresAt: "2026-09-15",
+    allowedAction: "conceptual proposal only",
+    privateApprovalReference: "private-codex-ui-approval:simulated",
+    ...overrides,
+  };
+}
+
 if (args.has("--simulate-unreferenced-active-exception")) {
   registry.exceptions = [
     ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
-    {
+    simulatedException({
       id: "simulated-unreferenced-active-exception",
-      status: "active",
-      scope: "simulated",
-      platforms: ["macos"],
-      owner: "ui-governance-self-test",
-      approvedBy: "user",
-      approvedAt: "2026-05-17",
       reason: "Synthetic fixture for active exception inventory mapping enforcement.",
-      createdAt: "2026-05-17",
-      reviewAfter: "2026-08-15",
-      expiresAt: "2026-09-15",
-      allowedAction: "conceptual proposal only",
-      privateApprovalReference: "private-codex-ui-approval:simulated",
-    },
+    }),
+  ];
+}
+
+if (args.has("--simulate-expired-active-exception")) {
+  registry.exceptions = [
+    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
+    simulatedException({
+      id: "simulated-expired-active-exception",
+      reviewAfter: "2026-05-16",
+      expiresAt: "2026-05-16",
+    }),
+  ];
+}
+
+if (args.has("--simulate-duplicate-exception-id")) {
+  registry.exceptions = [
+    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
+    simulatedException({ id: "simulated-duplicate-exception", status: "expired" }),
+    simulatedException({ id: "simulated-duplicate-exception", status: "expired" }),
+  ];
+}
+
+if (args.has("--simulate-unsupported-platform")) {
+  registry.exceptions = [
+    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
+    simulatedException({
+      id: "simulated-unsupported-platform-exception",
+      status: "expired",
+      platforms: ["visionos"],
+    }),
+  ];
+}
+
+if (args.has("--simulate-local-private-approval-reference")) {
+  registry.exceptions = [
+    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
+    simulatedException({
+      id: "simulated-local-private-approval-reference",
+      status: "expired",
+      privateApprovalReference: `private-codex-ui-approval:${["", "Users", "example", "private-approval.json"].join("/")}`,
+    }),
   ];
 }
 
