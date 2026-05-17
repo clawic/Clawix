@@ -5,6 +5,14 @@
   "privateApprovalAlias": "private-codex-ui-approval",
   "evidenceFilename": "approval-evidence.json",
   "requiredPrivateApprovalEvidenceFields": ["sourceId", "privateApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"],
+  "requiredApprovalSourceIds": [
+    "canon-promotions",
+    "protected-surfaces",
+    "visual-change-scopes",
+    "visual-model-allowlist",
+    "visual-proposals",
+    "exceptions"
+  ],
   "approvalSources": [
     {
       "id": "canon-promotions",

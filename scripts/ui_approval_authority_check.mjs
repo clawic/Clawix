@@ -82,13 +82,23 @@ requireFields(manifest, manifestPath, [
   "privateApprovalAlias",
   "evidenceFilename",
   "requiredPrivateApprovalEvidenceFields",
+  "requiredApprovalSourceIds",
   "approvalSources",
 ]);
+if (args.has("--simulate-inactive-approval-authority") && manifest) {
+  manifest.status = "draft";
+}
 if (args.has("--simulate-missing-approval-source") && Array.isArray(manifest?.approvalSources)) {
   manifest.approvalSources = manifest.approvalSources.filter((source) => source?.id !== "exceptions");
 }
 if (args.has("--simulate-duplicate-approval-source") && Array.isArray(manifest?.approvalSources) && manifest.approvalSources[0]) {
   manifest.approvalSources = [...manifest.approvalSources, { ...manifest.approvalSources[0] }];
+}
+if (args.has("--simulate-missing-required-approval-source-id") && Array.isArray(manifest?.requiredApprovalSourceIds)) {
+  manifest.requiredApprovalSourceIds = manifest.requiredApprovalSourceIds.filter((sourceId) => sourceId !== "protected-surfaces");
+}
+if (manifest?.status !== "active") {
+  fail(`${manifestPath}.status must be active`);
 }
 if (manifest?.privateApprovalAlias !== "private-codex-ui-approval") {
   fail(`${manifestPath}.privateApprovalAlias must be private-codex-ui-approval`);
@@ -107,14 +117,25 @@ for (const field of ["sourceId", "privateApprovalReference", "approvedBy", "appr
 }
 
 let checkedRecords = 0;
-const requiredSourceIds = new Set([
+const canonicalSourceIds = [
   "canon-promotions",
   "protected-surfaces",
   "visual-change-scopes",
   "visual-model-allowlist",
   "visual-proposals",
   "exceptions",
-]);
+];
+const requiredSourceIds = new Set();
+for (const [index, sourceId] of requireArray(manifest, manifestPath, "requiredApprovalSourceIds").entries()) {
+  const label = `${manifestPath}.requiredApprovalSourceIds[${index}]`;
+  if (typeof sourceId !== "string" || sourceId === "") fail(`${label} must be a non-empty string`);
+  if (requiredSourceIds.has(sourceId)) fail(`${label} duplicates ${sourceId}`);
+  requiredSourceIds.add(sourceId);
+  if (!canonicalSourceIds.includes(sourceId)) fail(`${label} is not a governed approval source`);
+}
+for (const sourceId of canonicalSourceIds) {
+  if (!requiredSourceIds.has(sourceId)) fail(`${manifestPath}.requiredApprovalSourceIds must include ${sourceId}`);
+}
 const requiredApprovedByFields = new Map([
   ["canon-promotions", "approvedBy"],
   ["protected-surfaces", "approvedBy"],
