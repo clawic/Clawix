@@ -106,6 +106,34 @@ function requirePublicReference(value, label) {
 
 const registryPath = "docs/ui/visual-proposals.registry.json";
 const registry = readJson(registryPath);
+if (
+  registry &&
+  (args.has("--simulate-conceptual-implemented") ||
+    args.has("--simulate-approved-without-private-reference"))
+) {
+  const simulatedProposal = {
+    id: "simulated-proposal",
+    status: args.has("--simulate-approved-without-private-reference")
+      ? "user-approved-for-visual-lane"
+      : "conceptual-only",
+    requestedBy: "non-visual-lane",
+    mutationClass: "visual-ui",
+    changeKinds: ["color"],
+    surfaces: ["simulated-surface"],
+    platforms: ["macos"],
+    proposalReference: "docs/ui/visual-change-proposal.template.md",
+    requiredEvidence: ["private-baseline", "rendered-geometry"],
+    outOfScopeDrift: [],
+    userApprovalStatus: args.has("--simulate-approved-without-private-reference") ? "approved" : "not-approved",
+    implementationStatus: args.has("--simulate-conceptual-implemented") ? "implemented" : "not-approved",
+    reviewAfter: "2999-12-31",
+  };
+  if (args.has("--simulate-approved-without-private-reference")) {
+    simulatedProposal.approvedBy = "user";
+    simulatedProposal.approvedAt = "2026-05-15";
+  }
+  registry.proposals = [...(registry.proposals || []), simulatedProposal];
+}
 requireFields(registry, registryPath, [
   "schemaVersion",
   "status",
