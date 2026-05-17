@@ -162,6 +162,49 @@ if (args.has("--simulate-open-decision-without-private-blockers")) {
   }
 }
 
+if (args.has("--simulate-wrong-conversation-id") && decisionVerification) {
+  decisionVerification.conversationId = "019e0000-invalid";
+}
+
+if (args.has("--simulate-missing-required-status") && Array.isArray(decisionVerification?.statuses)) {
+  decisionVerification.statuses = decisionVerification.statuses.filter((status) => status !== "open");
+}
+
+if (args.has("--simulate-verified-with-remaining") && Array.isArray(decisionVerification?.decisions)) {
+  const verifiedDecision = decisionVerification.decisions.find((decision) => decision?.status === "verified-complete");
+  if (verifiedDecision) {
+    verifiedDecision.remaining = ["simulated leftover work"];
+  }
+}
+
+if (args.has("--simulate-open-without-remaining") && Array.isArray(decisionVerification?.decisions)) {
+  const openDecision = decisionVerification.decisions.find((decision) => decision?.status === "open");
+  if (openDecision) {
+    openDecision.remaining = [];
+  }
+}
+
+if (args.has("--simulate-unsafe-public-evidence") && Array.isArray(decisionVerification?.decisions)) {
+  const decision = decisionVerification.decisions.find((item) => Array.isArray(item?.publicEvidence));
+  if (decision) {
+    decision.publicEvidence[0] = "/Users/example/private-note.md";
+  }
+}
+
+if (args.has("--simulate-unplanned-private-evidence") && Array.isArray(decisionVerification?.decisions)) {
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.privateEvidence));
+  if (openDecision) {
+    openDecision.privateEvidence[0] = "private-codex-ui-baselines:unplanned/decision-artifact";
+  }
+}
+
+if (args.has("--simulate-undelegated-blocking-verifier") && Array.isArray(decisionVerification?.decisions)) {
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.blockingVerifiers));
+  if (openDecision) {
+    openDecision.blockingVerifiers[0] = "scripts/ui_private_completion_source_verify.mjs";
+  }
+}
+
 if (decisionVerification?.conversationId !== "019e2b5e-fe48-7231-8e13-49411999b001") {
   fail(`${decisionPath}.conversationId must stay pinned to the source conversation`);
 }
