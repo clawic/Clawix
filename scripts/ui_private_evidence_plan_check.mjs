@@ -92,11 +92,11 @@ function assertSafeIdentifier(value, label) {
 function requireUniqueStringArray(values, label) {
   if (!Array.isArray(values)) {
     fail(`${label} must be an array`);
-    return;
+    return new Set();
   }
   if (values.length === 0) {
     fail(`${label} must not be empty`);
-    return;
+    return new Set();
   }
   const seen = new Set();
   for (const value of values) {
@@ -110,6 +110,15 @@ function requireUniqueStringArray(values, label) {
     if (seen.has(value)) fail(`${label} duplicates ${value}`);
     seen.add(value);
   }
+  return seen;
+}
+
+function requireExactStringArray(values, label, expectedValues) {
+  const seen = requireUniqueStringArray(values, label);
+  if (values.length !== expectedValues.length || values.some((value, index) => value !== expectedValues[index])) {
+    fail(`${label} must match ${JSON.stringify(expectedValues)}`);
+  }
+  return seen;
 }
 
 function addPlanItem(item) {
@@ -131,6 +140,7 @@ const renderedDrift = readJson("docs/ui/rendered-drift.manifest.json");
 const performanceBudgets = readJson("docs/ui/performance-budgets.registry.json");
 const debtAudit = readJson("docs/ui/debt-audit.manifest.json");
 const mechanicalEquivalence = readJson("docs/ui/mechanical-equivalence.manifest.json");
+const privateValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 
 if (argSet.has("--simulate-unsafe-surface-baseline-reference") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
   surfaceCoverage.coverage[0].privateBaselineReference = "/Users/example/private-baseline";
@@ -170,6 +180,83 @@ if (argSet.has("--simulate-missing-performance-budget-fields") && performanceBud
 
 if (argSet.has("--simulate-flow-duplicate-required-field") && Array.isArray(privateBaselines?.flows) && privateBaselines.flows[0]?.requiredEvidence?.[0]) {
   privateBaselines.flows[0].requiredEvidence.push(privateBaselines.flows[0].requiredEvidence[0]);
+}
+
+if (argSet.has("--simulate-missing-surface-coverage-entry") && Array.isArray(surfaceCoverage?.coverage)) {
+  surfaceCoverage.coverage = surfaceCoverage.coverage.filter((entry) => entry?.coverageId !== "web-screens");
+}
+
+if (argSet.has("--simulate-missing-pattern-registry-entry") && Array.isArray(patternRegistry?.patterns)) {
+  patternRegistry.patterns = patternRegistry.patterns.filter((patternId) => patternId !== "toast");
+}
+
+if (argSet.has("--simulate-private-validation-wrong-evidence-plan-command") && privateValidation) {
+  privateValidation.evidencePlanCommand = "node scripts/ui_private_evidence_plan_check.mjs";
+}
+
+if (argSet.has("--simulate-private-validation-missing-blocker") && Array.isArray(privateValidation?.decisionBlockers)) {
+  privateValidation.decisionBlockers = privateValidation.decisionBlockers.filter((decisionId) => decisionId !== "copy_governance");
+}
+
+if (argSet.has("--simulate-private-validation-extra-blocker") && Array.isArray(privateValidation?.decisionBlockers)) {
+  privateValidation.decisionBlockers = [...privateValidation.decisionBlockers, "simulated_blocker"];
+}
+
+if (argSet.has("--simulate-private-validation-wrong-evidence-type") && Array.isArray(privateValidation?.decisionBlockerEvidenceTypes)) {
+  privateValidation.decisionBlockerEvidenceTypes = privateValidation.decisionBlockerEvidenceTypes.map((entry) => (
+    entry?.decisionId === "perf_budget_source" ? { ...entry, evidenceTypes: ["critical-flow-baseline"] } : entry
+  ));
+}
+
+const expectedEvidenceCounts = new Map([
+  ["surface-baseline", 14],
+  ["surface-geometry", 14],
+  ["surface-copy", 14],
+  ["critical-flow-baseline", 24],
+  ["pattern-geometry", 59],
+  ["rendered-drift", 14],
+  ["debt-audit", 3],
+  ["performance-budget", 24],
+]);
+const expectedDecisionEvidence = new Map([
+  ["initial_scope", ["surface-baseline", "surface-geometry", "surface-copy"]],
+  ["enforcement_mode", ["rendered-drift"]],
+  ["debt_strategy", ["debt-audit"]],
+  ["visual_baselines_location", ["critical-flow-baseline", "surface-baseline", "rendered-drift"]],
+  ["alignment_validation", ["surface-geometry", "pattern-geometry", "surface-baseline"]],
+  ["copy_governance", ["surface-copy"]],
+  ["v1_pattern_set", ["surface-baseline", "pattern-geometry"]],
+  ["perf_budget_source", ["performance-budget"]],
+  ["size_contracts", ["pattern-geometry"]],
+]);
+
+if (privateValidation?.schemaVersion !== 1) fail("docs/ui/private-visual-validation.manifest.json.schemaVersion must be 1");
+if (privateValidation?.status !== "active") fail("docs/ui/private-visual-validation.manifest.json.status must be active");
+if (privateValidation?.evidencePlanCommand !== "node scripts/ui_private_evidence_plan_check.mjs --json") {
+  fail("docs/ui/private-visual-validation.manifest.json.evidencePlanCommand must be node scripts/ui_private_evidence_plan_check.mjs --json");
+}
+requireExactStringArray(
+  requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockers"),
+  "docs/ui/private-visual-validation.manifest.json.decisionBlockers",
+  [...expectedDecisionEvidence.keys()],
+);
+const seenDecisionEvidence = new Set();
+for (const [index, entry] of requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockerEvidenceTypes").entries()) {
+  const label = `docs/ui/private-visual-validation.manifest.json.decisionBlockerEvidenceTypes[${index}]`;
+  requireFields(entry, label, ["decisionId", "evidenceTypes"]);
+  if (seenDecisionEvidence.has(entry.decisionId)) fail(`${label}.decisionId duplicates ${entry.decisionId}`);
+  seenDecisionEvidence.add(entry.decisionId);
+  const expectedEvidenceTypes = expectedDecisionEvidence.get(entry.decisionId);
+  if (!expectedEvidenceTypes) {
+    fail(`${label}.decisionId is not an open private-evidence blocker`);
+    continue;
+  }
+  requireExactStringArray(entry.evidenceTypes, `${label}.evidenceTypes`, expectedEvidenceTypes);
+}
+for (const decisionId of expectedDecisionEvidence.keys()) {
+  if (!seenDecisionEvidence.has(decisionId)) {
+    fail(`docs/ui/private-visual-validation.manifest.json.decisionBlockerEvidenceTypes must include ${decisionId}`);
+  }
 }
 
 const surfaceRequiredFields = requireArray(surfaceCoverage, "docs/ui/surface-baseline-coverage.manifest.json", "requiredEvidenceFields");
@@ -347,6 +434,24 @@ for (const type of [
   "performance-budget",
 ]) {
   if (!counts.has(type)) fail(`private evidence plan must include ${type}`);
+}
+for (const [type, expectedCount] of expectedEvidenceCounts.entries()) {
+  const actualCount = counts.get(type) || 0;
+  if (actualCount !== expectedCount) {
+    fail(`private evidence plan ${type} count must be ${expectedCount}, got ${actualCount}`);
+  }
+}
+for (const type of counts.keys()) {
+  if (!expectedEvidenceCounts.has(type) && type !== "mechanical-equivalence") {
+    fail(`private evidence plan contains unknown evidence type ${type}`);
+  }
+}
+for (const [decisionId, evidenceTypes] of expectedDecisionEvidence.entries()) {
+  for (const evidenceType of evidenceTypes) {
+    if ((counts.get(evidenceType) || 0) === 0) {
+      fail(`private evidence blocker ${decisionId} requires missing evidence type ${evidenceType}`);
+    }
+  }
 }
 
 if (errors.length > 0) {
