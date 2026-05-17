@@ -96,6 +96,24 @@ requireFields(budgets, budgetsPath, [
   "verificationCommand",
   "flows",
 ]);
+if (args.has("--simulate-missing-required-flow") && Array.isArray(budgets?.flows)) {
+  budgets.flows = budgets.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "chat-scroll"));
+}
+if (args.has("--simulate-missing-required-metric") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = {
+    ...budgets.flows[0],
+    requiredMetrics: budgets.flows[0].requiredMetrics.filter((metric) => metric !== "memoryDeltaMb"),
+  };
+}
+if (args.has("--simulate-invalid-budget-status") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = { ...budgets.flows[0], budgetStatus: "active" };
+}
+if (args.has("--simulate-enforced-before-approved") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = { ...budgets.flows[0], budgetStatus: "enforced" };
+}
+if (args.has("--simulate-approved-before-private-baseline") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = { ...budgets.flows[0], baselineStatus: "approved" };
+}
 if (budgets?.evidenceFilename !== "performance-evidence.json") {
   fail(`${budgetsPath}.evidenceFilename must be performance-evidence.json`);
 }
@@ -137,6 +155,9 @@ const privateBaselinesPath = "docs/ui/private-baselines.manifest.json";
 const privateBaselines = readJson(privateBaselinesPath);
 if (privateBaselines?.privateRootAlias !== "private-codex-ui-baselines") {
   fail(`${privateBaselinesPath}.privateRootAlias must be private-codex-ui-baselines`);
+}
+if (args.has("--simulate-missing-private-baseline") && Array.isArray(privateBaselines?.flows)) {
+  privateBaselines.flows = privateBaselines.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "chat-scroll"));
 }
 if (args.has("--simulate-wrong-private-reference")) {
   const flow = budgets?.flows?.[0];
