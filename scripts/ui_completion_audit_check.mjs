@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_COMPLETION_AUDIT_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -407,6 +408,48 @@ for (const decision of decisions) {
     }
     if (Array.isArray(decision.blockingVerifiers) && decision.blockingVerifiers.length > 0) {
       fail(`${label} verified-complete decisions must not have blocking verifiers`);
+    }
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-unsafe-private-path", "must not publish local private paths"],
+    ["--simulate-missing-goal-reference", "must include private-codex-goal:clawix-interface-governance-plan-2026-05-15.md"],
+    ["--simulate-missing-blocked-status", "must state completion is blocked while decisions remain open"],
+    ["--simulate-wrong-private-evidence-total", "must state the derived private evidence total"],
+    ["--simulate-missing-evidence-count-row", "must include private evidence count row"],
+    ["--simulate-missing-open-decision-evidence-row", "must include open decision evidence row"],
+    ["--simulate-missing-decision-row", "must include one completion row per decision"],
+    ["--simulate-open-decision-public-state", "initial_scope must identify private evidence as EXTERNAL PENDING"],
+    ["--simulate-approval-state-public-only", "canon_approval must state private approval verifier is wired"],
+    ["--simulate-verified-state-external-pending", "canonical_source must state public evidence is verified"],
+    ["--simulate-decision-status-mismatch", "canonical_source status must match"],
+    ["--simulate-private-evidence-count-mismatch", "must include private evidence count row"],
+    ["--simulate-missing-private-blocker", "open decisions must exactly match"],
+    ["--simulate-extra-private-blocker", "open decisions must exactly match"],
+    ["--simulate-wrong-external-pending-exit-code", "EXTERNAL PENDING exit code 2"],
+    ["--simulate-duplicate-audit-decision-row", "must include one completion row per decision"],
+    ["--simulate-wrong-row-index", "completion row indexes must match"],
+    ["--simulate-open-decision-without-blocking-verifier", "must include blocking private verifiers while open"],
+    ["--simulate-verified-decision-with-remaining", "verified-complete decisions must not have remaining work"],
+    ["--simulate-decision-missing-public-evidence", "publicEvidence must not be empty"],
+    ["--simulate-unknown-status", "status is not an allowed status"],
+    ["--simulate-source-session-alias-mismatch", "sourceSession must match"],
+    ["--simulate-wrong-conversation-id", "conversationId must match"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_COMPLETION_AUDIT_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when completion audit evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
     }
   }
 }
