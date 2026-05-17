@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const argSet = new Set(args);
 const errors = [];
 const plan = [];
 
@@ -240,9 +241,25 @@ for (const [index, record] of requireArray(mechanicalEquivalence, "docs/ui/mecha
   }
 }
 
+if (argSet.has("--simulate-duplicate-evidence-record") && plan.length > 0) {
+  plan.push({ ...plan[0], label: `${plan[0].label}:duplicate-simulation` });
+}
+
 const counts = new Map();
+const logicalKeys = new Set();
+const referenceKeys = new Set();
 for (const item of plan) {
   counts.set(item.type, (counts.get(item.type) || 0) + 1);
+  const logicalKey = `${item.type}:${item.platform}:${item.id}`;
+  if (logicalKeys.has(logicalKey)) {
+    fail(`private evidence plan duplicates logical record ${logicalKey}`);
+  }
+  logicalKeys.add(logicalKey);
+  const referenceKey = `${item.type}:${item.privateReference}`;
+  if (referenceKeys.has(referenceKey)) {
+    fail(`private evidence plan duplicates private reference ${referenceKey}`);
+  }
+  referenceKeys.add(referenceKey);
 }
 
 for (const type of [
