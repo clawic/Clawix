@@ -9,6 +9,19 @@
     "requiredForVisualMutation": true
   },
   "scopeStatuses": ["proposed", "approved", "expired", "revoked"],
+  "requiredChangeKinds": [
+    "color",
+    "spacing",
+    "size",
+    "icon",
+    "layout",
+    "animation",
+    "microcopy",
+    "visible-name",
+    "ordering",
+    "hierarchy",
+    "typography"
+  ],
   "requiredApprovalFields": [
     "id",
     "status",

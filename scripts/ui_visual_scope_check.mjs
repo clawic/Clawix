@@ -126,6 +126,9 @@ if (
   };
   manifest.activeScopes = [...(manifest.activeScopes || []), simulatedScope];
 }
+if (manifest && args.has("--simulate-missing-required-change-kind") && Array.isArray(manifest.requiredChangeKinds)) {
+  manifest.requiredChangeKinds = manifest.requiredChangeKinds.filter((kind) => kind !== "typography");
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -134,6 +137,7 @@ requireFields(manifest, manifestPath, [
   "defaultAuthorized",
   "scopeSignal",
   "scopeStatuses",
+  "requiredChangeKinds",
   "requiredApprovalFields",
   "activeScopes",
 ]);
@@ -154,6 +158,17 @@ if (manifest?.scopeSignal?.requiredForVisualMutation !== true) {
 const allowedStatuses = new Set(requireArray(manifest, manifestPath, "scopeStatuses"));
 for (const status of ["proposed", "approved", "expired", "revoked"]) {
   if (!allowedStatuses.has(status)) fail(`${manifestPath}.scopeStatuses must include ${status}`);
+}
+
+const manifestRequiredChangeKinds = new Set(requireArray(manifest, manifestPath, "requiredChangeKinds"));
+for (const kind of requiredChangeKinds) {
+  if (!manifestRequiredChangeKinds.has(kind)) fail(`${manifestPath}.requiredChangeKinds must include ${kind}`);
+}
+for (const kind of manifestRequiredChangeKinds) {
+  if (!requiredChangeKinds.has(kind)) fail(`${manifestPath}.requiredChangeKinds contains unsupported ${kind}`);
+}
+if (manifestRequiredChangeKinds.size !== requiredChangeKinds.size || manifest?.requiredChangeKinds?.length !== manifestRequiredChangeKinds.size) {
+  fail(`${manifestPath}.requiredChangeKinds must exactly match ${configPath}.restrictedChangeKinds`);
 }
 
 const requiredApprovalFields = requireArray(manifest, manifestPath, "requiredApprovalFields");
