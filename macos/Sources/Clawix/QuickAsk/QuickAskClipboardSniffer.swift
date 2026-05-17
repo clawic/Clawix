@@ -78,7 +78,7 @@ enum QuickAskClipboardSniffer {
             return .image(url)
         }
         if let pdf = pb.data(forType: NSPasteboard.PasteboardType("com.adobe.pdf")),
-           let url = persistData(pdf, ext: "pdf")
+           let url = persistPasteboardBytes(pdf, ext: "pdf")
         {
             return .pdf(url)
         }
@@ -95,10 +95,10 @@ enum QuickAskClipboardSniffer {
               let bitmap = NSBitmapImageRep(data: tiff),
               let png = bitmap.representation(using: .png, properties: [:])
         else { return nil }
-        return persistData(png, ext: "png")
+        return persistPasteboardBytes(png, ext: "png")
     }
 
-    private static func persistData(_ data: Data, ext: String) -> URL? {
+    private static func persistPasteboardBytes(_ data: Data, ext: String) -> URL? {
         let dir = FileManager.default
             .urls(for: .cachesDirectory, in: .userDomainMask)
             .first?

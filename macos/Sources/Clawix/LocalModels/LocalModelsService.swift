@@ -114,7 +114,7 @@ final class LocalModelsService: ObservableObject {
             guard installer.isInstalled else { return }
         }
         await daemon.start(numCtx: contextLength, keepAlive: keepAlive)
-        await refreshDaemonInfo()
+        await refreshDaemonStatus()
     }
 
     /// "Toggle OFF". Stops the daemon. The runtime stays installed so a
@@ -213,7 +213,7 @@ final class LocalModelsService: ObservableObject {
         endPolling()
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
-                await self?.refreshDaemonInfo()
+                await self?.refreshDaemonStatus()
                 await self?.refreshModelList()
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
@@ -225,7 +225,7 @@ final class LocalModelsService: ObservableObject {
         pollTask = nil
     }
 
-    private func refreshDaemonInfo() async {
+    private func refreshDaemonStatus() async {
         guard daemon.isRunning else { return }
         runtimeVersion = (try? await client.version())
     }

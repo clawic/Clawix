@@ -275,7 +275,7 @@ enum DictationAudioStorage {
     }
 
     /// Encode a 16 kHz mono Float32 PCM buffer as a 16-bit WAV.
-    static func wavData(samples: [Float]) -> Data? {
+    static func wavFileBytes(samples: [Float]) -> Data? {
         guard !samples.isEmpty else { return nil }
         let sampleRate: Int = 16_000
         let bitsPerSample: Int = 16
@@ -311,7 +311,7 @@ enum DictationAudioStorage {
     /// because of an audio write hiccup.
     private static func writeWAV(samples: [Float], to url: URL) -> URL? {
         do {
-            guard let data = wavData(samples: samples) else { return nil }
+            guard let data = wavFileBytes(samples: samples) else { return nil }
             try data.write(to: url, options: .atomic)
             return url
         } catch {

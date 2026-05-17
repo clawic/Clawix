@@ -36,7 +36,7 @@ const requiredSnippets = [
   ["ios/Sources/Clawix/Design/EditorStore.swift", ".appendingPathComponent(frameworkRootName"],
   ["macos/Sources/Clawix/Apps/AGENT_CONTRACT.md", "~/.claw/apps/"],
   ["macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift", "Regular dictation audio is encoded in"],
-  ["macos/Sources/Clawix/Dictation/DictationAudioCatalogRecorder.swift", "DictationAudioStorage.wavData(samples: samples)"],
+  ["macos/Sources/Clawix/Dictation/DictationAudioCatalogRecorder.swift", "DictationAudioStorage.wavFileBytes(samples: samples)"],
   ["macos/Sources/Clawix/Audio/UserAudioBubble.swift", "framework audio catalog only"],
   ["macos/Sources/Clawix/QuickAsk/QuickAskSlashCommands.swift", "framework-owned snippets"],
   ["macos/Sources/Clawix/QuickAsk/QuickAskMentions.swift", "ClawJSFrameworkRecordsClient.shared.listSnippets"],

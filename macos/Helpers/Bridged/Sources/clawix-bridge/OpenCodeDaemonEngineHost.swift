@@ -334,7 +334,7 @@ final class OpenCodeDaemonEngineHost: EngineHost {
                   let info = dict(properties["info"]),
                   let chatId = chatBySession[sessionID]
             else { return }
-            applyMessageInfo(info, sessionID: sessionID, chatId: chatId)
+            applyMessageRecord(info, sessionID: sessionID, chatId: chatId)
         case "message.part.delta":
             guard let sessionID = string(properties["sessionID"]),
                   let chatId = chatBySession[sessionID],
@@ -403,7 +403,7 @@ final class OpenCodeDaemonEngineHost: EngineHost {
         }
     }
 
-    private func applyMessageInfo(_ info: [String: Any], sessionID: String, chatId: String) {
+    private func applyMessageRecord(_ info: [String: Any], sessionID: String, chatId: String) {
         guard string(info["role"]) == "assistant" else { return }
         let messageID = string(info["id"]) ?? UUID().uuidString
         let assistantId = ensureAssistant(chatId: chatId, sessionID: sessionID, messageID: messageID)

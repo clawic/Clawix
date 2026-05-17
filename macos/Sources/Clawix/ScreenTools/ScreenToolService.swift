@@ -887,7 +887,7 @@ final class ScreenToolService: ObservableObject {
         )
         NSGraphicsContext.restoreGraphicsState()
 
-        guard let data = bitmapData(for: targetRep, url: url) else {
+        guard let data = encodedBitmapBytes(for: targetRep, url: url) else {
             throw CocoaError(.fileWriteUnknown)
         }
         try data.write(to: url, options: .atomic)
@@ -939,7 +939,7 @@ final class ScreenToolService: ObservableObject {
         )
         NSGraphicsContext.restoreGraphicsState()
 
-        guard let data = bitmapData(for: targetRep, url: url) else {
+        guard let data = encodedBitmapBytes(for: targetRep, url: url) else {
             throw CocoaError(.fileWriteUnknown)
         }
         try data.write(to: url, options: .atomic)
@@ -998,7 +998,7 @@ final class ScreenToolService: ObservableObject {
         )
         NSGraphicsContext.restoreGraphicsState()
 
-        guard let data = bitmapData(for: targetRep, url: url) else {
+        guard let data = encodedBitmapBytes(for: targetRep, url: url) else {
             throw CocoaError(.fileWriteUnknown)
         }
         try data.write(to: url, options: .atomic)
@@ -1036,14 +1036,14 @@ final class ScreenToolService: ObservableObject {
 
         let targetRep = NSBitmapImageRep(cgImage: outputImage)
         targetRep.size = image.size
-        guard let data = bitmapData(for: targetRep, url: url) else {
+        guard let data = encodedBitmapBytes(for: targetRep, url: url) else {
             throw CocoaError(.fileWriteUnknown)
         }
         try data.write(to: url, options: .atomic)
         return true
     }
 
-    private static func bitmapData(for rep: NSBitmapImageRep, url: URL) -> Data? {
+    private static func encodedBitmapBytes(for rep: NSBitmapImageRep, url: URL) -> Data? {
         switch url.pathExtension.lowercased() {
         case "jpg", "jpeg":
             return rep.representation(using: .jpeg, properties: [.compressionFactor: 0.95])

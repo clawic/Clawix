@@ -13,7 +13,7 @@ enum DictationAudioCatalogRecorder {
         language: String?,
         enhancementProvider: String?
     ) async {
-        guard let data = DictationAudioStorage.wavData(samples: samples),
+        guard let data = DictationAudioStorage.wavFileBytes(samples: samples),
               let client = AudioCatalogBootstrap.shared.currentClient
         else { return }
 

@@ -654,7 +654,7 @@ final class QuickAskController: ObservableObject {
 
         if !staged,
            let pdfData = pb.data(forType: NSPasteboard.PasteboardType("com.adobe.pdf")),
-           let url = persistData(pdfData, ext: "pdf") {
+           let url = persistPasteboardBytes(pdfData, ext: "pdf") {
             addAttachment(QuickAskAttachment(url: url, kind: .paste))
             staged = true
         }
@@ -667,10 +667,10 @@ final class QuickAskController: ObservableObject {
               let bitmap = NSBitmapImageRep(data: tiff),
               let png = bitmap.representation(using: .png, properties: [:])
         else { return nil }
-        return persistData(png, ext: "png")
+        return persistPasteboardBytes(png, ext: "png")
     }
 
-    private func persistData(_ data: Data, ext: String) -> URL? {
+    private func persistPasteboardBytes(_ data: Data, ext: String) -> URL? {
         let dir = FileManager.default
             .urls(for: .cachesDirectory, in: .userDomainMask)
             .first?

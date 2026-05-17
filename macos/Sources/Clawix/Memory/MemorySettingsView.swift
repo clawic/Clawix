@@ -115,7 +115,7 @@ struct MemorySettingsView: View {
             Text("Utilities")
                 .font(BodyFont.system(size: 13, wght: 600))
                 .foregroundColor(.white)
-            Button(action: openDataFolder) {
+            Button(action: revealMemoryFolder) {
                 Text("Reveal data folder in Finder")
                     .font(BodyFont.system(size: 12, wght: 500))
                     .foregroundColor(.white.opacity(0.85))
@@ -151,7 +151,7 @@ struct MemorySettingsView: View {
         )
     }
 
-    private func openDataFolder() {
+    private func revealMemoryFolder() {
         let folder = ClawJSServiceManager.workspaceURL
             .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
             .appendingPathComponent("memory", isDirectory: true)

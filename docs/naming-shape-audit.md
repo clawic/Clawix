@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 35 in the current local tree. Broad source symbols account
-  for 34 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 28 in the current local tree. Broad source symbols account
+  for 27 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -96,10 +96,14 @@ for staged rename/split work and must not be hidden by compressing code.
   `AnyJSONCodableBridge`, and database/crypto tests describe row values, SQL
   keywords, and version-byte prefix validation instead of broad helper/data
   terms.
+- Runtime helper vocabulary: OpenCode message updates now use
+  `applyMessageRecord`; local-model polling uses `refreshDaemonStatus`; memory,
+  dictation, pasteboard, and screen-tool helpers now use folder/bytes/status
+  terminology instead of broad `Info`/`Data` names.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 35
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 28
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.
