@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -101,6 +102,75 @@ const manifestPath = "docs/ui/mechanical-equivalence.manifest.json";
 const manifest = readJson(manifestPath);
 const approvalAuthorityPath = "docs/ui/approval-authority.manifest.json";
 const approvalAuthority = readJson(approvalAuthorityPath);
+if (manifest && args.has("--simulate-wrong-private-evidence-alias")) {
+  manifest.privateEvidenceAlias = "private-codex-ui-baselines";
+}
+if (manifest && args.has("--simulate-wrong-evidence-filename")) {
+  manifest.evidenceFilename = "mechanical-evidence.json";
+}
+if (manifest && args.has("--simulate-wrong-required-mutation-class")) {
+  manifest.recordRequirement.requiredForMutationClass = "visual-ui";
+}
+if (manifest && args.has("--simulate-missing-required-evidence-field")) {
+  manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "approvedScope");
+}
+if (manifest && args.has("--simulate-missing-merge-blocking-status")) {
+  manifest.recordRequirement.mergeBlockingStatuses =
+    manifest.recordRequirement.mergeBlockingStatuses.filter((status) => status !== "blocked-visible-diff");
+}
+if (manifest && args.has("--simulate-missing-private-evidence-field")) {
+  manifest.requiredPrivateEvidenceFields =
+    manifest.requiredPrivateEvidenceFields.filter((field) => field !== "privateEvidenceReference");
+}
+
+const simulatedRecord = {
+  id: "simulated-mechanical-equivalence-record",
+  status: "verified-equivalent",
+  scope: "mechanical extraction self-test",
+  platforms: ["macos"],
+  changedFiles: ["macos/Sources/Clawix/SidebarView.swift"],
+  beforeSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/before.png",
+  beforeSnapshotHash: "0123456789abcdef",
+  afterSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/after.png",
+  afterSnapshotHash: "fedcba9876543210",
+  geometryBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-before.json",
+  geometryAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-after.json",
+  copyBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-before.json",
+  copyAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-after.json",
+  tokenDiffStatus: "no-token-diff",
+  approvedByUserAt: "2026-05-15T00:00:00Z",
+  approvedScope: {
+    scopeId: "simulated-mechanical-equivalence-scope",
+    approvedBy: "user",
+    approvedAt: "2026-05-15T00:00:00Z",
+    privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
+  },
+};
+if (manifest && args.has("--simulate-invalid-record-status")) {
+  manifest.records = [{ ...simulatedRecord, status: "approved" }];
+}
+if (manifest && args.has("--simulate-invalid-token-status")) {
+  manifest.records = [{ ...simulatedRecord, tokenDiffStatus: "token-drift" }];
+}
+if (manifest && args.has("--simulate-local-private-reference")) {
+  manifest.records = [{ ...simulatedRecord, beforeSnapshotReference: "/Users/example/private/before.png" }];
+}
+if (manifest && args.has("--simulate-short-record-hash")) {
+  manifest.records = [{ ...simulatedRecord, afterSnapshotHash: "short" }];
+}
+if (manifest && args.has("--simulate-record-approved-by-agent")) {
+  manifest.records = [{ ...simulatedRecord, approvedScope: { ...simulatedRecord.approvedScope, approvedBy: "agent" } }];
+}
+if (manifest && args.has("--simulate-record-unsafe-approval-reference")) {
+  manifest.records = [{
+    ...simulatedRecord,
+    approvedScope: { ...simulatedRecord.approvedScope, privateApprovalReference: "private-codex-ui-approval:../approval.json" },
+  }];
+}
+if (manifest && args.has("--simulate-missing-record-changed-files")) {
+  const { changedFiles, ...recordWithoutChangedFiles } = simulatedRecord;
+  manifest.records = [recordWithoutChangedFiles];
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
