@@ -43,6 +43,20 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const [index, value] of values.entries()) {
+    const entryLabel = `${label}[${index}]`;
+    if (typeof value !== "string" || value === "") {
+      fail(`${entryLabel} must be a non-empty string`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${entryLabel} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
 function hasLocalPath(value) {
   return typeof value === "string" && (/^\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value));
 }
@@ -94,8 +108,39 @@ if (args.has("--simulate-missing-approval-source") && Array.isArray(manifest?.ap
 if (args.has("--simulate-duplicate-approval-source") && Array.isArray(manifest?.approvalSources) && manifest.approvalSources[0]) {
   manifest.approvalSources = [...manifest.approvalSources, { ...manifest.approvalSources[0] }];
 }
+if (args.has("--simulate-unknown-approval-source") && Array.isArray(manifest?.approvalSources)) {
+  manifest.approvalSources = [
+    ...manifest.approvalSources,
+    {
+      id: "agent-approval-shortcut",
+      path: "docs/ui/agent-approval-shortcut.registry.json",
+      arrayField: "approvals",
+      approvedByField: "approvedBy",
+      approvedAtField: "approvedAt",
+      privateApprovalField: "privateApprovalReference",
+    },
+  ];
+}
 if (args.has("--simulate-missing-required-approval-source-id") && Array.isArray(manifest?.requiredApprovalSourceIds)) {
   manifest.requiredApprovalSourceIds = manifest.requiredApprovalSourceIds.filter((sourceId) => sourceId !== "protected-surfaces");
+}
+if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(manifest?.requiredPrivateApprovalEvidenceFields)) {
+  manifest.requiredPrivateApprovalEvidenceFields = [...manifest.requiredPrivateApprovalEvidenceFields, manifest.requiredPrivateApprovalEvidenceFields[0]];
+}
+if (args.has("--simulate-wrong-approval-source-path") && Array.isArray(manifest?.approvalSources)) {
+  manifest.approvalSources = manifest.approvalSources.map((source) => (
+    source?.id === "canon-promotions" ? { ...source, path: "docs/ui/wrong-canon-promotions.registry.json" } : source
+  ));
+}
+if (args.has("--simulate-wrong-approval-source-array-field") && Array.isArray(manifest?.approvalSources)) {
+  manifest.approvalSources = manifest.approvalSources.map((source) => (
+    source?.id === "protected-surfaces" ? { ...source, arrayField: "items" } : source
+  ));
+}
+if (args.has("--simulate-wrong-private-approval-field") && Array.isArray(manifest?.approvalSources)) {
+  manifest.approvalSources = manifest.approvalSources.map((source) => (
+    source?.id === "exceptions" ? { ...source, privateApprovalField: "privateApproval" } : source
+  ));
 }
 if (manifest?.status !== "active") {
   fail(`${manifestPath}.status must be active`);
@@ -106,7 +151,10 @@ if (manifest?.privateApprovalAlias !== "private-codex-ui-approval") {
 if (manifest?.evidenceFilename !== "approval-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be approval-evidence.json`);
 }
-const requiredEvidenceFields = new Set(requireArray(manifest, manifestPath, "requiredPrivateApprovalEvidenceFields"));
+const requiredEvidenceFields = requireUniqueStrings(
+  requireArray(manifest, manifestPath, "requiredPrivateApprovalEvidenceFields"),
+  `${manifestPath}.requiredPrivateApprovalEvidenceFields`,
+);
 if (args.has("--simulate-missing-required-evidence-field")) {
   requiredEvidenceFields.delete("approvalHash");
 }
@@ -117,50 +165,95 @@ for (const field of ["sourceId", "privateApprovalReference", "approvedBy", "appr
 }
 
 let checkedRecords = 0;
-const canonicalSourceIds = [
-  "canon-promotions",
-  "protected-surfaces",
-  "visual-change-scopes",
-  "visual-model-allowlist",
-  "visual-proposals",
-  "exceptions",
-  "rendered-drift",
-];
-const requiredSourceIds = new Set();
-for (const [index, sourceId] of requireArray(manifest, manifestPath, "requiredApprovalSourceIds").entries()) {
-  const label = `${manifestPath}.requiredApprovalSourceIds[${index}]`;
-  if (typeof sourceId !== "string" || sourceId === "") fail(`${label} must be a non-empty string`);
-  if (requiredSourceIds.has(sourceId)) fail(`${label} duplicates ${sourceId}`);
-  requiredSourceIds.add(sourceId);
-  if (!canonicalSourceIds.includes(sourceId)) fail(`${label} is not a governed approval source`);
+const canonicalSources = new Map([
+  ["canon-promotions", {
+    path: "docs/ui/canon-promotions.registry.json",
+    arrayField: "promotions",
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["protected-surfaces", {
+    path: "docs/ui/protected-surfaces.registry.json",
+    arrayField: "surfaces",
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["visual-change-scopes", {
+    path: "docs/ui/visual-change-scopes.manifest.json",
+    arrayField: "activeScopes",
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["visual-model-allowlist", {
+    path: "docs/ui/visual-model-allowlist.manifest.json",
+    arrayField: "allowedVisualModels",
+    statusField: "status",
+    statusValuesField: "modelStatuses",
+    approvalRequiredStatuses: ["active"],
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["visual-proposals", {
+    path: "docs/ui/visual-proposals.registry.json",
+    arrayField: "proposals",
+    statusField: "status",
+    statusValuesField: "proposalStatuses",
+    approvalRequiredStatuses: ["user-approved-for-visual-lane"],
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["exceptions", {
+    path: "docs/ui/exceptions.registry.json",
+    arrayField: "exceptions",
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+  ["rendered-drift", {
+    path: "docs/ui/rendered-drift.manifest.json",
+    arrayField: "reports",
+    statusField: "status",
+    statusValuesField: "reportStatuses",
+    approvalRequiredStatuses: ["approved-drift"],
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
+]);
+const canonicalSourceIds = [...canonicalSources.keys()];
+const requiredSourceIds = requireUniqueStrings(
+  requireArray(manifest, manifestPath, "requiredApprovalSourceIds"),
+  `${manifestPath}.requiredApprovalSourceIds`,
+);
+for (const sourceId of requiredSourceIds) {
+  if (!canonicalSourceIds.includes(sourceId)) fail(`${manifestPath}.requiredApprovalSourceIds contains non-governed source ${sourceId}`);
 }
 for (const sourceId of canonicalSourceIds) {
   if (!requiredSourceIds.has(sourceId)) fail(`${manifestPath}.requiredApprovalSourceIds must include ${sourceId}`);
 }
-const requiredApprovedByFields = new Map([
-  ["canon-promotions", "approvedBy"],
-  ["protected-surfaces", "approvedBy"],
-  ["visual-change-scopes", "approvedBy"],
-  ["visual-model-allowlist", "approvedBy"],
-  ["visual-proposals", "approvedBy"],
-  ["exceptions", "approvedBy"],
-  ["rendered-drift", "approvedBy"],
-]);
 const sourceIds = new Set();
 for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approvalSources").entries()) {
   const sourceLabel = `${manifestPath}.approvalSources[${sourceIndex}]`;
   requireFields(source, sourceLabel, ["id", "path", "arrayField"]);
   if (sourceIds.has(source.id)) fail(`${sourceLabel}.id duplicates ${source.id}`);
   sourceIds.add(source.id);
-  if (typeof source.privateApprovalField !== "string" || source.privateApprovalField === "") {
-    fail(`${sourceLabel}.privateApprovalField must name a private approval reference field`);
+  const expectedSource = canonicalSources.get(source.id);
+  if (!expectedSource) {
+    fail(`${sourceLabel}.id is not a governed approval source`);
+    continue;
   }
-  if (typeof source.approvedAtField !== "string" || source.approvedAtField === "") {
-    fail(`${sourceLabel}.approvedAtField must name a public approval date field`);
+  for (const field of ["path", "arrayField", "approvedByField", "approvedAtField", "privateApprovalField", "statusField", "statusValuesField"]) {
+    if (source[field] !== expectedSource[field]) fail(`${sourceLabel}.${field} must be ${expectedSource[field]}`);
   }
-  const requiredApprovedByField = requiredApprovedByFields.get(source.id);
-  if (requiredApprovedByField && source.approvedByField !== requiredApprovedByField) {
-    fail(`${sourceLabel}.approvedByField must be ${requiredApprovedByField}`);
+  const expectedStatuses = expectedSource.approvalRequiredStatuses || [];
+  const actualStatuses = Array.isArray(source.approvalRequiredStatuses) ? source.approvalRequiredStatuses : [];
+  if (actualStatuses.length !== expectedStatuses.length || actualStatuses.some((status, index) => status !== expectedStatuses[index])) {
+    fail(`${sourceLabel}.approvalRequiredStatuses must match ${JSON.stringify(expectedStatuses)}`);
   }
   const approvalRequiredStatuses = Array.isArray(source.approvalRequiredStatuses)
     ? new Set(source.approvalRequiredStatuses)
