@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = "macos/Sources/Clawix";
 const brokerPath = "macos/Sources/Clawix/HostActions/NativeMacActionBroker.swift";
+const wirePath = "macos/Sources/Clawix/HostActions/NativeMacActionWire.swift";
 const allowlistPath = "docs/native-action-broker-allowlist.json";
 const today = new Date().toISOString().slice(0, 10);
 
@@ -47,6 +48,25 @@ if (allowlist.schemaVersion !== 1) fail(`${allowlistPath}.schemaVersion must be 
 if (allowlist.program !== "mac-control-plane") fail(`${allowlistPath}.program must be mac-control-plane`);
 if (allowlist.status !== "active") fail(`${allowlistPath}.status must be active`);
 if (!Array.isArray(allowlist.entries)) fail(`${allowlistPath}.entries must be an array`);
+
+const brokerText = fs.readFileSync(path.join(rootDir, brokerPath), "utf8");
+if (!brokerText.includes("import ClawHostKit")) {
+  fail(`${brokerPath} must route Mac control actions through ClawHostKit`);
+}
+if (!brokerText.includes("typealias NativeMacActionBroker = MacControlActionBroker")) {
+  fail(`${brokerPath} must keep NativeMacActionBroker as a compatibility alias to MacControlActionBroker`);
+}
+if (!brokerText.includes("typealias NativeMacActionPolicy = MacControlPolicy")) {
+  fail(`${brokerPath} must keep NativeMacActionPolicy as a compatibility alias to MacControlPolicy`);
+}
+
+const wireText = fs.readFileSync(path.join(rootDir, wirePath), "utf8");
+if (!wireText.includes("import ClawHostKit")) {
+  fail(`${wirePath} must route Mac control wire contracts through ClawHostKit`);
+}
+if (!wireText.includes("typealias NativeMacActionWire = MacControlWire")) {
+  fail(`${wirePath} must keep NativeMacActionWire as a compatibility alias to MacControlWire`);
+}
 
 const allowlistByPath = new Map();
 for (const [index, entry] of (allowlist.entries ?? []).entries()) {

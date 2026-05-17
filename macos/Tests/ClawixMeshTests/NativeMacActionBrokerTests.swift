@@ -43,13 +43,12 @@ final class NativeMacActionBrokerTests: XCTestCase {
         )
 
         XCTAssertEqual(receipt.outcome, .approvalRequired)
-        XCTAssertEqual(receipt.error, "Requires explicit host approval.")
+        XCTAssertEqual(receipt.error, "Requires explicit Mac Control approval.")
         let events = try readAuditEvents(auditURL)
         XCTAssertEqual(events.count, 1)
-        XCTAssertEqual(events[0].surface, .macControl)
         XCTAssertEqual(events[0].action, "mac.window.close")
         XCTAssertEqual(events[0].origin, .agent)
-        XCTAssertEqual(events[0].outcome, "requiresApproval")
+        XCTAssertEqual(events[0].outcome, "requires_approval")
     }
 
     func testApprovedShortcutRunUsesShortcutsCLI() throws {
@@ -60,7 +59,7 @@ final class NativeMacActionBrokerTests: XCTestCase {
             requestId: "macreq_test_shortcut_run",
             capabilityId: "mac.shortcut.run",
             actorId: "owner",
-            origin: .userInterface,
+            origin: .userUI,
             arguments: ["name": "Daily Plan"],
             approved: true
         )
@@ -72,7 +71,6 @@ final class NativeMacActionBrokerTests: XCTestCase {
             RecordingMacActionRunner.ProcessCall(executable: "/usr/bin/shortcuts", arguments: ["run", "Daily Plan"]),
         ])
         let events = try readAuditEvents(auditURL)
-        XCTAssertEqual(events.first?.surface, .macControl)
         XCTAssertEqual(events.first?.action, "mac.shortcut.run")
         XCTAssertEqual(events.first?.outcome, "approved")
     }
@@ -156,14 +154,14 @@ final class NativeMacActionBrokerTests: XCTestCase {
     private func temporaryAuditURL() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("native-mac-action-broker-\(UUID().uuidString)")
-            .appendingPathComponent(HostActionPolicy.auditFilename)
+            .appendingPathComponent(NativeMacActionPolicy.auditFilename)
     }
 
-    private func readAuditEvents(_ url: URL) throws -> [HostActionPolicy.AuditEvent] {
+    private func readAuditEvents(_ url: URL) throws -> [NativeMacActionPolicy.AuditEvent] {
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()
         let lines = String(decoding: data, as: UTF8.self).split(separator: "\n")
-        return try lines.map { try decoder.decode(HostActionPolicy.AuditEvent.self, from: Data($0.utf8)) }
+        return try lines.map { try decoder.decode(NativeMacActionPolicy.AuditEvent.self, from: Data($0.utf8)) }
     }
 
     private func wireRequestJSON(
