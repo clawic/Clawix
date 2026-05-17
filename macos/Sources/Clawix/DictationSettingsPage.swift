@@ -26,11 +26,11 @@ struct DictationSettingsPage: View {
     @AppStorage(DictationCoordinator.addSpaceBeforeKey) private var addSpaceBefore = true
     @AppStorage(DictationCoordinator.autoFormatParagraphsKey) private var autoFormatParagraphs = true
 
-    @AppStorage(SoundManager.defaultsKey) private var soundFeedback = true
-    @AppStorage(SoundManager.playStartKey) private var playStartSound = true
-    @AppStorage(SoundManager.playStopKey) private var playStopSound = true
-    @AppStorage(SoundManager.customStartURLKey) private var customStartURL = ""
-    @AppStorage(SoundManager.customStopURLKey) private var customStopURL = ""
+    @AppStorage(DictationSoundPlayer.defaultsKey) private var soundFeedback = true
+    @AppStorage(DictationSoundPlayer.playStartKey) private var playStartSound = true
+    @AppStorage(DictationSoundPlayer.playStopKey) private var playStopSound = true
+    @AppStorage(DictationSoundPlayer.customStartURLKey) private var customStartURL = ""
+    @AppStorage(DictationSoundPlayer.customStopURLKey) private var customStopURL = ""
 
     @AppStorage(MediaController.enabledKey) private var muteAudioWhileRecording = true
     @AppStorage(MediaController.resumeDelayKey) private var muteResumeDelay = 0
@@ -1503,7 +1503,7 @@ private struct CustomSoundRow: View {
         } else {
             url = URL(fileURLWithPath: currentPath)
         }
-        SoundManager.shared.preview(url: url)
+        DictationSoundPlayer.shared.preview(url: url)
     }
 
     private func choose() {
@@ -1514,7 +1514,7 @@ private struct CustomSoundRow: View {
         panel.canChooseFiles = true
         panel.title = "Choose dictation sound"
         guard panel.runModal() == .OK, let chosen = panel.url else { return }
-        switch SoundManager.validate(url: chosen) {
+        switch DictationSoundPlayer.validate(url: chosen) {
         case .success:
             do {
                 let installed = try CustomSoundLibrary.install(chosen)

@@ -4,8 +4,8 @@ import SwiftUI
 
 /// Plays the four dictation feedback cues and supports custom start/stop sounds.
 @MainActor
-final class SoundManager {
-    static let shared = SoundManager()
+final class DictationSoundPlayer {
+    static let shared = DictationSoundPlayer()
 
     nonisolated static let defaultsKey = "dictation.soundFeedback"
     nonisolated static let playStartKey = "dictation.playStartSound"

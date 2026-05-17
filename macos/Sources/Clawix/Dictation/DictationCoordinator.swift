@@ -467,7 +467,7 @@ final class DictationCoordinator: ObservableObject {
         // otherwise. Mic capture is finished by this point, so there's
         // no bleed risk from unmuting early.
         MediaController.shared.unmuteImmediately()
-        SoundManager.shared.playStop()
+        DictationSoundPlayer.shared.playStop()
         state = .transcribing
         invalidateElapsedTimer()
         invalidateBarTimer()
@@ -832,7 +832,7 @@ final class DictationCoordinator: ObservableObject {
         // mute from this session is still in effect. cleanup() below
         // will re-enter the unmute path as a no-op (didMute=false).
         MediaController.shared.unmuteImmediately()
-        SoundManager.shared.playCancel()
+        DictationSoundPlayer.shared.playCancel()
         sessionToken &+= 1
         invalidateElapsedTimer()
         invalidateBarTimer()
@@ -986,7 +986,7 @@ final class DictationCoordinator: ObservableObject {
         activeSource = source.publicSource
         state = .recording
         overlayVisible = showOverlay
-        SoundManager.shared.playStart()
+        DictationSoundPlayer.shared.playStart()
         // Mute system output and pause Music/Spotify per user prefs.
         // Both controllers are no-ops when their toggles are off, so
         // calling them unconditionally keeps the lifecycle simple.
@@ -1091,7 +1091,7 @@ final class DictationCoordinator: ObservableObject {
             // may still be active. cleanup() runs after finish() and
             // its unmuteAfterDelay becomes a no-op.
             MediaController.shared.unmuteImmediately()
-            SoundManager.shared.playDone()
+            DictationSoundPlayer.shared.playDone()
             // Snapshot the result so AppIntents (Paste Last, Retry
             // Last) can replay it without redictating.
             LastTranscriptionStore.shared.record(
