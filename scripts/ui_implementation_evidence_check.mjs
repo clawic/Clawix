@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -59,6 +60,9 @@ function requireIncludes(values, label, expected) {
 
 const manifestPath = "docs/ui/implementation-evidence.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest && args.has("--simulate-missing-visual-model-check")) {
+  manifest.requiredPublicChecks = manifest.requiredPublicChecks.filter((check) => check !== "node scripts/ui_visual_model_allowlist_check.mjs");
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -118,7 +122,12 @@ requireIncludes(
 requireIncludes(
   requireArray(manifest, manifestPath, "requiredPublicChecks"),
   `${manifestPath}.requiredPublicChecks`,
-  ["node scripts/ui_governance_guard.mjs", "node scripts/ui_surface_inventory_check.mjs"],
+  [
+    "node scripts/ui_governance_guard.mjs",
+    "node scripts/ui_surface_inventory_check.mjs",
+    "node scripts/ui_visual_scope_check.mjs",
+    "node scripts/ui_visual_model_allowlist_check.mjs",
+  ],
 );
 
 requireIncludes(
