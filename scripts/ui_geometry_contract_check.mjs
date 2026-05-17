@@ -108,6 +108,25 @@ function geometryHasPlatformClauses(value) {
 const registryPath = "docs/ui/pattern-registry/patterns.registry.json";
 const registry = readJson(registryPath);
 const patternIds = requireArray(registry, registryPath, "patterns");
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const sizeContractsDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "size_contracts");
+
+if (args.has("--simulate-size-contracts-decision-missing-script") && sizeContractsDecision) {
+  sizeContractsDecision.publicEvidence = sizeContractsDecision.publicEvidence.filter((evidence) => evidence !== "scripts/ui_geometry_contract_check.mjs");
+}
+if (args.has("--simulate-size-contracts-decision-missing-rendered-geometry") && sizeContractsDecision) {
+  sizeContractsDecision.publicEvidence = sizeContractsDecision.publicEvidence.filter((evidence) => evidence !== "docs/ui/rendered-geometry.manifest.json");
+}
+if (args.has("--simulate-size-contracts-decision-missing-private-blocker") && sizeContractsDecision) {
+  sizeContractsDecision.blockingVerifiers = sizeContractsDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_geometry_verify.mjs");
+}
+if (args.has("--simulate-size-contracts-decision-premature-complete") && sizeContractsDecision) {
+  sizeContractsDecision.status = "verified-complete";
+  sizeContractsDecision.remaining = [];
+}
+
+let hasPendingGeometry = false;
 
 for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
@@ -137,6 +156,7 @@ for (const patternId of patternIds) {
   }
 
   const geometryType = classifyGeometryClause(pattern.geometry, `${patternPath}.geometry`);
+  if (["pending", "mixed"].includes(geometryType)) hasPendingGeometry = true;
   const platforms = requireArray(pattern, patternPath, "platforms");
   if (geometryHasPlatformClauses(pattern.geometry) && !geometryHasDirectMeasurements(pattern.geometry)) {
     const platformSet = new Set(platforms);
@@ -156,6 +176,38 @@ for (const patternId of patternIds) {
     fail(`${patternPath}.validation.private must name the private geometry/visual evidence`);
   }
   summaries.push(`${patternId}:${geometryType}`);
+}
+
+if (!sizeContractsDecision) {
+  fail(`${decisionVerificationPath}.decisions must include size_contracts`);
+} else {
+  const publicEvidence = new Set(Array.isArray(sizeContractsDecision.publicEvidence) ? sizeContractsDecision.publicEvidence : []);
+  for (const evidence of [
+    registryPath,
+    "docs/ui/pattern-registry/README.md",
+    "docs/ui/rendered-geometry.manifest.json",
+    "scripts/ui_geometry_contract_check.mjs",
+    "scripts/ui_private_geometry_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidence)) {
+      fail(`${decisionVerificationPath}.decisions.size_contracts.publicEvidence must include ${evidence}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(sizeContractsDecision.blockingVerifiers) ? sizeContractsDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_geometry_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.size_contracts.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (hasPendingGeometry && sizeContractsDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.size_contracts.status must remain open while geometry clauses are pending private measurement`);
+  }
+  if (hasPendingGeometry && (!Array.isArray(sizeContractsDecision.remaining) || sizeContractsDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.size_contracts.remaining must describe pending private geometry measurement`);
+  }
 }
 
 if (errors.length > 0) {
