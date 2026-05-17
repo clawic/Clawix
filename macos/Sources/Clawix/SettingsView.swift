@@ -20,6 +20,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case browserUsage
     case usage
     case macUtilities
+    case macControl
     case databaseWorkbench
     case secrets
     case identity
@@ -48,6 +49,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .browserUsage:     return "Browser usage"
         case .usage:            return "Usage"
         case .macUtilities:     return "Mac Utilities"
+        case .macControl:       return "Mac Control"
         case .databaseWorkbench: return "Database Workbench"
         case .secrets:          return "Secrets"
         case .identity:         return "Identity"
@@ -76,6 +78,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .browserUsage:     return "cursor"
         case .usage:            return "chart.bar"
         case .macUtilities:     return "bolt"
+        case .macControl:       return "laptopcomputer"
         case .databaseWorkbench: return "cylinder.split.1x2"
         case .secrets:          return "lock.shield"
         case .identity:         return "fingerprint"
@@ -98,6 +101,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .skills:           return .skills
         case .screenTools:      return .screenTools
         case .macUtilities:     return .macUtilities
+        case .macControl:       return .macControl
         case .databaseWorkbench: return .databaseWorkbench
         case .identity:         return .identity
         case .claw:           return .claw
@@ -281,6 +285,7 @@ struct SettingsContent: View {
                     case .browserUsage:    BrowserUsagePage()
                     case .usage:           UsagePage()
                     case .macUtilities:    MacUtilitiesSettingsPage()
+                    case .macControl:      MacControlSettingsPage()
                     case .databaseWorkbench: DatabaseWorkbenchSettingsPage()
                     case .mcp:             MCPPage()
                     case .machines:        HostsPage()

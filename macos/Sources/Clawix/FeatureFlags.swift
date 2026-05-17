@@ -39,6 +39,7 @@ enum AppFeature: Equatable, CaseIterable {
     case telegram
     case screenTools
     case macUtilities
+    case macControl
     case databaseWorkbench
     case marketplace
     case calendar
