@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -61,6 +62,9 @@ function scanForLocalPaths(value, label) {
 const registryPath = "docs/ui/inspiration/references.registry.json";
 const registry = readJson(registryPath);
 requireFields(registry, registryPath, ["schemaVersion", "policy", "references"]);
+if (args.has("--simulate-missing-required-reference") && Array.isArray(registry?.references)) {
+  registry.references = registry.references.filter((reference) => reference?.id !== "playwright-snapshots");
+}
 
 const policy = String(registry?.policy || "").toLowerCase();
 for (const phrase of ["inspiration", "non-canonical", "explicitly approves"]) {
@@ -69,6 +73,7 @@ for (const phrase of ["inspiration", "non-canonical", "explicitly approves"]) {
 
 const references = requireArray(registry, registryPath, "references");
 const seenIds = new Set();
+const seenUrlsById = new Map();
 for (const [index, reference] of references.entries()) {
   const label = `${registryPath}.references[${index}]`;
   requireFields(reference, label, ["id", "url", "use", "canonical"]);
@@ -77,6 +82,7 @@ for (const [index, reference] of references.entries()) {
   }
   if (seenIds.has(reference.id)) fail(`${label}.id duplicates ${reference.id}`);
   seenIds.add(reference.id);
+  seenUrlsById.set(reference.id, reference.url);
   let url = null;
   try {
     url = new URL(reference.url);
@@ -87,6 +93,24 @@ for (const [index, reference] of references.entries()) {
   if (reference.canonical !== false) fail(`${label}.canonical must remain false`);
   if (String(reference.use || "").toLowerCase().includes("canonical")) {
     fail(`${label}.use must not describe the reference as canonical`);
+  }
+}
+
+const requiredReferences = [
+  ["storybook-visual-tests", "https://storybook.js.org/docs/8/writing-tests/visual-testing"],
+  ["playwright-snapshots", "https://playwright.dev/docs/test-snapshots"],
+  ["design-tokens-format", "https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/"],
+  ["style-dictionary", "https://styledictionary.com/info/tokens/"],
+  ["shadcn-registry-mcp", "https://ui.shadcn.com/docs/registry/mcp"],
+  ["panda-slot-recipes", "https://panda-css.com/docs/concepts/slot-recipes"],
+];
+for (const [id, url] of requiredReferences) {
+  if (!seenIds.has(id)) {
+    fail(`${registryPath}.references must include required inspiration reference ${id}`);
+    continue;
+  }
+  if (seenUrlsById.get(id) !== url) {
+    fail(`${registryPath}.references ${id} must use ${url}`);
   }
 }
 
