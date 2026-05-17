@@ -17,11 +17,11 @@ struct ChatView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var meshStore: MeshStore
     @EnvironmentObject private var flags: FeatureFlags
-    @EnvironmentObject private var publishingManager: PublishingManager
+    @EnvironmentObject private var publishingStore: PublishingWorkspaceStore
 
     private var publishingReady: Bool {
         guard flags.isVisible(.publishing) else { return false }
-        if case .ready = publishingManager.state { return true }
+        if case .ready = publishingStore.state { return true }
         return false
     }
     /// View-owned composer used only when `isSideChat == true`.

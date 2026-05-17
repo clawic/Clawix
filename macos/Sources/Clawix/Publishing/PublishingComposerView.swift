@@ -13,7 +13,7 @@ struct PublishingComposerView: View {
     let prefillScheduleAt: Date?
 
     @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var manager: PublishingManager
+    @EnvironmentObject private var store: PublishingWorkspaceStore
     @State private var draft: String = ""
     @State private var selectedAccountIds: Set<String> = []
     @State private var scheduleKind: ScheduleKind = .datetime
@@ -22,11 +22,11 @@ struct PublishingComposerView: View {
     @State private var errorMessage: String?
 
     private var authorizedAccounts: [ClawJSPublishingClient.ChannelAccount] {
-        manager.channels.filter { $0.authorized }
+        store.channels.filter { $0.authorized }
     }
 
     private var familiesById: [String: ClawJSPublishingClient.Family] {
-        Dictionary(uniqueKeysWithValues: manager.families.map { ($0.id, $0) })
+        Dictionary(uniqueKeysWithValues: store.families.map { ($0.id, $0) })
     }
 
     private var maxChars: Int? {
@@ -69,7 +69,7 @@ struct PublishingComposerView: View {
                 scheduleKind = .datetime
                 scheduleAt = prefillScheduleAt
             }
-            if manager.state == .idle { manager.bootstrap() }
+            if store.state == .idle { store.bootstrap() }
         }
     }
 
@@ -336,7 +336,7 @@ struct PublishingComposerView: View {
                 ]
             )
             do {
-                _ = try await manager.createPost(spec: spec)
+                _ = try await store.createPost(spec: spec)
                 appState.navigate(to: .publishingHome)
             } catch {
                 errorMessage = error.localizedDescription

@@ -1444,10 +1444,10 @@ if (marketplaceManagerSource.includes("catch {}")) {
   fail("MarketplaceManager.swift must not swallow marketplace mutation failures");
 }
 
-const publishingManagerSource = read("macos/Sources/Clawix/Publishing/PublishingManager.swift");
+const publishingStoreSource = read("macos/Sources/Clawix/Publishing/PublishingWorkspaceStore.swift");
 for (const pattern of ["(try? await families)", "(try? await channels)"]) {
-  if (publishingManagerSource.includes(pattern)) {
-    fail(`PublishingManager.swift must not silently turn bootstrap list failures into empty v1 surfaces: ${JSON.stringify(pattern)}`);
+  if (publishingStoreSource.includes(pattern)) {
+    fail(`PublishingWorkspaceStore.swift must not silently turn bootstrap list failures into empty v1 surfaces: ${JSON.stringify(pattern)}`);
   }
 }
 

@@ -9,7 +9,7 @@ struct PublishingConnectSheet: View {
     let family: ClawJSPublishingClient.Family
     let onClose: () -> Void
 
-    @EnvironmentObject private var manager: PublishingManager
+    @EnvironmentObject private var store: PublishingWorkspaceStore
     @State private var fields: [String: String] = [:]
     @State private var submitting = false
     @State private var errorMessage: String?
@@ -133,7 +133,7 @@ struct PublishingConnectSheet: View {
         Task { @MainActor in
             defer { submitting = false }
             do {
-                _ = try await manager.connect(familyId: familyId, payload: payload)
+                _ = try await store.connect(familyId: familyId, payload: payload)
                 onClose()
             } catch {
                 errorMessage = error.localizedDescription

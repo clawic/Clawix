@@ -8,7 +8,7 @@ struct PublishingHomeView: View {
     enum HomeTab: String, CaseIterable { case calendar, channels }
 
     @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var manager: PublishingManager
+    @EnvironmentObject private var store: PublishingWorkspaceStore
     @AppStorage(ClawixPersistentSurfaceKeys.publishingHomeTab) private var tabRaw: String = HomeTab.calendar.rawValue
 
     private var tab: Binding<HomeTab> {
@@ -33,7 +33,7 @@ struct PublishingHomeView: View {
         }
         .background(Palette.background)
         .onAppear {
-            if manager.state == .idle { manager.bootstrap() }
+            if store.state == .idle { store.bootstrap() }
         }
     }
 

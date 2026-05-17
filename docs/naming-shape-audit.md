@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 6 in the current local tree. Broad source symbols account
-  for 5 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 5 in the current local tree. Broad source symbols account
+  for 4 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -130,10 +130,13 @@ for staged rename/split work and must not be hidden by compressing code.
   `TelegramBotsStore` instead of generic manager terminology.
 - Memory tab vocabulary: Memory notes, captures, search, and doctor state now
   use `MemoryStore` instead of generic manager terminology.
+- Publishing workspace vocabulary: Publishing workspace, family, channel, and
+  post state now uses `PublishingWorkspaceStore` instead of generic manager
+  terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 6
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 5
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

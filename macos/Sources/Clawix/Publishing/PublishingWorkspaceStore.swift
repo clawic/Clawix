@@ -5,10 +5,10 @@ import Combine
 /// Top-level `@MainActor` observable for the Publishing UI. Wraps the typed
 /// HTTP client and watches `ClawJSServiceManager` for liveness transitions
 /// so views can react when the helper crashes / restarts. Mirrors the
-/// philosophy of `DriveManager` / `SecretsManager`: one state machine, no
-/// hidden globals, all mutations flow through this object.
+/// app's surface-store pattern: one state machine, no hidden globals, all
+/// mutations flow through this object.
 @MainActor
-final class PublishingManager: ObservableObject {
+final class PublishingWorkspaceStore: ObservableObject {
 
     enum State: Equatable {
         case idle
@@ -57,7 +57,7 @@ final class PublishingManager: ObservableObject {
             defer { self.bootstrapTask = nil }
             do {
                 guard let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .publishing) else {
-                    throw NSError(domain: "PublishingManager", code: 1, userInfo: [
+                    throw NSError(domain: "PublishingWorkspaceStore", code: 1, userInfo: [
                         NSLocalizedDescriptionKey: "Publishing admin token is available only to the host process that launched the service."
                     ])
                 }

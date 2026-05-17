@@ -815,7 +815,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.iot.tab", "IoT tab", ClawixPersistentSurfaceKeys.iotTab, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.publishing.calendarMode", "Publishing calendar mode", ClawixPersistentSurfaceKeys.publishingCalendarMode, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.publishing.homeTab", "Publishing home tab", ClawixPersistentSurfaceKeys.publishingHomeTab, PersistentSurfaceKind.appStorageKey),
-            ("clawix.prefs.publishing.workspace", "Publishing workspace", PublishingManager.workspaceKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.publishing.workspace", "Publishing workspace", PublishingWorkspaceStore.workspaceKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.git.commitInstructions", "Git commit instructions", ClawixPersistentSurfaceKeys.gitCommitInstructions, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.featureFlags.developerSurfaces", "Developer-only surface flag", ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.enabledVerticals", "Life enabled verticals", ClawixPersistentSurfaceKeys.lifeEnabledVerticals, PersistentSurfaceKind.preferenceKey),

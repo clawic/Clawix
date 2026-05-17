@@ -4,13 +4,13 @@ import SwiftUI
 /// and a stack of chip-style entries for the posts scheduled that day.
 /// Clicking an empty cell opens the composer pre-filled with that day at
 /// 09:00; clicking a chip opens a detail popover once post detail UI is
-/// wired. The view polls `PublishingManager.refreshCalendar` every 30s while
+/// wired. The view polls `PublishingWorkspaceStore.refreshCalendar` every 30s while
 /// visible; realtime WebSocket can replace it later without UI changes.
 struct PublishingCalendarView: View {
     enum CalendarMode: String, CaseIterable { case month, week }
 
     @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var manager: PublishingManager
+    @EnvironmentObject private var store: PublishingWorkspaceStore
     @AppStorage(ClawixPersistentSurfaceKeys.publishingCalendarMode) private var modeRaw: String = CalendarMode.month.rawValue
     @State private var anchorDate: Date = Date()
     @State private var pollerTask: Task<Void, Never>?
@@ -49,7 +49,7 @@ struct PublishingCalendarView: View {
         VStack(spacing: 0) {
             controls
             Divider().background(Color.white.opacity(0.06))
-            switch manager.state {
+            switch store.state {
             case .ready:
                 grid
             case .bootstrapping, .idle:
@@ -239,7 +239,7 @@ struct PublishingCalendarView: View {
     }
 
     private func posts(on date: Date) -> [ClawJSPublishingClient.Post] {
-        manager.posts.filter { post in
+        store.posts.filter { post in
             guard let scheduled = post.scheduledDate ?? post.publishedDate else { return false }
             return calendar.isDate(scheduled, inSameDayAs: date)
         }
@@ -257,7 +257,7 @@ struct PublishingCalendarView: View {
 
     private func reload() async {
         let range = visibleRange
-        await manager.refreshCalendar(from: range.start, to: range.end)
+        await store.refreshCalendar(from: range.start, to: range.end)
     }
 
     private func startPolling() {
@@ -287,7 +287,7 @@ struct PublishingCalendarView: View {
                 .font(BodyFont.system(size: 12.5, weight: .medium))
                 .foregroundColor(Palette.textSecondary)
                 .multilineTextAlignment(.center)
-            if case .unavailable = manager.state {
+            if case .unavailable = store.state {
                 Button("Retry") {
                     Task { @MainActor in
                         await ClawJSServiceManager.shared.restart(.publishing)

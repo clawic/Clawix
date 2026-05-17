@@ -8,7 +8,7 @@ import SwiftUI
 /// the menu on that badge offers "Probe" and "Disconnect".
 struct PublishingChannelsView: View {
     @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var manager: PublishingManager
+    @EnvironmentObject private var store: PublishingWorkspaceStore
     @State private var connectFamily: ClawJSPublishingClient.Family?
 
     private static let connectableFamilies: Set<String> = ["bluesky", "mastodon", "devnull"]
@@ -18,7 +18,7 @@ struct PublishingChannelsView: View {
             "social", "chat", "long_form", "forum", "forum_federated",
             "feed", "email", "video", "audio", "event", "dev", "doc", "generic",
         ]
-        let byGroup = Dictionary(grouping: manager.families, by: { $0.group })
+        let byGroup = Dictionary(grouping: store.families, by: { $0.group })
         return order.compactMap { key in
             guard let entries = byGroup[key], !entries.isEmpty else { return nil }
             return (key, entries.sorted { $0.name < $1.name })
@@ -27,7 +27,7 @@ struct PublishingChannelsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            switch manager.state {
+            switch store.state {
             case .ready:
                 content
             case .bootstrapping, .idle:
@@ -77,7 +77,7 @@ struct PublishingChannelsView: View {
 
     @ViewBuilder
     private func row(for family: ClawJSPublishingClient.Family) -> some View {
-        let connectedAccount = manager.channels.first { $0.familyId == family.id }
+        let connectedAccount = store.channels.first { $0.familyId == family.id }
         let canConnect = Self.connectableFamilies.contains(family.id)
         HStack(alignment: .center, spacing: 12) {
             iconBubble(for: family.group)
@@ -155,10 +155,10 @@ struct PublishingChannelsView: View {
     private func connectedBadge(account: ClawJSPublishingClient.ChannelAccount) -> some View {
         Menu {
             Button("Probe health") {
-                Task { await manager.probe(account: account) }
+                Task { await store.probe(account: account) }
             }
             Button("Disconnect", role: .destructive) {
-                Task { await manager.disconnect(account: account) }
+                Task { await store.disconnect(account: account) }
             }
         } label: {
             HStack(spacing: 6) {
@@ -217,7 +217,7 @@ struct PublishingChannelsView: View {
                 .font(BodyFont.system(size: 12.5, weight: .medium))
                 .foregroundColor(Palette.textSecondary)
                 .multilineTextAlignment(.center)
-            if case .unavailable = manager.state {
+            if case .unavailable = store.state {
                 Button("Retry") {
                     Task { @MainActor in
                         await ClawJSServiceManager.shared.restart(.publishing)

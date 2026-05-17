@@ -86,7 +86,7 @@ struct ClawixApp: App {
     @StateObject private var iotManager: IoTManager
     @StateObject private var remoteToolsRegistry: RemoteToolsRegistry
     @StateObject private var agentStore = AgentStore.shared
-    @StateObject private var publishingManager = PublishingManager()
+    @StateObject private var publishingStore = PublishingWorkspaceStore()
     @Environment(\.openWindow) private var openWindow
 
     /// True when this binary is running as one of the sidebar-tool mini-app
@@ -171,7 +171,7 @@ struct ClawixApp: App {
                 .environmentObject(iotManager)
                 .environmentObject(remoteToolsRegistry)
                 .environmentObject(agentStore)
-                .environmentObject(publishingManager)
+                .environmentObject(publishingStore)
                 .environment(\.locale, appState.preferredLanguage.locale)
                 // Re-mount the view tree on language change. Some
                 // SwiftUI Text nodes cache their resolved string until
