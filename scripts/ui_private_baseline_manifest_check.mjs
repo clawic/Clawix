@@ -227,6 +227,15 @@ if (manifest) {
     visualBaselinesDecision.status = "verified-complete";
     visualBaselinesDecision.remaining = [];
   }
+  if (args.has("--simulate-approved-private-baselines-stale-decision") && manifest && Array.isArray(manifest.flows) && visualBaselinesDecision) {
+    manifest.status = "approved-private-baselines";
+    manifest.flows = manifest.flows.map((flow) => ({
+      ...flow,
+      baselineStatus: "approved",
+    }));
+    visualBaselinesDecision.status = "open";
+    visualBaselinesDecision.remaining = ["Simulated stale decision after approved private baselines."];
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -383,6 +392,12 @@ if (!visualBaselinesDecision) {
   }
   if (manifest?.status !== "approved-private-baselines" && (!Array.isArray(visualBaselinesDecision.remaining) || visualBaselinesDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.visual_baselines_location.remaining must describe pending private baseline evidence`);
+  }
+  if (manifest?.status === "approved-private-baselines" && visualBaselinesDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.status must be verified-complete after private baselines are captured and approved`);
+  }
+  if (manifest?.status === "approved-private-baselines" && Array.isArray(visualBaselinesDecision.remaining) && visualBaselinesDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.remaining must be empty after private baselines are captured and approved`);
   }
 }
 

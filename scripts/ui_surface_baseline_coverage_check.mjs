@@ -169,6 +169,20 @@ if (args.has("--simulate-initial-scope-premature-complete") && initialScopeDecis
   initialScopeDecision.status = "verified-complete";
   initialScopeDecision.remaining = [];
 }
+if (args.has("--simulate-approved-surface-baselines-stale-decision") && manifest && Array.isArray(manifest.coverage) && initialScopeDecision) {
+  manifest.status = "approved-private-capture";
+  const simulatedHash = "a".repeat(64);
+  manifest.coverage = manifest.coverage.map((entry) => ({
+    ...entry,
+    baselineStatus: "approved",
+    screenshotHash: simulatedHash,
+    geometryHash: simulatedHash,
+    copySnapshotHash: simulatedHash,
+    baselineArtifactHash: simulatedHash,
+  }));
+  initialScopeDecision.status = "open";
+  initialScopeDecision.remaining = ["Simulated stale decision after approved private surface evidence."];
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -341,6 +355,12 @@ if (!initialScopeDecision) {
   }
   if (manifest?.status !== "approved-private-capture" && (!Array.isArray(initialScopeDecision.remaining) || initialScopeDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.initial_scope.remaining must describe pending private surface evidence`);
+  }
+  if (manifest?.status === "approved-private-capture" && initialScopeDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.initial_scope.status must be verified-complete after private surface baseline, geometry, and copy artifacts are approved`);
+  }
+  if (manifest?.status === "approved-private-capture" && Array.isArray(initialScopeDecision.remaining) && initialScopeDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.initial_scope.remaining must be empty after private surface baseline, geometry, and copy artifacts are approved`);
   }
 }
 
