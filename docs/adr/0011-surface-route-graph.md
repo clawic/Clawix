@@ -30,6 +30,11 @@ Required host legs:
 
 Relay remains a ClawJS/Claw critical surface. Clawix can show or configure
 remote access, but it does not become the canonical Relay API owner.
+Sibling ClawJS ADR 0022 expands that remote surface into Coordinator,
+Gateway, Connector, Sync, Iroh adapter, node trust, remote parity, secret
+reference leases, and sync resource manifests. Clawix consumes those
+framework-owned contracts for UI, pairing, remote mesh status, and companion
+flows; it does not define a separate remote contract.
 
 ## Enforcement
 

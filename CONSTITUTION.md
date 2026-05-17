@@ -125,6 +125,9 @@ contract, not the preferred action API. Clawix is the reference human app and
 embedded host, not the privileged only interface. If a capability exists only
 as UI, only as SDK/API, only as CLI, or only as MCP, it is incomplete until an
 explicit ADR classifies the gap as temporary, blocked, or not applicable.
+Remote access is complete only when the same local capability is classified
+as `remote-safe`, `local-only`, `blocked`, or `pending`; `remote-safe`
+requires route, owner, policy, and tests.
 
 **I.7 AI capabilities are first-class without becoming agents.** Not every
 useful act of intelligence is an autonomous agent. Chat, media generation,
@@ -781,6 +784,15 @@ peer-to-peer reachability (NAT traversal, opportunistic relays, optional
 self-hosted rendezvous) without inserting a centrally-readable third party.
 When a relay is needed, the relay never reads plaintext, never decides
 routing, and never persists what passes through it.
+
+Remote framework access is organized as Coordinator, Gateway, Connector, and
+Sync. Coordinator handles node identity, pairing, discovery, rendezvous, and
+signaling. Gateway projects registered local SDK/service/CLI contracts under
+policy instead of creating a parallel remote business API. Connector links a
+host to runtime, storage, services, policies, and audit. Sync governs resource
+authority, changelogs, cursors, conflict elevation, drivers, encrypted client
+cache, and audit. Iroh is the preferred v1 transport adapter, not the
+permanent contract.
 
 **X.5 Meshes can collaborate.** Two users' meshes can share a resource (a
 document, an agent, a calendar, a memory) under explicit, revocable

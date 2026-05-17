@@ -23,7 +23,7 @@ Every accepted ADR that adds or changes an important capability must answer:
 - **Persistence**: which filesystem, SQLite, schema, or registry contract makes
   the user's accumulated value portable?
 - **Gaps**: classify missing surfaces as `required`, `optional`, `local-only`,
-  `remote-safe`, `blocked`, or `not applicable`.
+  `remote-safe`, `blocked`, `pending`, or `not applicable`.
 - **Validation**: name at least one human-path validation and one programmatic
   validation, or record `PARTIAL` / `EXTERNAL PENDING` with the missing physical
   dependency.

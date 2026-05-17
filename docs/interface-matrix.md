@@ -48,7 +48,7 @@ experimental switch. Every current surface must be one of:
 | Screen tools | Host | Capture tools | `HostActionPolicy` approval/audit API | Host policy plus UI prefs | Signed-host permission validation + policy tests |
 | Mac Utilities | Host | Native utility controls | `HostActionPolicy` approval/audit API | Host policy + host action audit | Approval/audit tests |
 | Git workflow | Framework + Host | Git workflow affordances | Framework git/resource APIs plus host policy | Framework resource plus host policy | Policy fixtures |
-| Remote Mesh | Framework + Host | Mesh targets and status | Framework mesh APIs and bridge fixtures | Framework runtime plus host state | Mesh API and bridge parity tests |
+| Remote Mesh | Framework + Host | Mesh targets and status | Framework Coordinator/Gateway/Connector/Sync contracts from sibling ClawJS ADR 0022, plus bridge fixtures | Framework runtime plus host state | Mesh API, remote conformance, sync manifest, and bridge parity tests |
 | OpenCode/runtime adapters | Framework | Runtime adapter selector | Framework runtime adapter registry | Framework runtime | Adapter registry tests |
 | Local Models | Host + Framework | Model availability/selection | Framework capability records | Host model cache; framework capability metadata | No synced blob guard |
 | Telegram/Connections QA | Framework + Host | Integration settings and QA state | ClawJS Integration QA Lab and provider matrices | Framework integration records; host secret refs | Hermetic QA tests; live checks `EXTERNAL PENDING` |
