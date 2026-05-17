@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -58,6 +59,26 @@ function scanForLocalPaths(value, label) {
 
 const manifestPath = "docs/ui/rendered-geometry.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-wrong-private-alias")) {
+    manifest.privateGeometryAlias = "private-codex-ui-baselines";
+  }
+  if (args.has("--simulate-wrong-evidence-filename")) {
+    manifest.evidenceFilename = "geometry-evidence.txt";
+  }
+  if (args.has("--simulate-verifier-without-approval")) {
+    manifest.verificationCommand = "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_geometry_verify.mjs";
+  }
+  if (args.has("--simulate-missing-pattern-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "screenshotComparisonHash");
+  }
+  if (args.has("--simulate-missing-surface-evidence-field") && Array.isArray(manifest.requiredSurfaceEvidenceFields)) {
+    manifest.requiredSurfaceEvidenceFields = manifest.requiredSurfaceEvidenceFields.filter((field) => field !== "coverageId");
+  }
+  if (args.has("--simulate-local-path-reference")) {
+    manifest.patternSource = "/Users/example/patterns.registry.json";
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
