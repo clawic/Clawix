@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -87,6 +88,15 @@ function tokenRegExp(tokens) {
 
 const manifestPath = "docs/ui/state-coverage.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest && args.has("--simulate-missing-required-state")) {
+  manifest.requiredStates = manifest.requiredStates.filter((state) => state !== "error");
+}
+if (manifest && args.has("--simulate-unknown-source-token-group")) {
+  manifest.sourceTokenGroups = {
+    ...manifest.sourceTokenGroups,
+    decorative: ["decorative-only"],
+  };
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -103,6 +113,12 @@ const configPath = "docs/ui/interface-governance.config.json";
 const config = readJson(configPath);
 const requiredStates = requireArray(config, configPath, "requiredInteractiveStates");
 const manifestStates = new Set(requireArray(manifest, manifestPath, "requiredStates"));
+for (const state of manifestStates) {
+  if (!requiredStates.includes(state)) fail(`${manifestPath}.requiredStates contains unknown state ${state}`);
+}
+for (const state of Object.keys(manifest?.sourceTokenGroups || {})) {
+  if (!requiredStates.includes(state)) fail(`${manifestPath}.sourceTokenGroups contains unknown state ${state}`);
+}
 for (const state of requiredStates) {
   if (!manifestStates.has(state)) fail(`${manifestPath}.requiredStates must include ${state}`);
   const tokens = manifest?.sourceTokenGroups?.[state];
