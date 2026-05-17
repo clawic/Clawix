@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DraggableTimedChip: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     let event: CalendarEvent
     let rowHeight: CGFloat
 
@@ -12,7 +12,7 @@ struct DraggableTimedChip: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             EventChip(event: event,
-                       color: manager.color(forCalendarID: event.calendarID),
+                       color: store.color(forCalendarID: event.calendarID),
                        style: .timedBar)
                 .offset(y: dragOffset)
                 .frame(maxHeight: .infinity)
@@ -20,7 +20,7 @@ struct DraggableTimedChip: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            manager.selectedEventID = event.id
+            store.selectedEventID = event.id
         }
         .simultaneousGesture(moveGesture)
     }
@@ -35,7 +35,7 @@ struct DraggableTimedChip: View {
             .onEnded { value in
                 let translation = value.translation.height
                 if abs(translation) < 6 {
-                    manager.selectedEventID = event.id
+                    store.selectedEventID = event.id
                     dragOffset = 0
                     return
                 }
@@ -43,7 +43,7 @@ struct DraggableTimedChip: View {
                 let minutes = Int(snapped / rowHeight * 60)
                 dragOffset = 0
                 guard minutes != 0 else { return }
-                Task { await manager.moveEvent(event, by: minutes) }
+                Task { await store.moveEvent(event, by: minutes) }
             }
     }
 
@@ -64,7 +64,7 @@ struct DraggableTimedChip: View {
                         resizeDelta = 0
                         isResizing = false
                         guard minutes != 0 else { return }
-                        Task { await manager.resizeEvent(event, deltaEndMinutes: minutes) }
+                        Task { await store.resizeEvent(event, deltaEndMinutes: minutes) }
                     }
             )
             .onHover { hovering in

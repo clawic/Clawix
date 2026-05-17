@@ -2,18 +2,18 @@ import SwiftUI
 
 struct CalendarScreen: View {
 
-    @StateObject private var manager = CalendarManager()
+    @StateObject private var store = CalendarStore()
 
     var body: some View {
         VStack(spacing: 0) {
-            CalendarToolbar(manager: manager)
+            CalendarToolbar(store: store)
             mainLayout
         }
         .background(CalendarTokens.Surface.window)
-        .task { await manager.bootstrap() }
+        .task { await store.bootstrap() }
         .sheet(isPresented: showSheetBinding) {
-            if let draft = manager.editingDraft {
-                EventEditSheet(manager: manager,
+            if let draft = store.editingDraft {
+                EventEditSheet(store: store,
                                 draft: draft,
                                 mode: draft.id == nil ? .create : .edit)
             }
@@ -22,22 +22,22 @@ struct CalendarScreen: View {
 
     private var mainLayout: some View {
         HStack(spacing: 0) {
-            CalendarSubSidebar(manager: manager)
+            CalendarSubSidebar(store: store)
             ZStack(alignment: .topTrailing) {
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 inspectorOverlay
             }
         }
-        .animation(CalendarTokens.Motion.inspectorShow, value: manager.selectedEventID)
+        .animation(CalendarTokens.Motion.inspectorShow, value: store.selectedEventID)
     }
 
     @ViewBuilder
     private var inspectorOverlay: some View {
-        if manager.viewMode != .year,
-           let selectedID = manager.selectedEventID,
-           let event = manager.event(byID: selectedID) {
-            EventInspectorPanel(manager: manager, event: event)
+        if store.viewMode != .year,
+           let selectedID = store.selectedEventID,
+           let event = store.event(byID: selectedID) {
+            EventInspectorPanel(store: store, event: event)
                 .frame(maxHeight: .infinity)
                 .shadow(color: .black.opacity(0.40), radius: 18, x: -6, y: 0)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -46,16 +46,16 @@ struct CalendarScreen: View {
 
     private var showSheetBinding: Binding<Bool> {
         Binding(
-            get: { manager.editingDraft != nil },
+            get: { store.editingDraft != nil },
             set: { newValue in
-                if !newValue { manager.cancelEdit() }
+                if !newValue { store.cancelEdit() }
             }
         )
     }
 
     @ViewBuilder
     private var content: some View {
-        switch manager.access {
+        switch store.access {
         case .unknown, .requesting:
             centered("Loading calendar…")
         case .denied(let reason):
@@ -65,17 +65,17 @@ struct CalendarScreen: View {
         case .granted:
             grantedContent
                 .transition(.opacity)
-                .id(manager.viewMode)
+                .id(store.viewMode)
         }
     }
 
     @ViewBuilder
     private var grantedContent: some View {
-        switch manager.viewMode {
-        case .day:   DayView(manager: manager)
-        case .week:  WeekView(manager: manager)
-        case .month: MonthView(manager: manager)
-        case .year:  YearView(manager: manager)
+        switch store.viewMode {
+        case .day:   DayView(store: store)
+        case .week:  WeekView(store: store)
+        case .month: MonthView(store: store)
+        case .year:  YearView(store: store)
         }
     }
 

@@ -28,7 +28,7 @@ struct CalendarEventDraft: Equatable {
 }
 
 @MainActor
-final class CalendarManager: ObservableObject {
+final class CalendarStore: ObservableObject {
 
     enum AccessState: Equatable {
         case unknown
@@ -55,9 +55,9 @@ final class CalendarManager: ObservableObject {
     private let displayLocale: Locale
 
     init(backend: CalendarBackend? = nil, calendar: Foundation.Calendar = .current) {
-        self.backend = backend ?? CalendarManager.makeDefaultBackend()
+        self.backend = backend ?? CalendarStore.makeDefaultBackend()
         self.calendar = calendar
-        self.displayLocale = CalendarManager.makeDisplayLocale()
+        self.displayLocale = CalendarStore.makeDisplayLocale()
     }
 
     private static func makeDefaultBackend() -> CalendarBackend {

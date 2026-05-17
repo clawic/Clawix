@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct WeekView: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     @State private var now: Date = Date()
     @State private var dragStart: CGPoint?
     @State private var dragEnd: CGPoint?
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -20,7 +20,7 @@ struct WeekView: View {
     }
 
     private var days: [Date] {
-        let start = manager.startOfWeek(for: manager.selectedDate)
+        let start = store.startOfWeek(for: store.selectedDate)
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
     }
 
@@ -48,8 +48,8 @@ struct WeekView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .onTapGesture {
-                    manager.selectedDate = date
-                    manager.setViewMode(.day)
+                    store.selectedDate = date
+                    store.setViewMode(.day)
                 }
             }
         }
@@ -59,7 +59,7 @@ struct WeekView: View {
 
     @ViewBuilder
     private var allDayBand: some View {
-        let allDayByDay: [(Date, [CalendarEvent])] = days.map { ($0, manager.allDayEventsForDay($0)) }
+        let allDayByDay: [(Date, [CalendarEvent])] = days.map { ($0, store.allDayEventsForDay($0)) }
         let hasAny = allDayByDay.contains { !$0.1.isEmpty }
         if hasAny {
             HStack(spacing: 0) {
@@ -72,9 +72,9 @@ struct WeekView: View {
                     ForEach(allDayByDay, id: \.0) { (_, list) in
                         VStack(spacing: 2) {
                             ForEach(list) { ev in
-                                Button { manager.selectedEventID = ev.id } label: {
+                                Button { store.selectedEventID = ev.id } label: {
                                     EventChip(event: ev,
-                                               color: manager.color(forCalendarID: ev.calendarID),
+                                               color: store.color(forCalendarID: ev.calendarID),
                                                style: .compact)
                                 }
                                 .buttonStyle(.plain)
@@ -94,7 +94,7 @@ struct WeekView: View {
 
     private func weekdayShort(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.dateFormat = "EEE"
         return f.string(from: d).uppercased()
     }
@@ -157,11 +157,11 @@ struct WeekView: View {
             let dayWidth = (geo.size.width - CalendarTokens.Geometry.hourGutterWidth) / CGFloat(days.count)
             ZStack(alignment: .topLeading) {
                 ForEach(Array(days.enumerated()), id: \.offset) { (idx, date) in
-                    ForEach(manager.eventsForDay(date)) { event in
+                    ForEach(store.eventsForDay(date)) { event in
                         let offset = eventOffset(event: event, day: date)
                         let height = max(20, eventHeight(event))
                         DraggableTimedChip(
-                            manager: manager,
+                            store: store,
                             event: event,
                             rowHeight: CalendarTokens.Geometry.hourRowHeight
                         )
@@ -235,7 +235,7 @@ struct WeekView: View {
                 if columnIndex < days.count,
                    let startDate = dateAt(day: days[columnIndex], minutes: startMinutes),
                    let endDate = dateAt(day: days[columnIndex], minutes: endMinutes) {
-                    manager.startCreate(at: startDate, duration: endDate.timeIntervalSince(startDate))
+                    store.startCreate(at: startDate, duration: endDate.timeIntervalSince(startDate))
                 }
                 dragStart = nil
                 dragEnd = nil
@@ -276,7 +276,7 @@ struct WeekView: View {
     }
 
     private func hourLabel(_ hour: Int) -> String {
-        let usesAMPM = manager.localeForDisplay.identifier.hasPrefix("en")
+        let usesAMPM = store.localeForDisplay.identifier.hasPrefix("en")
         if usesAMPM {
             let h = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
             let suffix = hour < 12 ? "am" : "pm"

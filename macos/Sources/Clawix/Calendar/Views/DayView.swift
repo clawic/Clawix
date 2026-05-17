@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct DayView: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     @State private var now: Date = Date()
     @State private var dragStartY: CGFloat?
     @State private var dragEndY: CGFloat?
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -21,10 +21,10 @@ struct DayView: View {
 
     private var titleStrip: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(longDate(manager.selectedDate))
+            Text(longDate(store.selectedDate))
                 .font(.system(size: CalendarTokens.TypeSize.title, weight: .semibold))
                 .foregroundColor(CalendarTokens.Ink.primary)
-            Text(weekdayLong(manager.selectedDate))
+            Text(weekdayLong(store.selectedDate))
                 .font(.system(size: CalendarTokens.TypeSize.subtitle))
                 .foregroundColor(CalendarTokens.Ink.secondary)
         }
@@ -36,7 +36,7 @@ struct DayView: View {
 
     @ViewBuilder
     private var allDayBand: some View {
-        let allDay = manager.allDayEventsForDay(manager.selectedDate)
+        let allDay = store.allDayEventsForDay(store.selectedDate)
         if !allDay.isEmpty {
             HStack(spacing: 6) {
                 Text("All day")
@@ -46,9 +46,9 @@ struct DayView: View {
                     .padding(.trailing, 6)
                 HStack(spacing: 4) {
                     ForEach(allDay) { ev in
-                        Button { manager.selectedEventID = ev.id } label: {
+                        Button { store.selectedEventID = ev.id } label: {
                             EventChip(event: ev,
-                                       color: manager.color(forCalendarID: ev.calendarID),
+                                       color: store.color(forCalendarID: ev.calendarID),
                                        style: .compact)
                         }
                         .buttonStyle(.plain)
@@ -108,11 +108,11 @@ struct DayView: View {
         GeometryReader { geo in
             let contentWidth = geo.size.width - CalendarTokens.Geometry.hourGutterWidth - 16
             ZStack(alignment: .topLeading) {
-                ForEach(manager.eventsForDay(manager.selectedDate)) { event in
+                ForEach(store.eventsForDay(store.selectedDate)) { event in
                     let offset = eventOffset(event: event)
                     let height = max(24, eventHeight(event))
                     DraggableTimedChip(
-                        manager: manager,
+                        store: store,
                         event: event,
                         rowHeight: CalendarTokens.Geometry.hourRowHeight
                     )
@@ -141,7 +141,7 @@ struct DayView: View {
 
     private var nowLine: some View {
         GeometryReader { geo in
-            if calendar.isDate(manager.selectedDate, inSameDayAs: now) {
+            if calendar.isDate(store.selectedDate, inSameDayAs: now) {
                 let minutes = nowMinutesSinceMidnight()
                 let offsetY = CGFloat(minutes) / 60.0 * CalendarTokens.Geometry.hourRowHeight
                 ZStack(alignment: .leading) {
@@ -173,7 +173,7 @@ struct DayView: View {
                 let endMinutes = max(startMinutes + 15, Int(bottom / CalendarTokens.Geometry.hourRowHeight * 60))
                 if let startDate = dateAt(minutes: startMinutes),
                    let endDate = dateAt(minutes: endMinutes) {
-                    manager.startCreate(at: startDate, duration: endDate.timeIntervalSince(startDate))
+                    store.startCreate(at: startDate, duration: endDate.timeIntervalSince(startDate))
                 }
                 dragStartY = nil
                 dragEndY = nil
@@ -186,12 +186,12 @@ struct DayView: View {
     }
 
     private func dateAt(minutes: Int) -> Date? {
-        let dayStart = calendar.startOfDay(for: manager.selectedDate)
+        let dayStart = calendar.startOfDay(for: store.selectedDate)
         return calendar.date(byAdding: .minute, value: max(0, min(24 * 60 - 1, minutes)), to: dayStart)
     }
 
     private func eventOffset(event: CalendarEvent) -> CGFloat {
-        let dayStart = calendar.startOfDay(for: manager.selectedDate)
+        let dayStart = calendar.startOfDay(for: store.selectedDate)
         let effectiveStart = max(event.startDate, dayStart)
         let minutes = effectiveStart.timeIntervalSince(dayStart) / 60.0
         return CGFloat(minutes) / 60.0 * CalendarTokens.Geometry.hourRowHeight
@@ -209,7 +209,7 @@ struct DayView: View {
 
     private func longDate(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.dateStyle = .long
         f.timeStyle = .none
         return f.string(from: d)
@@ -217,13 +217,13 @@ struct DayView: View {
 
     private func weekdayLong(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.dateFormat = "EEEE"
         return f.string(from: d).capitalized
     }
 
     private func hourLabel(_ hour: Int) -> String {
-        let usesAMPM = manager.localeForDisplay.identifier.hasPrefix("en")
+        let usesAMPM = store.localeForDisplay.identifier.hasPrefix("en")
         if usesAMPM {
             let h = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
             let suffix = hour < 12 ? "am" : "pm"

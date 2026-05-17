@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct CalendarSubSidebar: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
 
     var body: some View {
         VStack(spacing: 0) {
             sourcesList
             Spacer(minLength: 0)
             Rectangle().fill(CalendarTokens.Divider.hairline).frame(height: 1)
-            MiniMonthView(manager: manager)
+            MiniMonthView(store: store)
         }
         .frame(width: CalendarTokens.Geometry.subSidebarWidth)
         .background(CalendarTokens.Surface.subSidebar)
@@ -43,9 +43,9 @@ struct CalendarSubSidebar: View {
     }
 
     private func row(for source: CalendarSource) -> some View {
-        let isVisible = manager.isVisible(source)
+        let isVisible = store.isVisible(source)
         return Button {
-            manager.toggleSourceVisibility(source)
+            store.toggleSourceVisibility(source)
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -75,7 +75,7 @@ struct CalendarSubSidebar: View {
     }
 
     private func groupedSources() -> [CalendarSourceGroup] {
-        let grouped = Dictionary(grouping: manager.sources, by: { $0.sourceID })
+        let grouped = Dictionary(grouping: store.sources, by: { $0.sourceID })
         return grouped
             .map { key, value in
                 CalendarSourceGroup(id: key, title: key.capitalized, calendars: value)

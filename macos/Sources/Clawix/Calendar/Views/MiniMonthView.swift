@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct MiniMonthView: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -25,7 +25,7 @@ struct MiniMonthView: View {
 
     private var header: some View {
         HStack {
-            Button { withAnimation(CalendarTokens.Motion.miniMonthStep) { manager.stepMiniMonth(forward: false) } } label: {
+            Button { withAnimation(CalendarTokens.Motion.miniMonthStep) { store.stepMiniMonth(forward: false) } } label: {
                 LucideIcon(.chevronLeft, size: 10)
                     .foregroundColor(CalendarTokens.Ink.secondary)
                     .frame(width: 16, height: 16)
@@ -36,7 +36,7 @@ struct MiniMonthView: View {
                 .font(.system(size: CalendarTokens.TypeSize.miniMonthHeader, weight: .medium))
                 .foregroundColor(CalendarTokens.Ink.primary)
             Spacer()
-            Button { withAnimation(CalendarTokens.Motion.miniMonthStep) { manager.stepMiniMonth(forward: true) } } label: {
+            Button { withAnimation(CalendarTokens.Motion.miniMonthStep) { store.stepMiniMonth(forward: true) } } label: {
                 LucideIcon(.chevronRight, size: 10)
                     .foregroundColor(CalendarTokens.Ink.secondary)
                     .frame(width: 16, height: 16)
@@ -67,13 +67,13 @@ struct MiniMonthView: View {
         let f = DateFormatter()
         f.locale = Locale.current
         f.dateFormat = "MMMM yyyy"
-        return f.string(from: manager.miniMonthAnchor).capitalized
+        return f.string(from: store.miniMonthAnchor).capitalized
     }
 
     private func cell(for date: Date) -> some View {
-        let isInMonth = calendar.component(.month, from: date) == calendar.component(.month, from: manager.miniMonthAnchor)
+        let isInMonth = calendar.component(.month, from: date) == calendar.component(.month, from: store.miniMonthAnchor)
         let isToday = calendar.isDateInToday(date)
-        let isSelected = calendar.isDate(date, inSameDayAs: manager.selectedDate)
+        let isSelected = calendar.isDate(date, inSameDayAs: store.selectedDate)
         return ZStack {
             if isToday {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
@@ -95,13 +95,13 @@ struct MiniMonthView: View {
         .frame(maxWidth: .infinity, minHeight: 22)
         .contentShape(Rectangle())
         .onTapGesture {
-            manager.goTo(date: date)
+            store.goTo(date: date)
         }
     }
 
     private func weeks() -> [[Date]] {
-        let anchor = manager.miniMonthAnchor
-        let monthStart = manager.startOfMonth(for: anchor)
+        let anchor = store.miniMonthAnchor
+        let monthStart = store.startOfMonth(for: anchor)
         guard let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) else { return [] }
         let comps = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: monthStart)
         guard let gridStart = calendar.date(from: comps) else { return [] }

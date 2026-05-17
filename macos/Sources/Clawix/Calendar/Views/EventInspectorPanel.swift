@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EventInspectorPanel: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     let event: CalendarEvent
 
     var body: some View {
@@ -28,7 +28,7 @@ struct EventInspectorPanel: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 10) {
             Circle()
-                .fill(manager.color(forCalendarID: event.calendarID))
+                .fill(store.color(forCalendarID: event.calendarID))
                 .frame(width: 10, height: 10)
                 .padding(.top, 6)
             VStack(alignment: .leading, spacing: 4) {
@@ -36,14 +36,14 @@ struct EventInspectorPanel: View {
                     .font(.system(size: CalendarTokens.TypeSize.inspectorEventTitle, weight: .semibold))
                     .foregroundColor(CalendarTokens.Ink.primary)
                     .lineLimit(2)
-                if let source = manager.source(forCalendarID: event.calendarID) {
+                if let source = store.source(forCalendarID: event.calendarID) {
                     Text(source.title)
                         .font(.system(size: 11))
                         .foregroundColor(CalendarTokens.Ink.secondary)
                 }
             }
             Spacer()
-            Button { manager.selectedEventID = nil } label: {
+            Button { store.selectedEventID = nil } label: {
                 LucideIcon(.x, size: 12)
                     .foregroundColor(CalendarTokens.Ink.secondary)
             }
@@ -102,7 +102,7 @@ struct EventInspectorPanel: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            Button { manager.startEdit(event: event) } label: {
+            Button { store.startEdit(event: event) } label: {
                 Text("Edit")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(CalendarTokens.Ink.primary)
@@ -118,7 +118,7 @@ struct EventInspectorPanel: View {
                     )
             }
             .buttonStyle(.plain)
-            Button { Task { await manager.deleteEvent(event) } } label: {
+            Button { Task { await store.deleteEvent(event) } } label: {
                 Text("Delete")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Color(red: 1.0, green: 0.27, blue: 0.23))
@@ -140,7 +140,7 @@ struct EventInspectorPanel: View {
 
     private func longDate(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.dateStyle = .full
         f.timeStyle = .none
         return f.string(from: d)
@@ -148,7 +148,7 @@ struct EventInspectorPanel: View {
 
     private func timeOnly(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.timeStyle = .short
         f.dateStyle = .none
         return f.string(from: d)

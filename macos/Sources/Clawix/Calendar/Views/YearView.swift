@@ -6,9 +6,9 @@ private let YearColumnsCount: Int = 3
 private let YearRowsCount: Int = 4
 
 struct YearView: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
 
     var body: some View {
         GeometryReader { geo in
@@ -25,7 +25,7 @@ struct YearView: View {
         let tileWidth: CGFloat = usableW / CGFloat(YearColumnsCount)
         let tileHeight: CGFloat = usableH / CGFloat(YearRowsCount)
         let tileSize = CGSize(width: tileWidth, height: tileHeight)
-        let year = calendar.component(.year, from: manager.selectedDate)
+        let year = calendar.component(.year, from: store.selectedDate)
         return VStack(spacing: YearTileSpacing) {
             ForEach(0..<YearRowsCount, id: \.self) { row in
                 yearRow(row: row, year: year, tileSize: tileSize)
@@ -39,7 +39,7 @@ struct YearView: View {
             ForEach(0..<YearColumnsCount, id: \.self) { col in
                 MiniMonthTile(monthIndex: row * YearColumnsCount + col,
                               year: year,
-                              manager: manager,
+                              store: store,
                               size: tileSize)
             }
         }
@@ -49,11 +49,11 @@ struct YearView: View {
 private struct MiniMonthTile: View {
     let monthIndex: Int
     let year: Int
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     let size: CGSize
     @State private var hovered: Bool = false
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -74,8 +74,8 @@ private struct MiniMonthTile: View {
         .onHover { hovered = $0 }
         .onTapGesture {
             if let date = calendar.date(from: DateComponents(year: year, month: monthIndex + 1, day: 1)) {
-                manager.goTo(date: date)
-                manager.setViewMode(.month)
+                store.goTo(date: date)
+                store.setViewMode(.month)
             }
         }
         .animation(CalendarTokens.Motion.eventHover, value: hovered)

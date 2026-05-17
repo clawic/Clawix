@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CalendarToolbar: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     @FocusState private var searchFocused: Bool
     @State private var searchExpanded: Bool = false
 
@@ -26,7 +26,7 @@ struct CalendarToolbar: View {
     private var createButton: some View {
         Button {
             let now = Date()
-            let cal = manager.foundationCalendar
+            let cal = store.foundationCalendar
             let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: now)
             let snapped = cal.date(from: DateComponents(
                 year: comps.year, month: comps.month, day: comps.day,
@@ -35,7 +35,7 @@ struct CalendarToolbar: View {
             let target = (comps.minute ?? 0) < 30
                 ? snapped
                 : cal.date(byAdding: .hour, value: 1, to: snapped) ?? snapped
-            manager.startCreate(at: target, duration: 3600)
+            store.startCreate(at: target, duration: 3600)
         } label: {
             LucideIcon(.plus, size: 13)
                 .foregroundColor(CalendarTokens.Ink.primary)
@@ -49,14 +49,14 @@ struct CalendarToolbar: View {
         HStack(spacing: 6) {
             LucideIcon(.search, size: 11)
                 .foregroundColor(CalendarTokens.Ink.secondary)
-            TextField("Search", text: $manager.searchQuery)
+            TextField("Search", text: $store.searchQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: CalendarTokens.TypeSize.toolbar))
                 .foregroundColor(CalendarTokens.Ink.primary)
                 .focused($searchFocused)
-            if !manager.searchQuery.isEmpty {
+            if !store.searchQuery.isEmpty {
                 Button {
-                    manager.searchQuery = ""
+                    store.searchQuery = ""
                 } label: {
                     LucideIcon(.circleX, size: 11)
                         .foregroundColor(CalendarTokens.Ink.secondary)
@@ -84,8 +84,8 @@ struct CalendarToolbar: View {
     private var segmented: some View {
         SlidingSegmented(
             selection: Binding(
-                get: { manager.viewMode },
-                set: { manager.setViewMode($0) }
+                get: { store.viewMode },
+                set: { store.setViewMode($0) }
             ),
             options: CalendarViewMode.allCases.map { ($0, $0.localizedLabel) },
             height: 30,
@@ -97,7 +97,7 @@ struct CalendarToolbar: View {
     private var navCluster: some View {
         HStack(spacing: CalendarTokens.Spacing.toolbarButtonGap) {
             Button {
-                withAnimation(CalendarTokens.Motion.pageStep) { manager.step(forward: false) }
+                withAnimation(CalendarTokens.Motion.pageStep) { store.step(forward: false) }
             } label: {
                 LucideIcon(.chevronLeft, size: 12)
                     .foregroundColor(CalendarTokens.Ink.primary)
@@ -106,7 +106,7 @@ struct CalendarToolbar: View {
             .buttonStyle(.plain)
 
             Button {
-                withAnimation(CalendarTokens.Motion.todayBump) { manager.goToToday() }
+                withAnimation(CalendarTokens.Motion.todayBump) { store.goToToday() }
             } label: {
                 Text("Today")
                     .font(.system(size: 12))
@@ -125,7 +125,7 @@ struct CalendarToolbar: View {
             .buttonStyle(.plain)
 
             Button {
-                withAnimation(CalendarTokens.Motion.pageStep) { manager.step(forward: true) }
+                withAnimation(CalendarTokens.Motion.pageStep) { store.step(forward: true) }
             } label: {
                 LucideIcon(.chevronRight, size: 12)
                     .foregroundColor(CalendarTokens.Ink.primary)

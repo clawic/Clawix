@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EventPopover: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     let event: CalendarEvent
     let onClose: () -> Void
 
@@ -9,7 +9,7 @@ struct EventPopover: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 Circle()
-                    .fill(manager.color(forCalendarID: event.calendarID))
+                    .fill(store.color(forCalendarID: event.calendarID))
                     .frame(width: 8, height: 8)
                     .padding(.top, 6)
                 VStack(alignment: .leading, spacing: 2) {
@@ -45,7 +45,7 @@ struct EventPopover: View {
             }
             Divider().opacity(0.3)
             HStack(spacing: 8) {
-                Button { manager.startEdit(event: event) } label: {
+                Button { store.startEdit(event: event) } label: {
                     Text("Edit")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(CalendarTokens.Ink.primary)
@@ -57,7 +57,7 @@ struct EventPopover: View {
                         )
                 }
                 .buttonStyle(.plain)
-                Button { Task { await manager.deleteEvent(event) } } label: {
+                Button { Task { await store.deleteEvent(event) } } label: {
                     Text("Delete")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Color(red: 1.0, green: 0.27, blue: 0.23))
@@ -87,7 +87,7 @@ struct EventPopover: View {
 
     private var dateLine: String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         if event.isAllDay {
             f.dateStyle = .full
             f.timeStyle = .none
@@ -100,7 +100,7 @@ struct EventPopover: View {
 
     private func shortTime(_ d: Date) -> String {
         let f = DateFormatter()
-        f.locale = manager.localeForDisplay
+        f.locale = store.localeForDisplay
         f.timeStyle = .short
         f.dateStyle = .none
         return f.string(from: d)

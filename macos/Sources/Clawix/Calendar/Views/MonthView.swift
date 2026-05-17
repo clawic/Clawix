@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct MonthView: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,9 +73,9 @@ struct MonthView: View {
 
     private func cell(for date: Date, height: CGFloat) -> some View {
         let isToday = calendar.isDateInToday(date)
-        let isCurrentMonth = calendar.isDate(date, equalTo: manager.selectedDate, toGranularity: .month)
-        let isSelected = calendar.isDate(date, inSameDayAs: manager.selectedDate)
-        let events = manager.eventsForDay(date)
+        let isCurrentMonth = calendar.isDate(date, equalTo: store.selectedDate, toGranularity: .month)
+        let isSelected = calendar.isDate(date, inSameDayAs: store.selectedDate)
+        let events = store.eventsForDay(date)
         let maxChips = max(1, Int((height - 26) / 20))
         let chips = Array(events.prefix(maxChips))
         let overflow = max(0, events.count - maxChips)
@@ -87,13 +87,13 @@ struct MonthView: View {
             isSelected: isSelected,
             chips: chips,
             overflow: overflow,
-            manager: manager
+            store: store
         )
         .frame(maxWidth: CGFloat.infinity, maxHeight: CGFloat.infinity)
     }
 
     private func weeksInVisibleMonth() -> [[Date]] {
-        let (start, end) = manager.visibleRange(for: .month, anchor: manager.selectedDate)
+        let (start, end) = store.visibleRange(for: .month, anchor: store.selectedDate)
         var weeks: [[Date]] = []
         var cursor = start
         while cursor < end {
@@ -115,16 +115,16 @@ private struct MonthCell: View {
     let isSelected: Bool
     let chips: [CalendarEvent]
     let overflow: Int
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
 
-    private var calendar: Foundation.Calendar { manager.foundationCalendar }
+    private var calendar: Foundation.Calendar { store.foundationCalendar }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             dayNumber
             ForEach(chips) { ev in
                 EventChip(event: ev,
-                           color: manager.color(forCalendarID: ev.calendarID),
+                           color: store.color(forCalendarID: ev.calendarID),
                            style: .monthRow)
             }
             if overflow > 0 {
@@ -140,7 +140,7 @@ private struct MonthCell: View {
         .overlay(selectionStroke)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
-            let cal = manager.foundationCalendar
+            let cal = store.foundationCalendar
             let now = Date()
             let timeComps = cal.dateComponents([.hour, .minute], from: now)
             var combine = cal.dateComponents([.year, .month, .day], from: date)
@@ -150,10 +150,10 @@ private struct MonthCell: View {
             let start = ((timeComps.minute ?? 0) < 30)
                 ? dayBase
                 : (cal.date(byAdding: .hour, value: 1, to: dayBase) ?? dayBase)
-            manager.startCreate(at: start, duration: 3600)
+            store.startCreate(at: start, duration: 3600)
         }
         .onTapGesture {
-            manager.selectedDate = date
+            store.selectedDate = date
         }
     }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EventEditSheet: View {
-    @ObservedObject var manager: CalendarManager
+    @ObservedObject var store: CalendarStore
     @State private var localDraft: CalendarEventDraft
     @State private var isSubmitting: Bool = false
     @State private var showCalendarPicker: Bool = false
@@ -9,8 +9,8 @@ struct EventEditSheet: View {
 
     enum Mode { case create, edit }
 
-    init(manager: CalendarManager, draft: CalendarEventDraft, mode: Mode) {
-        self.manager = manager
+    init(store: CalendarStore, draft: CalendarEventDraft, mode: Mode) {
+        self.store = store
         self.mode = mode
         _localDraft = State(initialValue: draft)
     }
@@ -46,7 +46,7 @@ struct EventEditSheet: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(CalendarTokens.Ink.primary)
             Spacer()
-            Button { manager.cancelEdit() } label: {
+            Button { store.cancelEdit() } label: {
                 LucideIcon(.x, size: 14)
                     .foregroundColor(CalendarTokens.Ink.secondary)
             }
@@ -74,7 +74,7 @@ struct EventEditSheet: View {
     }
 
     private var calendarPicker: some View {
-        let current = manager.source(forCalendarID: localDraft.calendarID)
+        let current = store.source(forCalendarID: localDraft.calendarID)
         return HStack(spacing: 10) {
             Circle()
                 .fill(current?.color ?? CalendarTokens.Ink.secondary)
@@ -84,7 +84,7 @@ struct EventEditSheet: View {
                 .foregroundColor(CalendarTokens.Ink.primary)
             Spacer()
             Menu {
-                ForEach(manager.sources.filter { !$0.isReadOnly }) { source in
+                ForEach(store.sources.filter { !$0.isReadOnly }) { source in
                     Button(source.title) { localDraft.calendarID = source.id }
                 }
             } label: {
@@ -210,7 +210,7 @@ struct EventEditSheet: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Button("Cancel") { manager.cancelEdit() }
+            Button("Cancel") { store.cancelEdit() }
                 .buttonStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(CalendarTokens.Ink.primary)
@@ -219,9 +219,9 @@ struct EventEditSheet: View {
             Button {
                 guard !isSubmitting else { return }
                 isSubmitting = true
-                manager.editingDraft = localDraft
+                store.editingDraft = localDraft
                 Task {
-                    await manager.commitDraft()
+                    await store.commitDraft()
                     isSubmitting = false
                 }
             } label: {
