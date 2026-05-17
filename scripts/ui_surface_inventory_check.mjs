@@ -146,6 +146,11 @@ const exceptionIds = new Set(requireArray(exceptions, "docs/ui/exceptions.regist
 
 const inventoryPath = "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
+const surfaceBaselineCoveragePath = "docs/ui/surface-baseline-coverage.manifest.json";
+const surfaceBaselineCoverage = readJson(surfaceBaselineCoveragePath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const v1PatternSetDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "v1_pattern_set");
 requireFields(inventory, inventoryPath, ["schemaVersion", "status", "policy", "reviewAfter", "sourceRoots", "coverage"]);
 if (args.has("--simulate-expired-review-after") && inventory) {
   inventory.reviewAfter = "2026-01-01";
@@ -214,6 +219,36 @@ if (args.has("--simulate-unmatched-coverage-scope") && Array.isArray(inventory?.
 }
 if (args.has("--simulate-unsafe-coverage-scope") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
   inventory.coverage[0].scopes = ["/Users/example/View.swift"];
+}
+if (args.has("--simulate-v1-pattern-set-missing-registry") && v1PatternSetDecision) {
+  v1PatternSetDecision.publicEvidence = v1PatternSetDecision.publicEvidence.filter(
+    (evidencePath) => evidencePath !== "docs/ui/pattern-registry/patterns.registry.json",
+  );
+}
+if (args.has("--simulate-v1-pattern-set-missing-inventory") && v1PatternSetDecision) {
+  v1PatternSetDecision.publicEvidence = v1PatternSetDecision.publicEvidence.filter((evidencePath) => evidencePath !== inventoryPath);
+}
+if (args.has("--simulate-v1-pattern-set-missing-baseline-coverage") && v1PatternSetDecision) {
+  v1PatternSetDecision.publicEvidence = v1PatternSetDecision.publicEvidence.filter((evidencePath) => evidencePath !== surfaceBaselineCoveragePath);
+}
+if (args.has("--simulate-v1-pattern-set-missing-private-baseline") && v1PatternSetDecision) {
+  v1PatternSetDecision.privateEvidence = v1PatternSetDecision.privateEvidence.filter(
+    (evidenceReference) => evidenceReference !== "private-codex-ui-baselines:surfaces/*",
+  );
+}
+if (args.has("--simulate-v1-pattern-set-missing-private-geometry-platform") && v1PatternSetDecision) {
+  v1PatternSetDecision.privateEvidence = v1PatternSetDecision.privateEvidence.filter(
+    (evidenceReference) => evidenceReference !== "private-codex-ui-rendered-geometry:web/*",
+  );
+}
+if (args.has("--simulate-v1-pattern-set-missing-private-verifier") && v1PatternSetDecision) {
+  v1PatternSetDecision.blockingVerifiers = v1PatternSetDecision.blockingVerifiers.filter(
+    (verifier) => verifier !== "scripts/ui_private_geometry_verify.mjs",
+  );
+}
+if (args.has("--simulate-v1-pattern-set-premature-complete") && v1PatternSetDecision) {
+  v1PatternSetDecision.status = "verified-complete";
+  v1PatternSetDecision.remaining = [];
 }
 if (inventory?.reviewAfter && inventory.reviewAfter < today) {
   fail(`${inventoryPath}.reviewAfter expired on ${inventory.reviewAfter}`);
@@ -337,6 +372,54 @@ if (ambiguous.length > 0) {
       ambiguous.length > 80 ? `  ...and ${ambiguous.length - 80} more` : "",
     ].filter(Boolean).join("\n"),
   );
+}
+
+requireFields(surfaceBaselineCoverage, surfaceBaselineCoveragePath, ["status", "coverage"]);
+if (!v1PatternSetDecision) {
+  fail(`${decisionVerificationPath}.decisions must include v1_pattern_set`);
+} else {
+  const publicEvidence = new Set(Array.isArray(v1PatternSetDecision.publicEvidence) ? v1PatternSetDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "docs/ui/pattern-registry/patterns.registry.json",
+    inventoryPath,
+    surfaceBaselineCoveragePath,
+    "scripts/ui_surface_inventory_check.mjs",
+    "scripts/ui_surface_baseline_coverage_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.v1_pattern_set.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(v1PatternSetDecision.privateEvidence) ? v1PatternSetDecision.privateEvidence : []);
+  for (const evidenceReference of [
+    "private-codex-ui-baselines:surfaces/*",
+    "private-codex-ui-rendered-geometry:macos/*",
+    "private-codex-ui-rendered-geometry:ios/*",
+    "private-codex-ui-rendered-geometry:android/*",
+    "private-codex-ui-rendered-geometry:web/*",
+  ]) {
+    if (!privateEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.v1_pattern_set.privateEvidence must include ${evidenceReference}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(v1PatternSetDecision.blockingVerifiers) ? v1PatternSetDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+    "scripts/ui_private_geometry_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.v1_pattern_set.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (surfaceBaselineCoverage?.status !== "approved-private-capture" && v1PatternSetDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.status must remain open until visible inventory has approved private rendered screenshots`);
+  }
+  if (surfaceBaselineCoverage?.status !== "approved-private-capture" && (!Array.isArray(v1PatternSetDecision.remaining) || v1PatternSetDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.remaining must describe pending approved private rendered screenshots`);
+  }
 }
 
 if (errors.length > 0) {
