@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_COMPONENT_EXTRACTION_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -343,6 +345,33 @@ for (const sourceRoot of sourceRoots) {
           fail(`${relativeFile}:${lineIndex + 1} matches ${signal.id}: ${signal.reason}`);
         }
       }
+    }
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-wrong-minimum-call-sites", "minimumCallSites must be 2"],
+    ["--simulate-missing-performance-risk-signal", "requiredRiskSignals must include performance"],
+    ["--simulate-allowed-api-missing-forbid", "forbids must include unbounded-prop-bag"],
+    ["--simulate-extra-allowed-api", "is not an approved component API"],
+    ["--simulate-required-policy-local-composition", "allowedPolicies.required must not allow local-composition"],
+    ["--simulate-pattern-unknown-api", "sidebar-row.pattern.json.componentExtraction.api must be defined"],
+    ["--simulate-pattern-missing-state-interaction-risk", "must include state or interaction"],
+    ["--simulate-unsafe-source-root", "sourceAudit.roots[0] must be a safe relative path"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_COMPONENT_EXTRACTION_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when component extraction contract evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
     }
   }
 }
