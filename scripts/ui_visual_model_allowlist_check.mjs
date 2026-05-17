@@ -85,6 +85,12 @@ if (args.has("--simulate-missing-active-initial-model") && Array.isArray(manifes
     model?.id === "claude-opus-4.7" ? { ...model, status: "revoked" } : model
   ));
 }
+if (args.has("--simulate-extra-initial-model") && Array.isArray(manifest?.initialActiveModels)) {
+  manifest.initialActiveModels.push("other-visual-model");
+}
+if (args.has("--simulate-duplicate-visual-model") && Array.isArray(manifest?.allowedVisualModels) && manifest.allowedVisualModels[0]) {
+  manifest.allowedVisualModels.push({ ...manifest.allowedVisualModels[0] });
+}
 if (args.has("--simulate-missing-copy-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) =>
     model?.id === "claude-opus-4.7"
@@ -163,6 +169,9 @@ const initialActiveModels = new Set(requireArray(manifest, manifestPath, "initia
 if (!initialActiveModels.has("claude-opus-4.7")) {
   fail(`${manifestPath}.initialActiveModels must include claude-opus-4.7`);
 }
+if (initialActiveModels.size !== 1 || manifest?.initialActiveModels?.length !== 1) {
+  fail(`${manifestPath}.initialActiveModels must contain only claude-opus-4.7`);
+}
 const modelStatuses = new Set(requireArray(manifest, manifestPath, "modelStatuses"));
 for (const status of ["active", "revoked"]) {
   if (!modelStatuses.has(status)) fail(`${manifestPath}.modelStatuses must include ${status}`);
@@ -172,6 +181,7 @@ const allowedMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equi
 const requiredInitialMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equivalent-refactor"]);
 let activeVisualModelCount = 0;
 let initialVisualModel = null;
+const modelIds = new Set();
 for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisualModels").entries()) {
   const label = `${manifestPath}.allowedVisualModels[${index}]`;
   requireFields(model, label, [
@@ -182,6 +192,8 @@ for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisual
     "scopeSource",
     "privateApprovalRequired",
   ]);
+  if (modelIds.has(model?.id)) fail(`${label}.id duplicates ${model.id}`);
+  modelIds.add(model?.id);
   if (!modelStatuses.has(model.status)) fail(`${label}.status is invalid`);
   if (model.status === "active") activeVisualModelCount += 1;
   if (model.id === "claude-opus-4.7") initialVisualModel = { model, label };
