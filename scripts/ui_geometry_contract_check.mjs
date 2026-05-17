@@ -118,8 +118,20 @@ if (args.has("--simulate-size-contracts-decision-missing-script") && sizeContrac
 if (args.has("--simulate-size-contracts-decision-missing-rendered-geometry") && sizeContractsDecision) {
   sizeContractsDecision.publicEvidence = sizeContractsDecision.publicEvidence.filter((evidence) => evidence !== "docs/ui/rendered-geometry.manifest.json");
 }
+if (args.has("--simulate-size-contracts-decision-missing-pattern-file") && sizeContractsDecision) {
+  sizeContractsDecision.publicEvidence = sizeContractsDecision.publicEvidence.filter((evidence) => evidence !== "docs/ui/pattern-registry/patterns/sidebar-row.pattern.json");
+}
+if (args.has("--simulate-size-contracts-decision-missing-evidence-plan") && sizeContractsDecision) {
+  sizeContractsDecision.publicEvidence = sizeContractsDecision.publicEvidence.filter((evidence) => evidence !== "scripts/ui_private_evidence_plan_check.mjs");
+}
 if (args.has("--simulate-size-contracts-decision-missing-private-blocker") && sizeContractsDecision) {
   sizeContractsDecision.blockingVerifiers = sizeContractsDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_geometry_verify.mjs");
+}
+if (args.has("--simulate-size-contracts-decision-missing-private-platform") && sizeContractsDecision) {
+  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-rendered-geometry:web/*");
+}
+if (args.has("--simulate-size-contracts-decision-missing-sidebar-row-private") && sizeContractsDecision) {
+  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-rendered-geometry:macos/sidebar-row");
 }
 if (args.has("--simulate-size-contracts-decision-premature-complete") && sizeContractsDecision) {
   sizeContractsDecision.status = "verified-complete";
@@ -184,13 +196,31 @@ if (!sizeContractsDecision) {
   const publicEvidence = new Set(Array.isArray(sizeContractsDecision.publicEvidence) ? sizeContractsDecision.publicEvidence : []);
   for (const evidence of [
     registryPath,
+    "docs/ui/pattern-registry/patterns/sidebar-row.pattern.json",
+    "docs/ui/pattern-registry/patterns/sidebar-section.pattern.json",
+    "docs/ui/pattern-registry/patterns/composer-chrome.pattern.json",
     "docs/ui/pattern-registry/README.md",
     "docs/ui/rendered-geometry.manifest.json",
     "scripts/ui_geometry_contract_check.mjs",
+    "scripts/ui_rendered_geometry_manifest_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
     "scripts/ui_private_geometry_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
   ]) {
     if (!publicEvidence.has(evidence)) {
       fail(`${decisionVerificationPath}.decisions.size_contracts.publicEvidence must include ${evidence}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(sizeContractsDecision.privateEvidence) ? sizeContractsDecision.privateEvidence : []);
+  for (const evidence of [
+    "private-codex-ui-rendered-geometry:macos/*",
+    "private-codex-ui-rendered-geometry:ios/*",
+    "private-codex-ui-rendered-geometry:android/*",
+    "private-codex-ui-rendered-geometry:web/*",
+    "private-codex-ui-rendered-geometry:macos/sidebar-row",
+  ]) {
+    if (!privateEvidence.has(evidence)) {
+      fail(`${decisionVerificationPath}.decisions.size_contracts.privateEvidence must include ${evidence}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(sizeContractsDecision.blockingVerifiers) ? sizeContractsDecision.blockingVerifiers : []);
