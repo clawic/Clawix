@@ -73,6 +73,28 @@ if (args.has("--simulate-mismatched-surface-reference") && Array.isArray(manifes
     privateBaselineReference: `${manifest.privateBaselineAlias}:surfaces/${manifest.coverage[0].platform}/wrong-surface`,
   };
 }
+if (args.has("--simulate-duplicate-coverage-id") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage.push({ ...manifest.coverage[0] });
+}
+if (args.has("--simulate-missing-inventory-coverage") && Array.isArray(manifest?.coverage)) {
+  manifest.coverage = manifest.coverage.slice(0, -1);
+}
+if (args.has("--simulate-invalid-baseline-status") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].baselineStatus = "captured-without-user-approval";
+}
+if (args.has("--simulate-unsafe-geometry-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].geometryEvidenceReference = `${manifest.privateGeometryAlias}:../geometry`;
+}
+if (args.has("--simulate-unsafe-copy-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].copySnapshotReference = "/Users/example/copy-snapshot";
+}
+if (args.has("--simulate-missing-required-evidence") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].requiredEvidence = manifest.coverage[0].requiredEvidence.filter((field) => field !== "approvedScope");
+}
+if (args.has("--simulate-approved-invalid-hash") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
+  manifest.coverage[0].baselineStatus = "approved";
+  manifest.coverage[0].screenshotHash = "not-a-hex-hash";
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
