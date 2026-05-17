@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -135,6 +136,80 @@ for (const field of [
 
 const registry = readJson("docs/ui/pattern-registry/patterns.registry.json");
 const patternIds = new Set(requireArray(registry, "docs/ui/pattern-registry/patterns.registry.json", "patterns"));
+
+function simulatedProtectedSurface(overrides = {}) {
+  const hash = "a".repeat(64);
+  return {
+    id: "simulated-protected-surface",
+    scope: "simulated surface",
+    platform: "macos",
+    patterns: ["sidebar-row"],
+    approvedBy: "user",
+    approvedAt: "2026-05-17",
+    privateApprovalReference: "private-codex-ui-approval:simulated",
+    contract: {
+      geometry: "stable",
+      copy: "stable",
+      states: "stable",
+      performance: "stable",
+    },
+    privateBaselineReference: "private-codex-ui-baselines:simulated",
+    privateBaselineHash: hash,
+    copySnapshotReference: "private-codex-ui-copy-snapshots:simulated",
+    copySnapshotHash: hash,
+    geometryEvidenceReference: "private-codex-ui-rendered-geometry:simulated",
+    geometryEvidenceHash: hash,
+    changePolicy: {
+      requiresExplicitUserApproval: true,
+      requiresVisualModelAllowlist: true,
+      requiresScopeBudget: true,
+    },
+    ...overrides,
+  };
+}
+
+if (args.has("--simulate-missing-freeze-field")) {
+  const simulated = simulatedProtectedSurface();
+  delete simulated.privateApprovalReference;
+  protectedSurfaces.surfaces = [
+    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
+    simulated,
+  ];
+}
+
+if (args.has("--simulate-unknown-pattern")) {
+  protectedSurfaces.surfaces = [
+    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
+    simulatedProtectedSurface({
+      id: "simulated-unknown-pattern",
+      patterns: ["unknown-pattern"],
+    }),
+  ];
+}
+
+if (args.has("--simulate-invalid-baseline-hash")) {
+  protectedSurfaces.surfaces = [
+    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
+    simulatedProtectedSurface({
+      id: "simulated-invalid-baseline-hash",
+      privateBaselineHash: "not-a-sha256",
+    }),
+  ];
+}
+
+if (args.has("--simulate-disabled-change-policy")) {
+  protectedSurfaces.surfaces = [
+    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
+    simulatedProtectedSurface({
+      id: "simulated-disabled-change-policy",
+      changePolicy: {
+        requiresExplicitUserApproval: false,
+        requiresVisualModelAllowlist: true,
+        requiresScopeBudget: true,
+      },
+    }),
+  ];
+}
 
 const surfaces = requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false });
 const ids = new Set();
