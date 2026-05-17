@@ -84,6 +84,12 @@ function requireIsoTimestamp(value, label) {
   }
 }
 
+function requireHash(value, label) {
+  if (typeof value !== "string" || !/^[a-f0-9]{64}$/i.test(value)) {
+    fail(`${label} must be a 64-character hex hash`);
+  }
+}
+
 function requireApprovedScope(value, requiredFields, privateApprovalAlias, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     fail(`${label} must be an object with approved user scope metadata`);
@@ -114,6 +120,9 @@ if (manifest && args.has("--simulate-wrong-required-mutation-class")) {
 if (manifest && args.has("--simulate-missing-required-evidence-field")) {
   manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "approvedScope");
 }
+if (manifest && args.has("--simulate-missing-geometry-copy-hash-field")) {
+  manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "copyAfterHash");
+}
 if (manifest && args.has("--simulate-missing-merge-blocking-status")) {
   manifest.recordRequirement.mergeBlockingStatuses =
     manifest.recordRequirement.mergeBlockingStatuses.filter((status) => status !== "blocked-visible-diff");
@@ -130,13 +139,17 @@ const simulatedRecord = {
   platforms: ["macos"],
   changedFiles: ["macos/Sources/Clawix/SidebarView.swift"],
   beforeSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/before.png",
-  beforeSnapshotHash: "0123456789abcdef",
+  beforeSnapshotHash: "0".repeat(64),
   afterSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/after.png",
-  afterSnapshotHash: "fedcba9876543210",
+  afterSnapshotHash: "1".repeat(64),
   geometryBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-before.json",
+  geometryBeforeHash: "2".repeat(64),
   geometryAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-after.json",
+  geometryAfterHash: "3".repeat(64),
   copyBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-before.json",
+  copyBeforeHash: "4".repeat(64),
   copyAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-after.json",
+  copyAfterHash: "5".repeat(64),
   tokenDiffStatus: "no-token-diff",
   approvedByUserAt: "2026-05-15T00:00:00Z",
   approvedScope: {
@@ -157,6 +170,9 @@ if (manifest && args.has("--simulate-local-private-reference")) {
 }
 if (manifest && args.has("--simulate-short-record-hash")) {
   manifest.records = [{ ...simulatedRecord, afterSnapshotHash: "short" }];
+}
+if (manifest && args.has("--simulate-short-geometry-copy-hash")) {
+  manifest.records = [{ ...simulatedRecord, geometryAfterHash: "short" }];
 }
 if (manifest && args.has("--simulate-record-approved-by-agent")) {
   manifest.records = [{ ...simulatedRecord, approvedScope: { ...simulatedRecord.approvedScope, approvedBy: "agent" } }];
@@ -216,9 +232,13 @@ for (const field of [
   "afterSnapshotReference",
   "afterSnapshotHash",
   "geometryBeforeReference",
+  "geometryBeforeHash",
   "geometryAfterReference",
+  "geometryAfterHash",
   "copyBeforeReference",
+  "copyBeforeHash",
   "copyAfterReference",
+  "copyAfterHash",
   "tokenDiffStatus",
   "approvedByUserAt",
   "approvedScope",
@@ -278,10 +298,15 @@ for (const [index, record] of records.entries()) {
   ]) {
     requireAlias(record[field], manifest.privateEvidenceAlias, `${label}.${field}`);
   }
-  for (const hashField of ["beforeSnapshotHash", "afterSnapshotHash"]) {
-    if (typeof record[hashField] !== "string" || record[hashField].length < 16) {
-      fail(`${label}.${hashField} must record a private evidence hash`);
-    }
+  for (const hashField of [
+    "beforeSnapshotHash",
+    "afterSnapshotHash",
+    "geometryBeforeHash",
+    "geometryAfterHash",
+    "copyBeforeHash",
+    "copyAfterHash",
+  ]) {
+    requireHash(record[hashField], `${label}.${hashField}`);
   }
   requireArray(record, label, "platforms");
   requireArray(record, label, "changedFiles");

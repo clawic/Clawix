@@ -15,9 +15,13 @@
       "afterSnapshotReference",
       "afterSnapshotHash",
       "geometryBeforeReference",
+      "geometryBeforeHash",
       "geometryAfterReference",
+      "geometryAfterHash",
       "copyBeforeReference",
+      "copyBeforeHash",
       "copyAfterReference",
+      "copyAfterHash",
       "tokenDiffStatus",
       "approvedByUserAt",
       "approvedScope"
