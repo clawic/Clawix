@@ -107,6 +107,16 @@ if (manifest) {
   if (args.has("--simulate-missing-decision-blocker") && Array.isArray(manifest.decisionBlockers)) {
     manifest.decisionBlockers = manifest.decisionBlockers.filter((decisionId) => decisionId !== "copy_governance");
   }
+  if (args.has("--simulate-duplicate-decision-blocker") && Array.isArray(manifest.decisionBlockers)) {
+    manifest.decisionBlockers.push("copy_governance");
+  }
+  if (args.has("--simulate-missing-decision-evidence-types") && Array.isArray(manifest.decisionBlockerEvidenceTypes)) {
+    manifest.decisionBlockerEvidenceTypes = manifest.decisionBlockerEvidenceTypes.filter((item) => item?.decisionId !== "copy_governance");
+  }
+  if (args.has("--simulate-duplicate-decision-evidence-types") && Array.isArray(manifest.decisionBlockerEvidenceTypes)) {
+    const entry = manifest.decisionBlockerEvidenceTypes.find((item) => item?.decisionId === "copy_governance");
+    if (entry) manifest.decisionBlockerEvidenceTypes.push({ ...entry });
+  }
   if (args.has("--simulate-unknown-evidence-type") && Array.isArray(manifest.decisionBlockerEvidenceTypes)) {
     const entry = manifest.decisionBlockerEvidenceTypes.find((item) => item?.decisionId === "copy_governance");
     if (entry && Array.isArray(entry.evidenceTypes)) {
