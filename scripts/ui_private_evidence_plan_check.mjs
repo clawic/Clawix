@@ -79,12 +79,46 @@ function assertSafeEvidenceFilename(filename, label) {
   }
 }
 
+function assertSafeIdentifier(value, label) {
+  if (typeof value !== "string" || value.length === 0) {
+    fail(`${label} must be a non-empty string`);
+    return;
+  }
+  if (/^\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value)) {
+    fail(`${label} must not contain a local absolute path`);
+  }
+}
+
+function requireUniqueStringArray(values, label) {
+  if (!Array.isArray(values)) {
+    fail(`${label} must be an array`);
+    return;
+  }
+  if (values.length === 0) {
+    fail(`${label} must not be empty`);
+    return;
+  }
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (value.includes("/") || value.includes("\\") || value.includes("..")) {
+      fail(`${label} contains unsafe field name ${value}`);
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+}
+
 function addPlanItem(item) {
   requireFields(item, item.label, ["type", "id", "platform", "privateReference", "evidenceFilename", "requiredFields"]);
+  assertSafeIdentifier(item.type, `${item.label}.type`);
+  assertSafeIdentifier(item.id, `${item.label}.id`);
+  assertSafeIdentifier(item.platform, `${item.label}.platform`);
   assertSafeEvidenceFilename(item.evidenceFilename, item.label);
-  if (Array.isArray(item.requiredFields) && item.requiredFields.length === 0) {
-    fail(`${item.label}.requiredFields must not be empty`);
-  }
+  requireUniqueStringArray(item.requiredFields, `${item.label}.requiredFields`);
   plan.push(item);
 }
 
@@ -110,8 +144,20 @@ if (argSet.has("--simulate-path-evidence-filename") && surfaceCoverage) {
   surfaceCoverage.surfaceEvidenceFilename = "../surface-evidence.json";
 }
 
+if (argSet.has("--simulate-duplicate-surface-required-field") && Array.isArray(surfaceCoverage?.requiredEvidenceFields)) {
+  surfaceCoverage.requiredEvidenceFields.push(surfaceCoverage.requiredEvidenceFields[0]);
+}
+
+if (argSet.has("--simulate-unsafe-surface-required-field") && Array.isArray(surfaceCoverage?.requiredEvidenceFields)) {
+  surfaceCoverage.requiredEvidenceFields.push("../localPath");
+}
+
 if (argSet.has("--simulate-empty-pattern-geometry-fields") && renderedGeometry) {
   renderedGeometry.requiredEvidenceFields = [];
+}
+
+if (argSet.has("--simulate-duplicate-pattern-geometry-field") && Array.isArray(renderedGeometry?.requiredEvidenceFields)) {
+  renderedGeometry.requiredEvidenceFields.push(renderedGeometry.requiredEvidenceFields[0]);
 }
 
 if (argSet.has("--simulate-missing-rendered-drift-plan") && renderedDrift) {
@@ -120,6 +166,10 @@ if (argSet.has("--simulate-missing-rendered-drift-plan") && renderedDrift) {
 
 if (argSet.has("--simulate-missing-performance-budget-fields") && performanceBudgets) {
   performanceBudgets.requiredEvidenceFields = [];
+}
+
+if (argSet.has("--simulate-flow-duplicate-required-field") && Array.isArray(privateBaselines?.flows) && privateBaselines.flows[0]?.requiredEvidence?.[0]) {
+  privateBaselines.flows[0].requiredEvidence.push(privateBaselines.flows[0].requiredEvidence[0]);
 }
 
 const surfaceRequiredFields = requireArray(surfaceCoverage, "docs/ui/surface-baseline-coverage.manifest.json", "requiredEvidenceFields");
