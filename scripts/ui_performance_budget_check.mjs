@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
+const args = new Set(process.argv.slice(2));
 
 function fail(message) {
   errors.push(message);
@@ -42,6 +43,31 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
     fail(`${label}.${field} must not be empty`);
   }
   return value;
+}
+
+function privateReferenceSuffix(reference, expectedAlias, label) {
+  if (typeof reference !== "string" || reference.length === 0) {
+    fail(`${label} must be a private baseline alias reference`);
+    return null;
+  }
+  const prefix = `${expectedAlias}:`;
+  if (!reference.startsWith(prefix)) {
+    fail(`${label} must start with ${prefix}`);
+    return null;
+  }
+  const suffix = reference.slice(prefix.length);
+  if (
+    suffix.length === 0 ||
+    suffix.startsWith("/") ||
+    suffix.startsWith("~") ||
+    suffix.includes("\\") ||
+    suffix.split("/").includes("..") ||
+    suffix.split("/").includes(".")
+  ) {
+    fail(`${label} must be a relative private alias suffix`);
+    return null;
+  }
+  return suffix;
 }
 
 const requiredPlatforms = ["macos", "ios", "android", "web"];
@@ -109,6 +135,20 @@ for (const field of ["flowId", "platform", "privateBaselineReference", "metrics"
 
 const privateBaselinesPath = "docs/ui/private-baselines.manifest.json";
 const privateBaselines = readJson(privateBaselinesPath);
+if (privateBaselines?.privateRootAlias !== "private-codex-ui-baselines") {
+  fail(`${privateBaselinesPath}.privateRootAlias must be private-codex-ui-baselines`);
+}
+if (args.has("--simulate-wrong-private-reference")) {
+  const flow = budgets?.flows?.[0];
+  const baseline = privateBaselines?.flows?.find((candidate) => (
+    candidate.platform === flow?.platform && candidate.id === flow?.id
+  ));
+  if (flow && baseline) {
+    const wrongReference = `${privateBaselines.privateRootAlias}:${flow.platform}/wrong-flow`;
+    flow.privateBaselineReference = wrongReference;
+    baseline.privateBaselineReference = wrongReference;
+  }
+}
 const baselineByFlow = new Map();
 for (const flow of requireArray(privateBaselines, privateBaselinesPath, "flows")) {
   baselineByFlow.set(`${flow.platform}:${flow.id}`, flow);
@@ -134,6 +174,15 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   if (!allowedBaselineStatuses.has(flow.baselineStatus)) fail(`${label}.baselineStatus is invalid`);
   if (!allowedBudgetStatuses.has(flow.budgetStatus)) fail(`${label}.budgetStatus is invalid`);
   if (flow.measurementSource !== "private-baseline") fail(`${label}.measurementSource must be private-baseline`);
+  const expectedSuffix = `${flow.platform}/${flow.id}`;
+  const actualSuffix = privateReferenceSuffix(
+    flow.privateBaselineReference,
+    privateBaselines?.privateRootAlias,
+    `${label}.privateBaselineReference`,
+  );
+  if (actualSuffix && actualSuffix !== expectedSuffix) {
+    fail(`${label}.privateBaselineReference must resolve to ${expectedSuffix}`);
+  }
   const metrics = new Set(requireArray(flow, label, "requiredMetrics"));
   for (const metric of requiredMetrics) {
     if (!metrics.has(metric)) fail(`${label}.requiredMetrics must include ${metric}`);
