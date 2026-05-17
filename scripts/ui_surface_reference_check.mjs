@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -54,6 +55,44 @@ function referenceTarget(reference) {
   return reference.split("#", 1)[0];
 }
 
+function referenceAnchor(reference) {
+  const [, anchor] = reference.split("#", 2);
+  return anchor || "";
+}
+
+function markdownSlug(text) {
+  return text
+    .toLowerCase()
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/^[\s#>*-]+/, "")
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim()
+    .replace(/\s/g, "-");
+}
+
+function anchorExists(reference, target) {
+  const anchor = referenceAnchor(reference);
+  if (!anchor) return true;
+  const targetPath = path.join(rootDir, target);
+  const content = fs.readFileSync(targetPath, "utf8");
+  if (target.endsWith(".md")) {
+    return content
+      .split("\n")
+      .some((line) => {
+        if (/^\s*#+\s+/.test(line)) return markdownSlug(line) === anchor;
+        if (/^\s*(?:[-*]|\d+\.)\s+/.test(line)) return markdownSlug(line) === anchor || markdownSlug(line).startsWith(`${anchor}-`);
+        return false;
+      });
+  }
+  if (target.endsWith(".json")) {
+    return content.includes(`"id": "${anchor}"`) || content.includes(`"${anchor}"`);
+  }
+  return false;
+}
+
 function requireExistingReference(reference, label) {
   if (!isPublicSafeReference(reference)) {
     fail(`${label} must be a public-safe repo-relative reference`);
@@ -66,6 +105,10 @@ function requireExistingReference(reference, label) {
   }
   if (!fs.existsSync(path.join(rootDir, target))) {
     fail(`${label} points to missing target ${target}`);
+    return;
+  }
+  if (!anchorExists(reference, target)) {
+    fail(`${label} points to missing anchor ${referenceAnchor(reference)} in ${target}`);
   }
 }
 
@@ -117,6 +160,9 @@ const patternReferences = new Map();
 for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
+  if (args.has("--simulate-missing-anchor") && patternId === "sidebar-section") {
+    pattern.canonicalReferences = ["STYLE.md#missing-interface-governance-anchor"];
+  }
   const references = requireArray(pattern, patternPath, "canonicalReferences");
   for (const [index, reference] of references.entries()) {
     requireExistingReference(reference, `${patternPath}.canonicalReferences[${index}]`);
