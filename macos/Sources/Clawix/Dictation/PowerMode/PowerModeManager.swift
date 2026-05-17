@@ -5,9 +5,9 @@ import ClawixEngine
 
 /// Persists Power Mode profiles and publishes the currently-active profile.
 @MainActor
-final class PowerModeManager: ObservableObject {
+final class PowerModeStore: ObservableObject {
 
-    static let shared = PowerModeManager()
+    static let shared = PowerModeStore()
 
     nonisolated static let enabledKey = "dictation.powerMode.enabled"
     nonisolated static let configsKey = "dictation.powerMode.configs"

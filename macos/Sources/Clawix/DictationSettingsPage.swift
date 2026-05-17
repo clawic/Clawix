@@ -49,7 +49,7 @@ struct DictationSettingsPage: View {
     @StateObject private var replacementStore = DictationReplacementStore.shared
     @StateObject private var vocabulary = DictationVocabularyStore.shared
     @StateObject private var whisperPrompts = WhisperPromptStore.shared
-    @StateObject private var powerMode = PowerModeManager.shared
+    @StateObject private var powerMode = PowerModeStore.shared
     @StateObject private var promptLibrary = PromptLibrary.shared
     @StateObject private var transcripts = TranscriptionsRepository.shared
 
@@ -310,7 +310,7 @@ struct DictationSettingsPage: View {
 
                 SectionLabel(title: "Power Mode")
                 SettingsCard {
-                    PowerModeSummaryRow(manager: powerMode)
+                    PowerModeSummaryRow(store: powerMode)
                 }
 
                 SectionLabel(title: "AI Enhancement")
@@ -520,7 +520,7 @@ struct DictationSettingsPage: View {
         // .notDetermined/.denied to .granted), re-arm the hotkey so
         // the global monitor comes online without a relaunch.
         if previousInputMon != .granted, permissions.inputMonitoring == .granted {
-            HotkeyManager.shared.bootstrap(
+            DictationHotkeyMonitor.shared.bootstrap(
                 coordinator: DictationCoordinator.shared
             )
         }
@@ -845,7 +845,7 @@ private struct MicrophoneSelectorRow: View {
 
 // MARK: - Hotkey observable wrapper
 
-/// `HotkeyManager` keeps its mode/trigger in `UserDefaults` so the
+/// `DictationHotkeyMonitor` keeps its mode/trigger in `UserDefaults` so the
 /// daemon and the GUI can read the same source of truth, but Settings
 /// needs a `@Published` surface for SwiftUI to re-render on change.
 /// This thin wrapper republishes whenever the bound `@AppStorage`
@@ -856,12 +856,12 @@ final class DictationHotkeySettingsStore: ObservableObject {
 
     // Slot 1
     @Published var mode: DictationHotkeyMode {
-        didSet { HotkeyManager.shared.mode = mode }
+        didSet { DictationHotkeyMonitor.shared.mode = mode }
     }
     @Published var trigger: DictationHotkeyTrigger {
         didSet {
             let previous = oldValue
-            HotkeyManager.shared.trigger = trigger
+            DictationHotkeyMonitor.shared.trigger = trigger
             // When the user turns the hotkey on from Settings, drive
             // the Input Monitoring TCC flow explicitly so the consent
             // dialog appears with this Settings sheet on screen. The
@@ -871,7 +871,7 @@ final class DictationHotkeySettingsStore: ObservableObject {
             // request below is what surfaces the prompt and/or sends
             // the user to System Settings.
             if previous == .off, trigger != .off {
-                HotkeyManager.shared.requestPermissionAndRegister(
+                DictationHotkeyMonitor.shared.requestPermissionAndRegister(
                     coordinator: DictationCoordinator.shared
                 )
             }
@@ -880,14 +880,14 @@ final class DictationHotkeySettingsStore: ObservableObject {
 
     // Slot 2 (optional second binding, opt-in)
     @Published var mode2: DictationHotkeyMode {
-        didSet { HotkeyManager.shared.mode2 = mode2 }
+        didSet { DictationHotkeyMonitor.shared.mode2 = mode2 }
     }
     @Published var trigger2: DictationHotkeyTrigger {
         didSet {
             let previous = oldValue
-            HotkeyManager.shared.trigger2 = trigger2
+            DictationHotkeyMonitor.shared.trigger2 = trigger2
             if previous == .off, trigger2 != .off {
-                HotkeyManager.shared.requestPermissionAndRegister(
+                DictationHotkeyMonitor.shared.requestPermissionAndRegister(
                     coordinator: DictationCoordinator.shared
                 )
             }
@@ -895,10 +895,10 @@ final class DictationHotkeySettingsStore: ObservableObject {
     }
 
     private init() {
-        self.mode = HotkeyManager.shared.mode
-        self.trigger = HotkeyManager.shared.trigger
-        self.mode2 = HotkeyManager.shared.mode2
-        self.trigger2 = HotkeyManager.shared.trigger2
+        self.mode = DictationHotkeyMonitor.shared.mode
+        self.trigger = DictationHotkeyMonitor.shared.trigger
+        self.mode2 = DictationHotkeyMonitor.shared.mode2
+        self.trigger2 = DictationHotkeyMonitor.shared.trigger2
     }
 }
 

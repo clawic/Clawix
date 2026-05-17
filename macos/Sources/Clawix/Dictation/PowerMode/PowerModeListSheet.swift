@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PowerModeListSheet: View {
-    @ObservedObject var manager: PowerModeManager
+    @ObservedObject var store: PowerModeStore
     @Binding var isPresented: Bool
     @State private var selection: UUID?
 
@@ -17,7 +17,7 @@ struct PowerModeListSheet: View {
         .background(Color(white: 0.10))
         .onAppear {
             if selection == nil {
-                selection = manager.configs.first?.id
+                selection = store.configs.first?.id
             }
         }
     }
@@ -29,7 +29,7 @@ struct PowerModeListSheet: View {
                 .foregroundColor(Palette.textPrimary)
             Spacer()
             Button {
-                let id = manager.addBlank()
+                let id = store.addBlank()
                 selection = id
             } label: {
                 HStack(spacing: 4) {
@@ -53,11 +53,11 @@ struct PowerModeListSheet: View {
         HStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(manager.configs) { config in
+                    ForEach(store.configs) { config in
                         PowerModeListRow(
                             config: config,
                             selected: selection == config.id,
-                            isActive: manager.activeConfig?.id == config.id
+                            isActive: store.activeConfig?.id == config.id
                         ) {
                             selection = config.id
                         }
@@ -77,8 +77,8 @@ struct PowerModeListSheet: View {
                 PowerModeEditor(
                     config: binding,
                     onDelete: {
-                        selection = manager.configs.first { $0.id != id }?.id
-                        manager.delete(id)
+                        selection = store.configs.first { $0.id != id }?.id
+                        store.delete(id)
                     }
                 )
             } else {
@@ -97,8 +97,8 @@ struct PowerModeListSheet: View {
     private var footer: some View {
         HStack {
             Button("Reset to presets") {
-                manager.resetToPresets()
-                selection = manager.configs.first?.id
+                store.resetToPresets()
+                selection = store.configs.first?.id
             }
             Spacer()
             Button("Done") { isPresented = false }
@@ -109,10 +109,10 @@ struct PowerModeListSheet: View {
     }
 
     private func bindingFor(id: UUID) -> Binding<PowerModeConfig>? {
-        guard let idx = manager.configs.firstIndex(where: { $0.id == id }) else { return nil }
+        guard let idx = store.configs.firstIndex(where: { $0.id == id }) else { return nil }
         return Binding(
-            get: { manager.configs[idx] },
-            set: { manager.update($0) }
+            get: { store.configs[idx] },
+            set: { store.update($0) }
         )
     }
 }

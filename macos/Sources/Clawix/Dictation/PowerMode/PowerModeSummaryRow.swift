@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PowerModeSummaryRow: View {
-    @ObservedObject var manager: PowerModeManager
+    @ObservedObject var store: PowerModeStore
     @State private var sheetOpen = false
 
     var body: some View {
@@ -18,8 +18,8 @@ struct PowerModeSummaryRow: View {
         } trailing: {
             HStack(spacing: 10) {
                 PillToggle(isOn: Binding(
-                    get: { manager.enabled },
-                    set: { manager.enabled = $0 }
+                    get: { store.enabled },
+                    set: { store.enabled = $0 }
                 ))
                 Button {
                     sheetOpen = true
@@ -35,17 +35,17 @@ struct PowerModeSummaryRow: View {
             }
         }
         .sheet(isPresented: $sheetOpen) {
-            PowerModeListSheet(manager: manager, isPresented: $sheetOpen)
+            PowerModeListSheet(store: store, isPresented: $sheetOpen)
         }
     }
 
     private var detail: LocalizedStringKey {
-        let total = manager.configs.count
-        let enabled = manager.configs.filter(\.enabled).count
-        if !manager.enabled {
+        let total = store.configs.count
+        let enabled = store.configs.filter(\.enabled).count
+        if !store.enabled {
             return "Off. Profile-based overrides per app or website ignored until enabled."
         }
-        if let active = manager.activeConfig {
+        if let active = store.activeConfig {
             return "On · \(active.emoji) \(active.name) active for the foreground app"
         }
         return "On · \(enabled)/\(total) profiles enabled, no match for the foreground app"

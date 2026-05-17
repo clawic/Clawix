@@ -841,7 +841,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // doesn't touch `addGlobalMonitorForEvents` until the user
         // opts in from Settings → Voice to Text.
         DictationOverlay.shared.install(coordinator: DictationCoordinator.shared)
-        HotkeyManager.shared.bootstrap(coordinator: DictationCoordinator.shared)
+        DictationHotkeyMonitor.shared.bootstrap(coordinator: DictationCoordinator.shared)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

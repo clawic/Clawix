@@ -283,7 +283,7 @@ public actor TranscriptionService {
 
     /// File-backed tracer so transcription stage transitions land in a
     /// known location regardless of how the host app is launched.
-    /// Mirrors the format used by `HotkeyManager` / `DictationCoordinator`
+    /// Mirrors the format used by `DictationHotkeyMonitor` / `DictationCoordinator`
     /// (same `/tmp/clawix-hotkey.log`) so we can diff one continuous
     /// timeline when reproducing dictation bugs.
     public nonisolated static func trace(_ message: String) {

@@ -210,7 +210,7 @@ final class DictationCoordinator: ObservableObject {
         _ = MediaController.shared
         _ = PlaybackController.shared
         _ = FillerWordsStore.shared
-        _ = PowerModeManager.shared
+        _ = PowerModeStore.shared
         // Start the privacy cleanup scheduler so users with the
         // toggle on don't accumulate stale rows / audio across
         // sessions. Idempotent; safe to call once per launch.
@@ -287,7 +287,7 @@ final class DictationCoordinator: ObservableObject {
     /// `language` field and lets Whisper detect.
     private func resolvedLanguageHint() -> String? {
         // Power Mode override takes precedence.
-        if let pm = PowerModeManager.shared.activeConfig,
+        if let pm = PowerModeStore.shared.activeConfig,
            let langOverride = pm.languageOverride,
            !langOverride.isEmpty {
             if langOverride == "auto" { return nil }
@@ -301,7 +301,7 @@ final class DictationCoordinator: ObservableObject {
     }
 
     private func resolvedAutoSendKey() -> DictationAutoSendKey {
-        if let pm = PowerModeManager.shared.activeConfig,
+        if let pm = PowerModeStore.shared.activeConfig,
            let raw = pm.autoSendKeyOverride,
            let value = DictationAutoSendKey(rawValue: raw) {
             return value
@@ -311,7 +311,7 @@ final class DictationCoordinator: ObservableObject {
     }
 
     private func resolvedActiveModel() -> DictationModel {
-        if let pm = PowerModeManager.shared.activeConfig,
+        if let pm = PowerModeStore.shared.activeConfig,
            let override = pm.transcriptionModelOverride {
             return override
         }
@@ -329,7 +329,7 @@ final class DictationCoordinator: ObservableObject {
         // Power Mode override takes precedence over the per-language
         // global prompt.
         let stylePrompt: String?
-        if let pm = PowerModeManager.shared.activeConfig,
+        if let pm = PowerModeStore.shared.activeConfig,
            let override = pm.whisperPromptOverride,
            !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             stylePrompt = override
@@ -514,7 +514,7 @@ final class DictationCoordinator: ObservableObject {
                     ) ?? ""
                     let enhanced = await Self.enhanceFailOpen(
                         raw: raw,
-                        powerMode: PowerModeManager.shared.activeConfig
+                        powerMode: PowerModeStore.shared.activeConfig
                     )
                     await self?.finishIfFresh(
                         token: token,
@@ -556,7 +556,7 @@ final class DictationCoordinator: ObservableObject {
                 // the main actor.
                 let enhanced = await Self.enhanceFailOpen(
                     raw: raw,
-                    powerMode: PowerModeManager.shared.activeConfig
+                    powerMode: PowerModeStore.shared.activeConfig
                 )
                 await self?.finishIfFresh(
                     token: token,
@@ -945,7 +945,7 @@ final class DictationCoordinator: ObservableObject {
                     // Run AI Enhancement (#21) before finish, mirroring
                     // the Whisper branch. Returns input unchanged when
                     // the master toggle is off.
-                    let pmActive = PowerModeManager.shared.activeConfig
+                    let pmActive = PowerModeStore.shared.activeConfig
                     let enhanced = await EnhancementService.shared.enhance(
                         raw: final,
                         powerMode: pmActive
@@ -1103,7 +1103,7 @@ final class DictationCoordinator: ObservableObject {
             let id = UUID().uuidString
             let words = processed.split(whereSeparator: { $0.isWhitespace }).count
             let duration = TimeInterval(samples.count) / 16_000.0
-            let pmId = PowerModeManager.shared.activeConfig?.id.uuidString
+            let pmId = PowerModeStore.shared.activeConfig?.id.uuidString
             let enhancementProvider: String? = EnhancementService.shared.isEnabled ? "framework-route" : nil
             let record = TranscriptionRecord(
                 id: id,

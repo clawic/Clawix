@@ -1025,10 +1025,10 @@ for (const pattern of [
   }
 }
 
-const dictationHotkeyManager = read("macos/Sources/Clawix/Dictation/HotkeyManager.swift");
+const dictationHotkeyMonitor = read("macos/Sources/Clawix/Dictation/HotkeyManager.swift");
 for (const pattern of ["migratedV2", "dictation.hotkey.migratedV2", "One-shot migration"]) {
-  if (dictationHotkeyManager.includes(pattern)) {
-    fail(`HotkeyManager.swift contains clean-v1 incompatible hotkey migration ${JSON.stringify(pattern)}`);
+  if (dictationHotkeyMonitor.includes(pattern)) {
+    fail(`DictationHotkeyMonitor contains clean-v1 incompatible hotkey migration ${JSON.stringify(pattern)}`);
   }
 }
 

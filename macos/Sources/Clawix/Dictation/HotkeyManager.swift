@@ -79,11 +79,11 @@ enum DictationHotkeyTrigger: String, CaseIterable, Codable {
 /// hold/tap state machine so they can be active at the same time
 /// without interference.
 @MainActor
-final class HotkeyManager {
+final class DictationHotkeyMonitor {
 
-    static let shared = HotkeyManager()
+    static let shared = DictationHotkeyMonitor()
 
-    /// Per-binding mutable state, owned by the manager. Two of these
+    /// Per-binding mutable state, owned by the monitor. Two of these
     /// live at once — one for Shortcut 1, one for Shortcut 2. Carried
     /// in a class so `handle()` can mutate via reference without
     /// having to look up by index every event.
