@@ -308,6 +308,35 @@ for (const snippet of [
   if (!authorizedWrongFileScopeOutput.includes(snippet)) fail(`authorized wrong-file-scope failure output is missing: ${snippet}`);
 }
 
+let authorizedMissingPatternScopeOutput = "";
+let authorizedMissingPatternScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_governance_guard.mjs", "--simulate-unauthorized-visual-diff", "--simulate-missing-pattern-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-missing-pattern-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  authorizedMissingPatternScopeExitCode = error.status || 1;
+  authorizedMissingPatternScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+if (authorizedMissingPatternScopeExitCode === 0) {
+  fail("simulated visual diff must fail when the approved visual scope does not include a matching pattern");
+}
+for (const snippet of [
+  "authorized visual/copy/layout source edit missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-missing-pattern-scope",
+  "does not include a pattern for surface web-components-and-shell",
+]) {
+  if (!authorizedMissingPatternScopeOutput.includes(snippet)) fail(`authorized missing-pattern-scope failure output is missing: ${snippet}`);
+}
+
 let authorizedWrongKindScopeOutput = "";
 let authorizedWrongKindScopeExitCode = 0;
 try {

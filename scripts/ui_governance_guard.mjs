@@ -14,6 +14,7 @@ const simulateLayoutOnlyVisualScope = process.argv.includes("--simulate-layout-o
 const simulateRevokedVisualScope = process.argv.includes("--simulate-revoked-visual-scope");
 const simulateExpiredVisualScope = process.argv.includes("--simulate-expired-visual-scope");
 const simulateBudgetKindVisualScope = process.argv.includes("--simulate-budget-kind-visual-scope");
+const simulateMissingPatternVisualScope = process.argv.includes("--simulate-missing-pattern-visual-scope");
 const errors = [];
 
 function fail(message) {
@@ -556,6 +557,11 @@ const simulatedScopeApproval = {
   approvedAt: "2026-05-17",
   privateApprovalReference: "private-codex-ui-approval:simulated",
 };
+const simulatedSourceScope = {
+  platforms: ["web"],
+  surfaces: ["web-components-and-shell"],
+  patterns: ["icon-chip-button"],
+};
 if (simulateApprovedVisualScope) {
   visualScopes.activeScopes = [
     ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
@@ -563,6 +569,7 @@ if (simulateApprovedVisualScope) {
       id: "simulated-approved-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
@@ -577,6 +584,7 @@ if (simulateOverbudgetVisualScope) {
       id: "simulated-overbudget-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 1, allowedChangeKinds: ["layout", "microcopy"] },
@@ -591,6 +599,7 @@ if (simulateWrongFileVisualScope) {
       id: "simulated-wrong-file-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/other-visual-file.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
@@ -605,6 +614,7 @@ if (simulateLayoutOnlyVisualScope) {
       id: "simulated-layout-only-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout"] },
@@ -619,6 +629,7 @@ if (simulateRevokedVisualScope) {
       id: "simulated-revoked-scope",
       status: "revoked",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
@@ -633,6 +644,7 @@ if (simulateExpiredVisualScope) {
       id: "simulated-expired-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
@@ -647,9 +659,27 @@ if (simulateBudgetKindVisualScope) {
       id: "simulated-budget-kind-scope",
       status: "approved",
       ...simulatedScopeApproval,
+      ...simulatedSourceScope,
       files: ["web/src/simulated-visual-diff.tsx"],
       changeKinds: ["layout", "microcopy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
+if (simulateMissingPatternVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-missing-pattern-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      platforms: ["web"],
+      surfaces: ["web-components-and-shell"],
+      patterns: ["composer-chrome"],
+      files: ["web/src/simulated-visual-diff.tsx"],
+      changeKinds: ["layout", "microcopy"],
+      changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy"] },
       expiresAt: "2099-12-31",
     },
   ];
@@ -660,6 +690,43 @@ function fileMatchesScope(file, scopeFiles = []) {
     if (scopeFile === file) return true;
     if (scopeFile.endsWith("/**")) return file.startsWith(scopeFile.slice(0, -3));
     return false;
+  });
+}
+
+function globToRegExp(glob) {
+  let output = "^";
+  for (let index = 0; index < glob.length; index += 1) {
+    const char = glob[index];
+    const next = glob[index + 1];
+    if (char === "*" && next === "*") {
+      output += ".*";
+      index += 1;
+    } else if (char === "*") {
+      output += "[^/]*";
+    } else {
+      output += char.replace(/[|\\{}()[\]^$+?.]/g, "\\$&");
+    }
+  }
+  return new RegExp(`${output}$`);
+}
+
+const visibleInventoryPath = "docs/ui/visible-surfaces.inventory.json";
+const visibleInventory = readJson(visibleInventoryPath);
+const visibleCoverage = requireArray(visibleInventory, visibleInventoryPath, "coverage").map((entry) => ({
+  id: entry?.id,
+  platform: entry?.platform,
+  classification: entry?.classification,
+  patterns: Array.isArray(entry?.patterns) ? entry.patterns : [],
+  scopes: Array.isArray(entry?.scopes) ? entry.scopes.map((scope) => globToRegExp(scope)) : [],
+  excludeScopes: Array.isArray(entry?.excludeScopes) ? entry.excludeScopes.map((scope) => globToRegExp(scope)) : [],
+}));
+
+function inventoryMatchesForFile(file) {
+  const platform = platformForPath(file);
+  return visibleCoverage.filter((entry) => {
+    if (entry.platform !== platform) return false;
+    if (entry.excludeScopes.some((scope) => scope.test(file))) return false;
+    return entry.scopes.some((scope) => scope.test(file));
   });
 }
 
@@ -696,9 +763,16 @@ function approvedScopeForHits(hits) {
 
   const files = new Set(hits.map((hit) => hit.path));
   const changeKinds = new Set(hits.map((hit) => hit.changeKind));
+  const hitPlatforms = new Set([...files].map(platformForPath).filter(Boolean));
+  const scopePlatforms = new Set(Array.isArray(scope.platforms) ? scope.platforms : []);
+  const scopeSurfaces = new Set(Array.isArray(scope.surfaces) ? scope.surfaces : []);
+  const scopePatterns = new Set(Array.isArray(scope.patterns) ? scope.patterns : []);
   const scopeFiles = Array.isArray(scope.files) ? scope.files : [];
   const scopeChangeKinds = new Set(Array.isArray(scope.changeKinds) ? scope.changeKinds : []);
   const changeBudget = scope.changeBudget || {};
+  if (scopePlatforms.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare platforms` };
+  if (scopeSurfaces.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare surfaces` };
+  if (scopePatterns.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare patterns` };
   if (!Array.isArray(changeBudget.allowedChangeKinds)) {
     return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.allowedChangeKinds is required` };
   }
@@ -706,6 +780,19 @@ function approvedScopeForHits(hits) {
 
   for (const file of files) {
     if (!fileMatchesScope(file, scopeFiles)) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include ${file}` };
+  }
+  for (const platform of hitPlatforms) {
+    if (!scopePlatforms.has(platform)) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include platform ${platform}` };
+  }
+  for (const file of files) {
+    const matches = inventoryMatchesForFile(file);
+    if (matches.length === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} cannot map ${file} to a visible surface` };
+    for (const match of matches) {
+      if (!scopeSurfaces.has(match.id)) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include surface ${match.id}` };
+      if (match.patterns.length > 0 && !match.patterns.some((pattern) => scopePatterns.has(pattern))) {
+        return { ok: false, reason: `scope ${requestedVisualScopeId} does not include a pattern for surface ${match.id}` };
+      }
+    }
   }
   for (const changeKind of changeKinds) {
     if (!scopeChangeKinds.has(changeKind)) {
