@@ -3,6 +3,17 @@
   "status": "active",
   "policy": "UI exceptions are temporary, scoped, owned, and expire. They do not approve visual direction and cannot expand without explicit user approval.",
   "exceptionStatuses": ["active", "expired", "resolved", "revoked"],
+  "allowedActionPolicy": {
+    "nonVisualAgentAction": "track-or-conceptual-proposal-only",
+    "requiresExplicitUserApprovalForExpansion": true,
+    "forbiddenAllowedActionTerms": [
+      "modify presentation",
+      "change layout",
+      "change copy",
+      "change visual",
+      "cleanup now"
+    ]
+  },
   "requiredExceptionFields": [
     "id",
     "status",

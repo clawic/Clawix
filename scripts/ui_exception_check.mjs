@@ -102,6 +102,7 @@ requireFields(registry, registryPath, [
   "status",
   "policy",
   "exceptionStatuses",
+  "allowedActionPolicy",
   "requiredExceptionFields",
   "exceptions",
 ]);
@@ -111,6 +112,9 @@ if (args.has("--simulate-missing-exception-status") && Array.isArray(registry?.e
 if (args.has("--simulate-missing-required-exception-field") && Array.isArray(registry?.requiredExceptionFields)) {
   registry.requiredExceptionFields = registry.requiredExceptionFields.filter((field) => field !== "privateApprovalReference");
 }
+if (args.has("--simulate-missing-allowed-action-policy")) {
+  delete registry.allowedActionPolicy;
+}
 if (args.has("--simulate-missing-approval-authority-source") && Array.isArray(approvalAuthority?.approvalSources)) {
   approvalAuthority.approvalSources = approvalAuthority.approvalSources.filter((source) => source?.id !== "exceptions");
 }
@@ -118,6 +122,29 @@ if (args.has("--simulate-missing-approval-authority-source") && Array.isArray(ap
 const statuses = new Set(requireArray(registry, registryPath, "exceptionStatuses"));
 for (const status of ["active", "expired", "resolved", "revoked"]) {
   if (!statuses.has(status)) fail(`${registryPath}.exceptionStatuses must include ${status}`);
+}
+
+const allowedActionPolicy = registry?.allowedActionPolicy || {};
+requireFields(allowedActionPolicy, `${registryPath}.allowedActionPolicy`, [
+  "nonVisualAgentAction",
+  "requiresExplicitUserApprovalForExpansion",
+  "forbiddenAllowedActionTerms",
+]);
+if (allowedActionPolicy.nonVisualAgentAction !== "track-or-conceptual-proposal-only") {
+  fail(`${registryPath}.allowedActionPolicy.nonVisualAgentAction must be track-or-conceptual-proposal-only`);
+}
+if (allowedActionPolicy.requiresExplicitUserApprovalForExpansion !== true) {
+  fail(`${registryPath}.allowedActionPolicy.requiresExplicitUserApprovalForExpansion must be true`);
+}
+const forbiddenAllowedActionTerms = requireArray(
+  allowedActionPolicy,
+  `${registryPath}.allowedActionPolicy`,
+  "forbiddenAllowedActionTerms",
+);
+for (const term of ["modify presentation", "change layout", "change copy", "change visual", "cleanup now"]) {
+  if (!forbiddenAllowedActionTerms.includes(term)) {
+    fail(`${registryPath}.allowedActionPolicy.forbiddenAllowedActionTerms must include ${term}`);
+  }
 }
 
 const requiredExceptionFields = requireArray(registry, registryPath, "requiredExceptionFields");
@@ -244,6 +271,14 @@ if (args.has("--simulate-missing-entry-field")) {
   ];
 }
 
+if (args.has("--simulate-executable-allowed-action")) {
+  appendSimulatedException({
+    id: "simulated-executable-allowed-action",
+    status: "expired",
+    allowedAction: "Modify presentation now.",
+  });
+}
+
 if (args.has("--simulate-local-path-leak")) {
   appendSimulatedException({
     id: "simulated-local-path-leak",
@@ -293,6 +328,12 @@ for (const [index, exception] of exceptionRecords.entries()) {
     fail(`${label}.reviewAfter must not be after expiresAt`);
   }
   requireSafePrivateReference(exception.privateApprovalReference, "private-codex-ui-approval", `${label}.privateApprovalReference`);
+  const allowedAction = String(exception.allowedAction || "").toLowerCase();
+  for (const term of forbiddenAllowedActionTerms) {
+    if (allowedAction.includes(String(term).toLowerCase())) {
+      fail(`${label}.allowedAction must not authorize ${term}`);
+    }
+  }
 }
 
 const inventoryPath = "docs/ui/visible-surfaces.inventory.json";
