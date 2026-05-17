@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -79,6 +80,13 @@ function requireSafePrivateReference(value, alias, label) {
 
 const manifestPath = "docs/ui/visual-model-allowlist.manifest.json";
 const manifest = readJson(manifestPath);
+if (args.has("--simulate-missing-copy-class") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) =>
+    model?.id === "claude-opus-4.7"
+      ? { ...model, allowedMutationClasses: (model.allowedMutationClasses || []).filter((mutationClass) => mutationClass !== "copy-ui") }
+      : model,
+  );
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -133,7 +141,9 @@ for (const status of ["active", "revoked"]) {
 }
 
 const allowedMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equivalent-refactor"]);
+const requiredInitialMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equivalent-refactor"]);
 let activeVisualModelCount = 0;
+let initialVisualModel = null;
 for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisualModels").entries()) {
   const label = `${manifestPath}.allowedVisualModels[${index}]`;
   requireFields(model, label, [
@@ -146,6 +156,7 @@ for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisual
   ]);
   if (!modelStatuses.has(model.status)) fail(`${label}.status is invalid`);
   if (model.status === "active") activeVisualModelCount += 1;
+  if (model.id === "claude-opus-4.7") initialVisualModel = { model, label };
   if (model.privateApprovalRequired !== true) fail(`${label}.privateApprovalRequired must be true`);
   if (model.status === "active") {
     requireFields(model, label, ["approvedBy", "approvedAt", "privateApprovalReference"]);
@@ -169,6 +180,16 @@ const activeIds = new Set(
 );
 if (!activeIds.has("claude-opus-4.7")) {
   fail(`${manifestPath}.allowedVisualModels must include active claude-opus-4.7`);
+}
+if (!initialVisualModel) {
+  fail(`${manifestPath}.allowedVisualModels must include claude-opus-4.7`);
+} else {
+  const mutationClasses = new Set(Array.isArray(initialVisualModel.model.allowedMutationClasses) ? initialVisualModel.model.allowedMutationClasses : []);
+  for (const mutationClass of requiredInitialMutationClasses) {
+    if (!mutationClasses.has(mutationClass)) {
+      fail(`${initialVisualModel.label}.allowedMutationClasses must include ${mutationClass}`);
+    }
+  }
 }
 
 const guardPath = "scripts/ui_governance_guard.mjs";
