@@ -980,7 +980,7 @@ const requiredDocs = [
   "docs/ui/README.md",
   "docs/ui/decision-verification.json",
   "docs/ui/pattern-registry/README.md",
-  "docs/ui/pattern-registry/patterns/NOTES.md",
+  "docs/ui/pattern-registry/patterns/notes.md",
   "docs/ui/interface-governance.config.json",
   "docs/ui/implementation-evidence.manifest.json",
   "docs/ui/implementation-phases.manifest.json",

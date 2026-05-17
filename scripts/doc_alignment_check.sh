@@ -66,7 +66,7 @@ for file in \
   "docs/ui/visual-change-detectors.manifest.json" \
   "docs/ui/visual-proposals.registry.json" \
   "docs/ui/pattern-registry/patterns.registry.json" \
-  "docs/ui/pattern-registry/patterns/NOTES.md" \
+  "docs/ui/pattern-registry/patterns/notes.md" \
   "docs/ui/debt.baseline.json" \
   "docs/ui/debt-baseline.manifest.json" \
   "docs/ui/debt-report.registry.json" \
@@ -315,9 +315,9 @@ require_snippet "macos/PERF.md" "docs/ui/performance-budgets.registry.json"
 require_snippet "skills/ui-implementation/SKILL.md" "Declare the UI governance evidence"
 require_snippet "skills/ui-implementation/SKILL.md" "pattern IDs or debt/protected/exception mapping"
 require_snippet "skills/ui-performance-budget/SKILL.md" "docs/ui/performance-budgets.registry.json"
-require_snippet "docs/ui/pattern-registry/patterns/NOTES.md" "## sidebar-row"
-require_snippet "docs/ui/pattern-registry/patterns/NOTES.md" "## terminal-surface"
-require_snippet "docs/ui/pattern-registry/patterns/NOTES.md" "## right-sidebar-surface"
+require_snippet "docs/ui/pattern-registry/patterns/notes.md" "## sidebar-row"
+require_snippet "docs/ui/pattern-registry/patterns/notes.md" "## terminal-surface"
+require_snippet "docs/ui/pattern-registry/patterns/notes.md" "## right-sidebar-surface"
 require_snippet "docs/interface-matrix.md" "This matrix is the Clawix gate for ADR 0007"
 require_snippet "docs/interface-matrix.md" "Every current surface must be one of"
 require_snippet "docs/interface-matrix.md" "EXTERNAL PENDING"

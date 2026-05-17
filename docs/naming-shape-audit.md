@@ -11,9 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 4 in the current local tree. Broad source symbols account
-  for 3 warnings; one legacy uppercase Markdown note remains in UI pattern
-  registry docs.
+- Naming warnings: 3 in the current local tree. Broad source symbols account
+  for all remaining warnings.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
 
@@ -136,10 +135,13 @@ for staged rename/split work and must not be hidden by compressing code.
 - Index tab vocabulary: Index entity, search, monitor, run, alert, tag, and
   collection state now uses `IndexStore` instead of generic manager
   terminology.
+- UI pattern notes vocabulary: pattern notes now live at
+  `docs/ui/pattern-registry/patterns/notes.md` instead of an uppercase
+  Markdown path.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 4
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 3
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.
