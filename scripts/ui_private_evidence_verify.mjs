@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_PRIVATE_EVIDENCE_VERIFY_SELF_TEST === "1";
 const errors = [];
 
 const referenceFields = {
@@ -464,6 +466,59 @@ function verifyPublicApprovalState(item, registries, label) {
 if (!hasFlag("--require-approved")) {
   console.error("UI private evidence verification requires --require-approved.");
   process.exit(1);
+}
+
+if (!isSelfTest && !includePending) {
+  const selfTestEnv = { ...process.env, CLAWIX_UI_PRIVATE_EVIDENCE_VERIFY_SELF_TEST: "1" };
+  for (const [testArgs, expectedOutput, extraEnv = {}] of [
+    [[], "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--require-approved", "--include-pending"], "CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: { ...selfTestEnv, ...extraEnv },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for private evidence verification`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}`);
+    }
+  }
+
+  const emptyPrivateRoot = fs.mkdtempSync(path.join(os.tmpdir(), "clawix-ui-private-evidence-empty-"));
+  try {
+    const emptyRootResult = spawnSync(
+      process.execPath,
+      [new URL(import.meta.url).pathname, "--require-approved", "--include-pending"],
+      {
+        cwd: rootDir,
+        env: {
+          ...selfTestEnv,
+          CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE: "1",
+          CLAWIX_UI_PRIVATE_BASELINE_ROOT: emptyPrivateRoot,
+          CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: emptyPrivateRoot,
+          CLAWIX_UI_PRIVATE_COPY_ROOT: emptyPrivateRoot,
+          CLAWIX_UI_PRIVATE_DRIFT_ROOT: emptyPrivateRoot,
+          CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT: emptyPrivateRoot,
+        },
+        encoding: "utf8",
+      },
+    );
+    const emptyRootOutput = `${emptyRootResult.stdout || ""}${emptyRootResult.stderr || ""}`;
+    if (emptyRootResult.status === 0) {
+      fail("self-test empty private roots must fail for private evidence verification");
+    }
+    if (!emptyRootOutput.includes("missing surface-baseline:macos:macos-root-chrome surface-evidence.json")) {
+      fail("self-test empty private roots output must include missing surface evidence");
+    }
+  } finally {
+    fs.rmSync(emptyPrivateRoot, { recursive: true, force: true });
+  }
 }
 
 const plan = runEvidencePlan();
