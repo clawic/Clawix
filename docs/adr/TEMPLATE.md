@@ -28,6 +28,20 @@ Every accepted ADR that adds or changes an important capability must answer:
   validation, or record `PARTIAL` / `EXTERNAL PENDING` with the missing physical
   dependency.
 
+## Discovery Route
+
+Every accepted ADR that adds or changes durable meta-code must answer:
+
+- **AGENTS/CLAUDE**: which always-on entrypoint routes agents here within two
+  hops?
+- **Skill**: which task skill, if any, must be loaded before changing this
+  surface?
+- **Docs router**: which decision-map row or docs index entry points here?
+- **CLI/check**: which `claw search`, `claw inspect`, or local check exposes
+  this decision?
+- **Registry**: which `docs/discoverability.registry.json` record enforces the
+  route, or which baseline entry temporarily carries the existing debt?
+
 ## Consequences
 
 List the practical tradeoffs, migration impact, and follow-up enforcement.

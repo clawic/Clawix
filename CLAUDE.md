@@ -16,5 +16,8 @@ Read and follow:
 8. `docs/adr/0002-naming-and-stability-surfaces.md`
 9. `docs/adr/0009-agentic-naming-and-code-structure.md`
 10. The task-specific docs, tests, and code in the area you are changing
+11. `docs/adr/0017-discoverability-and-meta-code-routing.md` and
+    `docs/discoverability.registry.json` before adding durable ADRs, skills,
+    guardrails, harnesses, docs routers, UI governance artifacts, or route work
 
 If `CLAUDE.md` and `AGENTS.md` ever diverge, `AGENTS.md` wins.

@@ -2,6 +2,11 @@
 
 This directory is the machine-readable interface governance layer for Clawix.
 It complements `STYLE.md`, `STANDARDS.md`, and `macos/PERF.md`.
+It is also registered in `docs/discoverability.registry.json` under the
+discoverability contract in
+`docs/adr/0017-discoverability-and-meta-code-routing.md`; new durable UI
+governance artifacts must remain reachable from `AGENTS.md`, this README, the
+relevant UI skill, and the local guard within two hops.
 
 The system protects approved UI and prevents visual drift. It is not a license for agents to repair unrelated UI. If a guard finds visual debt outside the current authorized scope, the correct result is a tracked pending item.
 
