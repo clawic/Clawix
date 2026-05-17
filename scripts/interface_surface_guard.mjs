@@ -1423,7 +1423,7 @@ for (const pattern of ["ImportAgentRow", "Import another agent configuration", "
 }
 
 const driveScreenSource = read("macos/Sources/Clawix/Drive/DriveScreen.swift");
-for (const pattern of ["try? await manager.client.createTailnetShare", "try? await manager.client.createTunnelShare", "try? await manager.client.createAgentShare", "shares = try? await manager.client.listAllShares"]) {
+for (const pattern of ["try? await store.client.createTailnetShare", "try? await store.client.createTunnelShare", "try? await store.client.createAgentShare", "shares = try? await store.client.listAllShares"]) {
   if (driveScreenSource.includes(pattern)) {
     fail(`DriveScreen.swift must surface Drive detail action failures instead of swallowing them: ${JSON.stringify(pattern)}`);
   }

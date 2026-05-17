@@ -11,7 +11,7 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 3 in the current local tree. Broad source symbols account
+- Naming warnings: 2 in the current local tree. Broad source symbols account
   for all remaining warnings.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -138,10 +138,12 @@ for staged rename/split work and must not be hidden by compressing code.
 - UI pattern notes vocabulary: pattern notes now live at
   `docs/ui/pattern-registry/patterns/notes.md` instead of an uppercase
   Markdown path.
+- Drive surface vocabulary: Drive view, upload, realtime, thumbnail, and tool
+  binding state now uses `DriveStore` instead of generic manager terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 3
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 2
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

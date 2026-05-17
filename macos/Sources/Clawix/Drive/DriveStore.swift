@@ -9,11 +9,11 @@ extension Notification.Name {
 /// Top-level @MainActor orchestrator for the Drive UI. Wraps
 /// `ClawJSDriveClient` (HTTP) and `ClawJSDriveRealtimeClient` (WS), owns
 /// the auto-login flow, and exposes a SwiftUI-friendly snapshot of items
-/// for the active folder + counts + audit tail. Mirrors the philosophy
-/// of `SecretsManager`: state machine, no hidden globals, all mutations
-/// flow through this object so views can drive optimistic updates.
+/// for the active folder + counts + audit tail. Mirrors the app's store
+/// pattern: state machine, no hidden globals, all mutations flow through
+/// this object so views can drive optimistic updates.
 @MainActor
-final class DriveManager: ObservableObject {
+final class DriveStore: ObservableObject {
 
     enum State: Equatable {
         case loading

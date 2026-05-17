@@ -17,7 +17,7 @@ struct DriveScreen: View {
         case folder(String)
     }
 
-    @StateObject private var manager = DriveManager()
+    @StateObject private var store = DriveStore()
     @State private var selectedItemId: String? = nil
     @State private var isUploadDialogPresented = false
     @State private var duplicatePromptForExisting: ClawJSDriveClient.DriveItem? = nil
@@ -40,15 +40,15 @@ struct DriveScreen: View {
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             applyMode()
-            manager.boot()
-            DriveTools.bind(manager)
+            store.boot()
+            DriveTools.bind(store)
             presentPendingQuickUploadIfReady()
         }
         .onChange(of: mode) { _, _ in applyMode() }
         .onChange(of: appState.driveQuickUploadRequestID) { _, _ in
             presentPendingQuickUploadIfReady()
         }
-        .onChange(of: manager.state) { _, _ in
+        .onChange(of: store.state) { _, _ in
             presentPendingQuickUploadIfReady()
         }
         .onReceive(NotificationCenter.default.publisher(for: .driveQuickUploadRequested)) { _ in
@@ -63,10 +63,10 @@ struct DriveScreen: View {
             Button("Replace") {
                 if let url = pendingUploadURL, let existing = duplicatePromptForExisting {
                     Task { @MainActor in
-                        await manager.replaceDuplicate(
+                        await store.replaceDuplicate(
                             existingId: existing.id,
                             fileURL: url,
-                            parentId: manager.currentParentId
+                            parentId: store.currentParentId
                         )
                         pendingUploadURL = nil
                         duplicatePromptForExisting = nil
@@ -76,7 +76,7 @@ struct DriveScreen: View {
             Button("Keep both") {
                 if let url = pendingUploadURL {
                     Task { @MainActor in
-                        _ = await manager.upload(fileURL: url, parentId: manager.currentParentId, allowOverwrite: true)
+                        _ = await store.upload(fileURL: url, parentId: store.currentParentId, allowOverwrite: true)
                         duplicatePromptForExisting = nil
                     }
                 }
@@ -93,7 +93,7 @@ struct DriveScreen: View {
         HStack(spacing: 12) {
             Text(headerTitle).font(.system(size: 20, weight: .semibold))
             Spacer()
-            TextField("Search", text: Binding(get: { manager.query }, set: { manager.setQuery($0) }))
+            TextField("Search", text: Binding(get: { store.query }, set: { store.setQuery($0) }))
                 .textFieldStyle(.roundedBorder)
                 .frame(maxWidth: 280)
             Picker("", selection: $viewMode) {
@@ -112,7 +112,7 @@ struct DriveScreen: View {
                 for url in urls {
                     pendingUploadURL = url
                     Task { @MainActor in
-                        let result = await manager.upload(fileURL: url, parentId: manager.currentParentId)
+                        let result = await store.upload(fileURL: url, parentId: store.currentParentId)
                         if case .failure(let error) = result, case .duplicateExists(let existing) = error {
                             duplicatePromptForExisting = existing
                         } else {
@@ -126,7 +126,7 @@ struct DriveScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        switch manager.state {
+        switch store.state {
         case .loading, .authenticating:
             ProgressView("Connecting to Drive...").frame(maxWidth: .infinity, maxHeight: .infinity)
         case .error(let message):
@@ -145,7 +145,7 @@ struct DriveScreen: View {
                 contentBody
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 if let id = selectedItemId, let item = visibleItems.first(where: { $0.id == id }) {
-                    DriveItemDetailPane(item: item, manager: manager)
+                    DriveItemDetailPane(item: item, store: store)
                         .frame(
                             minWidth: 280,
                             idealWidth: 320,
@@ -163,7 +163,7 @@ struct DriveScreen: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(["my-drive", "recent", "starred", "shared", "trash"], id: \.self) { view in
                 Button {
-                    manager.setView(view)
+                    store.setView(view)
                 } label: {
                     HStack {
                         Image(systemName: iconFor(view))
@@ -176,16 +176,16 @@ struct DriveScreen: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(manager.currentView == view ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .background(store.currentView == view ? Color.accentColor.opacity(0.15) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
             Divider().padding(.vertical, 6)
             Text("Breadcrumbs").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
-            ForEach(manager.breadcrumbs, id: \.id) { crumb in
+            ForEach(store.breadcrumbs, id: \.id) { crumb in
                 Button {
-                    manager.setParent(crumb.id)
+                    store.setParent(crumb.id)
                 } label: {
                     Text(crumb.name).padding(.horizontal, 10)
                 }.buttonStyle(.plain)
@@ -204,9 +204,9 @@ struct DriveScreen: View {
                 )
             } else {
                 if effectiveLayout == .grid {
-                    DriveGridView(items: visibleItems, selectedId: $selectedItemId, manager: manager)
+                    DriveGridView(items: visibleItems, selectedId: $selectedItemId, store: store)
                 } else {
-                    DriveListView(items: visibleItems, selectedId: $selectedItemId, manager: manager)
+                    DriveListView(items: visibleItems, selectedId: $selectedItemId, store: store)
                 }
             }
         }
@@ -228,11 +228,11 @@ struct DriveScreen: View {
     private var visibleItems: [ClawJSDriveClient.DriveItem] {
         switch mode {
         case .photos:
-            return manager.items.filter { $0.kind == "folder" || isImage($0) }
+            return store.items.filter { $0.kind == "folder" || isImage($0) }
         case .documents:
-            return manager.items.filter { $0.kind == "folder" || !isImage($0) }
+            return store.items.filter { $0.kind == "folder" || !isImage($0) }
         case .admin, .recent, .folder:
-            return manager.items
+            return store.items
         }
     }
 
@@ -246,12 +246,12 @@ struct DriveScreen: View {
         case .documents: return "Documents"
         case .recent: return "Recent"
         case .admin: return "Drive"
-        case .folder: return manager.breadcrumbs.last?.name ?? "Folder"
+        case .folder: return store.breadcrumbs.last?.name ?? "Folder"
         }
     }
 
     private var canUpload: Bool {
-        if case .ready = manager.state { return true }
+        if case .ready = store.state { return true }
         return false
     }
 
@@ -265,18 +265,18 @@ struct DriveScreen: View {
         selectedItemId = nil
         switch mode {
         case .photos:
-            manager.setView("my-drive")
+            store.setView("my-drive")
             // Photos timeline filters by mime client-side via grid layout decision.
         case .documents:
-            manager.setView("my-drive")
+            store.setView("my-drive")
         case .recent:
-            manager.setView("recent")
+            store.setView("recent")
         case .admin:
-            manager.setView("my-drive")
-            manager.setParent(nil)
+            store.setView("my-drive")
+            store.setParent(nil)
         case .folder(let id):
-            manager.setView("my-drive")
-            manager.setParent(id)
+            store.setView("my-drive")
+            store.setParent(id)
         }
     }
 
@@ -304,11 +304,11 @@ struct DriveScreen: View {
 
     private func count(for view: String) -> Int {
         switch view {
-        case "my-drive": return manager.counts.myDrive
-        case "recent": return manager.counts.recent
-        case "starred": return manager.counts.starred
-        case "shared": return manager.counts.shared
-        case "trash": return manager.counts.trash
+        case "my-drive": return store.counts.myDrive
+        case "recent": return store.counts.recent
+        case "starred": return store.counts.starred
+        case "shared": return store.counts.shared
+        case "trash": return store.counts.trash
         default: return 0
         }
     }
@@ -320,7 +320,7 @@ struct DriveScreen: View {
                     guard let url = url else { return }
                     Task { @MainActor in
                         pendingUploadURL = url
-                        let result = await manager.upload(fileURL: url, parentId: manager.currentParentId)
+                        let result = await store.upload(fileURL: url, parentId: store.currentParentId)
                         if case .failure(let error) = result, case .duplicateExists(let existing) = error {
                             duplicatePromptForExisting = existing
                         } else {
@@ -336,7 +336,7 @@ struct DriveScreen: View {
 struct DriveGridView: View {
     let items: [ClawJSDriveClient.DriveItem]
     @Binding var selectedId: String?
-    let manager: DriveManager
+    let store: DriveStore
 
     private let columns = [GridItem(.adaptive(minimum: 140, maximum: 220), spacing: 12)]
 
@@ -344,9 +344,9 @@ struct DriveGridView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(items) { item in
-                    DriveItemTile(item: item, manager: manager, isSelected: selectedId == item.id)
+                    DriveItemTile(item: item, store: store, isSelected: selectedId == item.id)
                         .onTapGesture(count: 2) {
-                            if item.kind == "folder" { manager.setParent(item.id) }
+                            if item.kind == "folder" { store.setParent(item.id) }
                         }
                         .onTapGesture { selectedId = item.id }
                 }
@@ -359,7 +359,7 @@ struct DriveGridView: View {
 struct DriveListView: View {
     let items: [ClawJSDriveClient.DriveItem]
     @Binding var selectedId: String?
-    let manager: DriveManager
+    let store: DriveStore
 
     var body: some View {
         Table(items, selection: $selectedId) {
@@ -373,7 +373,7 @@ struct DriveListView: View {
             TableColumn("Modified") { item in Text(formatRelative(item.updatedAt)).foregroundStyle(.secondary) }
             TableColumn("Size") { item in Text(formatSize(item.sizeBytes)).foregroundStyle(.secondary) }
         }
-        .background(DriveListDoubleClickBridge(items: items, selectedId: selectedId, manager: manager))
+        .background(DriveListDoubleClickBridge(items: items, selectedId: selectedId, store: store))
     }
 
     private func formatRelative(_ iso: String) -> String {
@@ -393,7 +393,7 @@ struct DriveListView: View {
 private struct DriveListDoubleClickBridge: NSViewRepresentable {
     let items: [ClawJSDriveClient.DriveItem]
     let selectedId: String?
-    let manager: DriveManager
+    let store: DriveStore
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -412,7 +412,7 @@ private struct DriveListDoubleClickBridge: NSViewRepresentable {
     private func configure(_ coordinator: Coordinator, from view: NSView) {
         coordinator.items = items
         coordinator.selectedId = selectedId
-        coordinator.manager = manager
+        coordinator.store = store
         DispatchQueue.main.async {
             coordinator.install(from: view)
         }
@@ -421,7 +421,7 @@ private struct DriveListDoubleClickBridge: NSViewRepresentable {
     final class Coordinator: NSObject {
         var items: [ClawJSDriveClient.DriveItem] = []
         var selectedId: String?
-        weak var manager: DriveManager?
+        weak var store: DriveStore?
         private weak var installedTableView: NSTableView?
 
         func install(from view: NSView) {
@@ -442,9 +442,9 @@ private struct DriveListDoubleClickBridge: NSViewRepresentable {
             } else {
                 item = nil
             }
-            guard let item, item.kind == "folder", let manager else { return }
+            guard let item, item.kind == "folder", let store else { return }
             Task { @MainActor in
-                manager.setParent(item.id)
+                store.setParent(item.id)
             }
         }
 
@@ -476,7 +476,7 @@ private struct DriveListDoubleClickBridge: NSViewRepresentable {
 
 struct DriveItemTile: View {
     let item: ClawJSDriveClient.DriveItem
-    let manager: DriveManager
+    let store: DriveStore
     let isSelected: Bool
     @State private var thumbnail: NSImage?
 
@@ -499,7 +499,7 @@ struct DriveItemTile: View {
         }
         .task(id: item.id) {
             if (item.mimeType ?? "").starts(with: "image/") {
-                if let data = await manager.thumbnail(for: item.id, size: 256), let img = NSImage(data: data) {
+                if let data = await store.thumbnail(for: item.id, size: 256), let img = NSImage(data: data) {
                     thumbnail = img
                 }
             }
@@ -533,7 +533,7 @@ struct DriveItemTile: View {
 
 struct DriveItemDetailPane: View {
     let item: ClawJSDriveClient.DriveItem
-    let manager: DriveManager
+    let store: DriveStore
     @State private var exif: ClawJSDriveClient.ExifRecord?
     @State private var shares: ClawJSDriveClient.AllSharesResponse?
     @State private var detailError: String?
@@ -588,29 +588,29 @@ struct DriveItemDetailPane: View {
                 HStack {
                     if item.trashedAt == nil {
                         Button("Trash", role: .destructive) {
-                            Task { @MainActor in await manager.trash(item.id) }
+                            Task { @MainActor in await store.trash(item.id) }
                         }
                     } else {
                         Button("Restore") {
-                            Task { @MainActor in await manager.restore(item.id) }
+                            Task { @MainActor in await store.restore(item.id) }
                         }
                         Button("Delete", role: .destructive) {
                             confirmDelete = true
                         }
                     }
                     Button(item.starred ? "Unstar" : "Star") {
-                        Task { @MainActor in await manager.star(item.id, starred: !item.starred) }
+                        Task { @MainActor in await store.star(item.id, starred: !item.starred) }
                     }
                 }
             }
             .padding(16)
         }
         .task(id: item.id) {
-            await manager.markViewed(item.id)
+            await store.markViewed(item.id)
             var detailErrors: [String] = []
             if item.mimeType?.hasPrefix("image/") == true {
                 do {
-                    self.exif = try await manager.client.getExif(item.id)
+                    self.exif = try await store.client.getExif(item.id)
                 } catch {
                     self.exif = nil
                     detailErrors.append("EXIF: \(error.localizedDescription)")
@@ -619,18 +619,18 @@ struct DriveItemDetailPane: View {
                 self.exif = nil
             }
             do {
-                self.shares = try await manager.client.listAllShares(item.id)
+                self.shares = try await store.client.listAllShares(item.id)
             } catch {
                 self.shares = nil
                 detailErrors.append("Sharing: \(error.localizedDescription)")
             }
             let message = detailErrors.isEmpty ? nil : detailErrors.joined(separator: "\n")
             self.detailError = message
-            manager.lastError = message
+            store.lastError = message
         }
         .alert("Delete item?", isPresented: $confirmDelete) {
             Button("Delete", role: .destructive) {
-                Task { @MainActor in await manager.delete(item.id) }
+                Task { @MainActor in await store.delete(item.id) }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -641,45 +641,45 @@ struct DriveItemDetailPane: View {
     @MainActor
     private func createTailnetShare() async {
         do {
-            _ = try await manager.client.createTailnetShare(item.id)
-            shares = try await manager.client.listAllShares(item.id)
+            _ = try await store.client.createTailnetShare(item.id)
+            shares = try await store.client.listAllShares(item.id)
             detailError = nil
-            manager.lastError = nil
+            store.lastError = nil
         } catch {
             detailError = error.localizedDescription
-            manager.lastError = error.localizedDescription
+            store.lastError = error.localizedDescription
         }
     }
 
     @MainActor
     private func createTunnelShare() async {
         do {
-            _ = try await manager.client.createTunnelShare(item.id)
-            shares = try await manager.client.listAllShares(item.id)
+            _ = try await store.client.createTunnelShare(item.id)
+            shares = try await store.client.listAllShares(item.id)
             detailError = nil
-            manager.lastError = nil
+            store.lastError = nil
         } catch {
             detailError = error.localizedDescription
-            manager.lastError = error.localizedDescription
+            store.lastError = error.localizedDescription
         }
     }
 
     @MainActor
     private func createAgentShare() async {
         do {
-            _ = try await manager.client.createAgentShare(
+            _ = try await store.client.createAgentShare(
                 item.id,
                 capabilityKind: "drive.item.read",
                 ttlMinutes: 10,
                 reason: nil,
                 agentName: "agent",
             )
-            shares = try await manager.client.listAllShares(item.id)
+            shares = try await store.client.listAllShares(item.id)
             detailError = nil
-            manager.lastError = nil
+            store.lastError = nil
         } catch {
             detailError = error.localizedDescription
-            manager.lastError = error.localizedDescription
+            store.lastError = error.localizedDescription
         }
     }
 }

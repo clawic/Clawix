@@ -9,30 +9,30 @@ import Foundation
 @MainActor
 enum DriveTools {
 
-    static var sharedManager: DriveManager?
+    static var sharedStore: DriveStore?
 
-    static func bind(_ manager: DriveManager) {
-        sharedManager = manager
+    static func bind(_ store: DriveStore) {
+        sharedStore = store
     }
 
-    private static func require() throws -> DriveManager {
-        guard let manager = sharedManager else {
-            throw NSError(domain: "DriveTools", code: 1, userInfo: [NSLocalizedDescriptionKey: "Drive manager is not bound."])
+    private static func require() throws -> DriveStore {
+        guard let store = sharedStore else {
+            throw NSError(domain: "DriveTools", code: 1, userInfo: [NSLocalizedDescriptionKey: "Drive store is not bound."])
         }
-        return manager
+        return store
     }
 
     // MARK: - Tools
 
     static func upload(fileURL: URL, parentId: String? = nil, projectSlug: String? = nil) async throws -> ClawJSDriveClient.DriveItemDetail {
-        let manager = try require()
+        let store = try require()
         let resolvedParent: String?
         if let projectSlug = projectSlug {
-            resolvedParent = try await manager.client.ensureProjectFolder(slug: projectSlug)
+            resolvedParent = try await store.client.ensureProjectFolder(slug: projectSlug)
         } else {
             resolvedParent = parentId
         }
-        let result = await manager.upload(fileURL: fileURL, parentId: resolvedParent)
+        let result = await store.upload(fileURL: fileURL, parentId: resolvedParent)
         switch result {
         case .success(let detail): return detail
         case .failure(let error):
@@ -47,50 +47,50 @@ enum DriveTools {
     }
 
     static func find(_ query: String, semantic: Bool = false, limit: Int = 20) async throws -> [ClawJSDriveClient.DriveItem] {
-        let manager = try require()
+        let store = try require()
         if semantic {
-            let results = try await manager.client.searchSemantic(query, limit: limit)
+            let results = try await store.client.searchSemantic(query, limit: limit)
             return results.map { $0.item }
         }
-        return try await manager.client.searchText(query)
+        return try await store.client.searchText(query)
     }
 
     static func read(itemId: String) async throws -> Data {
-        let manager = try require()
+        let store = try require()
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent("\(itemId)-\(UUID().uuidString)")
-        try await manager.client.downloadItem(itemId, to: temp)
-        try await manager.client.markViewed(itemId)
+        try await store.client.downloadItem(itemId, to: temp)
+        try await store.client.markViewed(itemId)
         defer { try? FileManager.default.removeItem(at: temp) }
         return try Data(contentsOf: temp)
     }
 
     static func share(_ itemId: String, mode: ShareMode, ttlMinutes: Int = 10, agentName: String = "agent") async throws -> ShareDescriptor {
-        let manager = try require()
+        let store = try require()
         switch mode {
         case .read(let label):
-            let r = try await manager.client.createReadShare(itemId, label: label)
+            let r = try await store.client.createReadShare(itemId, label: label)
             return ShareDescriptor(mode: "read", id: r.share.id, payload: ["url": r.url, "token": r.token])
         case .tailnet:
-            let r = try await manager.client.createTailnetShare(itemId)
+            let r = try await store.client.createTailnetShare(itemId)
             return ShareDescriptor(mode: "tailnet", id: r.id, payload: ["magicdnsName": r.magicdnsName])
         case .publicTunnel:
-            let r = try await manager.client.createTunnelShare(itemId)
+            let r = try await store.client.createTunnelShare(itemId)
             return ShareDescriptor(mode: "public_tunnel", id: r.id, payload: ["url": r.tunnelUrl, "status": r.status])
         case .agent(let capabilityKind, let reason):
-            let r = try await manager.client.createAgentShare(itemId, capabilityKind: capabilityKind, ttlMinutes: ttlMinutes, reason: reason, agentName: agentName)
+            let r = try await store.client.createAgentShare(itemId, capabilityKind: capabilityKind, ttlMinutes: ttlMinutes, reason: reason, agentName: agentName)
             return ShareDescriptor(mode: "agent", id: r.record.id, payload: ["token": r.token, "expiresAt": r.record.expiresAt])
         }
     }
 
     static func organize(itemId: String, newParentId: String? = nil, newName: String? = nil) async throws -> ClawJSDriveClient.DriveItemDetail {
-        let manager = try require()
+        let store = try require()
         if let newName = newName {
-            _ = try await manager.client.updateItem(itemId, name: newName)
+            _ = try await store.client.updateItem(itemId, name: newName)
         }
         if let newParentId = newParentId {
-            return try await manager.client.moveItem(itemId, parentId: newParentId)
+            return try await store.client.moveItem(itemId, parentId: newParentId)
         }
-        return try await manager.client.getItem(itemId)
+        return try await store.client.getItem(itemId)
     }
 
     /// Destructive: the caller must pass `confirm: true`. The agent SHOULD
@@ -103,8 +103,8 @@ enum DriveTools {
                 NSLocalizedDescriptionKey: "Drive delete requires explicit confirmation.",
             ])
         }
-        let manager = try require()
-        return try await manager.client.deleteItem(itemId)
+        let store = try require()
+        return try await store.client.deleteItem(itemId)
     }
 
     enum ShareMode {
