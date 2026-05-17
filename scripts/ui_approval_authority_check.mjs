@@ -84,6 +84,12 @@ requireFields(manifest, manifestPath, [
   "requiredPrivateApprovalEvidenceFields",
   "approvalSources",
 ]);
+if (args.has("--simulate-missing-approval-source") && Array.isArray(manifest?.approvalSources)) {
+  manifest.approvalSources = manifest.approvalSources.filter((source) => source?.id !== "exceptions");
+}
+if (args.has("--simulate-duplicate-approval-source") && Array.isArray(manifest?.approvalSources) && manifest.approvalSources[0]) {
+  manifest.approvalSources = [...manifest.approvalSources, { ...manifest.approvalSources[0] }];
+}
 if (manifest?.privateApprovalAlias !== "private-codex-ui-approval") {
   fail(`${manifestPath}.privateApprovalAlias must be private-codex-ui-approval`);
 }
@@ -91,6 +97,9 @@ if (manifest?.evidenceFilename !== "approval-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be approval-evidence.json`);
 }
 const requiredEvidenceFields = new Set(requireArray(manifest, manifestPath, "requiredPrivateApprovalEvidenceFields"));
+if (args.has("--simulate-missing-required-evidence-field")) {
+  requiredEvidenceFields.delete("approvalHash");
+}
 for (const field of ["sourceId", "privateApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"]) {
   if (!requiredEvidenceFields.has(field)) {
     fail(`${manifestPath}.requiredPrivateApprovalEvidenceFields must include ${field}`);
@@ -145,6 +154,21 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
       const { approvedAt, ...rest } = model;
       return rest;
     });
+  }
+  if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-approved-by-not-user")) {
+    registry.allowedVisualModels = registry.allowedVisualModels.map((model) => (
+      model.status === "active" ? { ...model, approvedBy: "agent" } : model
+    ));
+  }
+  if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-unsafe-private-approval-reference")) {
+    registry.allowedVisualModels = registry.allowedVisualModels.map((model) => (
+      model.status === "active"
+        ? { ...model, privateApprovalReference: `${manifest.privateApprovalAlias}:${path.join(path.sep, "tmp", "approval-evidence")}` }
+        : model
+    ));
+  }
+  if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-undeclared-required-status")) {
+    registry.modelStatuses = registry.modelStatuses.filter((status) => status !== "active");
   }
   if (approvalRequiredStatuses) {
     const allowedStatuses = new Set(requireArray(registry, source.path, source.statusValuesField));
