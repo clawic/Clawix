@@ -120,6 +120,7 @@ const requiredApprovedByFields = new Map([
   ["protected-surfaces", "approvedBy"],
   ["visual-change-scopes", "approvedBy"],
   ["visual-model-allowlist", "approvedBy"],
+  ["visual-proposals", "approvedBy"],
   ["exceptions", "approvedBy"],
 ]);
 const sourceIds = new Set();
@@ -169,6 +170,29 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
   }
   if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-undeclared-required-status")) {
     registry.modelStatuses = registry.modelStatuses.filter((status) => status !== "active");
+  }
+  if (registry && source.id === "visual-proposals" && args.has("--simulate-visual-proposal-approved-by-not-user")) {
+    registry.proposals = [
+      ...(Array.isArray(registry.proposals) ? registry.proposals : []),
+      {
+        id: "simulated-visual-proposal-approval",
+        status: "user-approved-for-visual-lane",
+        requestedBy: "non-visual-lane",
+        mutationClass: "visual-ui",
+        changeKinds: ["color"],
+        surfaces: ["simulated-surface"],
+        platforms: ["macos"],
+        proposalReference: "docs/ui/visual-change-proposal.template.md",
+        requiredEvidence: ["private-baseline"],
+        outOfScopeDrift: [],
+        userApprovalStatus: "approved",
+        implementationStatus: "not-started",
+        reviewAfter: "2999-12-31",
+        approvedBy: "agent",
+        approvedAt: "2026-05-15",
+        privateApprovalReference: "private-codex-ui-approval:visual-proposals/simulated-visual-proposal-approval",
+      },
+    ];
   }
   if (approvalRequiredStatuses) {
     const allowedStatuses = new Set(requireArray(registry, source.path, source.statusValuesField));
