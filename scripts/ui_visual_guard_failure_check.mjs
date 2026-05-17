@@ -59,6 +59,7 @@ function buildApprovalFixture() {
     "docs/ui/visual-model-allowlist.manifest.json",
     "docs/ui/visual-proposals.registry.json",
     "docs/ui/exceptions.registry.json",
+    "docs/ui/rendered-drift.manifest.json",
   ]) {
     copyFixtureFile(fixtureRoot, relativePath);
   }

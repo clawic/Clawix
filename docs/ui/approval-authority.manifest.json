@@ -11,7 +11,8 @@
     "visual-change-scopes",
     "visual-model-allowlist",
     "visual-proposals",
-    "exceptions"
+    "exceptions",
+    "rendered-drift"
   ],
   "approvalSources": [
     {
@@ -64,6 +65,17 @@
       "id": "exceptions",
       "path": "docs/ui/exceptions.registry.json",
       "arrayField": "exceptions",
+      "approvedByField": "approvedBy",
+      "approvedAtField": "approvedAt",
+      "privateApprovalField": "privateApprovalReference"
+    },
+    {
+      "id": "rendered-drift",
+      "path": "docs/ui/rendered-drift.manifest.json",
+      "arrayField": "reports",
+      "statusField": "status",
+      "statusValuesField": "reportStatuses",
+      "approvalRequiredStatuses": ["approved-drift"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
       "privateApprovalField": "privateApprovalReference"

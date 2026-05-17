@@ -124,6 +124,7 @@ const canonicalSourceIds = [
   "visual-model-allowlist",
   "visual-proposals",
   "exceptions",
+  "rendered-drift",
 ];
 const requiredSourceIds = new Set();
 for (const [index, sourceId] of requireArray(manifest, manifestPath, "requiredApprovalSourceIds").entries()) {
@@ -143,6 +144,7 @@ const requiredApprovedByFields = new Map([
   ["visual-model-allowlist", "approvedBy"],
   ["visual-proposals", "approvedBy"],
   ["exceptions", "approvedBy"],
+  ["rendered-drift", "approvedBy"],
 ]);
 const sourceIds = new Set();
 for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approvalSources").entries()) {
@@ -212,6 +214,21 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
         approvedBy: "agent",
         approvedAt: "2026-05-15",
         privateApprovalReference: "private-codex-ui-approval:visual-proposals/simulated-visual-proposal-approval",
+      },
+    ];
+  }
+  if (registry && source.id === "rendered-drift" && args.has("--simulate-approved-drift-by-not-user")) {
+    registry.reports = [
+      {
+        coverageId: "macos-root-chrome",
+        platform: "macos",
+        privateDriftReportReference: "private-codex-ui-rendered-drift:surfaces/macos/macos-root-chrome",
+        driftCategories: ["geometry", "screenshot", "copy", "performance", "state"],
+        status: "approved-drift",
+        reviewAfter: "2999-12-31",
+        approvedBy: "agent",
+        approvedAt: "2026-05-17",
+        privateApprovalReference: "private-codex-ui-approval:rendered-drift/macos-root-chrome",
       },
     ];
   }
