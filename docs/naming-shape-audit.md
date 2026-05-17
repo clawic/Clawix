@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 21 in the current local tree. Broad source symbols account
-  for 20 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 19 in the current local tree. Broad source symbols account
+  for 18 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -106,10 +106,13 @@ for staged rename/split work and must not be hidden by compressing code.
 - Row component vocabulary: private metadata rows now use
   `EntityAttributeRow`, `ProfileIdentityRow`, and `PinsStorageNoticeRow`
   instead of generic `InfoRow` names.
+- Hotkey vocabulary: dictation hotkey settings now use
+  `DictationHotkeySettingsStore`, and Quick Ask global shortcut registration
+  uses `QuickAskHotkeyRegistrar` instead of generic manager terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 21
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 19
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

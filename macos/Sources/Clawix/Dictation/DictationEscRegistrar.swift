@@ -18,7 +18,7 @@ import Carbon.HIToolbox
 /// away). Bare Esc is intrusive — it breaks every other app's Esc
 /// while armed — so the lifetime must match the recording session.
 ///
-/// Patterned after `QuickAskHotkeyManager`. The signature char-code
+/// Patterned after `QuickAskHotkeyRegistrar`. The signature char-code
 /// (`ClDi` for "Clawix Dictation") is different so the two managers
 /// don't fight over the same `EventHotKeyID`.
 @MainActor
@@ -35,7 +35,7 @@ final class DictationEscRegistrar {
     private var eventHandler: EventHandlerRef?
 
     /// Distinct four-CC signature ("ClDi") so registrations don't
-    /// collide with `QuickAskHotkeyManager`'s ("Clwx") in the same
+    /// collide with `QuickAskHotkeyRegistrar`'s ("Clwx") in the same
     /// process.
     private let signature: OSType = {
         let chars: [UInt8] = [0x43, 0x6C, 0x44, 0x69]

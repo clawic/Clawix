@@ -15,7 +15,7 @@ struct DictationSettingsPage: View {
 
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var dictation: DictationCoordinator
-    @ObservedObject private var hotkey = HotkeyManagerObservable.shared
+    @ObservedObject private var hotkey = DictationHotkeySettingsStore.shared
     @ObservedObject private var micPrefs = MicrophonePreferences.shared
 
     @AppStorage(DictationCoordinator.injectDefaultsKey) private var injectText = true
@@ -851,8 +851,8 @@ private struct MicrophoneSelectorRow: View {
 /// This thin wrapper republishes whenever the bound `@AppStorage`
 /// values move.
 @MainActor
-final class HotkeyManagerObservable: ObservableObject {
-    static let shared = HotkeyManagerObservable()
+final class DictationHotkeySettingsStore: ObservableObject {
+    static let shared = DictationHotkeySettingsStore()
 
     // Slot 1
     @Published var mode: DictationHotkeyMode {

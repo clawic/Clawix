@@ -118,9 +118,9 @@ private func keyCodeDisplay(_ keyCode: UInt16) -> String {
 /// `update(_:)` re-registers, which is what Settings does when the
 /// user picks a new combo.
 @MainActor
-final class QuickAskHotkeyManager: ObservableObject {
+final class QuickAskHotkeyRegistrar: ObservableObject {
 
-    static let shared = QuickAskHotkeyManager()
+    static let shared = QuickAskHotkeyRegistrar()
 
     /// UserDefaults key holding the JSON-encoded `QuickAskHotkey`.
     /// Kept under the same suite as the rest of the app so a fork
@@ -190,7 +190,7 @@ final class QuickAskHotkeyManager: ObservableObject {
 
         let callback: EventHandlerUPP = { _, eventRef, userData in
             guard let userData, let eventRef else { return noErr }
-            let manager = Unmanaged<QuickAskHotkeyManager>
+            let manager = Unmanaged<QuickAskHotkeyRegistrar>
                 .fromOpaque(userData)
                 .takeUnretainedValue()
 

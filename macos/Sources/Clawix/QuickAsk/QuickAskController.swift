@@ -178,10 +178,10 @@ final class QuickAskController: ObservableObject {
     /// Wire the hotkey manager so a press toggles the panel. Called
     /// once from `AppDelegate.applicationDidFinishLaunching`.
     func install() {
-        QuickAskHotkeyManager.shared.onTrigger = { [weak self] in
+        QuickAskHotkeyRegistrar.shared.onTrigger = { [weak self] in
             self?.toggle()
         }
-        QuickAskHotkeyManager.shared.install()
+        QuickAskHotkeyRegistrar.shared.install()
     }
 
     /// Toggle visibility. Pressing the hotkey while the panel is on

@@ -8,7 +8,7 @@ import Carbon.HIToolbox
 /// Settings (handy when verifying a freshly-recorded combo).
 struct QuickAskSettingsPage: View {
 
-    @ObservedObject private var hotkeyManager = QuickAskHotkeyManager.shared
+    @ObservedObject private var hotkeyManager = QuickAskHotkeyRegistrar.shared
     @ObservedObject private var slashStore = QuickAskSlashCommandsStore.shared
     @ObservedObject private var mentionsStore = QuickAskMentionsStore.shared
     @ObservedObject private var flags = FeatureFlags.shared

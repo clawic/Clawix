@@ -833,7 +833,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.localModels.contextLength", "Local models context length", LocalModelsService.contextLengthKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.updater.pendingBuild", "Pending update build", UpdaterController.pendingBuildKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.updater.pendingDisplay", "Pending update display", UpdaterController.pendingDisplayKey, PersistentSurfaceKind.preferenceKey),
-            ("clawix.prefs.quickAsk.hotkey", "Quick Ask hotkey", QuickAskHotkeyManager.defaultsKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.quickAsk.hotkey", "Quick Ask hotkey", QuickAskHotkeyRegistrar.defaultsKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.clipboardLastSeen", "Quick Ask clipboard last seen", QuickAskClipboardSniffer.lastSeenKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.clipboardLastSeenAt", "Quick Ask clipboard last seen at", QuickAskClipboardSniffer.lastSeenAtKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.secrets.deviceId", "Secrets device id", SecretsPaths.deviceIdKey, PersistentSurfaceKind.preferenceKey),
