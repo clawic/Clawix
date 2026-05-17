@@ -74,6 +74,24 @@ if (args.has("--simulate-permissive-debt-action") && Array.isArray(debt?.entries
 if (args.has("--simulate-duplicate-debt-entry") && Array.isArray(debt?.entries) && debt.entries[0]) {
   debt.entries.push({ ...debt.entries[0] });
 }
+if (args.has("--simulate-wrong-debt-owner") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], owner: "visual-cleanup" };
+}
+if (args.has("--simulate-resolved-baseline-debt") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], status: "resolved" };
+}
+if (args.has("--simulate-short-debt-reason") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], reason: "Too vague." };
+}
+if (args.has("--simulate-unsupported-debt-platform") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], platforms: ["visionos"] };
+}
+if (args.has("--simulate-expired-debt-review") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], reviewAfter: "2026-01-01" };
+}
+if (args.has("--simulate-local-debt-path") && Array.isArray(debt?.entries) && debt.entries[0]) {
+  debt.entries[0] = { ...debt.entries[0], scope: "/Users/example/Clawix/Design" };
+}
 const debtEntries = requireArray(debt, debtPath, "entries");
 const debtIds = new Set();
 for (const [index, entry] of debtEntries.entries()) {
@@ -104,6 +122,41 @@ if (alias?.canonicalBaseline !== debtPath) fail(`${aliasPath}.canonicalBaseline 
 
 const reportPath = "docs/ui/debt-report.registry.json";
 const report = readJson(reportPath);
+if (report && args.has("--simulate-wrong-report-source-baseline")) {
+  report.sourceBaseline = "docs/ui/debt-baseline.json";
+}
+if (report && args.has("--simulate-missing-report-status")) {
+  report.reportStatusValues = report.reportStatusValues.filter((status) => status !== "blocked-without-private-baseline");
+}
+if (report && args.has("--simulate-fix-policy-allows-cleanup")) {
+  report.fixPolicy.nonAuthorizedAction = "cleanup";
+}
+if (report && args.has("--simulate-fix-policy-missing-evidence")) {
+  report.fixPolicy.requiredPrivateEvidenceBeforeCleanup =
+    report.fixPolicy.requiredPrivateEvidenceBeforeCleanup.filter((evidence) => evidence !== "rendered-geometry");
+}
+if (report && args.has("--simulate-fix-policy-allows-presentation-edit")) {
+  report.fixPolicy.forbiddenWithoutApproval =
+    report.fixPolicy.forbiddenWithoutApproval.filter((action) => action !== "presentation-edit");
+}
+if (report && args.has("--simulate-pending-item-unknown-debt") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = { ...report.pendingItems[0], debtId: "missing-debt-id" };
+}
+if (report && args.has("--simulate-pending-item-invalid-status") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = { ...report.pendingItems[0], status: "ready-to-fix" };
+}
+if (report && args.has("--simulate-pending-item-wrong-action") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = { ...report.pendingItems[0], allowedCurrentAction: "Fix now." };
+}
+if (report && args.has("--simulate-pending-item-missing-evidence") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = {
+    ...report.pendingItems[0],
+    requiredEvidence: report.pendingItems[0].requiredEvidence.filter((evidence) => evidence !== "copy-snapshot"),
+  };
+}
+if (report && args.has("--simulate-missing-pending-item") && Array.isArray(report.pendingItems)) {
+  report.pendingItems = report.pendingItems.slice(1);
+}
 requireFields(report, reportPath, [
   "schemaVersion",
   "status",
@@ -186,6 +239,8 @@ for (const debtId of debtIds) {
   if (!reportedDebtIds.has(debtId)) fail(`${reportPath}.pendingItems must include debtId ${debtId}`);
 }
 
+scanForLocalPaths(debt, debtPath);
+scanForLocalPaths(alias, aliasPath);
 scanForLocalPaths(report, reportPath);
 
 if (errors.length > 0) {
