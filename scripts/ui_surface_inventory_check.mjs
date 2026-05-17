@@ -48,6 +48,17 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function isSafeRelativePath(value) {
+  return typeof value === "string"
+    && value !== ""
+    && !value.startsWith("/")
+    && !value.startsWith("~/")
+    && !value.includes("\\")
+    && !value.includes("..")
+    && !value.startsWith("file://")
+    && !/^[A-Z]:\\/.test(value);
+}
+
 function walk(relativeDir) {
   const absoluteDir = path.join(rootDir, relativeDir);
   if (!fs.existsSync(absoluteDir)) return [];
@@ -118,6 +129,9 @@ const patternPlatforms = new Map();
 for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
+  if (args.has("--simulate-pattern-platform-mismatch") && patternId === "sidebar-row") {
+    pattern.platforms = ["macos"];
+  }
   patternPlatforms.set(patternId, new Set(requireArray(pattern, patternPath, "platforms")));
 }
 
@@ -133,6 +147,21 @@ const exceptionIds = new Set(requireArray(exceptions, "docs/ui/exceptions.regist
 const inventoryPath = "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
 requireFields(inventory, inventoryPath, ["schemaVersion", "status", "policy", "reviewAfter", "sourceRoots", "coverage"]);
+if (args.has("--simulate-expired-review-after") && inventory) {
+  inventory.reviewAfter = "2026-01-01";
+}
+if (args.has("--simulate-unsafe-source-root") && Array.isArray(inventory?.sourceRoots)) {
+  inventory.sourceRoots[0] = "/Users/example/Clawix";
+}
+if (args.has("--simulate-missing-required-source-root") && Array.isArray(inventory?.sourceRoots)) {
+  inventory.sourceRoots = inventory.sourceRoots.filter((sourceRoot) => sourceRoot !== "web/src");
+}
+if (args.has("--simulate-ungoverned-source-root") && Array.isArray(inventory?.sourceRoots)) {
+  inventory.sourceRoots.push("tools/ui");
+}
+if (args.has("--simulate-missing-source-root") && Array.isArray(inventory?.sourceRoots)) {
+  inventory.sourceRoots.push("web/missing");
+}
 if (args.has("--simulate-ambiguous-visible-candidate") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
   inventory.coverage.push({
     ...inventory.coverage[0],
@@ -141,6 +170,50 @@ if (args.has("--simulate-ambiguous-visible-candidate") && Array.isArray(inventor
 }
 if (args.has("--simulate-uncovered-visible-candidate") && Array.isArray(inventory?.coverage)) {
   inventory.coverage = inventory.coverage.filter((entry) => entry?.id !== "web-components-and-shell");
+}
+if (args.has("--simulate-duplicate-coverage-id") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage.push({
+    ...inventory.coverage[0],
+  });
+}
+if (args.has("--simulate-unsupported-platform") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0].platform = "visionos";
+}
+if (args.has("--simulate-invalid-classification") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0].classification = "misc";
+}
+if (args.has("--simulate-unknown-pattern") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0].patterns = ["missing-pattern"];
+}
+if (args.has("--simulate-unknown-debt-id") && Array.isArray(inventory?.coverage)) {
+  const debtEntry = inventory.coverage.find((entry) => entry?.classification === "debt");
+  if (debtEntry) debtEntry.debtIds = ["missing-debt"];
+}
+if (args.has("--simulate-unknown-protected-surface") && Array.isArray(inventory?.coverage)) {
+  inventory.coverage.push({
+    id: "simulated-unknown-protected-surface",
+    platform: "web",
+    scopes: ["web/src/__missing-protected__/**/*.tsx"],
+    classification: "protected",
+    surfaceIds: ["missing-protected"],
+    reason: "Simulated inventory failure for unknown protected surface references.",
+  });
+}
+if (args.has("--simulate-unknown-exception") && Array.isArray(inventory?.coverage)) {
+  inventory.coverage.push({
+    id: "simulated-unknown-exception",
+    platform: "web",
+    scopes: ["web/src/__missing-exception__/**/*.tsx"],
+    classification: "exception",
+    exceptionIds: ["missing-exception"],
+    reason: "Simulated inventory failure for unknown exception references.",
+  });
+}
+if (args.has("--simulate-unmatched-coverage-scope") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0].scopes = ["missing/**/*.swift"];
+}
+if (args.has("--simulate-unsafe-coverage-scope") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0].scopes = ["/Users/example/View.swift"];
 }
 if (inventory?.reviewAfter && inventory.reviewAfter < today) {
   fail(`${inventoryPath}.reviewAfter expired on ${inventory.reviewAfter}`);
@@ -157,7 +230,7 @@ const requiredSourceRoots = [
 ];
 const sourceRoots = requireArray(inventory, inventoryPath, "sourceRoots");
 for (const sourceRoot of sourceRoots) {
-  if (sourceRoot.startsWith("/") || sourceRoot.startsWith("~/") || sourceRoot.includes("\\") || sourceRoot.includes("..") || sourceRoot.startsWith("file://") || /^[A-Z]:\\/.test(sourceRoot)) {
+  if (!isSafeRelativePath(sourceRoot)) {
     fail(`${inventoryPath}.sourceRoots must use safe relative paths`);
     continue;
   }
@@ -181,6 +254,12 @@ for (const [index, entry] of coverage.entries()) {
   if (!requiredPlatforms.includes(entry.platform)) fail(`${label}.platform is not governed`);
   const scopes = requireArray(entry, label, "scopes");
   const excludeScopes = requireArray(entry, label, "excludeScopes", { nonEmpty: false });
+  for (const [scopeIndex, scope] of scopes.entries()) {
+    if (!isSafeRelativePath(scope)) fail(`${label}.scopes[${scopeIndex}] must be a safe relative path`);
+  }
+  for (const [scopeIndex, scope] of excludeScopes.entries()) {
+    if (!isSafeRelativePath(scope)) fail(`${label}.excludeScopes[${scopeIndex}] must be a safe relative path`);
+  }
   if (!["pattern", "debt", "exception", "protected"].includes(entry.classification)) {
     fail(`${label}.classification must be pattern, debt, exception, or protected`);
   }
