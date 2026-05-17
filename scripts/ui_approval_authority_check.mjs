@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -121,6 +122,9 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
   if (typeof source.privateApprovalField !== "string" || source.privateApprovalField === "") {
     fail(`${sourceLabel}.privateApprovalField must name a private approval reference field`);
   }
+  if (typeof source.approvedAtField !== "string" || source.approvedAtField === "") {
+    fail(`${sourceLabel}.approvedAtField must name a public approval date field`);
+  }
   const requiredApprovedByField = requiredApprovedByFields.get(source.id);
   if (requiredApprovedByField && source.approvedByField !== requiredApprovedByField) {
     fail(`${sourceLabel}.approvedByField must be ${requiredApprovedByField}`);
@@ -135,6 +139,13 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
     fail(`${sourceLabel}.statusValuesField must be set when approvalRequiredStatuses is present`);
   }
   const registry = readJson(source.path);
+  if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-missing-approved-at")) {
+    registry.allowedVisualModels = registry.allowedVisualModels.map((model) => {
+      if (model.status !== "active") return model;
+      const { approvedAt, ...rest } = model;
+      return rest;
+    });
+  }
   if (approvalRequiredStatuses) {
     const allowedStatuses = new Set(requireArray(registry, source.path, source.statusValuesField));
     for (const status of approvalRequiredStatuses) {
@@ -151,6 +162,12 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
     }
     if (source.approvedByField && record[source.approvedByField] !== "user") {
       fail(`${label}.${source.approvedByField} must be user`);
+    }
+    if (source.approvedAtField) {
+      const approvedAt = record[source.approvedAtField];
+      if (typeof approvedAt !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(approvedAt)) {
+        fail(`${label}.${source.approvedAtField} must be an ISO date`);
+      }
     }
     if (source.privateApprovalField) {
       const reference = record[source.privateApprovalField];
