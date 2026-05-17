@@ -46,6 +46,32 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStringSet(values, label, expectedValues) {
+  const seen = requireUniqueStrings(values, label);
+  const expected = new Set(expectedValues);
+  for (const value of seen) {
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function hasLocalPath(value) {
   return (
     typeof value === "string" &&
@@ -85,6 +111,16 @@ function requireIsoDate(value, label) {
   }
 }
 
+function requireExistingRepoFile(reference, label) {
+  if (typeof reference !== "string" || reference.startsWith("/") || reference.includes("..") || reference.includes("\\") || reference.includes(":")) {
+    fail(`${label} must be a public repo relative path`);
+    return;
+  }
+  if (!fs.existsSync(path.join(rootDir, reference))) {
+    fail(`${label} points to missing target ${reference}`);
+  }
+}
+
 const configPath = "docs/ui/interface-governance.config.json";
 const config = readJson(configPath);
 const requiredPlatforms = new Set(requireArray(config, configPath, "platforms"));
@@ -103,7 +139,12 @@ if (
   (args.has("--simulate-expired-approved-scope") ||
     args.has("--simulate-unsupported-platform") ||
     args.has("--simulate-uncovered-change-budget") ||
-    args.has("--simulate-duplicate-scope-id"))
+    args.has("--simulate-duplicate-scope-id") ||
+    args.has("--simulate-duplicate-scope-platform") ||
+    args.has("--simulate-duplicate-scope-surface") ||
+    args.has("--simulate-duplicate-scope-pattern") ||
+    args.has("--simulate-duplicate-scope-change-kind") ||
+    args.has("--simulate-duplicate-scope-file"))
 ) {
   const [surfaceId] = inventorySurfaceIds;
   const [patternId] = patternIds;
@@ -133,11 +174,43 @@ if (
 if (manifest && args.has("--simulate-inactive-scope-manifest")) {
   manifest.status = "draft";
 }
+if (manifest && args.has("--simulate-extra-scope-status") && Array.isArray(manifest.scopeStatuses)) {
+  manifest.scopeStatuses.push("pending-review");
+}
+if (manifest && args.has("--simulate-duplicate-scope-status") && Array.isArray(manifest.scopeStatuses) && manifest.scopeStatuses[0]) {
+  manifest.scopeStatuses.push(manifest.scopeStatuses[0]);
+}
 if (manifest && args.has("--simulate-missing-required-change-kind") && Array.isArray(manifest.requiredChangeKinds)) {
   manifest.requiredChangeKinds = manifest.requiredChangeKinds.filter((kind) => kind !== "typography");
 }
 if (manifest && args.has("--simulate-missing-required-approval-field") && Array.isArray(manifest.requiredApprovalFields)) {
   manifest.requiredApprovalFields = manifest.requiredApprovalFields.filter((field) => field !== "changeKinds");
+}
+if (manifest && args.has("--simulate-extra-required-approval-field") && Array.isArray(manifest.requiredApprovalFields)) {
+  manifest.requiredApprovalFields.push("screenshotPath");
+}
+if (manifest && args.has("--simulate-duplicate-required-approval-field") && Array.isArray(manifest.requiredApprovalFields) && manifest.requiredApprovalFields[0]) {
+  manifest.requiredApprovalFields.push(manifest.requiredApprovalFields[0]);
+}
+if (manifest && args.has("--simulate-duplicate-scope-platform") && Array.isArray(manifest.activeScopes)) {
+  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.platforms) && candidate.platforms[0]);
+  if (scope) scope.platforms.push(scope.platforms[0]);
+}
+if (manifest && args.has("--simulate-duplicate-scope-surface") && Array.isArray(manifest.activeScopes)) {
+  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.surfaces) && candidate.surfaces[0]);
+  if (scope) scope.surfaces.push(scope.surfaces[0]);
+}
+if (manifest && args.has("--simulate-duplicate-scope-pattern") && Array.isArray(manifest.activeScopes)) {
+  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.patterns) && candidate.patterns[0]);
+  if (scope) scope.patterns.push(scope.patterns[0]);
+}
+if (manifest && args.has("--simulate-duplicate-scope-change-kind") && Array.isArray(manifest.activeScopes)) {
+  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.changeKinds) && candidate.changeKinds[0]);
+  if (scope) scope.changeKinds.push(scope.changeKinds[0]);
+}
+if (manifest && args.has("--simulate-duplicate-scope-file") && Array.isArray(manifest.activeScopes)) {
+  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.files) && candidate.files[0]);
+  if (scope) scope.files.push(scope.files[0]);
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -166,10 +239,11 @@ if (manifest?.scopeSignal?.requiredForVisualMutation !== true) {
   fail(`${manifestPath}.scopeSignal.requiredForVisualMutation must be true`);
 }
 
-const allowedStatuses = new Set(requireArray(manifest, manifestPath, "scopeStatuses"));
-for (const status of ["proposed", "approved", "expired", "revoked"]) {
-  if (!allowedStatuses.has(status)) fail(`${manifestPath}.scopeStatuses must include ${status}`);
-}
+const allowedStatuses = requireExactStringSet(
+  requireArray(manifest, manifestPath, "scopeStatuses"),
+  `${manifestPath}.scopeStatuses`,
+  ["proposed", "approved", "expired", "revoked"],
+);
 
 const manifestRequiredChangeKinds = new Set(requireArray(manifest, manifestPath, "requiredChangeKinds"));
 for (const kind of requiredChangeKinds) {
@@ -183,8 +257,7 @@ if (manifestRequiredChangeKinds.size !== requiredChangeKinds.size || manifest?.r
 }
 
 const requiredApprovalFields = requireArray(manifest, manifestPath, "requiredApprovalFields");
-const requiredApprovalFieldSet = new Set(requiredApprovalFields);
-for (const field of [
+requireExactStringSet(requiredApprovalFields, `${manifestPath}.requiredApprovalFields`, [
   "id",
   "status",
   "platforms",
@@ -197,9 +270,7 @@ for (const field of [
   "approvedAt",
   "expiresAt",
   "privateApprovalReference",
-]) {
-  if (!requiredApprovalFieldSet.has(field)) fail(`${manifestPath}.requiredApprovalFields must include ${field}`);
-}
+]);
 
 const scopes = requireArray(manifest, manifestPath, "activeScopes", { nonEmpty: false });
 const scopeIds = new Set();
@@ -215,22 +286,30 @@ for (const [index, scope] of scopes.entries()) {
   if (scope.status === "approved" && scope.expiresAt < today) {
     fail(`${label} approved scope expired on ${scope.expiresAt}`);
   }
-  for (const platform of requireArray(scope, label, "platforms")) {
+  const platforms = requireArray(scope, label, "platforms");
+  requireUniqueStrings(platforms, `${label}.platforms`);
+  for (const platform of platforms) {
     if (!requiredPlatforms.has(platform)) fail(`${label}.platforms contains unsupported ${platform}`);
   }
-  for (const surface of requireArray(scope, label, "surfaces")) {
+  const surfaces = requireArray(scope, label, "surfaces");
+  requireUniqueStrings(surfaces, `${label}.surfaces`);
+  for (const surface of surfaces) {
     if (!inventorySurfaceIds.has(surface)) fail(`${label}.surfaces references unknown visible surface ${surface}`);
   }
-  for (const pattern of requireArray(scope, label, "patterns")) {
+  const patterns = requireArray(scope, label, "patterns");
+  requireUniqueStrings(patterns, `${label}.patterns`);
+  for (const pattern of patterns) {
     if (!patternIds.has(pattern)) fail(`${label}.patterns references unknown pattern ${pattern}`);
   }
-  for (const kind of requireArray(scope, label, "changeKinds")) {
+  const changeKinds = requireArray(scope, label, "changeKinds");
+  requireUniqueStrings(changeKinds, `${label}.changeKinds`);
+  for (const kind of changeKinds) {
     if (!requiredChangeKinds.has(kind)) fail(`${label}.changeKinds contains unsupported ${kind}`);
   }
-  for (const file of requireArray(scope, label, "files")) {
-    if (typeof file !== "string" || file.startsWith("/") || file.includes("..")) {
-      fail(`${label}.files entries must be public repo relative paths`);
-    }
+  const files = requireArray(scope, label, "files");
+  requireUniqueStrings(files, `${label}.files`);
+  for (const [fileIndex, file] of files.entries()) {
+    requireExistingRepoFile(file, `${label}.files[${fileIndex}]`);
   }
   const changeBudget = scope.changeBudget || {};
   requireFields(changeBudget, `${label}.changeBudget`, ["maxFiles", "maxLines", "allowedChangeKinds"]);
