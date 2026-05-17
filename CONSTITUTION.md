@@ -105,7 +105,12 @@ the command attempt itself proves that compact instructions, resource
 references, or risk notes apply, `claw` may return short `meta.guidance` hints
 with links to expandable records instead of injecting long documents into
 context. Guidance identifies relevant instructions; it never grants
-permissions, reveals secrets, or bypasses signed-host approvals.
+permissions, reveals secrets, or bypasses signed-host approvals. The CLI also
+owns the action-vocabulary layer for command attempts: when an agent tries an
+unrecognized word or phrase, `claw` should resolve it to a covered command,
+candidate alias, gap, future idea, blocked request, or external-pending need
+without executing unknown behavior. Demand for new CLI words is recorded
+explicitly, locally, and reviewably before it becomes a command or alias.
 
 **I.6 Capabilities are complete only when dual-surfaced.** Persistent user
 value outlives any one model, provider, session, device, or app. Every
