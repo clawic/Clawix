@@ -5,6 +5,7 @@ import path from "node:path";
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
 const summaries = [];
+const args = new Set(process.argv.slice(2));
 
 function fail(message) {
   errors.push(message);
@@ -112,10 +113,22 @@ for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
   if (!pattern) continue;
+  if (args.has("--simulate-extra-platform-geometry") && patternId === patternIds[0]) {
+    pattern.geometry = {
+      ...pattern.geometry,
+      windows: { source: "simulated undeclared platform geometry clause" },
+    };
+  }
 
   const geometryType = classifyGeometryClause(pattern.geometry, `${patternPath}.geometry`);
   const platforms = requireArray(pattern, patternPath, "platforms");
   if (geometryHasPlatformClauses(pattern.geometry) && !geometryHasDirectMeasurements(pattern.geometry)) {
+    const platformSet = new Set(platforms);
+    for (const geometryPlatform of Object.keys(pattern.geometry || {})) {
+      if (!platformSet.has(geometryPlatform)) {
+        fail(`${patternPath}.geometry.${geometryPlatform} must be listed in ${patternPath}.platforms`);
+      }
+    }
     for (const platform of platforms) {
       if (!isPlainObject(pattern.geometry?.[platform])) {
         fail(`${patternPath}.geometry.${platform} must declare measured values or an explicit pending source`);
