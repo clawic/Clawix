@@ -4,7 +4,7 @@ import SwiftUI
 /// lets the user promote them to durable memories one click at a time.
 struct MemoryCapturesView: View {
 
-    @ObservedObject var manager: MemoryManager
+    @ObservedObject var store: MemoryStore
     let onClose: () -> Void
     @State private var promotingId: String? = nil
     @State private var errorText: String? = nil
@@ -69,11 +69,11 @@ struct MemoryCapturesView: View {
     }
 
     private var pendingCaptures: [ClawJSMemoryClient.Capture] {
-        manager.captures.filter { $0.promotedAt == nil }
+        store.captures.filter { $0.promotedAt == nil }
     }
 
     private var promotedCaptures: [ClawJSMemoryClient.Capture] {
-        manager.captures.filter { $0.promotedAt != nil }
+        store.captures.filter { $0.promotedAt != nil }
     }
 
     private func captureCard(capture: ClawJSMemoryClient.Capture, isPromoted: Bool, dimmed: Bool = false) -> some View {
@@ -145,7 +145,7 @@ struct MemoryCapturesView: View {
         errorText = nil
         Task {
             do {
-                _ = try await manager.promote(captureId: capture.id)
+                _ = try await store.promote(captureId: capture.id)
                 await MainActor.run {
                     promotingId = nil
                 }

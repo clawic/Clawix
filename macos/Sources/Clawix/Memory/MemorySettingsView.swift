@@ -6,7 +6,7 @@ import AppKit
 /// graph view).
 struct MemorySettingsView: View {
 
-    @ObservedObject var manager: MemoryManager
+    @ObservedObject var store: MemoryStore
     let onClose: () -> Void
 
     var body: some View {
@@ -54,7 +54,7 @@ struct MemorySettingsView: View {
                     .font(BodyFont.system(size: 13, wght: 600))
                     .foregroundColor(.white)
                 Spacer()
-                Button(action: { Task { await manager.runDoctor() } }) {
+                Button(action: { Task { await store.runDoctor() } }) {
                     Text("Refresh")
                         .font(BodyFont.system(size: 11.5, wght: 500))
                         .foregroundColor(.white.opacity(0.7))
@@ -66,11 +66,11 @@ struct MemorySettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
-            doctorRow(label: "Notes", value: manager.doctor?.notes.map { String($0) } ?? "—")
-            doctorRow(label: "Captures pending", value: manager.doctor?.captures.map { String($0) } ?? "—")
-            doctorRow(label: "Index valid", value: manager.doctor?.valid.map { $0 ? "yes" : "no" } ?? "—")
-            doctorRow(label: "Workspace", value: manager.doctor?.workspace ?? "—", monospaced: true)
-            if let warnings = manager.doctor?.warnings, !warnings.isEmpty {
+            doctorRow(label: "Notes", value: store.doctor?.notes.map { String($0) } ?? "—")
+            doctorRow(label: "Captures pending", value: store.doctor?.captures.map { String($0) } ?? "—")
+            doctorRow(label: "Index valid", value: store.doctor?.valid.map { $0 ? "yes" : "no" } ?? "—")
+            doctorRow(label: "Workspace", value: store.doctor?.workspace ?? "—", monospaced: true)
+            if let warnings = store.doctor?.warnings, !warnings.isEmpty {
                 Text("Warnings:")
                     .font(BodyFont.system(size: 11, wght: 600))
                     .foregroundColor(.yellow.opacity(0.85))
@@ -89,7 +89,7 @@ struct MemorySettingsView: View {
                 .fill(Color.white.opacity(0.04))
         )
         .task {
-            if manager.doctor == nil { await manager.runDoctor() }
+            if store.doctor == nil { await store.runDoctor() }
         }
     }
 

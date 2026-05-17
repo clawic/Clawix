@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Top-level container for the Memory tab. Owns a `MemoryManager` for
+/// Top-level container for the Memory tab. Owns a `MemoryStore` for
 /// the current navigation lifetime and routes between the home view (3-pane
 /// browser), the captures view, and the settings view.
 struct MemoryScreen: View {
@@ -11,21 +11,21 @@ struct MemoryScreen: View {
         case settings
     }
 
-    @StateObject private var manager = MemoryManager()
+    @StateObject private var store = MemoryStore()
     @State private var section: Section = .home
 
     var body: some View {
         VStack(spacing: 0) {
             MemoryScreenHeader(
                 section: $section,
-                state: manager.state,
-                statsTotal: manager.stats?.total ?? manager.notes.count,
+                state: store.state,
+                statsTotal: store.stats?.total ?? store.notes.count,
                 onCreate: { showCreateSheet = true },
-                onRefresh: { Task { await manager.refresh() } }
+                onRefresh: { Task { await store.refresh() } }
             )
             CardDivider()
             Group {
-                if case .error(let message) = manager.state {
+                if case .error(let message) = store.state {
                     ContentUnavailableView(
                         "Memory unavailable",
                         systemImage: "exclamationmark.triangle",
@@ -34,22 +34,22 @@ struct MemoryScreen: View {
                 } else {
                     switch section {
                     case .home:
-                        MemoryHomeView(manager: manager, onSelectSection: { section = $0 })
+                        MemoryHomeView(store: store, onSelectSection: { section = $0 })
                     case .captures:
-                        MemoryCapturesView(manager: manager, onClose: { section = .home })
+                        MemoryCapturesView(store: store, onClose: { section = .home })
                     case .settings:
-                        MemorySettingsView(manager: manager, onClose: { section = .home })
+                        MemorySettingsView(store: store, onClose: { section = .home })
                     }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
-            if manager.state == .idle { await manager.refresh() }
+            if store.state == .idle { await store.refresh() }
         }
         .sheet(isPresented: $showCreateSheet) {
             MemoryEditSheet(
-                manager: manager,
+                store: store,
                 mode: .create,
                 onDismiss: { showCreateSheet = false }
             )
@@ -64,7 +64,7 @@ struct MemoryScreen: View {
 /// header so the Memory tab visually fits with the rest of the app.
 private struct MemoryScreenHeader: View {
     @Binding var section: MemoryScreen.Section
-    let state: MemoryManager.State
+    let state: MemoryStore.State
     let statsTotal: Int
     let onCreate: () -> Void
     let onRefresh: () -> Void

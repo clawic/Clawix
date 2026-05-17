@@ -3,7 +3,7 @@ import SwiftUI
 /// 3-pane Memory browser: Topics sidebar, filtered notes list, detail pane.
 struct MemoryHomeView: View {
 
-    @ObservedObject var manager: MemoryManager
+    @ObservedObject var store: MemoryStore
     let onSelectSection: (MemoryScreen.Section) -> Void
 
     @State private var groupBy: MemorySidebar.GroupBy = .type
@@ -21,8 +21,8 @@ struct MemoryHomeView: View {
                 groupBy: $groupBy,
                 selectedTopic: $selectedTopic,
                 selectedScopes: $selectedScopes,
-                notes: manager.notes,
-                stats: manager.stats,
+                notes: store.notes,
+                stats: store.stats,
                 pendingCaptures: pendingCapturesCount,
                 onOpenCaptures: { onSelectSection(.captures) },
                 onOpenSettings: { onSelectSection(.settings) }
@@ -31,14 +31,14 @@ struct MemoryHomeView: View {
             CardDivider()
             MemoryListPane(
                 searchText: $searchText,
-                isSearching: manager.isSearching,
-                searchResults: manager.lastSearch?.results ?? [],
+                isSearching: store.isSearching,
+                searchResults: store.lastSearch?.results ?? [],
                 notes: filteredNotes,
                 selectedNoteId: $selectedNoteId,
-                onSearchSubmit: { manager.search(searchText) },
+                onSearchSubmit: { store.search(searchText) },
                 onSearchClear: {
                     searchText = ""
-                    manager.clearSearch()
+                    store.clearSearch()
                 },
                 onEdit: { note in editTarget = note },
                 onDelete: { note in
@@ -57,11 +57,11 @@ struct MemoryHomeView: View {
             .frame(maxWidth: .infinity)
         }
         .onChange(of: searchText) { _, newValue in
-            manager.search(newValue)
+            store.search(newValue)
         }
         .sheet(item: $editTarget) { note in
             MemoryEditSheet(
-                manager: manager,
+                store: store,
                 mode: .edit(note),
                 onDismiss: { editTarget = nil }
             )
@@ -75,7 +75,7 @@ struct MemoryHomeView: View {
                 let id = note.id
                 Task {
                     do {
-                        _ = try await manager.delete(id: id)
+                        _ = try await store.delete(id: id)
                         await MainActor.run {
                             if selectedNoteId == id { selectedNoteId = nil }
                             deleteTarget = nil
@@ -107,14 +107,14 @@ struct MemoryHomeView: View {
     }
 
     private var pendingCapturesCount: Int {
-        manager.captures.filter { $0.promotedAt == nil }.count
+        store.captures.filter { $0.promotedAt == nil }.count
     }
 
-    /// Filters `manager.notes` by topic + scope. Search is handled by
-    /// the daemon and surfaces in `manager.lastSearch`; the list pane
+    /// Filters `store.notes` by topic + scope. Search is handled by
+    /// the daemon and surfaces in `store.lastSearch`; the list pane
     /// shows whichever side is active (search vs filter).
     private var filteredNotes: [ClawJSMemoryClient.MemoryNote] {
-        var result = manager.notes
+        var result = store.notes
         if let topic = selectedTopic {
             switch topic {
             case .all:
@@ -150,7 +150,7 @@ struct MemoryHomeView: View {
     }
 
     private var selectedNote: ClawJSMemoryClient.MemoryNote? {
-        guard let id = selectedNoteId else { return manager.notes.first }
-        return manager.notes.first(where: { $0.id == id })
+        guard let id = selectedNoteId else { return store.notes.first }
+        return store.notes.first(where: { $0.id == id })
     }
 }

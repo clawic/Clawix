@@ -8,7 +8,7 @@ struct MemoryEditSheet: View {
         case edit(ClawJSMemoryClient.MemoryNote)
     }
 
-    @ObservedObject var manager: MemoryManager
+    @ObservedObject var store: MemoryStore
     let mode: Mode
     let onDismiss: () -> Void
 
@@ -236,7 +236,7 @@ struct MemoryEditSheet: View {
                         scopeAgent: scopeAgent.isEmpty ? nil : scopeAgent,
                         scopeProject: scopeProject.isEmpty ? nil : scopeProject
                     )
-                    _ = try await manager.create(input)
+                    _ = try await store.create(input)
                 case .edit(let note):
                     let patch = ClawJSMemoryClient.UpdateNotePatch(
                         title: trimmedTitle,
@@ -247,7 +247,7 @@ struct MemoryEditSheet: View {
                         scopeProject: scopeProject.isEmpty ? nil : scopeProject,
                         memoryClass: noteKind == "memory" ? memoryClass : nil
                     )
-                    _ = try await manager.update(id: note.id, patch: patch, editor: "user")
+                    _ = try await store.update(id: note.id, patch: patch, editor: "user")
                 }
                 await MainActor.run { onDismiss() }
             } catch {
