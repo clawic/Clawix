@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
 const argSet = new Set(args);
+const isSelfTest = process.env.CLAWIX_UI_PRIVATE_EVIDENCE_PLAN_SELF_TEST === "1";
 const errors = [];
 const plan = [];
 
@@ -450,6 +452,38 @@ for (const [decisionId, evidenceTypes] of expectedDecisionEvidence.entries()) {
   for (const evidenceType of evidenceTypes) {
     if ((counts.get(evidenceType) || 0) === 0) {
       fail(`private evidence blocker ${decisionId} requires missing evidence type ${evidenceType}`);
+    }
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.length === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-unsafe-surface-baseline-reference", "privateBaselineReference must use private-codex-ui-baselines:"],
+    ["--simulate-unsafe-flow-baseline-reference", "privateBaselineReference must use a safe relative private reference"],
+    ["--simulate-path-evidence-filename", "evidenceFilename must be a safe filename"],
+    ["--simulate-duplicate-surface-required-field", "requiredFields duplicates coverageId"],
+    ["--simulate-empty-pattern-geometry-fields", "requiredFields must not be empty"],
+    ["--simulate-missing-rendered-drift-plan", "private evidence plan rendered-drift count must be 14"],
+    ["--simulate-missing-surface-coverage-entry", "private evidence plan surface-baseline count must be 14"],
+    ["--simulate-missing-pattern-registry-entry", "private evidence plan pattern-geometry count must be 59"],
+    ["--simulate-private-validation-wrong-evidence-plan-command", "evidencePlanCommand must be node scripts/ui_private_evidence_plan_check.mjs --json"],
+    ["--simulate-private-validation-missing-blocker", "decisionBlockers must match"],
+    ["--simulate-private-validation-extra-blocker", "decisionBlockers must match"],
+    ["--simulate-private-validation-wrong-evidence-type", "evidenceTypes must match"],
+    ["--simulate-duplicate-evidence-record", "duplicates logical record"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_PRIVATE_EVIDENCE_PLAN_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when private evidence plan coverage is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
     }
   }
 }
