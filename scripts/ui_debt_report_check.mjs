@@ -65,6 +65,9 @@ const requiredEvidence = new Set(["private-baseline", "copy-snapshot", "rendered
 
 const debtPath = "docs/ui/debt.baseline.json";
 const debt = readJson(debtPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const debtStrategyDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "debt_strategy");
 if (args.has("--simulate-permissive-debt-action") && Array.isArray(debt?.entries) && debt.entries[0]) {
   debt.entries[0] = {
     ...debt.entries[0],
@@ -122,6 +125,8 @@ if (alias?.canonicalBaseline !== debtPath) fail(`${aliasPath}.canonicalBaseline 
 
 const reportPath = "docs/ui/debt-report.registry.json";
 const report = readJson(reportPath);
+const auditPath = "docs/ui/debt-audit.manifest.json";
+const audit = readJson(auditPath);
 if (report && args.has("--simulate-wrong-report-source-baseline")) {
   report.sourceBaseline = "docs/ui/debt-baseline.json";
 }
@@ -156,6 +161,22 @@ if (report && args.has("--simulate-pending-item-missing-evidence") && Array.isAr
 }
 if (report && args.has("--simulate-missing-pending-item") && Array.isArray(report.pendingItems)) {
   report.pendingItems = report.pendingItems.slice(1);
+}
+if (args.has("--simulate-debt-decision-missing-baseline") && debtStrategyDecision) {
+  debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== debtPath);
+}
+if (args.has("--simulate-debt-decision-missing-audit") && debtStrategyDecision) {
+  debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== auditPath);
+}
+if (args.has("--simulate-debt-decision-missing-private-verifier") && debtStrategyDecision) {
+  debtStrategyDecision.blockingVerifiers = debtStrategyDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_debt_audit_verify.mjs");
+}
+if (args.has("--simulate-debt-decision-missing-private-evidence") && debtStrategyDecision) {
+  debtStrategyDecision.privateEvidence = [];
+}
+if (args.has("--simulate-debt-decision-premature-complete") && debtStrategyDecision) {
+  debtStrategyDecision.status = "verified-complete";
+  debtStrategyDecision.remaining = [];
 }
 requireFields(report, reportPath, [
   "schemaVersion",
@@ -239,9 +260,48 @@ for (const debtId of debtIds) {
   if (!reportedDebtIds.has(debtId)) fail(`${reportPath}.pendingItems must include debtId ${debtId}`);
 }
 
+if (!debtStrategyDecision) {
+  fail(`${decisionVerificationPath}.decisions must include debt_strategy`);
+} else {
+  const publicEvidence = new Set(Array.isArray(debtStrategyDecision.publicEvidence) ? debtStrategyDecision.publicEvidence : []);
+  for (const evidencePath of [
+    debtPath,
+    reportPath,
+    auditPath,
+    "scripts/ui_debt_report_check.mjs",
+    "scripts/ui_debt_audit_manifest_check.mjs",
+    "scripts/ui_private_debt_audit_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.debt_strategy.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(debtStrategyDecision.privateEvidence) ? debtStrategyDecision.privateEvidence : []);
+  const privateAlias = audit?.privateDebtAuditAlias || "private-codex-ui-debt-audit";
+  if (!privateEvidence.has(`${privateAlias}:macos/*`)) {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.privateEvidence must include ${privateAlias}:macos/*`);
+  }
+  const blockingVerifiers = new Set(Array.isArray(debtStrategyDecision.blockingVerifiers) ? debtStrategyDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_debt_audit_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.debt_strategy.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (audit?.status !== "audited-approved" && debtStrategyDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.status must remain open until private debt audit is approved`);
+  }
+  if (audit?.status !== "audited-approved" && (!Array.isArray(debtStrategyDecision.remaining) || debtStrategyDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.remaining must describe pending private debt audit`);
+  }
+}
+
 scanForLocalPaths(debt, debtPath);
 scanForLocalPaths(alias, aliasPath);
 scanForLocalPaths(report, reportPath);
+scanForLocalPaths(audit, auditPath);
 
 if (errors.length > 0) {
   console.error("UI debt report check failed:");
