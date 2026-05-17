@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -15,7 +16,32 @@ function read(relativePath) {
     fail(`missing ${relativePath}`);
     return "";
   }
-  return fs.readFileSync(file, "utf8");
+  let content = fs.readFileSync(file, "utf8");
+  if (args.has("--simulate-missing-frontmatter") && relativePath === "skills/ui-canon-review/SKILL.md") {
+    content = content.replace(/^---\n[\s\S]*?\n---\n\n/, "");
+  }
+  if (args.has("--simulate-wrong-skill-name") && relativePath === "skills/ui-implementation/SKILL.md") {
+    content = content.replace("name: ui-implementation", "name: visual-implementation");
+  }
+  if (args.has("--simulate-missing-keywords") && relativePath === "skills/visual-regression/SKILL.md") {
+    content = content.replace(/\nkeywords: .*\n/, "\n");
+  }
+  if (args.has("--simulate-private-path") && relativePath === "skills/ui-performance-budget/SKILL.md") {
+    content += "\nPrivate baseline: /Users/private/perf-baseline.json\n";
+  }
+  if (args.has("--simulate-missing-canon-snippet") && relativePath === "skills/ui-canon-review/SKILL.md") {
+    content = content.replace("docs/adr/0010-interface-governance.md", "docs/adr/other.md");
+  }
+  if (args.has("--simulate-missing-implementation-guard") && relativePath === "skills/ui-implementation/SKILL.md") {
+    content = content.replace("node scripts/ui_governance_guard.mjs", "node scripts/other_guard.mjs");
+  }
+  if (args.has("--simulate-missing-private-visual-command") && relativePath === "skills/visual-regression/SKILL.md") {
+    content = content.replace("node scripts/ui_private_visual_verify.mjs --require-approved", "node scripts/ui_private_visual_verify.mjs");
+  }
+  if (args.has("--simulate-missing-performance-flow") && relativePath === "skills/ui-performance-budget/SKILL.md") {
+    content = content.replace("sidebar lag", "sidebar responsiveness");
+  }
+  return content;
 }
 
 function requireSnippet(file, snippet) {
@@ -99,7 +125,10 @@ const skillContracts = [
   },
 ];
 
+const skillNames = new Set();
 for (const contract of skillContracts) {
+  if (skillNames.has(contract.name)) fail(`skill contract name ${contract.name} must be unique`);
+  skillNames.add(contract.name);
   requireFrontmatterName(contract.file, contract.name);
   scanForPrivateContent(contract.file);
   for (const snippet of contract.snippets) requireSnippet(contract.file, snippet);
