@@ -51,7 +51,25 @@ const requiredPlatforms = new Set(requireArray(config, configPath, "platforms"))
 const detectorPath = "docs/ui/visual-change-detectors.manifest.json";
 const manifest = readJson(detectorPath);
 const copyInventory = readJson("docs/ui/copy.inventory.json");
-if (manifest && args.has("--simulate-duplicate-detector-id")) {
+if (manifest && args.has("--simulate-unsafe-source-root") && Array.isArray(manifest.sourceRoots)) {
+  manifest.sourceRoots[0] = "/Users/example/Clawix/macos/Sources";
+}
+if (manifest && args.has("--simulate-missing-required-source-root") && Array.isArray(manifest.sourceRoots)) {
+  manifest.sourceRoots = manifest.sourceRoots.filter((sourceRoot) => sourceRoot !== "web/src");
+}
+if (manifest && args.has("--simulate-missing-required-change-kind") && Array.isArray(manifest.requiredChangeKinds)) {
+  manifest.requiredChangeKinds = manifest.requiredChangeKinds.filter((kind) => kind !== "typography");
+}
+if (manifest && args.has("--simulate-missing-classification-bucket") && Array.isArray(manifest.classificationBuckets)) {
+  manifest.classificationBuckets = manifest.classificationBuckets.filter((bucket) => bucket?.id !== "hierarchy");
+}
+if (manifest && args.has("--simulate-unregistered-bucket-kind") && Array.isArray(manifest.classificationBuckets)) {
+  manifest.classificationBuckets[0].changeKinds.push("shadow");
+}
+if (manifest && args.has("--simulate-duplicate-bucket-kind") && Array.isArray(manifest.classificationBuckets)) {
+  manifest.classificationBuckets[1].changeKinds.push("color");
+}
+if (manifest && args.has("--simulate-duplicate-detector-id") && Array.isArray(manifest.detectors)) {
   manifest.detectors = [...manifest.detectors, { ...manifest.detectors[0] }];
 }
 if (manifest && args.has("--simulate-unclassified-change-kind")) {
@@ -62,6 +80,18 @@ if (manifest && args.has("--simulate-unclassified-change-kind")) {
       changeKinds: bucket.changeKinds.filter((kind) => kind !== "typography"),
     };
   });
+}
+if (manifest && args.has("--simulate-missing-detector-kind") && Array.isArray(manifest.detectors)) {
+  manifest.detectors = manifest.detectors.filter((detector) => detector?.changeKind !== "spacing");
+}
+if (manifest && args.has("--simulate-unsupported-detector-platform") && Array.isArray(manifest.detectors)) {
+  manifest.detectors[0].platforms = ["visionos"];
+}
+if (manifest && args.has("--simulate-invalid-detector-regex") && Array.isArray(manifest.detectors)) {
+  manifest.detectors[0].pattern = "(";
+}
+if (copyInventory && args.has("--simulate-unknown-copy-kind") && Array.isArray(copyInventory.restrictedCopyKinds)) {
+  copyInventory.restrictedCopyKinds.push("confirmation-text");
 }
 requireFields(manifest, detectorPath, [
   "schemaVersion",
@@ -185,9 +215,12 @@ for (const copyKind of requireArray(copyInventory, "docs/ui/copy.inventory.json"
   }
 }
 
-const governanceGuardSource = fs.existsSync(path.join(rootDir, "scripts/ui_governance_guard.mjs"))
+let governanceGuardSource = fs.existsSync(path.join(rootDir, "scripts/ui_governance_guard.mjs"))
   ? fs.readFileSync(path.join(rootDir, "scripts/ui_governance_guard.mjs"), "utf8")
   : "";
+if (args.has("--simulate-missing-governance-guard-platform-scope")) {
+  governanceGuardSource = governanceGuardSource.replace("detector.platforms.includes(platform)", "");
+}
 for (const snippet of ["platformForPath", "detector.platforms.includes(platform)", "--simulate-cross-platform-visual-diff"]) {
   if (!governanceGuardSource.includes(snippet)) {
     fail(`scripts/ui_governance_guard.mjs must enforce detector platform scoping via ${snippet}`);
