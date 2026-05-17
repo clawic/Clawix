@@ -89,6 +89,25 @@ requireFields(copyInventory, copyPath, [
   "requiredEvidenceFields",
 ]);
 
+if (args.has("--simulate-inactive-copy-inventory") && copyInventory) {
+  copyInventory.status = "draft";
+}
+if (args.has("--simulate-wrong-private-snapshot-alias") && copyInventory) {
+  copyInventory.privateSnapshotAlias = "private-local-copy-snapshots";
+}
+if (args.has("--simulate-extra-copy-kind") && Array.isArray(copyInventory?.restrictedCopyKinds)) {
+  copyInventory.restrictedCopyKinds = [...copyInventory.restrictedCopyKinds, "marketing-tagline"];
+}
+if (args.has("--simulate-duplicate-copy-kind") && Array.isArray(copyInventory?.restrictedCopyKinds)) {
+  copyInventory.restrictedCopyKinds = [...copyInventory.restrictedCopyKinds, copyInventory.restrictedCopyKinds[0]];
+}
+if (args.has("--simulate-extra-required-evidence") && Array.isArray(copyInventory?.requiredEvidenceFields)) {
+  copyInventory.requiredEvidenceFields = [...copyInventory.requiredEvidenceFields, "approvalNote"];
+}
+if (args.has("--simulate-duplicate-required-evidence") && Array.isArray(copyInventory?.requiredEvidenceFields)) {
+  copyInventory.requiredEvidenceFields = [...copyInventory.requiredEvidenceFields, copyInventory.requiredEvidenceFields[0]];
+}
+
 if (args.has("--simulate-copy-decision-missing-inventory") && copyGovernanceDecision) {
   copyGovernanceDecision.publicEvidence = copyGovernanceDecision.publicEvidence.filter((evidencePath) => evidencePath !== copyPath);
 }
@@ -120,6 +139,12 @@ const requiredCopyKinds = [
   "error-state",
   "copy-hierarchy",
 ];
+if (copyInventory?.status !== "active" && copyInventory?.status !== "approved-private-snapshots") {
+  fail(`${copyPath}.status must be active or approved-private-snapshots`);
+}
+if (copyInventory?.privateSnapshotAlias !== "private-codex-ui-copy-snapshots") {
+  fail(`${copyPath}.privateSnapshotAlias must be private-codex-ui-copy-snapshots`);
+}
 if (copyInventory?.evidenceFilename !== "copy-evidence.json") {
   fail(`${copyPath}.evidenceFilename must be copy-evidence.json`);
 }
@@ -143,8 +168,17 @@ const copyKinds = new Set(requireArray(copyInventory, copyPath, "restrictedCopyK
 if (args.has("--simulate-missing-copy-kind")) {
   copyKinds.delete("tooltip");
 }
+if (copyKinds.size !== copyInventory?.restrictedCopyKinds?.length) {
+  fail(`${copyPath}.restrictedCopyKinds must not contain duplicates`);
+}
 for (const kind of requiredCopyKinds) {
   if (!copyKinds.has(kind)) fail(`${copyPath}.restrictedCopyKinds must include ${kind}`);
+}
+for (const kind of copyKinds) {
+  if (!requiredCopyKinds.includes(kind)) fail(`${copyPath}.restrictedCopyKinds contains unsupported ${kind}`);
+}
+if (copyKinds.size !== requiredCopyKinds.length) {
+  fail(`${copyPath}.restrictedCopyKinds must exactly match governed copy kinds`);
 }
 
 const requiredEvidence = [
@@ -161,8 +195,17 @@ const evidence = new Set(requireArray(copyInventory, copyPath, "requiredEvidence
 if (args.has("--simulate-missing-required-evidence")) {
   evidence.delete("copyHierarchyHash");
 }
+if (evidence.size !== copyInventory?.requiredEvidenceFields?.length) {
+  fail(`${copyPath}.requiredEvidenceFields must not contain duplicates`);
+}
 for (const field of requiredEvidence) {
   if (!evidence.has(field)) fail(`${copyPath}.requiredEvidenceFields must include ${field}`);
+}
+for (const field of evidence) {
+  if (!requiredEvidence.includes(field)) fail(`${copyPath}.requiredEvidenceFields contains unsupported ${field}`);
+}
+if (evidence.size !== requiredEvidence.length) {
+  fail(`${copyPath}.requiredEvidenceFields must exactly match approved copy evidence fields`);
 }
 
 const registryPath = "docs/ui/pattern-registry/patterns.registry.json";
