@@ -45,6 +45,25 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function requirePublicSafeReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}: and must not contain a local path`);
@@ -164,22 +183,11 @@ for (const field of [
     fail(`${copyPath}.protectedSurfaceRequirement.${field} must be true`);
   }
 }
-const copyKinds = new Set(requireArray(copyInventory, copyPath, "restrictedCopyKinds"));
+let copyKinds = requireArray(copyInventory, copyPath, "restrictedCopyKinds");
 if (args.has("--simulate-missing-copy-kind")) {
-  copyKinds.delete("tooltip");
+  copyKinds = copyKinds.filter((kind) => kind !== "tooltip");
 }
-if (copyKinds.size !== copyInventory?.restrictedCopyKinds?.length) {
-  fail(`${copyPath}.restrictedCopyKinds must not contain duplicates`);
-}
-for (const kind of requiredCopyKinds) {
-  if (!copyKinds.has(kind)) fail(`${copyPath}.restrictedCopyKinds must include ${kind}`);
-}
-for (const kind of copyKinds) {
-  if (!requiredCopyKinds.includes(kind)) fail(`${copyPath}.restrictedCopyKinds contains unsupported ${kind}`);
-}
-if (copyKinds.size !== requiredCopyKinds.length) {
-  fail(`${copyPath}.restrictedCopyKinds must exactly match governed copy kinds`);
-}
+requireExactStringSet(copyKinds, `${copyPath}.restrictedCopyKinds`, requiredCopyKinds);
 
 const requiredEvidence = [
   "coverageId",
@@ -191,22 +199,11 @@ const requiredEvidence = [
   "approvedByUserAt",
   "approvedScope",
 ];
-const evidence = new Set(requireArray(copyInventory, copyPath, "requiredEvidenceFields"));
+let evidence = requireArray(copyInventory, copyPath, "requiredEvidenceFields");
 if (args.has("--simulate-missing-required-evidence")) {
-  evidence.delete("copyHierarchyHash");
+  evidence = evidence.filter((field) => field !== "copyHierarchyHash");
 }
-if (evidence.size !== copyInventory?.requiredEvidenceFields?.length) {
-  fail(`${copyPath}.requiredEvidenceFields must not contain duplicates`);
-}
-for (const field of requiredEvidence) {
-  if (!evidence.has(field)) fail(`${copyPath}.requiredEvidenceFields must include ${field}`);
-}
-for (const field of evidence) {
-  if (!requiredEvidence.includes(field)) fail(`${copyPath}.requiredEvidenceFields contains unsupported ${field}`);
-}
-if (evidence.size !== requiredEvidence.length) {
-  fail(`${copyPath}.requiredEvidenceFields must exactly match approved copy evidence fields`);
-}
+requireExactStringSet(evidence, `${copyPath}.requiredEvidenceFields`, requiredEvidence);
 
 const registryPath = "docs/ui/pattern-registry/patterns.registry.json";
 const registry = readJson(registryPath);
@@ -261,6 +258,25 @@ if (args.has("--simulate-coverage-missing-copy-hash") && Array.isArray(surfaceCo
     requiredEvidence: surfaceCoverage.coverage[0].requiredEvidence.filter((field) => field !== "copySnapshotHash"),
   };
 }
+if (args.has("--simulate-coverage-extra-copy-evidence") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
+  surfaceCoverage.coverage[0] = {
+    ...surfaceCoverage.coverage[0],
+    requiredEvidence: [...surfaceCoverage.coverage[0].requiredEvidence, "localCopyPath"],
+  };
+}
+if (args.has("--simulate-coverage-duplicate-copy-evidence") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]?.requiredEvidence?.[0]) {
+  surfaceCoverage.coverage[0] = {
+    ...surfaceCoverage.coverage[0],
+    requiredEvidence: [...surfaceCoverage.coverage[0].requiredEvidence, surfaceCoverage.coverage[0].requiredEvidence[0]],
+  };
+}
+if (args.has("--simulate-wrong-surface-copy-alias") && surfaceCoverage) {
+  surfaceCoverage.privateCopyAlias = "private-local-copy-snapshots";
+}
+if (surfaceCoverage?.privateCopyAlias !== privateAlias) {
+  fail(`${surfaceCoveragePath}.privateCopyAlias must match ${copyPath}.privateSnapshotAlias`);
+}
+const surfaceCoverageEvidence = requireArray(surfaceCoverage, surfaceCoveragePath, "requiredEvidenceFields");
 for (const [index, entry] of requireArray(surfaceCoverage, surfaceCoveragePath, "coverage").entries()) {
   const label = `${surfaceCoveragePath}.coverage[${index}]`;
   requireFields(entry, label, ["coverageId", "platform", "copySnapshotReference", "requiredEvidence"]);
@@ -269,8 +285,7 @@ for (const [index, entry] of requireArray(surfaceCoverage, surfaceCoveragePath, 
   if (copySnapshotSuffix && copySnapshotSuffix !== expectedCopySnapshotSuffix) {
     fail(`${label}.copySnapshotReference must target ${expectedCopySnapshotSuffix}`);
   }
-  const coverageEvidence = new Set(requireArray(entry, label, "requiredEvidence"));
-  if (!coverageEvidence.has("copySnapshotHash")) fail(`${label}.requiredEvidence must include copySnapshotHash`);
+  requireExactStringSet(requireArray(entry, label, "requiredEvidence"), `${label}.requiredEvidence`, surfaceCoverageEvidence);
 }
 for (const [index, surface] of requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false }).entries()) {
   const label = `${protectedPath}.surfaces[${index}]`;
