@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -58,6 +59,32 @@ function requireRepoReference(reference, label) {
 
 const manifestPath = "docs/ui/canon-units.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-wrong-primary-unit")) {
+    manifest.primaryUnit = "component";
+  }
+  if (args.has("--simulate-absolute-pattern-registry")) {
+    manifest.patternRegistry = "/Users/private/patterns.registry.json";
+  }
+  if (args.has("--simulate-missing-allowed-status") && Array.isArray(manifest.allowedUnitStatuses)) {
+    manifest.allowedUnitStatuses = manifest.allowedUnitStatuses.filter((status) => status !== "revoked");
+  }
+  if (args.has("--simulate-missing-required-unit-field") && Array.isArray(manifest.requiredUnitFields)) {
+    manifest.requiredUnitFields = manifest.requiredUnitFields.filter((field) => field !== "promotionRequired");
+  }
+  if (args.has("--simulate-duplicate-unit") && Array.isArray(manifest.units) && manifest.units[0]) {
+    manifest.units.push({ ...manifest.units[0] });
+  }
+  if (args.has("--simulate-primary-requires-promotion") && Array.isArray(manifest.units) && manifest.units[0]) {
+    manifest.units[0] = { ...manifest.units[0], promotionRequired: true };
+  }
+  if (args.has("--simulate-narrower-no-promotion") && Array.isArray(manifest.units) && manifest.units[1]) {
+    manifest.units[1] = { ...manifest.units[1], promotionRequired: false };
+  }
+  if (args.has("--simulate-missing-surface-unit") && Array.isArray(manifest.units)) {
+    manifest.units = manifest.units.filter((unit) => unit.id !== "surface");
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -104,10 +131,19 @@ for (const requiredUnit of ["pattern", "component", "surface"]) {
 }
 
 const registry = readJson(manifest?.patternRegistry || "docs/ui/pattern-registry/patterns.registry.json");
+if (registry && args.has("--simulate-pattern-missing-mutation-class") && Array.isArray(registry.patterns)) {
+  registry.patterns = ["sidebar-row", ...registry.patterns.filter((patternId) => patternId !== "sidebar-row")];
+}
 const governanceConfig = readJson("docs/ui/interface-governance.config.json");
 const allowedMutationClasses = new Set(requireArray(governanceConfig, "docs/ui/interface-governance.config.json", "mutationClasses"));
 for (const patternId of requireArray(registry, manifest.patternRegistry, "patterns")) {
   const pattern = readJson(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json`);
+  if (pattern && args.has("--simulate-pattern-missing-mutation-class") && patternId === "sidebar-row") {
+    delete pattern.mutationClass;
+  }
+  if (pattern && args.has("--simulate-pattern-unknown-mutation-class") && patternId === "sidebar-row") {
+    pattern.mutationClass = ["visual-ui", "unknown-ui"];
+  }
   const mutationClasses = Array.isArray(pattern?.mutationClass)
     ? pattern.mutationClass
     : typeof pattern?.mutationClass === "string"
@@ -124,6 +160,15 @@ for (const patternId of requireArray(registry, manifest.patternRegistry, "patter
 }
 
 const promotions = readJson(manifest?.promotionRegistry || "docs/ui/canon-promotions.registry.json");
+if (promotions && args.has("--simulate-promotion-unknown-pattern")) {
+  promotions.promotions = [
+    ...(Array.isArray(promotions.promotions) ? promotions.promotions : []),
+    {
+      patterns: ["unknown-pattern"],
+      privateApprovalReference: "private-codex-ui-approvals:canon/unknown-pattern",
+    },
+  ];
+}
 for (const [index, promotion] of requireArray(promotions, manifest.promotionRegistry, "promotions", { nonEmpty: false }).entries()) {
   const label = `${manifest.promotionRegistry}.promotions[${index}]`;
   requireFields(promotion, label, ["patterns", "privateApprovalReference"]);
