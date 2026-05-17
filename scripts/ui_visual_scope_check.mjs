@@ -102,7 +102,8 @@ if (
   manifest &&
   (args.has("--simulate-expired-approved-scope") ||
     args.has("--simulate-unsupported-platform") ||
-    args.has("--simulate-uncovered-change-budget"))
+    args.has("--simulate-uncovered-change-budget") ||
+    args.has("--simulate-duplicate-scope-id"))
 ) {
   const [surfaceId] = inventorySurfaceIds;
   const [patternId] = patternIds;
@@ -125,9 +126,18 @@ if (
     privateApprovalReference: "private-codex-ui-approval:scopes/simulated-scope",
   };
   manifest.activeScopes = [...(manifest.activeScopes || []), simulatedScope];
+  if (args.has("--simulate-duplicate-scope-id")) {
+    manifest.activeScopes.push({ ...simulatedScope });
+  }
+}
+if (manifest && args.has("--simulate-inactive-scope-manifest")) {
+  manifest.status = "draft";
 }
 if (manifest && args.has("--simulate-missing-required-change-kind") && Array.isArray(manifest.requiredChangeKinds)) {
   manifest.requiredChangeKinds = manifest.requiredChangeKinds.filter((kind) => kind !== "typography");
+}
+if (manifest && args.has("--simulate-missing-required-approval-field") && Array.isArray(manifest.requiredApprovalFields)) {
+  manifest.requiredApprovalFields = manifest.requiredApprovalFields.filter((field) => field !== "changeKinds");
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -141,6 +151,7 @@ requireFields(manifest, manifestPath, [
   "requiredApprovalFields",
   "activeScopes",
 ]);
+if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
 if (manifest?.defaultAuthorized !== false) {
   fail(`${manifestPath}.defaultAuthorized must be false`);
 }
@@ -173,14 +184,30 @@ if (manifestRequiredChangeKinds.size !== requiredChangeKinds.size || manifest?.r
 
 const requiredApprovalFields = requireArray(manifest, manifestPath, "requiredApprovalFields");
 const requiredApprovalFieldSet = new Set(requiredApprovalFields);
-for (const field of ["platforms", "surfaces", "patterns", "files", "changeBudget", "approvedBy", "approvedAt", "expiresAt", "privateApprovalReference"]) {
+for (const field of [
+  "id",
+  "status",
+  "platforms",
+  "surfaces",
+  "patterns",
+  "files",
+  "changeKinds",
+  "changeBudget",
+  "approvedBy",
+  "approvedAt",
+  "expiresAt",
+  "privateApprovalReference",
+]) {
   if (!requiredApprovalFieldSet.has(field)) fail(`${manifestPath}.requiredApprovalFields must include ${field}`);
 }
 
 const scopes = requireArray(manifest, manifestPath, "activeScopes", { nonEmpty: false });
+const scopeIds = new Set();
 for (const [index, scope] of scopes.entries()) {
   const label = `${manifestPath}.activeScopes[${index}]`;
   requireFields(scope, label, requiredApprovalFields);
+  if (scopeIds.has(scope.id)) fail(`${label}.id duplicates ${scope.id}`);
+  scopeIds.add(scope.id);
   if (!allowedStatuses.has(scope.status)) fail(`${label}.status is invalid`);
   if (scope.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   requireIsoDate(scope.approvedAt, `${label}.approvedAt`);
