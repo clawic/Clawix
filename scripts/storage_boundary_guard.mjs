@@ -177,6 +177,21 @@ if (!hostActionAudit) {
   if (hostActionAudit.canonicality !== "hostOnly") fail("clawix.hostActionAudit canonicality must be hostOnly");
 }
 
+for (const [id, expectedPath] of [
+  ["clawix.macControlTimeline", "~/Library/Application Support/Clawix/mac-control-timeline.jsonl"],
+  ["clawix.macControlPendingApprovals", "~/Library/Application Support/Clawix/mac-control-pending-approvals.json"],
+]) {
+  const node = nodes.get(id);
+  if (!node) {
+    fail(`persistent surface manifest is missing ${id}`);
+    continue;
+  }
+  if (node.owner !== "clawix") fail(`${id} owner must be clawix`);
+  if (node.path !== expectedPath) fail(`${id} path must be ${expectedPath}`);
+  if (node.storageClass !== "hostOperational") fail(`${id} storageClass must be hostOperational`);
+  if (node.canonicality !== "hostOnly") fail(`${id} canonicality must be hostOnly`);
+}
+
 for (const [id, requiredNote] of [
   ["clawix.database.local", "UI/cache/snapshot"],
   ["clawix.clawjs", "Not a framework data root"],

@@ -26,6 +26,8 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.id == "clawix.secrets" && $0.storageClass == "hostOperational" && $0.notes?.contains("opaque secret ids only") == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.localModels" && $0.storageClass == "hostOperational" && $0.notes?.contains("model binaries") == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.dictationSounds" && $0.storageClass == "hostOperational" && $0.notes?.contains("framework audio surface") == true })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.macControlTimeline" && $0.path == "~/Library/Application Support/Clawix/mac-control-timeline.jsonl" })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.macControlPendingApprovals" && $0.path == "~/Library/Application Support/Clawix/mac-control-pending-approvals.json" })
         XCTAssertFalse(nodes.contains {
             $0.id == "clawix.apps" ||
             $0.id == "clawix.design" ||

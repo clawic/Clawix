@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct MacControlSettingsPage: View {
+    @EnvironmentObject private var databaseManager: DatabaseManager
     @StateObject private var center = MacControlCenter()
     @State private var family: MacControlSettingsFamily = .wifi
+    @State private var timelineFilter: MacControlTimelineFilter = .all
     @State private var pendingCapability: MacControlSettingsCapability?
+    @State private var globalProjectionError: String?
     @State private var wifiSSID = ""
     @State private var wifiSecretRef = ""
     @State private var wifiDevice = "en0"
@@ -16,6 +19,7 @@ struct MacControlSettingsPage: View {
     @State private var shortcutName = ""
 
     private let familyOptions: [(MacControlSettingsFamily, String)] = MacControlSettingsFamily.allCases.map { ($0, $0.title) }
+    private let timelineOptions: [(MacControlTimelineFilter, String)] = MacControlTimelineFilter.allCases.map { ($0, $0.title) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -39,6 +43,8 @@ struct MacControlSettingsPage: View {
             capabilitiesSection
             permissionsSection
             resultSection
+            approvalsSection
+            timelineSection
         }
         .alert(
             pendingCapability?.title ?? "Run Mac Action",
@@ -57,6 +63,93 @@ struct MacControlSettingsPage: View {
             }
         } message: { capability in
             Text("Run \(capability.id) through Mac Control now?")
+        }
+        .task {
+            await projectPendingApprovalsToGlobalInbox()
+        }
+        .onChange(of: center.pendingApprovals) { _, _ in
+            Task { await projectPendingApprovalsToGlobalInbox() }
+        }
+        .onChange(of: databaseManager.state) { _, _ in
+            Task { await projectPendingApprovalsToGlobalInbox() }
+        }
+    }
+
+    private var approvalsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionLabel(title: "Approvals")
+            SettingsCard {
+                if center.pendingApprovals.isEmpty {
+                    SettingsRow {
+                        RowLabel(title: "No pending approvals", detail: "Medium and high risk actions appear here after planning.")
+                    } trailing: {
+                        EmptyView()
+                    }
+                } else {
+                    let approvals = center.pendingApprovals
+                    if let globalProjectionError {
+                        SettingsRow {
+                            RowLabel(title: "Inbox projection paused", detail: LocalizedStringKey(globalProjectionError))
+                        } trailing: {
+                            EmptyView()
+                        }
+                        CardDivider()
+                    }
+                    ForEach(approvals, id: \.id) { (approval: MacControlPendingApproval) in
+                        SettingsRow {
+                            RowLabel(title: LocalizedStringKey(approval.capabilityId), detail: LocalizedStringKey(approval.reason))
+                        } trailing: {
+                            VStack(alignment: .trailing, spacing: 3) {
+                                Text(approval.risk)
+                                    .font(BodyFont.system(size: 12, wght: 600))
+                                    .foregroundColor(Palette.textPrimary)
+                                Text(approval.approverRoles.joined(separator: ", "))
+                                    .font(BodyFont.system(size: 11))
+                                    .foregroundColor(Palette.textSecondary)
+                                if approval.isProjectedToGlobalInbox {
+                                    Text("Inbox")
+                                        .font(BodyFont.system(size: 11, wght: 600))
+                                        .foregroundColor(Color.accentColor)
+                                }
+                            }
+                        }
+                        if approval.id != approvals.last?.id {
+                            CardDivider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var timelineSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionLabel(title: "Timeline")
+            SettingsCard {
+                SegmentedRow(
+                    title: "Filter",
+                    detail: "Review recent plans, approvals, runs, and blocked decisions.",
+                    options: timelineOptions,
+                    selection: $timelineFilter,
+                    width: 300
+                )
+                CardDivider()
+                let entries = filteredTimeline
+                if entries.isEmpty {
+                    SettingsRow {
+                        RowLabel(title: "No events", detail: "Plan or run a capability to populate this timeline.")
+                    } trailing: {
+                        EmptyView()
+                    }
+                } else {
+                    ForEach(Array(entries.prefix(8).enumerated()), id: \.element.id) { index, entry in
+                        MacControlTimelineRow(entry: entry)
+                        if index < min(entries.count, 8) - 1 {
+                            CardDivider()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -187,6 +280,138 @@ struct MacControlSettingsPage: View {
         }
         return rollback.level
     }
+
+    private var filteredTimeline: [MacControlTimelineEntry] {
+        center.timeline.filter { timelineFilter.includes($0) }
+    }
+
+    @MainActor
+    private func projectPendingApprovalsToGlobalInbox() async {
+        guard case .ready = databaseManager.state else { return }
+        for approval in center.pendingApprovals where !approval.isProjectedToGlobalInbox {
+            do {
+                let projection = try await MacControlGlobalInboxProjector.project(approval, using: databaseManager)
+                center.markPendingApprovalProjected(
+                    id: approval.id,
+                    approvalRecordId: projection.approvalRecordId,
+                    inboxThreadId: projection.inboxThreadId,
+                    inboxMessageId: projection.inboxMessageId
+                )
+                globalProjectionError = nil
+            } catch {
+                globalProjectionError = error.localizedDescription
+            }
+        }
+    }
+}
+
+private struct MacControlGlobalInboxProjection {
+    let approvalRecordId: String
+    let inboxThreadId: String
+    let inboxMessageId: String
+}
+
+@MainActor
+private enum MacControlGlobalInboxProjector {
+    static func project(
+        _ approval: MacControlPendingApproval,
+        using manager: DatabaseManager
+    ) async throws -> MacControlGlobalInboxProjection {
+        let title = "Mac Control approval: \(approval.capabilityId)"
+        let content = """
+        Approval required for \(approval.capabilityId)
+        Risk: \(approval.risk)
+        Roles: \(approval.approverRoles.joined(separator: ", "))
+        Reason: \(approval.reason)
+        Request: \(approval.requestId)
+        """
+        let createdAt = ISO8601DateFormatter().string(from: approval.createdAt)
+        let evidence: DBJSON = .array([
+            .string(approval.id),
+            .string(approval.requestId),
+            .string(approval.capabilityId),
+        ])
+
+        let approvalRecord = try await manager.createRecord(collection: "approvals", data: [
+            "title": .string(title),
+            "status": .string("pending"),
+            "kind": .string("policy_gate"),
+            "requestedByAgentId": .string("clawix_settings"),
+            "policyReason": .string(approval.reason),
+            "evidenceIds": evidence,
+            "confidence": .number(1.0),
+        ])
+
+        do {
+            let thread = try await manager.createRecord(collection: "inbox_threads", data: [
+                "channel": .string("mac_control"),
+                "status": .string("unread"),
+                "subject": .string(title),
+                "externalThreadId": .string(approval.id),
+                "latestMessageAt": .string(createdAt),
+                "preview": .string(approval.reason),
+            ])
+
+            do {
+                let message = try await manager.createRecord(collection: "inbox_messages", data: [
+                    "threadId": .string(thread.id),
+                    "channel": .string("mac_control"),
+                    "externalThreadId": .string(approval.id),
+                    "externalMessageId": .string(approval.requestId),
+                    "direction": .string("system"),
+                    "status": .string("unread"),
+                    "attachments": .object([
+                        "approvalRecordId": .string(approvalRecord.id),
+                        "capabilityId": .string(approval.capabilityId),
+                    ]),
+                    "content": .string(content),
+                ])
+                return MacControlGlobalInboxProjection(
+                    approvalRecordId: approvalRecord.id,
+                    inboxThreadId: thread.id,
+                    inboxMessageId: message.id
+                )
+            } catch {
+                try? await manager.deleteRecord(collection: "inbox_threads", id: thread.id)
+                try? await manager.deleteRecord(collection: "approvals", id: approvalRecord.id)
+                throw error
+            }
+        } catch {
+            try? await manager.deleteRecord(collection: "approvals", id: approvalRecord.id)
+            throw error
+        }
+    }
+}
+
+private enum MacControlTimelineFilter: String, CaseIterable, Identifiable {
+    case all
+    case approvals
+    case runs
+    case blocked
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all:       return "All"
+        case .approvals: return "Approvals"
+        case .runs:      return "Runs"
+        case .blocked:   return "Blocked"
+        }
+    }
+
+    func includes(_ entry: MacControlTimelineEntry) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .approvals:
+            return entry.kind == .approval
+        case .runs:
+            return entry.kind == .evaluation
+        case .blocked:
+            return entry.decision == "blocked" || entry.kind == .error
+        }
+    }
 }
 
 private struct MacControlCapabilityRow: View {
@@ -274,6 +499,26 @@ private struct MacControlResultCard: View {
                 }
             }
             .padding(14)
+        }
+    }
+}
+
+private struct MacControlTimelineRow: View {
+    let entry: MacControlTimelineEntry
+
+    var body: some View {
+        SettingsRow {
+            RowLabel(title: LocalizedStringKey(entry.capabilityId), detail: LocalizedStringKey(entry.detail))
+        } trailing: {
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(entry.decision)
+                    .font(BodyFont.system(size: 12, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                Text([entry.risk, entry.receiptId].compactMap { $0 }.joined(separator: " · "))
+                    .font(BodyFont.system(size: 11))
+                    .foregroundColor(Palette.textSecondary)
+                    .lineLimit(1)
+            }
         }
     }
 }

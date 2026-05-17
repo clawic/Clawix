@@ -66,6 +66,9 @@ struct MacControlPermissionSnapshot: Identifiable, Equatable {
             snapshot(.speechRecognition, title: "Speech recognition"),
             snapshot(.camera, title: "Camera"),
             snapshot(.inputMonitoring, title: "Input monitoring"),
+            snapshot(.contacts, title: "Contacts"),
+            snapshot(.calendar, title: "Calendar"),
+            snapshot(.reminders, title: "Reminders"),
         ]
     }
 
@@ -82,24 +85,146 @@ struct MacControlPermissionSnapshot: Identifiable, Equatable {
     }
 }
 
+struct MacControlTimelineEntry: Identifiable, Equatable, Codable {
+    enum Kind: String, Equatable, Codable {
+        case plan
+        case approval
+        case evaluation
+        case error
+    }
+
+    let id: String
+    let kind: Kind
+    let createdAt: Date
+    let hostId: String
+    let bundleId: String
+    let actorId: String
+    let capabilityId: String
+    let risk: String
+    let decision: String
+    let receiptId: String?
+    let detail: String
+}
+
+struct MacControlPendingApproval: Identifiable, Equatable, Codable {
+    let id: String
+    let requestId: String
+    let capabilityId: String
+    let risk: String
+    let approverRoles: [String]
+    let reason: String
+    let createdAt: Date
+    var globalApprovalRecordId: String? = nil
+    var globalInboxThreadId: String? = nil
+    var globalInboxMessageId: String? = nil
+    var projectedAt: Date? = nil
+
+    var isProjectedToGlobalInbox: Bool {
+        globalApprovalRecordId != nil && globalInboxThreadId != nil && globalInboxMessageId != nil
+    }
+}
+
+struct MacControlCenterPersistence {
+    let timelineURL: URL?
+    let pendingApprovalsURL: URL?
+
+    static var live: MacControlCenterPersistence {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let directory = base.appendingPathComponent("Clawix", isDirectory: true)
+        return MacControlCenterPersistence(
+            timelineURL: directory.appendingPathComponent("mac-control-timeline.jsonl"),
+            pendingApprovalsURL: directory.appendingPathComponent("mac-control-pending-approvals.json")
+        )
+    }
+
+    static var memoryOnly: MacControlCenterPersistence {
+        MacControlCenterPersistence(timelineURL: nil, pendingApprovalsURL: nil)
+    }
+
+    func loadTimeline(limit: Int = 100) -> [MacControlTimelineEntry] {
+        guard let timelineURL, let data = try? Data(contentsOf: timelineURL) else { return [] }
+        let decoder = JSONDecoder()
+        let entries = String(decoding: data, as: UTF8.self)
+            .split(separator: "\n")
+            .compactMap { try? decoder.decode(MacControlTimelineEntry.self, from: Data($0.utf8)) }
+        return Array(entries.suffix(limit).reversed())
+    }
+
+    func loadPendingApprovals() -> [MacControlPendingApproval] {
+        guard let pendingApprovalsURL,
+              let data = try? Data(contentsOf: pendingApprovalsURL),
+              let approvals = try? JSONDecoder().decode([MacControlPendingApproval].self, from: data) else {
+            return []
+        }
+        return approvals
+    }
+
+    func appendTimeline(_ entry: MacControlTimelineEntry) {
+        guard let timelineURL else { return }
+        do {
+            try FileManager.default.createDirectory(at: timelineURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            var data = try JSONEncoder().encode(entry)
+            data.append(0x0A)
+            if FileManager.default.fileExists(atPath: timelineURL.path),
+               let handle = try? FileHandle(forWritingTo: timelineURL) {
+                defer { try? handle.close() }
+                try handle.seekToEnd()
+                try handle.write(contentsOf: data)
+            } else {
+                try data.write(to: timelineURL, options: .atomic)
+            }
+        } catch {
+            NSLog("Clawix Mac Control timeline write failed: \(error.localizedDescription)")
+        }
+    }
+
+    func savePendingApprovals(_ approvals: [MacControlPendingApproval]) {
+        guard let pendingApprovalsURL else { return }
+        do {
+            try FileManager.default.createDirectory(at: pendingApprovalsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let data = try JSONEncoder().encode(approvals)
+            try data.write(to: pendingApprovalsURL, options: .atomic)
+        } catch {
+            NSLog("Clawix Mac Control approvals write failed: \(error.localizedDescription)")
+        }
+    }
+
+    func clear() {
+        if let timelineURL {
+            try? FileManager.default.removeItem(at: timelineURL)
+        }
+        if let pendingApprovalsURL {
+            try? FileManager.default.removeItem(at: pendingApprovalsURL)
+        }
+    }
+}
+
 @MainActor
 final class MacControlCenter: ObservableObject {
     @Published private(set) var lastPlan: NativeMacActionWirePlan?
     @Published private(set) var lastEvaluation: NativeMacActionWireEvaluation?
     @Published private(set) var lastError: String?
+    @Published private(set) var timeline: [MacControlTimelineEntry] = []
+    @Published private(set) var pendingApprovals: [MacControlPendingApproval] = []
 
     private let runner: NativeMacActionCommandRunning
     private let defaults: UserDefaults
     private let auditURL: URL?
+    private let persistence: MacControlCenterPersistence
 
     init(
         runner: NativeMacActionCommandRunning = NativeMacActionProcessRunner(),
         defaults: UserDefaults = .standard,
-        auditURL: URL? = nil
+        auditURL: URL? = nil,
+        persistence: MacControlCenterPersistence = .live
     ) {
         self.runner = runner
         self.defaults = defaults
         self.auditURL = auditURL
+        self.persistence = persistence
+        timeline = persistence.loadTimeline()
+        pendingApprovals = persistence.loadPendingApprovals()
     }
 
     func plan(_ capability: MacControlSettingsCapability, arguments: [String: String] = [:]) {
@@ -109,8 +234,9 @@ final class MacControlCenter: ObservableObject {
             let data = try requestData(for: capability, arguments: arguments, dryRun: true, approved: false)
             let planData = try NativeMacActionWire.planJSON(for: data)
             lastPlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planData)
+            recordPlan(lastPlan)
         } catch {
-            lastError = error.localizedDescription
+            recordError(error.localizedDescription, capabilityId: capability.id)
         }
     }
 
@@ -121,9 +247,31 @@ final class MacControlCenter: ObservableObject {
             let evaluationData = try NativeMacActionWire.evaluateJSON(for: data, defaults: defaults, auditURL: auditURL, runner: runner)
             lastEvaluation = try JSONDecoder().decode(NativeMacActionWireEvaluation.self, from: evaluationData)
             lastPlan = nil
+            recordEvaluation(lastEvaluation)
         } catch {
-            lastError = error.localizedDescription
+            recordError(error.localizedDescription, capabilityId: capability.id)
         }
+    }
+
+    func clearTimeline() {
+        timeline = []
+        pendingApprovals = []
+        persistence.clear()
+    }
+
+    func markPendingApprovalProjected(
+        id: String,
+        approvalRecordId: String,
+        inboxThreadId: String,
+        inboxMessageId: String,
+        projectedAt: Date = Date()
+    ) {
+        guard let index = pendingApprovals.firstIndex(where: { $0.id == id }) else { return }
+        pendingApprovals[index].globalApprovalRecordId = approvalRecordId
+        pendingApprovals[index].globalInboxThreadId = inboxThreadId
+        pendingApprovals[index].globalInboxMessageId = inboxMessageId
+        pendingApprovals[index].projectedAt = projectedAt
+        persistence.savePendingApprovals(pendingApprovals)
     }
 
     func arguments(
@@ -203,6 +351,113 @@ final class MacControlCenter: ObservableObject {
         #else
         return "release"
         #endif
+    }
+
+    private func recordPlan(_ plan: NativeMacActionWirePlan?) {
+        guard let plan else { return }
+        appendTimeline(
+            kind: .plan,
+            hostId: plan.host.hostId,
+            bundleId: plan.host.bundleId,
+            actorId: plan.actor.id,
+            capabilityId: plan.capabilityId,
+            risk: plan.risk,
+            decision: plan.blockedReasons.isEmpty ? "planned" : "blocked",
+            receiptId: nil,
+            detail: plan.blockedReasons.first ?? plan.rollback.level
+        )
+
+        for approval in plan.requiredApprovals {
+            let item = MacControlPendingApproval(
+                id: approval.requestId ?? "\(plan.requestId):\(approval.risk)",
+                requestId: plan.requestId,
+                capabilityId: plan.capabilityId,
+                risk: approval.risk,
+                approverRoles: approval.approverRoles,
+                reason: approval.reason,
+                createdAt: Date()
+            )
+            upsertPendingApproval(item)
+            appendTimeline(
+                kind: .approval,
+                hostId: plan.host.hostId,
+                bundleId: plan.host.bundleId,
+                actorId: plan.actor.id,
+                capabilityId: plan.capabilityId,
+                risk: approval.risk,
+                decision: "approval_required",
+                receiptId: nil,
+                detail: approval.reason
+            )
+        }
+    }
+
+    private func recordEvaluation(_ evaluation: NativeMacActionWireEvaluation?) {
+        guard let evaluation else { return }
+        if evaluation.decision == "allow" || evaluation.decision == "blocked" {
+            pendingApprovals.removeAll { $0.requestId == evaluation.requestId || $0.capabilityId == evaluation.capabilityId }
+            persistence.savePendingApprovals(pendingApprovals)
+        }
+        appendTimeline(
+            kind: .evaluation,
+            hostId: evaluation.host.hostId,
+            bundleId: evaluation.host.bundleId,
+            actorId: evaluation.actor.id,
+            capabilityId: evaluation.capabilityId,
+            risk: evaluation.receipt?.risk ?? "read",
+            decision: evaluation.decision,
+            receiptId: evaluation.receipt?.id,
+            detail: evaluation.reasons.first ?? evaluation.receipt?.result ?? "ok"
+        )
+    }
+
+    private func recordError(_ message: String, capabilityId: String) {
+        lastError = message
+        appendTimeline(
+            kind: .error,
+            hostId: ProcessInfo.processInfo.hostName,
+            bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+            actorId: "clawix_settings",
+            capabilityId: capabilityId,
+            risk: "unknown",
+            decision: "error",
+            receiptId: nil,
+            detail: message
+        )
+    }
+
+    private func upsertPendingApproval(_ item: MacControlPendingApproval) {
+        pendingApprovals.removeAll { $0.id == item.id }
+        pendingApprovals.insert(item, at: 0)
+        persistence.savePendingApprovals(pendingApprovals)
+    }
+
+    private func appendTimeline(
+        kind: MacControlTimelineEntry.Kind,
+        hostId: String,
+        bundleId: String,
+        actorId: String,
+        capabilityId: String,
+        risk: String,
+        decision: String,
+        receiptId: String?,
+        detail: String
+    ) {
+        let entry = MacControlTimelineEntry(
+            id: "mactl_\(UUID().uuidString.lowercased())",
+            kind: kind,
+            createdAt: Date(),
+            hostId: hostId,
+            bundleId: bundleId,
+            actorId: actorId,
+            capabilityId: capabilityId,
+            risk: risk,
+            decision: decision,
+            receiptId: receiptId,
+            detail: detail
+        )
+        timeline.insert(entry, at: 0)
+        persistence.appendTimeline(entry)
     }
 }
 

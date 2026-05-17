@@ -1,6 +1,8 @@
 import AppKit
 import ApplicationServices
 import AVFoundation
+import Contacts
+import EventKit
 import Foundation
 import IOKit.hid
 import Speech
@@ -14,6 +16,9 @@ enum NativeMacPermissionBroker {
         case accessibility = "mac.permission.accessibility"
         case inputMonitoring = "mac.permission.input_monitoring"
         case automationAppleEvents = "mac.permission.automation_apple_events"
+        case contacts = "mac.permission.contacts"
+        case calendar = "mac.permission.calendar"
+        case reminders = "mac.permission.reminders"
     }
 
     enum Status {
@@ -38,6 +43,12 @@ enum NativeMacPermissionBroker {
             return inputMonitoringStatus()
         case .automationAppleEvents:
             return .notDetermined
+        case .contacts:
+            return contactsStatus()
+        case .calendar:
+            return eventKitStatus(EKEventStore.authorizationStatus(for: .event))
+        case .reminders:
+            return eventKitStatus(EKEventStore.authorizationStatus(for: .reminder))
         }
     }
 
@@ -55,6 +66,12 @@ enum NativeMacPermissionBroker {
             return requestInputMonitoring()
         case .automationAppleEvents:
             return false
+        case .contacts:
+            return await requestContacts()
+        case .calendar:
+            return await requestEventKit(.event)
+        case .reminders:
+            return await requestEventKit(.reminder)
         }
     }
 
@@ -72,6 +89,12 @@ enum NativeMacPermissionBroker {
             open("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
         case .automationAppleEvents:
             open("x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+        case .contacts:
+            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts")
+        case .calendar:
+            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")
+        case .reminders:
+            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders")
         }
     }
 
@@ -171,6 +194,64 @@ enum NativeMacPermissionBroker {
     @discardableResult
     static func requestInputMonitoring() -> Bool {
         IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+    }
+
+    private static func contactsStatus() -> Status {
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized:
+            return .granted
+        case .denied, .restricted:
+            return .denied
+        case .notDetermined:
+            return .notDetermined
+        @unknown default:
+            return .notDetermined
+        }
+    }
+
+    private static func requestContacts() async -> Bool {
+        await withCheckedContinuation { continuation in
+            CNContactStore().requestAccess(for: .contacts) { granted, _ in
+                continuation.resume(returning: granted)
+            }
+        }
+    }
+
+    private static func eventKitStatus(_ status: EKAuthorizationStatus) -> Status {
+        switch status {
+        case .authorized, .fullAccess, .writeOnly:
+            return .granted
+        case .denied, .restricted:
+            return .denied
+        case .notDetermined:
+            return .notDetermined
+        @unknown default:
+            return .notDetermined
+        }
+    }
+
+    private static func requestEventKit(_ entityType: EKEntityType) async -> Bool {
+        let store = EKEventStore()
+        return await withCheckedContinuation { continuation in
+            if #available(macOS 14.0, *) {
+                switch entityType {
+                case .event:
+                    store.requestFullAccessToEvents { granted, _ in
+                        continuation.resume(returning: granted)
+                    }
+                case .reminder:
+                    store.requestFullAccessToReminders { granted, _ in
+                        continuation.resume(returning: granted)
+                    }
+                @unknown default:
+                    continuation.resume(returning: false)
+                }
+            } else {
+                store.requestAccess(to: entityType) { granted, _ in
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
     }
 
     private static func open(_ url: String) {

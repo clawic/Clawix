@@ -477,6 +477,22 @@ enum ClawixPersistentSurfaceRegistry {
                 storageClass: "hostOperational",
                 notes: "Append-only audit for host-owned Browser, Screen Tools, Mac Utilities, and agent-visible native action policy decisions."
             ),
+            ClawixPersistentSurface.file(
+                id: "clawix.macControlTimeline",
+                name: "Mac Control timeline",
+                path: "~/Library/Application Support/Clawix/mac-control-timeline.jsonl",
+                parentId: "clawix.applicationSupport",
+                storageClass: "hostOperational",
+                notes: "Append-only local projection of Mac Control plans, approval requirements, execution evaluations, and errors for the Settings timeline."
+            ),
+            ClawixPersistentSurface.file(
+                id: "clawix.macControlPendingApprovals",
+                name: "Mac Control pending approvals",
+                path: "~/Library/Application Support/Clawix/mac-control-pending-approvals.json",
+                parentId: "clawix.applicationSupport",
+                storageClass: "hostOperational",
+                notes: "Host-owned pending approval projection for Mac Control Settings. Durable source is local to the signed host identity."
+            ),
             ClawixPersistentSurface.folder(
                 id: "clawix.bridgeState",
                 name: "Bridge state",
