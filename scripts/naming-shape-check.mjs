@@ -72,6 +72,23 @@ const conventionalDataFiles = new Set([
   "source-size-baseline.json",
   "tsconfig.json",
 ]);
+const docsDataRoleSuffixes = new Set([
+  "acceptance",
+  "baseline",
+  "config",
+  "decisions",
+  "fixture",
+  "inventory",
+  "manifest",
+  "pattern",
+  "queue",
+  "registry",
+  "report",
+  "schema",
+  "tools",
+  "validation",
+  "verification",
+]);
 const ignoredDirectoryNames = new Set([
   ".git",
   ".build",
@@ -177,6 +194,12 @@ function collectBroadSymbolWarnings(relativePath, text) {
   return warnings;
 }
 
+function hasDocsDataRoleSuffix(name) {
+  const stem = name.replace(/\.(json|ya?ml)$/u, "");
+  const role = stem.split(/[.-]/u).at(-1);
+  return docsDataRoleSuffixes.has(role);
+}
+
 const failures = [];
 const warnings = [];
 
@@ -216,7 +239,7 @@ for (const relativePath of walk(rootDir)) {
     }
   }
   if ((ext === ".json" || ext === ".yaml" || ext === ".yml") && relativePath.startsWith("docs/")) {
-    if (!conventionalDataFiles.has(name) && !/\.(registry|manifest|fixture|schema|baseline|config|pattern)\.(json|ya?ml)$/.test(name)) {
+    if (!conventionalDataFiles.has(name) && !hasDocsDataRoleSuffix(name)) {
       warnings.push({ path: relativePath, kind: "data-file-role", message: "Owned docs data files should carry a role suffix" });
     }
   }

@@ -1,8 +1,8 @@
 # Naming shape audit
 
-Status: initial report
+Status: refreshed report
 
-Date: 2026-05-15
+Date: 2026-05-17
 
 This is the living Clawix host audit report for ADR 0009. The
 machine-readable source is `node scripts/naming-shape-check.mjs --json`;
@@ -11,10 +11,11 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 46 in the current local tree. In-progress governance and
-  code-hygiene files still account for part of the cleanup inventory.
-- Source-size warnings: 35.
-- Source-structure signals: 29.
+- Naming warnings: 40 in the current local tree. Broad source symbols account
+  for 39 warnings; one legacy uppercase Markdown note remains in UI pattern
+  registry docs.
+- Source-size warnings: 39.
+- Source-structure signals: 31.
 
 The current gate is intentionally critical-only. Warnings are cleanup inventory
 for staged rename/split work and must not be hidden by compressing code.
@@ -22,15 +23,15 @@ for staged rename/split work and must not be hidden by compressing code.
 ## Largest current files
 
 - `packages/SecretsCrypto/Sources/SecretsCrypto/BIP39Wordlist.swift` - 2066 lines.
-- `macos/Sources/Clawix/AppState.swift` - 1986 lines.
+- `macos/Sources/Clawix/AppState.swift` - 1987 lines.
 - `macos/Sources/Clawix/SidebarView.swift` - 1897 lines.
-- `macos/Sources/Clawix/DictationSettingsPage.swift` - 1844 lines.
+- `macos/Sources/Clawix/DictationSettingsPage.swift` - 1810 lines.
+- `scripts/interface_surface_guard.mjs` - 1580 lines.
 - `macos/Sources/Clawix/Sidebar/SidebarView+DragDrop.swift` - 1500 lines.
 - `web/src/screens/pomodoro/pomodoro-view.tsx` - 1403 lines.
 - `macos/Sources/Clawix/ScreenTools/ScreenToolService.swift` - 1365 lines.
 - `macos/Sources/Clawix/QuickAsk/QuickAskView.swift` - 1338 lines.
-- `macos/Sources/Clawix/Dictation/DictationCoordinator.swift` - 1323 lines.
-- `macos/Helpers/Bridged/Sources/clawix-bridge/main.swift` - 1310 lines.
+- `macos/Helpers/Bridged/Sources/clawix-bridge/main.swift` - 1311 lines.
 
 ## Cleanup families
 
@@ -42,8 +43,9 @@ for staged rename/split work and must not be hidden by compressing code.
   provider adapters, and persistence.
 - Web bridge exports: review `web/src/bridge/frames.ts` and `wire.ts` as large
   export surfaces.
-- UI governance docs: owned JSON files now use role suffixes, including
-  `*.registry.json`, `*.baseline.json`, `*.config.json`, and `*.pattern.json`.
+- UI governance docs: owned JSON files now use dot- or hyphen-delimited role
+  suffixes, including registry, baseline, config, pattern, inventory, queue,
+  decisions, validation, verification, acceptance, report, and tools records.
 - Design builtins and persistent registry: expand compressed lists only when
   the next edit touches that area.
 - Broad Swift symbols: review `Manager`, `Helper`, `Data`, and `Info` only when
@@ -93,9 +95,10 @@ for staged rename/split work and must not be hidden by compressing code.
 
 ## Validation snapshot
 
-- `bash scripts/test.sh fast` passed after adding the new checks.
-- `node scripts/naming-shape-check.mjs` passed with warnings only.
-- `node scripts/source-size-check.mjs` passed with warnings/signals only.
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 40
+  warnings.
+- `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
+  warnings, and 31 source-structure signals.
 - `node scripts/codebase-manifest.mjs --check` passed.
 - `bash scripts/doc_alignment_check.sh` passed.
 

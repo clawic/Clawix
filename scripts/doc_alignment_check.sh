@@ -380,7 +380,7 @@ do
 done
 
 for snippet in \
-  "Status: initial report" \
+  "Status: refreshed report" \
   "Critical naming failures: 0" \
   "Cleanup families"
 do
