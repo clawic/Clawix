@@ -43,6 +43,32 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStringSet(values, label, expectedValues) {
+  const seen = requireUniqueStrings(values, label);
+  const expected = new Set(expectedValues);
+  for (const value of seen) {
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function hasLocalPath(value) {
   return typeof value === "string" && (/^\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value));
 }
@@ -76,8 +102,15 @@ requireFields(queue, queuePath, [
   "items",
 ]);
 
-const debtReportPath = queue?.sourceDebtReport || "docs/ui/debt-report.registry.json";
-const debtReport = readJson(debtReportPath);
+if (args.has("--simulate-inactive-queue")) {
+  queue.status = "completed";
+}
+if (args.has("--simulate-wrong-source-debt-report")) {
+  queue.sourceDebtReport = "docs/ui/other-debt-report.registry.json";
+}
+if (args.has("--simulate-wrong-allowlist-path")) {
+  queue.visualModelAllowlist = "docs/ui/other-visual-model-allowlist.manifest.json";
+}
 if (args.has("--simulate-completed-cleanup-with-pending-debt") && Array.isArray(queue?.items) && queue.items[0]) {
   queue.items[0] = {
     ...queue.items[0],
@@ -99,6 +132,18 @@ if (args.has("--simulate-missing-blocker") && Array.isArray(queue?.v1Delivery?.b
     blockedUntil: queue.v1Delivery.blockedUntil.filter((blocker) => blocker !== "copy-snapshot"),
   };
 }
+if (args.has("--simulate-duplicate-blocker") && Array.isArray(queue?.v1Delivery?.blockedUntil) && queue.v1Delivery.blockedUntil[0]) {
+  queue.v1Delivery.blockedUntil.push(queue.v1Delivery.blockedUntil[0]);
+}
+if (args.has("--simulate-extra-queue-status") && Array.isArray(queue?.queueStatuses)) {
+  queue.queueStatuses.push("ready-for-any-agent");
+}
+if (args.has("--simulate-duplicate-queue-status") && Array.isArray(queue?.queueStatuses) && queue.queueStatuses[0]) {
+  queue.queueStatuses.push(queue.queueStatuses[0]);
+}
+if (args.has("--simulate-extra-required-item-field") && Array.isArray(queue?.requiredItemFields)) {
+  queue.requiredItemFields.push("implementationPatchPath");
+}
 if (args.has("--simulate-executable-nonvisual-action") && Array.isArray(queue?.items) && queue.items[0]) {
   queue.items[0] = { ...queue.items[0], allowedCurrentAction: "Modify presentation now." };
 }
@@ -111,13 +156,24 @@ if (args.has("--simulate-item-wrong-scope-source") && Array.isArray(queue?.items
 if (args.has("--simulate-unsupported-platform") && Array.isArray(queue?.items) && queue.items[0]) {
   queue.items[0] = { ...queue.items[0], platforms: ["visionos"] };
 }
+const debtReportPath = queue?.sourceDebtReport || "docs/ui/debt-report.registry.json";
+const debtReport = readJson(debtReportPath);
 const debtItems = new Map();
 for (const item of requireArray(debtReport, debtReportPath, "pendingItems")) {
   debtItems.set(item.debtId, item);
 }
+if (queue?.status !== "queued") {
+  fail(`${queuePath}.status must be queued`);
+}
+if (debtReportPath !== "docs/ui/debt-report.registry.json") {
+  fail(`${queuePath}.sourceDebtReport must be docs/ui/debt-report.registry.json`);
+}
 
 const allowlistPath = queue?.visualModelAllowlist || "docs/ui/visual-model-allowlist.manifest.json";
 const allowlist = readJson(allowlistPath);
+if (allowlistPath !== "docs/ui/visual-model-allowlist.manifest.json") {
+  fail(`${queuePath}.visualModelAllowlist must be docs/ui/visual-model-allowlist.manifest.json`);
+}
 const activeModels = new Set(
   requireArray(allowlist, allowlistPath, "allowedVisualModels")
     .filter((model) => model?.status === "active")
@@ -161,18 +217,20 @@ if (v1Delivery.completionCondition !== "completed-by-allowlisted-visual-model-or
 if (v1Delivery.nonVisualAgentAction !== "track-only") {
   fail(`${queuePath}.v1Delivery.nonVisualAgentAction must be track-only`);
 }
-const blockedUntil = new Set(requireArray(v1Delivery, `${queuePath}.v1Delivery`, "blockedUntil"));
-for (const blocker of ["approved-visual-scope", "private-baseline", "copy-snapshot", "rendered-geometry"]) {
-  if (!blockedUntil.has(blocker)) fail(`${queuePath}.v1Delivery.blockedUntil must include ${blocker}`);
-}
+requireExactStringSet(
+  requireArray(v1Delivery, `${queuePath}.v1Delivery`, "blockedUntil"),
+  `${queuePath}.v1Delivery.blockedUntil`,
+  ["approved-visual-scope", "private-baseline", "copy-snapshot", "rendered-geometry"],
+);
 
-const statuses = new Set(requireArray(queue, queuePath, "queueStatuses"));
-for (const status of ["queued-visual-authorized-lane", "blocked-without-approval", "in-progress", "completed"]) {
-  if (!statuses.has(status)) fail(`${queuePath}.queueStatuses must include ${status}`);
-}
+const statuses = requireExactStringSet(
+  requireArray(queue, queuePath, "queueStatuses"),
+  `${queuePath}.queueStatuses`,
+  ["queued-visual-authorized-lane", "blocked-without-approval", "in-progress", "completed"],
+);
 
 const requiredItemFields = requireArray(queue, queuePath, "requiredItemFields");
-for (const field of [
+requireExactStringSet(requiredItemFields, `${queuePath}.requiredItemFields`, [
   "id",
   "debtId",
   "status",
@@ -183,9 +241,7 @@ for (const field of [
   "requiredAuthorization",
   "privateApprovalRequired",
   "allowedCurrentAction",
-]) {
-  if (!requiredItemFields.includes(field)) fail(`${queuePath}.requiredItemFields must include ${field}`);
-}
+]);
 
 const queuedDebtIds = new Set();
 const queueItemIds = new Set();
