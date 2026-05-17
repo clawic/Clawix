@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -92,6 +93,15 @@ function requireIsoDate(value, label) {
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
 const manifestPath = "docs/ui/canon-promotions.registry.json";
 const manifest = readJson(manifestPath);
+if (manifest && args.has("--simulate-wrong-private-approval-alias")) {
+  manifest.privateApprovalAlias = "private-codex-ui-baselines";
+}
+if (manifest && args.has("--simulate-missing-approved-status")) {
+  manifest.promotionStatuses = manifest.promotionStatuses.filter((status) => status !== "approved");
+}
+if (manifest && args.has("--simulate-missing-required-promotion-field")) {
+  manifest.requiredPromotionFields = manifest.requiredPromotionFields.filter((field) => field !== "geometryEvidenceHash");
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -143,14 +153,90 @@ for (const field of [
 
 const protectedPath = "docs/ui/protected-surfaces.registry.json";
 const protectedSurfaces = readJson(protectedPath);
+const simulatedHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+const simulatedOtherHash = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+const simulatedProtectedSurface = {
+  id: "simulated-protected-surface",
+  scope: "simulated sidebar surface",
+  platform: args.has("--simulate-approved-platform-mismatch") ? "ios" : "macos",
+  patterns: ["sidebar-row"],
+  approvedBy: "user",
+  approvedAt: "2026-05-15",
+  privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
+  contract: "docs/ui/protected-surfaces.registry.json#simulated-protected-surface",
+  privateBaselineReference: "private-codex-ui-baselines:surfaces/simulated/baseline.png",
+  privateBaselineHash: args.has("--simulate-approved-protected-hash-mismatch") ? simulatedOtherHash : simulatedHash,
+  copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
+  copySnapshotHash: simulatedHash,
+  geometryEvidenceReference: "private-codex-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceHash: simulatedHash,
+  changePolicy: "explicit-user-approval-required",
+};
+const simulatedPromotion = {
+  id: "simulated-canon-promotion",
+  status: "approved",
+  surfaceId: "simulated-sidebar-surface",
+  platform: "macos",
+  patterns: ["sidebar-row"],
+  approvedBy: "user",
+  approvedAt: "2026-05-15",
+  privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
+  privateBaselineReference: "private-codex-ui-baselines:surfaces/simulated/baseline.png",
+  privateBaselineHash: simulatedHash,
+  copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
+  copySnapshotHash: simulatedHash,
+  geometryEvidenceReference: "private-codex-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceHash: simulatedHash,
+  protectedSurfaceId: "simulated-protected-surface",
+};
+if (manifest && args.has("--simulate-invalid-promotion-status")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "pending" }];
+}
+if (manifest && args.has("--simulate-unsupported-platform")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", platform: "visionos" }];
+}
+if (manifest && args.has("--simulate-approved-by-agent")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", approvedBy: "agent" }];
+}
+if (manifest && args.has("--simulate-invalid-approved-at")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", approvedAt: "2026/05/15" }];
+}
+if (manifest && args.has("--simulate-local-private-reference")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", privateBaselineReference: "/Users/example/baseline.png" }];
+}
+if (manifest && args.has("--simulate-invalid-baseline-hash")) {
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", privateBaselineHash: "short" }];
+}
+if (manifest && args.has("--simulate-approved-without-protected-surface")) {
+  manifest.promotions = [simulatedPromotion];
+}
+if (manifest && args.has("--simulate-approved-protected-hash-mismatch")) {
+  manifest.promotions = [simulatedPromotion];
+  protectedSurfaces.surfaces = [simulatedProtectedSurface];
+}
+if (manifest && args.has("--simulate-approved-platform-mismatch")) {
+  manifest.promotions = [simulatedPromotion];
+  protectedSurfaces.surfaces = [simulatedProtectedSurface];
+}
+if (manifest && args.has("--simulate-duplicate-promotion-id")) {
+  manifest.promotions = [
+    { ...simulatedPromotion, status: "revoked" },
+    { ...simulatedPromotion, status: "superseded" },
+  ];
+}
 const protectedSurfaceById = new Map(
   requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false }).map((surface) => [surface.id, surface]),
 );
 
 const promotions = requireArray(manifest, manifestPath, "promotions", { nonEmpty: false });
+const promotionIds = new Set();
 for (const [index, promotion] of promotions.entries()) {
   const label = `${manifestPath}.promotions[${index}]`;
   requireFields(promotion, label, requiredPromotionFields);
+  if (promotion.id) {
+    if (promotionIds.has(promotion.id)) fail(`${label}.id duplicates another promotion`);
+    promotionIds.add(promotion.id);
+  }
   if (!statuses.has(promotion.status)) fail(`${label}.status is invalid`);
   if (!requiredPlatforms.has(promotion.platform)) fail(`${label}.platform is not governed`);
   if (promotion.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
