@@ -95,6 +95,8 @@ function requireIsoDate(value, label) {
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
 const registryPath = "docs/ui/exceptions.registry.json";
 const registry = readJson(registryPath);
+const approvalAuthorityPath = "docs/ui/approval-authority.manifest.json";
+const approvalAuthority = readJson(approvalAuthorityPath);
 requireFields(registry, registryPath, [
   "schemaVersion",
   "status",
@@ -103,6 +105,15 @@ requireFields(registry, registryPath, [
   "requiredExceptionFields",
   "exceptions",
 ]);
+if (args.has("--simulate-missing-exception-status") && Array.isArray(registry?.exceptionStatuses)) {
+  registry.exceptionStatuses = registry.exceptionStatuses.filter((status) => status !== "revoked");
+}
+if (args.has("--simulate-missing-required-exception-field") && Array.isArray(registry?.requiredExceptionFields)) {
+  registry.requiredExceptionFields = registry.requiredExceptionFields.filter((field) => field !== "privateApprovalReference");
+}
+if (args.has("--simulate-missing-approval-authority-source") && Array.isArray(approvalAuthority?.approvalSources)) {
+  approvalAuthority.approvalSources = approvalAuthority.approvalSources.filter((source) => source?.id !== "exceptions");
+}
 
 const statuses = new Set(requireArray(registry, registryPath, "exceptionStatuses"));
 for (const status of ["active", "expired", "resolved", "revoked"]) {
@@ -148,25 +159,26 @@ function simulatedException(overrides = {}) {
   };
 }
 
-if (args.has("--simulate-unreferenced-active-exception")) {
+function appendSimulatedException(overrides = {}) {
   registry.exceptions = [
     ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
-    simulatedException({
-      id: "simulated-unreferenced-active-exception",
-      reason: "Synthetic fixture for active exception inventory mapping enforcement.",
-    }),
+    simulatedException(overrides),
   ];
 }
 
+if (args.has("--simulate-unreferenced-active-exception")) {
+  appendSimulatedException({
+    id: "simulated-unreferenced-active-exception",
+    reason: "Synthetic fixture for active exception inventory mapping enforcement.",
+  });
+}
+
 if (args.has("--simulate-expired-active-exception")) {
-  registry.exceptions = [
-    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
-    simulatedException({
-      id: "simulated-expired-active-exception",
-      reviewAfter: "2026-05-16",
-      expiresAt: "2026-05-16",
-    }),
-  ];
+  appendSimulatedException({
+    id: "simulated-expired-active-exception",
+    reviewAfter: "2026-05-16",
+    expiresAt: "2026-05-16",
+  });
 }
 
 if (args.has("--simulate-duplicate-exception-id")) {
@@ -178,25 +190,78 @@ if (args.has("--simulate-duplicate-exception-id")) {
 }
 
 if (args.has("--simulate-unsupported-platform")) {
-  registry.exceptions = [
-    ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
-    simulatedException({
-      id: "simulated-unsupported-platform-exception",
-      status: "expired",
-      platforms: ["visionos"],
-    }),
-  ];
+  appendSimulatedException({
+    id: "simulated-unsupported-platform-exception",
+    status: "expired",
+    platforms: ["visionos"],
+  });
 }
 
 if (args.has("--simulate-local-private-approval-reference")) {
+  appendSimulatedException({
+    id: "simulated-local-private-approval-reference",
+    status: "expired",
+    privateApprovalReference: `private-codex-ui-approval:${["", "Users", "example", "private-approval.json"].join("/")}`,
+  });
+}
+
+if (args.has("--simulate-invalid-status")) {
+  appendSimulatedException({ id: "simulated-invalid-status", status: "pending" });
+}
+
+if (args.has("--simulate-non-user-approval")) {
+  appendSimulatedException({ id: "simulated-non-user-approval", status: "expired", approvedBy: "agent" });
+}
+
+if (args.has("--simulate-invalid-approval-date")) {
+  appendSimulatedException({ id: "simulated-invalid-approval-date", status: "expired", approvedAt: "2026-02-30" });
+}
+
+if (args.has("--simulate-created-after-review")) {
+  appendSimulatedException({
+    id: "simulated-created-after-review",
+    status: "expired",
+    createdAt: "2026-08-16",
+    reviewAfter: "2026-08-15",
+  });
+}
+
+if (args.has("--simulate-review-after-expires")) {
+  appendSimulatedException({
+    id: "simulated-review-after-expires",
+    status: "expired",
+    reviewAfter: "2026-09-16",
+    expiresAt: "2026-09-15",
+  });
+}
+
+if (args.has("--simulate-missing-entry-field")) {
+  const simulated = simulatedException({ id: "simulated-missing-entry-field", status: "expired" });
+  delete simulated.reason;
   registry.exceptions = [
     ...(Array.isArray(registry?.exceptions) ? registry.exceptions : []),
-    simulatedException({
-      id: "simulated-local-private-approval-reference",
-      status: "expired",
-      privateApprovalReference: `private-codex-ui-approval:${["", "Users", "example", "private-approval.json"].join("/")}`,
-    }),
+    simulated,
   ];
+}
+
+if (args.has("--simulate-local-path-leak")) {
+  appendSimulatedException({
+    id: "simulated-local-path-leak",
+    status: "expired",
+    scope: "/Users/example/Desktop/Clawix/macos/Sources/Clawix/SidebarView.swift",
+  });
+}
+
+const exceptionApprovalSource = (approvalAuthority?.approvalSources || []).find((source) => source?.id === "exceptions");
+if (!exceptionApprovalSource) {
+  fail(`${approvalAuthorityPath}.approvalSources must include exceptions`);
+} else {
+  if (exceptionApprovalSource.path !== registryPath) fail(`${approvalAuthorityPath}.approvalSources.exceptions.path must be ${registryPath}`);
+  if (exceptionApprovalSource.arrayField !== "exceptions") fail(`${approvalAuthorityPath}.approvalSources.exceptions.arrayField must be exceptions`);
+  if (exceptionApprovalSource.approvedByField !== "approvedBy") fail(`${approvalAuthorityPath}.approvalSources.exceptions.approvedByField must be approvedBy`);
+  if (exceptionApprovalSource.privateApprovalField !== "privateApprovalReference") {
+    fail(`${approvalAuthorityPath}.approvalSources.exceptions.privateApprovalField must be privateApprovalReference`);
+  }
 }
 
 const exceptionIds = new Set();
