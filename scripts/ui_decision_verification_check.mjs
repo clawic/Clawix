@@ -45,6 +45,38 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
 function isPublicEvidenceReference(reference) {
   if (typeof reference !== "string" || reference.length === 0) return false;
   if (path.isAbsolute(reference)) return false;
@@ -170,6 +202,14 @@ if (args.has("--simulate-missing-required-status") && Array.isArray(decisionVeri
   decisionVerification.statuses = decisionVerification.statuses.filter((status) => status !== "open");
 }
 
+if (args.has("--simulate-extra-required-status") && Array.isArray(decisionVerification?.statuses)) {
+  decisionVerification.statuses.push("pending-private");
+}
+
+if (args.has("--simulate-duplicate-required-status") && Array.isArray(decisionVerification?.statuses) && decisionVerification.statuses[0]) {
+  decisionVerification.statuses.push(decisionVerification.statuses[0]);
+}
+
 if (args.has("--simulate-verified-with-remaining") && Array.isArray(decisionVerification?.decisions)) {
   const verifiedDecision = decisionVerification.decisions.find((decision) => decision?.status === "verified-complete");
   if (verifiedDecision) {
@@ -191,6 +231,13 @@ if (args.has("--simulate-unsafe-public-evidence") && Array.isArray(decisionVerif
   }
 }
 
+if (args.has("--simulate-duplicate-public-evidence") && Array.isArray(decisionVerification?.decisions)) {
+  const decision = decisionVerification.decisions.find((item) => Array.isArray(item?.publicEvidence) && item.publicEvidence[0]);
+  if (decision) {
+    decision.publicEvidence.push(decision.publicEvidence[0]);
+  }
+}
+
 if (args.has("--simulate-unplanned-private-evidence") && Array.isArray(decisionVerification?.decisions)) {
   const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.privateEvidence));
   if (openDecision) {
@@ -198,10 +245,24 @@ if (args.has("--simulate-unplanned-private-evidence") && Array.isArray(decisionV
   }
 }
 
+if (args.has("--simulate-duplicate-private-evidence") && Array.isArray(decisionVerification?.decisions)) {
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.privateEvidence) && decision.privateEvidence[0]);
+  if (openDecision) {
+    openDecision.privateEvidence.push(openDecision.privateEvidence[0]);
+  }
+}
+
 if (args.has("--simulate-undelegated-blocking-verifier") && Array.isArray(decisionVerification?.decisions)) {
   const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.blockingVerifiers));
   if (openDecision) {
     openDecision.blockingVerifiers[0] = "scripts/ui_private_completion_source_verify.mjs";
+  }
+}
+
+if (args.has("--simulate-duplicate-blocking-verifier") && Array.isArray(decisionVerification?.decisions)) {
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.blockingVerifiers) && decision.blockingVerifiers[0]);
+  if (openDecision) {
+    openDecision.blockingVerifiers.push(openDecision.blockingVerifiers[0]);
   }
 }
 
@@ -227,10 +288,11 @@ for (const entry of privateRootAliasEntries(rootDir)) {
   }
 }
 
-const allowedStatuses = new Set(requireArray(decisionVerification, decisionPath, "statuses"));
-for (const status of ["open", "verified-complete"]) {
-  if (!allowedStatuses.has(status)) fail(`${decisionPath}.statuses must include ${status}`);
-}
+const allowedStatuses = requireExactStringSet(
+  requireArray(decisionVerification, decisionPath, "statuses"),
+  `${decisionPath}.statuses`,
+  ["open", "verified-complete"],
+);
 
 const expectedDecisions = [
   ["initial_scope", "Cross-platform desde dia 1"],
@@ -304,7 +366,9 @@ for (const [index, decision] of decisions.entries()) {
   }
   if (decision.status === "open") {
     requireFields(decision, label, ["privateEvidence", "blockingVerifiers"]);
-    for (const [evidenceIndex, evidence] of requireArray(decision, label, "privateEvidence").entries()) {
+    const privateEvidence = requireArray(decision, label, "privateEvidence");
+    requireUniqueStrings(privateEvidence, `${label}.privateEvidence`);
+    for (const [evidenceIndex, evidence] of privateEvidence.entries()) {
       if (!isPrivateEvidenceReference(evidence)) {
         fail(`${label}.privateEvidence[${evidenceIndex}] must be a public-safe private evidence alias reference`);
         continue;
@@ -314,7 +378,9 @@ for (const [index, decision] of decisions.entries()) {
         fail(`${label}.privateEvidence[${evidenceIndex}] is not covered by the derived private evidence plan`);
       }
     }
-    for (const [verifierIndex, verifier] of requireArray(decision, label, "blockingVerifiers").entries()) {
+    const blockingVerifiers = requireArray(decision, label, "blockingVerifiers");
+    requireUniqueStrings(blockingVerifiers, `${label}.blockingVerifiers`);
+    for (const [verifierIndex, verifier] of blockingVerifiers.entries()) {
       const verifierLabel = `${label}.blockingVerifiers[${verifierIndex}]`;
       if (!isPublicEvidenceReference(verifier)) {
         fail(`${verifierLabel} must be a public-safe repo-relative reference`);
@@ -337,7 +403,9 @@ for (const [index, decision] of decisions.entries()) {
   if (approvalDecisionIds.has(decision.id) && !decision.publicEvidence.includes("scripts/ui_private_approval_verify.mjs")) {
     fail(`${label}.publicEvidence must include scripts/ui_private_approval_verify.mjs`);
   }
-  for (const [evidenceIndex, evidence] of requireArray(decision, label, "publicEvidence").entries()) {
+  const publicEvidence = requireArray(decision, label, "publicEvidence");
+  requireUniqueStrings(publicEvidence, `${label}.publicEvidence`);
+  for (const [evidenceIndex, evidence] of publicEvidence.entries()) {
     const evidenceLabel = `${label}.publicEvidence[${evidenceIndex}]`;
     if (!isPublicEvidenceReference(evidence)) {
       fail(`${evidenceLabel} must be a public-safe repo-relative reference`);
