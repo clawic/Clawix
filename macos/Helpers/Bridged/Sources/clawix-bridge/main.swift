@@ -619,7 +619,7 @@ final class DaemonEngineHost: EngineHost {
     /// Mirrors `ClawJSServiceManager.dataDirectoryURL(for: .audio)`
     /// path resolution. The supervisor (GUI) writes the per-session
     /// bearer token to `<root>/.admin-token` here on every spawn; the
-    /// daemon helper reads it lazily because the manager lives in a
+    /// daemon helper reads it lazily because the store lives in a
     /// different process.
     private static var audioCatalogTokenDir: URL {
         let env = ProcessInfo.processInfo.environment
@@ -650,7 +650,7 @@ final class DaemonEngineHost: EngineHost {
         // attachment path uses, then hand the file to WhisperKit.
         let suiteName = ClawixEnv.value(ClawixEnv.bridgeDefaultsSuite)
         let defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
-        let activeRaw = defaults.string(forKey: DictationModelManager.activeModelDefaultsKey) ?? ""
+        let activeRaw = defaults.string(forKey: DictationModelStore.activeModelDefaultsKey) ?? ""
         let model = DictationModel(rawValue: activeRaw) ?? .default
 
         Task { @MainActor in

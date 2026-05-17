@@ -5,7 +5,7 @@ import ClawixEngine
 
 // Linux stubs that satisfy call sites in `main.swift` which on Apple
 // platforms rely on AVFoundation-backed audio helpers,
-// `DictationModelManager` and `TranscriptionService`. The real types
+// `DictationModelStore` and `TranscriptionService`. The real types
 // depend on AVFoundation + WhisperKit and therefore do not compile on
 // Linux. Until the Linux daemon ships a whisper.cpp-backed engine,
 // these stubs make remote dictation requests and audio replays return
@@ -48,7 +48,7 @@ public enum DictationModel: String, Sendable {
     case `default`
 }
 
-public enum DictationModelManager {
+public enum DictationModelStore {
     public static let activeModelDefaultsKey = "ClawixBridge.Dictation.ActiveModel"
 }
 

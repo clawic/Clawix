@@ -14,14 +14,14 @@ import WhisperKit
 /// variant to ask `TranscriptionService` for when an iPhone request
 /// lands.
 @MainActor
-public final class DictationModelManager: ObservableObject {
+public final class DictationModelStore: ObservableObject {
 
     /// Persisted choice of active model. Stored in UserDefaults so the
     /// GUI and the LaunchAgent daemon agree on which variant to load.
     public static let activeModelDefaultsKey = ClawixPersistentSurfaceKeys.dictationActiveModel
 
     /// Posted by `TranscriptionService` (or anything else that wipes a
-    /// broken install) so every `DictationModelManager` instance —
+    /// broken install) so every `DictationModelStore` instance —
     /// there's typically one in the GUI and one in the daemon — drops
     /// the broken model from `installedModels`. The notification's
     /// object is the `DictationModel.rawValue` string so observers can
@@ -347,7 +347,7 @@ public final class DictationModelManager: ObservableObject {
     }
 
     /// Wipe the on-disk tree AND post `modelInvalidatedNotification`,
-    /// so every live `DictationModelManager` instance (GUI + daemon)
+    /// so every live `DictationModelStore` instance (GUI + daemon)
     /// drops the model from `installedModels` and shows a re-download
     /// prompt. Reserved for genuine corruption signals — e.g. when
     /// `TranscriptionService` finds the folder passes our static

@@ -80,7 +80,7 @@ enum DictationE2ERunner {
             report.pastePayloadPassed = capturedPayload(at: capturePath) == enhanced
             report.autoSendPassed = capturedAutoSend(at: capturePath) == DictationAutoSendKey.enter.rawValue
             report.clipboardRestorePassed = pasteboard.string(forType: .string) == previousClipboard
-            report.missingModelPreflightPassed = DictationModelManager.installedFolder(for: .default) == nil
+            report.missingModelPreflightPassed = DictationModelStore.installedFolder(for: .default) == nil
                 || DictationCoordinator.processForDelivery("preflight ok", language: "en") == "preflight ok"
             report.cloudMockPassed = true
             report.passed = report.allRequiredPassed

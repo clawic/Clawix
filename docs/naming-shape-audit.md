@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 11 in the current local tree. Broad source symbols account
-  for 10 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 9 in the current local tree. Broad source symbols account
+  for 8 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -121,10 +121,13 @@ for staged rename/split work and must not be hidden by compressing code.
   `MockConversationFixtures` instead of broad `Data` terminology.
 - Life vertical vocabulary: macOS and iOS vertical state/cache clients now use
   `LifeVerticalsStore` instead of generic manager terminology.
+- Dictation model vocabulary: downloaded-model state, active-model selection,
+  and Linux bridge stubs now use `DictationModelStore` instead of generic
+  manager terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 11
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 9
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

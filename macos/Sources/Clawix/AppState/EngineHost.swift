@@ -86,7 +86,7 @@ extension AppState: EngineHost {
                 let url = tmpDir.appendingPathComponent("\(requestId).\(ext)")
                 try data.write(to: url, options: .atomic)
                 let activeRaw = UserDefaults.standard.string(
-                    forKey: DictationModelManager.activeModelDefaultsKey
+                    forKey: DictationModelStore.activeModelDefaultsKey
                 ) ?? ""
                 let model = DictationModel(rawValue: activeRaw) ?? .default
                 let text = try await TranscriptionService.shared.transcribe(

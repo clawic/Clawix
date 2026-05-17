@@ -233,7 +233,7 @@ public actor TranscriptionService {
             return loaded.kit
         }
         loaded = nil
-        guard let folder = DictationModelManager.installedFolder(for: model) else {
+        guard let folder = DictationModelStore.installedFolder(for: model) else {
             Self.trace("ensureLoaded: noModelAvailable variant=\(model.whisperKitVariant)")
             throw TranscriptionError.noModelAvailable
         }
@@ -271,8 +271,8 @@ public actor TranscriptionService {
             // `modelIncomplete` error so the user gets a clean retry
             // path from Settings instead of a leaky CoreML message
             // pointing at `file:///Users/.../coremldata.bin`.
-            if !DictationModelManager.isCompleteVariantFolder(at: folder) {
-                DictationModelManager.wipeBrokenInstall(for: model)
+            if !DictationModelStore.isCompleteVariantFolder(at: folder) {
+                DictationModelStore.wipeBrokenInstall(for: model)
                 throw TranscriptionError.modelIncomplete(model)
             }
             throw TranscriptionError.engineFailed(

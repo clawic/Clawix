@@ -107,7 +107,7 @@ struct DictationSettingsPage: View {
                     if idx > 0 { CardDivider() }
                     DictationModelRow(
                         model: model,
-                        manager: dictation.modelManager,
+                        store: dictation.modelStore,
                         appState: appState
                     )
                 }
@@ -468,7 +468,7 @@ struct DictationSettingsPage: View {
             refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
                 Task { @MainActor in refreshPermissions() }
             }
-            dictation.modelManager.refreshInstalled()
+            dictation.modelStore.refreshInstalled()
         }
         .onDisappear {
             refreshTimer?.invalidate()
@@ -537,7 +537,7 @@ struct DictationSettingsPage: View {
 
 private struct DictationModelRow: View {
     let model: DictationModel
-    @ObservedObject var manager: DictationModelManager
+    @ObservedObject var store: DictationModelStore
     let appState: AppState
 
     var body: some View {
@@ -548,7 +548,7 @@ private struct DictationModelRow: View {
                         Text(model.displayName)
                             .font(BodyFont.system(size: 12.5, wght: 500))
                             .foregroundColor(Palette.textPrimary)
-                        if manager.activeModel == model {
+                        if store.activeModel == model {
                             Text("Active")
                                 .font(BodyFont.system(size: 10, wght: 700))
                                 .foregroundColor(.white)
@@ -570,7 +570,7 @@ private struct DictationModelRow: View {
                 trailingControl
             }
 
-            if let error = manager.downloadErrors[model] {
+            if let error = store.downloadErrors[model] {
                 Text(error)
                     .font(BodyFont.system(size: 11, wght: 500))
                     .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
@@ -588,9 +588,9 @@ private struct DictationModelRow: View {
 
     @ViewBuilder
     private var trailingControl: some View {
-        let installed = manager.installedModels.contains(model)
-        let downloading = manager.isDownloading(model)
-        let deleting = manager.isDeleting(model)
+        let installed = store.installedModels.contains(model)
+        let downloading = store.isDownloading(model)
+        let deleting = store.isDeleting(model)
         if deleting {
             HStack(spacing: 8) {
                 ProgressView()
@@ -602,16 +602,16 @@ private struct DictationModelRow: View {
             }
         } else if downloading {
             HStack(spacing: 10) {
-                DSPDownloadProgressBar(value: manager.downloadProgress[model] ?? 0)
+                DSPDownloadProgressBar(value: store.downloadProgress[model] ?? 0)
                 DSPSecondaryButton(label: "Cancel") {
-                    manager.cancel(model)
+                    store.cancel(model)
                 }
             }
         } else if installed {
             HStack(spacing: 8) {
-                if manager.activeModel != model {
+                if store.activeModel != model {
                     DSPSecondaryButton(label: "Use") {
-                        manager.setActive(model)
+                        store.setActive(model)
                     }
                 }
                 DSPSecondaryButton(label: "Delete") {
@@ -620,7 +620,7 @@ private struct DictationModelRow: View {
             }
         } else {
             DSPSecondaryButton(label: "Download") {
-                manager.download(model)
+                store.download(model)
             }
         }
     }
@@ -635,8 +635,8 @@ private struct DictationModelRow: View {
             body: body,
             confirmLabel: "Delete",
             isDestructive: true,
-            onConfirm: { [model, manager] in
-                manager.delete(model)
+            onConfirm: { [model, store] in
+                store.delete(model)
             }
         )
     }

@@ -107,7 +107,7 @@ final class DictationCoordinator: ObservableObject {
     private var errorToastTask: Task<Void, Never>?
     private let errorToastWindow: TimeInterval = 5.0
 
-    let modelManager: DictationModelManager
+    let modelStore: DictationModelStore
 
     private let capture = AudioCapture()
     /// Allocated lazily the first time the user picks the Apple
@@ -167,10 +167,10 @@ final class DictationCoordinator: ObservableObject {
 
     init(
         defaults: UserDefaults = .standard,
-        modelManager: DictationModelManager? = nil
+        modelStore: DictationModelStore? = nil
     ) {
         self.defaults = defaults
-        self.modelManager = modelManager ?? DictationModelManager(defaults: defaults)
+        self.modelStore = modelStore ?? DictationModelStore(defaults: defaults)
         // Default to ON for paste + clipboard restore on first launch.
         // Auto-Enter stays OFF: presses Return inside whatever field the
         // user happens to be focused on, which is the kind of behaviour
@@ -315,7 +315,7 @@ final class DictationCoordinator: ObservableObject {
            let override = pm.transcriptionModelOverride {
             return override
         }
-        return modelManager.activeModel
+        return modelStore.activeModel
     }
 
     func resolvedLanguageHintForExternalCallers() -> String? {
@@ -350,8 +350,8 @@ final class DictationCoordinator: ObservableObject {
 
     func prewarmIfEnabled() {
         guard defaults.object(forKey: Self.prewarmOnLaunchKey) as? Bool ?? true else { return }
-        let model = modelManager.activeModel
-        guard modelManager.installedModels.contains(model) else { return }
+        let model = modelStore.activeModel
+        guard modelStore.installedModels.contains(model) else { return }
         let samples = [Float](repeating: 0.0, count: 3200)
         Task.detached(priority: .background) {
             _ = try? await TranscriptionService.shared.transcribe(
@@ -820,7 +820,7 @@ final class DictationCoordinator: ObservableObject {
         if ClawixEnv.value(ClawixEnv.e2eTranscriptionText) != nil {
             return true
         }
-        return DictationModelManager.installedFolder(for: model) != nil
+        return DictationModelStore.installedFolder(for: model) != nil
     }
 
     /// Abandon the current session immediately, regardless of state.

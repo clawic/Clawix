@@ -55,7 +55,7 @@ extension DaemonEngineHost {
     private func transcribeFirstAudioAttachment(_ attachments: [WireAttachment]) async -> String? {
         let suiteName = ClawixEnv.value(ClawixEnv.bridgeDefaultsSuite)
         let defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
-        let activeRaw = defaults.string(forKey: DictationModelManager.activeModelDefaultsKey) ?? ""
+        let activeRaw = defaults.string(forKey: DictationModelStore.activeModelDefaultsKey) ?? ""
         let model = DictationModel(rawValue: activeRaw) ?? .default
         guard let first = attachments.first, let data = Data(base64Encoded: first.dataBase64) else { return nil }
 

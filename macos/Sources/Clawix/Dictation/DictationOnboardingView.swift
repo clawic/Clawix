@@ -16,7 +16,7 @@ struct DictationOnboardingView: View {
     @State private var permissions = PermissionsSnapshot()
     @State private var refreshTimer: Timer?
 
-    @ObservedObject private var modelManager = DictationCoordinator.shared.modelManager
+    @ObservedObject private var modelStore = DictationCoordinator.shared.modelStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -74,7 +74,7 @@ struct DictationOnboardingView: View {
                             .font(BodyFont.system(size: 11.5, wght: 500))
                             .foregroundColor(Palette.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        OnboardingModelGrid(manager: modelManager)
+                        OnboardingModelGrid(store: modelStore)
                     }
                 }
                 .padding(20)
@@ -222,7 +222,7 @@ private struct OnboardingPermissionRow: View {
 // MARK: - Model grid
 
 private struct OnboardingModelGrid: View {
-    @ObservedObject var manager: DictationModelManager
+    @ObservedObject var store: DictationModelStore
 
     var body: some View {
         LazyVGrid(
@@ -231,10 +231,10 @@ private struct OnboardingModelGrid: View {
         ) {
             ForEach(DictationModel.allCases, id: \.self) { model in
                 Button {
-                    if manager.installedModels.contains(model) {
-                        manager.setActive(model)
+                    if store.installedModels.contains(model) {
+                        store.setActive(model)
                     } else {
-                        manager.download(model)
+                        store.download(model)
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
@@ -242,7 +242,7 @@ private struct OnboardingModelGrid: View {
                             Text(model.displayName)
                                 .font(BodyFont.system(size: 12.5, wght: 600))
                                 .foregroundColor(Palette.textPrimary)
-                            if manager.activeModel == model {
+                            if store.activeModel == model {
                                 Spacer()
                                 LucideIcon(.circleCheck, size: 11)
                                     .foregroundColor(Color(red: 0.16, green: 0.46, blue: 0.98))
@@ -270,7 +270,7 @@ private struct OnboardingModelGrid: View {
 
     private func label(for model: DictationModel) -> String {
         let gb = String(format: "%.1f GB", Double(model.approximateBytes) / 1_000_000_000)
-        if manager.installedModels.contains(model) {
+        if store.installedModels.contains(model) {
             return "\(gb) · downloaded"
         }
         return "\(gb) · tap to download"

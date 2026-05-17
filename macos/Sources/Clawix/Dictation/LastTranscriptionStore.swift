@@ -86,7 +86,7 @@ final class LastTranscriptionStore {
             throw QuickActionError.noLastTranscription
         }
         let coordinator = DictationCoordinator.shared
-        let activeModel = coordinator.modelManager.activeModel
+        let activeModel = coordinator.modelStore.activeModel
         let language = coordinator.resolvedLanguageHintForExternalCallers()
 
         let prompt = DictationCoordinator.composeWhisperPrompt(language: language)
