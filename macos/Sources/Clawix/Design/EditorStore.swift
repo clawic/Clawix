@@ -70,7 +70,7 @@ final class EditorStore: ObservableObject {
             templateId: template.id,
             styleId: styleId,
             variantId: variantId ?? template.variants.first?.id,
-            data: seedData(for: template),
+            data: seededSlotValues(for: template),
             createdAt: now,
             updatedAt: now
         )
@@ -131,7 +131,7 @@ final class EditorStore: ObservableObject {
         try data.write(to: documentManifestURL(for: document.id), options: .atomic)
     }
 
-    private func seedData(for template: TemplateManifest) -> [String: SlotValue] {
+    private func seededSlotValues(for template: TemplateManifest) -> [String: SlotValue] {
         var out: [String: SlotValue] = [:]
         for slot in template.slots {
             switch slot.kind {

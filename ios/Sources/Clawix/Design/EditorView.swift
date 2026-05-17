@@ -393,7 +393,7 @@ struct EditorView: View {
         guard var doc = draft ?? store.document(id: documentId) else { return }
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else { return }
-            let asset = try store.storeAssetData(data, ext: "png", into: doc, slotId: slotId)
+            let asset = try store.storeAssetBytes(data, ext: "png", into: doc, slotId: slotId)
             doc.data[slotId] = .asset(asset)
             draft = doc
             flushPendingSave()

@@ -44,7 +44,7 @@ extension AppState {
         auth.logout(binary: binary)
     }
 
-    func loadMockData() {
+    func loadMockStartupState() {
         chats = []
 
         let now = Date()

@@ -551,7 +551,7 @@ final class AppState: ObservableObject {
         self.titleGenerator = nil
 
         manualProjectOrder = projectOrdersRepo.orderedIds()
-        loadMockData()
+        loadMockStartupState()
         if let fixtureThreads = AgentThreadStore.fixtureThreads() {
             applyThreads(fixtureThreads)
         } else if dummyModeActive {

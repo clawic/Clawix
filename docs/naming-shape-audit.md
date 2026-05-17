@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 28 in the current local tree. Broad source symbols account
-  for 27 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 24 in the current local tree. Broad source symbols account
+  for 23 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -100,10 +100,13 @@ for staged rename/split work and must not be hidden by compressing code.
   `applyMessageRecord`; local-model polling uses `refreshDaemonStatus`; memory,
   dictation, pasteboard, and screen-tool helpers now use folder/bytes/status
   terminology instead of broad `Info`/`Data` names.
+- Design and startup seed vocabulary: editor stores now use
+  `seededSlotValues`, the iOS editor writes `storeAssetBytes`, and AppState
+  mock bootstrapping uses `loadMockStartupState`.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 28
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 24
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.
