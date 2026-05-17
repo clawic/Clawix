@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -10,12 +11,35 @@ function fail(message) {
 }
 
 function read(relativePath) {
+  if (args.has("--simulate-missing-required-doc") && relativePath === "docs/ui/README.md") {
+    fail(`missing ${relativePath}`);
+    return "";
+  }
   const file = path.join(rootDir, relativePath);
   if (!fs.existsSync(file)) {
     fail(`missing ${relativePath}`);
     return "";
   }
-  return fs.readFileSync(file, "utf8");
+  let content = fs.readFileSync(file, "utf8");
+  if (args.has("--simulate-adr-missing-docs-ui") && relativePath === "docs/adr/0010-interface-governance.md") {
+    content = content.replaceAll("docs/ui/", "docs/interface/");
+  }
+  if (args.has("--simulate-style-missing-visual-model-allowlist") && relativePath === "STYLE.md") {
+    content = content.replaceAll("visual-model-allowlist.manifest.json", "visual-model-policy.manifest.json");
+  }
+  if (args.has("--simulate-standards-missing-protected-surfaces") && relativePath === "STANDARDS.md") {
+    content = content.replaceAll("protected-surfaces.registry.json", "surface-freezes.registry.json");
+  }
+  if (args.has("--simulate-perf-missing-critical-flow") && relativePath === "PERF.md") {
+    content = content.replaceAll("right-sidebar/browser use", "right-sidebar use");
+  }
+  if (args.has("--simulate-macos-perf-missing-baseline-approval") && relativePath === "macos/PERF.md") {
+    content = content.replaceAll("baseline approval", "baseline review");
+  }
+  if (args.has("--simulate-readme-missing-private-visual-verify") && relativePath === "docs/ui/README.md") {
+    content = content.replaceAll("ui_private_visual_verify.mjs --require-approved", "ui_private_visual_verify.mjs");
+  }
+  return content;
 }
 
 function requireSnippet(relativePath, snippet) {
