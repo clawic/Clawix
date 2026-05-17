@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -121,10 +122,14 @@ if (registry?.templatePath !== "docs/ui/visual-change-proposal.template.md") {
   fail(`${registryPath}.templatePath must point to docs/ui/visual-change-proposal.template.md`);
 }
 
-const template = readText(registry?.templatePath || "docs/ui/visual-change-proposal.template.md");
+let template = readText(registry?.templatePath || "docs/ui/visual-change-proposal.template.md");
+if (args.has("--simulate-template-allows-visible-edit")) {
+  template = template.replace("Do not edit visible source code from this lane.", "");
+}
 for (const snippet of [
   "Status: conceptual-only",
   "A proposal does not approve implementation",
+  "Do not edit visible source code from this lane.",
   "User approval needed before implementation",
   "## Required Evidence",
   "Drift found but not fixed",

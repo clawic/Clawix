@@ -5,6 +5,7 @@ Status: conceptual-only
 Use this template when the active lane is not authorized to edit visual, copy,
 layout, hierarchy, icon, spacing, typography, animation, ordering, or visible
 name decisions. A proposal does not approve implementation.
+Do not edit visible source code from this lane.
 
 ## Scope
 
