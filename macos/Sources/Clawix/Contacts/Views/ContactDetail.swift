@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContactDetail: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     let contact: Contact
 
     var body: some View {
@@ -57,19 +57,19 @@ struct ContactDetail: View {
         HStack(spacing: 6) {
             iconButton(.star, color: contact.isFavorite ? ContactsTokens.Accent.favorite : nil,
                        help: contact.isFavorite ? "Unfavorite" : "Favorite") {
-                Task { await manager.toggleFavorite(contact.id) }
+                Task { await store.toggleFavorite(contact.id) }
             }
-            .disabled(manager.isReadOnly)
+            .disabled(store.isReadOnly)
 
-            iconButton(.zap, color: nil, help: manager.isReadOnly ? "Read-only" : "Edit") {
-                manager.startEdit()
+            iconButton(.zap, color: nil, help: store.isReadOnly ? "Read-only" : "Edit") {
+                store.startEdit()
             }
-            .disabled(manager.isReadOnly)
+            .disabled(store.isReadOnly)
 
-            iconButton(.trash, color: nil, help: manager.isReadOnly ? "Read-only" : "Delete") {
-                Task { await manager.delete(contact.id) }
+            iconButton(.trash, color: nil, help: store.isReadOnly ? "Read-only" : "Delete") {
+                Task { await store.delete(contact.id) }
             }
-            .disabled(manager.isReadOnly)
+            .disabled(store.isReadOnly)
 
             iconButton(.share2, color: nil, help: "Share vCard") {
                 shareVCard()
@@ -94,7 +94,7 @@ struct ContactDetail: View {
 
     @ViewBuilder
     private var groupChips: some View {
-        let chips = contact.groupIDs.compactMap { manager.groupsByID[$0] }
+        let chips = contact.groupIDs.compactMap { store.groupsByID[$0] }
         if !chips.isEmpty {
             HStack(spacing: 6) {
                 ForEach(chips) { group in
@@ -166,7 +166,7 @@ struct ContactDetail: View {
     }
 
     private var vCardURL: URL? {
-        guard let data = manager.encodeVCard(for: contact) else { return nil }
+        guard let data = store.encodeVCard(for: contact) else { return nil }
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(contact.fullName).vcf")
         try? data.write(to: url)
@@ -174,7 +174,7 @@ struct ContactDetail: View {
     }
 
     private func shareVCard() {
-        guard let data = manager.encodeVCard(for: contact) else { return }
+        guard let data = store.encodeVCard(for: contact) else { return }
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(contact.fullName).vcf")
         do {

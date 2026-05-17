@@ -2,60 +2,60 @@ import SwiftUI
 
 struct ContactsScreen: View {
 
-    @StateObject private var manager = ContactsManager()
+    @StateObject private var store = ContactsStore()
 
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ContactsToolbar(manager: manager)
+                ContactsToolbar(store: store)
                 HStack(spacing: 0) {
-                    ContactsSubSidebar(manager: manager)
+                    ContactsSubSidebar(store: store)
                     contentColumns
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .background(ContactsTokens.Surface.window)
-            .task { await manager.bootstrap() }
+            .task { await store.bootstrap() }
 
-            if manager.isCreating {
+            if store.isCreating {
                 modalScrim {
-                    manager.endCreate()
+                    store.endCreate()
                 }
-                ContactCreateModal(manager: manager) {
-                    manager.endCreate()
+                ContactCreateModal(store: store) {
+                    store.endCreate()
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.97)))
             }
 
-            if manager.isMergeOpen {
+            if store.isMergeOpen {
                 modalScrim {
-                    manager.isMergeOpen = false
+                    store.isMergeOpen = false
                 }
-                MergeDuplicatesView(manager: manager) {
-                    manager.isMergeOpen = false
+                MergeDuplicatesView(store: store) {
+                    store.isMergeOpen = false
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.97)))
             }
 
-            if let id = manager.editingSmartGroupID,
-               let group = manager.groupsByID[id] {
+            if let id = store.editingSmartGroupID,
+               let group = store.groupsByID[id] {
                 modalScrim {
-                    manager.editingSmartGroupID = nil
+                    store.editingSmartGroupID = nil
                 }
-                SmartGroupConfigView(manager: manager, draft: group) {
-                    manager.editingSmartGroupID = nil
+                SmartGroupConfigView(store: store, draft: group) {
+                    store.editingSmartGroupID = nil
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.97)))
             }
         }
-        .animation(ContactsTokens.Motion.editToggle, value: manager.isCreating)
-        .animation(ContactsTokens.Motion.editToggle, value: manager.isMergeOpen)
-        .animation(ContactsTokens.Motion.editToggle, value: manager.editingSmartGroupID)
+        .animation(ContactsTokens.Motion.editToggle, value: store.isCreating)
+        .animation(ContactsTokens.Motion.editToggle, value: store.isMergeOpen)
+        .animation(ContactsTokens.Motion.editToggle, value: store.editingSmartGroupID)
     }
 
     @ViewBuilder
     private var contentColumns: some View {
-        switch manager.access {
+        switch store.access {
         case .unknown, .requesting:
             centered("Loading contacts…")
         case .denied(let reason):
@@ -64,7 +64,7 @@ struct ContactsScreen: View {
             centered("Contacts unavailable")
         case .granted:
             HStack(spacing: 0) {
-                ContactsList(manager: manager)
+                ContactsList(store: store)
                 detailColumn
             }
             .transition(.opacity)
@@ -74,27 +74,27 @@ struct ContactsScreen: View {
     @ViewBuilder
     private var detailColumn: some View {
         Group {
-            if let contact = manager.selectedContact {
-                if manager.isEditing {
+            if let contact = store.selectedContact {
+                if store.isEditing {
                     ContactEditView(
-                        manager: manager,
+                        store: store,
                         draft: contact,
                         isNew: false,
-                        onCancel: { manager.cancelEdit() },
+                        onCancel: { store.cancelEdit() },
                         onSave: { saved in
-                            Task { await manager.commit(saved) }
+                            Task { await store.commit(saved) }
                         }
                     )
                     .transition(.opacity)
                     .id("edit-\(contact.id)")
                 } else {
-                    ContactDetail(manager: manager, contact: contact)
+                    ContactDetail(store: store, contact: contact)
                         .transition(.opacity)
                         .id("read-\(contact.id)")
                 }
             } else {
                 centered("No Contact Selected",
-                         subtitle: manager.contacts.isEmpty
+                         subtitle: store.contacts.isEmpty
                             ? "Add a new contact to get started."
                             : "Pick a contact from the list to see details.")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,8 +102,8 @@ struct ContactsScreen: View {
             }
         }
         .frame(minWidth: ContactsTokens.Geometry.detailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
-        .animation(ContactsTokens.Motion.editToggle, value: manager.isEditing)
-        .animation(ContactsTokens.Motion.selection, value: manager.selectedContactID)
+        .animation(ContactsTokens.Motion.editToggle, value: store.isEditing)
+        .animation(ContactsTokens.Motion.selection, value: store.selectedContactID)
     }
 
     private func centered(_ title: String, subtitle: String? = nil) -> some View {

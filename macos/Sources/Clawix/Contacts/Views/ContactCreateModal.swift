@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct ContactCreateModal: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     @State private var draft: Contact
     let onClose: () -> Void
 
-    init(manager: ContactsManager, onClose: @escaping () -> Void) {
-        self.manager = manager
+    init(store: ContactsStore, onClose: @escaping () -> Void) {
+        self.store = store
         self.onClose = onClose
-        _draft = State(initialValue: manager.newContactDraft())
+        _draft = State(initialValue: store.newContactDraft())
     }
 
     var body: some View {
@@ -34,13 +34,13 @@ struct ContactCreateModal: View {
             }
 
             ContactEditView(
-                manager: manager,
+                store: store,
                 draft: draft,
                 isNew: true,
                 onCancel: onClose,
                 onSave: { saved in
                     Task {
-                        await manager.commit(saved)
+                        await store.commit(saved)
                         onClose()
                     }
                 }

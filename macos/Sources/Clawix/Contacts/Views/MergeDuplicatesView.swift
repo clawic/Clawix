@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MergeDuplicatesView: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     let onClose: () -> Void
 
     var body: some View {
@@ -69,7 +69,7 @@ struct MergeDuplicatesView: View {
                 .foregroundColor(ContactsTokens.Ink.secondary)
                 .font(.system(size: 12))
             Button("Merge") {
-                Task { await manager.performMerge(); onClose() }
+                Task { await store.performMerge(); onClose() }
             }
             .buttonStyle(.plain)
             .foregroundColor(.white)
@@ -80,8 +80,8 @@ struct MergeDuplicatesView: View {
                 RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
                     .fill(ContactsTokens.Accent.primary)
             )
-            .disabled(manager.isReadOnly)
-            .help(manager.isReadOnly ? "Read-only" : "Merge")
+            .disabled(store.isReadOnly)
+            .help(store.isReadOnly ? "Read-only" : "Merge")
         }
         .padding(.horizontal, 16)
         .frame(height: 48)
@@ -91,7 +91,7 @@ struct MergeDuplicatesView: View {
     }
 
     private var candidates: [Contact] {
-        manager.mergeCandidateIDs.compactMap { manager.contactsByID[$0] }
+        store.mergeCandidateIDs.compactMap { store.contactsByID[$0] }
     }
 
     private func column(for contact: Contact) -> some View {

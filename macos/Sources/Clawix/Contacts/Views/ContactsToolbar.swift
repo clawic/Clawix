@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContactsToolbar: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     @FocusState private var searchFocused: Bool
     @State private var searchExpanded: Bool = false
     @State private var sortMenuOpen: Bool = false
@@ -11,7 +11,7 @@ struct ContactsToolbar: View {
             createButton
             searchField
             Spacer(minLength: 12)
-            Text(manager.selectionTitle())
+            Text(store.selectionTitle())
                 .font(.system(size: ContactsTokens.TypeSize.toolbar, weight: .semibold))
                 .foregroundColor(ContactsTokens.Ink.primary)
             Spacer(minLength: 12)
@@ -29,35 +29,35 @@ struct ContactsToolbar: View {
 
     private var createButton: some View {
         Button {
-            manager.startCreate()
+            store.startCreate()
         } label: {
             LucideIcon(.plus, size: 13)
-                .foregroundColor(manager.isReadOnly
+                .foregroundColor(store.isReadOnly
                                  ? ContactsTokens.Ink.tertiary
                                  : ContactsTokens.Ink.primary)
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
-                        .fill(Color.white.opacity(manager.isReadOnly ? 0 : 0.04))
+                        .fill(Color.white.opacity(store.isReadOnly ? 0 : 0.04))
                 )
         }
         .buttonStyle(.plain)
-        .disabled(manager.isReadOnly)
-        .help(manager.isReadOnly ? "Read-only" : "New Contact")
+        .disabled(store.isReadOnly)
+        .help(store.isReadOnly ? "Read-only" : "New Contact")
     }
 
     private var searchField: some View {
         HStack(spacing: 6) {
             LucideIcon(.search, size: 11)
                 .foregroundColor(ContactsTokens.Ink.secondary)
-            TextField("Search", text: $manager.searchQuery)
+            TextField("Search", text: $store.searchQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: ContactsTokens.TypeSize.toolbar))
                 .foregroundColor(ContactsTokens.Ink.primary)
                 .focused($searchFocused)
-            if !manager.searchQuery.isEmpty {
+            if !store.searchQuery.isEmpty {
                 Button {
-                    manager.searchQuery = ""
+                    store.searchQuery = ""
                 } label: {
                     LucideIcon(.circleX, size: 11)
                         .foregroundColor(ContactsTokens.Ink.secondary)
@@ -89,7 +89,7 @@ struct ContactsToolbar: View {
             HStack(spacing: 4) {
                 LucideIcon(.list, size: 11)
                     .foregroundColor(ContactsTokens.Ink.secondary)
-                Text(manager.sortKey.displayName)
+                Text(store.sortKey.displayName)
                     .font(.system(size: 12))
                     .foregroundColor(ContactsTokens.Ink.primary)
                 LucideIcon(.chevronDown, size: 9)
@@ -112,9 +112,9 @@ struct ContactsToolbar: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(ContactsSortKey.allCases) { key in
                 SortMenuRow(label: key.displayName,
-                            isSelected: manager.sortKey == key) {
+                            isSelected: store.sortKey == key) {
                     withAnimation(ContactsTokens.Motion.selection) {
-                        manager.sortKey = key
+                        store.sortKey = key
                     }
                     sortMenuOpen = false
                 }
@@ -130,22 +130,22 @@ struct ContactsToolbar: View {
             shareSelected()
         } label: {
             LucideIcon(.share2, size: 12)
-                .foregroundColor(manager.selectedContact == nil
+                .foregroundColor(store.selectedContact == nil
                                  ? ContactsTokens.Ink.tertiary
                                  : ContactsTokens.Ink.primary)
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
-                        .fill(Color.white.opacity(manager.selectedContact == nil ? 0 : 0.04))
+                        .fill(Color.white.opacity(store.selectedContact == nil ? 0 : 0.04))
                 )
         }
         .buttonStyle(.plain)
-        .disabled(manager.selectedContact == nil)
+        .disabled(store.selectedContact == nil)
         .help("Share vCard")
     }
 
     private func shareSelected() {
-        guard let c = manager.selectedContact, let data = manager.encodeVCard(for: c) else { return }
+        guard let c = store.selectedContact, let data = store.encodeVCard(for: c) else { return }
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(c.fullName).vcf")
         do {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContactsList: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,13 +17,13 @@ struct ContactsList: View {
                                 ForEach(section.contacts) { contact in
                                     ContactRow(
                                         contact: contact,
-                                        isSelected: manager.selectedContactID == contact.id,
-                                        isMergeCandidate: manager.mergeCandidateIDs.contains(contact.id),
+                                        isSelected: store.selectedContactID == contact.id,
+                                        isMergeCandidate: store.mergeCandidateIDs.contains(contact.id),
                                         onSelect: {
-                                            manager.selectContact(contact.id)
+                                            store.selectContact(contact.id)
                                         },
                                         onToggleMerge: {
-                                            manager.toggleMerge(contact.id)
+                                            store.toggleMerge(contact.id)
                                         }
                                     )
                                     .transition(.opacity)
@@ -44,7 +44,7 @@ struct ContactsList: View {
     }
 
     private var sections: [SectionedContacts] {
-        manager.sectionedContacts()
+        store.sectionedContacts()
     }
 
     @ViewBuilder
@@ -72,8 +72,8 @@ struct ContactsList: View {
             Text("No Contacts")
                 .font(.system(size: ContactsTokens.TypeSize.emptyTitle, weight: .medium))
                 .foregroundColor(ContactsTokens.Ink.secondary)
-            if !manager.searchQuery.isEmpty {
-                Text("No matches for \"\(manager.searchQuery)\"")
+            if !store.searchQuery.isEmpty {
+                Text("No matches for \"\(store.searchQuery)\"")
                     .font(.system(size: ContactsTokens.TypeSize.emptySubtitle))
                     .foregroundColor(ContactsTokens.Ink.tertiary)
             }
@@ -82,22 +82,22 @@ struct ContactsList: View {
 
     @ViewBuilder
     private var mergeBar: some View {
-        if manager.mergeCandidateIDs.count >= 2 {
+        if store.mergeCandidateIDs.count >= 2 {
             HStack(spacing: 8) {
                 LucideIcon(.listChecks, size: 12)
                     .foregroundColor(ContactsTokens.Accent.primary)
-                Text("\(manager.mergeCandidateIDs.count) selected to merge")
+                Text("\(store.mergeCandidateIDs.count) selected to merge")
                     .font(.system(size: 12))
                     .foregroundColor(ContactsTokens.Ink.primary)
                 Spacer()
                 Button("Clear") {
-                    manager.mergeCandidateIDs.removeAll()
+                    store.mergeCandidateIDs.removeAll()
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(ContactsTokens.Ink.secondary)
                 .font(.system(size: 12))
                 Button("Merge") {
-                    manager.isMergeOpen = true
+                    store.isMergeOpen = true
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 10)
@@ -108,8 +108,8 @@ struct ContactsList: View {
                 )
                 .foregroundColor(.white)
                 .font(.system(size: 12, weight: .semibold))
-                .disabled(manager.isReadOnly)
-                .help(manager.isReadOnly ? "Read-only" : "Merge Selected")
+                .disabled(store.isReadOnly)
+                .help(store.isReadOnly ? "Read-only" : "Merge Selected")
             }
             .padding(.horizontal, 12)
             .frame(height: 32)

@@ -44,7 +44,7 @@ enum ContactsSortKey: String, CaseIterable, Identifiable {
 }
 
 @MainActor
-final class ContactsManager: ObservableObject {
+final class ContactsStore: ObservableObject {
 
     enum AccessState: Equatable {
         case unknown
@@ -71,7 +71,7 @@ final class ContactsManager: ObservableObject {
     let backend: ContactsBackend
 
     init(backend: ContactsBackend? = nil) {
-        self.backend = backend ?? ContactsManager.makeDefaultBackend()
+        self.backend = backend ?? ContactsStore.makeDefaultBackend()
     }
 
     private static func makeDefaultBackend() -> ContactsBackend {

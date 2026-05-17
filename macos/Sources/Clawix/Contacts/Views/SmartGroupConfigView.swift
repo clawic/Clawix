@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SmartGroupConfigView: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     @State var draft: ContactsGroup
     let onClose: () -> Void
 
@@ -35,7 +35,7 @@ struct SmartGroupConfigView: View {
                 .foregroundColor(ContactsTokens.Ink.secondary)
                 .font(.system(size: 12))
             Button("Save") {
-                Task { await manager.saveSmartGroup(draft); onClose() }
+                Task { await store.saveSmartGroup(draft); onClose() }
             }
             .buttonStyle(.plain)
             .foregroundColor(.white)
@@ -46,7 +46,7 @@ struct SmartGroupConfigView: View {
                 RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
                     .fill(ContactsTokens.Accent.primary)
             )
-            .disabled(manager.isReadOnly)
+            .disabled(store.isReadOnly)
         }
         .padding(.horizontal, 16)
         .frame(height: 48)

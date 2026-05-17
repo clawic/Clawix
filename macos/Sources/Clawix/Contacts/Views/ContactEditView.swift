@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContactEditView: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     @State var draft: Contact
     let isNew: Bool
     let onCancel: () -> Void
@@ -90,7 +90,7 @@ struct ContactEditView: View {
                     .foregroundColor(ContactsTokens.Ink.primary)
                 Spacer()
                 Picker("Account", selection: $draft.accountID) {
-                    ForEach(manager.accounts) { acc in
+                    ForEach(store.accounts) { acc in
                         Text(acc.title).tag(acc.id)
                     }
                 }

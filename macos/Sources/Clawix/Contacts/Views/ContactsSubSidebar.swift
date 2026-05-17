@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContactsSubSidebar: View {
-    @ObservedObject var manager: ContactsManager
+    @ObservedObject var store: ContactsStore
     @State private var expandedAccounts: Set<String> = []
 
     var body: some View {
@@ -27,9 +27,9 @@ struct ContactsSubSidebar: View {
                              selection: .birthdays)
                     Spacer().frame(height: 14)
 
-                    if !manager.accounts.isEmpty {
+                    if !store.accounts.isEmpty {
                         sectionHeader("Accounts")
-                        ForEach(manager.accounts) { account in
+                        ForEach(store.accounts) { account in
                             accountRow(account)
                         }
                         Spacer().frame(height: 14)
@@ -69,11 +69,11 @@ struct ContactsSubSidebar: View {
     }
 
     private var normalGroups: [ContactsGroup] {
-        manager.groups.filter { $0.kind == .normal }
+        store.groups.filter { $0.kind == .normal }
     }
 
     private var smartGroups: [ContactsGroup] {
-        manager.groups.filter { $0.kind == .smart }
+        store.groups.filter { $0.kind == .smart }
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -85,11 +85,11 @@ struct ContactsSubSidebar: View {
     }
 
     private func smartRow(title: String, icon: AnyView, selection: ContactsSelection) -> some View {
-        let isSelected = manager.selection == selection
+        let isSelected = store.selection == selection
         return Button {
             withAnimation(ContactsTokens.Motion.selection) {
-                manager.selection = selection
-                manager.selectedContactID = nil
+                store.selection = selection
+                store.selectedContactID = nil
             }
         } label: {
             HStack(spacing: 8) {
@@ -113,7 +113,7 @@ struct ContactsSubSidebar: View {
     }
 
     private func accountRow(_ account: ContactsAccount) -> some View {
-        let isSelected = manager.selection == .account(account.id)
+        let isSelected = store.selection == .account(account.id)
         let expanded = expandedAccounts.contains(account.id)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
@@ -121,8 +121,8 @@ struct ContactsSubSidebar: View {
                     if expanded { expandedAccounts.remove(account.id) }
                     else { expandedAccounts.insert(account.id) }
                 }
-                manager.selection = .account(account.id)
-                manager.selectedContactID = nil
+                store.selection = .account(account.id)
+                store.selectedContactID = nil
             } label: {
                 HStack(spacing: 6) {
                     LucideIcon(.chevronRight, size: 9)
@@ -155,16 +155,16 @@ struct ContactsSubSidebar: View {
     }
 
     private func groupsFor(account id: String) -> [ContactsGroup] {
-        manager.groups.filter { $0.accountID == id }
+        store.groups.filter { $0.accountID == id }
     }
 
     private func groupRow(_ group: ContactsGroup, indented: Bool = false) -> some View {
-        let isSelected = manager.selection == .group(group.id)
+        let isSelected = store.selection == .group(group.id)
         let smart = group.kind == .smart
         return Button {
             withAnimation(ContactsTokens.Motion.selection) {
-                manager.selection = .group(group.id)
-                manager.selectedContactID = nil
+                store.selection = .group(group.id)
+                store.selectedContactID = nil
             }
         } label: {
             HStack(spacing: 8) {
@@ -198,14 +198,14 @@ struct ContactsSubSidebar: View {
         .contextMenu {
             if group.kind == .smart {
                 Button("Edit Smart Group") {
-                    manager.editingSmartGroupID = group.id
+                    store.editingSmartGroupID = group.id
                 }
-                .disabled(manager.isReadOnly)
+                .disabled(store.isReadOnly)
             }
             Button("Delete Group", role: .destructive) {
-                Task { await manager.deleteGroup(group.id) }
+                Task { await store.deleteGroup(group.id) }
             }
-            .disabled(manager.isReadOnly)
+            .disabled(store.isReadOnly)
         }
     }
 
@@ -215,27 +215,27 @@ struct ContactsSubSidebar: View {
                 addNormalGroup()
             } label: {
                 LucideIcon(.plus, size: 13)
-                    .foregroundColor(manager.isReadOnly
+                    .foregroundColor(store.isReadOnly
                                      ? ContactsTokens.Ink.tertiary
                                      : ContactsTokens.Ink.primary)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
-            .disabled(manager.isReadOnly)
-            .help(manager.isReadOnly ? "Read-only" : "New Group")
+            .disabled(store.isReadOnly)
+            .help(store.isReadOnly ? "Read-only" : "New Group")
 
             Button {
                 addSmartGroup()
             } label: {
                 LucideIcon(.workflow, size: 12)
-                    .foregroundColor(manager.isReadOnly
+                    .foregroundColor(store.isReadOnly
                                      ? ContactsTokens.Ink.tertiary
                                      : ContactsTokens.Accent.smart)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
-            .disabled(manager.isReadOnly)
-            .help(manager.isReadOnly ? "Read-only" : "New Smart Group")
+            .disabled(store.isReadOnly)
+            .help(store.isReadOnly ? "Read-only" : "New Smart Group")
 
             Spacer()
         }
@@ -247,8 +247,8 @@ struct ContactsSubSidebar: View {
     }
 
     private func addNormalGroup() {
-        guard !manager.isReadOnly else { return }
-        let accountID = manager.accounts.first?.id ?? "local"
+        guard !store.isReadOnly else { return }
+        let accountID = store.accounts.first?.id ?? "local"
         let g = ContactsGroup(
             id: "grp-\(UUID().uuidString.prefix(8))",
             accountID: accountID,
@@ -257,12 +257,12 @@ struct ContactsSubSidebar: View {
             kind: .normal,
             smartRule: nil
         )
-        Task { await manager.saveSmartGroup(g) }
+        Task { await store.saveSmartGroup(g) }
     }
 
     private func addSmartGroup() {
-        guard !manager.isReadOnly else { return }
-        let accountID = manager.accounts.first?.id ?? "local"
+        guard !store.isReadOnly else { return }
+        let accountID = store.accounts.first?.id ?? "local"
         let id = "smart-\(UUID().uuidString.prefix(8))"
         let g = ContactsGroup(
             id: id,
@@ -276,8 +276,8 @@ struct ContactsSubSidebar: View {
             ])
         )
         Task {
-            await manager.saveSmartGroup(g)
-            manager.editingSmartGroupID = id
+            await store.saveSmartGroup(g)
+            store.editingSmartGroupID = id
         }
     }
 }
