@@ -61,7 +61,12 @@ function scanForLocalPaths(value, label) {
 
 const registryPath = "docs/ui/inspiration/references.registry.json";
 const registry = readJson(registryPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
 requireFields(registry, registryPath, ["schemaVersion", "policy", "references"]);
+if (args.has("--simulate-incomplete-policy") && registry) {
+  registry.policy = "External references are inspiration only.";
+}
 if (args.has("--simulate-missing-required-reference") && Array.isArray(registry?.references)) {
   registry.references = registry.references.filter((reference) => reference?.id !== "playwright-snapshots");
 }
@@ -73,6 +78,37 @@ if (args.has("--simulate-http-reference") && Array.isArray(registry?.references)
 }
 if (args.has("--simulate-duplicate-reference-id") && Array.isArray(registry?.references) && registry.references[0]) {
   registry.references = [...registry.references, { ...registry.references[0] }];
+}
+if (args.has("--simulate-invalid-reference-id") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], id: "Storybook Visual Tests" };
+}
+if (args.has("--simulate-invalid-reference-url") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], url: "not a url" };
+}
+if (args.has("--simulate-canonical-use-text") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], use: "canonical visual style reference" };
+}
+if (args.has("--simulate-required-reference-url-mismatch") && Array.isArray(registry?.references)) {
+  registry.references = registry.references.map((reference) => (
+    reference?.id === "playwright-snapshots"
+      ? { ...reference, url: "https://playwright.dev/docs/screenshots" }
+      : reference
+  ));
+}
+if (args.has("--simulate-local-path-leak") && Array.isArray(registry?.references) && registry.references[0]) {
+  registry.references[0] = { ...registry.references[0], use: "/Users/example/private/reference-notes" };
+}
+if (args.has("--simulate-decision-evidence-missing-registry") && Array.isArray(decisionVerification?.decisions)) {
+  const decision = decisionVerification.decisions.find((entry) => entry?.id === "external_references_policy");
+  if (decision) {
+    decision.publicEvidence = decision.publicEvidence.filter((evidence) => evidence !== registryPath);
+  }
+}
+if (args.has("--simulate-decision-evidence-missing-script") && Array.isArray(decisionVerification?.decisions)) {
+  const decision = decisionVerification.decisions.find((entry) => entry?.id === "external_references_policy");
+  if (decision) {
+    decision.publicEvidence = decision.publicEvidence.filter((evidence) => evidence !== "scripts/ui_inspiration_reference_check.mjs");
+  }
 }
 
 const policy = String(registry?.policy || "").toLowerCase();
@@ -120,6 +156,21 @@ for (const [id, url] of requiredReferences) {
   }
   if (seenUrlsById.get(id) !== url) {
     fail(`${registryPath}.references ${id} must use ${url}`);
+  }
+}
+
+const externalReferencesDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "external_references_policy");
+if (!externalReferencesDecision) {
+  fail(`${decisionVerificationPath}.decisions must include external_references_policy`);
+} else {
+  if (externalReferencesDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.external_references_policy.status must be verified-complete`);
+  }
+  const publicEvidence = new Set(Array.isArray(externalReferencesDecision.publicEvidence) ? externalReferencesDecision.publicEvidence : []);
+  for (const evidence of [registryPath, "scripts/ui_inspiration_reference_check.mjs"]) {
+    if (!publicEvidence.has(evidence)) {
+      fail(`${decisionVerificationPath}.decisions.external_references_policy.publicEvidence must include ${evidence}`);
+    }
   }
 }
 
