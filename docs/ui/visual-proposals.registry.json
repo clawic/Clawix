@@ -6,6 +6,15 @@
   "privateApprovalAlias": "private-codex-ui-approval",
   "approvalRequiredForStatuses": ["user-approved-for-visual-lane"],
   "proposalStatuses": ["conceptual-only", "user-approved-for-visual-lane", "rejected", "expired"],
+  "allowedRequiredEvidence": [
+    "private-baseline",
+    "rendered-geometry",
+    "copy-snapshot",
+    "rendered-drift",
+    "debt-audit",
+    "performance-budget",
+    "private-approval"
+  ],
   "requiredProposalFields": [
     "id",
     "status",

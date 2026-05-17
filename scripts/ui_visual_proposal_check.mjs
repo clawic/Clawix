@@ -109,7 +109,8 @@ const registry = readJson(registryPath);
 if (
   registry &&
   (args.has("--simulate-conceptual-implemented") ||
-    args.has("--simulate-approved-without-private-reference"))
+    args.has("--simulate-approved-without-private-reference") ||
+    args.has("--simulate-unknown-required-evidence"))
 ) {
   const simulatedProposal = {
     id: "simulated-proposal",
@@ -122,7 +123,9 @@ if (
     surfaces: ["simulated-surface"],
     platforms: ["macos"],
     proposalReference: "docs/ui/visual-change-proposal.template.md",
-    requiredEvidence: ["private-baseline", "rendered-geometry"],
+    requiredEvidence: args.has("--simulate-unknown-required-evidence")
+      ? ["private-baseline", "invented-evidence"]
+      : ["private-baseline", "rendered-geometry"],
     outOfScopeDrift: [],
     userApprovalStatus: args.has("--simulate-approved-without-private-reference") ? "approved" : "not-approved",
     implementationStatus: args.has("--simulate-conceptual-implemented") ? "implemented" : "not-approved",
@@ -142,6 +145,7 @@ requireFields(registry, registryPath, [
   "privateApprovalAlias",
   "approvalRequiredForStatuses",
   "proposalStatuses",
+  "allowedRequiredEvidence",
   "requiredProposalFields",
   "proposals",
 ]);
@@ -186,6 +190,18 @@ if (!approvalRequiredStatuses.has("user-approved-for-visual-lane")) {
 for (const status of approvalRequiredStatuses) {
   if (!allowedStatuses.has(status)) fail(`${registryPath}.approvalRequiredForStatuses contains unknown status ${status}`);
 }
+const allowedRequiredEvidence = new Set(requireArray(registry, registryPath, "allowedRequiredEvidence"));
+for (const evidence of [
+  "private-baseline",
+  "rendered-geometry",
+  "copy-snapshot",
+  "rendered-drift",
+  "debt-audit",
+  "performance-budget",
+  "private-approval",
+]) {
+  if (!allowedRequiredEvidence.has(evidence)) fail(`${registryPath}.allowedRequiredEvidence must include ${evidence}`);
+}
 
 const requiredFields = requireArray(registry, registryPath, "requiredProposalFields");
 for (const field of [
@@ -220,7 +236,9 @@ for (const [index, proposal] of requireArray(registry, registryPath, "proposals"
   for (const platform of requireArray(proposal, label, "platforms")) {
     if (!allowedPlatforms.has(platform)) fail(`${label}.platforms contains ${platform}`);
   }
-  requireArray(proposal, label, "requiredEvidence");
+  for (const evidence of requireArray(proposal, label, "requiredEvidence")) {
+    if (!allowedRequiredEvidence.has(evidence)) fail(`${label}.requiredEvidence contains unsupported ${evidence}`);
+  }
   requireArray(proposal, label, "outOfScopeDrift", { nonEmpty: false });
   requirePublicReference(proposal.proposalReference, `${label}.proposalReference`);
   const reviewAfter = requireIsoDate(proposal.reviewAfter, `${label}.reviewAfter`);
