@@ -43,6 +43,25 @@ function requireArray(object, label, field) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function scanForLocalPaths(value, label) {
   if (Array.isArray(value)) {
     value.forEach((child, index) => scanForLocalPaths(child, `${label}[${index}]`));
@@ -63,6 +82,9 @@ const decisionVerificationPath = "docs/ui/decision-verification.json";
 const decisionVerification = readJson(decisionVerificationPath);
 const alignmentValidationDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "alignment_validation");
 if (manifest) {
+  if (args.has("--simulate-inactive-rendered-geometry")) {
+    manifest.status = "active";
+  }
   if (args.has("--simulate-wrong-private-alias")) {
     manifest.privateGeometryAlias = "private-codex-ui-baselines";
   }
@@ -75,8 +97,26 @@ if (manifest) {
   if (args.has("--simulate-missing-pattern-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
     manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "screenshotComparisonHash");
   }
+  if (args.has("--simulate-extra-pattern-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields.push("localGeometryPath");
+  }
+  if (args.has("--simulate-duplicate-pattern-evidence-field") && Array.isArray(manifest.requiredEvidenceFields) && manifest.requiredEvidenceFields[0]) {
+    manifest.requiredEvidenceFields.push(manifest.requiredEvidenceFields[0]);
+  }
   if (args.has("--simulate-missing-surface-evidence-field") && Array.isArray(manifest.requiredSurfaceEvidenceFields)) {
     manifest.requiredSurfaceEvidenceFields = manifest.requiredSurfaceEvidenceFields.filter((field) => field !== "coverageId");
+  }
+  if (args.has("--simulate-extra-surface-evidence-field") && Array.isArray(manifest.requiredSurfaceEvidenceFields)) {
+    manifest.requiredSurfaceEvidenceFields.push("localGeometryPath");
+  }
+  if (args.has("--simulate-duplicate-surface-evidence-field") && Array.isArray(manifest.requiredSurfaceEvidenceFields) && manifest.requiredSurfaceEvidenceFields[0]) {
+    manifest.requiredSurfaceEvidenceFields.push(manifest.requiredSurfaceEvidenceFields[0]);
+  }
+  if (args.has("--simulate-extra-public-forbidden-store") && Array.isArray(manifest.publicRepoMustNotStore)) {
+    manifest.publicRepoMustNotStore.push("temporary-screenshot");
+  }
+  if (args.has("--simulate-duplicate-public-forbidden-store") && Array.isArray(manifest.publicRepoMustNotStore) && manifest.publicRepoMustNotStore[0]) {
+    manifest.publicRepoMustNotStore.push(manifest.publicRepoMustNotStore[0]);
   }
   if (args.has("--simulate-local-path-reference")) {
     manifest.patternSource = "/Users/example/patterns.registry.json";
@@ -134,6 +174,9 @@ requireFields(manifest, manifestPath, [
   "publicRepoMustNotStore",
 ]);
 
+if (!["pending-private-capture", "approved-private-geometry"].includes(manifest?.status)) {
+  fail(`${manifestPath}.status must be pending-private-capture or approved-private-geometry`);
+}
 if (manifest?.privateGeometryAlias !== "private-codex-ui-rendered-geometry") {
   fail(`${manifestPath}.privateGeometryAlias must be private-codex-ui-rendered-geometry`);
 }
@@ -150,14 +193,21 @@ if (!String(manifest?.verificationCommand || "").includes("--require-approved"))
   fail(`${manifestPath}.verificationCommand must require approved private geometry evidence`);
 }
 
-const requiredEvidence = new Set(requireArray(manifest, manifestPath, "requiredEvidenceFields"));
-for (const field of ["patternId", "platform", "geometryEvidenceReference", "measurements", "geometryHash", "screenshotComparisonHash", "captureCommand", "approvedByUserAt", "approvedScope"]) {
-  if (!requiredEvidence.has(field)) fail(`${manifestPath}.requiredEvidenceFields must include ${field}`);
-}
-const requiredSurfaceEvidence = new Set(requireArray(manifest, manifestPath, "requiredSurfaceEvidenceFields"));
-for (const field of ["coverageId", "platform", "geometryEvidenceReference", "measurements", "geometryHash", "screenshotComparisonHash", "captureCommand", "approvedByUserAt", "approvedScope"]) {
-  if (!requiredSurfaceEvidence.has(field)) fail(`${manifestPath}.requiredSurfaceEvidenceFields must include ${field}`);
-}
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredEvidenceFields"),
+  `${manifestPath}.requiredEvidenceFields`,
+  ["patternId", "platform", "geometryEvidenceReference", "measurements", "geometryHash", "screenshotComparisonHash", "captureCommand", "approvedByUserAt", "approvedScope"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredSurfaceEvidenceFields"),
+  `${manifestPath}.requiredSurfaceEvidenceFields`,
+  ["coverageId", "platform", "geometryEvidenceReference", "measurements", "geometryHash", "screenshotComparisonHash", "captureCommand", "approvedByUserAt", "approvedScope"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "publicRepoMustNotStore"),
+  `${manifestPath}.publicRepoMustNotStore`,
+  ["raw-geometry-dump", "raw-screenshot", "local-absolute-path", "secret", "signing-identity"],
+);
 
 const registry = readJson(manifest?.patternSource || "");
 requireArray(registry, manifest?.patternSource || "patternSource", "patterns");
