@@ -3,12 +3,12 @@ import SwiftUI
 
 /// Settings page for the Telegram surface. Master-detail layout: bot
 /// list on the left, full-bot detail on the right (Profile, Transport,
-/// Commands, Chats, Errors). Reads from `TelegramServiceManager`, which
+/// Commands, Chats, Errors). Reads from `TelegramBotsStore`, which
 /// polls the local `clawjs/telegram` server every 5 seconds while the
 /// page is on screen.
 struct TelegramSettingsPage: View {
 
-    @StateObject private var manager = TelegramServiceManager()
+    @StateObject private var store = TelegramBotsStore()
     @StateObject private var supervisor = ClawJSServiceManager.shared
     @State private var selectedBotId: String?
     @State private var addBotPresented = false
@@ -31,8 +31,8 @@ struct TelegramSettingsPage: View {
     }
 
     private var selectedBot: TelegramBot? {
-        guard let selectedBotId else { return manager.bots.first }
-        return manager.bots.first(where: { $0.id == selectedBotId })
+        guard let selectedBotId else { return store.bots.first }
+        return store.bots.first(where: { $0.id == selectedBotId })
     }
 
     var body: some View {
@@ -58,16 +58,16 @@ struct TelegramSettingsPage: View {
             updateRefreshLoop(for: newState)
         }
         .onDisappear {
-            manager.stopRefreshing()
+            store.stopRefreshing()
         }
         .sheet(isPresented: $addBotPresented) {
-            AddBotSheet(manager: manager, isPresented: $addBotPresented) { newBotId in
+            AddBotSheet(store: store, isPresented: $addBotPresented) { newBotId in
                 selectedBotId = newBotId
             }
         }
         .sheet(item: $sendMessageContext) { ctx in
             SendMessageSheet(
-                manager: manager,
+                store: store,
                 bot: ctx.bot,
                 chat: ctx.chat
             )
@@ -131,14 +131,14 @@ struct TelegramSettingsPage: View {
                     .font(BodyFont.system(size: 12, wght: 600))
                     .foregroundColor(Palette.textSecondary)
                 Spacer()
-                if manager.isLoading && telegramAvailable {
+                if store.isLoading && telegramAvailable {
                     ProgressView().controlSize(.mini)
                 }
             }
             .padding(.horizontal, 4)
             .padding(.bottom, 6)
 
-            if manager.bots.isEmpty {
+            if store.bots.isEmpty {
                 Text(telegramAvailable ? "No bots yet." : "Bot list unavailable until Telegram responds.")
                     .font(BodyFont.system(size: 11.5))
                     .foregroundColor(Palette.textSecondary)
@@ -146,10 +146,10 @@ struct TelegramSettingsPage: View {
                     .padding(.vertical, 8)
             } else {
                 VStack(spacing: 2) {
-                    ForEach(manager.bots) { bot in
+                    ForEach(store.bots) { bot in
                         BotListRow(
                             bot: bot,
-                            isSelected: bot.id == (selectedBotId ?? manager.bots.first?.id)
+                            isSelected: bot.id == (selectedBotId ?? store.bots.first?.id)
                         ) {
                             selectedBotId = bot.id
                         }
@@ -157,7 +157,7 @@ struct TelegramSettingsPage: View {
                 }
             }
 
-            if telegramAvailable, let error = manager.lastError {
+            if telegramAvailable, let error = store.lastError {
                 Text(error)
                     .font(BodyFont.system(size: 11))
                     .foregroundColor(.orange)
@@ -209,7 +209,7 @@ struct TelegramSettingsPage: View {
         if let bot = selectedBot {
             BotDetailView(
                 bot: bot,
-                manager: manager,
+                store: store,
                 onSendMessageRequested: { chat in
                     sendMessageContext = SendMessageContext(bot: bot, chat: chat)
                 }
@@ -226,9 +226,9 @@ struct TelegramSettingsPage: View {
 
     private func updateRefreshLoop(for state: ClawJSServiceState) {
         if state.isReady {
-            manager.startRefreshing()
+            store.startRefreshing()
         } else {
-            manager.resetForUnavailableService()
+            store.resetForUnavailableService()
         }
     }
 }
@@ -295,7 +295,7 @@ private struct BotListRow: View {
 
 private struct BotDetailView: View {
     let bot: TelegramBot
-    @ObservedObject var manager: TelegramServiceManager
+    @ObservedObject var store: TelegramBotsStore
     let onSendMessageRequested: (TelegramKnownChat) -> Void
 
     @State private var webhookURL: String = ""
@@ -303,8 +303,8 @@ private struct BotDetailView: View {
     @State private var commandsDraft: [TelegramCommandSpec] = []
     @State private var commandsLoaded = false
 
-    private var inflight: Bool { manager.inflight.contains(bot.id) }
-    private var lastResult: ClawCliResult? { manager.lastActionResult[bot.id] }
+    private var inflight: Bool { store.inflight.contains(bot.id) }
+    private var lastResult: ClawCliResult? { store.lastActionResult[bot.id] }
 
     var body: some View {
         ScrollView {
@@ -332,8 +332,8 @@ private struct BotDetailView: View {
         webhookSecret = ""
         commandsLoaded = false
         commandsDraft = []
-        Task { await manager.reloadCommands(bot) }
-        Task { await manager.reloadChats(bot) }
+        Task { await store.reloadCommands(bot) }
+        Task { await store.reloadChats(bot) }
     }
 
     // MARK: Profile
@@ -402,13 +402,13 @@ private struct BotDetailView: View {
 
                 HStack(spacing: 10) {
                     Button("Start polling") {
-                        Task { await manager.startPolling(bot) }
+                        Task { await store.startPolling(bot) }
                     }
                     .buttonStyle(.borderless)
                     .disabled(inflight)
 
                     Button("Stop polling") {
-                        Task { await manager.stopPolling(bot) }
+                        Task { await store.stopPolling(bot) }
                     }
                     .buttonStyle(.borderless)
                     .disabled(inflight)
@@ -440,7 +440,7 @@ private struct BotDetailView: View {
                     HStack(spacing: 10) {
                         Button("Set webhook") {
                             Task {
-                                await manager.setWebhook(
+                                await store.setWebhook(
                                     bot,
                                     url: webhookURL,
                                     secretToken: webhookSecret.isEmpty ? nil : webhookSecret
@@ -449,7 +449,7 @@ private struct BotDetailView: View {
                         }
                         .disabled(inflight || webhookURL.isEmpty)
                         Button("Clear webhook") {
-                            Task { await manager.clearWebhook(bot) }
+                            Task { await store.clearWebhook(bot) }
                         }
                         .disabled(inflight)
                         Spacer()
@@ -469,7 +469,7 @@ private struct BotDetailView: View {
         SectionCard(title: "Commands") {
             VStack(alignment: .leading, spacing: 10) {
                 if !commandsLoaded {
-                    let stored = manager.commands[bot.id] ?? []
+                    let stored = store.commands[bot.id] ?? []
                     let _ = DispatchQueue.main.async {
                         commandsDraft = stored
                         commandsLoaded = !stored.isEmpty
@@ -507,7 +507,7 @@ private struct BotDetailView: View {
                     Button("Sync to Telegram") {
                         Task {
                             let cleaned = commandsDraft.filter { !$0.command.isEmpty }
-                            await manager.saveCommands(bot, commands: cleaned)
+                            await store.saveCommands(bot, commands: cleaned)
                         }
                     }
                     .buttonStyle(.borderless)
@@ -515,8 +515,8 @@ private struct BotDetailView: View {
 
                     Button("Reload") {
                         Task {
-                            await manager.reloadCommands(bot)
-                            commandsDraft = manager.commands[bot.id] ?? []
+                            await store.reloadCommands(bot)
+                            commandsDraft = store.commands[bot.id] ?? []
                             commandsLoaded = true
                         }
                     }
@@ -533,7 +533,7 @@ private struct BotDetailView: View {
     // MARK: Chats
 
     private var chatsCard: some View {
-        let chats = manager.chats[bot.id] ?? []
+        let chats = store.chats[bot.id] ?? []
         return SectionCard(title: "Chats") {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -542,7 +542,7 @@ private struct BotDetailView: View {
                         .foregroundColor(Palette.textSecondary)
                     Spacer()
                     Button("Reload") {
-                        Task { await manager.reloadChats(bot) }
+                        Task { await store.reloadChats(bot) }
                     }
                     .buttonStyle(.borderless)
                     .font(BodyFont.system(size: 11.5, wght: 500))
@@ -665,7 +665,7 @@ private struct BotDetailView: View {
 // MARK: - Add bot sheet
 
 private struct AddBotSheet: View {
-    @ObservedObject var manager: TelegramServiceManager
+    @ObservedObject var store: TelegramBotsStore
     @Binding var isPresented: Bool
     let onCreated: (String?) -> Void
 
@@ -740,7 +740,7 @@ private struct AddBotSheet: View {
     private func connect() async {
         inflight = true
         defer { inflight = false }
-        let result = await manager.registerBot(
+        let result = await store.registerBot(
             secretName: secretName,
             accountId: accountId.isEmpty ? nil : accountId,
             label: label.isEmpty ? nil : label
@@ -808,7 +808,7 @@ private extension String {
 // MARK: - Send message sheet
 
 private struct SendMessageSheet: View {
-    @ObservedObject var manager: TelegramServiceManager
+    @ObservedObject var store: TelegramBotsStore
     let bot: TelegramBot
     let chat: TelegramKnownChat
 
@@ -871,10 +871,10 @@ private struct SendMessageSheet: View {
     private func send() async {
         inflight = true
         defer { inflight = false }
-        await manager.sendMessage(bot, chatId: chat.chatId, text: text)
-        if let envelope = manager.lastActionResult[bot.id], envelope.ok {
+        await store.sendMessage(bot, chatId: chat.chatId, text: text)
+        if let envelope = store.lastActionResult[bot.id], envelope.ok {
             dismiss()
-        } else if let envelope = manager.lastActionResult[bot.id] {
+        } else if let envelope = store.lastActionResult[bot.id] {
             failure = envelope.stderr.isEmpty ? "CLI exited non-zero." : envelope.stderr
         }
     }

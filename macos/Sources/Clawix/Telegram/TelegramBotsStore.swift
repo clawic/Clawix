@@ -6,7 +6,7 @@ import SwiftUI
 /// master pane. A 5s refresh task runs while the page is on screen and
 /// is cancelled on disappear.
 @MainActor
-final class TelegramServiceManager: ObservableObject {
+final class TelegramBotsStore: ObservableObject {
 
     @Published private(set) var bots: [TelegramBot] = []
     @Published private(set) var isLoading = false
