@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const today = new Date().toISOString().slice(0, 10);
 const errors = [];
 
@@ -61,6 +62,32 @@ const manifestPath = "docs/ui/rendered-drift.manifest.json";
 const manifest = readJson(manifestPath);
 const aggregateVisualManifestPath = "docs/ui/private-visual-validation.manifest.json";
 const aggregateVisualManifest = readJson(aggregateVisualManifestPath);
+if (manifest) {
+  if (args.has("--simulate-verifier-mismatch")) {
+    manifest.verificationCommand = "node scripts/ui_private_drift_verify.mjs --require-approved";
+  }
+  if (args.has("--simulate-missing-drift-category") && Array.isArray(manifest.driftCategories)) {
+    manifest.driftCategories = manifest.driftCategories.filter((category) => category !== "copy");
+  }
+  if (args.has("--simulate-missing-failure-output-requirement") && Array.isArray(manifest.failureOutputRequirements)) {
+    manifest.failureOutputRequirements = manifest.failureOutputRequirements.filter((field) => field !== "required permission");
+  }
+  if (args.has("--simulate-duplicate-report") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports.push({ ...manifest.reports[0] });
+  }
+  if (args.has("--simulate-missing-coverage-report") && Array.isArray(manifest.reports)) {
+    manifest.reports = manifest.reports.slice(0, -1);
+  }
+  if (args.has("--simulate-unsafe-private-reference") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].privateDriftReportReference = `${manifest.privateDriftAlias}:../drift`;
+  }
+  if (args.has("--simulate-expired-review") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].reviewAfter = "2026-01-01";
+  }
+  if (args.has("--simulate-invalid-report-status") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].status = "ignored-drift";
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
