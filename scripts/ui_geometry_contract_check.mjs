@@ -119,6 +119,22 @@ for (const patternId of patternIds) {
       windows: { source: "simulated undeclared platform geometry clause" },
     };
   }
+  if (args.has("--simulate-negative-measurement") && patternId === "icon-chip-button") {
+    pattern.geometry = { ...pattern.geometry, height: -1 };
+  }
+  if (args.has("--simulate-mixed-direct-and-platform-geometry") && patternId === "sidebar-section") {
+    pattern.geometry = { ...pattern.geometry, extraPadding: 4 };
+  }
+  if (args.has("--simulate-short-pending-source") && patternId === "sidebar-section") {
+    pattern.geometry = { ...pattern.geometry, ios: { source: "pending" } };
+  }
+  if (args.has("--simulate-missing-platform-geometry") && patternId === "sidebar-section") {
+    const { web, ...rest } = pattern.geometry;
+    pattern.geometry = rest;
+  }
+  if (args.has("--simulate-missing-private-validation") && patternId === "sidebar-section") {
+    pattern.validation = { ...pattern.validation, private: [] };
+  }
 
   const geometryType = classifyGeometryClause(pattern.geometry, `${patternPath}.geometry`);
   const platforms = requireArray(pattern, patternPath, "platforms");
