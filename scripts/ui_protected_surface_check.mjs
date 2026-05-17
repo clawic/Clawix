@@ -102,6 +102,7 @@ requireFields(protectedSurfaces, protectedPath, [
   "privateBaselineAlias",
   "privateCopyAlias",
   "privateGeometryAlias",
+  "freezeContractValue",
   "requiredFreezeFields",
   "surfaces",
 ]);
@@ -111,11 +112,15 @@ if (args.has("--simulate-wrong-private-baseline-alias") && protectedSurfaces) {
 if (args.has("--simulate-missing-required-freeze-field") && Array.isArray(protectedSurfaces?.requiredFreezeFields)) {
   protectedSurfaces.requiredFreezeFields = protectedSurfaces.requiredFreezeFields.filter((field) => field !== "changePolicy");
 }
+if (args.has("--simulate-wrong-freeze-contract-value") && protectedSurfaces) {
+  protectedSurfaces.freezeContractValue = "mutable";
+}
 
 for (const [field, expected] of [
   ["privateBaselineAlias", "private-codex-ui-baselines"],
   ["privateCopyAlias", "private-codex-ui-copy-snapshots"],
   ["privateGeometryAlias", "private-codex-ui-rendered-geometry"],
+  ["freezeContractValue", "stable"],
 ]) {
   if (protectedSurfaces?.[field] !== expected) fail(`${protectedPath}.${field} must be ${expected}`);
 }
@@ -245,6 +250,13 @@ if (args.has("--simulate-missing-contract-field")) {
   });
 }
 
+if (args.has("--simulate-unstable-contract-value")) {
+  appendSimulatedSurface({
+    id: "simulated-unstable-contract-value",
+    contract: { geometry: "stable", copy: "mutable", states: "stable", performance: "stable" },
+  });
+}
+
 if (args.has("--simulate-disabled-visual-model-policy")) {
   appendSimulatedSurface({
     id: "simulated-disabled-visual-model-policy",
@@ -301,6 +313,11 @@ for (const [index, surface] of surfaces.entries()) {
     if (!patternIds.has(pattern)) fail(`${label}.patterns references unknown pattern ${pattern}`);
   }
   requireFields(surface.contract, `${label}.contract`, ["geometry", "copy", "states", "performance"]);
+  for (const field of ["geometry", "copy", "states", "performance"]) {
+    if (surface.contract?.[field] !== protectedSurfaces.freezeContractValue) {
+      fail(`${label}.contract.${field} must be ${protectedSurfaces.freezeContractValue}`);
+    }
+  }
   requireAlias(surface.privateBaselineReference, protectedSurfaces.privateBaselineAlias, `${label}.privateBaselineReference`);
   requireAlias(surface.copySnapshotReference, protectedSurfaces.privateCopyAlias, `${label}.copySnapshotReference`);
   requireAlias(surface.geometryEvidenceReference, protectedSurfaces.privateGeometryAlias, `${label}.geometryEvidenceReference`);

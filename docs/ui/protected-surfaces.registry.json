@@ -5,6 +5,7 @@
   "privateBaselineAlias": "private-codex-ui-baselines",
   "privateCopyAlias": "private-codex-ui-copy-snapshots",
   "privateGeometryAlias": "private-codex-ui-rendered-geometry",
+  "freezeContractValue": "stable",
   "requiredFreezeFields": [
     "id",
     "scope",
