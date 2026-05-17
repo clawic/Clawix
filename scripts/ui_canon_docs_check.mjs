@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_CANON_DOCS_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -147,6 +149,34 @@ for (const snippet of [
   "performance-budgets.registry.json",
 ]) {
   requireSnippet("docs/decision-map.md", snippet);
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-adr-missing-docs-ui", "docs/adr/0010-interface-governance.md must mention docs/ui/"],
+    ["--simulate-style-missing-visual-model-allowlist", "STYLE.md must mention visual-model-allowlist.manifest.json"],
+    ["--simulate-standards-missing-protected-surfaces", "STANDARDS.md must mention protected-surfaces.registry.json"],
+    ["--simulate-perf-missing-critical-flow", "PERF.md must mention right-sidebar/browser use"],
+    ["--simulate-macos-perf-missing-baseline-approval", "macos/PERF.md must mention baseline approval"],
+    ["--simulate-readme-missing-private-visual-verify", "docs/ui/README.md must mention ui_private_visual_verify.mjs --require-approved"],
+    ["--simulate-readme-missing-pattern-registry", "docs/ui/README.md must mention pattern-registry/"],
+    ["--simulate-readme-missing-failure-diagnostics", "docs/ui/README.md must mention scripts/ui_visual_guard_failure_check.mjs"],
+    ["--simulate-decision-map-missing-interface-governance", "docs/decision-map.md must mention ## Interface governance"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_CANON_DOCS_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when required canon doc evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
+  }
 }
 
 if (errors.length > 0) {
