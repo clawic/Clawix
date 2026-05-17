@@ -46,6 +46,29 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
+function sameStringArray(left, right) {
+  return JSON.stringify(left || []) === JSON.stringify(right || []);
+}
+
 function scanForLocalPaths(value, label) {
   if (Array.isArray(value)) {
     value.forEach((child, index) => scanForLocalPaths(child, `${label}[${index}]`));
@@ -61,7 +84,9 @@ function scanForLocalPaths(value, label) {
 }
 
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
-const requiredEvidence = new Set(["private-baseline", "copy-snapshot", "rendered-geometry"]);
+const requiredEvidence = ["private-baseline", "copy-snapshot", "rendered-geometry"];
+const reportStatusValues = ["pending-visual-authorized-cleanup", "blocked-without-private-baseline", "resolved"];
+const forbiddenWithoutApprovalValues = ["presentation-edit", "copy-edit", "layout-edit", "opportunistic-fix"];
 
 const debtPath = "docs/ui/debt.baseline.json";
 const debt = readJson(debtPath);
@@ -133,6 +158,12 @@ if (report && args.has("--simulate-wrong-report-source-baseline")) {
 if (report && args.has("--simulate-missing-report-status")) {
   report.reportStatusValues = report.reportStatusValues.filter((status) => status !== "blocked-without-private-baseline");
 }
+if (report && args.has("--simulate-extra-report-status")) {
+  report.reportStatusValues.push("ready-to-cleanup");
+}
+if (report && args.has("--simulate-duplicate-report-status") && report.reportStatusValues[0]) {
+  report.reportStatusValues.push(report.reportStatusValues[0]);
+}
 if (report && args.has("--simulate-fix-policy-allows-cleanup")) {
   report.fixPolicy.nonAuthorizedAction = "cleanup";
 }
@@ -140,9 +171,21 @@ if (report && args.has("--simulate-fix-policy-missing-evidence")) {
   report.fixPolicy.requiredPrivateEvidenceBeforeCleanup =
     report.fixPolicy.requiredPrivateEvidenceBeforeCleanup.filter((evidence) => evidence !== "rendered-geometry");
 }
+if (report && args.has("--simulate-fix-policy-extra-evidence")) {
+  report.fixPolicy.requiredPrivateEvidenceBeforeCleanup.push("local-audit");
+}
+if (report && args.has("--simulate-fix-policy-duplicate-evidence") && report.fixPolicy.requiredPrivateEvidenceBeforeCleanup[0]) {
+  report.fixPolicy.requiredPrivateEvidenceBeforeCleanup.push(report.fixPolicy.requiredPrivateEvidenceBeforeCleanup[0]);
+}
 if (report && args.has("--simulate-fix-policy-allows-presentation-edit")) {
   report.fixPolicy.forbiddenWithoutApproval =
     report.fixPolicy.forbiddenWithoutApproval.filter((action) => action !== "presentation-edit");
+}
+if (report && args.has("--simulate-fix-policy-extra-forbidden-action")) {
+  report.fixPolicy.forbiddenWithoutApproval.push("style-review");
+}
+if (report && args.has("--simulate-fix-policy-duplicate-forbidden-action") && report.fixPolicy.forbiddenWithoutApproval[0]) {
+  report.fixPolicy.forbiddenWithoutApproval.push(report.fixPolicy.forbiddenWithoutApproval[0]);
 }
 if (report && args.has("--simulate-pending-item-unknown-debt") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
   report.pendingItems[0] = { ...report.pendingItems[0], debtId: "missing-debt-id" };
@@ -158,6 +201,27 @@ if (report && args.has("--simulate-pending-item-missing-evidence") && Array.isAr
     ...report.pendingItems[0],
     requiredEvidence: report.pendingItems[0].requiredEvidence.filter((evidence) => evidence !== "copy-snapshot"),
   };
+}
+if (report && args.has("--simulate-pending-item-extra-evidence") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = {
+    ...report.pendingItems[0],
+    requiredEvidence: [...report.pendingItems[0].requiredEvidence, "local-audit"],
+  };
+}
+if (report && args.has("--simulate-pending-item-duplicate-evidence") && Array.isArray(report.pendingItems) && report.pendingItems[0]?.requiredEvidence?.[0]) {
+  report.pendingItems[0] = {
+    ...report.pendingItems[0],
+    requiredEvidence: [...report.pendingItems[0].requiredEvidence, report.pendingItems[0].requiredEvidence[0]],
+  };
+}
+if (report && args.has("--simulate-pending-item-scope-mismatch") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = { ...report.pendingItems[0], scope: "macos/Sources/Clawix/Other.swift" };
+}
+if (report && args.has("--simulate-pending-item-platform-mismatch") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems[0] = { ...report.pendingItems[0], platforms: ["ios"] };
+}
+if (report && args.has("--simulate-duplicate-pending-item") && Array.isArray(report.pendingItems) && report.pendingItems[0]) {
+  report.pendingItems.push({ ...report.pendingItems[0] });
 }
 if (report && args.has("--simulate-missing-pending-item") && Array.isArray(report.pendingItems)) {
   report.pendingItems = report.pendingItems.slice(1);
@@ -197,12 +261,14 @@ requireFields(report, reportPath, [
   "pendingItems",
 ]);
 if (report?.sourceBaseline !== debtPath) fail(`${reportPath}.sourceBaseline must be ${debtPath}`);
+if (report?.status !== "active") fail(`${reportPath}.status must be active`);
 if (alias?.reportRegistry !== reportPath) fail(`${aliasPath}.reportRegistry must be ${reportPath}`);
 
-const reportStatuses = new Set(requireArray(report, reportPath, "reportStatusValues"));
-for (const status of ["pending-visual-authorized-cleanup", "blocked-without-private-baseline", "resolved"]) {
-  if (!reportStatuses.has(status)) fail(`${reportPath}.reportStatusValues must include ${status}`);
-}
+const reportStatuses = requireExactStringSet(
+  requireArray(report, reportPath, "reportStatusValues"),
+  `${reportPath}.reportStatusValues`,
+  reportStatusValues,
+);
 
 const fixPolicy = report?.fixPolicy || {};
 requireFields(fixPolicy, `${reportPath}.fixPolicy`, [
@@ -221,20 +287,19 @@ if (fixPolicy.cleanupActionBeforeApproval !== "queue-only") {
 if (fixPolicy.requiredAuthorization !== "visual-authorized-lane") {
   fail(`${reportPath}.fixPolicy.requiredAuthorization must be visual-authorized-lane`);
 }
-const fixPolicyEvidence = new Set(requireArray(fixPolicy, `${reportPath}.fixPolicy`, "requiredPrivateEvidenceBeforeCleanup"));
-for (const evidence of requiredEvidence) {
-  if (!fixPolicyEvidence.has(evidence)) {
-    fail(`${reportPath}.fixPolicy.requiredPrivateEvidenceBeforeCleanup must include ${evidence}`);
-  }
-}
-const forbiddenWithoutApproval = new Set(requireArray(fixPolicy, `${reportPath}.fixPolicy`, "forbiddenWithoutApproval"));
-for (const action of ["presentation-edit", "copy-edit", "layout-edit", "opportunistic-fix"]) {
-  if (!forbiddenWithoutApproval.has(action)) {
-    fail(`${reportPath}.fixPolicy.forbiddenWithoutApproval must include ${action}`);
-  }
-}
+requireExactStringSet(
+  requireArray(fixPolicy, `${reportPath}.fixPolicy`, "requiredPrivateEvidenceBeforeCleanup"),
+  `${reportPath}.fixPolicy.requiredPrivateEvidenceBeforeCleanup`,
+  requiredEvidence,
+);
+requireExactStringSet(
+  requireArray(fixPolicy, `${reportPath}.fixPolicy`, "forbiddenWithoutApproval"),
+  `${reportPath}.fixPolicy.forbiddenWithoutApproval`,
+  forbiddenWithoutApprovalValues,
+);
 
 const reportedDebtIds = new Set();
+const pendingItemIds = new Set();
 for (const [index, item] of requireArray(report, reportPath, "pendingItems").entries()) {
   const label = `${reportPath}.pendingItems[${index}]`;
   requireFields(item, label, [
@@ -247,7 +312,16 @@ for (const [index, item] of requireArray(report, reportPath, "pendingItems").ent
     "requiredEvidence",
     "allowedCurrentAction",
   ]);
-  if (!debtIds.has(item.debtId)) fail(`${label}.debtId must reference ${debtPath}`);
+  const debtEntry = debtEntries.find((entry) => entry.id === item.debtId);
+  if (!debtEntry) {
+    fail(`${label}.debtId must reference ${debtPath}`);
+  } else {
+    if (item.scope !== debtEntry.scope) fail(`${label}.scope must match ${debtPath}`);
+    if (!sameStringArray(item.platforms, debtEntry.platforms)) fail(`${label}.platforms must match ${debtPath}`);
+  }
+  if (pendingItemIds.has(item.id)) fail(`${label}.id duplicates ${item.id}`);
+  pendingItemIds.add(item.id);
+  if (reportedDebtIds.has(item.debtId)) fail(`${label}.debtId duplicates ${item.debtId}`);
   if (!reportStatuses.has(item.status)) fail(`${label}.status is invalid`);
   if (item.requiredAuthorization !== "visual-authorized-lane") {
     fail(`${label}.requiredAuthorization must be visual-authorized-lane`);
@@ -258,10 +332,7 @@ for (const [index, item] of requireArray(report, reportPath, "pendingItems").ent
   for (const platform of requireArray(item, label, "platforms")) {
     if (!requiredPlatforms.has(platform)) fail(`${label}.platforms contains unsupported ${platform}`);
   }
-  const itemEvidence = new Set(requireArray(item, label, "requiredEvidence"));
-  for (const evidence of requiredEvidence) {
-    if (!itemEvidence.has(evidence)) fail(`${label}.requiredEvidence must include ${evidence}`);
-  }
+  requireExactStringSet(requireArray(item, label, "requiredEvidence"), `${label}.requiredEvidence`, requiredEvidence);
   reportedDebtIds.add(item.debtId);
 }
 
