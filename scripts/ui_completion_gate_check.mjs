@@ -323,6 +323,7 @@ for (const snippet of [
   "process.exit(2)",
   "open decisions",
   "--simulate-no-open-decisions",
+  "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
 ]) {
   if (!privateVerifier.includes(snippet)) {
     fail(`${manifest.privateVerifierScript} must include ${snippet}`);
@@ -333,6 +334,23 @@ const decisionVerification = readJson(manifest?.decisionVerificationPath || "doc
 const openDecisions = requireArray(decisionVerification, manifest?.decisionVerificationPath || "docs/ui/decision-verification.json", "decisions")
   .filter((decision) => decision?.status === "open");
 if (openDecisions.length > 0) {
+  const unsafeSimulationResult = spawnSync(
+    process.execPath,
+    [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-no-open-decisions", "--skip-public-prerequisites"],
+    {
+      cwd: rootDir,
+      env: withoutPrivateCompletionEnv(),
+      encoding: "utf8",
+    },
+  );
+  const unsafeSimulationOutput = `${unsafeSimulationResult.stdout || ""}${unsafeSimulationResult.stderr || ""}`;
+  if (unsafeSimulationResult.status === 0 || unsafeSimulationResult.status === manifest.externalPendingExitCode) {
+    fail(`${manifest.privateVerifierScript} must reject simulation flags unless explicitly enabled for tests`);
+  }
+  if (!unsafeSimulationOutput.includes("CLAWIX_UI_ALLOW_COMPLETION_SIMULATION")) {
+    fail(`${manifest.privateVerifierScript} must explain the test-only simulation guard`);
+  }
+
   const result = spawnSync(process.execPath, [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--skip-public-prerequisites"], {
     cwd: rootDir,
     env: withoutPrivateCompletionEnv(),
@@ -357,7 +375,7 @@ const simulatedClosedResult = spawnSync(
   [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-no-open-decisions", "--skip-public-prerequisites"],
   {
     cwd: rootDir,
-    env: withoutPrivateCompletionEnv(),
+    env: { ...withoutPrivateCompletionEnv(), CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1" },
     encoding: "utf8",
   },
 );
@@ -377,7 +395,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
     [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-no-open-decisions", "--skip-public-prerequisites"],
     {
       cwd: rootDir,
-      env: { ...withoutPrivateCompletionEnv(), ...temporaryEnv },
+      env: { ...withoutPrivateCompletionEnv(), ...temporaryEnv, CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1" },
       encoding: "utf8",
     },
   );

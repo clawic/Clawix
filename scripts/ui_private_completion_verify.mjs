@@ -5,6 +5,8 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const allowedFlags = new Set(["--require-approved", "--skip-public-prerequisites", "--simulate-no-open-decisions"]);
+const simulationFlags = new Set(["--simulate-no-open-decisions"]);
 
 function hasFlag(name) {
   return args.includes(name);
@@ -39,13 +41,30 @@ if (!hasFlag("--require-approved")) {
   console.error("UI private completion verification requires --require-approved.");
   process.exit(1);
 }
+for (const arg of args) {
+  if (!allowedFlags.has(arg)) {
+    console.error(`UI private completion verification received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
+if (args.some((arg) => simulationFlags.has(arg)) && process.env.CLAWIX_UI_ALLOW_COMPLETION_SIMULATION !== "1") {
+  console.error("UI private completion verification simulation flags require CLAWIX_UI_ALLOW_COMPLETION_SIMULATION=1.");
+  process.exit(1);
+}
 
 const manifest = readJson("docs/ui/completion-gate.manifest.json");
 runPublicPrerequisites(manifest);
 const decisionVerification = readJson(manifest.decisionVerificationPath || "docs/ui/decision-verification.json");
+const decisions = decisionVerification.decisions || [];
+for (const decision of decisions) {
+  if (!["open", "verified-complete"].includes(decision?.status)) {
+    console.error(`UI private completion verification found unsupported decision status for ${decision?.id || "unknown"}.`);
+    process.exit(1);
+  }
+}
 const openDecisions = hasFlag("--simulate-no-open-decisions")
   ? []
-  : (decisionVerification.decisions || []).filter((decision) => decision.status === "open");
+  : decisions.filter((decision) => decision.status === "open");
 if (openDecisions.length > 0) {
   console.error(`EXTERNAL PENDING: ${openDecisions.length} open decisions block update_goal: ${openDecisions.map((decision) => decision.id).join(", ")}.`);
   process.exit(2);
