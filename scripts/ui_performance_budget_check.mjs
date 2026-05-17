@@ -169,6 +169,9 @@ if (args.has("--simulate-enforced-before-approved") && Array.isArray(budgets?.fl
 if (args.has("--simulate-approved-before-private-baseline") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
   budgets.flows[0] = { ...budgets.flows[0], baselineStatus: "approved" };
 }
+if (args.has("--simulate-approved-registry-with-pending-flow") && budgets) {
+  budgets.status = "approved-baseline-enforced";
+}
 if (args.has("--simulate-perf-decision-missing-budget-registry") && perfBudgetSourceDecision) {
   perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== budgetsPath);
 }
@@ -273,6 +276,18 @@ if (args.has("--simulate-wrong-private-reference")) {
     baseline.privateBaselineReference = wrongReference;
   }
 }
+if (args.has("--simulate-pending-registry-with-all-enforced") && budgets && Array.isArray(budgets.flows) && Array.isArray(privateBaselines?.flows)) {
+  budgets.status = "pending-approved-baseline-capture";
+  budgets.flows = budgets.flows.map((flow) => ({
+    ...flow,
+    baselineStatus: "approved",
+    budgetStatus: "enforced",
+  }));
+  privateBaselines.flows = privateBaselines.flows.map((flow) => ({
+    ...flow,
+    baselineStatus: "approved",
+  }));
+}
 const baselineByFlow = new Map();
 for (const [index, flow] of requireArray(privateBaselines, privateBaselinesPath, "flows").entries()) {
   const key = `${flow.platform}:${flow.id}`;
@@ -281,6 +296,9 @@ for (const [index, flow] of requireArray(privateBaselines, privateBaselinesPath,
 }
 
 const seen = new Set();
+let approvedBaselineCount = 0;
+let enforcedBudgetCount = 0;
+let pendingFlowCount = 0;
 for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries()) {
   const label = `${budgetsPath}.flows[${index}]`;
   requireFields(flow, label, [
@@ -299,6 +317,9 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   if (!requiredFlows.includes(flow.id)) fail(`${label}.id is not a required critical flow`);
   if (!allowedBaselineStatuses.has(flow.baselineStatus)) fail(`${label}.baselineStatus is invalid`);
   if (!allowedBudgetStatuses.has(flow.budgetStatus)) fail(`${label}.budgetStatus is invalid`);
+  if (flow.baselineStatus === "approved") approvedBaselineCount += 1;
+  if (flow.budgetStatus === "enforced") enforcedBudgetCount += 1;
+  if (flow.baselineStatus !== "approved" || flow.budgetStatus !== "enforced") pendingFlowCount += 1;
   if (flow.measurementSource !== "private-baseline") fail(`${label}.measurementSource must be private-baseline`);
   const expectedSuffix = `${flow.platform}/${flow.id}`;
   const actualSuffix = privateReferenceSuffix(
@@ -324,6 +345,13 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   if (flow.budgetStatus === "enforced" && flow.baselineStatus !== "approved") {
     fail(`${label}.budgetStatus cannot be enforced before baselineStatus is approved`);
   }
+}
+
+if (budgets?.status === "approved-baseline-enforced" && pendingFlowCount > 0) {
+  fail(`${budgetsPath}.status cannot be approved-baseline-enforced while ${pendingFlowCount} flow budgets are pending`);
+}
+if (budgets?.status === "pending-approved-baseline-capture" && seen.size > 0 && approvedBaselineCount === seen.size && enforcedBudgetCount === seen.size) {
+  fail(`${budgetsPath}.status must be approved-baseline-enforced when all flow budgets are enforced`);
 }
 
 for (const platform of requiredPlatforms) {
