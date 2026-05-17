@@ -59,6 +59,9 @@ function scanForLocalPaths(value, label) {
 
 const manifestPath = "docs/ui/rendered-geometry.manifest.json";
 const manifest = readJson(manifestPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const alignmentValidationDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "alignment_validation");
 if (manifest) {
   if (args.has("--simulate-wrong-private-alias")) {
     manifest.privateGeometryAlias = "private-codex-ui-baselines";
@@ -77,6 +80,44 @@ if (manifest) {
   }
   if (args.has("--simulate-local-path-reference")) {
     manifest.patternSource = "/Users/example/patterns.registry.json";
+  }
+  if (args.has("--simulate-alignment-decision-missing-rendered-geometry") && alignmentValidationDecision) {
+    alignmentValidationDecision.publicEvidence = alignmentValidationDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
+  }
+  if (args.has("--simulate-alignment-decision-missing-private-visual") && alignmentValidationDecision) {
+    alignmentValidationDecision.publicEvidence = alignmentValidationDecision.publicEvidence.filter(
+      (evidencePath) =>
+        evidencePath !== "docs/ui/private-visual-validation.manifest.json" &&
+        evidencePath !== "scripts/ui_private_visual_verify.mjs",
+    );
+    alignmentValidationDecision.blockingVerifiers = alignmentValidationDecision.blockingVerifiers.filter(
+      (verifier) => verifier !== "scripts/ui_private_visual_verify.mjs",
+    );
+  }
+  if (args.has("--simulate-alignment-decision-missing-private-geometry-verifier") && alignmentValidationDecision) {
+    alignmentValidationDecision.publicEvidence = alignmentValidationDecision.publicEvidence.filter(
+      (evidencePath) => evidencePath !== "scripts/ui_private_geometry_verify.mjs",
+    );
+    alignmentValidationDecision.blockingVerifiers = alignmentValidationDecision.blockingVerifiers.filter(
+      (verifier) => verifier !== "scripts/ui_private_geometry_verify.mjs",
+    );
+  }
+  if (args.has("--simulate-alignment-decision-missing-baseline-verifier") && alignmentValidationDecision) {
+    alignmentValidationDecision.publicEvidence = alignmentValidationDecision.publicEvidence.filter(
+      (evidencePath) => evidencePath !== "scripts/ui_private_baseline_verify.mjs",
+    );
+    alignmentValidationDecision.blockingVerifiers = alignmentValidationDecision.blockingVerifiers.filter(
+      (verifier) => verifier !== "scripts/ui_private_baseline_verify.mjs",
+    );
+  }
+  if (args.has("--simulate-alignment-decision-missing-platform-evidence") && alignmentValidationDecision) {
+    alignmentValidationDecision.privateEvidence = alignmentValidationDecision.privateEvidence.filter(
+      (evidenceReference) => evidenceReference !== "private-codex-ui-rendered-geometry:web/*",
+    );
+  }
+  if (args.has("--simulate-alignment-decision-premature-complete") && alignmentValidationDecision) {
+    alignmentValidationDecision.status = "verified-complete";
+    alignmentValidationDecision.remaining = [];
   }
 }
 requireFields(manifest, manifestPath, [
@@ -121,6 +162,59 @@ for (const field of ["coverageId", "platform", "geometryEvidenceReference", "mea
 const registry = readJson(manifest?.patternSource || "");
 requireArray(registry, manifest?.patternSource || "patternSource", "patterns");
 scanForLocalPaths(manifest, manifestPath);
+
+const privateGeometryAlias = manifest?.privateGeometryAlias || "private-codex-ui-rendered-geometry";
+if (!alignmentValidationDecision) {
+  fail(`${decisionVerificationPath}.decisions must include alignment_validation`);
+} else {
+  const publicEvidence = new Set(Array.isArray(alignmentValidationDecision.publicEvidence) ? alignmentValidationDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "docs/ui/interface-governance.config.json",
+    manifestPath,
+    "docs/ui/private-visual-validation.manifest.json",
+    "scripts/ui_geometry_contract_check.mjs",
+    "scripts/ui_rendered_geometry_manifest_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+    "scripts/ui_private_geometry_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.alignment_validation.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(alignmentValidationDecision.privateEvidence) ? alignmentValidationDecision.privateEvidence : []);
+  for (const evidenceReference of [
+    `${privateGeometryAlias}:surfaces/*`,
+    `${privateGeometryAlias}:macos/*`,
+    `${privateGeometryAlias}:ios/*`,
+    `${privateGeometryAlias}:android/*`,
+    `${privateGeometryAlias}:web/*`,
+    "private-codex-ui-baselines:surfaces/*",
+  ]) {
+    if (!privateEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.alignment_validation.privateEvidence must include ${evidenceReference}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(alignmentValidationDecision.blockingVerifiers) ? alignmentValidationDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_geometry_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.alignment_validation.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (manifest?.status !== "approved-private-geometry" && alignmentValidationDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.alignment_validation.status must remain open until private rendered geometry and baseline evidence are approved`);
+  }
+  if (manifest?.status !== "approved-private-geometry" && (!Array.isArray(alignmentValidationDecision.remaining) || alignmentValidationDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.alignment_validation.remaining must describe pending private rendered geometry and screenshot comparison evidence`);
+  }
+}
 
 if (errors.length > 0) {
   console.error("UI rendered geometry manifest check failed:");
