@@ -68,7 +68,7 @@ enum TextInjector {
             )
             return
         }
-        guard AXIsProcessTrusted() else {
+        guard NativeMacPermissionBroker.status(for: .accessibility) == .granted else {
             throw InjectError.accessibilityNotGranted
         }
 

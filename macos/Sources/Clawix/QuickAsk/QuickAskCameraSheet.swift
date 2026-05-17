@@ -120,22 +120,21 @@ final class QuickAskCameraSession: ObservableObject {
     private var captureDelegate: PhotoCaptureDelegate?
 
     func start(onError: @escaping (String) -> Void) {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        let status = NativeMacPermissionBroker.status(for: .camera)
         switch status {
-        case .authorized:
+        case .granted:
             configure(onError: onError)
         case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    if granted {
-                        self.configure(onError: onError)
-                    } else {
-                        onError("Camera access denied. Enable Clawix in System Settings → Privacy → Camera.")
-                    }
+            Task { @MainActor [weak self] in
+                let granted = await NativeMacPermissionBroker.request(.camera)
+                guard let self else { return }
+                if granted {
+                    self.configure(onError: onError)
+                } else {
+                    onError("Camera access denied. Enable Clawix in System Settings → Privacy → Camera.")
                 }
             }
-        default:
+        case .denied:
             onError("Camera access denied. Enable Clawix in System Settings → Privacy → Camera.")
         }
     }

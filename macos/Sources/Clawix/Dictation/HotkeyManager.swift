@@ -226,7 +226,7 @@ final class DictationHotkeyMonitor {
     /// We install it only after a trigger is configured so macOS adds
     /// Clawix to the Input Monitoring privacy list in a user-initiated
     /// flow. The explicit
-    /// `IOHIDRequestAccess` in `requestPermissionAndRegister` surfaces
+    /// The central native permission broker request surfaces
     /// the consent dialog as soon as the user picks a trigger so they
     /// don't have to find Settings on their own.
     ///

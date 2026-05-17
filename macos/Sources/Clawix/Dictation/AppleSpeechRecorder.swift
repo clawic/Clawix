@@ -35,15 +35,11 @@ final class AppleSpeechRecorder: NSObject {
     private var latestPartial: String = ""
 
     static func requestPermission() async -> Bool {
-        await withCheckedContinuation { cont in
-            SFSpeechRecognizer.requestAuthorization { status in
-                cont.resume(returning: status == .authorized)
-            }
-        }
+        await NativeMacPermissionBroker.request(.speechRecognition)
     }
 
     static func authorizationStatus() -> SFSpeechRecognizerAuthorizationStatus {
-        SFSpeechRecognizer.authorizationStatus()
+        NativeMacPermissionBroker.speechRecognitionAuthorizationStatus()
     }
 
     /// Start streaming recognition. `language` is a BCP-47 locale

@@ -1,8 +1,4 @@
 import Foundation
-import AVFoundation
-import AppKit
-import ApplicationServices
-import IOKit.hid
 
 /// Lightweight wrapper around the three TCC permissions the dictation
 /// flow needs:
@@ -25,47 +21,34 @@ import IOKit.hid
 @MainActor
 enum DictationPermissions {
 
-    enum Status {
-        case granted
-        case denied
-        case notDetermined
-    }
+    typealias Status = NativeMacPermissionBroker.Status
 
     // MARK: - Microphone
 
     static func microphone() -> Status {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized: return .granted
-        case .denied, .restricted: return .denied
-        case .notDetermined: return .notDetermined
-        @unknown default: return .notDetermined
-        }
+        NativeMacPermissionBroker.status(for: .microphone)
     }
 
     static func requestMicrophone() async -> Bool {
-        await withCheckedContinuation { cont in
-            AVCaptureDevice.requestAccess(for: .audio) { ok in cont.resume(returning: ok) }
-        }
+        await NativeMacPermissionBroker.request(.microphone)
     }
 
     static func openMicrophoneSettings() {
-        open("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+        NativeMacPermissionBroker.openSettings(for: .microphone)
     }
 
     // MARK: - Accessibility (AXUIElement)
 
-    /// `AXIsProcessTrusted` only reports trusted/untrusted; there is no
+    /// macOS only reports trusted/untrusted for Accessibility; there is no
     /// system-level "not determined" bit. To still distinguish a fresh
     /// install (where the right CTA is "Request Access") from an
     /// explicit denial (where only "Open Settings" makes sense), we
     /// remember whether the OS prompt has ever been triggered for this
     /// process and treat the pre-prompt state as `.notDetermined`.
-    nonisolated static let hasRequestedAccessibilityKey = "dictation.accessibility.hasRequested"
+    nonisolated static let hasRequestedAccessibilityKey = NativeMacPermissionBroker.accessibilityRequestedKey
 
     static func accessibility() -> Status {
-        if AXIsProcessTrusted() { return .granted }
-        if UserDefaults.standard.bool(forKey: hasRequestedAccessibilityKey) { return .denied }
-        return .notDetermined
+        NativeMacPermissionBroker.status(for: .accessibility)
     }
 
     /// Triggers the standard accessibility prompt. The OS dialog is
@@ -76,15 +59,11 @@ enum DictationPermissions {
     /// Settings" instead of asking again (the prompt is one-shot).
     @discardableResult
     static func requestAccessibility() -> Bool {
-        let key = "AXTrustedCheckOptionPrompt" as CFString
-        let opts: CFDictionary = [key: true] as CFDictionary
-        let trusted = AXIsProcessTrustedWithOptions(opts)
-        UserDefaults.standard.set(true, forKey: hasRequestedAccessibilityKey)
-        return trusted
+        NativeMacPermissionBroker.requestAccessibility()
     }
 
     static func openAccessibilitySettings() {
-        open("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+        NativeMacPermissionBroker.openSettings(for: .accessibility)
     }
 
     // MARK: - Input Monitoring
@@ -92,11 +71,7 @@ enum DictationPermissions {
     /// IOKit reports a tri-state directly, so unlike `accessibility()`
     /// we don't need to remember whether a prompt has been shown.
     static func inputMonitoring() -> Status {
-        switch IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) {
-        case kIOHIDAccessTypeGranted: return .granted
-        case kIOHIDAccessTypeDenied:  return .denied
-        default:                      return .notDetermined
-        }
+        NativeMacPermissionBroker.status(for: .inputMonitoring)
     }
 
     /// Triggers the system "would like to monitor your keyboard" prompt.
@@ -105,17 +80,10 @@ enum DictationPermissions {
     /// afterwards.
     @discardableResult
     static func requestInputMonitoring() -> Bool {
-        IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+        NativeMacPermissionBroker.requestInputMonitoring()
     }
 
     static func openInputMonitoringSettings() {
-        open("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
-    }
-
-    // MARK: - Helpers
-
-    private static func open(_ url: String) {
-        guard let u = URL(string: url) else { return }
-        NSWorkspace.shared.open(u)
+        NativeMacPermissionBroker.openSettings(for: .inputMonitoring)
     }
 }

@@ -20,7 +20,7 @@ enum QuickAskSelectionSniffer {
     /// this BEFORE the QuickAsk panel becomes key, otherwise the
     /// frontmost app is already Clawix and the snapshot is empty.
     static func capture() -> Snapshot? {
-        guard AXIsProcessTrusted() else {
+        guard NativeMacPermissionBroker.status(for: .accessibility) == .granted else {
             // No Accessibility permission yet. Don't ask for it here;
             // the work-with-apps / settings flow handles the prompt
             // explicitly so we don't surprise users with a system
