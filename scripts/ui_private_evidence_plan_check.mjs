@@ -98,6 +98,30 @@ const performanceBudgets = readJson("docs/ui/performance-budgets.registry.json")
 const debtAudit = readJson("docs/ui/debt-audit.manifest.json");
 const mechanicalEquivalence = readJson("docs/ui/mechanical-equivalence.manifest.json");
 
+if (argSet.has("--simulate-unsafe-surface-baseline-reference") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
+  surfaceCoverage.coverage[0].privateBaselineReference = "/Users/example/private-baseline";
+}
+
+if (argSet.has("--simulate-unsafe-flow-baseline-reference") && Array.isArray(privateBaselines?.flows) && privateBaselines.flows[0]) {
+  privateBaselines.flows[0].privateBaselineReference = `${privateBaselines.privateRootAlias}:../escape`;
+}
+
+if (argSet.has("--simulate-path-evidence-filename") && surfaceCoverage) {
+  surfaceCoverage.surfaceEvidenceFilename = "../surface-evidence.json";
+}
+
+if (argSet.has("--simulate-empty-pattern-geometry-fields") && renderedGeometry) {
+  renderedGeometry.requiredEvidenceFields = [];
+}
+
+if (argSet.has("--simulate-missing-rendered-drift-plan") && renderedDrift) {
+  renderedDrift.reports = [];
+}
+
+if (argSet.has("--simulate-missing-performance-budget-fields") && performanceBudgets) {
+  performanceBudgets.requiredEvidenceFields = [];
+}
+
 const surfaceRequiredFields = requireArray(surfaceCoverage, "docs/ui/surface-baseline-coverage.manifest.json", "requiredEvidenceFields");
 for (const [index, entry] of requireArray(surfaceCoverage, "docs/ui/surface-baseline-coverage.manifest.json", "coverage").entries()) {
   const label = `surface-baseline-coverage[${index}]`;
