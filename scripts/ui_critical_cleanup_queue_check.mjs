@@ -68,6 +68,7 @@ requireFields(queue, queuePath, [
   "policy",
   "sourceDebtReport",
   "visualModelAllowlist",
+  "visualScopeSource",
   "requiredVisualModel",
   "v1Delivery",
   "queueStatuses",
@@ -89,6 +90,9 @@ if (args.has("--simulate-missing-queued-debt") && Array.isArray(queue?.items)) {
 if (args.has("--simulate-wrong-required-model")) {
   queue.requiredVisualModel = "missing-visual-model";
 }
+if (args.has("--simulate-wrong-visual-scope-source")) {
+  queue.visualScopeSource = "docs/ui/missing-visual-change-scopes.manifest.json";
+}
 if (args.has("--simulate-missing-blocker") && Array.isArray(queue?.v1Delivery?.blockedUntil)) {
   queue.v1Delivery = {
     ...queue.v1Delivery,
@@ -100,6 +104,9 @@ if (args.has("--simulate-executable-nonvisual-action") && Array.isArray(queue?.i
 }
 if (args.has("--simulate-wrong-item-authorization") && Array.isArray(queue?.items) && queue.items[0]) {
   queue.items[0] = { ...queue.items[0], requiredAuthorization: "any-agent" };
+}
+if (args.has("--simulate-item-wrong-scope-source") && Array.isArray(queue?.items) && queue.items[0]) {
+  queue.items[0] = { ...queue.items[0], requiredVisualScopeSource: "docs/ui/other-scopes.manifest.json" };
 }
 if (args.has("--simulate-unsupported-platform") && Array.isArray(queue?.items) && queue.items[0]) {
   queue.items[0] = { ...queue.items[0], platforms: ["visionos"] };
@@ -118,6 +125,20 @@ const activeModels = new Set(
 );
 if (!activeModels.has(queue?.requiredVisualModel)) {
   fail(`${queuePath}.requiredVisualModel must be active in ${allowlistPath}`);
+}
+
+const visualScopePath = queue?.visualScopeSource || "docs/ui/visual-change-scopes.manifest.json";
+const visualScopes = readJson(visualScopePath);
+requireFields(visualScopes, visualScopePath, ["scopeSignal", "scopeStatuses"]);
+if (visualScopePath !== "docs/ui/visual-change-scopes.manifest.json") {
+  fail(`${queuePath}.visualScopeSource must be docs/ui/visual-change-scopes.manifest.json`);
+}
+if (visualScopes?.scopeSignal?.requiredForVisualMutation !== true) {
+  fail(`${visualScopePath}.scopeSignal.requiredForVisualMutation must be true`);
+}
+const scopeStatuses = new Set(requireArray(visualScopes, visualScopePath, "scopeStatuses"));
+if (!scopeStatuses.has("approved")) {
+  fail(`${visualScopePath}.scopeStatuses must include approved`);
 }
 
 const v1Delivery = queue?.v1Delivery || {};
@@ -158,6 +179,7 @@ for (const field of [
   "scope",
   "platforms",
   "requiredVisualModel",
+  "requiredVisualScopeSource",
   "requiredAuthorization",
   "privateApprovalRequired",
   "allowedCurrentAction",
@@ -175,6 +197,9 @@ for (const [index, item] of requireArray(queue, queuePath, "items").entries()) {
   if (item.id !== `cleanup-${item.debtId}`) fail(`${label}.id must be cleanup-${item.debtId}`);
   if (!statuses.has(item.status)) fail(`${label}.status is invalid`);
   if (item.requiredVisualModel !== queue.requiredVisualModel) fail(`${label}.requiredVisualModel must match ${queuePath}`);
+  if (item.requiredVisualScopeSource !== queue.visualScopeSource) {
+    fail(`${label}.requiredVisualScopeSource must match ${queuePath}.visualScopeSource`);
+  }
   if (item.requiredAuthorization !== "visual-authorized-lane") fail(`${label}.requiredAuthorization must be visual-authorized-lane`);
   if (item.privateApprovalRequired !== true) fail(`${label}.privateApprovalRequired must be true`);
   if (!String(item.allowedCurrentAction || "").includes("Queue only")) {

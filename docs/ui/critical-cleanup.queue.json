@@ -4,6 +4,7 @@
   "policy": "Critical visual cleanup is queued but not executable by non-visual agents. Each item must come from the UI debt report and can only be worked by an explicitly allowlisted visual model inside an approved visual scope.",
   "sourceDebtReport": "docs/ui/debt-report.registry.json",
   "visualModelAllowlist": "docs/ui/visual-model-allowlist.manifest.json",
+  "visualScopeSource": "docs/ui/visual-change-scopes.manifest.json",
   "requiredVisualModel": "claude-opus-4.7",
   "v1Delivery": {
     "goal": "governance-system-plus-critical-cleanup",
@@ -20,6 +21,7 @@
     "scope",
     "platforms",
     "requiredVisualModel",
+    "requiredVisualScopeSource",
     "requiredAuthorization",
     "privateApprovalRequired",
     "allowedCurrentAction"
@@ -32,6 +34,7 @@
       "scope": "macos/Sources/Clawix/Design/**",
       "platforms": ["macos"],
       "requiredVisualModel": "claude-opus-4.7",
+      "requiredVisualScopeSource": "docs/ui/visual-change-scopes.manifest.json",
       "requiredAuthorization": "visual-authorized-lane",
       "privateApprovalRequired": true,
       "allowedCurrentAction": "Queue only; do not modify presentation without approved visual scope."
@@ -43,6 +46,7 @@
       "scope": "macos/Sources/Clawix/AutomationsView.swift",
       "platforms": ["macos"],
       "requiredVisualModel": "claude-opus-4.7",
+      "requiredVisualScopeSource": "docs/ui/visual-change-scopes.manifest.json",
       "requiredAuthorization": "visual-authorized-lane",
       "privateApprovalRequired": true,
       "allowedCurrentAction": "Queue only; do not modify presentation without approved visual scope."
@@ -54,6 +58,7 @@
       "scope": "macos/Sources/Clawix/PlanQuestionCard.swift",
       "platforms": ["macos"],
       "requiredVisualModel": "claude-opus-4.7",
+      "requiredVisualScopeSource": "docs/ui/visual-change-scopes.manifest.json",
       "requiredAuthorization": "visual-authorized-lane",
       "privateApprovalRequired": true,
       "allowedCurrentAction": "Queue only; do not modify presentation without approved visual scope."
