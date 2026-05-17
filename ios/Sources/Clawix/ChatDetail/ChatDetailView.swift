@@ -1277,7 +1277,7 @@ private struct ReasoningDisclosure: View {
     let store = BridgeStore.mock()
     return ChatDetailView(
         store: store,
-        chatId: MockData.chats[0].id,
+        chatId: MockConversationFixtures.chats[0].id,
         onBack: {}
     )
     .preferredColorScheme(.dark)

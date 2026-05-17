@@ -1091,38 +1091,38 @@ final class BridgeStore {
     static func mock() -> BridgeStore {
         let s = BridgeStore()
         s.connection = .connected(hostDisplayName: "studio Mac", via: .lan)
-        s.chats = MockData.chats
+        s.chats = MockConversationFixtures.chats
         // Seed every chat with the same canned transcript so any row the
         // designer taps lands on a populated detail screen instead of
         // the loading gate. Cheap and isolated to mock builds.
         var seeded: [String: [WireMessage]] = [:]
-        for chat in MockData.chats {
-            seeded[chat.id] = MockData.messages
+        for chat in MockConversationFixtures.chats {
+            seeded[chat.id] = MockConversationFixtures.messages
         }
         // Override the long-thread chat with the trailing window of
         // its synthesized 150-message transcript so the iPhone shows
         // exactly what a real `openSession(limit:)` reply would deliver.
-        let longTail = Array(MockData.longMessages.suffix(bridgeInitialPageLimit))
-        seeded[MockData.longChatId] = longTail
+        let longTail = Array(MockConversationFixtures.longMessages.suffix(bridgeInitialPageLimit))
+        seeded[MockConversationFixtures.longChatId] = longTail
         s.messagesByChat = seeded
-        s.hasMoreByChat[MockData.longChatId] = MockData.longMessages.count > longTail.count
-        s.oldestKnownIdByChat[MockData.longChatId] = longTail.first?.id
+        s.hasMoreByChat[MockConversationFixtures.longChatId] = MockConversationFixtures.longMessages.count > longTail.count
+        s.oldestKnownIdByChat[MockConversationFixtures.longChatId] = longTail.first?.id
         // Stand in for the bridge's `loadOlderMessages` round trip:
-        // serves the next slice of `MockData.longMessages` after a
+        // serves the next slice of `MockConversationFixtures.longMessages` after a
         // 200ms delay so the spinner is observable, then flips
         // `loadingOlderByChat` back off via `applyMessagesPage`.
         s.mockLoadOlderHandler = { @MainActor [weak s] chatId, beforeId in
             guard let s else { return }
-            guard chatId == MockData.longChatId else {
+            guard chatId == MockConversationFixtures.longChatId else {
                 s.applyMessagesPage(chatId: chatId, messages: [], hasMore: false)
                 return
             }
-            guard let cursorIdx = MockData.longMessages.firstIndex(where: { $0.id == beforeId }) else {
+            guard let cursorIdx = MockConversationFixtures.longMessages.firstIndex(where: { $0.id == beforeId }) else {
                 s.applyMessagesPage(chatId: chatId, messages: [], hasMore: false)
                 return
             }
             let lower = max(0, cursorIdx - bridgeOlderPageLimit)
-            let slice = Array(MockData.longMessages[lower..<cursorIdx])
+            let slice = Array(MockConversationFixtures.longMessages[lower..<cursorIdx])
             let hasMore = lower > 0
             Task { @MainActor [weak s] in
                 try? await Task.sleep(nanoseconds: 200_000_000)
@@ -1134,7 +1134,7 @@ final class BridgeStore {
         // attachment bytes gets its `[UIImage]` cached so the
         // `UserBubble` thumbnail strip renders without waiting for an
         // upload round-trip (there is no daemon in this mock build).
-        for msg in MockData.messages where !msg.attachments.isEmpty {
+        for msg in MockConversationFixtures.messages where !msg.attachments.isEmpty {
             s.ingestInlineAttachments(messageId: msg.id, attachments: msg.attachments)
         }
         #endif

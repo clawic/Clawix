@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 14 in the current local tree. Broad source symbols account
-  for 13 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 13 in the current local tree. Broad source symbols account
+  for 12 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -117,10 +117,12 @@ for staged rename/split work and must not be hidden by compressing code.
   `PowerModeStore` instead of generic manager terminology.
 - Dictation sound vocabulary: dictation cue playback now uses
   `DictationSoundPlayer` instead of generic manager terminology.
+- iOS mock conversation vocabulary: preview/mock launch seeds now use
+  `MockConversationFixtures` instead of broad `Data` terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 14
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 13
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

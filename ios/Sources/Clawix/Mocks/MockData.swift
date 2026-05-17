@@ -7,7 +7,7 @@ import ClawixCore
 // several chats spread across a handful of working directories so the
 // "Projects" section has something to render.
 
-enum MockData {
+enum MockConversationFixtures {
 
     static let now = Date()
 
