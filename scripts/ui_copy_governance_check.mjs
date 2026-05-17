@@ -146,6 +146,11 @@ if (args.has("--simulate-copy-decision-premature-complete") && copyGovernanceDec
   copyGovernanceDecision.status = "verified-complete";
   copyGovernanceDecision.remaining = [];
 }
+if (args.has("--simulate-approved-copy-snapshots-stale-decision") && copyInventory && copyGovernanceDecision) {
+  copyInventory.status = "approved-private-snapshots";
+  copyGovernanceDecision.status = "open";
+  copyGovernanceDecision.remaining = ["Simulated stale decision after approved private copy snapshots."];
+}
 
 const requiredCopyKinds = [
   "visible-name",
@@ -332,6 +337,12 @@ if (!copyGovernanceDecision) {
   }
   if (copyInventory?.status !== "approved-private-snapshots" && (!Array.isArray(copyGovernanceDecision.remaining) || copyGovernanceDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.copy_governance.remaining must describe pending private copy snapshots`);
+  }
+  if (copyInventory?.status === "approved-private-snapshots" && copyGovernanceDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.status must be verified-complete after private copy snapshots are approved`);
+  }
+  if (copyInventory?.status === "approved-private-snapshots" && Array.isArray(copyGovernanceDecision.remaining) && copyGovernanceDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.remaining must be empty after private copy snapshots are approved`);
   }
 }
 
