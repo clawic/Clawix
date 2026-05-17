@@ -165,6 +165,9 @@ if (report && args.has("--simulate-missing-pending-item") && Array.isArray(repor
 if (args.has("--simulate-debt-decision-missing-baseline") && debtStrategyDecision) {
   debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== debtPath);
 }
+if (args.has("--simulate-debt-decision-missing-alias") && debtStrategyDecision) {
+  debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== aliasPath);
+}
 if (args.has("--simulate-debt-decision-missing-audit") && debtStrategyDecision) {
   debtStrategyDecision.publicEvidence = debtStrategyDecision.publicEvidence.filter((evidencePath) => evidencePath !== auditPath);
 }
@@ -272,6 +275,7 @@ if (!debtStrategyDecision) {
   const publicEvidence = new Set(Array.isArray(debtStrategyDecision.publicEvidence) ? debtStrategyDecision.publicEvidence : []);
   for (const evidencePath of [
     debtPath,
+    aliasPath,
     reportPath,
     auditPath,
     "scripts/ui_debt_report_check.mjs",
