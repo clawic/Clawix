@@ -99,6 +99,9 @@ function assertPublicSafeReference(reference, alias, label) {
 }
 
 const manifest = readJson(manifestPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const visualBaselinesDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "visual_baselines_location");
 if (manifest) {
   if (args.has("--simulate-wrong-private-root-alias")) {
     manifest.privateRootAlias = "private-codex-ui-rendered-geometry";
@@ -125,6 +128,36 @@ if (manifest) {
   if (args.has("--simulate-local-private-artifact-path")) {
     manifest.privateArtifactPolicy = manifest.privateArtifactPolicy || {};
     manifest.privateArtifactPolicy.example = "/Users/example/private-baseline.png";
+  }
+  if (args.has("--simulate-baselines-decision-missing-manifest") && visualBaselinesDecision) {
+    visualBaselinesDecision.publicEvidence = visualBaselinesDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
+  }
+  if (args.has("--simulate-baselines-decision-missing-private-visual") && visualBaselinesDecision) {
+    visualBaselinesDecision.publicEvidence = visualBaselinesDecision.publicEvidence.filter(
+      (evidencePath) =>
+        evidencePath !== "docs/ui/private-visual-validation.manifest.json" &&
+        evidencePath !== "scripts/ui_private_visual_verify.mjs",
+    );
+    visualBaselinesDecision.blockingVerifiers = visualBaselinesDecision.blockingVerifiers.filter(
+      (verifier) => verifier !== "scripts/ui_private_visual_verify.mjs",
+    );
+  }
+  if (args.has("--simulate-baselines-decision-missing-private-baseline-verifier") && visualBaselinesDecision) {
+    visualBaselinesDecision.publicEvidence = visualBaselinesDecision.publicEvidence.filter(
+      (evidencePath) => evidencePath !== "scripts/ui_private_baseline_verify.mjs",
+    );
+    visualBaselinesDecision.blockingVerifiers = visualBaselinesDecision.blockingVerifiers.filter(
+      (verifier) => verifier !== "scripts/ui_private_baseline_verify.mjs",
+    );
+  }
+  if (args.has("--simulate-baselines-decision-missing-platform-evidence") && visualBaselinesDecision) {
+    visualBaselinesDecision.privateEvidence = visualBaselinesDecision.privateEvidence.filter(
+      (evidenceReference) => evidenceReference !== "private-codex-ui-baselines:web/*",
+    );
+  }
+  if (args.has("--simulate-baselines-decision-premature-complete") && visualBaselinesDecision) {
+    visualBaselinesDecision.status = "verified-complete";
+    visualBaselinesDecision.remaining = [];
   }
 }
 requireFields(manifest, manifestPath, [
@@ -197,6 +230,59 @@ for (const platform of requiredPlatforms) {
 }
 
 scanForAbsolutePaths(manifest, manifestPath);
+
+const privateRootAlias = manifest?.privateRootAlias || "private-codex-ui-baselines";
+if (!visualBaselinesDecision) {
+  fail(`${decisionVerificationPath}.decisions must include visual_baselines_location`);
+} else {
+  const publicEvidence = new Set(Array.isArray(visualBaselinesDecision.publicEvidence) ? visualBaselinesDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "docs/ui/interface-governance.config.json",
+    manifestPath,
+    "docs/ui/private-visual-validation.manifest.json",
+    "scripts/ui_private_baseline_manifest_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_visual_validation_manifest_check.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+    "scripts/ui_private_drift_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.visual_baselines_location.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(visualBaselinesDecision.privateEvidence) ? visualBaselinesDecision.privateEvidence : []);
+  for (const evidenceReference of [
+    `${privateRootAlias}:macos/*`,
+    `${privateRootAlias}:ios/*`,
+    `${privateRootAlias}:android/*`,
+    `${privateRootAlias}:web/*`,
+    `${privateRootAlias}:surfaces/*`,
+    "private-codex-ui-rendered-drift:surfaces/*",
+  ]) {
+    if (!privateEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.visual_baselines_location.privateEvidence must include ${evidenceReference}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(visualBaselinesDecision.blockingVerifiers) ? visualBaselinesDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+    "scripts/ui_private_drift_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.visual_baselines_location.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (manifest?.status !== "approved-private-baselines" && visualBaselinesDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.status must remain open until private baselines are captured and approved`);
+  }
+  if (manifest?.status !== "approved-private-baselines" && (!Array.isArray(visualBaselinesDecision.remaining) || visualBaselinesDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.remaining must describe pending private baseline evidence`);
+  }
+}
 
 const forbiddenPrivateAssets = [];
 for (const file of fs.readdirSync(path.join(rootDir, "docs/ui"), { recursive: true, withFileTypes: true })) {
