@@ -163,6 +163,9 @@ for (const patternId of patternIds) {
   if (args.has("--simulate-missing-anchor") && patternId === "sidebar-section") {
     pattern.canonicalReferences = ["STYLE.md#missing-interface-governance-anchor"];
   }
+  if (args.has("--simulate-absolute-pattern-reference") && patternId === "sidebar-section") {
+    pattern.canonicalReferences = [path.join(path.sep, "tmp", "visual-baseline.md")];
+  }
   const references = requireArray(pattern, patternPath, "canonicalReferences");
   for (const [index, reference] of references.entries()) {
     requireExistingReference(reference, `${patternPath}.canonicalReferences[${index}]`);
@@ -181,6 +184,17 @@ const protectedIds = new Set(requireArray(protectedSurfaces, protectedPath, "sur
 const exceptionPath = manifest?.exceptionRegistryPath || "docs/ui/exceptions.registry.json";
 const exceptions = readJson(exceptionPath);
 const exceptionIds = new Set(requireArray(exceptions, exceptionPath, "exceptions", { nonEmpty: false }).map((entry) => entry.id));
+
+if (args.has("--simulate-duplicate-coverage-id") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage = [...inventory.coverage, { ...inventory.coverage[0] }];
+}
+if (args.has("--simulate-unknown-pattern-reference") && Array.isArray(inventory?.coverage)) {
+  const entry = inventory.coverage.find((candidate) => candidate?.classification === "pattern" && Array.isArray(candidate?.patterns));
+  if (entry) entry.patterns = [...entry.patterns, "missing-pattern"];
+}
+if (args.has("--simulate-private-scope-reference") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0] = { ...inventory.coverage[0], scopes: ["private-ui-root/**"] };
+}
 
 const seenCoverage = new Set();
 for (const [index, entry] of requireArray(inventory, inventoryPath, "coverage").entries()) {
