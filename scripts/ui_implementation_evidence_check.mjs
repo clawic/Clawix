@@ -60,8 +60,34 @@ function requireIncludes(values, label, expected) {
 
 const manifestPath = "docs/ui/implementation-evidence.manifest.json";
 const manifest = readJson(manifestPath);
-if (manifest && args.has("--simulate-missing-visual-model-check")) {
-  manifest.requiredPublicChecks = manifest.requiredPublicChecks.filter((check) => check !== "node scripts/ui_visual_model_allowlist_check.mjs");
+if (manifest) {
+  if (args.has("--simulate-inactive-manifest")) {
+    manifest.status = "draft";
+  }
+  if (args.has("--simulate-missing-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "visibleSurfaces");
+  }
+  if (args.has("--simulate-missing-mapping-kind") && Array.isArray(manifest.mappingKinds)) {
+    manifest.mappingKinds = manifest.mappingKinds.filter((kind) => kind !== "protected");
+  }
+  if (args.has("--simulate-missing-interactive-state") && Array.isArray(manifest.requiredInteractiveStates)) {
+    manifest.requiredInteractiveStates = manifest.requiredInteractiveStates.filter((state) => state !== "error");
+  }
+  if (args.has("--simulate-missing-visual-model-check") && Array.isArray(manifest.requiredPublicChecks)) {
+    manifest.requiredPublicChecks = manifest.requiredPublicChecks.filter((check) => check !== "node scripts/ui_visual_model_allowlist_check.mjs");
+  }
+  if (args.has("--simulate-missing-private-data-ban")) {
+    manifest.privateDataPolicy = manifest.privateDataPolicy || {};
+    manifest.privateDataPolicy.publicRepoMustNotStore = (manifest.privateDataPolicy.publicRepoMustNotStore || []).filter(
+      (item) => item !== "private model assignment",
+    );
+  }
+  if (args.has("--simulate-missing-pr-template-snippet") && Array.isArray(manifest.prTemplateRequiredSnippets)) {
+    manifest.prTemplateRequiredSnippets = [...manifest.prTemplateRequiredSnippets, "Simulated required evidence line:"];
+  }
+  if (args.has("--simulate-nonconceptual-proposal")) {
+    manifest.proposalPath = "docs/ui/implementation-evidence.manifest.json";
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
