@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_STATE_COVERAGE_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -278,6 +280,37 @@ for (const [index, entry] of requireArray(inventory, inventoryPath, "coverage").
 
 for (const key of gapByKey.keys()) {
   if (!missingKeys.has(key)) fail(`${manifestPath}.allowedGaps contains stale gap ${key}`);
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-missing-required-state", "requiredStates must include error"],
+    ["--simulate-unknown-source-token-group", "sourceTokenGroups contains unknown state decorative"],
+    ["--simulate-empty-source-token-group", "sourceTokenGroups.error must not be empty"],
+    ["--simulate-invalid-gap-status", "status is not allowed"],
+    ["--simulate-expired-gap", "reviewAfter expired"],
+    ["--simulate-stale-gap", "allowedGaps contains stale gap simulated-state-gap:error"],
+    ["--simulate-unknown-gap-state", "state is not a required interactive state"],
+    ["--simulate-duplicate-gap", "duplicates state coverage gap simulated-state-gap:error"],
+    ["--simulate-unsafe-source-root", "sourceRoots must use safe relative paths"],
+    ["--simulate-unmatched-scope", "scopes must match at least one source file"],
+    ["--simulate-unknown-pattern-reference", "patterns references unknown pattern missing-pattern"],
+    ["--simulate-pattern-missing-state", "sidebar-row.pattern.json.states must include error"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_STATE_COVERAGE_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when state coverage evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
+  }
 }
 
 if (errors.length > 0) {
