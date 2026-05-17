@@ -440,6 +440,15 @@ for (const snippet of ["requiredApprovedScopeFields", "privateApprovalAlias", "a
     fail(`${approvedScopeContractPath} must validate approved scope metadata via ${snippet}`);
   }
 }
+const privateVerifierArgsPath = "scripts/ui_private_verifier_args.mjs";
+const privateVerifierArgsSource = fs.existsSync(path.join(rootDir, privateVerifierArgsPath))
+  ? fs.readFileSync(path.join(rootDir, privateVerifierArgsPath), "utf8")
+  : "";
+for (const snippet of ["CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE", "allowedFlags", "optionsWithValues", "testOnlyFlags"]) {
+  if (!privateVerifierArgsSource.includes(snippet)) {
+    fail(`${privateVerifierArgsPath} must enforce private verifier argument contracts via ${snippet}`);
+  }
+}
 for (const script of [
   "scripts/ui_private_approval_verify.mjs",
   "scripts/ui_private_baseline_verify.mjs",
@@ -472,6 +481,40 @@ for (const script of [
   }
   if (!source.includes("assertApprovedScopeMetadata")) {
     fail(`${script} must use shared approved scope metadata validation`);
+  }
+}
+for (const script of [
+  "scripts/ui_private_evidence_verify.mjs",
+  "scripts/ui_private_baseline_verify.mjs",
+  "scripts/ui_private_geometry_verify.mjs",
+  "scripts/ui_private_copy_verify.mjs",
+  "scripts/ui_private_drift_verify.mjs",
+  "scripts/ui_private_debt_audit_verify.mjs",
+  "scripts/ui_private_performance_budget_verify.mjs",
+]) {
+  const source = fs.existsSync(path.join(rootDir, script)) ? fs.readFileSync(path.join(rootDir, script), "utf8") : "";
+  if (!source.includes("ui_private_verifier_args.mjs") || !source.includes("enforcePrivateVerifierArgs")) {
+    fail(`${script} must use ${privateVerifierArgsPath}`);
+  }
+  const pendingResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--include-pending"], {
+    cwd: rootDir,
+    env: withoutPrivateUiEnv(),
+    encoding: "utf8",
+  });
+  const pendingOutput = `${pendingResult.stdout || ""}${pendingResult.stderr || ""}`;
+  if (pendingResult.status === 0 || pendingResult.status === manifest?.externalPendingExitCode) {
+    fail(`${script} must reject pending evidence mode unless explicitly enabled for tests`);
+  }
+  if (!pendingOutput.includes("CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE")) {
+    fail(`${script} must explain the pending evidence test-only guard`);
+  }
+  const unknownFlagResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--unknown-flag"], {
+    cwd: rootDir,
+    env: withoutPrivateUiEnv(),
+    encoding: "utf8",
+  });
+  if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
+    fail(`${script} must reject unknown flags before private root checks`);
   }
 }
 for (const script of [
@@ -547,6 +590,7 @@ for (const decisionId of decisionBlockers) {
 for (const script of [
   "scripts/ui_private_root_contract.mjs",
   "scripts/ui_private_approved_scope_contract.mjs",
+  "scripts/ui_private_verifier_args.mjs",
   "scripts/ui_private_visual_verify.mjs",
   "scripts/ui_private_evidence_plan_check.mjs",
   "scripts/ui_private_evidence_verify.mjs",

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
+import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -21,6 +22,13 @@ function optionValue(name) {
 function hasFlag(name) {
   return args.includes(name);
 }
+
+enforcePrivateVerifierArgs(args, {
+  label: "UI private debt audit verification",
+  allowedFlags: ["--require-approved", "--include-pending", "--root"],
+  optionsWithValues: ["--root"],
+  testOnlyFlags: ["--include-pending"],
+});
 
 function readJsonFile(file, label) {
   if (!fs.existsSync(file)) {
