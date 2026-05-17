@@ -42,14 +42,27 @@ if (!hasFlag("--require-approved")) {
 }
 enforcePrivateVerifierArgs(args, {
   label: "UI private completion verification",
-  allowedFlags: ["--require-approved", "--skip-public-prerequisites", "--simulate-no-open-decisions"],
-  testOnlyFlags: ["--simulate-no-open-decisions"],
+  allowedFlags: [
+    "--require-approved",
+    "--skip-public-prerequisites",
+    "--simulate-no-open-decisions",
+    "--simulate-missing-decision-blocker",
+    "--simulate-stale-decision-blocker",
+  ],
+  testOnlyFlags: ["--simulate-no-open-decisions", "--simulate-missing-decision-blocker", "--simulate-stale-decision-blocker"],
   testOnlyEnv: "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
 });
 
 const manifest = readJson("docs/ui/completion-gate.manifest.json");
 runPublicPrerequisites(manifest);
 const decisionVerification = readJson(manifest.decisionVerificationPath || "docs/ui/decision-verification.json");
+const privateVisualValidation = readJson(manifest.privateVisualValidationManifestPath || "docs/ui/private-visual-validation.manifest.json");
+if (hasFlag("--simulate-missing-decision-blocker") && Array.isArray(privateVisualValidation.decisionBlockers)) {
+  privateVisualValidation.decisionBlockers = privateVisualValidation.decisionBlockers.filter((decisionId) => decisionId !== "initial_scope");
+}
+if (hasFlag("--simulate-stale-decision-blocker") && Array.isArray(privateVisualValidation.decisionBlockers)) {
+  privateVisualValidation.decisionBlockers = [...privateVisualValidation.decisionBlockers, "simulated_stale_decision"];
+}
 const decisions = decisionVerification.decisions || [];
 for (const decision of decisions) {
   if (!["open", "verified-complete"].includes(decision?.status)) {
@@ -57,9 +70,30 @@ for (const decision of decisions) {
     process.exit(1);
   }
 }
+const actualOpenDecisions = decisions.filter((decision) => decision.status === "open");
+const decisionBlockers = Array.isArray(privateVisualValidation.decisionBlockers)
+  ? privateVisualValidation.decisionBlockers
+  : [];
+const blockerSet = new Set(decisionBlockers);
+if (blockerSet.size !== decisionBlockers.length) {
+  console.error("UI private completion verification found duplicate private decision blockers.");
+  process.exit(1);
+}
+for (const decision of actualOpenDecisions) {
+  if (!blockerSet.has(decision.id)) {
+    console.error(`UI private completion verification requires private visual decisionBlockers to include open decision ${decision.id}.`);
+    process.exit(1);
+  }
+}
+for (const decisionId of decisionBlockers) {
+  if (!actualOpenDecisions.some((decision) => decision.id === decisionId)) {
+    console.error(`UI private completion verification found stale private visual decisionBlocker ${decisionId}.`);
+    process.exit(1);
+  }
+}
 const openDecisions = hasFlag("--simulate-no-open-decisions")
   ? []
-  : decisions.filter((decision) => decision.status === "open");
+  : actualOpenDecisions;
 if (openDecisions.length > 0) {
   console.error(`EXTERNAL PENDING: ${openDecisions.length} open decisions block update_goal: ${openDecisions.map((decision) => decision.id).join(", ")}.`);
   process.exit(2);

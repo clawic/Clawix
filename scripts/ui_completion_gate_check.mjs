@@ -322,6 +322,7 @@ for (const snippet of [
   "EXTERNAL PENDING",
   "process.exit(2)",
   "open decisions",
+  "decisionBlockers",
   "--simulate-no-open-decisions",
   "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
   "enforcePrivateVerifierArgs",
@@ -376,6 +377,40 @@ if (openDecisions.length > 0) {
     if (!output.includes(decision.id)) {
       fail(`${manifest.privateVerifierScript} open-decision output must include ${decision.id}`);
     }
+  }
+
+  const missingBlockerResult = spawnSync(
+    process.execPath,
+    [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-missing-decision-blocker", "--skip-public-prerequisites"],
+    {
+      cwd: rootDir,
+      env: { ...withoutPrivateCompletionEnv(), CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1" },
+      encoding: "utf8",
+    },
+  );
+  const missingBlockerOutput = `${missingBlockerResult.stdout || ""}${missingBlockerResult.stderr || ""}`;
+  if (missingBlockerResult.status === 0 || missingBlockerResult.status === manifest.externalPendingExitCode) {
+    fail(`${manifest.privateVerifierScript} must fail before EXTERNAL PENDING when private decisionBlockers omit an open decision`);
+  }
+  if (!missingBlockerOutput.includes("decisionBlockers") || !missingBlockerOutput.includes("initial_scope")) {
+    fail(`${manifest.privateVerifierScript} must explain missing private decisionBlockers for open decisions`);
+  }
+
+  const staleBlockerResult = spawnSync(
+    process.execPath,
+    [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-stale-decision-blocker", "--skip-public-prerequisites"],
+    {
+      cwd: rootDir,
+      env: { ...withoutPrivateCompletionEnv(), CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1" },
+      encoding: "utf8",
+    },
+  );
+  const staleBlockerOutput = `${staleBlockerResult.stdout || ""}${staleBlockerResult.stderr || ""}`;
+  if (staleBlockerResult.status === 0 || staleBlockerResult.status === manifest.externalPendingExitCode) {
+    fail(`${manifest.privateVerifierScript} must fail before EXTERNAL PENDING when private decisionBlockers contain stale decisions`);
+  }
+  if (!staleBlockerOutput.includes("stale private visual decisionBlocker") || !staleBlockerOutput.includes("simulated_stale_decision")) {
+    fail(`${manifest.privateVerifierScript} must explain stale private decisionBlockers`);
   }
 }
 
