@@ -520,6 +520,37 @@ for (const snippet of [
   if (!patternOutput.includes(snippet)) fail(`pattern mutation failure output is missing: ${snippet}`);
 }
 
+let patternNotesOutput = "";
+let patternNotesExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_pattern_mutation_guard.mjs", "--simulate-unauthorized-pattern-notes-mutation"], {
+    cwd: rootDir,
+    env,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  patternNotesExitCode = error.status || 1;
+  patternNotesOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+
+if (patternNotesExitCode === 0) {
+  fail("simulated unauthorized pattern notes mutation must fail");
+}
+
+for (const snippet of [
+  "unauthorized pattern registry visual/copy contract mutation detected",
+  "required permission:",
+  "current model signal:",
+  "proposal route:",
+  "simulated unauthorized pattern notes mutation",
+  "docs/ui/pattern-registry/patterns/notes.md:10",
+  "pattern-notes",
+  "added",
+]) {
+  if (!patternNotesOutput.includes(snippet)) fail(`pattern notes mutation failure output is missing: ${snippet}`);
+}
+
 let patternAuthorizedNoScopeOutput = "";
 let patternAuthorizedNoScopeExitCode = 0;
 try {

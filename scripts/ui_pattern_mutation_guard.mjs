@@ -14,6 +14,7 @@ const simulateRevokedVisualScope = args.includes("--simulate-revoked-visual-scop
 const simulateExpiredVisualScope = args.includes("--simulate-expired-visual-scope");
 const simulateBudgetKindVisualScope = args.includes("--simulate-budget-kind-visual-scope");
 const simulateMissingPatternVisualScope = args.includes("--simulate-missing-pattern-visual-scope");
+const simulateUnauthorizedPatternNotesMutation = args.includes("--simulate-unauthorized-pattern-notes-mutation");
 const errors = [];
 
 function fail(message) {
@@ -226,11 +227,13 @@ if (simulateMissingPatternVisualScope) {
 }
 
 const governedPattern = /^docs\/ui\/pattern-registry\/patterns\/[^/]+\.pattern\.json$/;
+const governedPatternNotes = "docs/ui/pattern-registry/patterns/notes.md";
 const governedFields = [
   { id: "geometry", changeKind: "visual-ui", scopeChangeKind: "layout", pattern: /"geometry"\s*:|"cornerRadius"|"padding"|"spacing"|"height"|"width"|"fontSize"|"animationDuration"|"source"\s*:/ },
   { id: "copy", changeKind: "copy-ui", scopeChangeKind: "microcopy", pattern: /"copy"\s*:|"labelMaxWords"|"tooltipMaxWords"|"visibleNamesAreCanon"|"placeholder|Label|Text|Words"/ },
   { id: "state", changeKind: "visual-ui", scopeChangeKind: "hierarchy", pattern: /"states"\s*:|"hover-or-highlight"|"focused"|"pressed"|"selected"|"busy"|"error"/ },
   { id: "references", changeKind: "visual-ui", scopeChangeKind: "layout", pattern: /"canonicalReferences"\s*:|"STYLE\.md#/ },
+  { id: "pattern-notes", changeKind: "visual-ui", scopeChangeKind: "hierarchy", pattern: /\S/ },
 ];
 
 function fileMatchesScope(file, scopeFiles = []) {
@@ -358,8 +361,10 @@ function findPatternMutationHits(diffText, sourceLabel) {
       const isRemoval = line.startsWith("-");
       const sourceLine = isRemoval ? nextOldLine : nextNewLine;
       const currentPath = isRemoval ? oldPath : newPath;
-      if (governedPattern.test(currentPath)) {
+      if (governedPattern.test(currentPath) || currentPath === governedPatternNotes) {
         for (const field of governedFields) {
+          if (currentPath === governedPatternNotes && field.id !== "pattern-notes") continue;
+          if (currentPath !== governedPatternNotes && field.id === "pattern-notes") continue;
           if (field.pattern.test(line)) {
             hits.push({
               path: currentPath,
@@ -420,10 +425,20 @@ const simulatedPatternDeletion = [
   '-  "states": ["idle", "focused"]',
 ].join("\n");
 
+const simulatedPatternNotesMutation = [
+  "diff --git a/docs/ui/pattern-registry/patterns/notes.md b/docs/ui/pattern-registry/patterns/notes.md",
+  "--- a/docs/ui/pattern-registry/patterns/notes.md",
+  "+++ b/docs/ui/pattern-registry/patterns/notes.md",
+  "@@ -10,0 +10,1 @@",
+  "+Sidebar rows may use a taller decorative treatment when desired.",
+].join("\n");
+
 const sourceRoots = ["docs/ui/pattern-registry/patterns"];
 const changedBase = process.env.CLAWIX_UI_GUARD_DIFF_BASE;
 const visualHits = args.includes("--simulate-unauthorized-pattern-mutation")
   ? findPatternMutationHits(simulatedPatternMutation, "simulated unauthorized pattern mutation")
+  : simulateUnauthorizedPatternNotesMutation
+    ? findPatternMutationHits(simulatedPatternNotesMutation, "simulated unauthorized pattern notes mutation")
   : args.includes("--simulate-unauthorized-pattern-removal")
     ? findPatternMutationHits(simulatedPatternRemoval, "simulated unauthorized pattern removal")
     : args.includes("--simulate-unauthorized-pattern-deletion")
