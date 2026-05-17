@@ -45,6 +45,32 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStringSet(values, label, expectedValues) {
+  const seen = requireUniqueStrings(values, label);
+  const expected = new Set(expectedValues);
+  for (const value of seen) {
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function hasLocalPath(value) {
   return (
     typeof value === "string" &&
@@ -88,8 +114,24 @@ if (args.has("--simulate-missing-active-initial-model") && Array.isArray(manifes
 if (args.has("--simulate-extra-initial-model") && Array.isArray(manifest?.initialActiveModels)) {
   manifest.initialActiveModels.push("other-visual-model");
 }
+if (args.has("--simulate-duplicate-initial-model") && Array.isArray(manifest?.initialActiveModels) && manifest.initialActiveModels[0]) {
+  manifest.initialActiveModels.push(manifest.initialActiveModels[0]);
+}
+if (args.has("--simulate-extra-model-status") && Array.isArray(manifest?.modelStatuses)) {
+  manifest.modelStatuses.push("pending-review");
+}
+if (args.has("--simulate-duplicate-model-status") && Array.isArray(manifest?.modelStatuses) && manifest.modelStatuses[0]) {
+  manifest.modelStatuses.push(manifest.modelStatuses[0]);
+}
 if (args.has("--simulate-duplicate-visual-model") && Array.isArray(manifest?.allowedVisualModels) && manifest.allowedVisualModels[0]) {
   manifest.allowedVisualModels.push({ ...manifest.allowedVisualModels[0] });
+}
+if (args.has("--simulate-duplicate-mutation-class") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
+    model?.id === "claude-opus-4.7" && Array.isArray(model.allowedMutationClasses) && model.allowedMutationClasses[0]
+      ? { ...model, allowedMutationClasses: [...model.allowedMutationClasses, model.allowedMutationClasses[0]] }
+      : model
+  ));
 }
 if (args.has("--simulate-missing-copy-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) =>
@@ -118,8 +160,17 @@ if (args.has("--simulate-wrong-scope-source") && Array.isArray(manifest?.allowed
 if (args.has("--simulate-model-signal-not-required")) {
   manifest.modelSignal = { ...manifest.modelSignal, requiredForVisualMutation: false };
 }
+if (args.has("--simulate-wrong-authorization-signal")) {
+  manifest.authorizationSignal = { ...manifest.authorizationSignal, env: "CLAWIX_VISUAL_AUTHORIZED" };
+}
+if (args.has("--simulate-wrong-model-signal-env")) {
+  manifest.modelSignal = { ...manifest.modelSignal, env: "CLAWIX_VISUAL_MODEL" };
+}
 if (args.has("--simulate-private-assignment-public")) {
   manifest.privateAssignment = "public-repo";
+}
+if (args.has("--simulate-inactive-manifest")) {
+  manifest.status = "draft";
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -136,11 +187,21 @@ requireFields(manifest, manifestPath, [
   "allowedVisualModels",
 ]);
 
+if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
 if (manifest?.privateAssignment !== "outside-public-repo") {
   fail(`${manifestPath}.privateAssignment must stay outside-public-repo`);
 }
 requireFields(manifest?.authorizationSignal, `${manifestPath}.authorizationSignal`, ["env", "value"]);
+if (manifest?.authorizationSignal?.env !== "CLAWIX_UI_VISUAL_AUTHORIZED") {
+  fail(`${manifestPath}.authorizationSignal.env must be CLAWIX_UI_VISUAL_AUTHORIZED`);
+}
+if (manifest?.authorizationSignal?.value !== "1") {
+  fail(`${manifestPath}.authorizationSignal.value must be 1`);
+}
 requireFields(manifest?.modelSignal, `${manifestPath}.modelSignal`, ["env", "requiredForVisualMutation"]);
+if (manifest?.modelSignal?.env !== "CLAWIX_UI_VISUAL_MODEL") {
+  fail(`${manifestPath}.modelSignal.env must be CLAWIX_UI_VISUAL_MODEL`);
+}
 if (manifest?.modelSignal?.requiredForVisualMutation !== true) {
   fail(`${manifestPath}.modelSignal.requiredForVisualMutation must be true`);
 }
@@ -165,17 +226,15 @@ if (manifest?.additionalActiveModelPolicy?.privateApprovalReferenceRequired !== 
 if (manifest?.additionalActiveModelPolicy?.publicRepoStoresApprovalAliasOnly !== true) {
   fail(`${manifestPath}.additionalActiveModelPolicy.publicRepoStoresApprovalAliasOnly must be true`);
 }
-const initialActiveModels = new Set(requireArray(manifest, manifestPath, "initialActiveModels"));
+const initialActiveModels = requireExactStringSet(
+  requireArray(manifest, manifestPath, "initialActiveModels"),
+  `${manifestPath}.initialActiveModels`,
+  ["claude-opus-4.7"],
+);
 if (!initialActiveModels.has("claude-opus-4.7")) {
   fail(`${manifestPath}.initialActiveModels must include claude-opus-4.7`);
 }
-if (initialActiveModels.size !== 1 || manifest?.initialActiveModels?.length !== 1) {
-  fail(`${manifestPath}.initialActiveModels must contain only claude-opus-4.7`);
-}
-const modelStatuses = new Set(requireArray(manifest, manifestPath, "modelStatuses"));
-for (const status of ["active", "revoked"]) {
-  if (!modelStatuses.has(status)) fail(`${manifestPath}.modelStatuses must include ${status}`);
-}
+const modelStatuses = requireExactStringSet(requireArray(manifest, manifestPath, "modelStatuses"), `${manifestPath}.modelStatuses`, ["active", "revoked"]);
 
 const allowedMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equivalent-refactor"]);
 const requiredInitialMutationClasses = new Set(["visual-ui", "copy-ui", "mechanical-equivalent-refactor"]);
@@ -209,7 +268,9 @@ for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisual
   if (model.scopeSource !== "docs/ui/visual-change-scopes.manifest.json") {
     fail(`${label}.scopeSource must be docs/ui/visual-change-scopes.manifest.json`);
   }
-  for (const mutationClass of requireArray(model, label, "allowedMutationClasses")) {
+  const mutationClasses = requireArray(model, label, "allowedMutationClasses");
+  requireUniqueStrings(mutationClasses, `${label}.allowedMutationClasses`);
+  for (const mutationClass of mutationClasses) {
     if (!allowedMutationClasses.has(mutationClass)) fail(`${label}.allowedMutationClasses contains ${mutationClass}`);
   }
 }
