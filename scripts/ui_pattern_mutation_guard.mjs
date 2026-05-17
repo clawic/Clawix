@@ -14,6 +14,9 @@ const simulateRevokedVisualScope = args.includes("--simulate-revoked-visual-scop
 const simulateExpiredVisualScope = args.includes("--simulate-expired-visual-scope");
 const simulateBudgetKindVisualScope = args.includes("--simulate-budget-kind-visual-scope");
 const simulateMissingPatternVisualScope = args.includes("--simulate-missing-pattern-visual-scope");
+const simulateDuplicatePatternVisualScope = args.includes("--simulate-duplicate-pattern-visual-scope");
+const simulateInvalidBudgetVisualScope = args.includes("--simulate-invalid-budget-visual-scope");
+const simulateUnsafeReferenceVisualScope = args.includes("--simulate-unsafe-reference-visual-scope");
 const simulateUnauthorizedPatternNotesMutation = args.includes("--simulate-unauthorized-pattern-notes-mutation");
 const errors = [];
 
@@ -225,6 +228,54 @@ if (simulateMissingPatternVisualScope) {
     },
   ];
 }
+if (simulateDuplicatePatternVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-duplicate-pattern-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      ...simulatedPatternScope,
+      patterns: ["sidebar-row", "sidebar-row"],
+      files: ["docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
+      changeKinds: ["layout", "microcopy", "hierarchy"],
+      changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy", "hierarchy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
+if (simulateInvalidBudgetVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-invalid-budget-scope",
+      status: "approved",
+      ...simulatedScopeApproval,
+      ...simulatedPatternScope,
+      files: ["docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
+      changeKinds: ["layout", "microcopy", "hierarchy"],
+      changeBudget: { maxFiles: 0, maxLines: "3", allowedChangeKinds: ["layout", "microcopy", "hierarchy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
+if (simulateUnsafeReferenceVisualScope) {
+  visualScopes.activeScopes = [
+    ...(Array.isArray(visualScopes.activeScopes) ? visualScopes.activeScopes : []),
+    {
+      id: "simulated-unsafe-reference-scope",
+      status: "approved",
+      ...simulatedPatternScope,
+      approvedBy: "user",
+      approvedAt: "2026-05-17",
+      privateApprovalReference: "private-codex-ui-approval:../private/approval",
+      files: ["docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
+      changeKinds: ["layout", "microcopy", "hierarchy"],
+      changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy", "hierarchy"] },
+      expiresAt: "2099-12-31",
+    },
+  ];
+}
 
 const governedPattern = /^docs\/ui\/pattern-registry\/patterns\/[^/]+\.pattern\.json$/;
 const governedPatternNotes = "docs/ui/pattern-registry/patterns/notes.md";
@@ -263,6 +314,23 @@ function isSafePrivateApprovalReference(value) {
   );
 }
 
+function requireScopeStringSet(values, fieldName) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} must declare ${fieldName}` };
+  }
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      return { ok: false, reason: `scope ${requestedVisualScopeId} ${fieldName} must only include non-empty strings` };
+    }
+    if (seen.has(value)) {
+      return { ok: false, reason: `scope ${requestedVisualScopeId} ${fieldName} duplicates ${value}` };
+    }
+    seen.add(value);
+  }
+  return { ok: true, values: seen, list: values };
+}
+
 function patternIdForPath(file) {
   const match = /^docs\/ui\/pattern-registry\/patterns\/([^/]+)\.pattern\.json$/.exec(file);
   return match?.[1] || null;
@@ -290,20 +358,31 @@ function approvedScopeForHits(hits) {
   }
 
   const files = new Set(hits.map((hit) => hit.path));
-  const scopePlatforms = new Set(Array.isArray(scope.platforms) ? scope.platforms : []);
-  const scopeSurfaces = new Set(Array.isArray(scope.surfaces) ? scope.surfaces : []);
-  const scopePatterns = new Set(Array.isArray(scope.patterns) ? scope.patterns : []);
-  const scopeChangeKinds = new Set(Array.isArray(scope.changeKinds) ? scope.changeKinds : []);
+  const scopePlatformsResult = requireScopeStringSet(scope.platforms, "platforms");
+  if (!scopePlatformsResult.ok) return scopePlatformsResult;
+  const scopeSurfacesResult = requireScopeStringSet(scope.surfaces, "surfaces");
+  if (!scopeSurfacesResult.ok) return scopeSurfacesResult;
+  const scopePatternsResult = requireScopeStringSet(scope.patterns, "patterns");
+  if (!scopePatternsResult.ok) return scopePatternsResult;
+  const scopeFilesResult = requireScopeStringSet(scope.files, "files");
+  if (!scopeFilesResult.ok) return scopeFilesResult;
+  const scopeChangeKindsResult = requireScopeStringSet(scope.changeKinds, "changeKinds");
+  if (!scopeChangeKindsResult.ok) return scopeChangeKindsResult;
+  const scopePlatforms = scopePlatformsResult.values;
+  const scopePatterns = scopePatternsResult.values;
+  const scopeChangeKinds = scopeChangeKindsResult.values;
   const changeBudget = scope.changeBudget || {};
-  if (scopePlatforms.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare platforms` };
-  if (scopeSurfaces.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare surfaces` };
-  if (scopePatterns.size === 0) return { ok: false, reason: `scope ${requestedVisualScopeId} must declare patterns` };
-  if (!Array.isArray(changeBudget.allowedChangeKinds)) {
-    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.allowedChangeKinds is required` };
+  if (!Number.isInteger(changeBudget.maxFiles) || changeBudget.maxFiles < 1) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.maxFiles must be a positive integer` };
   }
-  const budgetChangeKinds = new Set(changeBudget.allowedChangeKinds);
+  if (!Number.isInteger(changeBudget.maxLines) || changeBudget.maxLines < 1) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} changeBudget.maxLines must be a positive integer` };
+  }
+  const budgetChangeKindsResult = requireScopeStringSet(changeBudget.allowedChangeKinds, "changeBudget.allowedChangeKinds");
+  if (!budgetChangeKindsResult.ok) return budgetChangeKindsResult;
+  const budgetChangeKinds = budgetChangeKindsResult.values;
   for (const file of files) {
-    if (!fileMatchesScope(file, scope.files || [])) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include ${file}` };
+    if (!fileMatchesScope(file, scopeFilesResult.list)) return { ok: false, reason: `scope ${requestedVisualScopeId} does not include ${file}` };
   }
   const touchedPatterns = new Set([...files].map(patternIdForPath).filter(Boolean));
   for (const patternId of touchedPatterns) {

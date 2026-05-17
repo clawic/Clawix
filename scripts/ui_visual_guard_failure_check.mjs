@@ -844,6 +844,102 @@ for (const snippet of [
   if (!patternAuthorizedBudgetKindScopeOutput.includes(snippet)) fail(`pattern authorized budget-kind-scope failure output is missing: ${snippet}`);
 }
 
+let patternAuthorizedDuplicatePatternScopeOutput = "";
+let patternAuthorizedDuplicatePatternScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_pattern_mutation_guard.mjs", "--simulate-unauthorized-pattern-mutation", "--simulate-duplicate-pattern-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-duplicate-pattern-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  patternAuthorizedDuplicatePatternScopeExitCode = error.status || 1;
+  patternAuthorizedDuplicatePatternScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+
+if (patternAuthorizedDuplicatePatternScopeExitCode === 0) {
+  fail("simulated pattern mutation must fail when the approved visual scope has duplicate pattern ids");
+}
+for (const snippet of [
+  "authorized pattern registry visual/copy contract mutation missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-duplicate-pattern-scope",
+  "patterns duplicates sidebar-row",
+]) {
+  if (!patternAuthorizedDuplicatePatternScopeOutput.includes(snippet)) {
+    fail(`pattern authorized duplicate-pattern-scope failure output is missing: ${snippet}`);
+  }
+}
+
+let patternAuthorizedInvalidBudgetScopeOutput = "";
+let patternAuthorizedInvalidBudgetScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_pattern_mutation_guard.mjs", "--simulate-unauthorized-pattern-mutation", "--simulate-invalid-budget-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-invalid-budget-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  patternAuthorizedInvalidBudgetScopeExitCode = error.status || 1;
+  patternAuthorizedInvalidBudgetScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+
+if (patternAuthorizedInvalidBudgetScopeExitCode === 0) {
+  fail("simulated pattern mutation must fail when the approved visual scope has an invalid change budget");
+}
+for (const snippet of [
+  "authorized pattern registry visual/copy contract mutation missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-invalid-budget-scope",
+  "changeBudget.maxFiles must be a positive integer",
+]) {
+  if (!patternAuthorizedInvalidBudgetScopeOutput.includes(snippet)) {
+    fail(`pattern authorized invalid-budget-scope failure output is missing: ${snippet}`);
+  }
+}
+
+let patternAuthorizedUnsafeReferenceScopeOutput = "";
+let patternAuthorizedUnsafeReferenceScopeExitCode = 0;
+try {
+  execFileSync("node", ["scripts/ui_pattern_mutation_guard.mjs", "--simulate-unauthorized-pattern-mutation", "--simulate-unsafe-reference-visual-scope"], {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CLAWIX_UI_VISUAL_AUTHORIZED: "1",
+      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-unsafe-reference-scope",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+} catch (error) {
+  patternAuthorizedUnsafeReferenceScopeExitCode = error.status || 1;
+  patternAuthorizedUnsafeReferenceScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
+}
+
+if (patternAuthorizedUnsafeReferenceScopeExitCode === 0) {
+  fail("simulated pattern mutation must fail when the approved visual scope has an unsafe private reference");
+}
+for (const snippet of [
+  "authorized pattern registry visual/copy contract mutation missing approved scope",
+  "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-unsafe-reference-scope",
+  "must include safe private approval reference",
+]) {
+  if (!patternAuthorizedUnsafeReferenceScopeOutput.includes(snippet)) {
+    fail(`pattern authorized unsafe-reference-scope failure output is missing: ${snippet}`);
+  }
+}
+
 let patternWrongModelOutput = "";
 let patternWrongModelExitCode = 0;
 try {
