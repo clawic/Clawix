@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -62,6 +63,38 @@ function sameStringArray(left, right) {
 
 const manifestPath = "docs/ui/debt-audit.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-wrong-private-debt-audit-alias")) {
+    manifest.privateDebtAuditAlias = "private-other-debt-audit";
+  }
+  if (args.has("--simulate-wrong-evidence-filename")) {
+    manifest.evidenceFilename = "visual-debt-evidence.json";
+  }
+  if (args.has("--simulate-missing-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "approvedScope");
+  }
+  if (args.has("--simulate-missing-audit-status") && Array.isArray(manifest.auditStatuses)) {
+    manifest.auditStatuses = manifest.auditStatuses.filter((status) => status !== "pending-private-visual-inventory");
+  }
+  if (args.has("--simulate-duplicate-audit-entry") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries.push({ ...manifest.entries[0] });
+  }
+  if (args.has("--simulate-unknown-debt-id") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries[0] = { ...manifest.entries[0], debtId: "ui-debt-unknown" };
+  }
+  if (args.has("--simulate-scope-mismatch") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries[0] = { ...manifest.entries[0], scope: "macos/Sources/Clawix/Other.swift" };
+  }
+  if (args.has("--simulate-mismatched-surface-coverage") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries[0] = { ...manifest.entries[0], surfaceCoverageId: "macos-unknown-debt" };
+  }
+  if (args.has("--simulate-unsafe-private-reference") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries[0] = {
+      ...manifest.entries[0],
+      privateDebtAuditReference: "/Users/private/debt-audit-evidence.json",
+    };
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -111,6 +144,11 @@ for (const status of ["pending-private-visual-inventory", "audited-approved"]) {
 
 const debtBaseline = readJson(manifest?.sourceBaseline || "docs/ui/debt.baseline.json");
 const debtReport = readJson(manifest?.sourceReport || "docs/ui/debt-report.registry.json");
+if (debtReport && args.has("--simulate-missing-pending-report") && Array.isArray(debtReport.pendingItems)) {
+  debtReport.pendingItems = debtReport.pendingItems.filter(
+    (item) => item.debtId !== "ui-debt-design-surface-raw-visual-values",
+  );
+}
 const surfaceCoverage = readJson(manifest?.surfaceCoverageSource || "docs/ui/surface-baseline-coverage.manifest.json");
 
 const debtById = new Map();
@@ -157,6 +195,7 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "entries").ent
   for (const field of requiredEvidence) {
     if (!entryRequired.has(field)) fail(`${label}.requiredEvidence must include ${field}`);
   }
+  if (auditDebtIds.has(entry.debtId)) fail(`${label}.debtId must be unique`);
   auditDebtIds.add(entry.debtId);
 }
 
