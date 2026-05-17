@@ -44,18 +44,40 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function requireAlias(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
-    return;
+    return null;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
     fail(`${label} must use a safe relative private reference`);
+    return null;
   }
   if (value.includes("/Users/") || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value)) {
     fail(`${label} must not contain a local path`);
+    return null;
   }
+  return suffix;
 }
 
 const manifestPath = "docs/ui/rendered-drift.manifest.json";
@@ -69,11 +91,62 @@ if (manifest) {
   if (args.has("--simulate-verifier-mismatch")) {
     manifest.verificationCommand = "node scripts/ui_private_drift_verify.mjs --require-approved";
   }
+  if (args.has("--simulate-inactive-rendered-drift")) {
+    manifest.status = "captured";
+  }
+  if (args.has("--simulate-extra-drift-category") && Array.isArray(manifest.driftCategories)) {
+    manifest.driftCategories.push("visual-copy");
+  }
+  if (args.has("--simulate-duplicate-drift-category") && Array.isArray(manifest.driftCategories) && manifest.driftCategories[0]) {
+    manifest.driftCategories.push(manifest.driftCategories[0]);
+  }
   if (args.has("--simulate-missing-drift-category") && Array.isArray(manifest.driftCategories)) {
     manifest.driftCategories = manifest.driftCategories.filter((category) => category !== "copy");
   }
+  if (args.has("--simulate-extra-report-status") && Array.isArray(manifest.reportStatuses)) {
+    manifest.reportStatuses.push("ignored-drift");
+  }
+  if (args.has("--simulate-duplicate-report-status") && Array.isArray(manifest.reportStatuses) && manifest.reportStatuses[0]) {
+    manifest.reportStatuses.push(manifest.reportStatuses[0]);
+  }
+  if (args.has("--simulate-extra-blocking-report-status") && Array.isArray(manifest.blockingReportStatuses)) {
+    manifest.blockingReportStatuses.push("approved-drift");
+  }
+  if (args.has("--simulate-duplicate-blocking-report-status") && Array.isArray(manifest.blockingReportStatuses) && manifest.blockingReportStatuses[0]) {
+    manifest.blockingReportStatuses.push(manifest.blockingReportStatuses[0]);
+  }
+  if (args.has("--simulate-extra-approval-required-status") && Array.isArray(manifest.approvalRequiredStatuses)) {
+    manifest.approvalRequiredStatuses.push("no-drift");
+  }
+  if (args.has("--simulate-duplicate-approval-required-status") && Array.isArray(manifest.approvalRequiredStatuses) && manifest.approvalRequiredStatuses[0]) {
+    manifest.approvalRequiredStatuses.push(manifest.approvalRequiredStatuses[0]);
+  }
+  if (args.has("--simulate-extra-required-report-field") && Array.isArray(manifest.requiredReportFields)) {
+    manifest.requiredReportFields.push("localReportPath");
+  }
+  if (args.has("--simulate-duplicate-required-report-field") && Array.isArray(manifest.requiredReportFields) && manifest.requiredReportFields[0]) {
+    manifest.requiredReportFields.push(manifest.requiredReportFields[0]);
+  }
+  if (args.has("--simulate-extra-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields.push("localTracePath");
+  }
+  if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields) && manifest.requiredEvidenceFields[0]) {
+    manifest.requiredEvidenceFields.push(manifest.requiredEvidenceFields[0]);
+  }
+  if (args.has("--simulate-extra-approved-drift-evidence-field") && Array.isArray(manifest.approvedDriftEvidenceFields)) {
+    manifest.approvedDriftEvidenceFields.push("approvalScreenshotPath");
+  }
+  if (args.has("--simulate-duplicate-approved-drift-evidence-field") && Array.isArray(manifest.approvedDriftEvidenceFields) && manifest.approvedDriftEvidenceFields[0]) {
+    manifest.approvedDriftEvidenceFields.push(manifest.approvedDriftEvidenceFields[0]);
+  }
   if (args.has("--simulate-missing-failure-output-requirement") && Array.isArray(manifest.failureOutputRequirements)) {
     manifest.failureOutputRequirements = manifest.failureOutputRequirements.filter((field) => field !== "required permission");
+  }
+  if (args.has("--simulate-extra-failure-output-requirement") && Array.isArray(manifest.failureOutputRequirements)) {
+    manifest.failureOutputRequirements.push("local path");
+  }
+  if (args.has("--simulate-duplicate-failure-output-requirement") && Array.isArray(manifest.failureOutputRequirements) && manifest.failureOutputRequirements[0]) {
+    manifest.failureOutputRequirements.push(manifest.failureOutputRequirements[0]);
   }
   if (args.has("--simulate-duplicate-report") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports.push({ ...manifest.reports[0] });
@@ -84,11 +157,20 @@ if (manifest) {
   if (args.has("--simulate-unsafe-private-reference") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].privateDriftReportReference = `${manifest.privateDriftAlias}:../drift`;
   }
+  if (args.has("--simulate-mismatched-private-reference") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].privateDriftReportReference = `${manifest.privateDriftAlias}:surfaces/${manifest.reports[0].platform}/wrong-surface`;
+  }
   if (args.has("--simulate-expired-review") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].reviewAfter = "2026-01-01";
   }
   if (args.has("--simulate-invalid-report-status") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].status = "ignored-drift";
+  }
+  if (args.has("--simulate-report-extra-drift-category") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].driftCategories.push("visual-copy");
+  }
+  if (args.has("--simulate-report-duplicate-drift-category") && Array.isArray(manifest.reports) && manifest.reports[0]) {
+    manifest.reports[0].driftCategories.push(manifest.reports[0].driftCategories[0]);
   }
   if (args.has("--simulate-enforcement-missing-rendered-drift") && enforcementModeDecision) {
     enforcementModeDecision.publicEvidence = enforcementModeDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
@@ -136,51 +218,57 @@ if (manifest?.verificationCommand !== aggregateVisualManifest?.verificationComma
 }
 
 const expectedCategories = ["geometry", "screenshot", "copy", "performance", "state"];
-const categories = new Set(requireArray(manifest, manifestPath, "driftCategories"));
-for (const category of expectedCategories) {
-  if (!categories.has(category)) fail(`${manifestPath}.driftCategories must include ${category}`);
-}
-const statuses = new Set(requireArray(manifest, manifestPath, "reportStatuses"));
-for (const status of ["pending-private-evidence", "no-drift", "drift-detected", "approved-drift"]) {
-  if (!statuses.has(status)) fail(`${manifestPath}.reportStatuses must include ${status}`);
-}
-const blockingStatuses = new Set(requireArray(manifest, manifestPath, "blockingReportStatuses"));
-for (const status of ["pending-private-evidence", "drift-detected"]) {
-  if (!blockingStatuses.has(status)) fail(`${manifestPath}.blockingReportStatuses must include ${status}`);
-}
-const approvalRequiredStatuses = new Set(requireArray(manifest, manifestPath, "approvalRequiredStatuses"));
-if (!approvalRequiredStatuses.has("approved-drift")) {
-  fail(`${manifestPath}.approvalRequiredStatuses must include approved-drift`);
-}
-const requiredReportFields = requireArray(manifest, manifestPath, "requiredReportFields");
-for (const field of ["coverageId", "platform", "privateDriftReportReference", "driftCategories", "status", "reviewAfter"]) {
-  if (!requiredReportFields.includes(field)) fail(`${manifestPath}.requiredReportFields must include ${field}`);
-}
-const requiredEvidenceFields = requireArray(manifest, manifestPath, "requiredEvidenceFields");
-for (const field of ["coverageId", "platform", "privateDriftReportReference", "driftCategories", "driftResults", "status", "reportHash", "producedAt"]) {
-  if (!requiredEvidenceFields.includes(field)) fail(`${manifestPath}.requiredEvidenceFields must include ${field}`);
-}
-const approvedDriftEvidenceFields = requireArray(manifest, manifestPath, "approvedDriftEvidenceFields");
-for (const field of ["approvedByUserAt", "approvedScope"]) {
-  if (!approvedDriftEvidenceFields.includes(field)) fail(`${manifestPath}.approvedDriftEvidenceFields must include ${field}`);
-}
-const failureOutputRequirements = requireArray(manifest, manifestPath, "failureOutputRequirements");
-for (const field of ["route", "reason", "required permission", "proposal route", "privateDriftReportReference"]) {
-  if (!failureOutputRequirements.includes(field)) fail(`${manifestPath}.failureOutputRequirements must include ${field}`);
-}
+requireExactStringSet(requireArray(manifest, manifestPath, "driftCategories"), `${manifestPath}.driftCategories`, expectedCategories);
+const statuses = requireExactStringSet(
+  requireArray(manifest, manifestPath, "reportStatuses"),
+  `${manifestPath}.reportStatuses`,
+  ["pending-private-evidence", "no-drift", "drift-detected", "approved-drift"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "blockingReportStatuses"),
+  `${manifestPath}.blockingReportStatuses`,
+  ["pending-private-evidence", "drift-detected"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "approvalRequiredStatuses"),
+  `${manifestPath}.approvalRequiredStatuses`,
+  ["approved-drift"],
+);
+const requiredReportFieldValues = ["coverageId", "platform", "privateDriftReportReference", "driftCategories", "status", "reviewAfter"];
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredReportFields"),
+  `${manifestPath}.requiredReportFields`,
+  requiredReportFieldValues,
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredEvidenceFields"),
+  `${manifestPath}.requiredEvidenceFields`,
+  ["coverageId", "platform", "privateDriftReportReference", "driftCategories", "driftResults", "status", "reportHash", "producedAt"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "approvedDriftEvidenceFields"),
+  `${manifestPath}.approvedDriftEvidenceFields`,
+  ["approvedByUserAt", "approvedScope"],
+);
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "failureOutputRequirements"),
+  `${manifestPath}.failureOutputRequirements`,
+  ["route", "reason", "required permission", "proposal route", "privateDriftReportReference"],
+);
 if (manifest?.evidenceFilename !== "drift-report.json") fail(`${manifestPath}.evidenceFilename must be drift-report.json`);
 
 const coveragePath = manifest?.surfaceBaselineCoveragePath || "docs/ui/surface-baseline-coverage.manifest.json";
 const coverage = readJson(coveragePath);
 const coverageById = new Map();
-for (const entry of requireArray(coverage, coveragePath, "coverage")) {
+for (const [index, entry] of requireArray(coverage, coveragePath, "coverage").entries()) {
+  if (coverageById.has(entry.coverageId)) fail(`${coveragePath}.coverage[${index}].coverageId duplicates ${entry.coverageId}`);
   coverageById.set(entry.coverageId, entry);
 }
 
 const seen = new Set();
 for (const [index, report] of requireArray(manifest, manifestPath, "reports").entries()) {
   const label = `${manifestPath}.reports[${index}]`;
-  requireFields(report, label, requiredReportFields);
+  requireFields(report, label, requiredReportFieldValues);
   if (seen.has(report.coverageId)) fail(`${label}.coverageId duplicates ${report.coverageId}`);
   seen.add(report.coverageId);
   const coverageEntry = coverageById.get(report.coverageId);
@@ -189,13 +277,14 @@ for (const [index, report] of requireArray(manifest, manifestPath, "reports").en
     continue;
   }
   if (report.platform !== coverageEntry.platform) fail(`${label}.platform must match ${coveragePath}`);
-  requireAlias(report.privateDriftReportReference, manifest.privateDriftAlias, `${label}.privateDriftReportReference`);
+  const driftReferenceSuffix = requireAlias(report.privateDriftReportReference, manifest.privateDriftAlias, `${label}.privateDriftReportReference`);
+  const expectedDriftReference = `surfaces/${report.platform}/${report.coverageId}`;
+  if (driftReferenceSuffix && driftReferenceSuffix !== expectedDriftReference) {
+    fail(`${label}.privateDriftReportReference must target ${expectedDriftReference}`);
+  }
   if (!statuses.has(report.status)) fail(`${label}.status is not allowed`);
   if (report.reviewAfter < today) fail(`${label}.reviewAfter expired on ${report.reviewAfter}`);
-  const reportCategories = new Set(requireArray(report, label, "driftCategories"));
-  for (const category of categories) {
-    if (!reportCategories.has(category)) fail(`${label}.driftCategories must include ${category}`);
-  }
+  requireExactStringSet(requireArray(report, label, "driftCategories"), `${label}.driftCategories`, expectedCategories);
 }
 
 for (const coverageId of coverageById.keys()) {
