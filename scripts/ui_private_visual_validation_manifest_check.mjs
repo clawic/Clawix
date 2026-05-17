@@ -46,6 +46,25 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function runEvidencePlan() {
   const result = spawnSync(process.execPath, [path.join(rootDir, "scripts/ui_private_evidence_plan_check.mjs"), "--json"], {
     cwd: rootDir,
@@ -89,8 +108,23 @@ function approvalRecordCount() {
 const manifestPath = "docs/ui/private-visual-validation.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
+  if (args.has("--simulate-inactive-private-visual-manifest")) {
+    manifest.status = "pending";
+  }
   if (args.has("--simulate-missing-required-root") && Array.isArray(manifest.requiredRoots)) {
     manifest.requiredRoots = manifest.requiredRoots.filter((root) => root !== "CLAWIX_UI_PRIVATE_COPY_ROOT");
+  }
+  if (args.has("--simulate-extra-required-root") && Array.isArray(manifest.requiredRoots)) {
+    manifest.requiredRoots.push("CLAWIX_UI_PRIVATE_SCREENSHOT_ROOT");
+  }
+  if (args.has("--simulate-duplicate-required-root") && Array.isArray(manifest.requiredRoots) && manifest.requiredRoots[0]) {
+    manifest.requiredRoots.push(manifest.requiredRoots[0]);
+  }
+  if (args.has("--simulate-extra-approved-scope-field") && Array.isArray(manifest.requiredApprovedScopeFields)) {
+    manifest.requiredApprovedScopeFields.push("localApprovalPath");
+  }
+  if (args.has("--simulate-duplicate-approved-scope-field") && Array.isArray(manifest.requiredApprovedScopeFields) && manifest.requiredApprovedScopeFields[0]) {
+    manifest.requiredApprovedScopeFields.push(manifest.requiredApprovedScopeFields[0]);
   }
   if (args.has("--simulate-delegate-without-approval") && Array.isArray(manifest.delegates)) {
     const delegateIndex = manifest.delegates.findIndex((delegate) => String(delegate).includes("scripts/ui_private_copy_verify.mjs"));
@@ -98,8 +132,30 @@ if (manifest) {
       manifest.delegates[delegateIndex] = "node scripts/ui_private_copy_verify.mjs";
     }
   }
+  if (args.has("--simulate-extra-delegate") && Array.isArray(manifest.delegates)) {
+    manifest.delegates.push("node scripts/ui_private_unknown_verify.mjs --require-approved");
+  }
+  if (args.has("--simulate-duplicate-delegate") && Array.isArray(manifest.delegates) && manifest.delegates[0]) {
+    manifest.delegates.push(manifest.delegates[0]);
+  }
   if (args.has("--simulate-duplicate-root-alias") && Array.isArray(manifest.rootAliases) && manifest.rootAliases[0]) {
     manifest.rootAliases.push({ ...manifest.rootAliases[0], env: "CLAWIX_UI_PRIVATE_DUPLICATE_ROOT" });
+  }
+  if (args.has("--simulate-extra-root-alias") && Array.isArray(manifest.rootAliases)) {
+    manifest.rootAliases.push({
+      alias: "private-codex-ui-screenshots",
+      env: "CLAWIX_UI_PRIVATE_SCREENSHOT_ROOT",
+      manifestPath: "docs/ui/private-baselines.manifest.json",
+      manifestAliasField: "privateRootAlias",
+    });
+  }
+  if (args.has("--simulate-extra-optional-root-alias") && Array.isArray(manifest.optionalRootAliases)) {
+    manifest.optionalRootAliases.push({
+      alias: "private-codex-ui-local-drafts",
+      env: "CLAWIX_UI_PRIVATE_LOCAL_DRAFT_ROOT",
+      manifestPath: "docs/ui/approval-authority.manifest.json",
+      manifestAliasField: "privateApprovalAlias",
+    });
   }
   if (args.has("--simulate-optional-root-required") && Array.isArray(manifest.requiredRoots)) {
     manifest.requiredRoots.push("CLAWIX_UI_PRIVATE_APPROVAL_ROOT");
@@ -144,6 +200,9 @@ requireFields(manifest, manifestPath, [
 ]);
 const evidencePlan = runEvidencePlan();
 
+if (manifest?.status !== "active") {
+  fail(`${manifestPath}.status must be active`);
+}
 if (!String(manifest?.verificationCommand || "").includes("scripts/ui_private_visual_verify.mjs")) {
   fail(`${manifestPath}.verificationCommand must run scripts/ui_private_visual_verify.mjs`);
 }
@@ -156,14 +215,12 @@ if (manifest?.evidencePlanCommand !== "node scripts/ui_private_evidence_plan_che
 if (manifest?.externalPendingExitCode !== 2) {
   fail(`${manifestPath}.externalPendingExitCode must be 2`);
 }
-const requiredApprovedScopeFields = new Set(requireArray(manifest, manifestPath, "requiredApprovedScopeFields"));
-for (const field of ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"]) {
-  if (!requiredApprovedScopeFields.has(field)) {
-    fail(`${manifestPath}.requiredApprovedScopeFields must include ${field}`);
-  }
-}
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredApprovedScopeFields"),
+  `${manifestPath}.requiredApprovedScopeFields`,
+  ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"],
+);
 
-const roots = new Set(requireArray(manifest, manifestPath, "requiredRoots"));
 const expectedRoots = [
   "CLAWIX_UI_PRIVATE_BASELINE_ROOT",
   "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
@@ -171,8 +228,8 @@ const expectedRoots = [
   "CLAWIX_UI_PRIVATE_DRIFT_ROOT",
   "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT",
 ];
+const roots = requireExactStringSet(requireArray(manifest, manifestPath, "requiredRoots"), `${manifestPath}.requiredRoots`, expectedRoots);
 for (const root of expectedRoots) {
-  if (!roots.has(root)) fail(`${manifestPath}.requiredRoots must include ${root}`);
   if (!String(manifest?.verificationCommand || "").includes(root)) {
     fail(`${manifestPath}.verificationCommand must include ${root}`);
   }
@@ -226,6 +283,12 @@ const expectedOptionalAliasContracts = [
 ];
 const rootAliases = requireArray(manifest, manifestPath, "rootAliases");
 const optionalRootAliases = requireArray(manifest, manifestPath, "optionalRootAliases");
+if (rootAliases.length !== expectedAliasContracts.length) {
+  fail(`${manifestPath}.rootAliases must exactly match required private aliases`);
+}
+if (optionalRootAliases.length !== expectedOptionalAliasContracts.length) {
+  fail(`${manifestPath}.optionalRootAliases must exactly match optional private aliases`);
+}
 const aliasesByAlias = new Map();
 const aliasesByEnv = new Map();
 for (const [index, entry] of [...rootAliases, ...optionalRootAliases].entries()) {
@@ -257,6 +320,11 @@ for (const contract of expectedAliasContracts) {
     }
   }
 }
+for (const entry of rootAliases) {
+  if (!expectedAliasContracts.some((contract) => contract.alias === entry?.alias)) {
+    fail(`${manifestPath}.rootAliases must not include ${entry?.alias}`);
+  }
+}
 for (const contract of expectedOptionalAliasContracts) {
   const entry = aliasesByAlias.get(contract.alias);
   if (!entry) {
@@ -272,11 +340,27 @@ for (const contract of expectedOptionalAliasContracts) {
     fail(`${manifestPath}.optionalRootAliases entry for ${contract.alias} must not add ${entry.env} to requiredRoots`);
   }
 }
+for (const entry of optionalRootAliases) {
+  if (!expectedOptionalAliasContracts.some((contract) => contract.alias === entry?.alias)) {
+    fail(`${manifestPath}.optionalRootAliases must not include ${entry?.alias}`);
+  }
+}
 if (approvalRecordCount() > 0 && !String(manifest?.verificationCommand || "").includes("CLAWIX_UI_PRIVATE_APPROVAL_ROOT")) {
   fail(`${manifestPath}.verificationCommand must include CLAWIX_UI_PRIVATE_APPROVAL_ROOT while public approval records exist`);
 }
 
 const delegates = requireArray(manifest, manifestPath, "delegates");
+const expectedDelegates = [
+  "node scripts/ui_private_evidence_verify.mjs --require-approved",
+  "node scripts/ui_private_approval_verify.mjs --require-approved",
+  "node scripts/ui_private_baseline_verify.mjs --require-approved",
+  "node scripts/ui_private_geometry_verify.mjs --require-approved",
+  "node scripts/ui_private_copy_verify.mjs --require-approved",
+  "node scripts/ui_private_drift_verify.mjs --require-approved",
+  "node scripts/ui_private_debt_audit_verify.mjs --require-approved",
+  "node scripts/ui_private_performance_budget_verify.mjs --require-approved",
+];
+requireExactStringSet(delegates, `${manifestPath}.delegates`, expectedDelegates);
 const runnerSource = fs.existsSync(path.join(rootDir, "scripts/ui_private_visual_verify.mjs"))
   ? fs.readFileSync(path.join(rootDir, "scripts/ui_private_visual_verify.mjs"), "utf8")
   : "";
