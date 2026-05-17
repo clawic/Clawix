@@ -190,6 +190,12 @@ for (const patternId of patternIds) {
   summaries.push(`${patternId}:${geometryType}`);
 }
 
+if (args.has("--simulate-approved-size-contracts-stale-decision") && sizeContractsDecision) {
+  hasPendingGeometry = false;
+  sizeContractsDecision.status = "open";
+  sizeContractsDecision.remaining = ["Simulated stale decision after approved private geometry measurement."];
+}
+
 if (!sizeContractsDecision) {
   fail(`${decisionVerificationPath}.decisions must include size_contracts`);
 } else {
@@ -237,6 +243,12 @@ if (!sizeContractsDecision) {
   }
   if (hasPendingGeometry && (!Array.isArray(sizeContractsDecision.remaining) || sizeContractsDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.size_contracts.remaining must describe pending private geometry measurement`);
+  }
+  if (!hasPendingGeometry && sizeContractsDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.size_contracts.status must be verified-complete after geometry clauses have private measurement`);
+  }
+  if (!hasPendingGeometry && Array.isArray(sizeContractsDecision.remaining) && sizeContractsDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.size_contracts.remaining must be empty after geometry clauses have private measurement`);
   }
 }
 

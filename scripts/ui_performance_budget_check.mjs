@@ -200,6 +200,16 @@ if (args.has("--simulate-perf-decision-premature-complete") && perfBudgetSourceD
   perfBudgetSourceDecision.status = "verified-complete";
   perfBudgetSourceDecision.remaining = [];
 }
+if (args.has("--simulate-approved-performance-budgets-stale-decision") && budgets && Array.isArray(budgets.flows) && perfBudgetSourceDecision) {
+  budgets.status = "approved-baseline-enforced";
+  budgets.flows = budgets.flows.map((flow) => ({
+    ...flow,
+    baselineStatus: "approved",
+    budgetStatus: "enforced",
+  }));
+  perfBudgetSourceDecision.status = "open";
+  perfBudgetSourceDecision.remaining = ["Simulated stale decision after approved performance baselines."];
+}
 if (budgets?.evidenceFilename !== "performance-evidence.json") {
   fail(`${budgetsPath}.evidenceFilename must be performance-evidence.json`);
 }
@@ -283,6 +293,12 @@ if (args.has("--simulate-pending-registry-with-all-enforced") && budgets && Arra
     baselineStatus: "approved",
     budgetStatus: "enforced",
   }));
+  privateBaselines.flows = privateBaselines.flows.map((flow) => ({
+    ...flow,
+    baselineStatus: "approved",
+  }));
+}
+if (args.has("--simulate-approved-performance-budgets-stale-decision") && Array.isArray(privateBaselines?.flows)) {
   privateBaselines.flows = privateBaselines.flows.map((flow) => ({
     ...flow,
     baselineStatus: "approved",
@@ -401,6 +417,12 @@ if (!perfBudgetSourceDecision) {
   }
   if (budgets?.status !== "approved-baseline-enforced" && (!Array.isArray(perfBudgetSourceDecision.remaining) || perfBudgetSourceDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.perf_budget_source.remaining must describe pending approved performance baselines`);
+  }
+  if (budgets?.status === "approved-baseline-enforced" && perfBudgetSourceDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.perf_budget_source.status must be verified-complete after private performance baselines are approved`);
+  }
+  if (budgets?.status === "approved-baseline-enforced" && Array.isArray(perfBudgetSourceDecision.remaining) && perfBudgetSourceDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.perf_budget_source.remaining must be empty after private performance baselines are approved`);
   }
 }
 

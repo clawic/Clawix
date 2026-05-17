@@ -159,6 +159,11 @@ if (manifest) {
     alignmentValidationDecision.status = "verified-complete";
     alignmentValidationDecision.remaining = [];
   }
+  if (args.has("--simulate-approved-geometry-stale-decision") && manifest && alignmentValidationDecision) {
+    manifest.status = "approved-private-geometry";
+    alignmentValidationDecision.status = "open";
+    alignmentValidationDecision.remaining = ["Simulated stale decision after approved private rendered geometry."];
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -263,6 +268,12 @@ if (!alignmentValidationDecision) {
   }
   if (manifest?.status !== "approved-private-geometry" && (!Array.isArray(alignmentValidationDecision.remaining) || alignmentValidationDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.alignment_validation.remaining must describe pending private rendered geometry and screenshot comparison evidence`);
+  }
+  if (manifest?.status === "approved-private-geometry" && alignmentValidationDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.alignment_validation.status must be verified-complete after private rendered geometry and baseline evidence are approved`);
+  }
+  if (manifest?.status === "approved-private-geometry" && Array.isArray(alignmentValidationDecision.remaining) && alignmentValidationDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.alignment_validation.remaining must be empty after private rendered geometry and baseline evidence are approved`);
   }
 }
 

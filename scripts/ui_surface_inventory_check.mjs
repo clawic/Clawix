@@ -250,6 +250,11 @@ if (args.has("--simulate-v1-pattern-set-premature-complete") && v1PatternSetDeci
   v1PatternSetDecision.status = "verified-complete";
   v1PatternSetDecision.remaining = [];
 }
+if (args.has("--simulate-approved-v1-pattern-set-stale-decision") && surfaceBaselineCoverage && v1PatternSetDecision) {
+  surfaceBaselineCoverage.status = "approved-private-capture";
+  v1PatternSetDecision.status = "open";
+  v1PatternSetDecision.remaining = ["Simulated stale decision after approved visible inventory screenshots."];
+}
 if (inventory?.reviewAfter && inventory.reviewAfter < today) {
   fail(`${inventoryPath}.reviewAfter expired on ${inventory.reviewAfter}`);
 }
@@ -419,6 +424,12 @@ if (!v1PatternSetDecision) {
   }
   if (surfaceBaselineCoverage?.status !== "approved-private-capture" && (!Array.isArray(v1PatternSetDecision.remaining) || v1PatternSetDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.v1_pattern_set.remaining must describe pending approved private rendered screenshots`);
+  }
+  if (surfaceBaselineCoverage?.status === "approved-private-capture" && v1PatternSetDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.status must be verified-complete after visible inventory has approved private rendered screenshots`);
+  }
+  if (surfaceBaselineCoverage?.status === "approved-private-capture" && Array.isArray(v1PatternSetDecision.remaining) && v1PatternSetDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.remaining must be empty after visible inventory has approved private rendered screenshots`);
   }
 }
 

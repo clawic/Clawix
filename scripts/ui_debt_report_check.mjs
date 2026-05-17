@@ -251,6 +251,11 @@ if (args.has("--simulate-debt-decision-premature-complete") && debtStrategyDecis
   debtStrategyDecision.status = "verified-complete";
   debtStrategyDecision.remaining = [];
 }
+if (args.has("--simulate-approved-debt-audit-stale-decision") && audit && debtStrategyDecision) {
+  audit.status = "audited-approved";
+  debtStrategyDecision.status = "open";
+  debtStrategyDecision.remaining = ["Simulated stale decision after approved private debt audit."];
+}
 requireFields(report, reportPath, [
   "schemaVersion",
   "status",
@@ -378,6 +383,12 @@ if (!debtStrategyDecision) {
   }
   if (audit?.status !== "audited-approved" && (!Array.isArray(debtStrategyDecision.remaining) || debtStrategyDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.debt_strategy.remaining must describe pending private debt audit`);
+  }
+  if (audit?.status === "audited-approved" && debtStrategyDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.status must be verified-complete after private debt audit is approved`);
+  }
+  if (audit?.status === "audited-approved" && Array.isArray(debtStrategyDecision.remaining) && debtStrategyDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.remaining must be empty after private debt audit is approved`);
   }
 }
 

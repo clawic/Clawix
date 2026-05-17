@@ -195,6 +195,15 @@ if (manifest) {
     enforcementModeDecision.status = "verified-complete";
     enforcementModeDecision.remaining = [];
   }
+  if (args.has("--simulate-active-drift-stale-decision") && manifest && Array.isArray(manifest.reports) && enforcementModeDecision) {
+    manifest.status = "active";
+    manifest.reports = manifest.reports.map((report) => ({
+      ...report,
+      status: "no-drift",
+    }));
+    enforcementModeDecision.status = "open";
+    enforcementModeDecision.remaining = ["Simulated stale decision after private rendered drift evidence."];
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -345,6 +354,12 @@ if (!enforcementModeDecision) {
   }
   if (manifest?.status !== "active" && (!Array.isArray(enforcementModeDecision.remaining) || enforcementModeDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.enforcement_mode.remaining must describe pending rendered drift evidence`);
+  }
+  if (manifest?.status === "active" && enforcementModeDecision.status !== "verified-complete") {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.status must be verified-complete after private rendered drift evidence is captured`);
+  }
+  if (manifest?.status === "active" && Array.isArray(enforcementModeDecision.remaining) && enforcementModeDecision.remaining.length > 0) {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.remaining must be empty after private rendered drift evidence is captured`);
   }
 }
 
