@@ -138,6 +138,21 @@ if (args.has("--simulate-approved-invalid-hash") && Array.isArray(manifest?.cove
   manifest.coverage[0].baselineStatus = "approved";
   manifest.coverage[0].screenshotHash = "not-a-hex-hash";
 }
+if (args.has("--simulate-approved-manifest-with-pending-entry") && manifest) {
+  manifest.status = "approved-private-capture";
+}
+if (args.has("--simulate-pending-manifest-with-all-approved") && Array.isArray(manifest?.coverage)) {
+  manifest.status = "pending-private-capture";
+  const simulatedHash = "a".repeat(64);
+  manifest.coverage = manifest.coverage.map((entry) => ({
+    ...entry,
+    baselineStatus: "approved",
+    screenshotHash: simulatedHash,
+    geometryHash: simulatedHash,
+    copySnapshotHash: simulatedHash,
+    baselineArtifactHash: simulatedHash,
+  }));
+}
 if (args.has("--simulate-missing-platform-scope") && Array.isArray(manifest?.coverage)) {
   manifest.coverage = manifest.coverage.filter((entry) => entry?.platform !== "android");
 }
@@ -220,6 +235,8 @@ for (const [index, entry] of requireArray(inventory, inventoryPath, "coverage").
 
 const seen = new Set();
 const platformsSeen = new Set();
+let approvedCoverageCount = 0;
+let pendingCoverageCount = 0;
 for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").entries()) {
   const label = `${manifestPath}.coverage[${index}]`;
   requireFields(entry, label, [
@@ -235,6 +252,8 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
   if (seen.has(entry.coverageId)) fail(`${label}.coverageId duplicates ${entry.coverageId}`);
   seen.add(entry.coverageId);
   if (entry.platform) platformsSeen.add(entry.platform);
+  if (entry.baselineStatus === "approved") approvedCoverageCount += 1;
+  if (entry.baselineStatus === "pending-user-approved-capture") pendingCoverageCount += 1;
   const inventoryEntry = inventoryById.get(entry.coverageId);
   if (!inventoryEntry) {
     fail(`${label}.coverageId is not listed in ${inventoryPath}`);
@@ -262,6 +281,13 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
       requireHash(entry[hashField], `${label}.${hashField}`);
     }
   }
+}
+
+if (manifest?.status === "approved-private-capture" && pendingCoverageCount > 0) {
+  fail(`${manifestPath}.status cannot be approved-private-capture while ${pendingCoverageCount} coverage entries are pending`);
+}
+if (manifest?.status === "pending-private-capture" && approvedCoverageCount === seen.size && seen.size > 0) {
+  fail(`${manifestPath}.status must be approved-private-capture when all coverage entries are approved`);
 }
 
 for (const coverageId of inventoryById.keys()) {
