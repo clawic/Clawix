@@ -60,6 +60,9 @@ function requireAlias(value, alias, label) {
 
 const manifestPath = "docs/ui/rendered-drift.manifest.json";
 const manifest = readJson(manifestPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const enforcementModeDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "enforcement_mode");
 const aggregateVisualManifestPath = "docs/ui/private-visual-validation.manifest.json";
 const aggregateVisualManifest = readJson(aggregateVisualManifestPath);
 if (manifest) {
@@ -86,6 +89,19 @@ if (manifest) {
   }
   if (args.has("--simulate-invalid-report-status") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].status = "ignored-drift";
+  }
+  if (args.has("--simulate-enforcement-missing-rendered-drift") && enforcementModeDecision) {
+    enforcementModeDecision.publicEvidence = enforcementModeDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
+  }
+  if (args.has("--simulate-enforcement-missing-private-drift-verifier") && enforcementModeDecision) {
+    enforcementModeDecision.blockingVerifiers = enforcementModeDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_drift_verify.mjs");
+  }
+  if (args.has("--simulate-enforcement-missing-private-drift-evidence") && enforcementModeDecision) {
+    enforcementModeDecision.privateEvidence = [];
+  }
+  if (args.has("--simulate-enforcement-premature-complete") && enforcementModeDecision) {
+    enforcementModeDecision.status = "verified-complete";
+    enforcementModeDecision.remaining = [];
   }
 }
 requireFields(manifest, manifestPath, [
@@ -184,6 +200,43 @@ for (const [index, report] of requireArray(manifest, manifestPath, "reports").en
 
 for (const coverageId of coverageById.keys()) {
   if (!seen.has(coverageId)) fail(`${manifestPath}.reports must include ${coverageId}`);
+}
+
+if (!enforcementModeDecision) {
+  fail(`${decisionVerificationPath}.decisions must include enforcement_mode`);
+} else {
+  const publicEvidence = new Set(Array.isArray(enforcementModeDecision.publicEvidence) ? enforcementModeDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "scripts/ui_governance_guard.mjs",
+    "scripts/ui_geometry_contract_check.mjs",
+    "scripts/ui_rendered_drift_check.mjs",
+    "scripts/ui_private_drift_verify.mjs",
+    manifestPath,
+    "scripts/test.sh",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.enforcement_mode.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(enforcementModeDecision.privateEvidence) ? enforcementModeDecision.privateEvidence : []);
+  if (!privateEvidence.has(`${manifest?.privateDriftAlias}:surfaces/*`)) {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.privateEvidence must include ${manifest?.privateDriftAlias}:surfaces/*`);
+  }
+  const blockingVerifiers = new Set(Array.isArray(enforcementModeDecision.blockingVerifiers) ? enforcementModeDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_drift_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.enforcement_mode.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (manifest?.status !== "active" && enforcementModeDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.status must remain open until private rendered drift evidence is captured`);
+  }
+  if (manifest?.status !== "active" && (!Array.isArray(enforcementModeDecision.remaining) || enforcementModeDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.remaining must describe pending rendered drift evidence`);
+  }
 }
 
 if (errors.length > 0) {
