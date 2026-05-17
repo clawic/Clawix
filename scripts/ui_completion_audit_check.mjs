@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -93,12 +94,66 @@ function countPrivateApprovalRecords() {
 
 const auditPath = "docs/ui/completion-audit.md";
 const decisionPath = "docs/ui/decision-verification.json";
-const audit = read(auditPath);
+let audit = read(auditPath);
 const decisionVerification = readJson(decisionPath);
 const privateVisualValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 const completionSource = readJson("docs/ui/completion-source.manifest.json");
-const privateEvidencePlan = runPrivateEvidencePlan();
+let privateEvidencePlan = runPrivateEvidencePlan();
 const privateApprovalRecordCount = countPrivateApprovalRecords();
+if (args.has("--simulate-unsafe-private-path")) {
+  audit += "\nPrivate source: /Users/private/source-session.jsonl\n";
+}
+if (args.has("--simulate-missing-goal-reference")) {
+  audit = audit.replace("private-codex-goal:clawix-interface-governance-plan-2026-05-15.md", "private-codex-goal:other.md");
+}
+if (args.has("--simulate-missing-blocked-status")) {
+  audit = audit.replace("Completion status: blocked by EXTERNAL PENDING private evidence.", "Completion status: ready.");
+}
+if (args.has("--simulate-wrong-private-evidence-total")) {
+  audit = audit.replace(/Private evidence plan: \d+ records must be verified before completion\./, "Private evidence plan: 0 records must be verified before completion.");
+}
+if (args.has("--simulate-missing-evidence-count-row")) {
+  audit = audit.replace("| `surface-baseline` | 14 |\n", "");
+}
+if (args.has("--simulate-missing-open-decision-evidence-row")) {
+  audit = audit.replace("| `initial_scope` | `surface-baseline`, `surface-geometry`, `surface-copy` |\n", "");
+}
+if (args.has("--simulate-missing-decision-row")) {
+  audit = audit.replace("| 3 | `canonical_source` | verified-complete | Public evidence verified. |\n", "");
+}
+if (args.has("--simulate-open-decision-public-state")) {
+  audit = audit.replace(
+    "| 1 | `initial_scope` | open | EXTERNAL PENDING: private surface baselines, rendered geometry, and copy snapshots. |",
+    "| 1 | `initial_scope` | open | Public evidence verified. |",
+  );
+}
+if (args.has("--simulate-approval-state-public-only")) {
+  audit = audit.replace(
+    "| 5 | `canon_approval` | verified-complete | Public approval evidence and private approval verifier wired. |",
+    "| 5 | `canon_approval` | verified-complete | Public evidence verified. |",
+  );
+}
+if (args.has("--simulate-verified-state-external-pending")) {
+  audit = audit.replace(
+    "| 3 | `canonical_source` | verified-complete | Public evidence verified. |",
+    "| 3 | `canonical_source` | verified-complete | EXTERNAL PENDING: private evidence. |",
+  );
+}
+if (args.has("--simulate-decision-status-mismatch") && Array.isArray(decisionVerification?.decisions)) {
+  decisionVerification.decisions[2] = {
+    ...decisionVerification.decisions[2],
+    status: "open",
+  };
+}
+if (args.has("--simulate-private-evidence-count-mismatch")) {
+  privateEvidencePlan = {
+    ...privateEvidencePlan,
+    counts: {
+      ...(privateEvidencePlan.counts || {}),
+      "surface-baseline": 15,
+    },
+  };
+}
 scanPublicSafety(audit, auditPath);
 
 for (const required of [
