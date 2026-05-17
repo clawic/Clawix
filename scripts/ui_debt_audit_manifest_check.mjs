@@ -43,6 +43,25 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function assertPublicSafeReference(reference, alias, label) {
   if (typeof reference !== "string" || !reference.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
@@ -64,6 +83,9 @@ function sameStringArray(left, right) {
 const manifestPath = "docs/ui/debt-audit.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
+  if (args.has("--simulate-inactive-debt-audit-manifest")) {
+    manifest.status = "inactive";
+  }
   if (args.has("--simulate-wrong-private-debt-audit-alias")) {
     manifest.privateDebtAuditAlias = "private-other-debt-audit";
   }
@@ -73,11 +95,26 @@ if (manifest) {
   if (args.has("--simulate-missing-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
     manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "approvedScope");
   }
+  if (args.has("--simulate-extra-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields.push("localAuditPath");
+  }
+  if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields) && manifest.requiredEvidenceFields[0]) {
+    manifest.requiredEvidenceFields.push(manifest.requiredEvidenceFields[0]);
+  }
   if (args.has("--simulate-missing-audit-status") && Array.isArray(manifest.auditStatuses)) {
     manifest.auditStatuses = manifest.auditStatuses.filter((status) => status !== "pending-private-visual-inventory");
   }
+  if (args.has("--simulate-extra-audit-status") && Array.isArray(manifest.auditStatuses)) {
+    manifest.auditStatuses.push("needs-follow-up");
+  }
+  if (args.has("--simulate-duplicate-audit-status") && Array.isArray(manifest.auditStatuses) && manifest.auditStatuses[0]) {
+    manifest.auditStatuses.push(manifest.auditStatuses[0]);
+  }
   if (args.has("--simulate-duplicate-audit-entry") && Array.isArray(manifest.entries) && manifest.entries[0]) {
     manifest.entries.push({ ...manifest.entries[0] });
+  }
+  if (args.has("--simulate-unreferenced-audit-debt") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries = manifest.entries.slice(1);
   }
   if (args.has("--simulate-unknown-debt-id") && Array.isArray(manifest.entries) && manifest.entries[0]) {
     manifest.entries[0] = { ...manifest.entries[0], debtId: "ui-debt-unknown" };
@@ -92,6 +129,18 @@ if (manifest) {
     manifest.entries[0] = {
       ...manifest.entries[0],
       privateDebtAuditReference: "/Users/private/debt-audit-evidence.json",
+    };
+  }
+  if (args.has("--simulate-entry-extra-required-evidence") && Array.isArray(manifest.entries) && manifest.entries[0]) {
+    manifest.entries[0] = {
+      ...manifest.entries[0],
+      requiredEvidence: [...(manifest.entries[0].requiredEvidence || []), "localAuditPath"],
+    };
+  }
+  if (args.has("--simulate-entry-duplicate-required-evidence") && Array.isArray(manifest.entries) && manifest.entries[0]?.requiredEvidence?.[0]) {
+    manifest.entries[0] = {
+      ...manifest.entries[0],
+      requiredEvidence: [...manifest.entries[0].requiredEvidence, manifest.entries[0].requiredEvidence[0]],
     };
   }
 }
@@ -110,6 +159,9 @@ requireFields(manifest, manifestPath, [
   "entries",
 ]);
 
+if (!["pending-private-visual-inventory", "audited-approved"].includes(manifest?.status)) {
+  fail(`${manifestPath}.status must be pending-private-visual-inventory or audited-approved`);
+}
 if (manifest?.privateDebtAuditAlias !== "private-codex-ui-debt-audit") {
   fail(`${manifestPath}.privateDebtAuditAlias must be private-codex-ui-debt-audit`);
 }
@@ -119,9 +171,11 @@ if (manifest?.evidenceFilename !== "debt-audit-evidence.json") {
 if (!String(manifest?.verificationCommand || "").includes("scripts/ui_private_debt_audit_verify.mjs")) {
   fail(`${manifestPath}.verificationCommand must run scripts/ui_private_debt_audit_verify.mjs`);
 }
+if (!String(manifest?.verificationCommand || "").includes("--require-approved")) {
+  fail(`${manifestPath}.verificationCommand must require approved private debt audit evidence`);
+}
 
-const requiredEvidence = new Set(requireArray(manifest, manifestPath, "requiredEvidenceFields"));
-for (const field of [
+const expectedEvidenceFields = [
   "debtId",
   "platform",
   "scope",
@@ -133,14 +187,18 @@ for (const field of [
   "auditedAt",
   "approvedByUserAt",
   "approvedScope",
-]) {
-  if (!requiredEvidence.has(field)) fail(`${manifestPath}.requiredEvidenceFields must include ${field}`);
-}
+];
+const requiredEvidence = requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredEvidenceFields"),
+  `${manifestPath}.requiredEvidenceFields`,
+  expectedEvidenceFields,
+);
 
-const auditStatuses = new Set(requireArray(manifest, manifestPath, "auditStatuses"));
-for (const status of ["pending-private-visual-inventory", "audited-approved"]) {
-  if (!auditStatuses.has(status)) fail(`${manifestPath}.auditStatuses must include ${status}`);
-}
+const auditStatuses = requireExactStringSet(
+  requireArray(manifest, manifestPath, "auditStatuses"),
+  `${manifestPath}.auditStatuses`,
+  ["pending-private-visual-inventory", "audited-approved"],
+);
 
 const debtBaseline = readJson(manifest?.sourceBaseline || "docs/ui/debt.baseline.json");
 const debtReport = readJson(manifest?.sourceReport || "docs/ui/debt-report.registry.json");
@@ -191,10 +249,7 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "entries").ent
   }
   if (!auditStatuses.has(entry.auditStatus)) fail(`${label}.auditStatus is invalid`);
   assertPublicSafeReference(entry.privateDebtAuditReference, manifest?.privateDebtAuditAlias, `${label}.privateDebtAuditReference`);
-  const entryRequired = new Set(requireArray(entry, label, "requiredEvidence"));
-  for (const field of requiredEvidence) {
-    if (!entryRequired.has(field)) fail(`${label}.requiredEvidence must include ${field}`);
-  }
+  requireExactStringSet(requireArray(entry, label, "requiredEvidence"), `${label}.requiredEvidence`, [...requiredEvidence]);
   if (auditDebtIds.has(entry.debtId)) fail(`${label}.debtId must be unique`);
   auditDebtIds.add(entry.debtId);
 }
