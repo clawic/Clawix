@@ -67,7 +67,7 @@ if (args.has("--simulate-missing-required-reference") && Array.isArray(registry?
 }
 
 const policy = String(registry?.policy || "").toLowerCase();
-for (const phrase of ["inspiration", "non-canonical", "explicitly approves"]) {
+for (const phrase of ["inspiration", "non-canonical", "explicitly approves", "concepts", "not visual styles", "do not copy"]) {
   if (!policy.includes(phrase)) fail(`${registryPath}.policy must mention ${phrase}`);
 }
 

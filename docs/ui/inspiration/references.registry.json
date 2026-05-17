@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "policy": "External references are inspiration only. They are non-canonical until the user explicitly approves a Clawix decision derived from them.",
+  "policy": "External references are inspiration only. They are non-canonical until the user explicitly approves a Clawix decision derived from them. Adapt concepts, not visual styles; do not copy external visual style into Clawix by default.",
   "references": [
     {
       "id": "storybook-visual-tests",
