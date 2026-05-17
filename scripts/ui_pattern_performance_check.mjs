@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_PATTERN_PERFORMANCE_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -243,6 +245,36 @@ for (const patternId of patternIds) {
     `${patternPath}.performance.criticalFlows`,
   )) {
     if (!budgetFlows.has(flowId)) fail(`${patternPath}.performance.criticalFlows references unknown flow ${flowId}`);
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-wrong-pattern-registry-path", "patternRegistryPath must be docs/ui/pattern-registry/patterns.registry.json"],
+    ["--simulate-wrong-budget-registry-path", "performanceBudgetRegistryPath must be docs/ui/performance-budgets.registry.json"],
+    ["--simulate-wrong-private-baseline-alias", "privateBaselineAlias must be private-codex-ui-baselines"],
+    ["--simulate-missing-flow-mapping", "requiredFlowMappings must map critical flow chat-scroll"],
+    ["--simulate-duplicate-flow-mapping", "flowId must be unique"],
+    ["--simulate-unknown-pattern-mapping", "references unknown pattern missing-performance-pattern"],
+    ["--simulate-pattern-missing-critical-flow", "chat-surface.pattern.json.performance.criticalFlows must include chat-scroll"],
+    ["--simulate-pattern-wrong-budget-registry", "sidebar-row.pattern.json.performance.budgetRegistry must be docs/ui/performance-budgets.registry.json"],
+    ["--simulate-pattern-missing-platform", "patterns must include at least one pattern declared for web"],
+    ["--simulate-pattern-unknown-critical-flow", "references unknown flow unknown-critical-flow"],
+    ["--simulate-missing-budget-platform", "performance-budgets.registry.json.flows must include web:chat-scroll"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_PATTERN_PERFORMANCE_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when pattern performance evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
   }
 }
 
