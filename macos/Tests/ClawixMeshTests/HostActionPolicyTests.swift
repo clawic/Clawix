@@ -64,6 +64,26 @@ final class HostActionPolicyTests: XCTestCase {
         XCTAssertEqual(events.first?.approval, .alwaysBlock)
     }
 
+    func testApprovedOverrideAllowsAgentWhenPolicyAsks() throws {
+        let defaults = try makeDefaults()
+        let auditURL = temporaryAuditURL()
+
+        let result = HostActionPolicy.authorize(
+            surface: .macControl,
+            action: "mac.shortcut.run",
+            origin: .agent,
+            defaults: defaults,
+            auditURL: auditURL,
+            approvedOverride: true
+        )
+
+        XCTAssertTrue(result.allowed)
+        XCTAssertEqual(result.outcome, "approved")
+        let events = try readAuditEvents(auditURL)
+        XCTAssertEqual(events.first?.surface, .macControl)
+        XCTAssertEqual(events.first?.outcome, "approved")
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let suite = "HostActionPolicyTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

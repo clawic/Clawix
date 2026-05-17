@@ -826,6 +826,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.browser.allowedDomains", "Browser allowed domains", BrowserPermissionPolicy.allowedDomainsStorageKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.hostPolicy.screenTools.approval", "Screen Tools host action approval", HostActionPolicy.screenToolsApprovalKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.hostPolicy.macUtilities.approval", "Mac Utilities host action approval", HostActionPolicy.macUtilitiesApprovalKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.hostPolicy.macControl.approval", "Mac Control host action approval", HostActionPolicy.macControlApprovalKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.mesh.httpPort", "Mesh HTTP port override", MeshClient.httpPortDefaultsKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.mesh.remoteWorkspaces", "Mesh remote workspaces", MeshStore.workspacesDefaultsKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.localModels.defaultModel", "Local models default model", LocalModelsService.defaultModelKey, PersistentSurfaceKind.preferenceKey),

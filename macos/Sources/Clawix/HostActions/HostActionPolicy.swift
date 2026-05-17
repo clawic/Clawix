@@ -3,6 +3,7 @@ import Foundation
 enum HostActionSurface: String, Codable, CaseIterable {
     case screenTools
     case macUtilities
+    case macControl
 
     var approvalKey: String {
         switch self {
@@ -10,6 +11,8 @@ enum HostActionSurface: String, Codable, CaseIterable {
             return HostActionPolicy.screenToolsApprovalKey
         case .macUtilities:
             return HostActionPolicy.macUtilitiesApprovalKey
+        case .macControl:
+            return HostActionPolicy.macControlApprovalKey
         }
     }
 }
@@ -55,6 +58,7 @@ enum HostActionPolicy {
 
     static let screenToolsApprovalKey = "clawix.hostPolicy.screenTools.approval"
     static let macUtilitiesApprovalKey = "clawix.hostPolicy.macUtilities.approval"
+    static let macControlApprovalKey = "clawix.hostPolicy.macControl.approval"
     static let auditFilename = "host-action-audit.jsonl"
 
     static func approval(
@@ -75,7 +79,8 @@ enum HostActionPolicy {
         origin: HostActionOrigin,
         defaults: UserDefaults = UserDefaults(suiteName: appPrefsSuite) ?? .standard,
         auditURL: URL? = nil,
-        now: Date = Date()
+        now: Date = Date(),
+        approvedOverride: Bool = false
     ) -> Authorization {
         let policy = approval(for: surface, defaults: defaults)
         let authorization: Authorization
@@ -85,7 +90,9 @@ enum HostActionPolicy {
         case .alwaysBlock:
             authorization = Authorization(allowed: false, outcome: "blocked", reason: "Host policy blocks this action.")
         case .alwaysAsk:
-            if origin.isUserApproved {
+            if approvedOverride {
+                authorization = Authorization(allowed: true, outcome: "approved", reason: nil)
+            } else if origin.isUserApproved {
                 authorization = Authorization(allowed: true, outcome: "allowed", reason: nil)
             } else {
                 authorization = Authorization(
