@@ -171,6 +171,16 @@ if (manifest) {
     manifest.flows[0].baselineStatus = "approved";
     manifest.flows[0].privateBaselineReference = `${manifest.privateRootAlias}:${manifest.flows[0].platform}/pending-${manifest.flows[0].id}`;
   }
+  if (args.has("--simulate-approved-manifest-with-pending-flow")) {
+    manifest.status = "approved-private-baselines";
+  }
+  if (args.has("--simulate-pending-manifest-with-all-approved") && Array.isArray(manifest.flows)) {
+    manifest.status = "pending-private-capture";
+    manifest.flows = manifest.flows.map((flow) => ({
+      ...flow,
+      baselineStatus: "approved",
+    }));
+  }
   if (args.has("--simulate-local-private-artifact-path")) {
     manifest.privateArtifactPolicy = manifest.privateArtifactPolicy || {};
     manifest.privateArtifactPolicy.example = "/Users/example/private-baseline.png";
@@ -265,6 +275,8 @@ const evidenceFields = requireExactStringSet(
 );
 
 const coverage = new Set();
+let approvedFlowCount = 0;
+let pendingFlowCount = 0;
 for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entries()) {
   const label = `${manifestPath}.flows[${index}]`;
   requireFields(flow, label, [
@@ -291,6 +303,8 @@ for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entrie
   if (flow.baselineStatus !== "pending-user-approved-capture" && flow.baselineStatus !== "approved") {
     fail(`${label}.baselineStatus must be pending-user-approved-capture or approved`);
   }
+  if (flow.baselineStatus === "approved") approvedFlowCount += 1;
+  if (flow.baselineStatus === "pending-user-approved-capture") pendingFlowCount += 1;
   if (flow.baselineStatus === "approved" && String(flow.privateBaselineReference).includes("pending")) {
     fail(`${label}.privateBaselineReference cannot be pending when approved`);
   }
@@ -300,6 +314,13 @@ for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entrie
   if (flow?.tolerance?.screenshotDiff !== "private-threshold") {
     fail(`${label}.tolerance.screenshotDiff must be private-threshold`);
   }
+}
+
+if (manifest?.status === "approved-private-baselines" && pendingFlowCount > 0) {
+  fail(`${manifestPath}.status cannot be approved-private-baselines while ${pendingFlowCount} baseline flows are pending`);
+}
+if (manifest?.status === "pending-private-capture" && coverage.size > 0 && approvedFlowCount === coverage.size) {
+  fail(`${manifestPath}.status must be approved-private-baselines when all baseline flows are approved`);
 }
 
 for (const platform of requiredPlatforms) {
