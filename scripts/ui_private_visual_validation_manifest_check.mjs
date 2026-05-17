@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_PRIVATE_VISUAL_VALIDATION_MANIFEST_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -615,6 +616,34 @@ for (const script of [
   "scripts/ui_private_performance_budget_verify.mjs",
 ]) {
   if (!fs.existsSync(path.join(rootDir, script))) fail(`missing ${script}`);
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-inactive-private-visual-manifest", "status must be active"],
+    ["--simulate-missing-required-root", "requiredRoots must include CLAWIX_UI_PRIVATE_COPY_ROOT"],
+    ["--simulate-extra-approved-scope-field", "requiredApprovedScopeFields must not include localApprovalPath"],
+    ["--simulate-delegate-without-approval", "delegates must include node scripts/ui_private_copy_verify.mjs --require-approved"],
+    ["--simulate-extra-root-alias", "rootAliases must exactly match required private aliases"],
+    ["--simulate-extra-optional-root-alias", "optionalRootAliases must exactly match optional private aliases"],
+    ["--simulate-missing-decision-blocker", "decisionBlockers must include open decision copy_governance"],
+    ["--simulate-unknown-evidence-type", "evidenceTypes includes unknown-private-evidence"],
+    ["--simulate-wrong-external-pending-code", "externalPendingExitCode must be 2"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_PRIVATE_VISUAL_VALIDATION_MANIFEST_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when private visual validation manifest evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
+  }
 }
 
 if (errors.length > 0) {
