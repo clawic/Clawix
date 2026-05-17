@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -68,6 +69,52 @@ function scanPublicSafety(value, label) {
 
 const manifestPath = "docs/ui/completion-source.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-unsafe-private-path")) {
+    manifest.sourceSessionAlias = "/Users/private/source-session.jsonl";
+  }
+  if (args.has("--simulate-wrong-goal-alias")) {
+    manifest.goalReferenceAlias = "private-codex-goal:other-plan.md";
+  }
+  if (args.has("--simulate-wrong-source-session-alias")) {
+    manifest.sourceSessionAlias = "private-codex-session:other";
+  }
+  if (args.has("--simulate-wrong-private-goal-env")) {
+    manifest.privateGoalFileEnv = "CLAWIX_UI_OTHER_GOAL_FILE";
+  }
+  if (args.has("--simulate-verifier-without-require-approved")) {
+    manifest.verificationCommand = String(manifest.verificationCommand || "").replace(" --require-approved", "");
+  }
+  if (args.has("--simulate-wrong-external-pending-exit-code")) {
+    manifest.externalPendingExitCode = 1;
+  }
+  if (args.has("--simulate-wrong-decision-count")) {
+    manifest.expectedDecisionCount = 38;
+  }
+  if (args.has("--simulate-missing-required-record-type")) {
+    manifest.sourceSessionRequirements = {
+      ...(manifest.sourceSessionRequirements || {}),
+      requiredRecordTypes: (manifest.sourceSessionRequirements?.requiredRecordTypes || []).filter(
+        (recordType) => recordType !== "event_msg:thread_goal_updated",
+      ),
+    };
+  }
+  if (args.has("--simulate-zero-minimum-user-messages")) {
+    manifest.sourceSessionRequirements = {
+      ...(manifest.sourceSessionRequirements || {}),
+      minimumUserMessages: 0,
+    };
+  }
+  if (args.has("--simulate-missing-expected-decision-id") && Array.isArray(manifest.expectedDecisionIds)) {
+    manifest.expectedDecisionIds = manifest.expectedDecisionIds.filter((id) => id !== "initial_scope");
+  }
+  if (args.has("--simulate-wrong-expected-decision-choice") && Array.isArray(manifest.expectedDecisions) && manifest.expectedDecisions[0]) {
+    manifest.expectedDecisions[0] = {
+      ...manifest.expectedDecisions[0],
+      choice: "Wrong choice",
+    };
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -131,6 +178,9 @@ for (const recordType of ["session_meta", "event_msg:user_message", "response_it
 }
 
 const decisionVerification = readJson("docs/ui/decision-verification.json");
+if (args.has("--simulate-wrong-decision-conversation-id") && decisionVerification) {
+  decisionVerification.conversationId = "other-conversation";
+}
 if (manifest?.expectedConversationId !== decisionVerification?.conversationId) {
   fail(`${manifestPath}.expectedConversationId must match docs/ui/decision-verification.json.conversationId`);
 }
@@ -168,7 +218,10 @@ for (const [index, decision] of decisions.entries()) {
   }
 }
 
-const completionAudit = read("docs/ui/completion-audit.md");
+let completionAudit = read("docs/ui/completion-audit.md");
+if (args.has("--simulate-audit-missing-source-alias")) {
+  completionAudit = completionAudit.replace(String(manifest?.sourceSessionAlias || ""), "private-codex-session:missing");
+}
 for (const snippet of [
   manifest?.goalReferenceAlias,
   manifest?.sourceSessionAlias,
@@ -178,7 +231,10 @@ for (const snippet of [
   if (!completionAudit.includes(snippet)) fail(`docs/ui/completion-audit.md must include ${snippet}`);
 }
 
-const privateVerifier = read("scripts/ui_private_completion_source_verify.mjs");
+let privateVerifier = read("scripts/ui_private_completion_source_verify.mjs");
+if (args.has("--simulate-private-verifier-missing-snippet")) {
+  privateVerifier = privateVerifier.split("sourceBeforeFirstGoalEvent").join("sourceAfterFirstGoalEvent");
+}
 for (const snippet of [
   "docs/ui/completion-source.manifest.json",
   "EXTERNAL PENDING",
