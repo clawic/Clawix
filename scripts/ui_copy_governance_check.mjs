@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
 const args = new Set(process.argv.slice(2));
+const isSelfTest = process.env.CLAWIX_UI_COPY_GOVERNANCE_SELF_TEST === "1";
 
 function fail(message) {
   errors.push(message);
@@ -343,6 +345,40 @@ if (!copyGovernanceDecision) {
   }
   if (copyInventory?.status === "approved-private-snapshots" && Array.isArray(copyGovernanceDecision.remaining) && copyGovernanceDecision.remaining.length > 0) {
     fail(`${decisionVerificationPath}.decisions.copy_governance.remaining must be empty after private copy snapshots are approved`);
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--simulate-inactive-copy-inventory", "status must be active or approved-private-snapshots"],
+    ["--simulate-wrong-private-snapshot-alias", "privateSnapshotAlias must be private-codex-ui-copy-snapshots"],
+    ["--simulate-missing-copy-kind", "restrictedCopyKinds must include tooltip"],
+    ["--simulate-extra-copy-kind", "restrictedCopyKinds must not include marketing-tagline"],
+    ["--simulate-missing-required-evidence", "requiredEvidenceFields must include copyHierarchyHash"],
+    ["--simulate-missing-pattern-copy-contract", "sidebar-row.pattern.json.copy must declare a non-empty copy contract"],
+    ["--simulate-invalid-pattern-copy-key", "copy.Visible Label must use stable lowerCamelCase naming"],
+    ["--simulate-mismatched-copy-snapshot-reference", "copySnapshotReference must target surfaces/macos/macos-root-chrome"],
+    ["--simulate-absolute-copy-snapshot-reference", "copySnapshotReference must use private-codex-ui-copy-snapshots: and must not contain a local path"],
+    ["--simulate-coverage-missing-copy-hash", "requiredEvidence must include copySnapshotHash"],
+    ["--simulate-wrong-surface-copy-alias", "privateCopyAlias must match docs/ui/copy.inventory.json.privateSnapshotAlias"],
+    ["--simulate-copy-decision-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_copy_verify.mjs"],
+    ["--simulate-copy-decision-missing-private-evidence", "privateEvidence must include private-codex-ui-copy-snapshots:surfaces/*"],
+    ["--simulate-copy-decision-premature-complete", "status must remain open until private copy snapshots are captured and approved"],
+    ["--simulate-approved-copy-snapshots-stale-decision", "status must be verified-complete after private copy snapshots are approved"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_COPY_GOVERNANCE_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when copy governance evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
   }
 }
 
