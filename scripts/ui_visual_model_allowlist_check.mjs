@@ -80,12 +80,40 @@ function requireSafePrivateReference(value, alias, label) {
 
 const manifestPath = "docs/ui/visual-model-allowlist.manifest.json";
 const manifest = readJson(manifestPath);
+if (args.has("--simulate-missing-active-initial-model") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
+    model?.id === "claude-opus-4.7" ? { ...model, status: "revoked" } : model
+  ));
+}
 if (args.has("--simulate-missing-copy-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) =>
     model?.id === "claude-opus-4.7"
       ? { ...model, allowedMutationClasses: (model.allowedMutationClasses || []).filter((mutationClass) => mutationClass !== "copy-ui") }
       : model,
   );
+}
+if (args.has("--simulate-unknown-mutation-class") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
+    model?.id === "claude-opus-4.7"
+      ? { ...model, allowedMutationClasses: [...(model.allowedMutationClasses || []), "layout-ui"] }
+      : model
+  ));
+}
+if (args.has("--simulate-private-approval-not-required") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
+    model?.id === "claude-opus-4.7" ? { ...model, privateApprovalRequired: false } : model
+  ));
+}
+if (args.has("--simulate-wrong-scope-source") && Array.isArray(manifest?.allowedVisualModels)) {
+  manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
+    model?.id === "claude-opus-4.7" ? { ...model, scopeSource: "docs/ui/unknown-scopes.manifest.json" } : model
+  ));
+}
+if (args.has("--simulate-model-signal-not-required")) {
+  manifest.modelSignal = { ...manifest.modelSignal, requiredForVisualMutation: false };
+}
+if (args.has("--simulate-private-assignment-public")) {
+  manifest.privateAssignment = "public-repo";
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
