@@ -28,7 +28,7 @@ final class DatabaseWorkbenchSessionTests: XCTestCase {
         XCTAssertEqual(DatabaseWorkbenchSessionStore.classify("   -- comment\n   "), .empty)
     }
 
-    func test_formatSQLUppercasesCommonKeywordsAndBreaksClauses() {
+    func test_formatSQLUppercasesSQLKeywordsAndBreaksClauses() {
         let formatted = DatabaseWorkbenchSessionStore.formatSQL("select * from users where id = 1 order by id limit 5")
 
         XCTAssertTrue(formatted.contains("SELECT *"))

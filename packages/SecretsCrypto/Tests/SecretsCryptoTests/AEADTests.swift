@@ -84,7 +84,7 @@ final class AEADTests: XCTestCase {
         }
     }
 
-    func testVersionByteHelper() throws {
+    func testVersionBytePrefixValidation() throws {
         let key = makeKey()
         let blob = try AEAD.seal(plaintext: Data("p".utf8), key: key)
         XCTAssertEqual(AEAD.versionByte(of: blob), CryptoVersion.v1)

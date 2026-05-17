@@ -194,7 +194,7 @@ function collectBroadSymbolWarnings(relativePath, text) {
   return warnings;
 }
 
-function hasDocsDataRoleSuffix(name) {
+function hasDocsJsonRoleSuffix(name) {
   const stem = name.replace(/\.(json|ya?ml)$/u, "");
   const role = stem.split(/[.-]/u).at(-1);
   return docsDataRoleSuffixes.has(role);
@@ -239,7 +239,7 @@ for (const relativePath of walk(rootDir)) {
     }
   }
   if ((ext === ".json" || ext === ".yaml" || ext === ".yml") && relativePath.startsWith("docs/")) {
-    if (!conventionalDataFiles.has(name) && !hasDocsDataRoleSuffix(name)) {
+    if (!conventionalDataFiles.has(name) && !hasDocsJsonRoleSuffix(name)) {
       warnings.push({ path: relativePath, kind: "data-file-role", message: "Owned docs data files should carry a role suffix" });
     }
   }

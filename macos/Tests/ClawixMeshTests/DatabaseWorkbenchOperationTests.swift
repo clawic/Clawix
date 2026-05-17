@@ -385,7 +385,7 @@ final class DatabaseWorkbenchOperationTests: XCTestCase {
         XCTAssertTrue(plan.message.contains("SQLite restore failed"), plan.message)
     }
 
-    func test_sqliteDatabaseSearchFindsRowData() throws {
+    func test_sqliteDatabaseSearchFindsMatchingRowValues() throws {
         let paths = try makeSQLiteFixture()
         defer { try? FileManager.default.removeItem(at: paths.directory) }
         let store = DatabaseWorkbenchOperationStore(defaults: defaults)

@@ -429,7 +429,7 @@ struct ClawJSIndexClient {
         if let body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             do {
-                req.httpBody = try JSONSerialization.data(withJSONObject: AnyJSONCodableHelper.swift(from: body))
+            req.httpBody = try JSONSerialization.data(withJSONObject: AnyJSONCodableBridge.swift(from: body))
             } catch {
                 throw Error.transport(error)
             }
@@ -458,7 +458,7 @@ struct ClawJSIndexClient {
 
 /// Coerces our `AnyJSON` enum (and dictionaries thereof) into the
 /// `Any` graph `JSONSerialization` accepts.
-enum AnyJSONCodableHelper {
+enum AnyJSONCodableBridge {
     static func swift(from value: Any) -> Any {
         if let json = value as? AnyJSON { return json.swiftValue }
         if let dict = value as? [String: AnyJSON] {
