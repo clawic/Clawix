@@ -50,6 +50,42 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
+function requireStringSet(values, label, { nonEmpty = true } = {}) {
+  const seen = new Set();
+  if (nonEmpty && values.length === 0) fail(`${label} must not be empty`);
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (hasLocalPath(value) || value.includes("/Users/") || value.startsWith("/") || value.startsWith("~/") || value.startsWith("file://") || value.includes("..") || value.includes("\\")) {
+      fail(`${label} must only include safe public identifiers`);
+    }
+  }
+  return seen;
+}
+
 function hasLocalPath(value) {
   return typeof value === "string" && (/^\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value));
 }
@@ -69,15 +105,18 @@ function scanForLocalPaths(value, label) {
 function requireSafePrivateReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
-    return;
+    return null;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
     fail(`${label} must use a safe relative private reference`);
+    return null;
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
+    return null;
   }
+  return suffix;
 }
 
 function requireIsoDate(value, label) {
@@ -106,11 +145,45 @@ function requirePublicReference(value, label) {
 
 const registryPath = "docs/ui/visual-proposals.registry.json";
 const registry = readJson(registryPath);
+if (registry) {
+  if (args.has("--simulate-inactive-visual-proposals")) {
+    registry.status = "pending";
+  }
+  if (args.has("--simulate-extra-proposal-status") && Array.isArray(registry.proposalStatuses)) {
+    registry.proposalStatuses.push("implemented");
+  }
+  if (args.has("--simulate-duplicate-proposal-status") && Array.isArray(registry.proposalStatuses) && registry.proposalStatuses[0]) {
+    registry.proposalStatuses.push(registry.proposalStatuses[0]);
+  }
+  if (args.has("--simulate-extra-approval-required-status") && Array.isArray(registry.approvalRequiredForStatuses)) {
+    registry.approvalRequiredForStatuses.push("conceptual-only");
+  }
+  if (args.has("--simulate-duplicate-approval-required-status") && Array.isArray(registry.approvalRequiredForStatuses) && registry.approvalRequiredForStatuses[0]) {
+    registry.approvalRequiredForStatuses.push(registry.approvalRequiredForStatuses[0]);
+  }
+  if (args.has("--simulate-extra-allowed-required-evidence") && Array.isArray(registry.allowedRequiredEvidence)) {
+    registry.allowedRequiredEvidence.push("local-screenshot");
+  }
+  if (args.has("--simulate-duplicate-allowed-required-evidence") && Array.isArray(registry.allowedRequiredEvidence) && registry.allowedRequiredEvidence[0]) {
+    registry.allowedRequiredEvidence.push(registry.allowedRequiredEvidence[0]);
+  }
+  if (args.has("--simulate-extra-required-proposal-field") && Array.isArray(registry.requiredProposalFields)) {
+    registry.requiredProposalFields.push("localDraftPath");
+  }
+  if (args.has("--simulate-duplicate-required-proposal-field") && Array.isArray(registry.requiredProposalFields) && registry.requiredProposalFields[0]) {
+    registry.requiredProposalFields.push(registry.requiredProposalFields[0]);
+  }
+}
 if (
   registry &&
   (args.has("--simulate-conceptual-implemented") ||
     args.has("--simulate-approved-without-private-reference") ||
-    args.has("--simulate-unknown-required-evidence"))
+    args.has("--simulate-approved-mismatched-private-reference") ||
+    args.has("--simulate-unknown-required-evidence") ||
+    args.has("--simulate-duplicate-proposal-change-kind") ||
+    args.has("--simulate-duplicate-proposal-platform") ||
+    args.has("--simulate-duplicate-proposal-evidence") ||
+    args.has("--simulate-unsafe-proposal-surface"))
 ) {
   const simulatedProposal = {
     id: "simulated-proposal",
@@ -134,6 +207,25 @@ if (
   if (args.has("--simulate-approved-without-private-reference")) {
     simulatedProposal.approvedBy = "user";
     simulatedProposal.approvedAt = "2026-05-15";
+  }
+  if (args.has("--simulate-approved-mismatched-private-reference")) {
+    simulatedProposal.status = "user-approved-for-visual-lane";
+    simulatedProposal.userApprovalStatus = "approved";
+    simulatedProposal.approvedBy = "user";
+    simulatedProposal.approvedAt = "2026-05-15";
+    simulatedProposal.privateApprovalReference = `${registry.privateApprovalAlias}:visual-proposals/wrong-proposal`;
+  }
+  if (args.has("--simulate-duplicate-proposal-change-kind")) {
+    simulatedProposal.changeKinds.push(simulatedProposal.changeKinds[0]);
+  }
+  if (args.has("--simulate-duplicate-proposal-platform")) {
+    simulatedProposal.platforms.push(simulatedProposal.platforms[0]);
+  }
+  if (args.has("--simulate-duplicate-proposal-evidence")) {
+    simulatedProposal.requiredEvidence.push(simulatedProposal.requiredEvidence[0]);
+  }
+  if (args.has("--simulate-unsafe-proposal-surface")) {
+    simulatedProposal.surfaces.push("../local-surface");
   }
   registry.proposals = [...(registry.proposals || []), simulatedProposal];
 }
@@ -179,19 +271,18 @@ const config = readJson(configPath);
 const allowedMutationClasses = new Set(requireArray(config, configPath, "mutationClasses"));
 const allowedChangeKinds = new Set(requireArray(config, configPath, "restrictedChangeKinds"));
 const allowedPlatforms = new Set(requireArray(config, configPath, "platforms"));
-const allowedStatuses = new Set(requireArray(registry, registryPath, "proposalStatuses"));
-const approvalRequiredStatuses = new Set(requireArray(registry, registryPath, "approvalRequiredForStatuses"));
-for (const status of ["conceptual-only", "user-approved-for-visual-lane", "rejected", "expired"]) {
-  if (!allowedStatuses.has(status)) fail(`${registryPath}.proposalStatuses must include ${status}`);
-}
-if (!approvalRequiredStatuses.has("user-approved-for-visual-lane")) {
-  fail(`${registryPath}.approvalRequiredForStatuses must include user-approved-for-visual-lane`);
-}
-for (const status of approvalRequiredStatuses) {
-  if (!allowedStatuses.has(status)) fail(`${registryPath}.approvalRequiredForStatuses contains unknown status ${status}`);
-}
-const allowedRequiredEvidence = new Set(requireArray(registry, registryPath, "allowedRequiredEvidence"));
-for (const evidence of [
+const proposalStatuses = ["conceptual-only", "user-approved-for-visual-lane", "rejected", "expired"];
+const allowedStatuses = requireExactStringSet(
+  requireArray(registry, registryPath, "proposalStatuses"),
+  `${registryPath}.proposalStatuses`,
+  proposalStatuses,
+);
+const approvalRequiredStatuses = requireExactStringSet(
+  requireArray(registry, registryPath, "approvalRequiredForStatuses"),
+  `${registryPath}.approvalRequiredForStatuses`,
+  ["user-approved-for-visual-lane"],
+);
+const requiredEvidenceValues = [
   "private-baseline",
   "rendered-geometry",
   "copy-snapshot",
@@ -199,12 +290,14 @@ for (const evidence of [
   "debt-audit",
   "performance-budget",
   "private-approval",
-]) {
-  if (!allowedRequiredEvidence.has(evidence)) fail(`${registryPath}.allowedRequiredEvidence must include ${evidence}`);
-}
+];
+const allowedRequiredEvidence = requireExactStringSet(
+  requireArray(registry, registryPath, "allowedRequiredEvidence"),
+  `${registryPath}.allowedRequiredEvidence`,
+  requiredEvidenceValues,
+);
 
-const requiredFields = requireArray(registry, registryPath, "requiredProposalFields");
-for (const field of [
+const requiredProposalFieldValues = [
   "id",
   "status",
   "requestedBy",
@@ -218,25 +311,29 @@ for (const field of [
   "userApprovalStatus",
   "implementationStatus",
   "reviewAfter",
-]) {
-  if (!requiredFields.includes(field)) fail(`${registryPath}.requiredProposalFields must include ${field}`);
-}
+];
+requireExactStringSet(
+  requireArray(registry, registryPath, "requiredProposalFields"),
+  `${registryPath}.requiredProposalFields`,
+  requiredProposalFieldValues,
+);
 
 const ids = new Set();
 for (const [index, proposal] of requireArray(registry, registryPath, "proposals", { nonEmpty: false }).entries()) {
   const label = `${registryPath}.proposals[${index}]`;
-  requireFields(proposal, label, requiredFields);
+  requireFields(proposal, label, requiredProposalFieldValues);
   if (ids.has(proposal.id)) fail(`${label}.id duplicates ${proposal.id}`);
   ids.add(proposal.id);
   if (!allowedStatuses.has(proposal.status)) fail(`${label}.status is not allowed`);
   if (!allowedMutationClasses.has(proposal.mutationClass)) fail(`${label}.mutationClass is not allowed`);
-  for (const kind of requireArray(proposal, label, "changeKinds")) {
+  for (const kind of requireStringSet(requireArray(proposal, label, "changeKinds"), `${label}.changeKinds`)) {
     if (!allowedChangeKinds.has(kind)) fail(`${label}.changeKinds contains ${kind}`);
   }
-  for (const platform of requireArray(proposal, label, "platforms")) {
+  requireStringSet(requireArray(proposal, label, "surfaces"), `${label}.surfaces`);
+  for (const platform of requireStringSet(requireArray(proposal, label, "platforms"), `${label}.platforms`)) {
     if (!allowedPlatforms.has(platform)) fail(`${label}.platforms contains ${platform}`);
   }
-  for (const evidence of requireArray(proposal, label, "requiredEvidence")) {
+  for (const evidence of requireStringSet(requireArray(proposal, label, "requiredEvidence"), `${label}.requiredEvidence`)) {
     if (!allowedRequiredEvidence.has(evidence)) fail(`${label}.requiredEvidence contains unsupported ${evidence}`);
   }
   requireArray(proposal, label, "outOfScopeDrift", { nonEmpty: false });
@@ -254,7 +351,11 @@ for (const [index, proposal] of requireArray(registry, registryPath, "proposals"
     }
     if (proposal.approvedBy !== "user") fail(`${label}.approvedBy must be user for ${proposal.status}`);
     requireIsoDate(proposal.approvedAt, `${label}.approvedAt`);
-    requireSafePrivateReference(proposal.privateApprovalReference, registry.privateApprovalAlias, `${label}.privateApprovalReference`);
+    const approvalSuffix = requireSafePrivateReference(proposal.privateApprovalReference, registry.privateApprovalAlias, `${label}.privateApprovalReference`);
+    const expectedApprovalSuffix = `visual-proposals/${proposal.id}`;
+    if (approvalSuffix && approvalSuffix !== expectedApprovalSuffix) {
+      fail(`${label}.privateApprovalReference must target ${expectedApprovalSuffix}`);
+    }
   }
   if (reviewAfter && reviewAfter < today) fail(`${label}.reviewAfter expired on ${proposal.reviewAfter}`);
 }
