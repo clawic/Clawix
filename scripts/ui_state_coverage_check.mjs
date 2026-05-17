@@ -97,6 +97,80 @@ if (manifest && args.has("--simulate-unknown-source-token-group")) {
     decorative: ["decorative-only"],
   };
 }
+if (manifest && args.has("--simulate-empty-source-token-group")) {
+  manifest.sourceTokenGroups.error = [];
+}
+if (manifest && args.has("--simulate-missing-source-evidence-token")) {
+  manifest.sourceTokenGroups.error = ["codex-state-token-that-does-not-exist"];
+}
+if (manifest && args.has("--simulate-invalid-gap-status")) {
+  manifest.allowedGaps = [
+    {
+      coverageId: "simulated-state-gap",
+      state: "error",
+      status: "ready-to-ignore",
+      owner: "interface-governance",
+      reviewAfter: "2999-12-31",
+      reason: "Simulated invalid status must fail state coverage.",
+    },
+  ];
+}
+if (manifest && args.has("--simulate-expired-gap")) {
+  manifest.allowedGaps = [
+    {
+      coverageId: "simulated-state-gap",
+      state: "error",
+      status: "pending-implementation-evidence",
+      owner: "interface-governance",
+      reviewAfter: "2026-01-01",
+      reason: "Simulated expired state coverage gap must fail.",
+    },
+  ];
+}
+if (manifest && args.has("--simulate-stale-gap")) {
+  manifest.allowedGaps = [
+    {
+      coverageId: "simulated-state-gap",
+      state: "error",
+      status: "pending-implementation-evidence",
+      owner: "interface-governance",
+      reviewAfter: "2999-12-31",
+      reason: "Simulated stale state coverage gap must fail.",
+    },
+  ];
+}
+if (manifest && args.has("--simulate-unknown-gap-state")) {
+  manifest.allowedGaps = [
+    {
+      coverageId: "simulated-state-gap",
+      state: "decorative",
+      status: "pending-implementation-evidence",
+      owner: "interface-governance",
+      reviewAfter: "2999-12-31",
+      reason: "Simulated unknown state coverage gap must fail.",
+    },
+  ];
+}
+if (manifest && args.has("--simulate-duplicate-gap")) {
+  manifest.allowedGaps = [
+    {
+      coverageId: "simulated-state-gap",
+      state: "error",
+      status: "pending-implementation-evidence",
+      owner: "interface-governance",
+      reviewAfter: "2999-12-31",
+      reason: "Simulated duplicate state coverage gap must fail.",
+    },
+    {
+      coverageId: "simulated-state-gap",
+      state: "error",
+      status: "pending-implementation-evidence",
+      owner: "interface-governance",
+      reviewAfter: "2999-12-31",
+      reason: "Simulated duplicate state coverage gap must fail.",
+    },
+  ];
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
@@ -127,6 +201,15 @@ for (const state of requiredStates) {
 
 const inventoryPath = manifest?.inventoryPath || "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
+if (inventory && args.has("--simulate-unsafe-source-root")) {
+  inventory.sourceRoots = ["/Users/example/Clawix/macos", ...inventory.sourceRoots.slice(1)];
+}
+if (inventory && args.has("--simulate-unmatched-scope") && Array.isArray(inventory.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0] = { ...inventory.coverage[0], scopes: ["missing/state-coverage/**/*.swift"] };
+}
+if (inventory && args.has("--simulate-unknown-pattern-reference") && Array.isArray(inventory.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0] = { ...inventory.coverage[0], classification: "pattern", patterns: ["missing-pattern"] };
+}
 const sourceRoots = requireArray(inventory, inventoryPath, "sourceRoots");
 for (const sourceRoot of sourceRoots) {
   if (sourceRoot.startsWith("/") || sourceRoot.startsWith("~/") || sourceRoot.includes("\\") || sourceRoot.includes("..") || sourceRoot.startsWith("file://") || /^[A-Z]:\\/.test(sourceRoot)) {
@@ -142,6 +225,9 @@ const patternStates = new Map();
 for (const patternId of patternIds) {
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
+  if (pattern && args.has("--simulate-pattern-missing-state") && patternId === "sidebar-row") {
+    pattern.states = pattern.states.filter((state) => state !== "error");
+  }
   patternStates.set(patternId, new Set(requireArray(pattern, patternPath, "states")));
 }
 
@@ -153,8 +239,12 @@ for (const [index, gap] of requireArray(manifest, manifestPath, "allowedGaps", {
   const label = `${manifestPath}.allowedGaps[${index}]`;
   requireFields(gap, label, ["coverageId", "state", "status", "owner", "reviewAfter", "reason"]);
   if (!allowedStatuses.has(gap.status)) fail(`${label}.status is not allowed`);
+  if (!requiredStates.includes(gap.state)) fail(`${label}.state is not a required interactive state`);
+  if (gap.owner !== "interface-governance") fail(`${label}.owner must be interface-governance`);
   if (gap.reviewAfter < today) fail(`${label}.reviewAfter expired on ${gap.reviewAfter}`);
-  gapByKey.set(`${gap.coverageId}:${gap.state}`, gap);
+  const key = `${gap.coverageId}:${gap.state}`;
+  if (gapByKey.has(key)) fail(`${label} duplicates state coverage gap ${key}`);
+  gapByKey.set(key, gap);
 }
 
 const missingKeys = new Set();
