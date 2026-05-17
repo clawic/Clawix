@@ -28,12 +28,12 @@ enum DictationE2ERunner {
         let oldRestore = defaults.object(forKey: DictationCoordinator.restoreClipboardDefaultsKey)
         let oldRestoreDelay = defaults.object(forKey: DictationCoordinator.restoreClipboardDelayMsKey)
         let oldAutoSend = defaults.object(forKey: DictationCoordinator.autoSendKeyDefaultsKey)
-        let oldFillerEnabled = FillerWordsManager.shared.enabled
+        let oldFillerEnabled = FillerWordsStore.shared.enabled
         defaults.set(true, forKey: DictationCoordinator.injectDefaultsKey)
         defaults.set(true, forKey: DictationCoordinator.restoreClipboardDefaultsKey)
         defaults.set(100, forKey: DictationCoordinator.restoreClipboardDelayMsKey)
         defaults.set(DictationAutoSendKey.enter.rawValue, forKey: DictationCoordinator.autoSendKeyDefaultsKey)
-        FillerWordsManager.shared.setEnabled(true)
+        FillerWordsStore.shared.setEnabled(true)
 
         var replacementID: UUID?
         if case .success(let entry) = DictationReplacementStore.shared.add(
@@ -96,7 +96,7 @@ enum DictationE2ERunner {
         restore(defaults: defaults, key: DictationCoordinator.restoreClipboardDefaultsKey, value: oldRestore)
         restore(defaults: defaults, key: DictationCoordinator.restoreClipboardDelayMsKey, value: oldRestoreDelay)
         restore(defaults: defaults, key: DictationCoordinator.autoSendKeyDefaultsKey, value: oldAutoSend)
-        FillerWordsManager.shared.setEnabled(oldFillerEnabled)
+        FillerWordsStore.shared.setEnabled(oldFillerEnabled)
 
         do {
             let data = try JSONEncoder().encode(report)

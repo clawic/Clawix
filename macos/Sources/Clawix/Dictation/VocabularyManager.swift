@@ -10,9 +10,9 @@ import Foundation
 /// Keeping vocabulary global (not per-language) is intentional — most
 /// proper nouns and product-specific terms are language-agnostic.
 @MainActor
-final class VocabularyManager: ObservableObject {
+final class DictationVocabularyStore: ObservableObject {
 
-    static let shared = VocabularyManager()
+    static let shared = DictationVocabularyStore()
 
     nonisolated static let defaultsKey = "dictation.vocabulary"
 

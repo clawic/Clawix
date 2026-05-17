@@ -38,7 +38,7 @@ struct DictationSettingsPage: View {
     @AppStorage(PlaybackController.enabledKey) private var pauseMediaWhileRecording = false
     @AppStorage(PlaybackController.resumeDelayKey) private var pauseResumeDelay = 0
 
-    @AppStorage(FillerWordsManager.enabledKey) private var fillerWordsEnabled = true
+    @AppStorage(FillerWordsStore.enabledKey) private var fillerWordsEnabled = true
 
     @AppStorage(DictationCoordinator.prewarmOnLaunchKey) private var prewarmOnLaunch = true
 
@@ -47,7 +47,7 @@ struct DictationSettingsPage: View {
     @AppStorage(ClawixPersistentSurfaceKeys.dictationAdvancedExpanded) private var advancedExpanded = false
 
     @StateObject private var replacementStore = DictationReplacementStore.shared
-    @StateObject private var vocabulary = VocabularyManager.shared
+    @StateObject private var vocabulary = DictationVocabularyStore.shared
     @StateObject private var whisperPrompts = WhisperPromptStore.shared
     @StateObject private var powerMode = PowerModeManager.shared
     @StateObject private var promptLibrary = PromptLibrary.shared
@@ -1567,7 +1567,7 @@ private struct CustomSoundIconButton: View {
 /// transcription model itself (Whisper's `initial_prompt`) — orthogonal
 /// to the post-processing word replacements stored next to it.
 private struct VocabularyHintsRow: View {
-    @ObservedObject var vocabulary: VocabularyManager
+    @ObservedObject var vocabulary: DictationVocabularyStore
     @State private var sheetOpen = false
 
     var body: some View {
@@ -1599,7 +1599,7 @@ private struct VocabularyHintsRow: View {
 }
 
 private struct VocabularySheet: View {
-    @ObservedObject var vocabulary: VocabularyManager
+    @ObservedObject var vocabulary: DictationVocabularyStore
     @Binding var isPresented: Bool
     @State private var draft: String = ""
 

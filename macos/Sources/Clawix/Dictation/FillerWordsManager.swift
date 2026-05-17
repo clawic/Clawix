@@ -14,9 +14,9 @@ import Foundation
 /// every active language is used (more recall, slightly more risk of
 /// over-removal).
 @MainActor
-final class FillerWordsManager: ObservableObject {
+final class FillerWordsStore: ObservableObject {
 
-    static let shared = FillerWordsManager()
+    static let shared = FillerWordsStore()
 
     nonisolated static let enabledKey = "dictation.fillerWords.enabled"
     nonisolated static let listKey = "dictation.fillerWords.list"

@@ -324,7 +324,7 @@ public actor TranscriptionService {
         options.temperature = 0.0
         // Custom initial prompt: combination of (a) per-language
         // formatting hint from `WhisperPromptStore` and (b) the
-        // vocabulary boost list from `VocabularyManager`. Both are
+        // vocabulary boost list from `DictationVocabularyStore`. Both are
         // resolved by the GUI side before calling us; we just stuff
         // the resulting string into `promptTokens` via Whisper's
         // tokenizer-friendly path. Empty prompts are dropped to keep

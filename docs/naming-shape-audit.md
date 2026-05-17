@@ -11,8 +11,8 @@ source-shape signals come from `node scripts/source-size-check.mjs --json`.
 ## Current gate status
 
 - Critical naming failures: 0.
-- Naming warnings: 19 in the current local tree. Broad source symbols account
-  for 18 warnings; one legacy uppercase Markdown note remains in UI pattern
+- Naming warnings: 17 in the current local tree. Broad source symbols account
+  for 16 warnings; one legacy uppercase Markdown note remains in UI pattern
   registry docs.
 - Source-size warnings: 39.
 - Source-structure signals: 31.
@@ -109,10 +109,13 @@ for staged rename/split work and must not be hidden by compressing code.
 - Hotkey vocabulary: dictation hotkey settings now use
   `DictationHotkeySettingsStore`, and Quick Ask global shortcut registration
   uses `QuickAskHotkeyRegistrar` instead of generic manager terminology.
+- Dictation store vocabulary: filler-word cleanup and vocabulary boosting now
+  use `FillerWordsStore` and `DictationVocabularyStore` instead of generic
+  manager terminology.
 
 ## Validation snapshot
 
-- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 19
+- `node scripts/naming-shape-check.mjs --json` passed with 0 failures and 17
   warnings.
 - `node scripts/source-size-check.mjs --json` passed with 0 failures, 39
   warnings, and 31 source-structure signals.

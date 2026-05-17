@@ -209,7 +209,7 @@ final class DictationCoordinator: ObservableObject {
         }
         _ = MediaController.shared
         _ = PlaybackController.shared
-        _ = FillerWordsManager.shared
+        _ = FillerWordsStore.shared
         _ = PowerModeManager.shared
         // Start the privacy cleanup scheduler so users with the
         // toggle on don't accumulate stale rows / audio across
@@ -325,7 +325,7 @@ final class DictationCoordinator: ObservableObject {
     // MARK: - Prewarm
 
     static func composeWhisperPrompt(language: String?) -> String? {
-        let vocab = VocabularyManager.shared.asPromptFragment()
+        let vocab = DictationVocabularyStore.shared.asPromptFragment()
         // Power Mode override takes precedence over the per-language
         // global prompt.
         let stylePrompt: String?
@@ -1214,7 +1214,7 @@ final class DictationCoordinator: ObservableObject {
     static func processForDelivery(_ text: String, language: String?) -> String {
         let trimmed = normalizeTranscriptText(text)
         trace("process: start chars=\(trimmed.count)")
-        let deFillered = FillerWordsManager.shared.apply(to: trimmed, language: language)
+        let deFillered = FillerWordsStore.shared.apply(to: trimmed, language: language)
         let processed = DictationReplacementStore.shared.apply(to: deFillered)
         trace("process: done chars=\(processed.count)")
         return processed
