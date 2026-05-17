@@ -166,6 +166,16 @@ if (manifest) {
   if (args.has("--simulate-invalid-report-status") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].status = "ignored-drift";
   }
+  if (args.has("--simulate-active-manifest-with-blocking-report")) {
+    manifest.status = "active";
+  }
+  if (args.has("--simulate-pending-manifest-with-all-nonblocking") && Array.isArray(manifest.reports)) {
+    manifest.status = "pending-private-capture";
+    manifest.reports = manifest.reports.map((report) => ({
+      ...report,
+      status: "no-drift",
+    }));
+  }
   if (args.has("--simulate-report-extra-drift-category") && Array.isArray(manifest.reports) && manifest.reports[0]) {
     manifest.reports[0].driftCategories.push("visual-copy");
   }
@@ -266,6 +276,8 @@ for (const [index, entry] of requireArray(coverage, coveragePath, "coverage").en
 }
 
 const seen = new Set();
+let blockingReportCount = 0;
+const blockingReportStatuses = new Set(Array.isArray(manifest?.blockingReportStatuses) ? manifest.blockingReportStatuses : []);
 for (const [index, report] of requireArray(manifest, manifestPath, "reports").entries()) {
   const label = `${manifestPath}.reports[${index}]`;
   requireFields(report, label, requiredReportFieldValues);
@@ -283,8 +295,16 @@ for (const [index, report] of requireArray(manifest, manifestPath, "reports").en
     fail(`${label}.privateDriftReportReference must target ${expectedDriftReference}`);
   }
   if (!statuses.has(report.status)) fail(`${label}.status is not allowed`);
+  if (blockingReportStatuses.has(report.status)) blockingReportCount += 1;
   if (report.reviewAfter < today) fail(`${label}.reviewAfter expired on ${report.reviewAfter}`);
   requireExactStringSet(requireArray(report, label, "driftCategories"), `${label}.driftCategories`, expectedCategories);
+}
+
+if (manifest?.status === "active" && blockingReportCount > 0) {
+  fail(`${manifestPath}.status cannot be active while ${blockingReportCount} drift reports are blocking`);
+}
+if (manifest?.status === "pending-private-capture" && seen.size > 0 && blockingReportCount === 0) {
+  fail(`${manifestPath}.status must be active when no drift reports are blocking`);
 }
 
 for (const coverageId of coverageById.keys()) {
