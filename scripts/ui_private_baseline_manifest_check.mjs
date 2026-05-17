@@ -4,6 +4,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const manifestPath = "docs/ui/private-baselines.manifest.json";
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 const requiredPlatforms = ["macos", "ios", "android", "web"];
@@ -98,6 +99,34 @@ function assertPublicSafeReference(reference, alias, label) {
 }
 
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-wrong-private-root-alias")) {
+    manifest.privateRootAlias = "private-codex-ui-rendered-geometry";
+  }
+  if (args.has("--simulate-verifier-without-approval")) {
+    manifest.verificationCommand = "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_baseline_verify.mjs";
+  }
+  if (args.has("--simulate-missing-required-evidence-field") && Array.isArray(manifest.requiredEvidenceFields)) {
+    manifest.requiredEvidenceFields = manifest.requiredEvidenceFields.filter((field) => field !== "approvedScope");
+  }
+  if (args.has("--simulate-missing-critical-flow") && Array.isArray(manifest.flows)) {
+    manifest.flows = manifest.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "right-sidebar-browser-use"));
+  }
+  if (args.has("--simulate-unsafe-baseline-reference") && Array.isArray(manifest.flows) && manifest.flows[0]) {
+    manifest.flows[0].privateBaselineReference = `${manifest.privateRootAlias}:../baseline`;
+  }
+  if (args.has("--simulate-invalid-baseline-status") && Array.isArray(manifest.flows) && manifest.flows[0]) {
+    manifest.flows[0].baselineStatus = "captured-without-user";
+  }
+  if (args.has("--simulate-approved-pending-reference") && Array.isArray(manifest.flows) && manifest.flows[0]) {
+    manifest.flows[0].baselineStatus = "approved";
+    manifest.flows[0].privateBaselineReference = `${manifest.privateRootAlias}:${manifest.flows[0].platform}/pending-${manifest.flows[0].id}`;
+  }
+  if (args.has("--simulate-local-private-artifact-path")) {
+    manifest.privateArtifactPolicy = manifest.privateArtifactPolicy || {};
+    manifest.privateArtifactPolicy.example = "/Users/example/private-baseline.png";
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
