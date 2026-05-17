@@ -85,6 +85,9 @@ const allowedBudgetStatuses = new Set(["pending-approved-measurement", "enforced
 
 const budgetsPath = "docs/ui/performance-budgets.registry.json";
 const budgets = readJson(budgetsPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const perfBudgetSourceDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "perf_budget_source");
 requireFields(budgets, budgetsPath, [
   "schemaVersion",
   "status",
@@ -113,6 +116,22 @@ if (args.has("--simulate-enforced-before-approved") && Array.isArray(budgets?.fl
 }
 if (args.has("--simulate-approved-before-private-baseline") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
   budgets.flows[0] = { ...budgets.flows[0], baselineStatus: "approved" };
+}
+if (args.has("--simulate-perf-decision-missing-budget-registry") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== budgetsPath);
+}
+if (args.has("--simulate-perf-decision-missing-private-baselines") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.publicEvidence = perfBudgetSourceDecision.publicEvidence.filter((evidencePath) => evidencePath !== "docs/ui/private-baselines.manifest.json");
+}
+if (args.has("--simulate-perf-decision-missing-private-verifier") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.blockingVerifiers = perfBudgetSourceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_performance_budget_verify.mjs");
+}
+if (args.has("--simulate-perf-decision-missing-platform-evidence") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.privateEvidence = perfBudgetSourceDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-baselines:web/*");
+}
+if (args.has("--simulate-perf-decision-premature-complete") && perfBudgetSourceDecision) {
+  perfBudgetSourceDecision.status = "verified-complete";
+  perfBudgetSourceDecision.remaining = [];
 }
 if (budgets?.evidenceFilename !== "performance-evidence.json") {
   fail(`${budgetsPath}.evidenceFilename must be performance-evidence.json`);
@@ -227,6 +246,47 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
 for (const platform of requiredPlatforms) {
   for (const flow of requiredFlows) {
     if (!seen.has(`${platform}:${flow}`)) fail(`${budgetsPath}.flows must include ${platform}:${flow}`);
+  }
+}
+
+if (!perfBudgetSourceDecision) {
+  fail(`${decisionVerificationPath}.decisions must include perf_budget_source`);
+} else {
+  const publicEvidence = new Set(Array.isArray(perfBudgetSourceDecision.publicEvidence) ? perfBudgetSourceDecision.publicEvidence : []);
+  for (const evidencePath of [
+    budgetsPath,
+    privateBaselinesPath,
+    "docs/ui/private-visual-validation.manifest.json",
+    "scripts/ui_performance_budget_check.mjs",
+    "scripts/ui_private_performance_budget_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.perf_budget_source.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(perfBudgetSourceDecision.privateEvidence) ? perfBudgetSourceDecision.privateEvidence : []);
+  const privateAlias = privateBaselines?.privateRootAlias || "private-codex-ui-baselines";
+  for (const platform of requiredPlatforms) {
+    const evidencePath = `${privateAlias}:${platform}/*`;
+    if (!privateEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.perf_budget_source.privateEvidence must include ${evidencePath}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(perfBudgetSourceDecision.blockingVerifiers) ? perfBudgetSourceDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_performance_budget_verify.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_visual_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.perf_budget_source.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (budgets?.status !== "approved-baseline-enforced" && perfBudgetSourceDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.perf_budget_source.status must remain open until private performance baselines are approved`);
+  }
+  if (budgets?.status !== "approved-baseline-enforced" && (!Array.isArray(perfBudgetSourceDecision.remaining) || perfBudgetSourceDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.perf_budget_source.remaining must describe pending approved performance baselines`);
   }
 }
 
