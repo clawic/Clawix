@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
 const errors = [];
 
 function fail(message) {
@@ -87,6 +88,35 @@ function approvalRecordCount() {
 
 const manifestPath = "docs/ui/private-visual-validation.manifest.json";
 const manifest = readJson(manifestPath);
+if (manifest) {
+  if (args.has("--simulate-missing-required-root") && Array.isArray(manifest.requiredRoots)) {
+    manifest.requiredRoots = manifest.requiredRoots.filter((root) => root !== "CLAWIX_UI_PRIVATE_COPY_ROOT");
+  }
+  if (args.has("--simulate-delegate-without-approval") && Array.isArray(manifest.delegates)) {
+    const delegateIndex = manifest.delegates.findIndex((delegate) => String(delegate).includes("scripts/ui_private_copy_verify.mjs"));
+    if (delegateIndex >= 0) {
+      manifest.delegates[delegateIndex] = "node scripts/ui_private_copy_verify.mjs";
+    }
+  }
+  if (args.has("--simulate-duplicate-root-alias") && Array.isArray(manifest.rootAliases) && manifest.rootAliases[0]) {
+    manifest.rootAliases.push({ ...manifest.rootAliases[0], env: "CLAWIX_UI_PRIVATE_DUPLICATE_ROOT" });
+  }
+  if (args.has("--simulate-optional-root-required") && Array.isArray(manifest.requiredRoots)) {
+    manifest.requiredRoots.push("CLAWIX_UI_PRIVATE_APPROVAL_ROOT");
+  }
+  if (args.has("--simulate-missing-decision-blocker") && Array.isArray(manifest.decisionBlockers)) {
+    manifest.decisionBlockers = manifest.decisionBlockers.filter((decisionId) => decisionId !== "copy_governance");
+  }
+  if (args.has("--simulate-unknown-evidence-type") && Array.isArray(manifest.decisionBlockerEvidenceTypes)) {
+    const entry = manifest.decisionBlockerEvidenceTypes.find((item) => item?.decisionId === "copy_governance");
+    if (entry && Array.isArray(entry.evidenceTypes)) {
+      entry.evidenceTypes = [...entry.evidenceTypes, "unknown-private-evidence"];
+    }
+  }
+  if (args.has("--simulate-wrong-external-pending-code")) {
+    manifest.externalPendingExitCode = 1;
+  }
+}
 requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
