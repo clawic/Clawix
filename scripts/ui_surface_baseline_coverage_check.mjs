@@ -67,6 +67,9 @@ function requireHash(value, label) {
 
 const manifestPath = "docs/ui/surface-baseline-coverage.manifest.json";
 const manifest = readJson(manifestPath);
+const decisionVerificationPath = "docs/ui/decision-verification.json";
+const decisionVerification = readJson(decisionVerificationPath);
+const initialScopeDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "initial_scope");
 if (args.has("--simulate-mismatched-surface-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0] = {
     ...manifest.coverage[0],
@@ -94,6 +97,22 @@ if (args.has("--simulate-missing-required-evidence") && Array.isArray(manifest?.
 if (args.has("--simulate-approved-invalid-hash") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0].baselineStatus = "approved";
   manifest.coverage[0].screenshotHash = "not-a-hex-hash";
+}
+if (args.has("--simulate-missing-platform-scope") && Array.isArray(manifest?.coverage)) {
+  manifest.coverage = manifest.coverage.filter((entry) => entry?.platform !== "android");
+}
+if (args.has("--simulate-initial-scope-missing-surface-manifest") && initialScopeDecision) {
+  initialScopeDecision.publicEvidence = initialScopeDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
+}
+if (args.has("--simulate-initial-scope-missing-private-geometry") && initialScopeDecision) {
+  initialScopeDecision.privateEvidence = initialScopeDecision.privateEvidence.filter((evidencePath) => evidencePath !== `${manifest?.privateGeometryAlias}:surfaces/*`);
+}
+if (args.has("--simulate-initial-scope-missing-copy-verifier") && initialScopeDecision) {
+  initialScopeDecision.blockingVerifiers = initialScopeDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_copy_verify.mjs");
+}
+if (args.has("--simulate-initial-scope-premature-complete") && initialScopeDecision) {
+  initialScopeDecision.status = "verified-complete";
+  initialScopeDecision.remaining = [];
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -150,6 +169,7 @@ for (const entry of requireArray(inventory, inventoryPath, "coverage")) {
 }
 
 const seen = new Set();
+const platformsSeen = new Set();
 for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").entries()) {
   const label = `${manifestPath}.coverage[${index}]`;
   requireFields(entry, label, [
@@ -164,6 +184,7 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
   ]);
   if (seen.has(entry.coverageId)) fail(`${label}.coverageId duplicates ${entry.coverageId}`);
   seen.add(entry.coverageId);
+  if (entry.platform) platformsSeen.add(entry.platform);
   const inventoryEntry = inventoryById.get(entry.coverageId);
   if (!inventoryEntry) {
     fail(`${label}.coverageId is not listed in ${inventoryPath}`);
@@ -198,6 +219,56 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
 
 for (const coverageId of inventoryById.keys()) {
   if (!seen.has(coverageId)) fail(`${manifestPath}.coverage must include ${coverageId}`);
+}
+
+for (const platform of ["macos", "ios", "android", "web"]) {
+  if (!platformsSeen.has(platform)) fail(`${manifestPath}.coverage must include at least one ${platform} surface`);
+}
+
+if (!initialScopeDecision) {
+  fail(`${decisionVerificationPath}.decisions must include initial_scope`);
+} else {
+  const publicEvidence = new Set(Array.isArray(initialScopeDecision.publicEvidence) ? initialScopeDecision.publicEvidence : []);
+  for (const evidencePath of [
+    "docs/ui/interface-governance.config.json",
+    "docs/ui/pattern-registry/patterns.registry.json",
+    inventoryPath,
+    manifestPath,
+    "scripts/ui_surface_baseline_coverage_check.mjs",
+    "scripts/ui_private_evidence_plan_check.mjs",
+    "scripts/ui_private_evidence_verify.mjs",
+  ]) {
+    if (!publicEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.initial_scope.publicEvidence must include ${evidencePath}`);
+    }
+  }
+  const privateEvidence = new Set(Array.isArray(initialScopeDecision.privateEvidence) ? initialScopeDecision.privateEvidence : []);
+  for (const evidencePath of [
+    `${manifest?.privateBaselineAlias}:surfaces/*`,
+    `${manifest?.privateGeometryAlias}:surfaces/*`,
+    `${manifest?.privateCopyAlias}:surfaces/*`,
+  ]) {
+    if (!privateEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.initial_scope.privateEvidence must include ${evidencePath}`);
+    }
+  }
+  const blockingVerifiers = new Set(Array.isArray(initialScopeDecision.blockingVerifiers) ? initialScopeDecision.blockingVerifiers : []);
+  for (const verifier of [
+    "scripts/ui_private_evidence_verify.mjs",
+    "scripts/ui_private_baseline_verify.mjs",
+    "scripts/ui_private_geometry_verify.mjs",
+    "scripts/ui_private_copy_verify.mjs",
+  ]) {
+    if (!blockingVerifiers.has(verifier)) {
+      fail(`${decisionVerificationPath}.decisions.initial_scope.blockingVerifiers must include ${verifier}`);
+    }
+  }
+  if (manifest?.status !== "approved-private-capture" && initialScopeDecision.status !== "open") {
+    fail(`${decisionVerificationPath}.decisions.initial_scope.status must remain open until private surface baseline, geometry, and copy artifacts are approved`);
+  }
+  if (manifest?.status !== "approved-private-capture" && (!Array.isArray(initialScopeDecision.remaining) || initialScopeDecision.remaining.length === 0)) {
+    fail(`${decisionVerificationPath}.decisions.initial_scope.remaining must describe pending private surface evidence`);
+  }
 }
 
 if (errors.length > 0) {
