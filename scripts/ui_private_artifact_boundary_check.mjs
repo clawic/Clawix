@@ -38,6 +38,38 @@ function requireField(object, label, field, expected) {
   }
 }
 
+function requireArray(object, label, field, { nonEmpty = true } = {}) {
+  const value = object?.[field];
+  if (!Array.isArray(value)) {
+    fail(`${label}.${field} must be an array`);
+    return [];
+  }
+  if (nonEmpty && value.length === 0) fail(`${label}.${field} must not be empty`);
+  return value;
+}
+
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const [index, value] of values.entries()) {
+    const entryLabel = `${label}[${index}]`;
+    if (typeof value !== "string" || value === "") {
+      fail(`${entryLabel} must be a non-empty string`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${entryLabel} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
+function requireExactStrings(values, label, expected) {
+  requireUniqueStrings(values, label);
+  if (values.length !== expected.length || values.some((value, index) => value !== expected[index])) {
+    fail(`${label} must match ${JSON.stringify(expected)}`);
+  }
+  return new Set(values);
+}
+
 function isSafeRepoRelativePath(value) {
   return typeof value === "string" &&
     value !== "" &&
@@ -94,10 +126,14 @@ const forbiddenExtensions = new Set([
   ".webp",
   ".zip",
 ]);
+const allowedPublicUiExtensions = new Set([".json", ".md"]);
 
 for (const file of walk(uiDir)) {
   const relativePath = path.relative(rootDir, file);
   const extension = path.extname(file).toLowerCase();
+  if (!allowedPublicUiExtensions.has(extension)) {
+    fail(`${relativePath} must be a JSON or Markdown public contract, not a generated artifact`);
+  }
   if (forbiddenExtensions.has(extension)) {
     fail(`${relativePath} must not store private visual evidence in the public repo`);
   }
@@ -113,12 +149,21 @@ for (const file of walk(uiDir)) {
     }
   }
 }
+if (args.has("--simulate-public-ui-binary-artifact")) {
+  fail("docs/ui/simulated-private-baseline.png must not store private visual evidence in the public repo");
+}
 
 const privateValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
 const config = readJson("docs/ui/interface-governance.config.json");
 if (args.has("--simulate-missing-private-baseline-alias") && Array.isArray(privateValidation?.rootAliases)) {
   privateValidation.rootAliases = privateValidation.rootAliases.filter((entry) => entry?.alias !== expectedPrivateBaselineAlias);
+}
+if (args.has("--simulate-missing-required-root") && Array.isArray(privateValidation?.requiredRoots)) {
+  privateValidation.requiredRoots = privateValidation.requiredRoots.filter((root) => root !== "CLAWIX_UI_PRIVATE_COPY_ROOT");
+}
+if (args.has("--simulate-unexpected-required-root") && Array.isArray(privateValidation?.requiredRoots)) {
+  privateValidation.requiredRoots = [...privateValidation.requiredRoots, "CLAWIX_UI_PRIVATE_SCREENSHOT_ROOT"];
 }
 if (args.has("--simulate-required-root-without-alias") && Array.isArray(privateValidation?.requiredRoots)) {
   privateValidation.requiredRoots = [...privateValidation.requiredRoots, "CLAWIX_UI_PRIVATE_SIMULATED_ROOT"];
@@ -135,6 +180,12 @@ if (args.has("--simulate-root-alias-missing-field") && Array.isArray(privateVali
 if (args.has("--simulate-root-alias-unsafe-manifest-path") && Array.isArray(privateValidation?.rootAliases) && privateValidation.rootAliases[0]) {
   privateValidation.rootAliases[0].manifestPath = "../private-baselines.manifest.json";
 }
+if (args.has("--simulate-root-alias-wrong-manifest-alias-field") && Array.isArray(privateValidation?.rootAliases) && privateValidation.rootAliases[1]) {
+  privateValidation.rootAliases[1].manifestAliasField = "privateRootAlias";
+}
+if (args.has("--simulate-optional-root-alias-wrong-env") && Array.isArray(privateValidation?.optionalRootAliases) && privateValidation.optionalRootAliases[0]) {
+  privateValidation.optionalRootAliases[0].env = "CLAWIX_UI_PRIVATE_BASELINE_ROOT";
+}
 if (args.has("--simulate-private-validation-command-missing-root") && privateValidation) {
   privateValidation.verificationCommand = String(privateValidation.verificationCommand || "").replace("CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> ", "");
 }
@@ -147,17 +198,99 @@ if (args.has("--simulate-public-baselines-policy") && config?.privateArtifactsPo
 if (args.has("--simulate-missing-public-manifest-store") && Array.isArray(config?.privateArtifactsPolicy?.publicRepoStores)) {
   config.privateArtifactsPolicy.publicRepoStores = config.privateArtifactsPolicy.publicRepoStores.filter((store) => store !== "manifest");
 }
+if (args.has("--simulate-extra-public-repo-store") && Array.isArray(config?.privateArtifactsPolicy?.publicRepoStores)) {
+  config.privateArtifactsPolicy.publicRepoStores = [...config.privateArtifactsPolicy.publicRepoStores, "raw-screenshot"];
+}
+if (args.has("--simulate-public-baseline-may-store-raw-screenshot") && Array.isArray(privateBaselines?.privateArtifactPolicy?.publicRepoMayStore)) {
+  privateBaselines.privateArtifactPolicy.publicRepoMayStore = [...privateBaselines.privateArtifactPolicy.publicRepoMayStore, "raw-screenshot"];
+}
+if (args.has("--simulate-public-baseline-must-not-store-missing-secret") && Array.isArray(privateBaselines?.privateArtifactPolicy?.publicRepoMustNotStore)) {
+  privateBaselines.privateArtifactPolicy.publicRepoMustNotStore = privateBaselines.privateArtifactPolicy.publicRepoMustNotStore.filter((store) => store !== "secret");
+}
 requireField(privateBaselines, "docs/ui/private-baselines.manifest.json", "privateRootAlias");
 const privateBaselineAlias = privateBaselines?.privateRootAlias;
 if (privateBaselineAlias !== expectedPrivateBaselineAlias) {
   fail(`docs/ui/private-baselines.manifest.json.privateRootAlias must be ${expectedPrivateBaselineAlias}`);
 }
-const requiredRoots = new Set(Array.isArray(privateValidation?.requiredRoots) ? privateValidation.requiredRoots : []);
+const requiredRootValues = requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "requiredRoots");
+const requiredRoots = requireExactStrings(requiredRootValues, "docs/ui/private-visual-validation.manifest.json.requiredRoots", [
+  "CLAWIX_UI_PRIVATE_BASELINE_ROOT",
+  "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
+  "CLAWIX_UI_PRIVATE_COPY_ROOT",
+  "CLAWIX_UI_PRIVATE_DRIFT_ROOT",
+  "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT",
+]);
 const rootAliases = Array.isArray(privateValidation?.rootAliases) ? privateValidation.rootAliases : [];
 const optionalRootAliases = Array.isArray(privateValidation?.optionalRootAliases) ? privateValidation.optionalRootAliases : [];
 if (rootAliases.length === 0) fail("docs/ui/private-visual-validation.manifest.json.rootAliases must not be empty");
 if (!rootAliases.some((entry) => entry?.alias === privateBaselineAlias)) {
   fail(`docs/ui/private-visual-validation.manifest.json.rootAliases must include ${privateBaselineAlias}`);
+}
+const expectedRootAliases = [
+  {
+    alias: "private-codex-ui-baselines",
+    env: "CLAWIX_UI_PRIVATE_BASELINE_ROOT",
+    manifestPath: "docs/ui/private-baselines.manifest.json",
+    manifestAliasField: "privateRootAlias",
+  },
+  {
+    alias: "private-codex-ui-rendered-geometry",
+    env: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
+    manifestPath: "docs/ui/rendered-geometry.manifest.json",
+    manifestAliasField: "privateGeometryAlias",
+  },
+  {
+    alias: "private-codex-ui-copy-snapshots",
+    env: "CLAWIX_UI_PRIVATE_COPY_ROOT",
+    manifestPath: "docs/ui/copy.inventory.json",
+    manifestAliasField: "privateSnapshotAlias",
+  },
+  {
+    alias: "private-codex-ui-rendered-drift",
+    env: "CLAWIX_UI_PRIVATE_DRIFT_ROOT",
+    manifestPath: "docs/ui/rendered-drift.manifest.json",
+    manifestAliasField: "privateDriftAlias",
+  },
+  {
+    alias: "private-codex-ui-debt-audit",
+    env: "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT",
+    manifestPath: "docs/ui/debt-audit.manifest.json",
+    manifestAliasField: "privateDebtAuditAlias",
+  },
+];
+const expectedOptionalRootAliases = [
+  {
+    alias: "private-codex-ui-approval",
+    env: "CLAWIX_UI_PRIVATE_APPROVAL_ROOT",
+    manifestPath: "docs/ui/approval-authority.manifest.json",
+    manifestAliasField: "privateApprovalAlias",
+  },
+  {
+    alias: "private-codex-ui-mechanical-equivalence",
+    env: "CLAWIX_UI_PRIVATE_MECHANICAL_EQUIVALENCE_ROOT",
+    manifestPath: "docs/ui/mechanical-equivalence.manifest.json",
+    manifestAliasField: "privateEvidenceAlias",
+  },
+];
+for (const [index, expected] of expectedRootAliases.entries()) {
+  const actual = rootAliases[index];
+  const label = `docs/ui/private-visual-validation.manifest.json.rootAliases[${index}]`;
+  for (const field of ["alias", "env", "manifestPath", "manifestAliasField"]) {
+    if (actual?.[field] !== expected[field]) fail(`${label}.${field} must be ${expected[field]}`);
+  }
+}
+if (rootAliases.length !== expectedRootAliases.length) {
+  fail("docs/ui/private-visual-validation.manifest.json.rootAliases must match the required private evidence aliases");
+}
+for (const [index, expected] of expectedOptionalRootAliases.entries()) {
+  const actual = optionalRootAliases[index];
+  const label = `docs/ui/private-visual-validation.manifest.json.optionalRootAliases[${index}]`;
+  for (const field of ["alias", "env", "manifestPath", "manifestAliasField"]) {
+    if (actual?.[field] !== expected[field]) fail(`${label}.${field} must be ${expected[field]}`);
+  }
+}
+if (optionalRootAliases.length !== expectedOptionalRootAliases.length) {
+  fail("docs/ui/private-visual-validation.manifest.json.optionalRootAliases must match the approved optional private evidence aliases");
 }
 const seenAliases = new Set();
 const seenEnvs = new Set();
@@ -215,14 +348,25 @@ for (const root of requiredRoots) {
 
 requireField(config?.privateArtifactsPolicy, "docs/ui/interface-governance.config.json.privateArtifactsPolicy", "screenshots", "private");
 requireField(config?.privateArtifactsPolicy, "docs/ui/interface-governance.config.json.privateArtifactsPolicy", "goldenBaselines", "private");
-const publicRepoStores = Array.isArray(config?.privateArtifactsPolicy?.publicRepoStores)
-  ? new Set(config.privateArtifactsPolicy.publicRepoStores)
-  : new Set();
-for (const store of ["manifest", "metadata", "tolerance", "command", "hash"]) {
-  if (!publicRepoStores.has(store)) {
-    fail(`docs/ui/interface-governance.config.json.privateArtifactsPolicy.publicRepoStores must include ${store}`);
-  }
-}
+requireExactStrings(
+  requireArray(config?.privateArtifactsPolicy, "docs/ui/interface-governance.config.json.privateArtifactsPolicy", "publicRepoStores"),
+  "docs/ui/interface-governance.config.json.privateArtifactsPolicy.publicRepoStores",
+  ["manifest", "metadata", "tolerance", "command", "hash"],
+);
+requireField(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "screenshots", "private-only");
+requireField(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "videos", "private-only");
+requireField(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "geometrySnapshots", "private-only");
+requireField(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "performanceTraces", "private-only");
+requireExactStrings(
+  requireArray(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "publicRepoMayStore"),
+  "docs/ui/private-baselines.manifest.json.privateArtifactPolicy.publicRepoMayStore",
+  ["manifest", "metadata", "hash", "tolerance", "runner-id", "approval-record-reference"],
+);
+requireExactStrings(
+  requireArray(privateBaselines?.privateArtifactPolicy, "docs/ui/private-baselines.manifest.json.privateArtifactPolicy", "publicRepoMustNotStore"),
+  "docs/ui/private-baselines.manifest.json.privateArtifactPolicy.publicRepoMustNotStore",
+  ["raw-screenshot", "raw-video", "raw-trace", "local-absolute-path", "secret", "signing-identity"],
+);
 
 if (errors.length > 0) {
   console.error("UI private artifact boundary check failed:");
