@@ -45,6 +45,25 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
 function privateReferenceSuffix(reference, expectedAlias, label) {
   if (typeof reference !== "string" || reference.length === 0) {
     fail(`${label} must be a private baseline alias reference`);
@@ -88,6 +107,9 @@ const budgets = readJson(budgetsPath);
 const decisionVerificationPath = "docs/ui/decision-verification.json";
 const decisionVerification = readJson(decisionVerificationPath);
 const perfBudgetSourceDecision = (decisionVerification?.decisions || []).find((decision) => decision?.id === "perf_budget_source");
+if (budgets && args.has("--simulate-inactive-budget-registry")) {
+  budgets.status = "active";
+}
 requireFields(budgets, budgetsPath, [
   "schemaVersion",
   "status",
@@ -99,6 +121,24 @@ requireFields(budgets, budgetsPath, [
   "verificationCommand",
   "flows",
 ]);
+if (args.has("--simulate-extra-required-flow") && Array.isArray(budgets?.budgetStyle?.requiredFlows)) {
+  budgets.budgetStyle.requiredFlows.push("search-open");
+}
+if (args.has("--simulate-duplicate-required-flow") && Array.isArray(budgets?.budgetStyle?.requiredFlows) && budgets.budgetStyle.requiredFlows[0]) {
+  budgets.budgetStyle.requiredFlows.push(budgets.budgetStyle.requiredFlows[0]);
+}
+if (args.has("--simulate-extra-required-metric") && Array.isArray(budgets?.requiredMetrics)) {
+  budgets.requiredMetrics.push("cpuUsagePercent");
+}
+if (args.has("--simulate-duplicate-required-metric") && Array.isArray(budgets?.requiredMetrics) && budgets.requiredMetrics[0]) {
+  budgets.requiredMetrics.push(budgets.requiredMetrics[0]);
+}
+if (args.has("--simulate-extra-required-evidence-field") && Array.isArray(budgets?.requiredEvidenceFields)) {
+  budgets.requiredEvidenceFields.push("localTracePath");
+}
+if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(budgets?.requiredEvidenceFields) && budgets.requiredEvidenceFields[0]) {
+  budgets.requiredEvidenceFields.push(budgets.requiredEvidenceFields[0]);
+}
 if (args.has("--simulate-missing-required-flow") && Array.isArray(budgets?.flows)) {
   budgets.flows = budgets.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "chat-scroll"));
 }
@@ -106,6 +146,18 @@ if (args.has("--simulate-missing-required-metric") && Array.isArray(budgets?.flo
   budgets.flows[0] = {
     ...budgets.flows[0],
     requiredMetrics: budgets.flows[0].requiredMetrics.filter((metric) => metric !== "memoryDeltaMb"),
+  };
+}
+if (args.has("--simulate-flow-extra-required-metric") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = {
+    ...budgets.flows[0],
+    requiredMetrics: [...budgets.flows[0].requiredMetrics, "cpuUsagePercent"],
+  };
+}
+if (args.has("--simulate-flow-duplicate-required-metric") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
+  budgets.flows[0] = {
+    ...budgets.flows[0],
+    requiredMetrics: [...budgets.flows[0].requiredMetrics, budgets.flows[0].requiredMetrics[0]],
   };
 }
 if (args.has("--simulate-invalid-budget-status") && Array.isArray(budgets?.flows) && budgets.flows[0]) {
@@ -148,6 +200,9 @@ if (args.has("--simulate-perf-decision-premature-complete") && perfBudgetSourceD
 if (budgets?.evidenceFilename !== "performance-evidence.json") {
   fail(`${budgetsPath}.evidenceFilename must be performance-evidence.json`);
 }
+if (!["pending-approved-baseline-capture", "approved-baseline-enforced"].includes(budgets?.status)) {
+  fail(`${budgetsPath}.status must be pending-approved-baseline-capture or approved-baseline-enforced`);
+}
 if (!String(budgets?.verificationCommand || "").includes("scripts/ui_private_performance_budget_verify.mjs --require-approved")) {
   fail(`${budgetsPath}.verificationCommand must run scripts/ui_private_performance_budget_verify.mjs --require-approved`);
 }
@@ -169,18 +224,32 @@ if (budgetStyle.measurementSource !== "private-baseline") {
 if (budgetStyle.approvalRequiredBeforeEnforcement !== true) {
   fail(`${budgetsPath}.budgetStyle.approvalRequiredBeforeEnforcement must be true`);
 }
-const styleFlows = new Set(requireArray(budgetStyle, `${budgetsPath}.budgetStyle`, "requiredFlows"));
-for (const flow of requiredFlows) {
-  if (!styleFlows.has(flow)) fail(`${budgetsPath}.budgetStyle.requiredFlows must include ${flow}`);
-}
-const topLevelMetrics = new Set(requireArray(budgets, budgetsPath, "requiredMetrics"));
-for (const metric of requiredMetrics) {
-  if (!topLevelMetrics.has(metric)) fail(`${budgetsPath}.requiredMetrics must include ${metric}`);
-}
-const evidenceFields = new Set(requireArray(budgets, budgetsPath, "requiredEvidenceFields"));
-for (const field of ["flowId", "platform", "privateBaselineReference", "metrics", "measurementSamples", "measurementHash", "measuredAt", "approvedByUserAt", "approvedScope"]) {
-  if (!evidenceFields.has(field)) fail(`${budgetsPath}.requiredEvidenceFields must include ${field}`);
-}
+requireExactStringSet(
+  requireArray(budgetStyle, `${budgetsPath}.budgetStyle`, "requiredFlows"),
+  `${budgetsPath}.budgetStyle.requiredFlows`,
+  requiredFlows,
+);
+requireExactStringSet(
+  requireArray(budgets, budgetsPath, "requiredMetrics"),
+  `${budgetsPath}.requiredMetrics`,
+  requiredMetrics,
+);
+const requiredEvidenceFields = [
+  "flowId",
+  "platform",
+  "privateBaselineReference",
+  "metrics",
+  "measurementSamples",
+  "measurementHash",
+  "measuredAt",
+  "approvedByUserAt",
+  "approvedScope",
+];
+requireExactStringSet(
+  requireArray(budgets, budgetsPath, "requiredEvidenceFields"),
+  `${budgetsPath}.requiredEvidenceFields`,
+  requiredEvidenceFields,
+);
 
 const privateBaselinesPath = "docs/ui/private-baselines.manifest.json";
 const privateBaselines = readJson(privateBaselinesPath);
@@ -189,6 +258,9 @@ if (privateBaselines?.privateRootAlias !== "private-codex-ui-baselines") {
 }
 if (args.has("--simulate-missing-private-baseline") && Array.isArray(privateBaselines?.flows)) {
   privateBaselines.flows = privateBaselines.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "chat-scroll"));
+}
+if (args.has("--simulate-duplicate-private-baseline") && Array.isArray(privateBaselines?.flows) && privateBaselines.flows[0]) {
+  privateBaselines.flows.push({ ...privateBaselines.flows[0] });
 }
 if (args.has("--simulate-wrong-private-reference")) {
   const flow = budgets?.flows?.[0];
@@ -202,8 +274,10 @@ if (args.has("--simulate-wrong-private-reference")) {
   }
 }
 const baselineByFlow = new Map();
-for (const flow of requireArray(privateBaselines, privateBaselinesPath, "flows")) {
-  baselineByFlow.set(`${flow.platform}:${flow.id}`, flow);
+for (const [index, flow] of requireArray(privateBaselines, privateBaselinesPath, "flows").entries()) {
+  const key = `${flow.platform}:${flow.id}`;
+  if (baselineByFlow.has(key)) fail(`${privateBaselinesPath}.flows[${index}] duplicates ${key}`);
+  baselineByFlow.set(key, flow);
 }
 
 const seen = new Set();
@@ -235,10 +309,7 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   if (actualSuffix && actualSuffix !== expectedSuffix) {
     fail(`${label}.privateBaselineReference must resolve to ${expectedSuffix}`);
   }
-  const metrics = new Set(requireArray(flow, label, "requiredMetrics"));
-  for (const metric of requiredMetrics) {
-    if (!metrics.has(metric)) fail(`${label}.requiredMetrics must include ${metric}`);
-  }
+  requireExactStringSet(requireArray(flow, label, "requiredMetrics"), `${label}.requiredMetrics`, requiredMetrics);
   const baseline = baselineByFlow.get(key);
   if (!baseline) {
     fail(`${label} must have matching ${privateBaselinesPath}.flows entry`);
