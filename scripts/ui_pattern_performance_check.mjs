@@ -43,9 +43,28 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
 const manifestPath = "docs/ui/pattern-performance.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
+  if (args.has("--simulate-wrong-pattern-registry-path")) {
+    manifest.patternRegistryPath = "docs/ui/pattern-registry/other.registry.json";
+  }
+  if (args.has("--simulate-wrong-budget-registry-path")) {
+    manifest.performanceBudgetRegistryPath = "docs/ui/other-performance-budgets.registry.json";
+  }
   if (args.has("--simulate-wrong-private-baseline-alias")) {
     manifest.privateBaselineAlias = "local-private-baselines";
   }
@@ -63,6 +82,15 @@ if (manifest) {
       patterns: [...(manifest.requiredFlowMappings[0].patterns || []), "missing-performance-pattern"],
     };
   }
+  if (args.has("--simulate-duplicate-mapping-pattern") && Array.isArray(manifest.requiredFlowMappings) && manifest.requiredFlowMappings[0]) {
+    manifest.requiredFlowMappings[0] = {
+      ...manifest.requiredFlowMappings[0],
+      patterns: [
+        ...(manifest.requiredFlowMappings[0].patterns || []),
+        (manifest.requiredFlowMappings[0].patterns || [])[0],
+      ],
+    };
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -74,13 +102,19 @@ requireFields(manifest, manifestPath, [
   "requiredFlowMappings",
 ]);
 if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
+if (manifest?.patternRegistryPath !== "docs/ui/pattern-registry/patterns.registry.json") {
+  fail(`${manifestPath}.patternRegistryPath must be docs/ui/pattern-registry/patterns.registry.json`);
+}
+if (manifest?.performanceBudgetRegistryPath !== "docs/ui/performance-budgets.registry.json") {
+  fail(`${manifestPath}.performanceBudgetRegistryPath must be docs/ui/performance-budgets.registry.json`);
+}
 if (manifest?.privateBaselineAlias !== "private-codex-ui-baselines") {
   fail(`${manifestPath}.privateBaselineAlias must be private-codex-ui-baselines`);
 }
 
 const registryPath = manifest?.patternRegistryPath || "docs/ui/pattern-registry/patterns.registry.json";
 const registry = readJson(registryPath);
-const patternIds = new Set(requireArray(registry, registryPath, "patterns"));
+const patternIds = requireUniqueStrings(requireArray(registry, registryPath, "patterns"), `${registryPath}.patterns`);
 
 const budgetsPath = manifest?.performanceBudgetRegistryPath || "docs/ui/performance-budgets.registry.json";
 const budgets = readJson(budgetsPath);
@@ -104,7 +138,7 @@ for (const [index, mapping] of requireArray(manifest, manifestPath, "requiredFlo
   if (!budgetFlows.has(mapping?.flowId)) fail(`${label}.flowId must exist in ${budgetsPath}`);
   mappedFlows.add(mapping?.flowId);
   const mappingPlatforms = new Set();
-  for (const patternId of requireArray(mapping, label, "patterns")) {
+  for (const patternId of requireUniqueStrings(requireArray(mapping, label, "patterns"), `${label}.patterns`)) {
     if (!patternIds.has(patternId)) {
       fail(`${label}.patterns references unknown pattern ${patternId}`);
       continue;
@@ -132,8 +166,16 @@ for (const [index, mapping] of requireArray(manifest, manifestPath, "requiredFlo
     if (pattern && args.has("--simulate-pattern-missing-platform") && patternId === "chat-surface") {
       pattern.platforms = (pattern.platforms || []).filter((platform) => platform !== "web");
     }
-    for (const platform of requireArray(pattern, patternPath, "platforms")) mappingPlatforms.add(platform);
+    for (const platform of requireUniqueStrings(requireArray(pattern, patternPath, "platforms"), `${patternPath}.platforms`)) {
+      mappingPlatforms.add(platform);
+    }
     const performance = pattern?.performance || {};
+    if (pattern && args.has("--simulate-pattern-duplicate-critical-flow") && patternId === "sidebar-row") {
+      performance.criticalFlows = [...(performance.criticalFlows || []), "sidebar-hover-click-expand"];
+    }
+    if (pattern && args.has("--simulate-pattern-empty-critical-flow") && patternId === "sidebar-row") {
+      performance.criticalFlows = [...(performance.criticalFlows || []), ""];
+    }
     requireFields(performance, `${patternPath}.performance`, [
       "criticalFlows",
       "budgetRegistry",
@@ -145,7 +187,10 @@ for (const [index, mapping] of requireArray(manifest, manifestPath, "requiredFlo
     if (performance.privateBaselineAlias !== manifest.privateBaselineAlias) {
       fail(`${patternPath}.performance.privateBaselineAlias must match ${manifestPath}`);
     }
-    const criticalFlows = new Set(requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false }));
+    const criticalFlows = requireUniqueStrings(
+      requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false }),
+      `${patternPath}.performance.criticalFlows`,
+    );
     if (!criticalFlows.has(mapping.flowId)) {
       fail(`${patternPath}.performance.criticalFlows must include ${mapping.flowId}`);
     }
@@ -176,6 +221,12 @@ for (const patternId of patternIds) {
     };
   }
   const performance = pattern?.performance || {};
+  if (pattern && args.has("--simulate-pattern-duplicate-critical-flow") && patternId === "sidebar-row") {
+    performance.criticalFlows = [...(performance.criticalFlows || []), "sidebar-hover-click-expand"];
+  }
+  if (pattern && args.has("--simulate-pattern-empty-critical-flow") && patternId === "sidebar-row") {
+    performance.criticalFlows = [...(performance.criticalFlows || []), ""];
+  }
   requireFields(performance, `${patternPath}.performance`, [
     "criticalFlows",
     "budgetRegistry",
@@ -187,7 +238,10 @@ for (const patternId of patternIds) {
   if (performance.privateBaselineAlias !== manifest?.privateBaselineAlias) {
     fail(`${patternPath}.performance.privateBaselineAlias must be ${manifestPath}.privateBaselineAlias`);
   }
-  for (const flowId of requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false })) {
+  for (const flowId of requireUniqueStrings(
+    requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false }),
+    `${patternPath}.performance.criticalFlows`,
+  )) {
     if (!budgetFlows.has(flowId)) fail(`${patternPath}.performance.criticalFlows references unknown flow ${flowId}`);
   }
 }
