@@ -20,6 +20,9 @@ permissions, grants, approvals, audit, or agent chat routes.
    - `claw inspect routes --json`
    - `claw inspect route <route-id> --json`
 3. Read the ADRs, docs, tests, and source files named by the inspection output.
+   For the route graph contract itself, start from
+   `docs/adr/0012-surface-route-graph.md`; the Clawix projection uses
+   `docs/adr/0011-surface-route-graph.md`.
 4. Choose the work mode explicitly:
    - surface-first: start at one node and inspect adjacent ingress/egress;
    - route-first: follow every explicit step in the registered route.
@@ -28,7 +31,10 @@ permissions, grants, approvals, audit, or agent chat routes.
    host identity, visual state, and host operational state.
 6. Update the registry graph when a stable node, edge, route, transport,
    contract, owner, validation, or gap changes.
-7. Validate with the route's listed tests or add a focused fixture/E2E when the
+7. Register new durable route docs, skills, guards, or harnesses in
+   `docs/discoverability.registry.json` per
+   `docs/adr/0017-discoverability-and-meta-code-routing.md`.
+8. Validate with the route's listed tests or add a focused fixture/E2E when the
    route did not have one. Mark unavailable physical/provider validation as
    `EXTERNAL PENDING`, separate from defects.
 

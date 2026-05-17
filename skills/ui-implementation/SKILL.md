@@ -12,6 +12,7 @@ accessibility behavior.
 ## Procedure
 
 1. Read `docs/adr/0010-interface-governance.md`, `docs/ui/README.md`,
+   `docs/adr/0017-discoverability-and-meta-code-routing.md`,
    `docs/ui/visible-surfaces.inventory.json`, and the relevant pattern
    manifest.
 2. Declare the mutation class. Non-authorized agents may proceed only for
@@ -29,7 +30,10 @@ accessibility behavior.
 6. For visual/copy/layout work without authorization, fill
    `docs/ui/visual-change-proposal.template.md` as a conceptual proposal and
    stop before editing presentation.
-7. Run `node scripts/ui_governance_guard.mjs`, the relevant UI governance
+7. Register any new durable UI governance artifact, guard, harness, docs router,
+   or skill in `docs/discoverability.registry.json` so future agents can reach
+   it within two hops.
+8. Run `node scripts/ui_governance_guard.mjs`, the relevant UI governance
    checks, and the focused functional tests.
 
 ## Constraints
@@ -37,5 +41,7 @@ accessibility behavior.
 - No opportunistic visual cleanup.
 - No protected-surface edits without explicit permission.
 - Mechanical extraction requires before/after equivalence evidence.
+- UI comments are not canonical; durable UI decisions must point to ADRs, docs,
+  registries, manifests, or tests.
 - Do not finish a UI task without reporting the pattern/debt/protected mapping
   and state coverage that were validated.

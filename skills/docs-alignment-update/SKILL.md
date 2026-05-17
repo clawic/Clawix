@@ -14,8 +14,11 @@ Keep documentation aligned with behavior and routing.
 2. Update public docs, README, playbooks, `AGENTS.md`, `CLAUDE.md` shims, generated docs, and decision maps only where they route to or explain that source.
 3. Keep `AGENTS.md` compact; link to skills or docs for procedures.
 4. Add alignment-check snippets only for durable rules worth enforcing.
-5. Remove stale duplicated instructions when a canonical doc or skill supersedes them.
-6. Run docs alignment/link checks or record why they cannot run.
+5. Register new durable docs routers, instruction shims, guardrails, harnesses,
+   and skills in `docs/discoverability.registry.json` under
+   `docs/adr/0017-discoverability-and-meta-code-routing.md`.
+6. Remove stale duplicated instructions when a canonical doc or skill supersedes them.
+7. Run docs alignment/link checks or record why they cannot run.
 
 ## Constraints
 

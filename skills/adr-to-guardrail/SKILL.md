@@ -13,9 +13,12 @@ Make an ADR operational.
 1. Read the ADR template and the closest accepted ADRs before drafting or changing a decision.
 2. State the decision in implementation-neutral terms and fill surface parity: human surface, programmatic surface, persistence, gaps, and validation.
 3. Update `docs/decision-map.md` or the equivalent project router with the new decision and its guardrail.
-4. Update affected docs, registries, manifests, CLI inspection/search output, and tests so agents can discover and enforce the decision.
-5. Refactor implementation only as far as needed to make the ADR true for the intended batch.
-6. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
+4. Register durable meta-code in `docs/discoverability.registry.json` per
+   `docs/adr/0017-discoverability-and-meta-code-routing.md`; do not add hidden
+   ADRs, guardrails, harnesses, docs routers, or skills.
+5. Update affected docs, registries, manifests, CLI inspection/search output, and tests so agents can discover and enforce the decision.
+6. Refactor implementation only as far as needed to make the ADR true for the intended batch.
+7. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
 
 ## Constraints
 
