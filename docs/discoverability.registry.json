@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "distanceBudget": 2,
+  "description": "Clawix projection of the ClawJS discoverability contract for local ADRs, UI governance, host validation, projected skills, and route work.",
+  "artifacts": [
+    {
+      "id": "clawix-discoverability-projection",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0017-discoverability-and-meta-code-routing.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/decision-map.md",
+        "skills/adr-to-guardrail/SKILL.md",
+        "skills/docs-alignment-update/SKILL.md",
+        "skills/decision-map-maintenance/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "discoverability",
+        "meta-code routing",
+        "Clawix projection"
+      ],
+      "searchQueries": [
+        {
+          "query": "discoverability",
+          "expectPath": "docs/adr/0017-discoverability-and-meta-code-routing.md"
+        },
+        {
+          "query": "meta-code routing",
+          "expectPath": "docs/adr/0017-discoverability-and-meta-code-routing.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "clawix-ui-governance-discoverability",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "docs/ui/README.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "docs/decision-map.md",
+        "skills/ui-implementation/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "interface governance",
+        "UI governance",
+        "visual mutation boundary"
+      ],
+      "searchQueries": [
+        {
+          "query": "UI governance",
+          "expectPath": "docs/ui/README.md"
+        }
+      ],
+      "guard": "scripts/ui_governance_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "clawix-surface-route-graph",
+      "kind": "surface-route",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0011-surface-route-graph.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/decision-map.md",
+        "skills/surface-route-work/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "surface route graph",
+        "Clawix bridge",
+        "runtime-critical"
+      ],
+      "searchQueries": [
+        {
+          "query": "surface route graph",
+          "expectPath": "docs/adr/0011-surface-route-graph.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "clawix-ui-implementation-skill",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/ui-implementation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "docs/ui/README.md"
+      ],
+      "discoveryTerms": [
+        "ui implementation",
+        "mutation class",
+        "discovery registration"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui implementation",
+          "expectPath": "skills/ui-implementation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/ui_skill_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    }
+  ]
+}
