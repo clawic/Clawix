@@ -93,6 +93,8 @@ function requireIsoDate(value, label) {
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
 const protectedPath = "docs/ui/protected-surfaces.registry.json";
 const protectedSurfaces = readJson(protectedPath);
+const approvalAuthorityPath = "docs/ui/approval-authority.manifest.json";
+const approvalAuthority = readJson(approvalAuthorityPath);
 requireFields(protectedSurfaces, protectedPath, [
   "schemaVersion",
   "status",
@@ -103,6 +105,12 @@ requireFields(protectedSurfaces, protectedPath, [
   "requiredFreezeFields",
   "surfaces",
 ]);
+if (args.has("--simulate-wrong-private-baseline-alias") && protectedSurfaces) {
+  protectedSurfaces.privateBaselineAlias = "private-local-baselines";
+}
+if (args.has("--simulate-missing-required-freeze-field") && Array.isArray(protectedSurfaces?.requiredFreezeFields)) {
+  protectedSurfaces.requiredFreezeFields = protectedSurfaces.requiredFreezeFields.filter((field) => field !== "changePolicy");
+}
 
 for (const [field, expected] of [
   ["privateBaselineAlias", "private-codex-ui-baselines"],
@@ -136,6 +144,9 @@ for (const field of [
 
 const registry = readJson("docs/ui/pattern-registry/patterns.registry.json");
 const patternIds = new Set(requireArray(registry, "docs/ui/pattern-registry/patterns.registry.json", "patterns"));
+if (args.has("--simulate-missing-approval-authority-source") && Array.isArray(approvalAuthority?.approvalSources)) {
+  approvalAuthority.approvalSources = approvalAuthority.approvalSources.filter((source) => source?.id !== "protected-surfaces");
+}
 
 function simulatedProtectedSurface(overrides = {}) {
   const hash = "a".repeat(64);
@@ -168,6 +179,13 @@ function simulatedProtectedSurface(overrides = {}) {
   };
 }
 
+function appendSimulatedSurface(overrides = {}) {
+  protectedSurfaces.surfaces = [
+    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
+    simulatedProtectedSurface(overrides),
+  ];
+}
+
 if (args.has("--simulate-missing-freeze-field")) {
   const simulated = simulatedProtectedSurface();
   delete simulated.privateApprovalReference;
@@ -178,37 +196,94 @@ if (args.has("--simulate-missing-freeze-field")) {
 }
 
 if (args.has("--simulate-unknown-pattern")) {
-  protectedSurfaces.surfaces = [
-    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
-    simulatedProtectedSurface({
-      id: "simulated-unknown-pattern",
-      patterns: ["unknown-pattern"],
-    }),
-  ];
+  appendSimulatedSurface({ id: "simulated-unknown-pattern", patterns: ["unknown-pattern"] });
 }
 
 if (args.has("--simulate-invalid-baseline-hash")) {
-  protectedSurfaces.surfaces = [
-    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
-    simulatedProtectedSurface({
-      id: "simulated-invalid-baseline-hash",
-      privateBaselineHash: "not-a-sha256",
-    }),
-  ];
+  appendSimulatedSurface({ id: "simulated-invalid-baseline-hash", privateBaselineHash: "not-a-sha256" });
 }
 
 if (args.has("--simulate-disabled-change-policy")) {
-  protectedSurfaces.surfaces = [
-    ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
-    simulatedProtectedSurface({
-      id: "simulated-disabled-change-policy",
-      changePolicy: {
-        requiresExplicitUserApproval: false,
-        requiresVisualModelAllowlist: true,
-        requiresScopeBudget: true,
-      },
-    }),
-  ];
+  appendSimulatedSurface({
+    id: "simulated-disabled-change-policy",
+    changePolicy: {
+      requiresExplicitUserApproval: false,
+      requiresVisualModelAllowlist: true,
+      requiresScopeBudget: true,
+    },
+  });
+}
+
+if (args.has("--simulate-duplicate-surface-id")) {
+  appendSimulatedSurface({ id: "simulated-duplicate-surface" });
+  appendSimulatedSurface({ id: "simulated-duplicate-surface", scope: "second simulated surface" });
+}
+
+if (args.has("--simulate-unsupported-platform")) {
+  appendSimulatedSurface({ id: "simulated-unsupported-platform", platform: "visionos" });
+}
+
+if (args.has("--simulate-non-user-approval")) {
+  appendSimulatedSurface({ id: "simulated-non-user-approval", approvedBy: "agent" });
+}
+
+if (args.has("--simulate-invalid-approval-date")) {
+  appendSimulatedSurface({ id: "simulated-invalid-approval-date", approvedAt: "May 17 2026" });
+}
+
+if (args.has("--simulate-unsafe-private-reference")) {
+  appendSimulatedSurface({
+    id: "simulated-unsafe-private-reference",
+    privateBaselineReference: "private-codex-ui-baselines:../outside",
+  });
+}
+
+if (args.has("--simulate-missing-contract-field")) {
+  appendSimulatedSurface({
+    id: "simulated-missing-contract-field",
+    contract: { geometry: "stable", copy: "stable", states: "stable" },
+  });
+}
+
+if (args.has("--simulate-disabled-visual-model-policy")) {
+  appendSimulatedSurface({
+    id: "simulated-disabled-visual-model-policy",
+    changePolicy: {
+      requiresExplicitUserApproval: true,
+      requiresVisualModelAllowlist: false,
+      requiresScopeBudget: true,
+    },
+  });
+}
+
+if (args.has("--simulate-disabled-scope-budget-policy")) {
+  appendSimulatedSurface({
+    id: "simulated-disabled-scope-budget-policy",
+    changePolicy: {
+      requiresExplicitUserApproval: true,
+      requiresVisualModelAllowlist: true,
+      requiresScopeBudget: false,
+    },
+  });
+}
+
+if (args.has("--simulate-local-path-leak")) {
+  appendSimulatedSurface({
+    id: "simulated-local-path-leak",
+    scope: "/Users/example/Desktop/Clawix/macos/Sources/Clawix/SidebarView.swift",
+  });
+}
+
+const protectedApprovalSource = (approvalAuthority?.approvalSources || []).find((source) => source?.id === "protected-surfaces");
+if (!protectedApprovalSource) {
+  fail(`${approvalAuthorityPath}.approvalSources must include protected-surfaces`);
+} else {
+  if (protectedApprovalSource.path !== protectedPath) fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.path must be ${protectedPath}`);
+  if (protectedApprovalSource.arrayField !== "surfaces") fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.arrayField must be surfaces`);
+  if (protectedApprovalSource.approvedByField !== "approvedBy") fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.approvedByField must be approvedBy`);
+  if (protectedApprovalSource.privateApprovalField !== "privateApprovalReference") {
+    fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.privateApprovalField must be privateApprovalReference`);
+  }
 }
 
 const surfaces = requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false });
