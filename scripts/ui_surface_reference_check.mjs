@@ -43,6 +43,38 @@ function requireArray(object, label, field, { nonEmpty = true } = {}) {
   return value;
 }
 
+function requireExactStringSet(values, label, expectedValues) {
+  const expected = new Set(expectedValues);
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+    if (!expected.has(value)) fail(`${label} must not include ${value}`);
+  }
+  for (const value of expected) {
+    if (!seen.has(value)) fail(`${label} must include ${value}`);
+  }
+  if (seen.size !== expected.size) fail(`${label} must exactly match approved values`);
+  return seen;
+}
+
+function requireUniqueStrings(values, label) {
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label} duplicates ${value}`);
+    seen.add(value);
+  }
+  return seen;
+}
+
 function isPublicSafeReference(reference) {
   if (typeof reference !== "string" || reference.length === 0) return false;
   if (path.isAbsolute(reference)) return false;
@@ -151,6 +183,20 @@ for (const [field, expected] of Object.entries({
   }
 }
 
+if (args.has("--simulate-extra-required-reference-kind") && Array.isArray(manifest?.requiredReferenceKinds)) {
+  manifest.requiredReferenceKinds.push("private-baseline");
+}
+
+if (args.has("--simulate-duplicate-required-reference-kind") && Array.isArray(manifest?.requiredReferenceKinds) && manifest.requiredReferenceKinds[0]) {
+  manifest.requiredReferenceKinds.push(manifest.requiredReferenceKinds[0]);
+}
+
+requireExactStringSet(
+  requireArray(manifest, manifestPath, "requiredReferenceKinds"),
+  `${manifestPath}.requiredReferenceKinds`,
+  ["pattern", "debt", "protected", "exception"],
+);
+
 const inventoryPath = manifest?.inventoryPath || "docs/ui/visible-surfaces.inventory.json";
 const inventory = readJson(inventoryPath);
 const registryPath = manifest?.patternRegistryPath || "docs/ui/pattern-registry/patterns.registry.json";
@@ -167,6 +213,7 @@ for (const patternId of patternIds) {
     pattern.canonicalReferences = [path.join(path.sep, "tmp", "visual-baseline.md")];
   }
   const references = requireArray(pattern, patternPath, "canonicalReferences");
+  requireUniqueStrings(references, `${patternPath}.canonicalReferences`);
   for (const [index, reference] of references.entries()) {
     requireExistingReference(reference, `${patternPath}.canonicalReferences[${index}]`);
   }
@@ -195,18 +242,46 @@ if (args.has("--simulate-unknown-pattern-reference") && Array.isArray(inventory?
 if (args.has("--simulate-private-scope-reference") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
   inventory.coverage[0] = { ...inventory.coverage[0], scopes: ["private-ui-root/**"] };
 }
+if (args.has("--simulate-duplicate-source-root") && Array.isArray(inventory?.sourceRoots) && inventory.sourceRoots[0]) {
+  inventory.sourceRoots.push(inventory.sourceRoots[0]);
+}
+if (args.has("--simulate-unknown-platform") && Array.isArray(inventory?.coverage) && inventory.coverage[0]) {
+  inventory.coverage[0] = { ...inventory.coverage[0], platform: "desktop" };
+}
+if (args.has("--simulate-duplicate-scope") && Array.isArray(inventory?.coverage)) {
+  const entry = inventory.coverage.find((candidate) => Array.isArray(candidate?.scopes) && candidate.scopes[0]);
+  if (entry) entry.scopes.push(entry.scopes[0]);
+}
+if (args.has("--simulate-duplicate-pattern-reference") && Array.isArray(inventory?.coverage)) {
+  const entry = inventory.coverage.find((candidate) => Array.isArray(candidate?.patterns) && candidate.patterns[0]);
+  if (entry) entry.patterns.push(entry.patterns[0]);
+}
+
+const allowedPlatforms = new Set(["macos", "ios", "android", "web"]);
+requireFields(inventory, inventoryPath, ["schemaVersion", "status", "policy", "reviewAfter", "sourceRoots", "coverage"]);
+if (inventory?.status !== "active") fail(`${inventoryPath}.status must be active`);
+const sourceRoots = requireArray(inventory, inventoryPath, "sourceRoots");
+requireUniqueStrings(sourceRoots, `${inventoryPath}.sourceRoots`);
+for (const [index, sourceRoot] of sourceRoots.entries()) {
+  requireExistingReference(sourceRoot, `${inventoryPath}.sourceRoots[${index}]`);
+}
 
 const seenCoverage = new Set();
 for (const [index, entry] of requireArray(inventory, inventoryPath, "coverage").entries()) {
   const label = `${inventoryPath}.coverage[${index}]`;
-  requireFields(entry, label, ["id", "classification", "scopes"]);
+  requireFields(entry, label, ["id", "platform", "classification", "scopes"]);
   if (seenCoverage.has(entry.id)) fail(`${label}.id duplicates ${entry.id}`);
   seenCoverage.add(entry.id);
-  for (const [scopeIndex, scope] of requireArray(entry, label, "scopes").entries()) {
+  if (!allowedPlatforms.has(entry.platform)) fail(`${label}.platform must be macos, ios, android, or web`);
+  const scopes = requireArray(entry, label, "scopes");
+  requireUniqueStrings(scopes, `${label}.scopes`);
+  for (const [scopeIndex, scope] of scopes.entries()) {
     requireExistingReference(scope.replace(/\*\*.*$/, "").replace(/\*.*$/, ""), `${label}.scopes[${scopeIndex}]`);
   }
   if (entry.classification === "pattern") {
-    for (const patternId of requireArray(entry, label, "patterns")) {
+    const patterns = requireArray(entry, label, "patterns");
+    requireUniqueStrings(patterns, `${label}.patterns`);
+    for (const patternId of patterns) {
       if (!patternIds.has(patternId)) fail(`${label}.patterns references unknown pattern ${patternId}`);
       if ((patternReferences.get(patternId) || []).length === 0) fail(`${label}.patterns ${patternId} has no canonical references`);
     }
