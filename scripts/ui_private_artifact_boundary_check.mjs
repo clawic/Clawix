@@ -6,6 +6,7 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const uiDir = path.join(rootDir, "docs/ui");
 const expectedPrivateBaselineAlias = "private-codex-ui-baselines";
 const expectedPrivateAssignment = "outside-public-repo";
+const args = new Set(process.argv.slice(2));
 const errors = [];
 const privatePathOrSecretPattern = /\/Users\/|~\/|file:\/\/|[A-Z]:\\|BEGIN [A-Z ]*PRIVATE KEY|\bAKIA[0-9A-Z]{16}\b|\bsk-[A-Za-z0-9]{20,}\b/;
 
@@ -104,6 +105,12 @@ for (const file of walk(uiDir)) {
 
 const privateValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
+if (args.has("--simulate-missing-private-baseline-alias") && Array.isArray(privateValidation?.rootAliases)) {
+  privateValidation.rootAliases = privateValidation.rootAliases.filter((entry) => entry?.alias !== expectedPrivateBaselineAlias);
+}
+if (args.has("--simulate-required-root-without-alias") && Array.isArray(privateValidation?.requiredRoots)) {
+  privateValidation.requiredRoots = [...privateValidation.requiredRoots, "CLAWIX_UI_PRIVATE_SIMULATED_ROOT"];
+}
 requireField(privateBaselines, "docs/ui/private-baselines.manifest.json", "privateRootAlias");
 const privateBaselineAlias = privateBaselines?.privateRootAlias;
 if (privateBaselineAlias !== expectedPrivateBaselineAlias) {
@@ -140,9 +147,15 @@ for (const [index, entry] of [...rootAliases, ...optionalRootAliases].entries())
 }
 
 const visualModelAllowlist = readJson("docs/ui/visual-model-allowlist.manifest.json");
+if (args.has("--simulate-public-visual-model-assignment")) {
+  visualModelAllowlist.privateAssignment = "public-repo";
+}
 requireField(visualModelAllowlist, "docs/ui/visual-model-allowlist.manifest.json", "privateAssignment", expectedPrivateAssignment);
 
 const visualScopes = readJson("docs/ui/visual-change-scopes.manifest.json");
+if (args.has("--simulate-public-visual-scope-assignment")) {
+  visualScopes.privateModelAssignment = "public-repo";
+}
 requireField(visualScopes, "docs/ui/visual-change-scopes.manifest.json", "privateModelAssignment", expectedPrivateAssignment);
 
 for (const root of requiredRoots) {
