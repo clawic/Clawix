@@ -390,17 +390,142 @@ struct Automation: Identifiable {
     var trigger: String
 }
 
+enum ProjectFolderState: String, Codable, Hashable {
+    case active
+    case missing
+    case detached
+    case duplicate
+
+    var label: String? {
+        switch self {
+        case .active: nil
+        case .missing: "Missing"
+        case .detached: "Detached"
+        case .duplicate: "Duplicate"
+        }
+    }
+}
+
+enum ProjectFolderInspector {
+    private struct Manifest: Decodable {
+        struct Attachment: Decodable {
+            let state: String?
+            let workspaceId: String?
+            enum CodingKeys: String, CodingKey {
+                case state
+                case workspaceId
+            }
+        }
+        struct WorkspaceBinding: Decodable {
+            let workspaceId: String?
+            enum CodingKeys: String, CodingKey {
+                case workspaceId
+            }
+        }
+        let attachment: Attachment?
+        let workspaceBinding: WorkspaceBinding?
+    }
+
+    static func state(for path: String, currentWorkspaceId: String? = nil, fileManager: FileManager = .default) -> ProjectFolderState {
+        guard !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .missing }
+        let expandedPath = (path as NSString).expandingTildeInPath
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return .missing
+        }
+        let manifestURL = URL(fileURLWithPath: expandedPath).appendingPathComponent("claw.project.json")
+        guard let data = try? Data(contentsOf: manifestURL),
+              let manifest = try? JSONDecoder().decode(Manifest.self, from: data)
+        else {
+            return .active
+        }
+        if manifest.attachment?.state == "detached" { return .detached }
+        let manifestWorkspaceId = manifest.attachment?.workspaceId ?? manifest.workspaceBinding?.workspaceId
+        if let currentWorkspaceId,
+           let manifestWorkspaceId,
+           manifestWorkspaceId != currentWorkspaceId {
+            return .duplicate
+        }
+        return .active
+    }
+}
+
+enum ProjectFolderPathResolver {
+    static let defaultProjectsDirectoryName = "Projects"
+
+    static func createDefaultFolder(
+        forName name: String,
+        workspaceURL: URL,
+        fileManager: FileManager = .default
+    ) throws -> URL {
+        let projectsURL = workspaceURL.appendingPathComponent(defaultProjectsDirectoryName, isDirectory: true)
+        try fileManager.createDirectory(at: projectsURL, withIntermediateDirectories: true)
+        let baseName = sanitizedFolderName(for: name)
+        for suffix in 0...999 {
+            let folderName = suffix == 0 ? baseName : "\(baseName) \(suffix + 1)"
+            let candidate = projectsURL.appendingPathComponent(folderName, isDirectory: true)
+            if !fileManager.fileExists(atPath: candidate.path) {
+                try fileManager.createDirectory(at: candidate, withIntermediateDirectories: true)
+                return candidate
+            }
+        }
+        let fallback = projectsURL.appendingPathComponent("\(baseName) \(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: fallback, withIntermediateDirectories: true)
+        return fallback
+    }
+
+    static func sanitizedFolderName(for name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let source = trimmed.isEmpty ? "Untitled" : trimmed
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: " ._-"))
+        var output = ""
+        var lastWasSeparator = false
+        for scalar in source.unicodeScalars {
+            if allowed.contains(scalar) {
+                output.unicodeScalars.append(scalar)
+                lastWasSeparator = false
+            } else if !lastWasSeparator {
+                output.append("-")
+                lastWasSeparator = true
+            }
+        }
+        let cleaned = output
+            .trimmingCharacters(in: CharacterSet(charactersIn: " .-_").union(.whitespacesAndNewlines))
+        return cleaned.isEmpty ? "Untitled" : String(cleaned.prefix(80))
+    }
+}
+
 struct Project: Identifiable, Codable, Hashable {
     let id: UUID
     var resourceId: String?
     var name: String
     var path: String
+    var folderState: ProjectFolderState
 
-    init(id: UUID = UUID(), resourceId: String? = nil, name: String, path: String) {
+    init(id: UUID = UUID(), resourceId: String? = nil, name: String, path: String, folderState: ProjectFolderState? = nil) {
         self.id = id
         self.resourceId = resourceId
         self.name = name
         self.path = path
+        self.folderState = folderState ?? ProjectFolderInspector.state(for: path)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case resourceId
+        case name
+        case path
+        case folderState
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        resourceId = try container.decodeIfPresent(String.self, forKey: .resourceId)
+        name = try container.decode(String.self, forKey: .name)
+        path = try container.decode(String.self, forKey: .path)
+        folderState = try container.decodeIfPresent(ProjectFolderState.self, forKey: .folderState)
+            ?? ProjectFolderInspector.state(for: path)
     }
 }
 
