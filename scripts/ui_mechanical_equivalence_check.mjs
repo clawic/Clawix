@@ -1,10 +1,38 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_MECHANICAL_EQUIVALENCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-wrong-private-evidence-alias",
+  "--simulate-wrong-evidence-filename",
+  "--simulate-wrong-required-mutation-class",
+  "--simulate-missing-required-evidence-field",
+  "--simulate-missing-geometry-copy-hash-field",
+  "--simulate-missing-merge-blocking-status",
+  "--simulate-missing-private-evidence-field",
+  "--simulate-invalid-record-status",
+  "--simulate-invalid-token-status",
+  "--simulate-local-private-reference",
+  "--simulate-short-record-hash",
+  "--simulate-short-geometry-copy-hash",
+  "--simulate-record-approved-by-agent",
+  "--simulate-record-unsafe-approval-reference",
+  "--simulate-missing-record-changed-files",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI mechanical equivalence check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
 
 function fail(message) {
   errors.push(message);
@@ -318,6 +346,86 @@ if (errors.length > 0) {
   console.error("UI mechanical equivalence check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    [
+      "--simulate-wrong-private-evidence-alias",
+      "docs/ui/mechanical-equivalence.manifest.json.privateEvidenceAlias must be private-codex-ui-mechanical-equivalence",
+    ],
+    [
+      "--simulate-wrong-evidence-filename",
+      "docs/ui/mechanical-equivalence.manifest.json.evidenceFilename must be mechanical-equivalence-evidence.json",
+    ],
+    [
+      "--simulate-wrong-required-mutation-class",
+      "docs/ui/mechanical-equivalence.manifest.json.recordRequirement.requiredForMutationClass must be mechanical-equivalent-refactor",
+    ],
+    [
+      "--simulate-missing-required-evidence-field",
+      "docs/ui/mechanical-equivalence.manifest.json.requiredEvidenceFields must include approvedScope",
+    ],
+    [
+      "--simulate-missing-geometry-copy-hash-field",
+      "docs/ui/mechanical-equivalence.manifest.json.requiredEvidenceFields must include copyAfterHash",
+    ],
+    [
+      "--simulate-missing-merge-blocking-status",
+      "docs/ui/mechanical-equivalence.manifest.json.recordRequirement.mergeBlockingStatuses must include blocked-visible-diff",
+    ],
+    [
+      "--simulate-missing-private-evidence-field",
+      "docs/ui/mechanical-equivalence.manifest.json.requiredPrivateEvidenceFields must include privateEvidenceReference",
+    ],
+    [
+      "--simulate-invalid-record-status",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].status is invalid",
+    ],
+    [
+      "--simulate-invalid-token-status",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].tokenDiffStatus is invalid",
+    ],
+    [
+      "--simulate-local-private-reference",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].beforeSnapshotReference must use private-codex-ui-mechanical-equivalence:",
+    ],
+    [
+      "--simulate-short-record-hash",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].afterSnapshotHash must be a 64-character hex hash",
+    ],
+    [
+      "--simulate-short-geometry-copy-hash",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].geometryAfterHash must be a 64-character hex hash",
+    ],
+    [
+      "--simulate-record-approved-by-agent",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].approvedScope.approvedBy must be user",
+    ],
+    [
+      "--simulate-record-unsafe-approval-reference",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].approvedScope.privateApprovalReference must use a safe relative private reference",
+    ],
+    [
+      "--simulate-missing-record-changed-files",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0] is missing changedFiles",
+    ],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_MECHANICAL_EQUIVALENCE_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI mechanical equivalence self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI mechanical equivalence check passed (${records.length} records)`);
