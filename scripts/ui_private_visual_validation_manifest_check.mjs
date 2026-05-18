@@ -445,7 +445,7 @@ const privateVerifierArgsPath = "scripts/ui_private_verifier_args.mjs";
 const privateVerifierArgsSource = fs.existsSync(path.join(rootDir, privateVerifierArgsPath))
   ? fs.readFileSync(path.join(rootDir, privateVerifierArgsPath), "utf8")
   : "";
-for (const snippet of ["CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE", "allowedFlags", "optionsWithValues", "testOnlyFlags"]) {
+for (const snippet of ["CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE", "allowedFlags", "optionsWithValues", "testOnlyFlags", "received unexpected argument"]) {
   if (!privateVerifierArgsSource.includes(snippet)) {
     fail(`${privateVerifierArgsPath} must enforce private verifier argument contracts via ${snippet}`);
   }
@@ -506,6 +506,18 @@ for (const script of [
   });
   if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
     fail(`${script} must reject unknown flags before private root checks`);
+  }
+  const unexpectedArgumentResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "unexpected-arg"], {
+    cwd: rootDir,
+    env: withoutPrivateUiEnv(),
+    encoding: "utf8",
+  });
+  const unexpectedArgumentOutput = `${unexpectedArgumentResult.stdout || ""}${unexpectedArgumentResult.stderr || ""}`;
+  if (unexpectedArgumentResult.status === 0 || unexpectedArgumentResult.status === manifest?.externalPendingExitCode) {
+    fail(`${script} must reject unexpected positional arguments before private root checks`);
+  }
+  if (!unexpectedArgumentOutput.includes("received unexpected argument unexpected-arg")) {
+    fail(`${script} must explain unexpected positional arguments`);
   }
 }
 for (const script of [
