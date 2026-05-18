@@ -1,13 +1,44 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_PROTECTED_SURFACE_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-wrong-private-baseline-alias",
+  "--simulate-missing-required-freeze-field",
+  "--simulate-wrong-freeze-contract-value",
+  "--simulate-missing-approval-authority-source",
+  "--simulate-missing-freeze-field",
+  "--simulate-unknown-pattern",
+  "--simulate-invalid-baseline-hash",
+  "--simulate-disabled-change-policy",
+  "--simulate-duplicate-surface-id",
+  "--simulate-unsupported-platform",
+  "--simulate-non-user-approval",
+  "--simulate-invalid-approval-date",
+  "--simulate-unsafe-private-reference",
+  "--simulate-missing-contract-field",
+  "--simulate-unstable-contract-value",
+  "--simulate-disabled-visual-model-policy",
+  "--simulate-disabled-scope-budget-policy",
+  "--simulate-local-path-leak",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI protected surface check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -89,6 +120,49 @@ function requireIsoDate(value, label) {
     fail(`${label} must be an ISO date`);
   }
 }
+
+function runFailureSelfTests() {
+  const selfTestEnv = { ...process.env, CLAWIX_UI_PROTECTED_SURFACE_SELF_TEST: "1" };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-wrong-private-baseline-alias"], "privateBaselineAlias must be private-codex-ui-baselines"],
+    [["--simulate-missing-required-freeze-field"], "requiredFreezeFields must include changePolicy"],
+    [["--simulate-wrong-freeze-contract-value"], "freezeContractValue must be stable"],
+    [["--simulate-missing-approval-authority-source"], "approvalSources must include protected-surfaces"],
+    [["--simulate-missing-freeze-field"], "is missing privateApprovalReference"],
+    [["--simulate-unknown-pattern"], "patterns references unknown pattern unknown-pattern"],
+    [["--simulate-invalid-baseline-hash"], "privateBaselineHash must be a 64-character hex hash"],
+    [["--simulate-disabled-change-policy"], "changePolicy.requiresExplicitUserApproval must be true"],
+    [["--simulate-duplicate-surface-id"], "id duplicates simulated-duplicate-surface"],
+    [["--simulate-unsupported-platform"], "platform is not governed"],
+    [["--simulate-non-user-approval"], "approvedBy must be user"],
+    [["--simulate-invalid-approval-date"], "approvedAt must be an ISO date"],
+    [["--simulate-unsafe-private-reference"], "privateBaselineReference must use a safe relative private reference"],
+    [["--simulate-missing-contract-field"], "contract is missing performance"],
+    [["--simulate-unstable-contract-value"], "contract.copy must be stable"],
+    [["--simulate-disabled-visual-model-policy"], "changePolicy.requiresVisualModelAllowlist must be true"],
+    [["--simulate-disabled-scope-budget-policy"], "changePolicy.requiresScopeBudget must be true"],
+    [["--simulate-local-path-leak"], "scope must not contain a local path"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for protected surface validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) runFailureSelfTests();
 
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
 const protectedPath = "docs/ui/protected-surfaces.registry.json";
