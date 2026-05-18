@@ -293,7 +293,13 @@ final class AppState: ObservableObject {
     @Published var browserPageBackgroundColors: [UUID: Color] = [:]
     @Published var clawixBackendStatus: ClawixService.Status = .idle {
         didSet {
-            rescueDecision = RescueRuntimeSignalMapper.decision(backendStatus: clawixBackendStatus)
+            rescueDecision = RescueRuntimeSignalMapper.decision(
+                backendStatus: clawixBackendStatus,
+                runtimeHealth: ResourceSampler.latestHealthSnapshot(
+                    bridgeReachable: clawixBackendStatus.isRescueBridgeReachable,
+                    runtimeCount: clawixBackendStatus.defaultRescueRuntimeCount
+                )
+            )
         }
     }
     @Published var rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)

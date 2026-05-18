@@ -90,4 +90,46 @@ final class RescueSurvivalPolicyTests: XCTestCase {
         XCTAssertEqual(ready.mode, .normal)
         XCTAssertTrue(ready.pendingRepairSignals.isEmpty)
     }
+
+    func testRuntimeSignalDetectorMapsHealthThresholdsToCircuitBreakers() {
+        let thresholds = RescueRuntimeHealthThresholds(
+            highCPUPercent: 80,
+            highResidentBytes: 500,
+            highFootprintBytes: 1_000,
+            startupHangSeconds: 5,
+            mainThreadStallMs: 1_000,
+            crashLoopCount: 2
+        )
+        let signals = RescueRuntimeSignalDetector.signals(
+            from: RescueRuntimeHealthSnapshot(
+                processCpuPercent: 90,
+                residentBytes: 600,
+                footprintBytes: 900,
+                bridgeReachable: false,
+                runtimeCount: 1,
+                startupElapsedSeconds: 6,
+                mainThreadStallMs: 1_200,
+                recentCrashCount: 2
+            ),
+            thresholds: thresholds
+        )
+
+        XCTAssertEqual(signals, [.bridgeRuntimeDown, .crashLoop, .highCPU, .highMemory, .startupHang])
+    }
+
+    func testRuntimeSignalMapperPreservesEphemeralChatWhenAlternateRuntimeExists() {
+        let decision = RescueRuntimeSignalMapper.decision(
+            backendStatus: .error("bridge failed"),
+            runtimeHealth: RescueRuntimeHealthSnapshot(
+                bridgeReachable: false,
+                runtimeCount: 1
+            )
+        )
+
+        XCTAssertEqual(decision.mode, .ephemeralChat)
+        XCTAssertTrue(decision.canLaunch)
+        XCTAssertTrue(decision.canChat)
+        XCTAssertTrue(decision.pendingRepairSignals.contains(.bridgeRuntimeDown))
+        XCTAssertFalse(decision.pendingRepairSignals.contains(.noRuntimeAvailable))
+    }
 }

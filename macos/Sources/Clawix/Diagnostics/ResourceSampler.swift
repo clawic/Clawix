@@ -71,6 +71,47 @@ enum ResourceSampler {
         }
     }
 
+    static func latestHealthSnapshot(
+        bridgeReachable: Bool? = nil,
+        runtimeCount: Int? = nil
+    ) -> RescueRuntimeHealthSnapshot? {
+        queue.sync {
+            guard let sample = lastSample else {
+                guard bridgeReachable != nil || runtimeCount != nil else { return nil }
+                return RescueRuntimeHealthSnapshot(
+                    bridgeReachable: bridgeReachable,
+                    runtimeCount: runtimeCount
+                )
+            }
+            return RescueRuntimeHealthSnapshot(
+                processCpuPercent: sample.processCpuPercent,
+                residentBytes: sample.residentBytes,
+                footprintBytes: sample.footprintBytes,
+                bridgeReachable: bridgeReachable,
+                runtimeCount: runtimeCount
+            )
+        }
+    }
+
+    static func persistedHealthSnapshot(
+        from url: URL?,
+        bridgeReachable: Bool? = nil,
+        runtimeCount: Int? = nil
+    ) -> RescueRuntimeHealthSnapshot? {
+        guard let url,
+              let data = try? Data(contentsOf: url),
+              let sample = try? JSONDecoder().decode(Sample.self, from: data) else {
+            return nil
+        }
+        return RescueRuntimeHealthSnapshot(
+            processCpuPercent: sample.processCpuPercent,
+            residentBytes: sample.residentBytes,
+            footprintBytes: sample.footprintBytes,
+            bridgeReachable: bridgeReachable,
+            runtimeCount: runtimeCount
+        )
+    }
+
     /// Resolves `~/Library/Application Support/<bundleId>/Diagnostics/<name>`,
     /// creating the directory tree if needed. Returns nil on sandbox
     /// or filesystem errors (the caller should treat that as "no

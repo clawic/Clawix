@@ -126,6 +126,38 @@ final class RescueRepairContextTests: XCTestCase {
         try? FileManager.default.removeItem(at: tempDir)
     }
 
+    func testResourceSamplerBuildsPostMortemHealthSnapshotFromPersistedDiagnostics() throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("RescueResourceSamplerTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let sampleURL = tempDir.appendingPathComponent("last-resources.json")
+        try Data("""
+        {
+          "timestamp": 1779123456,
+          "residentBytes": 2048,
+          "footprintBytes": 4096,
+          "processCpuPercent": 87.5,
+          "appVersion": "1.0",
+          "buildNumber": "100"
+        }
+        """.utf8).write(to: sampleURL)
+
+        let snapshot = try XCTUnwrap(ResourceSampler.persistedHealthSnapshot(
+            from: sampleURL,
+            bridgeReachable: false,
+            runtimeCount: 1
+        ))
+
+        XCTAssertTrue(snapshot.hasResourceMetrics)
+        XCTAssertEqual(snapshot.processCpuPercent, 87.5)
+        XCTAssertEqual(snapshot.residentBytes, 2_048)
+        XCTAssertEqual(snapshot.footprintBytes, 4_096)
+        XCTAssertEqual(snapshot.bridgeReachable, false)
+        XCTAssertEqual(snapshot.runtimeCount, 1)
+
+        try? FileManager.default.removeItem(at: tempDir)
+    }
+
     private static let fixtureRepairEnvelope = Data("""
     {
       "ok": true,

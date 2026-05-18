@@ -134,13 +134,109 @@ enum RescueSurvivalPolicy {
     }
 }
 
+struct RescueRuntimeHealthThresholds: Equatable, Codable {
+    var highCPUPercent: Double
+    var highResidentBytes: UInt64
+    var highFootprintBytes: UInt64
+    var startupHangSeconds: TimeInterval
+    var mainThreadStallMs: Double
+    var crashLoopCount: Int
+
+    static let defaults = RescueRuntimeHealthThresholds(
+        highCPUPercent: 350,
+        highResidentBytes: 3 * 1024 * 1024 * 1024,
+        highFootprintBytes: 3 * 1024 * 1024 * 1024,
+        startupHangSeconds: 45,
+        mainThreadStallMs: 2_000,
+        crashLoopCount: 3
+    )
+}
+
+enum RescueRuntimeSignalDetector {
+    static func signals(
+        from health: RescueRuntimeHealthSnapshot?,
+        thresholds: RescueRuntimeHealthThresholds = .defaults
+    ) -> Set<RescueFailureSignal> {
+        guard let health else { return [] }
+
+        var signals: Set<RescueFailureSignal> = []
+        if health.bridgeReachable == false {
+            signals.insert(.bridgeRuntimeDown)
+        }
+        if let processCpuPercent = health.processCpuPercent,
+           processCpuPercent >= thresholds.highCPUPercent {
+            signals.insert(.highCPU)
+        }
+        if let residentBytes = health.residentBytes,
+           residentBytes >= thresholds.highResidentBytes {
+            signals.insert(.highMemory)
+        }
+        if let footprintBytes = health.footprintBytes,
+           footprintBytes >= thresholds.highFootprintBytes {
+            signals.insert(.highMemory)
+        }
+        if let startupElapsedSeconds = health.startupElapsedSeconds,
+           startupElapsedSeconds >= thresholds.startupHangSeconds,
+           health.bridgeReachable != true {
+            signals.insert(.startupHang)
+        }
+        if let mainThreadStallMs = health.mainThreadStallMs,
+           mainThreadStallMs >= thresholds.mainThreadStallMs {
+            signals.insert(.startupHang)
+        }
+        if let recentCrashCount = health.recentCrashCount,
+           recentCrashCount >= thresholds.crashLoopCount {
+            signals.insert(.crashLoop)
+        }
+        return signals
+    }
+}
+
 enum RescueRuntimeSignalMapper {
-    static func decision(backendStatus: ClawixService.Status) -> RescueSurvivalDecision {
+    static func decision(
+        backendStatus: ClawixService.Status,
+        runtimeHealth: RescueRuntimeHealthSnapshot? = nil,
+        thresholds: RescueRuntimeHealthThresholds = .defaults
+    ) -> RescueSurvivalDecision {
+        var signals = RescueRuntimeSignalDetector.signals(from: runtimeHealth, thresholds: thresholds)
+        let runtimeCount = runtimeHealth?.runtimeCount ?? defaultRuntimeCount(for: backendStatus)
         switch backendStatus {
         case .error:
-            return RescueSurvivalPolicy.evaluate(signals: [.bridgeRuntimeDown], availableRuntimeCount: 0)
+            signals.insert(.bridgeRuntimeDown)
         case .idle, .starting, .ready:
-            return RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+            break
+        }
+        return RescueSurvivalPolicy.evaluate(signals: signals, availableRuntimeCount: runtimeCount)
+    }
+
+    private static func defaultRuntimeCount(for backendStatus: ClawixService.Status) -> Int {
+        switch backendStatus {
+        case .error:
+            return 0
+        case .idle, .starting, .ready:
+            return 1
+        }
+    }
+}
+
+extension ClawixService.Status {
+    var isRescueBridgeReachable: Bool? {
+        switch self {
+        case .ready:
+            return true
+        case .error:
+            return false
+        case .idle, .starting:
+            return nil
+        }
+    }
+
+    var defaultRescueRuntimeCount: Int {
+        switch self {
+        case .error:
+            return 0
+        case .idle, .starting, .ready:
+            return 1
         }
     }
 }

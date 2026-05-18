@@ -1,11 +1,18 @@
 import Foundation
 
 struct RescueRuntimeHealthSnapshot: Codable, Equatable {
-    var processCpuPercent: Double?
-    var residentBytes: UInt64?
-    var footprintBytes: UInt64?
-    var bridgeReachable: Bool?
-    var runtimeCount: Int?
+    var processCpuPercent: Double? = nil
+    var residentBytes: UInt64? = nil
+    var footprintBytes: UInt64? = nil
+    var bridgeReachable: Bool? = nil
+    var runtimeCount: Int? = nil
+    var startupElapsedSeconds: TimeInterval? = nil
+    var mainThreadStallMs: Double? = nil
+    var recentCrashCount: Int? = nil
+
+    var hasResourceMetrics: Bool {
+        processCpuPercent != nil || residentBytes != nil || footprintBytes != nil
+    }
 }
 
 struct RescueDiagnosticReference: Codable, Equatable, Identifiable {
@@ -291,15 +298,25 @@ enum RescueRepairContextExporter {
         let lastResourcesURL = ResourceSampler.diagnosticsFileURL(named: "last-resources.json")
         let evolutionData = try? RescueEvolutionCommandClient().repairReport()
         let runtimeAvailable = ClawJSRuntime.isAvailable
-        let decision = RescueSurvivalPolicy.evaluate(
-            signals: runtimeAvailable ? [] : [.bridgeRuntimeDown],
-            availableRuntimeCount: runtimeAvailable ? 1 : 0
+        let liveHealth = ResourceSampler.latestHealthSnapshot(
+            bridgeReachable: runtimeAvailable,
+            runtimeCount: runtimeAvailable ? 1 : 0
+        )
+        let persistedHealth = ResourceSampler.persistedHealthSnapshot(
+            from: lastResourcesURL,
+            bridgeReachable: runtimeAvailable,
+            runtimeCount: runtimeAvailable ? 1 : 0
+        )
+        let runtimeHealth = liveHealth?.hasResourceMetrics == true ? liveHealth : (persistedHealth ?? liveHealth)
+        let decision = RescueRuntimeSignalMapper.decision(
+            backendStatus: runtimeAvailable ? .ready : .error("ClawJS runtime is unavailable"),
+            runtimeHealth: runtimeHealth
         )
         return try write(
             decision: decision,
             evolutionEnvelopeData: evolutionData,
             diagnosticFiles: [lastResourcesURL].compactMap { $0 }.filter { FileManager.default.fileExists(atPath: $0.path) },
-            runtimeHealth: nil,
+            runtimeHealth: runtimeHealth,
             destinationURL: destinationURL
         )
     }
