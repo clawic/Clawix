@@ -5,11 +5,45 @@ import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_COPY_GOVERNANCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-copy-inventory",
+  "--simulate-wrong-private-snapshot-alias",
+  "--simulate-extra-copy-kind",
+  "--simulate-duplicate-copy-kind",
+  "--simulate-extra-required-evidence",
+  "--simulate-duplicate-required-evidence",
+  "--simulate-copy-decision-missing-inventory",
+  "--simulate-copy-decision-missing-evidence-plan",
+  "--simulate-copy-decision-missing-evidence-verifier",
+  "--simulate-copy-decision-missing-private-verifier",
+  "--simulate-copy-decision-missing-private-evidence",
+  "--simulate-copy-decision-premature-complete",
+  "--simulate-approved-copy-snapshots-stale-decision",
+  "--simulate-missing-copy-kind",
+  "--simulate-missing-required-evidence",
+  "--simulate-missing-pattern-copy-contract",
+  "--simulate-invalid-pattern-copy-key",
+  "--simulate-mismatched-copy-snapshot-reference",
+  "--simulate-absolute-copy-snapshot-reference",
+  "--simulate-coverage-missing-copy-hash",
+  "--simulate-coverage-extra-copy-evidence",
+  "--simulate-coverage-duplicate-copy-evidence",
+  "--simulate-wrong-surface-copy-alias",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI copy governance check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -350,6 +384,7 @@ if (!copyGovernanceDecision) {
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-inactive-copy-inventory", "status must be active or approved-private-snapshots"],
     ["--simulate-wrong-private-snapshot-alias", "privateSnapshotAlias must be private-codex-ui-copy-snapshots"],
     ["--simulate-missing-copy-kind", "restrictedCopyKinds must include tooltip"],
