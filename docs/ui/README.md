@@ -255,6 +255,11 @@ the public repo.
     public repo. Evidence is not complete until the required fields from the
     plan, including `approvedByUserAt` and `approvedScope` where required, are
     present and pass the relevant private verifier.
+    To scaffold placeholder files for capture, run
+    `node scripts/ui_private_evidence_plan_check.mjs --write-template-root <outside-repo-dir>`.
+    The command refuses public-repo destinations and writes invalid templates
+    grouped under each private root alias; replace placeholders with approved
+    private captures before using any verifier.
 46. Close the nine open completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,

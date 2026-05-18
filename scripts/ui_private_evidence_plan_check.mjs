@@ -26,7 +26,8 @@ const simulationFlags = [
   "--simulate-private-validation-wrong-evidence-type",
   "--simulate-duplicate-evidence-record",
 ];
-const allowedFlags = new Set(["--json", "--capture-plan", ...simulationFlags]);
+const optionsWithValues = new Set(["--write-template-root"]);
+const allowedFlags = new Set(["--json", "--capture-plan", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
 const errors = [];
 const plan = [];
 
@@ -39,6 +40,17 @@ for (const arg of args) {
     console.error(`UI private evidence plan check received unknown flag ${arg}.`);
     process.exit(1);
   }
+}
+
+function optionValue(name) {
+  const index = args.indexOf(name);
+  if (index === -1) return null;
+  const value = args[index + 1] || null;
+  if (!value || value.startsWith("--")) {
+    console.error(`UI private evidence plan check option ${name} requires a value.`);
+    process.exit(1);
+  }
+  return value;
 }
 
 function readJson(relativePath) {
@@ -255,6 +267,61 @@ function evidenceTemplateForItem(item) {
     template[field] = templateValueForField(field, item);
   }
   return template;
+}
+
+function assertOutsidePublicRepo(outputRootRaw) {
+  const outputRoot = path.resolve(outputRootRaw);
+  const relativeToRepo = path.relative(rootDir, outputRoot);
+  if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
+    fail("--write-template-root must point outside the public repository");
+    return null;
+  }
+  return outputRoot;
+}
+
+function writeJsonTemplate(file, value, { force }) {
+  if (fs.existsSync(file) && !force) {
+    fail(`${file} already exists; pass --force-template-root to overwrite generated templates`);
+    return;
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function writeTemplateRoot(outputRootRaw) {
+  const outputRoot = assertOutsidePublicRepo(outputRootRaw);
+  if (!outputRoot) return;
+  const capturePlan = capturePlanFromEvidencePlan();
+  if (errors.length > 0) return;
+  const force = args.includes("--force-template-root");
+  fs.mkdirSync(outputRoot, { recursive: true });
+  writeJsonTemplate(path.join(outputRoot, "capture-template-index.json"), {
+    schemaVersion: 1,
+    status: "placeholder-not-valid-evidence",
+    note: "Templates are field-shape checklists only. Replace null values with approved private evidence before verification.",
+    totalRecords: capturePlan.totalRecords,
+    roots: capturePlan.roots.map((root) => ({
+      alias: root.alias,
+      env: root.env,
+      required: root.required,
+      recordCount: root.recordCount,
+      evidenceTypes: root.evidenceTypes,
+    })),
+    completionBlockers: capturePlan.completionBlockers,
+  }, { force });
+  for (const root of capturePlan.roots) {
+    for (const record of root.records) {
+      writeJsonTemplate(path.join(outputRoot, root.alias, record.relativeEvidencePath), {
+        _rootAlias: root.alias,
+        _rootEnv: root.env,
+        _relativeEvidencePath: record.relativeEvidencePath,
+        ...record.evidenceTemplate,
+      }, { force });
+    }
+  }
+  if (errors.length === 0) {
+    console.log(`UI private evidence template root written (${capturePlan.totalRecords} placeholder files): ${outputRoot}`);
+  }
 }
 
 function capturePlanFromEvidencePlan() {
@@ -703,7 +770,15 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-if (args.includes("--capture-plan")) {
+const templateRoot = optionValue("--write-template-root");
+if (templateRoot) {
+  writeTemplateRoot(templateRoot);
+  if (errors.length > 0) {
+    console.error("UI private evidence plan check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+} else if (args.includes("--capture-plan")) {
   console.log(JSON.stringify(capturePlanFromEvidencePlan(), null, 2));
 } else if (args.includes("--json")) {
   console.log(JSON.stringify({ schemaVersion: 1, counts: Object.fromEntries(counts), evidence: plan }, null, 2));
