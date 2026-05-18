@@ -35,13 +35,6 @@ require() {
     exit 78
   fi
 }
-require swift
-require cargo
-require npm
-require appimagetool
-require zsyncmake
-require gpg
-
 echo "[release] legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
@@ -50,6 +43,13 @@ if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-appimage" ]]; then
   echo "[release] Set CLAWIX_RELEASE_APPROVED_FOR=linux-appimage only after fresh maintainer approval." >&2
   exit 1
 fi
+
+require swift
+require cargo
+require npm
+require appimagetool
+require zsyncmake
+require gpg
 : "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
 
 mkdir -p "$OUT_DIR"
