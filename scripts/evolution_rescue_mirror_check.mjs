@@ -81,6 +81,9 @@ requireSnippet("macos/Sources/Clawix/Diagnostics/ResourceSampler.swift", "latest
 requireSnippet("macos/Sources/Clawix/Diagnostics/ResourceSampler.swift", "persistedHealthSnapshot");
 requireSnippet("macos/Sources/Clawix/AppState/Routes.swift", "case rescue");
 requireSnippet("macos/Sources/Clawix/AppState/DeepLinks.swift", "openRescueDeepLink");
+requireSnippet("macos/Sources/Clawix/AppState/DeepLinks.swift", "openRescueSurface(exportDiagnostics: true)");
+requireSnippet("macos/Sources/Clawix/AppState/DeepLinks.swift", "SettingsUtilities.revealDiagnosticsFolder()");
+requireSnippet("macos/Sources/Clawix/Rescue/RescueDiagnosticsView.swift", "SettingsUtilities.revealDiagnosticsFolder()");
 for (const snippet of [
   "failed_migration",
   "partial_storage",
