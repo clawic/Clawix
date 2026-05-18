@@ -830,6 +830,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // each other confuse users. The CLI agent is restored on
         // applicationWillTerminate if the bridge daemon is still alive.
         BridgeAgentControl.bootoutMenubarAgent()
+        SystemTelemetryStatusItemController.shared.start()
         // Register the system-wide QuickAsk hotkey. The default combo
         // (⌃Space) is set in `QuickAskHotkey.defaultValue`; the user
         // can change it from Settings → QuickAsk.
@@ -851,6 +852,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ClawixApp.isToolRole {
             return
         }
+        SystemTelemetryStatusItemController.shared.stop()
         // Send SIGHUP to every live integrated-terminal shell so the
         // children get a chance to flush before the process exits.
         // macOS reaps any stragglers via SIGKILL once the parent
