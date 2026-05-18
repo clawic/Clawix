@@ -1,14 +1,43 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_SCOPE_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-expired-approved-scope",
+  "--simulate-unsupported-platform",
+  "--simulate-uncovered-change-budget",
+  "--simulate-duplicate-scope-id",
+  "--simulate-duplicate-scope-platform",
+  "--simulate-duplicate-scope-surface",
+  "--simulate-duplicate-scope-pattern",
+  "--simulate-duplicate-scope-change-kind",
+  "--simulate-duplicate-scope-file",
+  "--simulate-inactive-scope-manifest",
+  "--simulate-extra-scope-status",
+  "--simulate-duplicate-scope-status",
+  "--simulate-missing-required-change-kind",
+  "--simulate-missing-required-approval-field",
+  "--simulate-extra-required-approval-field",
+  "--simulate-duplicate-required-approval-field",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI visual scope check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -119,6 +148,52 @@ function requireExistingRepoFile(reference, label) {
   if (!fs.existsSync(path.join(rootDir, reference))) {
     fail(`${label} points to missing target ${reference}`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_VISUAL_SCOPE_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-expired-approved-scope"], "approved scope expired on 2026-01-01"],
+    [["--simulate-unsupported-platform"], "platforms contains unsupported visionos"],
+    [["--simulate-uncovered-change-budget"], "changeBudget.allowedChangeKinds must cover scope change kind spacing"],
+    [["--simulate-duplicate-scope-id"], "id duplicates simulated-scope"],
+    [["--simulate-duplicate-scope-platform"], "platforms duplicates macos"],
+    [["--simulate-duplicate-scope-surface"], "surfaces duplicates"],
+    [["--simulate-duplicate-scope-pattern"], "patterns duplicates"],
+    [["--simulate-duplicate-scope-change-kind"], "changeKinds duplicates color"],
+    [["--simulate-duplicate-scope-file"], "files duplicates macos/Sources/Clawix/SidebarView.swift"],
+    [["--simulate-inactive-scope-manifest"], "status must be active"],
+    [["--simulate-extra-scope-status"], "scopeStatuses must not include pending-review"],
+    [["--simulate-duplicate-scope-status"], "scopeStatuses duplicates proposed"],
+    [["--simulate-missing-required-change-kind"], "requiredChangeKinds must include typography"],
+    [["--simulate-missing-required-approval-field"], "requiredApprovalFields must include changeKinds"],
+    [["--simulate-extra-required-approval-field"], "requiredApprovalFields must not include screenshotPath"],
+    [["--simulate-duplicate-required-approval-field"], "requiredApprovalFields duplicates id"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI visual scope validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const configPath = "docs/ui/interface-governance.config.json";
