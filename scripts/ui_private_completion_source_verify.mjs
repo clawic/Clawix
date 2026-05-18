@@ -118,6 +118,21 @@ function runFailureSelfTests(goalEnv, sessionEnv) {
       { [goalEnv]: missingGoalFile, [sessionEnv]: missingSessionFile },
       `${goalEnv} does not point to an existing file`,
     ],
+    [
+      ["--require-approved", "--simulate-missing-expected-decision-id"],
+      { CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION: "1" },
+      "expectedDecisionIds must contain expectedDecisionCount entries",
+    ],
+    [
+      ["--require-approved", "--simulate-duplicate-expected-decision-id"],
+      { CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION: "1" },
+      "expectedDecisionIds must not contain duplicate decisions",
+    ],
+    [
+      ["--require-approved", "--simulate-wrong-expected-decision-choice"],
+      { CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION: "1" },
+      "expectedDecisions[0].choice must be Cross-platform desde dia 1",
+    ],
   ];
 
   for (const [testArgs, extraEnv, expectedOutput] of tests) {
