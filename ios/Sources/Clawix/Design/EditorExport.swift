@@ -23,7 +23,7 @@ enum EditorExport {
     }
 
     static func writeHTML(_ html: String, to url: URL) throws {
-        try html.data(using: .utf8)?.write(to: url, options: .atomic)
+        try "\(legalHTMLComment)\n\(html)".data(using: .utf8)?.write(to: url, options: .atomic)
     }
 
     static func writeSVG(html: String, width: Double, height: Double, to url: URL) throws {
@@ -31,6 +31,7 @@ enum EditorExport {
         let style = extract(tag: "style", from: html) ?? ""
         let svg = """
 <svg xmlns="http://www.w3.org/2000/svg" width="\(Int(width))" height="\(Int(height))" viewBox="0 0 \(Int(width)) \(Int(height))">
+  <metadata>\(legalPlainText)</metadata>
   <foreignObject x="0" y="0" width="\(Int(width))" height="\(Int(height))">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <style>\(style)</style>
@@ -40,6 +41,14 @@ enum EditorExport {
 </svg>
 """
         try svg.data(using: .utf8)?.write(to: url, options: .atomic)
+    }
+
+    private static var legalHTMLComment: String {
+        "<!-- \(legalPlainText) -->"
+    }
+
+    private static var legalPlainText: String {
+        "Clawix export labels: draft_not_final, not_professional_advice, human_review_required, sources_and_gaps_required, regulated_domain, disclaimer_version:2026-05-18; not professional advice; draft not final."
     }
 
     static func writePNG(webView: WKWebView, to url: URL, completion: @escaping (Result<Void, Error>) -> Void) {

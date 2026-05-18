@@ -25,6 +25,7 @@ struct EditorView: View {
     @State private var assetSlotId: String?
     @State private var photoPickerItem: PhotosPickerItem?
     @State private var sharePayload: SharePayload?
+    @State private var pendingExportFormat: EditorExport.Format?
     @State private var compactPane: CompactPane = .canvas
     @State private var webViewRef = WebViewBox()
     @State private var inspectorSheetOpen: Bool = false
@@ -80,6 +81,18 @@ struct EditorView: View {
         .sheet(item: $sharePayload) { payload in
             ShareSheet(items: [payload.url])
         }
+        .confirmationDialog("Export or share sensitive data?", isPresented: exportReviewPresented, titleVisibility: .visible) {
+            Button("Continue") {
+                guard let format = pendingExportFormat else { return }
+                pendingExportFormat = nil
+                export(format: format)
+            }
+            Button("Cancel", role: .cancel) {
+                pendingExportFormat = nil
+            }
+        } message: {
+            Text("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material.")
+        }
         .confirmationDialog("Delete draft?", isPresented: $pendingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { performDelete() }
             Button("Cancel", role: .cancel) {}
@@ -90,6 +103,13 @@ struct EditorView: View {
     }
 
     // MARK: - Layouts
+
+    private var exportReviewPresented: Binding<Bool> {
+        Binding(
+            get: { pendingExportFormat != nil },
+            set: { if !$0 { pendingExportFormat = nil } }
+        )
+    }
 
     private func regularLayout(document: EditorDocument, template: TemplateManifest, style: StyleManifest, html: String) -> some View {
         HStack(spacing: 0) {
@@ -272,7 +292,7 @@ struct EditorView: View {
                 ForEach(EditorExport.Format.allCases) { format in
                     Button("Export \(format.label)") {
                         Haptics.tap()
-                        export(format: format)
+                        requestExportReview(format: format)
                     }
                 }
                 Divider()
@@ -417,6 +437,10 @@ struct EditorView: View {
     }
 
     // MARK: - Export
+
+    private func requestExportReview(format: EditorExport.Format) {
+        pendingExportFormat = format
+    }
 
     private func export(format: EditorExport.Format) {
         guard let doc = currentDocument else { return }

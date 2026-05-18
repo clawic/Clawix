@@ -78,6 +78,7 @@ enum PlanSegmenter {
 struct PlanCardView: View {
     let content: String
     let completed: Bool
+    @EnvironmentObject private var appState: AppState
 
     /// The card collapses by default once the plan is finished.
     /// While it's still being written it must stay open so the user can
@@ -264,9 +265,15 @@ struct PlanCardView: View {
     // MARK: actions
 
     private func handleCopy() {
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            handleReviewedCopy()
+        }
+    }
+
+    private func handleReviewedCopy() {
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.setString(content, forType: .string)
+        pb.setString(reviewedExportContent, forType: .string)
 
         copyResetTask?.cancel()
         withAnimation(.easeOut(duration: 0.15)) { justCopied = true }
@@ -280,13 +287,27 @@ struct PlanCardView: View {
     }
 
     private func handleDownload() {
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            handleReviewedDownload()
+        }
+    }
+
+    private func handleReviewedDownload() {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "PLAN.md"
         panel.allowedContentTypes = [.plainText]
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            try? content.data(using: .utf8)?.write(to: url)
+            try? reviewedExportContent.data(using: .utf8)?.write(to: url)
         }
+    }
+
+    private var reviewedExportContent: String {
+        """
+        <!-- Clawix export labels: \(LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final. -->
+
+        \(content)
+        """
     }
 }
 

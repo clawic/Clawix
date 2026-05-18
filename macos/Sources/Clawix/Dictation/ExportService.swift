@@ -10,7 +10,8 @@ enum DictationExportService {
 
     static func exportTranscripts() async throws -> URL {
         let rows = try await TranscriptionsRepository.shared.fetchPage(offset: 0, limit: 100_000)
-        var csv = "id,timestamp,model,language,duration_s,word_count,original,enhanced\n"
+        let labels = LegalSafetyPolicy.defaultOutputLabels.joined(separator: "|")
+        var csv = "id,timestamp,model,language,duration_s,word_count,legal_labels,disclaimer_version,original,enhanced\n"
         let formatter = ISO8601DateFormatter()
         for row in rows {
             let parts = [
@@ -20,6 +21,8 @@ enum DictationExportService {
                 row.language ?? "",
                 String(format: "%.2f", row.durationSeconds),
                 String(row.wordCount),
+                escape(labels),
+                LegalSafetyPolicy.disclaimerVersion,
                 escape(row.originalText),
                 escape(row.enhancedText ?? "")
             ]
@@ -73,6 +76,11 @@ enum DictationExportService {
             "schema": "clawix-dictation-settings",
             "version": 1,
             "exportedAt": ISO8601DateFormatter().string(from: Date()),
+            "legal": [
+                "labels": LegalSafetyPolicy.defaultOutputLabels,
+                "disclaimerVersion": LegalSafetyPolicy.disclaimerVersion,
+                "notice": LegalSafetyPolicy.regulatedDecisionDisclaimer
+            ],
             "values": dump
         ]
         let data = try JSONSerialization.data(

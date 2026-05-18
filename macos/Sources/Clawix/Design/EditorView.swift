@@ -147,7 +147,7 @@ struct EditorView: View {
             HStack(spacing: 6) {
                 ForEach(EditorExport.Format.allCases) { format in
                     Button {
-                        export(format: format)
+                        requestExportReview(format: format)
                     } label: {
                         Text(format.label)
                             .font(.system(size: 11, design: .monospaced))
@@ -326,6 +326,12 @@ struct EditorView: View {
     }
 
     // MARK: - Export
+
+    private func requestExportReview(format: EditorExport.Format) {
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            export(format: format)
+        }
+    }
 
     private func export(format: EditorExport.Format) {
         guard let doc = currentDocument else { return }

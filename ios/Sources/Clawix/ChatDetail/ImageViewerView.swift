@@ -26,6 +26,7 @@ struct ImageViewerView: View {
     @State private var index: Int = 0
     @State private var backdropProgress: CGFloat = 0
     @State private var shareItem: ShareItem?
+    @State private var pendingSensitiveImageAction: SensitiveImageAction?
     @State private var toast: String?
 
     private var currentImage: UIImage? {
@@ -60,15 +61,13 @@ struct ImageViewerView: View {
                             systemName: "arrow.down.to.line",
                             tint: Color.black.opacity(0.35)
                         ) {
-                            if let img = currentImage { saveToPhotos(img) }
+                            pendingSensitiveImageAction = .save
                         }
                         GlassIconButton(
                             systemName: "square.and.arrow.up",
                             tint: Color.black.opacity(0.35)
                         ) {
-                            if let img = currentImage {
-                                shareItem = ShareItem(image: img)
-                            }
+                            pendingSensitiveImageAction = .share
                         }
                         GlassIconButton(
                             systemName: "xmark",
@@ -100,6 +99,33 @@ struct ImageViewerView: View {
         .sheet(item: $shareItem) { item in
             ImageShareSheet(items: [item.image])
         }
+        .confirmationDialog("Export or share sensitive data?", isPresented: sensitiveImageReviewPresented, titleVisibility: .visible) {
+            Button("Continue") {
+                guard let action = pendingSensitiveImageAction, let image = currentImage else {
+                    pendingSensitiveImageAction = nil
+                    return
+                }
+                pendingSensitiveImageAction = nil
+                switch action {
+                case .save:
+                    saveToPhotos(image)
+                case .share:
+                    shareItem = ShareItem(image: image)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                pendingSensitiveImageAction = nil
+            }
+        } message: {
+            Text("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material.")
+        }
+    }
+
+    private var sensitiveImageReviewPresented: Binding<Bool> {
+        Binding(
+            get: { pendingSensitiveImageAction != nil },
+            set: { if !$0 { pendingSensitiveImageAction = nil } }
+        )
     }
 
     private func saveToPhotos(_ image: UIImage) {
@@ -136,6 +162,18 @@ struct ImageViewerView: View {
 private struct ShareItem: Identifiable {
     let id = UUID()
     let image: UIImage
+}
+
+private enum SensitiveImageAction: Identifiable {
+    case save
+    case share
+
+    var id: String {
+        switch self {
+        case .save: return "save"
+        case .share: return "share"
+        }
+    }
 }
 
 private struct ImageShareSheet: UIViewControllerRepresentable {

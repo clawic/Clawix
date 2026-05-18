@@ -262,6 +262,27 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         )
     }
 
+    func testSensitiveExportEntrypointsRequireLegalReview() throws {
+        let editorSource = try readSource("Design/EditorView.swift")
+        let imagePreviewSource = try readSource("ImagePreviewOverlay.swift")
+        let planCardSource = try readSource("PlanCardView.swift")
+        let transcriptSource = try readSource("Dictation/TranscriptHistoryUI.swift")
+        let exportServiceSource = try readSource("Dictation/ExportService.swift")
+        let editorExportSource = try readSource("Design/EditorExport.swift")
+        let databaseSource = try readSource("Database/DatabaseWorkbenchCommands.swift")
+
+        XCTAssertTrue(editorSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
+        XCTAssertTrue(imagePreviewSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
+        XCTAssertTrue(planCardSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
+        XCTAssertTrue(planCardSource.contains("reviewedExportContent"))
+        XCTAssertTrue(exportServiceSource.contains("legal_labels"))
+        XCTAssertTrue(exportServiceSource.contains("\"legal\""))
+        XCTAssertTrue(editorExportSource.contains("legalHTMLComment"))
+        XCTAssertTrue(editorExportSource.contains("<metadata>\\(legalPlainText)</metadata>"))
+        XCTAssertTrue(transcriptSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview("))
+        XCTAssertTrue(databaseSource.contains("kind.requiresSensitiveExportReview"))
+    }
+
     func testCodexInstructionsWritesStaySentinelScopedAndConfirmed() throws {
         let personalizationSource = try readSource("Settings/SettingsView+PersonalizationPage.swift")
         let instructionsSource = try readSource("CodexInstructionsFile.swift")

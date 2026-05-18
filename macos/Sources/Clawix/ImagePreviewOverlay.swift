@@ -191,6 +191,12 @@ struct ImagePreviewOverlay: View {
     }
 
     private func downloadImage(from url: URL) {
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            downloadReviewedImage(from: url)
+        }
+    }
+
+    private func downloadReviewedImage(from url: URL) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = url.lastPathComponent
         panel.canCreateDirectories = true
