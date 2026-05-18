@@ -233,6 +233,16 @@ inspect, narrow, override, or revoke access for a specific resource, secret,
 agent, action, person, or host. Organizational control is a policy layer over
 sovereignty, not a replacement for it.
 
+**II.10 Updates preserve use before perfection.** A user who updates Clawix or
+Claw must not be trapped outside their agent because local state, migrations,
+indexes, bridge contracts, runtime state, or non-critical subsystems failed.
+After V1, public user data migrates forward through explicit, testable steps.
+If a migration or repair cannot complete immediately, the product prioritizes
+launch, chat, and agent-readable repair context over blocking startup. The
+current implementation stays clean: old-version knowledge belongs in
+migrators, adapters, receipts, repair tools, and fixtures, not scattered
+through the main current-model code path.
+
 ### III. Openness
 
 **III.1 Open data, open local API, open source.** Three pillars. Data: open
@@ -485,7 +495,8 @@ by construction, regardless of who proposes them.
 additive: optional fields, never breaking. Twenty percent is structural
 (rename, restructure) and requires automatic migration with a pre-migration
 snapshot in a known location. No framework update may ever cause the user
-to lose data. If a migration fails, it rolls back.
+to lose data. If a migration cannot finish, the system rolls back or moves
+into repair mode without losing the launch/chat/rescue core.
 
 ### VII. Agents
 

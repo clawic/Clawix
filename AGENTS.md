@@ -120,7 +120,8 @@ Use the relevant skill instead of loading long instructions into context:
   `architecture-drift-repair`, `adr-to-guardrail`,
   `decision-map-maintenance`
 - Stable surfaces: `naming-surface-audit`, `surface-registry-alignment`,
-  `surface-route-work`, `cli-agent-surface-work`,
+  `surface-route-work`, `compatibility-evolution-work`,
+  `cli-agent-surface-work`,
   `source-file-boundary-refactor`
 - Data/storage: `canonical-catalog-expansion`,
   `data-storage-boundary-review`
@@ -175,6 +176,9 @@ Use the relevant skill instead of loading long instructions into context:
   registered or their gaps are explicitly classified.
 - Runtime-critical bridge, companion, chat, host, and remote work starts from
   `claw inspect show|neighbors|routes|route` plus the Clawix manifest.
+- Stable evolution, migration, rollback, rescue, receipt, or repair work starts
+  from sibling ClawJS ADR 0030 and `claw evolution`. Clawix must preserve
+  launch, chat, and repair before non-critical subsystems after updates.
 - New hand-authored files at 1200+ lines need a split plan or baseline
   rationale; new 2000+ line files are blocked unless explicitly exempted.
   Emergency-debt files above 5000 lines must not grow except for extraction,

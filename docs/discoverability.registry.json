@@ -311,6 +311,33 @@
       "reviewDate": "2026-08-17"
     },
     {
+      "id": "adr-docs-adr-0018-evolution-rescue-backbone-mirror",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0018-evolution-rescue-backbone-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0018: Evolution and rescue backbone mirror",
+        "0018-evolution-rescue-backbone-mirror",
+        "ADR 0018"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0018: Evolution and rescue backbone mirror",
+          "expectPath": "docs/adr/0018-evolution-rescue-backbone-mirror.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "owner": "clawix",
@@ -575,6 +602,30 @@
         {
           "query": "commit-hygiene-public",
           "expectPath": "skills/commit-hygiene-public/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-compatibility-evolution-work",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/compatibility-evolution-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "compatibility-evolution-work",
+        "Add or change stable public state, contracts, routes, migrations, adapters, rescue behavior, or compatibility-sensitive surfaces through the evolution ledger."
+      ],
+      "searchQueries": [
+        {
+          "query": "compatibility-evolution-work",
+          "expectPath": "skills/compatibility-evolution-work/SKILL.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
@@ -1185,6 +1236,31 @@
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-evolution-rescue-mirror-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/evolution_rescue_mirror_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "evolution_rescue_mirror_check",
+        "Evolution Rescue Mirror Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "evolution_rescue_mirror_check",
+          "expectPath": "scripts/evolution_rescue_mirror_check.mjs"
+        }
+      ],
+      "guard": "scripts/evolution_rescue_mirror_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
