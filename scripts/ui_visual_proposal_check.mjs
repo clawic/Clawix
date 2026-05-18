@@ -1,14 +1,45 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_PROPOSAL_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-inactive-visual-proposals",
+  "--simulate-extra-proposal-status",
+  "--simulate-duplicate-proposal-status",
+  "--simulate-extra-approval-required-status",
+  "--simulate-duplicate-approval-required-status",
+  "--simulate-extra-allowed-required-evidence",
+  "--simulate-duplicate-allowed-required-evidence",
+  "--simulate-extra-required-proposal-field",
+  "--simulate-duplicate-required-proposal-field",
+  "--simulate-conceptual-implemented",
+  "--simulate-approved-without-private-reference",
+  "--simulate-approved-mismatched-private-reference",
+  "--simulate-unknown-required-evidence",
+  "--simulate-duplicate-proposal-change-kind",
+  "--simulate-duplicate-proposal-platform",
+  "--simulate-duplicate-proposal-evidence",
+  "--simulate-unsafe-proposal-surface",
+  "--simulate-template-allows-visible-edit",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI visual proposal check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readText(relativePath) {
@@ -141,6 +172,54 @@ function requirePublicReference(value, label) {
   if (!fs.existsSync(path.join(rootDir, target))) {
     fail(`${label} points to missing target ${target}`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_VISUAL_PROPOSAL_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-inactive-visual-proposals"], "status must be active"],
+    [["--simulate-extra-proposal-status"], "proposalStatuses must not include implemented"],
+    [["--simulate-duplicate-proposal-status"], "proposalStatuses duplicates conceptual-only"],
+    [["--simulate-extra-approval-required-status"], "approvalRequiredForStatuses must not include conceptual-only"],
+    [["--simulate-duplicate-approval-required-status"], "approvalRequiredForStatuses duplicates user-approved-for-visual-lane"],
+    [["--simulate-extra-allowed-required-evidence"], "allowedRequiredEvidence must not include local-screenshot"],
+    [["--simulate-duplicate-allowed-required-evidence"], "allowedRequiredEvidence duplicates private-baseline"],
+    [["--simulate-extra-required-proposal-field"], "requiredProposalFields must not include localDraftPath"],
+    [["--simulate-duplicate-required-proposal-field"], "requiredProposalFields duplicates id"],
+    [["--simulate-conceptual-implemented"], "implementationStatus must be not-approved while conceptual-only"],
+    [["--simulate-approved-without-private-reference"], "privateApprovalReference must use private-codex-ui-approval:"],
+    [["--simulate-approved-mismatched-private-reference"], "privateApprovalReference must target visual-proposals/simulated-proposal"],
+    [["--simulate-unknown-required-evidence"], "requiredEvidence contains unsupported invented-evidence"],
+    [["--simulate-duplicate-proposal-change-kind"], "changeKinds duplicates color"],
+    [["--simulate-duplicate-proposal-platform"], "platforms duplicates macos"],
+    [["--simulate-duplicate-proposal-evidence"], "requiredEvidence duplicates private-baseline"],
+    [["--simulate-unsafe-proposal-surface"], "surfaces must only include safe public identifiers"],
+    [["--simulate-template-allows-visible-edit"], "is missing required snippet: Do not edit visible source code from this lane."],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI visual proposal validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const registryPath = "docs/ui/visual-proposals.registry.json";
