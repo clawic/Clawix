@@ -158,6 +158,105 @@ function splitPrivateReference(reference) {
   return { alias, suffix };
 }
 
+const idFieldByEvidenceType = new Map([
+  ["surface-baseline", "coverageId"],
+  ["surface-geometry", "coverageId"],
+  ["surface-copy", "coverageId"],
+  ["critical-flow-baseline", "flowId"],
+  ["pattern-geometry", "patternId"],
+  ["rendered-drift", "coverageId"],
+  ["debt-audit", "debtId"],
+  ["performance-budget", "flowId"],
+  ["mechanical-equivalence", "recordId"],
+]);
+
+const referenceFieldByEvidenceType = new Map([
+  ["surface-baseline", "privateBaselineReference"],
+  ["surface-geometry", "geometryEvidenceReference"],
+  ["surface-copy", "copySnapshotReference"],
+  ["critical-flow-baseline", "privateBaselineReference"],
+  ["pattern-geometry", "geometryEvidenceReference"],
+  ["rendered-drift", "privateDriftReportReference"],
+  ["debt-audit", "privateDebtAuditReference"],
+  ["performance-budget", "privateBaselineReference"],
+  ["mechanical-equivalence", "privateEvidenceReference"],
+]);
+
+function approvedScopeTemplate() {
+  const fields = Array.isArray(privateValidation?.requiredApprovedScopeFields)
+    ? privateValidation.requiredApprovedScopeFields
+    : ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"];
+  return Object.fromEntries(fields.map((field) => [field, null]));
+}
+
+function debtAuditEntryFor(item) {
+  return (debtAudit?.entries || []).find((entry) => entry?.debtId === item.id);
+}
+
+function renderedDriftReportFor(item) {
+  return (renderedDrift?.reports || []).find((report) => report?.coverageId === item.id && report?.platform === item.platform);
+}
+
+function templateValueForField(field, item) {
+  if (field === "platform") return item.platform;
+  if (field === idFieldByEvidenceType.get(item.type)) return item.id;
+  if (field === referenceFieldByEvidenceType.get(item.type)) return item.privateReference;
+  if (field === "approvedScope") return approvedScopeTemplate();
+  if (["approvedByUserAt", "measuredAt", "auditedAt", "producedAt"].includes(field)) return null;
+  if (/Hash$/.test(field)) return null;
+  if (field === "captureCommand") return null;
+  if (field === "measurements") return {};
+  if (field === "metrics") {
+    return Object.fromEntries((performanceBudgets?.requiredMetrics || []).map((metric) => [metric, null]));
+  }
+  if (field === "measurementSamples") {
+    return (performanceBudgets?.requiredMetrics || []).map((metric) => ({
+      metric,
+      value: null,
+      sampleHash: null,
+    }));
+  }
+  if (field === "copyItems") {
+    return [{
+      kind: null,
+      textHash: null,
+      source: null,
+    }];
+  }
+  if (field === "driftCategories") return renderedDriftReportFor(item)?.driftCategories || [];
+  if (field === "driftResults") {
+    return Object.fromEntries((renderedDriftReportFor(item)?.driftCategories || []).map((category) => [
+      category,
+      {
+        status: null,
+        resultHash: null,
+      },
+    ]));
+  }
+  if (field === "status") return renderedDriftReportFor(item)?.status || null;
+  if (field === "findingItems") {
+    return [{
+      category: null,
+      source: null,
+      itemHash: null,
+    }];
+  }
+  if (field === "scope") return debtAuditEntryFor(item)?.scope || null;
+  if (field === "platforms") return debtAuditEntryFor(item)?.platforms || [];
+  return null;
+}
+
+function evidenceTemplateForItem(item) {
+  const template = {
+    _templateStatus: "placeholder-not-valid-evidence",
+    _templateNote: "Fill from private captured evidence. Do not treat null placeholders as approval.",
+  };
+  for (const field of item.requiredFields || []) {
+    template[field] = templateValueForField(field, item);
+  }
+  return template;
+}
+
 function capturePlanFromEvidencePlan() {
   const aliasEntries = [
     ...requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "rootAliases"),
@@ -190,6 +289,7 @@ function capturePlanFromEvidencePlan() {
       privateReference: item.privateReference,
       relativeEvidencePath: `${parsed.suffix}/${item.evidenceFilename}`,
       requiredFields: item.requiredFields,
+      evidenceTemplate: evidenceTemplateForItem(item),
     });
     roots.set(parsed.alias, root);
   }

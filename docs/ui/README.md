@@ -248,11 +248,13 @@ the public repo.
     `private-codex-ui-baselines`, `private-codex-ui-rendered-geometry`,
     `private-codex-ui-copy-snapshots`, `private-codex-ui-rendered-drift`, and
     `private-codex-ui-debt-audit`. For each record, create the matching private
-    root suffix plus its `evidenceFilename`; keep raw screenshots, traces,
-    rendered copy, measurements, and hashes outside the public repo. Evidence is
-    not complete until the required fields from the plan, including
-    `approvedByUserAt` and `approvedScope` where required, are present and pass
-    the relevant private verifier.
+    root suffix plus its `evidenceFilename`; use the emitted
+    `evidenceTemplate` only as a field-shape checklist. Template placeholders
+    are intentionally invalid and do not count as approval. Keep raw
+    screenshots, traces, rendered copy, measurements, and hashes outside the
+    public repo. Evidence is not complete until the required fields from the
+    plan, including `approvedByUserAt` and `approvedScope` where required, are
+    present and pass the relevant private verifier.
 46. Close the nine open completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,
