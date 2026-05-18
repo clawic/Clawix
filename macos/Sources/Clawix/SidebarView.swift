@@ -978,6 +978,11 @@ struct SidebarView: View {
                                       route: .skills,
                                       shortcut: "⌘⇧K")
                     }
+                    if let rescueSummary = RescueRepairStatusSummary(decision: appState.rescueDecision) {
+                        RescueRepairSidebarButton(summary: rescueSummary) {
+                            SettingsUtilities.revealDiagnosticsFolder()
+                        }
+                    }
                     /*
                     SidebarButton(title: "Plugins",
                                   icon: "circle.grid.2x2",
@@ -1424,6 +1429,59 @@ struct SidebarView: View {
             appState.selectedProject = project
             appState.currentRoute = .home
             expandedProjects.insert(project.id)
+        }
+    }
+}
+
+private struct RescueRepairSidebarButton: View {
+    let summary: RescueRepairStatusSummary
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 11) {
+                LucideIcon.auto("circle-alert", size: 10.5)
+                    .frame(width: 15)
+                    .foregroundColor(iconColor)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(summary.title)
+                        .font(BodyFont.system(size: 13.5, wght: 500))
+                        .foregroundColor(Color(white: 0.92))
+                    Text(summary.detail)
+                        .font(BodyFont.system(size: 11, wght: 500))
+                        .foregroundColor(Color(white: 0.64))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 6)
+                if summary.pendingCount > 0 {
+                    Text("\(summary.pendingCount)")
+                        .font(BodyFont.system(size: 11, wght: 600))
+                        .foregroundColor(Color(white: 0.94))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.white.opacity(0.08)))
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(hovered ? Color.white.opacity(0.035) : Color.white.opacity(0.018))
+            )
+        }
+        .buttonStyle(.plain)
+        .sidebarHover { hovered = $0 }
+        .accessibilityLabel("\(summary.title), \(summary.detail)")
+    }
+
+    private var iconColor: Color {
+        switch summary.mode {
+        case .diagnosticsOnly: return Color(red: 1.0, green: 0.60, blue: 0.38)
+        case .ephemeralChat: return Color(red: 0.92, green: 0.70, blue: 0.34)
+        case .degraded: return Color(red: 0.78, green: 0.78, blue: 0.78)
+        case .normal: return Color(white: 0.78)
         }
     }
 }

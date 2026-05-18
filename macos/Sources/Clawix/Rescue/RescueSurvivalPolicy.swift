@@ -43,6 +43,39 @@ struct RescueSurvivalDecision: Equatable, Codable {
     var canProvideRepairContext: Bool { preservedCapabilities.contains(.repairContext) }
 }
 
+struct RescueRepairStatusSummary: Equatable, Codable {
+    var mode: RescueMode
+    var pendingCount: Int
+    var title: String
+    var detail: String
+    var actionTitle: String
+
+    init?(decision: RescueSurvivalDecision) {
+        guard decision.mode != .normal || !decision.pendingRepairSignals.isEmpty else { return nil }
+        mode = decision.mode
+        pendingCount = decision.pendingRepairSignals.count
+        actionTitle = "Diagnose"
+        switch decision.mode {
+        case .normal:
+            title = "Repair pending"
+            detail = Self.countText(pendingCount)
+        case .degraded:
+            title = "Repair pending"
+            detail = Self.countText(pendingCount)
+        case .ephemeralChat:
+            title = "Repair pending"
+            detail = "Chat is available"
+        case .diagnosticsOnly:
+            title = "Diagnostics available"
+            detail = "Chat runtime unavailable"
+        }
+    }
+
+    private static func countText(_ count: Int) -> String {
+        count == 1 ? "1 issue" : "\(count) issues"
+    }
+}
+
 enum RescueSurvivalPolicy {
     static func evaluate(
         signals rawSignals: Set<RescueFailureSignal>,

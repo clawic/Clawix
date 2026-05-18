@@ -11,12 +11,16 @@ extension Notification.Name {
 enum ClawixDeepLink: Equatable {
     case session(String)
     case authCallback(provider: String)
+    case rescue
 
     static func parse(_ url: URL) -> ClawixDeepLink? {
         guard url.scheme?.lowercased() == "clawix" else { return nil }
         guard let host = url.host?.lowercased() else { return nil }
         let parts = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
         switch host {
+        case "rescue":
+            guard parts.isEmpty else { return nil }
+            return .rescue
         case "session":
             guard parts.count == 1 else { return nil }
             return .session(parts[0])

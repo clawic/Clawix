@@ -5,11 +5,20 @@ extension AppState {
     func handleOpenURL(_ url: URL) -> Bool {
         guard let deepLink = ClawixDeepLink.parse(url) else { return false }
         switch deepLink {
+        case .rescue:
+            return openRescueDeepLink()
         case .session(let token):
             return openSessionDeepLink(token)
         case .authCallback:
             return true
         }
+    }
+
+    @discardableResult
+    func openRescueDeepLink() -> Bool {
+        currentRoute = .settings
+        SettingsUtilities.revealDiagnosticsFolder()
+        return true
     }
 
     @discardableResult

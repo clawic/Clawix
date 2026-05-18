@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -49,6 +50,7 @@ for (const snippet of [
   "bridgeRuntimeDown",
   "highCPU",
   "highMemory",
+  "RescueRepairStatusSummary",
 ]) requireSnippet("macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift", snippet);
 
 for (const snippet of [
@@ -64,13 +66,24 @@ for (const snippet of [
 ]) requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", snippet);
 
 requireSnippet("macos/Sources/Clawix/Settings/SettingsView+Controls.swift", "RescueRepairContextExporter.writeCurrentRescueContext");
+requireSnippet("macos/Sources/Clawix/AppState.swift", "rescueDecision");
+requireSnippet("macos/Sources/Clawix/SidebarView.swift", "RescueRepairSidebarButton");
+requireSnippet("macos/Sources/Clawix/SidebarView.swift", "RescueRepairStatusSummary(decision: appState.rescueDecision)");
+requireSnippet("macos/Sources/Clawix/AppState/Routes.swift", "case rescue");
+requireSnippet("macos/Sources/Clawix/AppState/DeepLinks.swift", "openRescueDeepLink");
 requireSnippet("docs/evolution/README.md", "rescue-context.json");
+requireSnippet("docs/evolution/README.md", "discreet");
+requireSnippet("../scripts-dev/clawix-launcher.sh", "open-rescue");
+requireSnippet("../scripts-dev/clawix-launcher.sh", "clawix://rescue");
 
 if (fs.existsSync(siblingClawjs)) {
   const siblingAdr = path.join(siblingClawjs, "docs/adr/0030-post-v1-evolution-rescue-backbone.md");
   const siblingLedger = path.join(siblingClawjs, "docs/evolution/baseline.json");
+  const siblingPackage = path.join(siblingClawjs, "package.json");
   if (!fs.existsSync(siblingAdr)) errors.push("sibling ClawJS ADR 0030 is missing");
   if (!fs.existsSync(siblingLedger)) errors.push("sibling ClawJS evolution ledger is missing");
+  if (!fs.existsSync(siblingPackage)) errors.push("sibling ClawJS package.json is missing");
+  if (fs.existsSync(siblingPackage)) runSiblingEvolutionGate();
 }
 
 if (errors.length > 0) {
@@ -80,3 +93,15 @@ if (errors.length > 0) {
 }
 
 console.log("Clawix evolution rescue mirror check passed");
+
+function runSiblingEvolutionGate() {
+  const result = spawnSync("npm", ["run", "test:evolution", "--silent"], {
+    cwd: siblingClawjs,
+    encoding: "utf8",
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
+    errors.push(`sibling ClawJS evolution gate failed${output ? `:\n${output}` : ""}`);
+  }
+}

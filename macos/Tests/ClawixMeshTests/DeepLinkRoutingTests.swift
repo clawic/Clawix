@@ -12,6 +12,16 @@ final class DeepLinkRoutingTests: XCTestCase {
         XCTAssertEqual(ClawixDeepLink.parse(url), .authCallback(provider: "anthropic"))
     }
 
+    func testParsesRescueDeepLink() throws {
+        let url = try XCTUnwrap(URL(string: "clawix://rescue"))
+        XCTAssertEqual(ClawixDeepLink.parse(url), .rescue)
+    }
+
+    func testRejectsNestedRescueDeepLink() throws {
+        let url = try XCTUnwrap(URL(string: "clawix://rescue/extra"))
+        XCTAssertNil(ClawixDeepLink.parse(url))
+    }
+
     func testRejectsRetiredChatDeepLink() throws {
         let url = try XCTUnwrap(URL(string: "clawix://chat/04CD35A5-E5D0-4CFA-A332-F6B5666C584B"))
         XCTAssertNil(ClawixDeepLink.parse(url))

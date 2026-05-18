@@ -63,4 +63,20 @@ final class RescueSurvivalPolicyTests: XCTestCase {
         XCTAssertTrue(decision.disabledCapabilities.isEmpty)
         XCTAssertFalse(decision.requiresApprovalForRiskyRepair)
     }
+
+    func testRepairStatusSummaryOnlyAppearsWhenThereIsPendingRescueWork() {
+        let healthy = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+        XCTAssertNil(RescueRepairStatusSummary(decision: healthy))
+
+        let degraded = RescueSurvivalPolicy.evaluate(signals: [.highCPU, .highMemory], availableRuntimeCount: 1)
+        let degradedSummary = try! XCTUnwrap(RescueRepairStatusSummary(decision: degraded))
+        XCTAssertEqual(degradedSummary.title, "Repair pending")
+        XCTAssertEqual(degradedSummary.detail, "2 issues")
+        XCTAssertEqual(degradedSummary.actionTitle, "Diagnose")
+
+        let noRuntime = RescueSurvivalPolicy.evaluate(signals: [.bridgeRuntimeDown], availableRuntimeCount: 0)
+        let diagnosticsSummary = try! XCTUnwrap(RescueRepairStatusSummary(decision: noRuntime))
+        XCTAssertEqual(diagnosticsSummary.title, "Diagnostics available")
+        XCTAssertEqual(diagnosticsSummary.detail, "Chat runtime unavailable")
+    }
 }

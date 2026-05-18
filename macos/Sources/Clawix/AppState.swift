@@ -292,6 +292,7 @@ final class AppState: ObservableObject {
     /// active page is currently painting at that edge.
     @Published var browserPageBackgroundColors: [UUID: Color] = [:]
     @Published var clawixBackendStatus: ClawixService.Status = .idle
+    @Published var rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
     /// Snapshot of the user's primary/secondary rate-limit windows as
     /// reported by the backend (`account/rateLimits/read` once at boot,
     /// then refreshed by `account/rateLimits/updated`). nil while the
