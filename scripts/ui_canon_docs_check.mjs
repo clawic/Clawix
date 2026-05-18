@@ -4,12 +4,33 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_CANON_DOCS_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-missing-required-doc",
+  "--simulate-adr-missing-docs-ui",
+  "--simulate-style-missing-visual-model-allowlist",
+  "--simulate-standards-missing-protected-surfaces",
+  "--simulate-perf-missing-critical-flow",
+  "--simulate-macos-perf-missing-baseline-approval",
+  "--simulate-readme-missing-private-visual-verify",
+  "--simulate-readme-missing-pattern-registry",
+  "--simulate-readme-missing-failure-diagnostics",
+  "--simulate-decision-map-missing-interface-governance",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI canon docs check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function read(relativePath) {
@@ -153,6 +174,7 @@ for (const snippet of [
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--simulate-missing-required-doc", "missing docs/ui/README.md"],
     ["--simulate-adr-missing-docs-ui", "docs/adr/0010-interface-governance.md must mention docs/ui/"],
     ["--simulate-style-missing-visual-model-allowlist", "STYLE.md must mention visual-model-allowlist.manifest.json"],
     ["--simulate-standards-missing-protected-surfaces", "STANDARDS.md must mention protected-surfaces.registry.json"],
