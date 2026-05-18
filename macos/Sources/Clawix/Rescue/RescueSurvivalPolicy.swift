@@ -134,6 +134,17 @@ enum RescueSurvivalPolicy {
     }
 }
 
+enum RescueRuntimeSignalMapper {
+    static func decision(backendStatus: ClawixService.Status) -> RescueSurvivalDecision {
+        switch backendStatus {
+        case .error:
+            return RescueSurvivalPolicy.evaluate(signals: [.bridgeRuntimeDown], availableRuntimeCount: 0)
+        case .idle, .starting, .ready:
+            return RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+        }
+    }
+}
+
 private extension Set where Element == RescueFailureSignal {
     func intersects(_ values: Set<RescueFailureSignal>) -> Bool {
         !intersection(values).isEmpty

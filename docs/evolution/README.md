@@ -33,9 +33,10 @@ file references. If the bundled ClawJS CLI is unavailable, it still emits an
 offline diagnostics context so the app can launch and the user can continue
 with local rescue guidance.
 
-`AppState.rescueDecision` and `RescueRepairStatusSummary` provide the discreet
-sidebar signal. The sidebar shows a compact repair row only when rescue work is
-pending; activating it writes `rescue-context.json` and opens local diagnostics.
+`AppState.rescueDecision`, `RescueRuntimeSignalMapper`, and
+`RescueRepairStatusSummary` provide the discreet sidebar signal. The sidebar
+shows a compact repair row only when rescue work is pending; activating it
+writes `rescue-context.json` and opens local diagnostics.
 
 `Settings -> Diagnose Clawix Workspace issues` writes `rescue-context.json`
 next to `last-resources.json` in the local Diagnostics folder before opening

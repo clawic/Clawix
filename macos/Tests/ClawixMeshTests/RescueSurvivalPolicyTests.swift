@@ -79,4 +79,15 @@ final class RescueSurvivalPolicyTests: XCTestCase {
         XCTAssertEqual(diagnosticsSummary.title, "Diagnostics available")
         XCTAssertEqual(diagnosticsSummary.detail, "Chat runtime unavailable")
     }
+
+    func testRuntimeSignalMapperRaisesDiagnosticsWhenBackendErrors() {
+        let failed = RescueRuntimeSignalMapper.decision(backendStatus: .error("launch failed"))
+        XCTAssertEqual(failed.mode, .diagnosticsOnly)
+        XCTAssertTrue(failed.pendingRepairSignals.contains(.bridgeRuntimeDown))
+        XCTAssertTrue(failed.pendingRepairSignals.contains(.noRuntimeAvailable))
+
+        let ready = RescueRuntimeSignalMapper.decision(backendStatus: .ready)
+        XCTAssertEqual(ready.mode, .normal)
+        XCTAssertTrue(ready.pendingRepairSignals.isEmpty)
+    }
 }

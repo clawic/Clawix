@@ -51,6 +51,7 @@ for (const snippet of [
   "highCPU",
   "highMemory",
   "RescueRepairStatusSummary",
+  "RescueRuntimeSignalMapper",
 ]) requireSnippet("macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift", snippet);
 
 for (const snippet of [
