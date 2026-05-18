@@ -40,7 +40,7 @@
     {
       "id": "macos-settings-and-configuration",
       "platform": "macos",
-      "scopes": ["macos/Sources/Clawix/Settings/**", "macos/Sources/Clawix/Providers/**", "macos/Sources/Clawix/Dictation/**", "macos/Sources/Clawix/HostActions/**"],
+      "scopes": ["macos/Sources/Clawix/Settings/**", "macos/Sources/Clawix/Providers/**", "macos/Sources/Clawix/Dictation/**", "macos/Sources/Clawix/HostActions/**", "macos/Sources/Clawix/Rescue/**"],
       "classification": "pattern",
       "patterns": ["settings-surface", "dropdown-menu", "sheet-chrome", "icon-chip-button", "entity-card"],
       "reason": "Configuration, provider, identity, appearance, browser, host, dictation, and controls pages."
