@@ -27,7 +27,7 @@ const simulationFlags = [
   "--simulate-duplicate-evidence-record",
 ];
 const optionsWithValues = new Set(["--write-template-root"]);
-const allowedFlags = new Set(["--json", "--capture-plan", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
+const allowedFlags = new Set(["--json", "--capture-plan", "--capture-status", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
 const errors = [];
 const plan = [];
 
@@ -322,6 +322,128 @@ function writeTemplateRoot(outputRootRaw) {
   if (errors.length === 0) {
     console.log(`UI private evidence template root written (${capturePlan.totalRecords} placeholder files): ${outputRoot}`);
   }
+}
+
+function emptyCaptureStatusCounts() {
+  return {
+    missingRoot: 0,
+    invalidRoot: 0,
+    missingFile: 0,
+    invalidJson: 0,
+    placeholder: 0,
+    candidate: 0,
+  };
+}
+
+function addCaptureStatus(left, right) {
+  for (const key of Object.keys(left)) left[key] += right[key] || 0;
+}
+
+function captureStatusForFile(rootPath, relativeEvidencePath) {
+  const counts = emptyCaptureStatusCounts();
+  const evidencePath = path.join(rootPath, relativeEvidencePath.split("/").join(path.sep));
+  if (!fs.existsSync(evidencePath)) {
+    counts.missingFile += 1;
+    return { state: "missing-file", counts };
+  }
+  let evidence = null;
+  try {
+    evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
+  } catch {
+    counts.invalidJson += 1;
+    return { state: "invalid-json", counts };
+  }
+  if (evidence?._templateStatus === "placeholder-not-valid-evidence") {
+    counts.placeholder += 1;
+    return { state: "placeholder", counts };
+  }
+  counts.candidate += 1;
+  return { state: "candidate", counts };
+}
+
+function captureStatusFromEvidencePlan() {
+  const capturePlan = capturePlanFromEvidencePlan();
+  if (errors.length > 0) return null;
+  const recordStates = new Map();
+  const roots = capturePlan.roots.map((root) => {
+    const counts = emptyCaptureStatusCounts();
+    const rootPathRaw = process.env[root.env] || "";
+    const rootStatus = {
+      alias: root.alias,
+      env: root.env,
+      required: root.required,
+      recordCount: root.recordCount,
+      configured: Boolean(rootPathRaw),
+      status: "external-pending-missing-root",
+      counts,
+    };
+    if (!rootPathRaw) {
+      counts.missingRoot = root.recordCount;
+      for (const record of root.records) {
+        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "missing-root");
+      }
+      return rootStatus;
+    }
+    const rootPath = path.resolve(rootPathRaw);
+    const relativeToRepo = path.relative(rootDir, rootPath);
+    if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
+      counts.invalidRoot = root.recordCount;
+      rootStatus.status = "invalid-root-inside-public-repo";
+      for (const record of root.records) {
+        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "invalid-root");
+      }
+      return rootStatus;
+    }
+    if (!fs.existsSync(rootPath) || !fs.statSync(rootPath).isDirectory()) {
+      counts.missingRoot = root.recordCount;
+      rootStatus.status = "external-pending-root-not-found";
+      for (const record of root.records) {
+        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "missing-root");
+      }
+      return rootStatus;
+    }
+    rootStatus.status = "configured";
+    for (const record of root.records) {
+      const fileStatus = captureStatusForFile(rootPath, record.relativeEvidencePath);
+      addCaptureStatus(counts, fileStatus.counts);
+      recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, fileStatus.state);
+    }
+    return rootStatus;
+  });
+  const completionBlockers = capturePlan.completionBlockers.map((blocker) => {
+    const counts = emptyCaptureStatusCounts();
+    for (const root of capturePlan.roots) {
+      for (const record of root.records) {
+        if (!blocker.evidenceTypes.includes(record.type)) continue;
+        const state = recordStates.get(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`);
+        if (state === "missing-root") counts.missingRoot += 1;
+        else if (state === "invalid-root") counts.invalidRoot += 1;
+        else if (state === "missing-file") counts.missingFile += 1;
+        else if (state === "invalid-json") counts.invalidJson += 1;
+        else if (state === "placeholder") counts.placeholder += 1;
+        else if (state === "candidate") counts.candidate += 1;
+      }
+    }
+    const completeCandidates = counts.candidate === blocker.recordCount;
+    return {
+      ...blocker,
+      status: completeCandidates ? "candidate-private-evidence-present" : "external-pending",
+      counts,
+    };
+  });
+  const totals = emptyCaptureStatusCounts();
+  for (const root of roots) addCaptureStatus(totals, root.counts);
+  return {
+    schemaVersion: 1,
+    status: totals.candidate === capturePlan.totalRecords
+      ? "candidate-private-evidence-present-run-approved-verifiers"
+      : "external-pending-private-evidence-capture",
+    note: "Candidate files are not approval. Final completion still requires the private verifiers with --require-approved.",
+    totalRecords: capturePlan.totalRecords,
+    totals,
+    roots,
+    completionBlockers,
+  };
 }
 
 function capturePlanFromEvidencePlan() {
@@ -778,6 +900,14 @@ if (templateRoot) {
     for (const error of errors) console.error(`- ${error}`);
     process.exit(1);
   }
+} else if (args.includes("--capture-status")) {
+  const status = captureStatusFromEvidencePlan();
+  if (errors.length > 0) {
+    console.error("UI private evidence plan check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(JSON.stringify(status, null, 2));
 } else if (args.includes("--capture-plan")) {
   console.log(JSON.stringify(capturePlanFromEvidencePlan(), null, 2));
 } else if (args.includes("--json")) {

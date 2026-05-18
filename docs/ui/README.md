@@ -260,6 +260,12 @@ the public repo.
     The command refuses public-repo destinations and writes invalid templates
     grouped under each private root alias; replace placeholders with approved
     private captures before using any verifier.
+    During capture, run
+    `node scripts/ui_private_evidence_plan_check.mjs --capture-status` with the
+    private root environment variables set to count missing roots, missing
+    files, placeholders, invalid JSON, and candidate evidence by root and
+    completion blocker. Candidate files are still not approval; final closure
+    requires the private verifiers with `--require-approved`.
 46. Close the nine open completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,
