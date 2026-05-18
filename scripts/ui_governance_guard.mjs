@@ -1,27 +1,52 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const rawArgs = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_GOVERNANCE_GUARD_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-unauthorized-visual-diff",
+  "--simulate-cross-platform-visual-diff",
+  "--simulate-approved-visual-scope",
+  "--simulate-overbudget-visual-scope",
+  "--simulate-wrong-file-visual-scope",
+  "--simulate-layout-only-visual-scope",
+  "--simulate-revoked-visual-scope",
+  "--simulate-expired-visual-scope",
+  "--simulate-budget-kind-visual-scope",
+  "--simulate-missing-pattern-visual-scope",
+  "--simulate-duplicate-pattern-visual-scope",
+  "--simulate-invalid-budget-visual-scope",
+  "--simulate-unsafe-file-visual-scope",
+];
+const allowedFlags = new Set(simulationFlags);
 const today = new Date().toISOString().slice(0, 10);
-const simulateUnauthorizedVisualDiff = process.argv.includes("--simulate-unauthorized-visual-diff");
-const simulateCrossPlatformVisualDiff = process.argv.includes("--simulate-cross-platform-visual-diff");
-const simulateApprovedVisualScope = process.argv.includes("--simulate-approved-visual-scope");
-const simulateOverbudgetVisualScope = process.argv.includes("--simulate-overbudget-visual-scope");
-const simulateWrongFileVisualScope = process.argv.includes("--simulate-wrong-file-visual-scope");
-const simulateLayoutOnlyVisualScope = process.argv.includes("--simulate-layout-only-visual-scope");
-const simulateRevokedVisualScope = process.argv.includes("--simulate-revoked-visual-scope");
-const simulateExpiredVisualScope = process.argv.includes("--simulate-expired-visual-scope");
-const simulateBudgetKindVisualScope = process.argv.includes("--simulate-budget-kind-visual-scope");
-const simulateMissingPatternVisualScope = process.argv.includes("--simulate-missing-pattern-visual-scope");
-const simulateDuplicatePatternVisualScope = process.argv.includes("--simulate-duplicate-pattern-visual-scope");
-const simulateInvalidBudgetVisualScope = process.argv.includes("--simulate-invalid-budget-visual-scope");
-const simulateUnsafeFileVisualScope = process.argv.includes("--simulate-unsafe-file-visual-scope");
+const simulateUnauthorizedVisualDiff = rawArgs.includes("--simulate-unauthorized-visual-diff");
+const simulateCrossPlatformVisualDiff = rawArgs.includes("--simulate-cross-platform-visual-diff");
+const simulateApprovedVisualScope = rawArgs.includes("--simulate-approved-visual-scope");
+const simulateOverbudgetVisualScope = rawArgs.includes("--simulate-overbudget-visual-scope");
+const simulateWrongFileVisualScope = rawArgs.includes("--simulate-wrong-file-visual-scope");
+const simulateLayoutOnlyVisualScope = rawArgs.includes("--simulate-layout-only-visual-scope");
+const simulateRevokedVisualScope = rawArgs.includes("--simulate-revoked-visual-scope");
+const simulateExpiredVisualScope = rawArgs.includes("--simulate-expired-visual-scope");
+const simulateBudgetKindVisualScope = rawArgs.includes("--simulate-budget-kind-visual-scope");
+const simulateMissingPatternVisualScope = rawArgs.includes("--simulate-missing-pattern-visual-scope");
+const simulateDuplicatePatternVisualScope = rawArgs.includes("--simulate-duplicate-pattern-visual-scope");
+const simulateInvalidBudgetVisualScope = rawArgs.includes("--simulate-invalid-budget-visual-scope");
+const simulateUnsafeFileVisualScope = rawArgs.includes("--simulate-unsafe-file-visual-scope");
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI governance guard received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -1115,6 +1140,109 @@ for (const relativePath of requiredDocs) {
   if (!fs.existsSync(path.join(rootDir, relativePath))) {
     fail(`missing required UI governance file ${relativePath}`);
   }
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const visualAuthEnv = visualAuthorizationEnv ? { [visualAuthorizationEnv]: visualAuthorizationValue } : {};
+  const visualModelEnvObject = visualModelEnv && activeVisualModelIds.size > 0 ? { [visualModelEnv]: [...activeVisualModelIds][0] } : {};
+  const baseSelfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_GOVERNANCE_GUARD_SELF_TEST: "1",
+  };
+  const authorizedEnv = {
+    ...baseSelfTestEnv,
+    ...visualAuthEnv,
+    ...visualModelEnvObject,
+  };
+  const runFailingSelfTest = (selfTestArgs, expectedOutput, env = baseSelfTestEnv) => {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...selfTestArgs], {
+      cwd: rootDir,
+      env,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${selfTestArgs.join(" ")} must fail when UI governance authorization is invalid`);
+      return;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${selfTestArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  };
+  const runPassingSelfTest = (selfTestArgs, env) => {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...selfTestArgs], {
+      cwd: rootDir,
+      env,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status !== 0) {
+      fail(`self-test ${selfTestArgs.join(" ")} must pass with an approved visual scope; output: ${output}`);
+    }
+  };
+
+  for (const [selfTestArgs, expectedOutput, env] of [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-unauthorized-visual-diff"], "unauthorized visual/copy/layout source edit detected"],
+    [["--simulate-cross-platform-visual-diff"], "simulated cross-platform visual diff"],
+    [["--simulate-unauthorized-visual-diff"], `${visualScopeEnv}=<approved visual scope id> is required`, authorizedEnv],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-overbudget-visual-scope"],
+      "scope simulated-overbudget-scope maxLines budget exceeded",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-overbudget-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-wrong-file-visual-scope"],
+      "scope simulated-wrong-file-scope does not include web/src/simulated-visual-diff.tsx",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-wrong-file-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-layout-only-visual-scope"],
+      "scope simulated-layout-only-scope does not allow microcopy",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-layout-only-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-revoked-visual-scope"],
+      "scope simulated-revoked-scope is revoked, not approved",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-revoked-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-expired-visual-scope"],
+      "scope simulated-expired-scope expired on 2000-01-01",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-expired-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-budget-kind-visual-scope"],
+      "scope simulated-budget-kind-scope changeBudget does not allow microcopy",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-budget-kind-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-missing-pattern-visual-scope"],
+      "scope simulated-missing-pattern-scope does not include a pattern for surface web-components-and-shell",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-missing-pattern-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-duplicate-pattern-visual-scope"],
+      "scope simulated-duplicate-pattern-scope patterns duplicates icon-chip-button",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-duplicate-pattern-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-invalid-budget-visual-scope"],
+      "scope simulated-invalid-budget-scope changeBudget.maxFiles must be a positive integer",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-invalid-budget-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-visual-diff", "--simulate-unsafe-file-visual-scope"],
+      "scope simulated-unsafe-file-scope files must use safe repo-relative paths",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-unsafe-file-scope" },
+    ],
+  ]) {
+    runFailingSelfTest(selfTestArgs, expectedOutput, env);
+  }
+  runPassingSelfTest(
+    ["--simulate-unauthorized-visual-diff", "--simulate-approved-visual-scope"],
+    { ...authorizedEnv, [visualScopeEnv]: "simulated-approved-scope" },
+  );
 }
 
 if (errors.length > 0) {
