@@ -4,12 +4,46 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_COMPLETION_AUDIT_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-unsafe-private-path",
+  "--simulate-missing-goal-reference",
+  "--simulate-missing-blocked-status",
+  "--simulate-wrong-private-evidence-total",
+  "--simulate-missing-evidence-count-row",
+  "--simulate-missing-open-decision-evidence-row",
+  "--simulate-missing-decision-row",
+  "--simulate-open-decision-public-state",
+  "--simulate-approval-state-public-only",
+  "--simulate-verified-state-external-pending",
+  "--simulate-decision-status-mismatch",
+  "--simulate-private-evidence-count-mismatch",
+  "--simulate-missing-private-blocker",
+  "--simulate-extra-private-blocker",
+  "--simulate-wrong-external-pending-exit-code",
+  "--simulate-duplicate-audit-decision-row",
+  "--simulate-wrong-row-index",
+  "--simulate-open-decision-without-blocking-verifier",
+  "--simulate-verified-decision-with-remaining",
+  "--simulate-decision-missing-public-evidence",
+  "--simulate-unknown-status",
+  "--simulate-source-session-alias-mismatch",
+  "--simulate-wrong-conversation-id",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI completion audit check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function read(relativePath) {
@@ -414,6 +448,7 @@ for (const decision of decisions) {
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-unsafe-private-path", "must not publish local private paths"],
     ["--simulate-missing-goal-reference", "must include private-codex-goal:clawix-interface-governance-plan-2026-05-15.md"],
     ["--simulate-missing-blocked-status", "must state completion is blocked while decisions remain open"],
