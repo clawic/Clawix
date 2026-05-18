@@ -1,14 +1,44 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_EXCEPTION_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-missing-exception-status",
+  "--simulate-missing-required-exception-field",
+  "--simulate-missing-allowed-action-policy",
+  "--simulate-missing-approval-authority-source",
+  "--simulate-unreferenced-active-exception",
+  "--simulate-expired-active-exception",
+  "--simulate-duplicate-exception-id",
+  "--simulate-unsupported-platform",
+  "--simulate-local-private-approval-reference",
+  "--simulate-invalid-status",
+  "--simulate-non-user-approval",
+  "--simulate-invalid-approval-date",
+  "--simulate-created-after-review",
+  "--simulate-review-after-expires",
+  "--simulate-missing-entry-field",
+  "--simulate-executable-allowed-action",
+  "--simulate-local-path-leak",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI exception check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -90,6 +120,53 @@ function requireIsoDate(value, label) {
     return null;
   }
   return value;
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_EXCEPTION_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-missing-exception-status"], "exceptionStatuses must include revoked"],
+    [["--simulate-missing-required-exception-field"], "requiredExceptionFields must include privateApprovalReference"],
+    [["--simulate-missing-allowed-action-policy"], "allowedActionPolicy is missing nonVisualAgentAction"],
+    [["--simulate-missing-approval-authority-source"], "approvalSources must include exceptions"],
+    [["--simulate-unreferenced-active-exception"], "active exception must be referenced by docs/ui/visible-surfaces.inventory.json"],
+    [["--simulate-expired-active-exception"], "active exception expired on 2026-05-16"],
+    [["--simulate-duplicate-exception-id"], "id duplicates simulated-duplicate-exception"],
+    [["--simulate-unsupported-platform"], "platforms contains unsupported visionos"],
+    [["--simulate-local-private-approval-reference"], "privateApprovalReference must use a safe relative private reference"],
+    [["--simulate-invalid-status"], "status is invalid"],
+    [["--simulate-non-user-approval"], "approvedBy must be user"],
+    [["--simulate-invalid-approval-date"], "approvedAt must be a valid calendar date"],
+    [["--simulate-created-after-review"], "createdAt must not be after reviewAfter"],
+    [["--simulate-review-after-expires"], "reviewAfter must not be after expiresAt"],
+    [["--simulate-missing-entry-field"], "is missing reason"],
+    [["--simulate-executable-allowed-action"], "allowedAction must not authorize modify presentation"],
+    [["--simulate-local-path-leak"], "scope must not contain a local path"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI exception validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
