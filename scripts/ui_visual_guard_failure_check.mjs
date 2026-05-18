@@ -1,11 +1,23 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const rawArgs = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_GUARD_FAILURE_SELF_TEST === "1";
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--")) {
+    console.error(`UI visual guard failure check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+  console.error(`UI visual guard failure check received unknown argument ${arg}.`);
+  process.exit(1);
+}
+
 const errors = [];
 
 function fail(message) {
@@ -1267,6 +1279,25 @@ try {
 } finally {
   fs.rmSync(approvalFixtureRoot, { recursive: true, force: true });
   fs.rmSync(approvalPrivateRoot, { recursive: true, force: true });
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const unknownFlagResult = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--unknown-flag"], {
+    cwd: rootDir,
+    env: {
+      ...process.env,
+      CLAWIX_UI_VISUAL_GUARD_FAILURE_SELF_TEST: "1",
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const unknownFlagOutput = `${unknownFlagResult.stdout || ""}${unknownFlagResult.stderr || ""}`;
+  if (unknownFlagResult.status === 0) {
+    fail("visual guard failure check must reject unknown direct CLI flags");
+  }
+  if (!unknownFlagOutput.includes("UI visual guard failure check received unknown flag --unknown-flag.")) {
+    fail("visual guard failure check unknown-flag self-test output is missing the rejected flag");
+  }
 }
 
 if (errors.length > 0) {
