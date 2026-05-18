@@ -26,7 +26,9 @@ for (const file of [
   "macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift",
   "macos/Sources/Clawix/Rescue/RescueRepairContext.swift",
   "macos/Tests/ClawixMeshTests/RescueSurvivalPolicyTests.swift",
+  "macos/Tests/ClawixMeshTests/RescueSurvivalMatrixTests.swift",
   "macos/Tests/ClawixMeshTests/RescueRepairContextTests.swift",
+  "macos/Tests/ClawixMeshTests/RescueChatFallbackTests.swift",
 ]) requireFile(file);
 
 for (const snippet of [
@@ -52,6 +54,8 @@ for (const snippet of [
   "highMemory",
   "RescueRepairStatusSummary",
   "RescueRuntimeSignalMapper",
+  "RescueRuntimeSignalDetector",
+  "RescueRuntimeHealthThresholds",
 ]) requireSnippet("macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift", snippet);
 
 for (const snippet of [
@@ -68,10 +72,22 @@ for (const snippet of [
 
 requireSnippet("macos/Sources/Clawix/Settings/SettingsView+Controls.swift", "RescueRepairContextExporter.writeCurrentRescueContext");
 requireSnippet("macos/Sources/Clawix/AppState.swift", "rescueDecision");
+requireSnippet("macos/Sources/Clawix/AppState.swift", "ResourceSampler.latestHealthSnapshot");
+requireSnippet("macos/Sources/Clawix/AppState/MessageSending.swift", "handleRescueChatUnavailableIfNeeded");
+requireSnippet("macos/Sources/Clawix/AppState/ConversationActions.swift", "handleRescueChatUnavailableIfNeeded");
 requireSnippet("macos/Sources/Clawix/SidebarView.swift", "RescueRepairSidebarButton");
 requireSnippet("macos/Sources/Clawix/SidebarView.swift", "RescueRepairStatusSummary(decision: appState.rescueDecision)");
+requireSnippet("macos/Sources/Clawix/Diagnostics/ResourceSampler.swift", "latestHealthSnapshot");
+requireSnippet("macos/Sources/Clawix/Diagnostics/ResourceSampler.swift", "persistedHealthSnapshot");
 requireSnippet("macos/Sources/Clawix/AppState/Routes.swift", "case rescue");
 requireSnippet("macos/Sources/Clawix/AppState/DeepLinks.swift", "openRescueDeepLink");
+for (const snippet of [
+  "failed_migration",
+  "partial_storage",
+  "bridge_runtime_down_with_alternate_runtime",
+  "startup_cpu_hang_circuit_breaker",
+  "testNoRuntimeMatrixFallsBackToLocalDiagnosticsWithoutBlockingLaunch",
+]) requireSnippet("macos/Tests/ClawixMeshTests/RescueSurvivalMatrixTests.swift", snippet);
 requireSnippet("docs/evolution/README.md", "rescue-context.json");
 requireSnippet("docs/evolution/README.md", "discreet");
 requireSnippet("../scripts-dev/clawix-launcher.sh", "open-rescue");
@@ -86,6 +102,8 @@ if (fs.existsSync(siblingClawjs)) {
   if (!fs.existsSync(siblingPackage)) errors.push("sibling ClawJS package.json is missing");
   if (fs.existsSync(siblingPackage)) runSiblingEvolutionGate();
 }
+
+runRescueSurvivalMatrixGate();
 
 if (errors.length > 0) {
   console.error("Clawix evolution rescue mirror check failed:");
@@ -104,5 +122,17 @@ function runSiblingEvolutionGate() {
   if (result.status !== 0) {
     const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
     errors.push(`sibling ClawJS evolution gate failed${output ? `:\n${output}` : ""}`);
+  }
+}
+
+function runRescueSurvivalMatrixGate() {
+  const result = spawnSync("swift", ["test", "--disable-sandbox", "--package-path", "macos", "--filter", "RescueSurvivalMatrixTests"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
+    errors.push(`Clawix rescue survival matrix failed${output ? `:\n${output}` : ""}`);
   }
 }
