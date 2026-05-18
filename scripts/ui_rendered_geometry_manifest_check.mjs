@@ -1,13 +1,46 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_RENDERED_GEOMETRY_MANIFEST_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-rendered-geometry",
+  "--simulate-wrong-private-alias",
+  "--simulate-wrong-evidence-filename",
+  "--simulate-verifier-without-approval",
+  "--simulate-missing-pattern-evidence-field",
+  "--simulate-extra-pattern-evidence-field",
+  "--simulate-duplicate-pattern-evidence-field",
+  "--simulate-missing-surface-evidence-field",
+  "--simulate-extra-surface-evidence-field",
+  "--simulate-duplicate-surface-evidence-field",
+  "--simulate-extra-public-forbidden-store",
+  "--simulate-duplicate-public-forbidden-store",
+  "--simulate-local-path-reference",
+  "--simulate-alignment-decision-missing-rendered-geometry",
+  "--simulate-alignment-decision-missing-private-visual",
+  "--simulate-alignment-decision-missing-private-geometry-verifier",
+  "--simulate-alignment-decision-missing-baseline-verifier",
+  "--simulate-alignment-decision-missing-platform-evidence",
+  "--simulate-alignment-decision-premature-complete",
+  "--simulate-approved-geometry-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI rendered geometry manifest check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -281,6 +314,32 @@ if (errors.length > 0) {
   console.error("UI rendered geometry manifest check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-wrong-private-alias", "privateGeometryAlias must be private-codex-ui-rendered-geometry"],
+    ["--simulate-verifier-without-approval", "verificationCommand must require approved private geometry evidence"],
+    ["--simulate-local-path-reference", "must not contain a local path"],
+    ["--simulate-alignment-decision-missing-private-geometry-verifier", "publicEvidence must include scripts/ui_private_geometry_verify.mjs"],
+    ["--simulate-alignment-decision-premature-complete", "status must remain open until private rendered geometry and baseline evidence are approved"],
+    ["--simulate-approved-geometry-stale-decision", "status must be verified-complete after private rendered geometry and baseline evidence are approved"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_RENDERED_GEOMETRY_MANIFEST_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI rendered geometry manifest self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log("UI rendered geometry manifest check passed");
