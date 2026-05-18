@@ -54,6 +54,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-code-hygiene-check` | guardrail | `scripts/code-hygiene-check.mjs` | code-hygiene-check, Code Hygiene Check | `scripts/code-hygiene-check.mjs` |
 | `guard-scripts-discoverability-check` | guardrail | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |
 | `guard-scripts-interface-surface-guard` | guardrail | `scripts/interface_surface_guard.mjs` | interface_surface_guard, Interface Surface Guard | `scripts/interface_surface_guard.mjs` |
+| `guard-scripts-legal-safety-check` | guardrail | `scripts/legal_safety_check.mjs` | legal_safety_check, Legal Safety Check | `scripts/legal_safety_check.mjs` |
 | `guard-scripts-naming-shape-check` | guardrail | `scripts/naming-shape-check.mjs` | naming-shape-check, Naming Shape Check | `scripts/naming-shape-check.mjs` |
 | `guard-scripts-native-action-broker-check` | guardrail | `scripts/native_action_broker_check.mjs` | native_action_broker_check, Native Action Broker Check | `scripts/native_action_broker_check.mjs` |
 | `guard-scripts-native-permission-broker-check` | guardrail | `scripts/native_permission_broker_check.mjs` | native_permission_broker_check, Native Permission Broker Check | `scripts/native_permission_broker_check.mjs` |

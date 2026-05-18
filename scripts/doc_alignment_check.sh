@@ -25,6 +25,13 @@ for file in \
   "AGENTS.md" \
   "CLAUDE.md" \
   "PERF.md" \
+  "TERMS.md" \
+  "PRIVACY.md" \
+  "DISCLAIMER.md" \
+  "SAFETY.md" \
+  "REGULATED_DOMAINS.md" \
+  "EULA.md" \
+  "SECURITY.md" \
   "docs/host-ownership.md" \
   "docs/data-storage-boundary.md" \
   "docs/decision-map.md" \
@@ -150,7 +157,12 @@ require_snippet "CLAUDE.md" "docs/adr/0001-claw-framework-host-boundary.md"
 require_snippet "AGENTS.md" "docs/decision-map.md"
 require_snippet "AGENTS.md" "docs/adr/0004-source-file-boundaries.md"
 require_snippet "AGENTS.md" "Sensitive native permissions"
+require_snippet "AGENTS.md" "Regulated domains are assistive only"
 require_snippet "CONSTITUTION.md" "Capabilities are complete only when dual-surfaced"
+require_snippet "CONSTITUTION.md" "Regulated domains are assistive, never final decision authorities"
+require_snippet "README.md" "SAFETY.md"
+require_snippet "README.md" "REGULATED_DOMAINS.md"
+require_snippet "docs/decision-map.md" "scripts/legal_safety_check.mjs"
 require_snippet "docs/host-ownership.md" "NativeMacPermissionBroker"
 require_snippet "docs/host-ownership.md" "MacControlActionBroker"
 require_snippet "docs/host-ownership.md" "MacControlWire"

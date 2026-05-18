@@ -1214,6 +1214,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-legal-safety-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/legal_safety_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "legal_safety_check",
+        "Legal Safety Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "legal_safety_check",
+          "expectPath": "scripts/legal_safety_check.mjs"
+        }
+      ],
+      "guard": "scripts/legal_safety_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-naming-shape-check",
       "kind": "guardrail",
       "owner": "clawix",

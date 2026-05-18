@@ -197,6 +197,7 @@ fast() {
   run bash "$ROOT_DIR/macos/scripts/public_hygiene_check.sh"
   run node "$ROOT_DIR/scripts/tracked-ignored-check.mjs"
   run node "$ROOT_DIR/scripts/check-clawjs-skills-sync.mjs"
+  run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
