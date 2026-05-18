@@ -151,17 +151,19 @@ extension AppState {
     @discardableResult
     func createProject(name: String, path: String) -> Project {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedPath = (path as NSString).expandingTildeInPath
+        let displayName = trimmed.isEmpty ? "Untitled" : trimmed
+        let normalizedPath = resolvedPrimaryFolderPath(name: displayName, requestedPath: path)
         let resourceId = StableProjectID.newResourceId()
         let project = Project(
             id: StableProjectID.uuid(forResourceId: resourceId),
             resourceId: resourceId,
-            name: trimmed.isEmpty ? "Untitled" : trimmed,
+            name: displayName,
             path: normalizedPath
         )
         projects.append(project)
         if !project.path.isEmpty {
             projectsRepo.upsert(project)
+            ClawJSProjectHandoffClient.syncProjectFolderBestEffort(project)
             Task { @MainActor in
                 try? await ClawJSSessionsClient.local().createProject(.init(
                     id: project.resourceId ?? project.id.uuidString,
@@ -179,10 +181,17 @@ extension AppState {
 
     func updateProject(_ project: Project) {
         guard let idx = projects.firstIndex(where: { $0.id == project.id }) else { return }
+        var project = project
+        project.path = resolvedPrimaryFolderPath(name: project.name, requestedPath: project.path)
+        project.folderState = ProjectFolderInspector.state(
+            for: project.path,
+            currentWorkspaceId: ClawJSProjectHandoffClient.defaultWorkspaceId
+        )
         projects[idx] = project
         if selectedProject?.id == project.id { selectedProject = project }
         if !project.path.isEmpty {
             projectsRepo.upsert(project)
+            ClawJSProjectHandoffClient.syncProjectFolderBestEffort(project)
             Task { @MainActor in
                 try? await ClawJSSessionsClient.local().createProject(.init(
                     id: project.resourceId ?? project.id.uuidString,
@@ -195,6 +204,18 @@ extension AppState {
                 ))
             }
         }
+    }
+
+    private func resolvedPrimaryFolderPath(name: String, requestedPath: String) -> String {
+        let trimmedPath = requestedPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedPath.isEmpty,
+           let folderURL = try? ProjectFolderPathResolver.createDefaultFolder(
+                forName: name,
+                workspaceURL: ClawJSServiceManager.workspaceURL
+           ) {
+            return folderURL.path
+        }
+        return (trimmedPath as NSString).expandingTildeInPath
     }
 
     /// Removes a project. Chats previously assigned to it become projectless.
