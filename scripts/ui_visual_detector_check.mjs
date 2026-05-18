@@ -4,12 +4,36 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_VISUAL_DETECTOR_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-unsafe-source-root",
+  "--simulate-missing-required-source-root",
+  "--simulate-missing-required-change-kind",
+  "--simulate-missing-classification-bucket",
+  "--simulate-unregistered-bucket-kind",
+  "--simulate-duplicate-bucket-kind",
+  "--simulate-duplicate-detector-id",
+  "--simulate-unclassified-change-kind",
+  "--simulate-missing-detector-kind",
+  "--simulate-unsupported-detector-platform",
+  "--simulate-invalid-detector-regex",
+  "--simulate-unknown-copy-kind",
+  "--simulate-missing-governance-guard-platform-scope",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI visual detector check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -231,6 +255,7 @@ for (const snippet of ["platformForPath", "detector.platforms.includes(platform)
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-unsafe-source-root", "sourceRoots[0] must be a safe relative path"],
     ["--simulate-missing-required-source-root", "sourceRoots must include web/src"],
     ["--simulate-missing-required-change-kind", "requiredChangeKinds must include typography"],
