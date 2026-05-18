@@ -95,17 +95,15 @@ final class SystemTelemetryBridge {
         }
 
         let samples = (data["samples"] as? [[String: Any]] ?? []).compactMap(decodeSample)
-        let unavailable = (data["unavailable_metrics"] as? [[String: Any]] ?? []).compactMap {
-            $0["metric_key"] as? String
-        }
+        let unavailable = decodeUnavailableMetricKeys(from: data)
         let policy = data["policy"] as? [String: Any] ?? [:]
 
         return SystemTelemetrySnapshotState(
-            capturedAt: data["captured_at"] as? String ?? "",
+            capturedAt: string(from: data["captured_at"]) ?? string(from: data["capturedAt"]) ?? string(from: data["generatedAt"]) ?? "",
             samples: samples,
             unavailableMetricKeys: unavailable,
-            defaultAgentAccess: policy["default_agent_access"] as? String ?? "safe_read",
-            retentionOwner: policy["retention_owner"] as? String ?? "monitor"
+            defaultAgentAccess: string(from: policy["default_agent_access"]) ?? string(from: policy["defaultAgentAccess"]) ?? "safe_read",
+            retentionOwner: string(from: policy["retention_owner"]) ?? string(from: policy["retentionOwner"]) ?? "monitor"
         )
     }
 
@@ -113,7 +111,16 @@ final class SystemTelemetryBridge {
         guard response.ok else {
             throw SystemTelemetryBridgeError.commandFailed(response.error?.message ?? "Telemetry widget command failed.")
         }
-        guard let values = try decodedObject(from: response.data) as? [[String: Any]] else {
+        guard let decoded = try decodedObject(from: response.data) else {
+            throw SystemTelemetryBridgeError.missingData
+        }
+        let values: [[String: Any]]
+        if let array = decoded as? [[String: Any]] {
+            values = array
+        } else if let object = decoded as? [String: Any],
+                  let widgets = object["widgets"] as? [[String: Any]] {
+            values = widgets
+        } else {
             throw SystemTelemetryBridgeError.missingData
         }
         return values.compactMap(decodeWidget)
@@ -126,32 +133,62 @@ final class SystemTelemetryBridge {
     }
 
     private static func decodeSample(_ object: [String: Any]) -> SystemTelemetrySample? {
-        guard let metricKey = object["metric_key"] as? String else {
+        guard let metricKey = string(from: object["metric_key"]) ?? string(from: object["key"]) else {
             return nil
         }
+        let source = object["source"]
+        let sourceObject = source as? [String: Any]
         return SystemTelemetrySample(
             metricKey: metricKey,
             value: number(from: object["value"]) ?? 0,
-            unit: object["unit"] as? String ?? "",
-            capturedAt: object["captured_at"] as? String ?? "",
-            source: object["source"] as? String ?? "",
-            confidence: object["confidence"] as? String ?? ""
+            unit: string(from: object["unit"]) ?? "",
+            capturedAt: string(from: object["captured_at"]) ?? string(from: object["capturedAt"]) ?? "",
+            source: string(from: sourceObject?["adapter"]) ?? string(from: source) ?? "",
+            confidence: string(from: object["confidence"]) ?? string(from: sourceObject?["confidence"]) ?? ""
         )
     }
 
     private static func decodeWidget(_ object: [String: Any]) -> SystemTelemetryWidget? {
-        guard let id = object["id"] as? String else {
+        guard let id = string(from: object["id"]) else {
             return nil
         }
+        let metricKeys = stringArray(from: object["metric_keys"])
+            ?? stringArray(from: object["metricKeys"])
+            ?? [string(from: object["metric_key"]) ?? string(from: object["metricKey"])]
+                .compactMap { $0 }
         return SystemTelemetryWidget(
             id: id,
-            title: object["title"] as? String ?? id,
-            placement: object["placement"] as? String ?? "menu_bar",
-            metricKeys: object["metric_keys"] as? [String] ?? [],
-            renderMode: object["render_mode"] as? String ?? "compact",
-            refreshIntervalMS: object["refresh_interval_ms"] as? Int ?? 5000,
-            agentVisible: object["agent_visible"] as? Bool ?? true
+            title: string(from: object["title"]) ?? id,
+            placement: normalizePlacement(string(from: object["placement"]) ?? "menu_bar"),
+            metricKeys: metricKeys,
+            renderMode: string(from: object["render_mode"]) ?? string(from: object["presentation"]) ?? "compact",
+            refreshIntervalMS: integer(from: object["refresh_interval_ms"]) ?? integer(from: object["refreshIntervalMS"]) ?? 5000,
+            agentVisible: bool(from: object["agent_visible"]) ?? bool(from: object["enabledByDefault"]) ?? true
         )
+    }
+
+    private static func decodeUnavailableMetricKeys(from data: [String: Any]) -> [String] {
+        if let objects = data["unavailable_metrics"] as? [[String: Any]] {
+            return objects.compactMap { string(from: $0["metric_key"]) ?? string(from: $0["key"]) }
+        }
+        if let strings = stringArray(from: data["unavailableMetrics"]) {
+            return strings
+        }
+        if let objects = data["unavailableMetrics"] as? [[String: Any]] {
+            return objects.compactMap { string(from: $0["metricKey"]) ?? string(from: $0["metric_key"]) ?? string(from: $0["key"]) }
+        }
+        return []
+    }
+
+    private static func normalizePlacement(_ value: String) -> String {
+        switch value {
+        case "menubar":
+            return "menu_bar"
+        case "combined_panel":
+            return "panel"
+        default:
+            return value
+        }
     }
 }
 
@@ -175,7 +212,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         do {
             async let nextWidgets = bridge.widgets()
             async let nextSnapshot = bridge.snapshot()
-            widgets = try await nextWidgets.filter { $0.placement == "menu_bar" }
+            widgets = try await nextWidgets.filter { $0.agentVisible && ($0.placement == "menu_bar" || $0.placement == "both") }
             snapshot = try await nextSnapshot
             errorMessage = nil
         } catch {
@@ -224,4 +261,49 @@ private func number(from value: Any?) -> Double? {
     default:
         return nil
     }
+}
+
+private func integer(from value: Any?) -> Int? {
+    switch value {
+    case let value as Int:
+        return value
+    case let value as Double:
+        return Int(value)
+    case let value as NSNumber:
+        return value.intValue
+    default:
+        return nil
+    }
+}
+
+private func bool(from value: Any?) -> Bool? {
+    switch value {
+    case let value as Bool:
+        return value
+    case let value as NSNumber:
+        return value.boolValue
+    default:
+        return nil
+    }
+}
+
+private func string(from value: Any?) -> String? {
+    switch value {
+    case let value as String:
+        return value
+    case let value as CustomStringConvertible:
+        return value.description
+    default:
+        return nil
+    }
+}
+
+private func stringArray(from value: Any?) -> [String]? {
+    if let value = value as? [String] {
+        return value
+    }
+    if let values = value as? [Any] {
+        return values.compactMap(string)
+    }
+    return nil
 }
