@@ -1,10 +1,36 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_SKILL_CONTRACT_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-missing-frontmatter",
+  "--simulate-wrong-skill-name",
+  "--simulate-missing-keywords",
+  "--simulate-private-path",
+  "--simulate-missing-canon-snippet",
+  "--simulate-missing-implementation-guard",
+  "--simulate-missing-private-visual-command",
+  "--simulate-missing-performance-flow",
+  "--simulate-missing-agents-skill",
+  "--simulate-missing-sync-skill",
+  "--simulate-duplicate-skill-name",
+  "--simulate-duplicate-skill-file",
+  "--simulate-extra-skill-contract",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI skill contract check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
 
 function fail(message) {
   errors.push(message);
@@ -194,6 +220,42 @@ if (errors.length > 0) {
   console.error("UI skill contract check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-missing-frontmatter", "skills/ui-canon-review/SKILL.md must start with YAML frontmatter"],
+    ["--simulate-wrong-skill-name", "skills/ui-implementation/SKILL.md must include name: ui-implementation"],
+    ["--simulate-missing-keywords", "skills/visual-regression/SKILL.md must include keywords:"],
+    ["--simulate-private-path", "skills/ui-performance-budget/SKILL.md must not contain private paths or secret-like tokens"],
+    ["--simulate-missing-canon-snippet", "skills/ui-canon-review/SKILL.md must include docs/adr/0010-interface-governance.md"],
+    ["--simulate-missing-implementation-guard", "skills/ui-implementation/SKILL.md must include node scripts/ui_governance_guard.mjs"],
+    [
+      "--simulate-missing-private-visual-command",
+      "skills/visual-regression/SKILL.md must include node scripts/ui_private_visual_verify.mjs --require-approved",
+    ],
+    ["--simulate-missing-performance-flow", "skills/ui-performance-budget/SKILL.md must include sidebar lag"],
+    ["--simulate-missing-agents-skill", "AGENTS.md must include visual-regression"],
+    ["--simulate-missing-sync-skill", "scripts/check-clawjs-skills-sync.mjs must include \"ui-performance-budget\""],
+    ["--simulate-duplicate-skill-name", "UI skill contract names duplicates ui-canon-review"],
+    ["--simulate-duplicate-skill-file", "UI skill contract files duplicates skills/ui-implementation/SKILL.md"],
+    ["--simulate-extra-skill-contract", "UI skill contract names must not include style-apply"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_SKILL_CONTRACT_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI skill contract self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI skill contract check passed (${skillContracts.length} skills)`);
