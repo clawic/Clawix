@@ -5,6 +5,7 @@ struct ClawJSAppStateSidebarSnapshot: Encodable, Sendable {
     let chatUuid: String
     let title: String
     let cwd: String?
+    let projectId: String?
     let projectPath: String?
     let updatedAt: String
     let archived: Bool
@@ -43,6 +44,7 @@ struct ClawJSAppStateSnapshot: Decodable, Sendable {
         let chatUuid: String
         let title: String
         let cwd: String?
+        let projectId: String?
         let projectPath: String?
         let updatedAt: String?
         let archived: Int
@@ -125,6 +127,7 @@ enum ClawJSAppStateClient {
         chatUuid: String,
         title: String,
         cwd: String?,
+        projectId: String?,
         projectPath: String?,
         updatedAt: Int64,
         archived: Bool,
@@ -141,6 +144,9 @@ enum ClawJSAppStateClient {
         ]
         if let cwd, !cwd.isEmpty {
             args += ["--cwd", cwd]
+        }
+        if let projectId, !projectId.isEmpty {
+            args += ["--project-id", projectId]
         }
         if let projectPath, !projectPath.isEmpty {
             args += ["--project-path", projectPath]

@@ -989,6 +989,7 @@ final class AppState: ObservableObject {
                 chatUuid: chat.id.uuidString,
                 title: chat.title,
                 cwd: chat.cwd,
+                projectId: project.id.uuidString,
                 projectPath: project.path,
                 updatedAt: Int64(chat.createdAt.timeIntervalSince1970),
                 archived: 0,
@@ -998,10 +999,10 @@ final class AppState: ObservableObject {
         }
         bucket.sort { $0.updatedAt > $1.updatedAt }
         let trimmed = Array(bucket.prefix(cap))
-        let path = project.path
+        let projectId = project.id.uuidString
         let repo = snapshotRepo
         Task.detached(priority: .background) {
-            repo.replaceProjectIndexFor(path: path, rows: trimmed)
+            repo.replaceProjectIndexFor(projectId: projectId, rows: trimmed)
         }
     }
 
@@ -1119,6 +1120,7 @@ final class AppState: ObservableObject {
         // fresh install where the snapshot is still empty.
         projects = mergedProjects()
         let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
+        let projectById = Dictionary(uniqueKeysWithValues: projects.map { ($0.id.uuidString, $0) })
 
         var restored: [Chat] = []
         var seenThreadIds = Set<String>()
@@ -1134,7 +1136,8 @@ final class AppState: ObservableObject {
         let topRows = snapshotRepo.loadTop(limit: firstPaintLimit)
         for row in topRows {
             guard let id = UUID(uuidString: row.chatUuid) else { continue }
-            let projectId = row.projectPath.flatMap { path in projectByPath[path]?.id }
+            let projectId = row.projectId.flatMap { projectById[$0]?.id }
+                ?? row.projectPath.flatMap { path in projectByPath[path]?.id }
             let archived = row.archived != 0
             restored.append(Chat(
                 id: id,
@@ -1161,13 +1164,14 @@ final class AppState: ObservableObject {
         // Per-project rows. Skip anything already restored from the
         // global snapshot; the goal is to fill in chats that were
         // outside the top-N global cut but are still the freshest in
-        // their project. `project_path` is non-optional in this table,
-        // so we drop rows whose project is no longer known (the user
-        // hid the workspace root or removed the local project).
+        // their project. `project_id` is the stable identity; path is
+        // only a recovery locator for older snapshots or moved folders.
+        // Drop rows whose project is no longer known (the user hid the
+        // workspace root or removed the local project).
         let projectRows = snapshotRepo.loadAllProjectIndexed()
         for row in projectRows where !seenThreadIds.contains(row.threadId) {
             guard let id = UUID(uuidString: row.chatUuid) else { continue }
-            guard let project = projectByPath[row.projectPath] else { continue }
+            guard let project = projectById[row.projectId] ?? projectByPath[row.projectPath] else { continue }
             let archived = row.archived != 0
             restored.append(Chat(
                 id: id,
@@ -1227,6 +1231,7 @@ final class AppState: ObservableObject {
                 chatUuid: chat.id.uuidString,
                 title: chat.title,
                 cwd: chat.cwd,
+                projectId: chat.projectId?.uuidString,
                 projectPath: chat.projectId.flatMap { projectsById[$0]?.path },
                 updatedAt: Int64(chat.createdAt.timeIntervalSince1970),
                 archived: chat.isArchived ? 1 : 0,
@@ -1237,7 +1242,7 @@ final class AppState: ObservableObject {
 
         // Per-project view: chats whose project is resolved, archived
         // ones dropped (sidebar accordions never list them). Group by
-        // project_path, sort each bucket by recency, truncate to the
+        // project_id, sort each bucket by recency, truncate to the
         // per-project cap.
         let perProjectCap = Self.snapshotPerProjectCap
         let globalCap = Self.snapshotGlobalCap
@@ -1253,6 +1258,7 @@ final class AppState: ObservableObject {
                 chatUuid: chat.id.uuidString,
                 title: chat.title,
                 cwd: chat.cwd,
+                projectId: project.id.uuidString,
                 projectPath: project.path,
                 updatedAt: Int64(chat.createdAt.timeIntervalSince1970),
                 archived: 0,

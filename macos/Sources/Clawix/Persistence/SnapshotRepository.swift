@@ -87,6 +87,7 @@ final class SnapshotRepository: @unchecked Sendable {
                 chatUuid: $0.chatUuid,
                 title: $0.title,
                 cwd: $0.cwd,
+                projectId: $0.projectId,
                 projectPath: $0.projectPath,
                 updatedAt: ISO8601DateFormatter().string(
                     from: Date(timeIntervalSince1970: TimeInterval($0.updatedAt))
@@ -108,7 +109,8 @@ final class SnapshotRepository: @unchecked Sendable {
         (try? db.read { db in
             try SidebarSnapshotProjectRow.fetchAll(db, sql: """
                 SELECT * FROM sidebar_snapshot_project
-                ORDER BY project_path ASC, updated_at DESC
+                WHERE project_id IS NOT NULL AND project_id <> ''
+                ORDER BY project_id ASC, updated_at DESC
             """)
         }) ?? []
     }
@@ -128,13 +130,13 @@ final class SnapshotRepository: @unchecked Sendable {
     /// Replace the rows for a single project. Used by the per-project
     /// background refresh so a fresh fetch for one folder doesn't have
     /// to rewrite every other project's rows.
-    func replaceProjectIndexFor(path: String, rows: [SidebarSnapshotProjectRow]) {
+    func replaceProjectIndexFor(projectId: String, rows: [SidebarSnapshotProjectRow]) {
         try? db.write { db in
             try db.execute(
-                sql: "DELETE FROM sidebar_snapshot_project WHERE project_path = ?",
-                arguments: [path]
+                sql: "DELETE FROM sidebar_snapshot_project WHERE project_id = ?",
+                arguments: [projectId]
             )
-            for row in rows where row.projectPath == path {
+            for row in rows where row.projectId == projectId {
                 try row.insert(db)
             }
         }

@@ -184,8 +184,8 @@ final class Database {
         // must appear there without waiting for a per-project RPC.
         // This table stores up to ~200 recent chats per project, keyed
         // by thread id so it deduplicates against the global table on
-        // hydration. `project_path` is NOT NULL on purpose: rows here
-        // only exist for chats whose project is resolved.
+        // hydration. `project_path` is the original mutable locator; newer
+        // migrations add `project_id` as the stable identity used for lookup.
         migrator.registerMigration("v5_sidebar_snapshot_project") { db in
             try db.execute(sql: """
                 CREATE TABLE sidebar_snapshot_project (
@@ -290,6 +290,43 @@ final class Database {
                 CREATE UNIQUE INDEX projects_resource_id_idx
                     ON projects(resource_id)
                     WHERE resource_id IS NOT NULL AND resource_id <> ''
+            """)
+        }
+
+        migrator.registerMigration("v10_sidebar_snapshot_project_id") { db in
+            try db.execute(sql: "ALTER TABLE sidebar_snapshot ADD COLUMN project_id TEXT")
+            try db.execute(sql: "ALTER TABLE sidebar_snapshot_project ADD COLUMN project_id TEXT")
+            try db.execute(sql: """
+                UPDATE sidebar_snapshot
+                SET project_id = (
+                    SELECT projects.id
+                    FROM projects
+                    WHERE projects.path = sidebar_snapshot.project_path
+                    LIMIT 1
+                )
+                WHERE project_id IS NULL
+                  AND project_path IS NOT NULL
+                  AND project_path <> ''
+            """)
+            try db.execute(sql: """
+                UPDATE sidebar_snapshot_project
+                SET project_id = (
+                    SELECT projects.id
+                    FROM projects
+                    WHERE projects.path = sidebar_snapshot_project.project_path
+                    LIMIT 1
+                )
+                WHERE project_id IS NULL
+                  AND project_path IS NOT NULL
+                  AND project_path <> ''
+            """)
+            try db.execute(sql: """
+                CREATE INDEX sidebar_snapshot_project_id_idx
+                    ON sidebar_snapshot(project_id, updated_at DESC)
+            """)
+            try db.execute(sql: """
+                CREATE INDEX sidebar_snapshot_project_project_id_idx
+                    ON sidebar_snapshot_project(project_id, updated_at DESC)
             """)
         }
 

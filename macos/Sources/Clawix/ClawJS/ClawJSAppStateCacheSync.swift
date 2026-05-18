@@ -94,19 +94,21 @@ enum ClawJSAppStateCacheSync {
                 chatUuid: row.chatUuid,
                 title: row.title,
                 cwd: row.cwd,
+                projectId: row.projectId,
                 projectPath: row.projectPath,
                 updatedAt: updatedAt,
                 archived: Int64(row.archived),
                 pinned: Int64(row.pinned),
                 capturedAt: Int64(Date().timeIntervalSince1970)
             ).insert(db)
-            if row.archived == 0, let projectPath = row.projectPath, !projectPath.isEmpty {
+            if row.archived == 0, let projectId = row.projectId, !projectId.isEmpty {
                 projectRows.append(SidebarSnapshotProjectRow(
                     threadId: row.threadId,
                     chatUuid: row.chatUuid,
                     title: row.title,
                     cwd: row.cwd,
-                    projectPath: projectPath,
+                    projectId: projectId,
+                    projectPath: row.projectPath ?? "",
                     updatedAt: updatedAt,
                     archived: 0,
                     pinned: Int64(row.pinned),
