@@ -15,6 +15,7 @@ const simulationFlags = [
   "--simulate-wrong-private-evidence-total",
   "--simulate-missing-evidence-count-row",
   "--simulate-missing-open-decision-evidence-row",
+  "--simulate-missing-open-blocker-action-row",
   "--simulate-missing-decision-row",
   "--simulate-open-decision-public-state",
   "--simulate-approval-state-public-only",
@@ -164,6 +165,9 @@ if (args.has("--simulate-missing-evidence-count-row")) {
 }
 if (args.has("--simulate-missing-open-decision-evidence-row")) {
   audit = audit.replace("| `initial_scope` | `surface-baseline`, `surface-geometry`, `surface-copy` |\n", "");
+}
+if (args.has("--simulate-missing-open-blocker-action-row")) {
+  audit = audit.replace(/\| `initial_scope` \| 14 `surface-baseline`; 14 `surface-geometry`; 14 `surface-copy` \|[^\n]+\n/, "");
 }
 if (args.has("--simulate-missing-decision-row")) {
   audit = audit.replace("| 3 | `canonical_source` | verified-complete | Public evidence verified. |\n", "");
@@ -344,6 +348,17 @@ const privateEvidenceTypes = new Set(Object.keys(privateEvidencePlan.counts || {
 const privateBlockerIds = requireArray(privateVisualValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockers");
 const openDecisionIds = new Set(openDecisions.map((decision) => decision.id));
 const privateBlockerIdSet = new Set(privateBlockerIds);
+const blockerExternalDependencies = {
+  initial_scope: "private capture + human approval",
+  enforcement_mode: "private rendered capture + visual approval",
+  debt_strategy: "private visual inventory + human approval",
+  visual_baselines_location: "private baseline/drift capture + human approval",
+  alignment_validation: "private rendered measurement + human approval",
+  copy_governance: "private copy extraction + human approval",
+  v1_pattern_set: "private rendered capture + human approval",
+  perf_budget_source: "private performance measurement + human approval",
+  size_contracts: "private rendered measurement + human approval",
+};
 if (!setEquals(openDecisionIds, privateBlockerIdSet)) {
   fail("open decisions must exactly match docs/ui/private-visual-validation.manifest.json.decisionBlockers");
 }
@@ -362,6 +377,18 @@ for (const entry of decisionBlockerEvidenceTypes) {
   }
   const row = `| \`${entry.decisionId}\` | ${evidenceTypes.map((type) => `\`${type}\``).join(", ")} |`;
   if (!audit.includes(row)) fail(`${auditPath} must include open decision evidence row ${row}`);
+  const decision = openDecisions.find((candidate) => candidate.id === entry.decisionId);
+  const evidenceRecordSummary = evidenceTypes
+    .map((type) => `${privateEvidencePlan.counts?.[type]} \`${type}\``)
+    .join("; ");
+  const verifierSummary = requireArray(decision, `${decisionPath}.${entry.decisionId}`, "blockingVerifiers")
+    .map((verifier) => `\`${verifier}\``)
+    .join(", ");
+  const remaining = requireArray(decision, `${decisionPath}.${entry.decisionId}`, "remaining")[0];
+  const dependency = blockerExternalDependencies[entry.decisionId];
+  if (!dependency) fail(`${entry.decisionId} must have an explicit public-safe external dependency`);
+  const actionRow = `| \`${entry.decisionId}\` | ${evidenceRecordSummary} | ${verifierSummary} | ${remaining} | ${dependency} |`;
+  if (!audit.includes(actionRow)) fail(`${auditPath} must include open blocker action row ${actionRow}`);
 }
 
 const rowPattern = /^\| (\d+) \| `([^`]+)` \| ([^|]+) \| ([^|]+) \|$/gm;
@@ -455,6 +482,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-wrong-private-evidence-total", "must state the derived private evidence total"],
     ["--simulate-missing-evidence-count-row", "must include private evidence count row"],
     ["--simulate-missing-open-decision-evidence-row", "must include open decision evidence row"],
+    ["--simulate-missing-open-blocker-action-row", "must include open blocker action row"],
     ["--simulate-missing-decision-row", "must include one completion row per decision"],
     ["--simulate-open-decision-public-state", "initial_scope must identify private evidence as EXTERNAL PENDING"],
     ["--simulate-approval-state-public-only", "canon_approval must state private approval verifier is wired"],

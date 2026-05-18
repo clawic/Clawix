@@ -40,6 +40,18 @@ are re-read one by one.
 | `perf_budget_source` | `performance-budget` |
 | `size_contracts` | `pattern-geometry` |
 
+| Open decision | Blocking evidence records | Blocking private verifiers | Next required action | External dependency |
+| --- | --- | --- | --- | --- |
+| `initial_scope` | 14 `surface-baseline`; 14 `surface-geometry`; 14 `surface-copy` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_copy_verify.mjs` | Capture and approve private surface baseline artifacts for each coverage entry. | private capture + human approval |
+| `enforcement_mode` | 14 `rendered-drift` | `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture rendered drift results from private visual evidence. | private rendered capture + visual approval |
+| `debt_strategy` | 3 `debt-audit` | `scripts/ui_private_debt_audit_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Populate exact audited debt after private visual inventory. | private visual inventory + human approval |
+| `visual_baselines_location` | 24 `critical-flow-baseline`; 14 `surface-baseline`; 14 `rendered-drift` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture approved hashes outside the public repo. | private baseline/drift capture + human approval |
+| `alignment_validation` | 14 `surface-geometry`; 59 `pattern-geometry`; 14 `surface-baseline` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture private rendered geometry and screenshot comparison evidence. | private rendered measurement + human approval |
+| `copy_governance` | 14 `surface-copy` | `scripts/ui_private_copy_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Extract private copy snapshots before any protected approval. | private copy extraction + human approval |
+| `v1_pattern_set` | 14 `surface-baseline`; 59 `pattern-geometry` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs` | Confirm candidate inventory with approved private rendered screenshots before goal completion. | private rendered capture + human approval |
+| `perf_budget_source` | 24 `performance-budget` | `scripts/ui_private_performance_budget_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Replace pending budget placeholders with approved measurements. | private performance measurement + human approval |
+| `size_contracts` | 59 `pattern-geometry` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Replace pending geometry clauses with approved measured contracts. | private rendered measurement + human approval |
+
 | # | Decision | Status | Completion evidence state |
 | --- | --- | --- | --- |
 | 1 | `initial_scope` | open | EXTERNAL PENDING: private surface baselines, rendered geometry, and copy snapshots. |
