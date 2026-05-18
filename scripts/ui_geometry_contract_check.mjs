@@ -1,14 +1,42 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
 const summaries = [];
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_GEOMETRY_CONTRACT_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-size-contracts-decision-missing-script",
+  "--simulate-size-contracts-decision-missing-rendered-geometry",
+  "--simulate-size-contracts-decision-missing-pattern-file",
+  "--simulate-size-contracts-decision-missing-evidence-plan",
+  "--simulate-size-contracts-decision-missing-private-blocker",
+  "--simulate-size-contracts-decision-missing-private-platform",
+  "--simulate-size-contracts-decision-missing-sidebar-row-private",
+  "--simulate-size-contracts-decision-premature-complete",
+  "--simulate-extra-platform-geometry",
+  "--simulate-negative-measurement",
+  "--simulate-mixed-direct-and-platform-geometry",
+  "--simulate-short-pending-source",
+  "--simulate-missing-platform-geometry",
+  "--simulate-missing-private-validation",
+  "--simulate-approved-size-contracts-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI geometry contract check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -249,6 +277,41 @@ if (!sizeContractsDecision) {
   }
   if (!hasPendingGeometry && Array.isArray(sizeContractsDecision.remaining) && sizeContractsDecision.remaining.length > 0) {
     fail(`${decisionVerificationPath}.decisions.size_contracts.remaining must be empty after geometry clauses have private measurement`);
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-size-contracts-decision-missing-script", "decisions.size_contracts.publicEvidence must include scripts/ui_geometry_contract_check.mjs"],
+    ["--simulate-size-contracts-decision-missing-rendered-geometry", "decisions.size_contracts.publicEvidence must include docs/ui/rendered-geometry.manifest.json"],
+    ["--simulate-size-contracts-decision-missing-pattern-file", "decisions.size_contracts.publicEvidence must include docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
+    ["--simulate-size-contracts-decision-missing-evidence-plan", "decisions.size_contracts.publicEvidence must include scripts/ui_private_evidence_plan_check.mjs"],
+    ["--simulate-size-contracts-decision-missing-private-blocker", "decisions.size_contracts.blockingVerifiers must include scripts/ui_private_geometry_verify.mjs"],
+    ["--simulate-size-contracts-decision-missing-private-platform", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:web/*"],
+    ["--simulate-size-contracts-decision-missing-sidebar-row-private", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:macos/sidebar-row"],
+    ["--simulate-size-contracts-decision-premature-complete", "decisions.size_contracts.status must remain open while geometry clauses are pending private measurement"],
+    ["--simulate-extra-platform-geometry", "geometry.windows must be listed in"],
+    ["--simulate-negative-measurement", "geometry.height must be a finite non-negative number"],
+    ["--simulate-mixed-direct-and-platform-geometry", "must not mix direct measurements with nested platform clauses"],
+    ["--simulate-short-pending-source", "geometry.ios.source must explain the pending geometry contract"],
+    ["--simulate-missing-platform-geometry", "geometry.web must declare measured values or an explicit pending source"],
+    ["--simulate-missing-private-validation", "validation.private must name the private geometry/visual evidence"],
+    ["--simulate-approved-size-contracts-stale-decision", "decisions.size_contracts.status must be verified-complete after geometry clauses have private measurement"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_GEOMETRY_CONTRACT_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when geometry contract evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
   }
 }
 
