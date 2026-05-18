@@ -8,6 +8,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
 WEB_PKG="$PROJECT_DIR/../web"
 WEB_DIST_SRC="$WEB_PKG/dist"
 WEB_DIST_DEST="$PROJECT_DIR/Helpers/Bridged/Sources/clawix-bridge/Resources/web-dist"
@@ -25,6 +26,9 @@ skip_or_fail() {
 [[ -f "$WEB_PKG/package.json" ]] || skip_or_fail "web package not found at $WEB_PKG"
 command -v node >/dev/null 2>&1 || skip_or_fail "node is required to build the web SPA"
 command -v pnpm >/dev/null 2>&1 || skip_or_fail "pnpm is required to build the web SPA"
+
+echo "==> Legal safety preflight"
+node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
 echo "==> Building clawix/web/ SPA"
 if ! (cd "$WEB_PKG" && pnpm install --silent --frozen-lockfile && pnpm --silent build); then

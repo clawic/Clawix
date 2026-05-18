@@ -56,12 +56,27 @@ function assertExternalPendingLedger(relativePath, expectedCount) {
   }
 }
 
+const ignoredWalkDirectories = new Set([
+  ".build",
+  ".dart_tool",
+  ".git",
+  "AppPackages",
+  "build",
+  "dist",
+  "node_modules",
+  "publish",
+  "release-output",
+  "target",
+  "web-dist",
+]);
+
 function walk(dir, predicate, files = []) {
   const absoluteDir = path.join(root, dir);
   if (!fs.existsSync(absoluteDir)) return files;
   for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
     const relativePath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (ignoredWalkDirectories.has(entry.name)) continue;
       walk(relativePath, predicate, files);
     } else if (predicate(relativePath)) {
       files.push(relativePath);
@@ -371,6 +386,11 @@ requireSnippet("macos/scripts/build_release_app.sh", "Legal safety preflight");
 requireSnippet("macos/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
 requireSnippet("macos/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("macos/scripts/build_release_app.sh", "macos-app");
+requireSnippet("macos/scripts/build_web_dist.sh", "Legal safety preflight");
+requireSnippet("macos/scripts/build_web_dist.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("scripts/launch-web.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("scripts/launch-web.sh", "macos/scripts/build_web_dist.sh");
+requireSnippet("web/package.json", "node ../scripts/legal_safety_check.mjs");
 requireSnippet("ios/scripts/build_release_app.sh", "Legal safety preflight");
 requireSnippet("ios/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
 requireSnippet("ios/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
@@ -383,6 +403,7 @@ requireSnippet("linux/scripts/build_release_deb.sh", "legal safety preflight");
 requireSnippet("linux/scripts/build_release_deb.sh", "scripts/legal_safety_check.mjs");
 requireSnippet("linux/scripts/build_release_deb.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("linux/scripts/build_release_deb.sh", "linux-deb");
+requireSnippet("linux/app/package.json", "node ../../scripts/legal_safety_check.mjs");
 requireSnippet("windows/scripts/build-release.ps1", "legal_safety_check.mjs");
 requireSnippet("windows/scripts/build-release.ps1", "CLAWIX_RELEASE_APPROVED_FOR");
 requireSnippet("windows/scripts/build-release.ps1", "windows-msix");

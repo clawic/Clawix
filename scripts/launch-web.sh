@@ -10,7 +10,8 @@ case "${1:-dev}" in
     ;;
   embedded)
     cd "$ROOT_DIR"
-    pnpm --dir web build
+    node "$ROOT_DIR/scripts/legal_safety_check.mjs"
+    bash "$ROOT_DIR/macos/scripts/build_web_dist.sh" --required
     exec bash macos/scripts/dev.sh
     ;;
   *)
