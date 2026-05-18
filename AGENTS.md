@@ -34,6 +34,9 @@ Read the relevant canonical docs before changing their surfaces:
 - Testing and validation: `docs/adr/0003-testing-architecture.md`,
   `docs/adr/0005-integration-qa-lab.md`, `playbooks/testing.md`,
   `playbooks/testing-matrix.md`
+- Legal/safety boundary: `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`,
+  `SAFETY.md`, `REGULATED_DOMAINS.md`, `EULA.md`, sibling ClawJS
+  `docs/regulated-domain-safety.md`, and sibling ClawJS ADR 0026.
 - Source file boundaries: `docs/adr/0004-source-file-boundaries.md`
 - Code hygiene and dead-code cleanup: `docs/adr/0016-code-hygiene-program.md`,
   `docs/code-hygiene-decisions.json`
@@ -146,6 +149,10 @@ Use the relevant skill instead of loading long instructions into context:
   generated artifacts, or public docs.
 - Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
   services, and native execution belong to the active signed host, not Node.
+- Regulated domains are assistive only. Clawix may organize, summarize, label,
+  search, and draft sensitive information, but it must not make final medical,
+  mental health, legal, financial, insurance, employment, education,
+  government, emergency, physical-safety, or other regulated decisions.
 - `~/.codex` is an external read-only source by default. Mirror or index it
   only; do not delete, move, overwrite, chmod broadly, or write into it without
   explicit reversible opt-in.

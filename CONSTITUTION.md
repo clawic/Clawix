@@ -144,6 +144,17 @@ agents, or composed into workflows. They do not need to be modeled as
 autonomous agents to be first-class. They still obey the same constitutional
 rules for permissions, audit, state, portability, and user ownership.
 
+**I.8 Regulated domains are assistive, never final decision authorities.**
+Clawix and Claw may structure, search, relate, summarize, label, and prepare
+drafts for health, mental health, legal, finance, banking, insurance,
+employment, education, government, pharma, labs, identity, security,
+physical-control, and other sensitive domains. They must not replace regulated
+professionals, institutions, public authorities, or emergency services, and
+they must not make final clinical, legal, financial, insurance, employment,
+education, government, emergency, safety, or other regulated decisions.
+Sensitive outputs carry review labels and external sensitive actions require
+explicit human review.
+
 ### II. Sovereignty
 
 **II.1 Local-first by construction.** The user's data lives on the user's
