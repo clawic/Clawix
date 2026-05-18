@@ -27,8 +27,8 @@ state.
 | LCA-006 | Audience limits | Strong limits | Terms, Disclaimer, Safety, EULA, and legal settings define assistive local use and no professional replacement. | Store metadata must match before submission. |
 | LCA-007 | Legal docs authority | Ready to publish | Terms, Privacy, Disclaimer, Safety, Regulated Domains, EULA, SECURITY, and README links exist. | User approval still required before publishing. |
 | LCA-008 | Allowed regulated use | Personal local use | Safety and Regulated Domains allow local records, summaries, searches, drafts, questions, and review prep. | External flows must stay opt-in. |
-| LCA-009 | Crisis policy | Refusal + resources | Disclaimer and Safety state Clawix is not an emergency service and block crisis handling. | Final app surface must show refusal/resources where relevant. |
-| LCA-010 | Release legal gate | Maintainer approval enough | Public release docs and private workflow require explicit approval for app/binary release actions. | Exact action approval remains required. |
+| LCA-009 | Crisis policy | Refusal + resources | Disclaimer/Safety state Clawix is not an emergency service; macOS and iOS source guards refuse crisis/autolesion prompts locally with 988/112/local resources before model, bridge, remote, or P2P dispatch. | Signed binary smoke remains pending; keyword guard is not a clinical classifier. |
+| LCA-010 | Release legal gate | Maintainer approval enough | Public release docs and private workflow require explicit approval; direct macOS, iOS, Linux, and Windows release builders run `scripts/legal_safety_check.mjs` before packaging/signing. | Exact action approval remains required. |
 | LCA-011 | Terms acceptance | Initial clickwrap | `LegalConsentSheet` is non-dismissible and `LegalSafetyTests` verify current acceptance persistence. | Final signed build smoke still needed. |
 | LCA-012 | Binary policy | App EULA | `EULA.md` covers official Clawix binaries and native permissions. | Binary packaging must link current EULA. |
 | LCA-013 | Governing law/forum | Spain/EU | Terms and EULA include Spain and applicable EU law. | Mandatory local law may still apply. |
@@ -48,10 +48,10 @@ state.
 | LCA-027 | Provider terms | User chooses/assumes | Terms/Privacy/EULA place chosen third-party providers under their own terms. | Provider UI must keep disclosure/opt-in. |
 | LCA-028 | Prohibited practices | Broad hard list | Safety and Regulated Domains prohibit final regulated decisions and harmful high-risk practices. | Future app features must classify before release. |
 | LCA-029 | Professional role | No official professional mode | Docs and EULA say Clawix does not replace regulated professionals. | Product copy must not add official professional mode. |
-| LCA-030 | Output labels | Mandatory labels | Legal safety tests require draft, not professional advice, human review, sources/gaps, and disclaimer version labels. | Export/share must preserve labels. |
+| LCA-030 | Output labels | Mandatory labels | Legal safety tests require draft, not professional advice, human review, sources/gaps, and disclaimer version labels; textual exports preserve labels/disclaimer metadata. | Binary/image metadata portability remains platform-limited. |
 | LCA-031 | Release channels | GitHub+npm+apps+web | Clawix docs cover app/binary/web surfaces and sibling ClawJS covers npm/CLI. | Each exact channel needs separate approval. |
 | LCA-032 | Versioning | Re-acceptance by version | Tests prove version mismatch forces reacceptance. | Material version changes must update legal versions. |
-| LCA-033 | Sensitive exports/share | Confirmation + labels | Transcript export review and sensitive action review are guarded; tests cover mandatory labels. | All export/share entrypoints need final smoke coverage. |
+| LCA-033 | Sensitive exports/share | Confirmation + labels | Transcript, editor, image, plan, settings, secrets, and database export/share paths require review; text/HTML/SVG/CSV/JSON/Markdown outputs preserve legal labels where supported. | Final signed app and platform share-sheet smoke remain pending. |
 
 ## Required Evidence Spine
 
