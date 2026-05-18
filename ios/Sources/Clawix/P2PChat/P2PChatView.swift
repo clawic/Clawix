@@ -119,6 +119,27 @@ struct P2PChatDetailView: View {
     private func send() async {
         let body = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else { return }
+        if let refusal = IOSLegalSafetyPolicy.crisisRefusal(for: body) {
+            let now = Int(Date().timeIntervalSince1970)
+            messages.append(ProfileClient.ChatMessage(
+                id: "local-user-\(UUID().uuidString)",
+                threadPeerRootPubkey: thread.peer.rootPubkey,
+                fromMe: true,
+                body: body,
+                sentAt: now,
+                draftFromAgent: false
+            ))
+            messages.append(ProfileClient.ChatMessage(
+                id: "local-crisis-\(UUID().uuidString)",
+                threadPeerRootPubkey: thread.peer.rootPubkey,
+                fromMe: false,
+                body: refusal,
+                sentAt: now,
+                draftFromAgent: false
+            ))
+            draft = ""
+            return
+        }
         if let m = await store.sendMessage(peer: thread.peer.handle.fingerprint, body: body) {
             messages.append(m)
             draft = ""

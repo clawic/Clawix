@@ -45,6 +45,10 @@ extension AppState {
         composer.text = ""
         composer.attachments = []
 
+        if handleCrisisPromptIfNeeded(text: combined, chatId: chatId) {
+            return
+        }
+
         if let localModel = localModelName(forSelected: selectedModel) {
             let history = chats.first(where: { $0.id == chatId })?.messages ?? []
             LocalModelChat.shared.send(
@@ -241,6 +245,12 @@ extension AppState {
         chats[idx].messages.append(note)
     }
 
+    private func handleCrisisPromptIfNeeded(text: String, chatId: UUID) -> Bool {
+        guard let refusal = LegalSafetyPolicy.crisisRefusal(for: text) else { return false }
+        appendAssistantSystemMessage(to: chatId, text: refusal)
+        return true
+    }
+
     /// Returns the bare Ollama model name (e.g. `llama3.2:3b`) when the
     /// composer's currently-selected model points at a local runtime
     /// model. The composer encodes this with the `ollama:` prefix so the
@@ -376,6 +386,10 @@ extension AppState {
             resolvedId = newChat.id
         }
 
+        if handleCrisisPromptIfNeeded(text: combined, chatId: resolvedId) {
+            return resolvedId
+        }
+
         if let daemonBridgeClient {
             // sendMessage() reaches openSession implicitly via the
             // currentRoute didSet; QuickAsk doesn't switch the route
@@ -440,6 +454,10 @@ extension AppState {
         // Sending a fresh prompt closes any earlier interrupted-turn
         // pill: the user has acknowledged the gap and is moving on.
         chats[idx].lastTurnInterrupted = false
+
+        if handleCrisisPromptIfNeeded(text: trimmed, chatId: chatId) {
+            return
+        }
 
         // Audio attachments are registered with the framework catalog
         // and never shipped to the model: Codex doesn't accept audio,
@@ -588,6 +606,10 @@ extension AppState {
             createdAt: Date()
         )
         chats.insert(newChat, at: 0)
+
+        if handleCrisisPromptIfNeeded(text: trimmed, chatId: chatId) {
+            return
+        }
 
         if !audioAttachments.isEmpty {
             ingestAudioFromBridge(

@@ -381,6 +381,24 @@ final class BridgeStore {
             timestamp: Date()
         )
         messagesByChat[chatId, default: []].append(optimistic)
+        if let refusal = IOSLegalSafetyPolicy.crisisRefusal(for: trimmed) {
+            appendLocalCrisisRefusal(chatId: chatId, text: refusal)
+            if let idx = chats.firstIndex(where: { $0.id == chatId }) {
+                chats[idx].hasActiveTurn = false
+                chats[idx].lastTurnInterrupted = false
+            } else {
+                chats.append(WireSession(
+                    id: chatId,
+                    title: String(trimmed.prefix(40)),
+                    createdAt: Date(),
+                    hasActiveTurn: false,
+                    lastMessageAt: Date(),
+                    lastMessagePreview: String(preview.prefix(140)),
+                    cwd: pendingNewChatCwds[chatId]
+                ))
+            }
+            return messageId
+        }
         if let idx = chats.firstIndex(where: { $0.id == chatId }) {
             chats[idx].hasActiveTurn = true
             chats[idx].lastTurnInterrupted = false
@@ -417,6 +435,18 @@ final class BridgeStore {
         return text.isEmpty ? label : "\(label) \(text)"
     }
 
+    @MainActor
+    private func appendLocalCrisisRefusal(chatId: String, text: String) {
+        let refusal = WireMessage(
+            id: "local-crisis-\(UUID().uuidString)",
+            role: .assistant,
+            content: text,
+            streamingFinished: true,
+            timestamp: Date()
+        )
+        messagesByChat[chatId, default: []].append(refusal)
+    }
+
     #if canImport(UIKit)
     /// Stash the inline image previews against the optimistic
     /// `WireMessage.id` returned by `beginPendingTurn` so the
@@ -439,6 +469,11 @@ final class BridgeStore {
     func dispatchPrompt(chatId: String, text: String, attachments: [WireAttachment] = []) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || !attachments.isEmpty else { return }
+        if IOSLegalSafetyPolicy.crisisRefusal(for: trimmed) != nil {
+            pendingNewChats.remove(chatId)
+            pendingNewChatCwds.removeValue(forKey: chatId)
+            return
+        }
         // Idempotent: if `beginPendingTurn` already ran (the typical
         // path from the chat detail), the chat's `hasActiveTurn` is
         // already true and the bubble is already there. The check

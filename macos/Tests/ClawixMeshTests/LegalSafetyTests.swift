@@ -82,4 +82,18 @@ final class LegalSafetyTests: XCTestCase {
         XCTAssertFalse(store.review(for: .supportDiagnostics).requiresConfirmation)
         XCTAssertTrue(store.review(for: .externalAction).requiresConfirmation)
     }
+
+    func testCrisisPromptReturnsRefusalAndEmergencyResources() {
+        let refusal = LegalSafetyPolicy.crisisRefusal(for: "I want to kill myself")
+
+        XCTAssertNotNil(refusal)
+        XCTAssertTrue(refusal?.contains("I can't help handle a crisis") == true)
+        XCTAssertTrue(refusal?.contains("988") == true)
+        XCTAssertTrue(refusal?.contains("112") == true)
+        XCTAssertTrue(refusal?.contains("Clawix is not an emergency service") == true)
+    }
+
+    func testNonCrisisPromptDoesNotTriggerCrisisRefusal() {
+        XCTAssertNil(LegalSafetyPolicy.crisisRefusal(for: "Summarize these local meeting notes."))
+    }
 }
