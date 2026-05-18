@@ -4,12 +4,38 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_PATTERN_PERFORMANCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-wrong-pattern-registry-path",
+  "--simulate-wrong-budget-registry-path",
+  "--simulate-wrong-private-baseline-alias",
+  "--simulate-missing-flow-mapping",
+  "--simulate-duplicate-flow-mapping",
+  "--simulate-unknown-pattern-mapping",
+  "--simulate-duplicate-mapping-pattern",
+  "--simulate-missing-budget-platform",
+  "--simulate-pattern-missing-critical-flow",
+  "--simulate-pattern-wrong-budget-registry",
+  "--simulate-pattern-wrong-private-baseline-alias",
+  "--simulate-pattern-missing-platform",
+  "--simulate-pattern-duplicate-critical-flow",
+  "--simulate-pattern-empty-critical-flow",
+  "--simulate-pattern-unknown-critical-flow",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI pattern performance check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -250,6 +276,7 @@ for (const patternId of patternIds) {
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-wrong-pattern-registry-path", "patternRegistryPath must be docs/ui/pattern-registry/patterns.registry.json"],
     ["--simulate-wrong-budget-registry-path", "performanceBudgetRegistryPath must be docs/ui/performance-budgets.registry.json"],
     ["--simulate-wrong-private-baseline-alias", "privateBaselineAlias must be private-codex-ui-baselines"],
