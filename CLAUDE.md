@@ -20,5 +20,10 @@ Read and follow:
     `docs/discoverability.md`, and `docs/discoverability.registry.json` before
     adding durable ADRs, skills, guardrails, harnesses, docs routers, UI
     governance artifacts, or route work
+12. Sibling ClawJS `docs/adr/0027-governance-identity-scope-model.md` and
+    sibling ClawJS `docs/adr/0028-workspace-project-folder-manifest.md` before
+    changing principals, entities, scopes, stewards, grants, restrictions,
+    workspaces, projects, project folders, manifests, sharing, or
+    ownership-like fields
 
 If `CLAUDE.md` and `AGENTS.md` ever diverge, `AGENTS.md` wins.

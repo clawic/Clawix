@@ -62,6 +62,20 @@ shape, and agent-oriented rename workflow, also read
 - Use `runtimeId`, `agentId`, `providerId`, `modelId`, and `account` with the
   same meanings as ClawJS.
 
+## Governance words
+
+Clawix follows sibling ClawJS ADR 0027 for governance vocabulary.
+
+- Use principals, entities, scopes, stewards, grants, authority edges, and
+  restrictions for authority-sensitive UI, bridge, and storage work.
+- Do not add generic `ownerId`, `ownerKind`, or `tenantId` authority fields.
+- Use `tenant` only for technical hosted/provider isolation.
+- Treat `companyId` as business data, not access control.
+- Avoid bare `profile` for identity or authority; use precise names such as
+  `userProfile`, `providerProfile`, or `profileProjection`.
+- Sidebar and project state should key on stable project/resource ids, not
+  folder names or paths.
+
 ## Public hygiene
 
 - Public examples may use `com.example...` only as placeholders.

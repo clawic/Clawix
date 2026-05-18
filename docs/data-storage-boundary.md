@@ -41,6 +41,11 @@ The main database owns:
   metadata, apps/resources/design metadata, publishing/social, marketplace,
   home, technical IoT adapters, and other structured domain tables when the data
   is not a native secret and not a high-churn runtime log.
+- Governance bindings owned by ClawJS: principals, entities, scopes, stewards,
+  authority edges, grants, restrictions, data-class declarations, resource
+  bindings, workspace bindings, project bindings, and projection metadata.
+  Clawix consumes these records instead of inventing UI-local `ownerId` or
+  `tenantId` authority.
 
 Framework-visible app projections may be stored in the main database when they
 are part of the reusable framework contract. Host-only UI preferences still live
@@ -92,6 +97,12 @@ owns the native permission identity and approval UI.
 `state/desired/`, `state/observed/`, `projections/`, `sessions/`, `audit/`,
 `locks/`, `backups/`, `browser/`, design/style/template/reference assets, and
 other source-like files that should travel with a workspace.
+
+Full `.claw/` directories belong to workspace roots. Project primary folders
+carry `claw.project.json`, managed `AGENTS.md`, and `CLAUDE.md` shims for
+identity, handoff, and external-agent discovery. Canonical grants, secrets,
+sensitive memory, sessions, pins, archives, and resource bindings remain in
+the framework database or approved sidecars.
 
 Do not add new workspace-local SQLite databases for canonical framework data.
 Do not add `.clawjs/` readers or migrations for pre-public workspace databases
