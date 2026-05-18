@@ -1,14 +1,65 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_DEBT_REPORT_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-permissive-debt-action",
+  "--simulate-duplicate-debt-entry",
+  "--simulate-wrong-debt-owner",
+  "--simulate-resolved-baseline-debt",
+  "--simulate-short-debt-reason",
+  "--simulate-unsupported-debt-platform",
+  "--simulate-expired-debt-review",
+  "--simulate-local-debt-path",
+  "--simulate-wrong-report-source-baseline",
+  "--simulate-missing-report-status",
+  "--simulate-extra-report-status",
+  "--simulate-duplicate-report-status",
+  "--simulate-fix-policy-allows-cleanup",
+  "--simulate-fix-policy-missing-evidence",
+  "--simulate-fix-policy-extra-evidence",
+  "--simulate-fix-policy-duplicate-evidence",
+  "--simulate-fix-policy-allows-presentation-edit",
+  "--simulate-fix-policy-extra-forbidden-action",
+  "--simulate-fix-policy-duplicate-forbidden-action",
+  "--simulate-pending-item-unknown-debt",
+  "--simulate-pending-item-invalid-status",
+  "--simulate-pending-item-wrong-action",
+  "--simulate-pending-item-missing-evidence",
+  "--simulate-pending-item-extra-evidence",
+  "--simulate-pending-item-duplicate-evidence",
+  "--simulate-pending-item-scope-mismatch",
+  "--simulate-pending-item-platform-mismatch",
+  "--simulate-duplicate-pending-item",
+  "--simulate-missing-pending-item",
+  "--simulate-debt-decision-missing-baseline",
+  "--simulate-debt-decision-missing-alias",
+  "--simulate-debt-decision-missing-audit",
+  "--simulate-debt-decision-missing-evidence-plan",
+  "--simulate-debt-decision-missing-evidence-verifier",
+  "--simulate-debt-decision-missing-private-verifier",
+  "--simulate-debt-decision-missing-private-evidence",
+  "--simulate-debt-decision-premature-complete",
+  "--simulate-approved-debt-audit-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI debt report check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -81,6 +132,41 @@ function scanForLocalPaths(value, label) {
   if (typeof value === "string" && (/^\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value))) {
     fail(`${label} must not contain a local path`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_DEBT_REPORT_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-permissive-debt-action"], "allowedAction must only allow listing and planning for a visual-authorized model"],
+    [["--simulate-duplicate-debt-entry"], "id duplicates"],
+    [["--simulate-fix-policy-allows-cleanup"], "fixPolicy.nonAuthorizedAction must be report-only"],
+    [["--simulate-pending-item-wrong-action"], "allowedCurrentAction must remain Report only."],
+    [["--simulate-debt-decision-premature-complete"], "status must remain open until private debt audit is approved"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI debt report validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
