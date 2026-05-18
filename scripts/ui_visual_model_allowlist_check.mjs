@@ -1,13 +1,42 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_MODEL_ALLOWLIST_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-missing-active-initial-model",
+  "--simulate-extra-initial-model",
+  "--simulate-duplicate-initial-model",
+  "--simulate-extra-model-status",
+  "--simulate-duplicate-model-status",
+  "--simulate-duplicate-visual-model",
+  "--simulate-duplicate-mutation-class",
+  "--simulate-missing-copy-class",
+  "--simulate-unknown-mutation-class",
+  "--simulate-private-approval-not-required",
+  "--simulate-wrong-scope-source",
+  "--simulate-model-signal-not-required",
+  "--simulate-wrong-authorization-signal",
+  "--simulate-wrong-model-signal-env",
+  "--simulate-private-assignment-public",
+  "--simulate-inactive-manifest",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI visual model allowlist check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -102,6 +131,52 @@ function requireSafePrivateReference(value, alias, label) {
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_VISUAL_MODEL_ALLOWLIST_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-missing-active-initial-model"], "allowedVisualModels must include active claude-opus-4.7"],
+    [["--simulate-extra-initial-model"], "initialActiveModels must not include other-visual-model"],
+    [["--simulate-duplicate-initial-model"], "initialActiveModels duplicates claude-opus-4.7"],
+    [["--simulate-extra-model-status"], "modelStatuses must not include pending-review"],
+    [["--simulate-duplicate-model-status"], "modelStatuses duplicates active"],
+    [["--simulate-duplicate-visual-model"], "id duplicates claude-opus-4.7"],
+    [["--simulate-duplicate-mutation-class"], "allowedMutationClasses duplicates visual-ui"],
+    [["--simulate-missing-copy-class"], "allowedMutationClasses must include copy-ui"],
+    [["--simulate-unknown-mutation-class"], "allowedMutationClasses contains layout-ui"],
+    [["--simulate-private-approval-not-required"], "privateApprovalRequired must be true"],
+    [["--simulate-wrong-scope-source"], "scopeSource must be docs/ui/visual-change-scopes.manifest.json"],
+    [["--simulate-model-signal-not-required"], "modelSignal.requiredForVisualMutation must be true"],
+    [["--simulate-wrong-authorization-signal"], "authorizationSignal.env must be CLAWIX_UI_VISUAL_AUTHORIZED"],
+    [["--simulate-wrong-model-signal-env"], "modelSignal.env must be CLAWIX_UI_VISUAL_MODEL"],
+    [["--simulate-private-assignment-public"], "privateAssignment must stay outside-public-repo"],
+    [["--simulate-inactive-manifest"], "status must be active"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI visual model allowlist validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const manifestPath = "docs/ui/visual-model-allowlist.manifest.json";
