@@ -1,10 +1,30 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const args = rawArgs;
+const isSelfTest = process.env.CLAWIX_UI_PATTERN_MUTATION_GUARD_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-approved-visual-scope",
+  "--simulate-overbudget-visual-scope",
+  "--simulate-wrong-file-visual-scope",
+  "--simulate-layout-only-visual-scope",
+  "--simulate-revoked-visual-scope",
+  "--simulate-expired-visual-scope",
+  "--simulate-budget-kind-visual-scope",
+  "--simulate-missing-pattern-visual-scope",
+  "--simulate-duplicate-pattern-visual-scope",
+  "--simulate-invalid-budget-visual-scope",
+  "--simulate-unsafe-reference-visual-scope",
+  "--simulate-unauthorized-pattern-notes-mutation",
+  "--simulate-unauthorized-pattern-mutation",
+  "--simulate-unauthorized-pattern-removal",
+  "--simulate-unauthorized-pattern-deletion",
+];
+const allowedFlags = new Set(simulationFlags);
 const today = new Date().toISOString().slice(0, 10);
 const simulateApprovedVisualScope = args.includes("--simulate-approved-visual-scope");
 const simulateOverbudgetVisualScope = args.includes("--simulate-overbudget-visual-scope");
@@ -22,6 +42,13 @@ const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI pattern mutation guard received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -561,6 +588,96 @@ if (visualHits.length > 0 && visualAuthorized) {
         ),
       ].join("\n"),
     );
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.length === 0) {
+  const visualAuthEnv = authorizationEnv ? { [authorizationEnv]: authorizationValue } : {};
+  const visualModelEnv = modelEnv && activeModels.size > 0 ? { [modelEnv]: [...activeModels][0] } : {};
+  const baseSelfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_PATTERN_MUTATION_GUARD_SELF_TEST: "1",
+  };
+  const authorizedEnv = {
+    ...baseSelfTestEnv,
+    ...visualAuthEnv,
+    ...visualModelEnv,
+  };
+  const runSelfTest = (selfTestArgs, expectedOutput, env = baseSelfTestEnv) => {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...selfTestArgs], {
+      cwd: rootDir,
+      env,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${selfTestArgs.join(" ")} must fail when pattern mutation authorization is invalid`);
+      return;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${selfTestArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  };
+
+  for (const [selfTestArgs, expectedOutput, env] of [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-unauthorized-pattern-mutation"], "unauthorized pattern registry visual/copy contract mutation detected"],
+    [["--simulate-unauthorized-pattern-notes-mutation"], "simulated unauthorized pattern notes mutation"],
+    [["--simulate-unauthorized-pattern-removal"], "simulated unauthorized pattern removal"],
+    [["--simulate-unauthorized-pattern-deletion"], "simulated unauthorized pattern deletion"],
+    [["--simulate-unauthorized-pattern-mutation"], `${visualScopeEnv}=<approved visual scope id> is required`, authorizedEnv],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-overbudget-visual-scope"],
+      "scope simulated-overbudget-scope maxLines budget exceeded",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-overbudget-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-wrong-file-visual-scope"],
+      "scope simulated-wrong-file-scope does not include docs/ui/pattern-registry/patterns/sidebar-row.pattern.json",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-wrong-file-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-layout-only-visual-scope"],
+      "scope simulated-layout-only-scope does not allow microcopy",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-layout-only-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-revoked-visual-scope"],
+      "scope simulated-revoked-scope is revoked, not approved",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-revoked-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-expired-visual-scope"],
+      "scope simulated-expired-scope expired on 2000-01-01",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-expired-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-budget-kind-visual-scope"],
+      "scope simulated-budget-kind-scope changeBudget does not allow microcopy",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-budget-kind-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-missing-pattern-visual-scope"],
+      "scope simulated-missing-pattern-scope does not include pattern sidebar-row",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-missing-pattern-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-duplicate-pattern-visual-scope"],
+      "scope simulated-duplicate-pattern-scope patterns duplicates sidebar-row",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-duplicate-pattern-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-invalid-budget-visual-scope"],
+      "scope simulated-invalid-budget-scope changeBudget.maxFiles must be a positive integer",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-invalid-budget-scope" },
+    ],
+    [
+      ["--simulate-unauthorized-pattern-mutation", "--simulate-unsafe-reference-visual-scope"],
+      "scope simulated-unsafe-reference-scope must include safe private approval reference",
+      { ...authorizedEnv, [visualScopeEnv]: "simulated-unsafe-reference-scope" },
+    ],
+  ]) {
+    runSelfTest(selfTestArgs, expectedOutput, env);
   }
 }
 
