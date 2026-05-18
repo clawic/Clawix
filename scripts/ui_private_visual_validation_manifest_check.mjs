@@ -521,6 +521,31 @@ for (const script of [
   }
 }
 for (const script of [
+  "scripts/ui_private_baseline_verify.mjs",
+  "scripts/ui_private_geometry_verify.mjs",
+  "scripts/ui_private_copy_verify.mjs",
+  "scripts/ui_private_drift_verify.mjs",
+  "scripts/ui_private_debt_audit_verify.mjs",
+  "scripts/ui_private_performance_budget_verify.mjs",
+]) {
+  const source = fs.existsSync(path.join(rootDir, script)) ? fs.readFileSync(path.join(rootDir, script), "utf8") : "";
+  if (!source.includes("optionsWithValues") || !source.includes("--root")) {
+    fail(`${script} must declare --root as an option with a required value`);
+  }
+  const missingRootValueResult = spawnSync(process.execPath, [path.join(rootDir, script), "--require-approved", "--root"], {
+    cwd: rootDir,
+    env: withoutPrivateUiEnv(),
+    encoding: "utf8",
+  });
+  const missingRootValueOutput = `${missingRootValueResult.stdout || ""}${missingRootValueResult.stderr || ""}`;
+  if (missingRootValueResult.status === 0 || missingRootValueResult.status === manifest?.externalPendingExitCode) {
+    fail(`${script} must reject --root without a value before private root checks`);
+  }
+  if (!missingRootValueOutput.includes("requires a value after --root")) {
+    fail(`${script} must explain missing --root values`);
+  }
+}
+for (const script of [
   "scripts/ui_private_evidence_verify.mjs",
   "scripts/ui_private_baseline_verify.mjs",
   "scripts/ui_private_geometry_verify.mjs",
