@@ -1,13 +1,51 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_SURFACE_REFERENCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-surface-references",
+  "--simulate-wrong-inventory-path",
+  "--simulate-wrong-pattern-registry-path",
+  "--simulate-wrong-debt-registry-path",
+  "--simulate-wrong-protected-surface-registry-path",
+  "--simulate-wrong-exception-registry-path",
+  "--simulate-extra-required-reference-kind",
+  "--simulate-duplicate-required-reference-kind",
+  "--simulate-missing-anchor",
+  "--simulate-absolute-pattern-reference",
+  "--simulate-pattern-missing-entry-platform",
+  "--simulate-duplicate-coverage-id",
+  "--simulate-unknown-pattern-reference",
+  "--simulate-private-scope-reference",
+  "--simulate-duplicate-source-root",
+  "--simulate-unknown-platform",
+  "--simulate-duplicate-scope",
+  "--simulate-duplicate-pattern-reference",
+  "--simulate-inactive-inventory",
+  "--simulate-missing-source-root",
+  "--simulate-missing-coverage-entry",
+  "--simulate-unexpected-coverage-entry",
+  "--simulate-wrong-coverage-classification",
+  "--simulate-missing-coverage-reason",
+  "--simulate-irrelevant-kind-field",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI surface reference check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -440,6 +478,33 @@ if (errors.length > 0) {
   console.error("UI surface reference check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-inactive-surface-references", "docs/ui/surface-references.manifest.json.status must be active"],
+    ["--simulate-wrong-inventory-path", "inventoryPath must be docs/ui/visible-surfaces.inventory.json"],
+    ["--simulate-absolute-pattern-reference", "canonicalReferences[0] must be a public-safe repo-relative reference"],
+    ["--simulate-missing-anchor", "points to missing anchor missing-interface-governance-anchor"],
+    ["--simulate-private-scope-reference", "scopes[0] must be a public-safe repo-relative reference"],
+    ["--simulate-unknown-pattern-reference", "references unknown pattern missing-pattern"],
+    ["--simulate-wrong-coverage-classification", "classification must be pattern"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_SURFACE_REFERENCE_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI surface reference self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI surface reference check passed (${seenCoverage.size} surface coverage entries)`);
