@@ -1,13 +1,40 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const errors = [];
+const isSelfTest = process.env.CLAWIX_UI_RELEASE_GATE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-wrong-external-pending-code",
+  "--simulate-private-command-mismatch",
+  "--simulate-missing-required-lane",
+  "--simulate-missing-release-requirement",
+  "--simulate-missing-visual-diff",
+  "--simulate-private-roots-allowed",
+  "--simulate-missing-diff-base-consumer",
+  "--simulate-unlisted-coverage-script",
+  "--simulate-undeclared-public-check-coverage",
+  "--simulate-required-script-uncovered",
+  "--simulate-missing-config-public-check",
+  "--simulate-missing-test-script-run",
+  "--simulate-missing-workflow-run",
+  "--simulate-private-root-in-workflow",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI release gate check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function read(relativePath) {
@@ -280,6 +307,40 @@ for (const script of requireArray(manifest, manifestPath, "requiredPublicCheckSc
 }
 
 scanForLocalPaths(manifest, manifestPath);
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-wrong-external-pending-code", "externalPendingExitCode must be 2"],
+    ["--simulate-private-command-mismatch", "privateEvidenceCommand must require the aggregate private visual verifier"],
+    ["--simulate-missing-required-lane", "requiredLanes must include release"],
+    ["--simulate-missing-release-requirement", "releaseLaneRequires must include host"],
+    ["--simulate-missing-visual-diff", "publicCiStrategy.validates must include visual-diff"],
+    ["--simulate-private-roots-allowed", "publicCiStrategy.forbidsPrivateRoots must be true"],
+    ["--simulate-missing-diff-base-consumer", "publicCiStrategy.diffBaseConsumers must include scripts/ui_pattern_mutation_guard.mjs"],
+    ["--simulate-unlisted-coverage-script", "publicCheckCoverage.release-gate-contract-check references script not listed in requiredPublicCheckScripts"],
+    ["--simulate-undeclared-public-check-coverage", "publicCheckCoverage contains undeclared public check simulated-undeclared-check"],
+    ["--simulate-required-script-uncovered", "publicCheckCoverage must cover required public script scripts/simulated-uncovered-check.mjs"],
+    ["--simulate-missing-config-public-check", "publicCheckCoverage contains undeclared public check release-gate-contract-check"],
+    ["--simulate-missing-test-script-run", "scripts/test.sh must run scripts/ui_release_gate_check.mjs"],
+    ["--simulate-missing-workflow-run", ".github/workflows/ui-governance.yml must run scripts/ui_release_gate_check.mjs"],
+    ["--simulate-private-root-in-workflow", ".github/workflows/ui-governance.yml must not contain private roots, local paths, or secret-like tokens"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_RELEASE_GATE_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when release gate evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
+  }
+}
 
 if (errors.length > 0) {
   console.error("UI release gate check failed:");
