@@ -131,6 +131,7 @@ for file in \
   "scripts/ui_private_visual_validation_manifest_check.mjs" \
   "scripts/native_permission_broker_check.mjs" \
   "scripts/native_action_broker_check.mjs" \
+  "scripts/remote_canon_alignment_check.mjs" \
   "scripts/ui_governance_guard.mjs" \
   "scripts/v1_surface_closure_audit_check.mjs" \
   "scripts/storage_boundary_guard.mjs"
@@ -158,6 +159,8 @@ require_snippet "docs/decision-map.md" "NativeMacActionBrokerTests"
 require_snippet "docs/decision-map.md" "MacControlWire"
 require_snippet "scripts/test.sh" "scripts/native_permission_broker_check.mjs"
 require_snippet "scripts/test.sh" "scripts/native_action_broker_check.mjs"
+require_snippet "scripts/test.sh" "scripts/remote_canon_alignment_check.mjs"
+require_snippet "docs/decision-map.md" "claw inspect remote"
 require_snippet "docs/native-action-broker-allowlist.json" "MacControlActionBroker"
 require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"
 require_snippet "docs/adr/0007-dual-human-programmatic-surfaces.md" "MCP is the model-native surface"

@@ -794,6 +794,17 @@ authority, changelogs, cursors, conflict elevation, drivers, encrypted client
 cache, and audit. Iroh is the preferred v1 transport adapter, not the
 permanent contract.
 
+Remote access has two explicit trust modes: sovereign E2E tunnel-only and
+Gateway-governed projection. Stable capabilities must be classified as
+`remote-safe`, `local-only`, `blocked`, or `pending`; `remote-safe` requires a
+registered route, owner, policy, and tests. Secrets cross remote and sync paths
+only as opaque references plus brokered secret leases, never as plaintext.
+Sync authority handoff is signed intent, not physical authority transfer,
+until the host/Coordinator proves it. Clawix consumes the framework-owned
+`RemoteExternalPendingRegister`, `RemoteRouteContractCatalog`, and
+`claw inspect remote` view for status, gaps, contracts, and conformance; it
+does not create a second remote source of truth.
+
 **X.5 Meshes can collaborate.** Two users' meshes can share a resource (a
 document, an agent, a calendar, a memory) under explicit, revocable
 consent. The framework provides primitives for invitation, scoped sharing,

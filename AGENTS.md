@@ -41,6 +41,9 @@ Read the relevant canonical docs before changing their surfaces:
   `docs/adr/0007-dual-human-programmatic-surfaces.md`
 - Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS
   `docs/adr/0012-surface-route-graph.md`
+- Remote mesh, Gateway, Connector, Sync, Iroh, and node trust: sibling ClawJS
+  `docs/adr/0022-remote-gateway-sync-redesign.md`, sibling ClawJS
+  `docs/relay.md`, and local `docs/decision-map.md`
 - CLI guidance/resource assertions: `docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md`
 - Discoverability/meta-code routing:
   `docs/adr/0017-discoverability-and-meta-code-routing.md`
