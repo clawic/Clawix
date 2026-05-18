@@ -1,13 +1,46 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_DEBT_AUDIT_MANIFEST_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-inactive-debt-audit-manifest",
+  "--simulate-wrong-private-debt-audit-alias",
+  "--simulate-wrong-evidence-filename",
+  "--simulate-missing-required-evidence-field",
+  "--simulate-extra-required-evidence-field",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-missing-audit-status",
+  "--simulate-extra-audit-status",
+  "--simulate-duplicate-audit-status",
+  "--simulate-duplicate-audit-entry",
+  "--simulate-unreferenced-audit-debt",
+  "--simulate-unknown-debt-id",
+  "--simulate-scope-mismatch",
+  "--simulate-mismatched-surface-coverage",
+  "--simulate-unsafe-private-reference",
+  "--simulate-entry-extra-required-evidence",
+  "--simulate-entry-duplicate-required-evidence",
+  "--simulate-approved-manifest-with-pending-entry",
+  "--simulate-pending-manifest-with-all-approved",
+  "--simulate-missing-pending-report",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI debt audit manifest check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -78,6 +111,44 @@ function assertPublicSafeReference(reference, alias, label) {
 
 function sameStringArray(left, right) {
   return JSON.stringify(left || []) === JSON.stringify(right || []);
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_DEBT_AUDIT_MANIFEST_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-inactive-debt-audit-manifest"], "status must be pending-private-visual-inventory or audited-approved"],
+    [["--simulate-wrong-private-debt-audit-alias"], "privateDebtAuditAlias must be private-codex-ui-debt-audit"],
+    [["--simulate-wrong-evidence-filename"], "evidenceFilename must be debt-audit-evidence.json"],
+    [["--simulate-unknown-debt-id"], "debtId must reference"],
+    [["--simulate-mismatched-surface-coverage"], "surfaceCoverageId must map the debt entry"],
+    [["--simulate-unsafe-private-reference"], "privateDebtAuditReference must use private-codex-ui-debt-audit:"],
+    [["--simulate-approved-manifest-with-pending-entry"], "status cannot be audited-approved while"],
+    [["--simulate-pending-manifest-with-all-approved"], "status must be audited-approved when all debt audit entries are approved"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI debt audit manifest validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const manifestPath = "docs/ui/debt-audit.manifest.json";
