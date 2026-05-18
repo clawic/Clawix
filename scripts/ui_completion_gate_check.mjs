@@ -383,6 +383,22 @@ const unknownFlagResult = spawnSync(process.execPath, [path.join(rootDir, manife
 if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest.externalPendingExitCode) {
   fail(`${manifest.privateVerifierScript} must reject unknown flags before private completion checks`);
 }
+const unexpectedArgumentResult = spawnSync(
+  process.execPath,
+  [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "unexpected-arg"],
+  {
+    cwd: rootDir,
+    env: withoutPrivateCompletionEnv(),
+    encoding: "utf8",
+  },
+);
+const unexpectedArgumentOutput = `${unexpectedArgumentResult.stdout || ""}${unexpectedArgumentResult.stderr || ""}`;
+if (unexpectedArgumentResult.status === 0 || unexpectedArgumentResult.status === manifest.externalPendingExitCode) {
+  fail(`${manifest.privateVerifierScript} must reject unexpected positional arguments before private completion checks`);
+}
+if (!unexpectedArgumentOutput.includes("received unexpected argument unexpected-arg")) {
+  fail(`${manifest.privateVerifierScript} must explain unexpected positional arguments`);
+}
 
 const decisionVerification = readJson(manifest?.decisionVerificationPath || "docs/ui/decision-verification.json");
 const openDecisions = requireArray(decisionVerification, manifest?.decisionVerificationPath || "docs/ui/decision-verification.json", "decisions")

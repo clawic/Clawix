@@ -341,6 +341,21 @@ const unknownFlagResult = spawnSync(
 if (unknownFlagResult.status === 0 || unknownFlagResult.status === manifest?.externalPendingExitCode) {
   fail("scripts/ui_private_completion_source_verify.mjs must reject unknown flags before private source checks");
 }
+const unexpectedArgumentResult = spawnSync(
+  process.execPath,
+  [path.join(rootDir, "scripts/ui_private_completion_source_verify.mjs"), "--require-approved", "unexpected-arg"],
+  {
+    cwd: rootDir,
+    encoding: "utf8",
+  },
+);
+const unexpectedArgumentOutput = `${unexpectedArgumentResult.stdout || ""}${unexpectedArgumentResult.stderr || ""}`;
+if (unexpectedArgumentResult.status === 0 || unexpectedArgumentResult.status === manifest?.externalPendingExitCode) {
+  fail("scripts/ui_private_completion_source_verify.mjs must reject unexpected positional arguments before private source checks");
+}
+if (!unexpectedArgumentOutput.includes("received unexpected argument unexpected-arg")) {
+  fail("scripts/ui_private_completion_source_verify.mjs must explain unexpected positional arguments");
+}
 for (const [flag, expectedOutput] of [
   ["--simulate-missing-expected-decision-id", "expectedDecisionIds must contain expectedDecisionCount entries"],
   ["--simulate-duplicate-expected-decision-id", "expectedDecisionIds must contain expectedDecisionCount entries"],
