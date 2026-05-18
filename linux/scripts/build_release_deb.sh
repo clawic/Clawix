@@ -11,8 +11,8 @@
 set -euo pipefail
 
 ARCH=${CLAWIX_LINUX_ARCH:-$(dpkg --print-architecture 2>/dev/null || uname -m)}
-ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="$ROOT"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
