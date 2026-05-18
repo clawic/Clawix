@@ -87,6 +87,10 @@ extension AppState {
             return
         }
 
+        if handleRescueChatUnavailableIfNeeded(chatId: chatId) {
+            return
+        }
+
         if let daemonBridgeClient {
             trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
             daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: wireAttachments(from: attachments))
@@ -101,6 +105,20 @@ extension AppState {
                 self.clawixBackendStatus = clawix.status
             }
         }
+    }
+
+    @discardableResult
+    func handleRescueChatUnavailableIfNeeded(chatId: UUID) -> Bool {
+        guard !rescueDecision.canChat else { return false }
+        ResourceSampler.persistLastSample()
+        appendAssistantSystemMessage(
+            to: chatId,
+            text: "Diagnostics are available. The agent runtime is unavailable right now, so this message stayed local. Open Repair pending to diagnose and repair the runtime."
+        )
+        if let idx = chats.firstIndex(where: { $0.id == chatId }) {
+            chats[idx].hasActiveTurn = false
+        }
+        return true
     }
 
     private func sendMessageViaClawJSSessions(
@@ -390,6 +408,10 @@ extension AppState {
             return resolvedId
         }
 
+        if handleRescueChatUnavailableIfNeeded(chatId: resolvedId) {
+            return resolvedId
+        }
+
         if let daemonBridgeClient {
             // sendMessage() reaches openSession implicitly via the
             // currentRoute didSet; QuickAsk doesn't switch the route
@@ -470,6 +492,10 @@ extension AppState {
                 messageId: userMsg.id,
                 transcript: trimmed
             )
+        }
+
+        if handleRescueChatUnavailableIfNeeded(chatId: chatId) {
+            return
         }
 
         if let daemonBridgeClient {
@@ -618,6 +644,10 @@ extension AppState {
                 messageId: userMsg.id,
                 transcript: trimmed
             )
+        }
+
+        if handleRescueChatUnavailableIfNeeded(chatId: chatId) {
+            return
         }
 
         if let daemonBridgeClient {

@@ -413,6 +413,10 @@ extension AppState {
         composer.text = ""
         composer.attachments = []
 
+        if handleRescueChatUnavailableIfNeeded(chatId: chatId) {
+            return
+        }
+
         if let daemonBridgeClient {
             // Same as `sendMessage()`: keep the BridgeBus subscription
             // explicit because we don't switch `currentRoute` here
