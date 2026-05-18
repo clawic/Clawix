@@ -79,9 +79,13 @@ Clawix does not own the remote service API inventory. It mirrors these anchors
 only to keep UI and bridge work routed to the sibling ClawJS source of truth:
 
 - Remote status and validation: `GET /v1/remote/conformance`,
-  `GET /v1/remote/external-pending`, `GET /v1/remote/route-contracts`,
-  `GET /v1/remote/provider-device-e2e-plan`, and
-  `POST /v1/remote/compatibility/adapters`.
+  `GET /v1/remote/external-pending`,
+  `GET /v1/remote/external-validation-artifact`,
+  `GET /v1/remote/external-validation-readiness`,
+  `GET /v1/remote/external-validation-approval-request`,
+  `GET /v1/remote/external-validation-report`,
+  `GET /v1/remote/route-contracts`, `GET /v1/remote/provider-device-e2e-plan`,
+  and `POST /v1/remote/compatibility/adapters`.
 - Gateway projection: `GET /v1/gateway/conformance`,
   `POST /v1/gateway/agent-service/evaluate`,
   `POST /v1/gateway/agent-service/executions`, and

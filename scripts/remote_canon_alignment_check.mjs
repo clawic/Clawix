@@ -86,6 +86,10 @@ for (const snippet of [
 
 for (const snippet of [
   "GET /v1/remote/conformance",
+  "GET /v1/remote/external-validation-artifact",
+  "GET /v1/remote/external-validation-readiness",
+  "GET /v1/remote/external-validation-approval-request",
+  "GET /v1/remote/external-validation-report",
   "GET /v1/remote/route-contracts",
   "POST /v1/remote/compatibility/adapters",
   "POST /v1/gateway/agent-service/executions",
@@ -103,6 +107,18 @@ for (const snippet of [
 ]) {
   requireSnippet("docs/decision-map.md", snippet);
   requireSiblingSnippet(snippet, "Coordinator");
+}
+
+for (const snippet of [
+  "artifact-only clearable",
+  "raw evidence",
+  "approval-request-bound",
+]) {
+  requireSiblingSnippet("CONSTITUTION.md", snippet === "artifact-only clearable" ? "artifact-bound" : snippet);
+  requireSiblingSnippet("docs/adr/0022-remote-gateway-sync-redesign.md", snippet);
+  requireSiblingSnippet("docs/relay.md", snippet);
+  requireSiblingSnippet("docs/cli.md", snippet);
+  requireSiblingSnippet("docs/remote-gateway-sync-completion-audit.md", snippet);
 }
 
 if (failures.length > 0) {

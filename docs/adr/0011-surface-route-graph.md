@@ -41,6 +41,10 @@ not define a separate remote contract.
 
 Clawix route and UI work must treat the sibling ClawJS HTTP inventory as
 framework-owned. Current route anchors include `GET /v1/remote/conformance`,
+`GET /v1/remote/external-validation-artifact`,
+`GET /v1/remote/external-validation-readiness`,
+`GET /v1/remote/external-validation-approval-request`,
+`GET /v1/remote/external-validation-report`,
 `GET /v1/remote/route-contracts`,
 `POST /v1/remote/compatibility/adapters`,
 `POST /v1/gateway/agent-service/executions`,
