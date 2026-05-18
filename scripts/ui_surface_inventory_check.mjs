@@ -1,14 +1,52 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_SURFACE_INVENTORY_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-pattern-platform-mismatch",
+  "--simulate-expired-review-after",
+  "--simulate-unsafe-source-root",
+  "--simulate-missing-required-source-root",
+  "--simulate-ungoverned-source-root",
+  "--simulate-missing-source-root",
+  "--simulate-ambiguous-visible-candidate",
+  "--simulate-uncovered-visible-candidate",
+  "--simulate-duplicate-coverage-id",
+  "--simulate-unsupported-platform",
+  "--simulate-invalid-classification",
+  "--simulate-unknown-pattern",
+  "--simulate-unknown-debt-id",
+  "--simulate-unknown-protected-surface",
+  "--simulate-unknown-exception",
+  "--simulate-unmatched-coverage-scope",
+  "--simulate-unsafe-coverage-scope",
+  "--simulate-v1-pattern-set-missing-registry",
+  "--simulate-v1-pattern-set-missing-inventory",
+  "--simulate-v1-pattern-set-missing-baseline-coverage",
+  "--simulate-v1-pattern-set-missing-private-baseline",
+  "--simulate-v1-pattern-set-missing-private-geometry-platform",
+  "--simulate-v1-pattern-set-missing-private-verifier",
+  "--simulate-v1-pattern-set-premature-complete",
+  "--simulate-approved-v1-pattern-set-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI surface inventory check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -437,6 +475,35 @@ if (errors.length > 0) {
   console.error("UI surface inventory check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-expired-review-after", "reviewAfter expired"],
+    ["--simulate-unsafe-source-root", "sourceRoots must use safe relative paths"],
+    ["--simulate-missing-required-source-root", "sourceRoots must include web/src"],
+    ["--simulate-unsupported-platform", "platform is not governed"],
+    ["--simulate-invalid-classification", "classification must be pattern, debt, exception, or protected"],
+    ["--simulate-unknown-pattern", "patterns references unknown pattern missing-pattern"],
+    ["--simulate-unsafe-coverage-scope", "scopes[0] must be a safe relative path"],
+    ["--simulate-v1-pattern-set-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_geometry_verify.mjs"],
+    ["--simulate-v1-pattern-set-premature-complete", "status must remain open until visible inventory has approved private rendered screenshots"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_SURFACE_INVENTORY_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI surface inventory self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI surface inventory check passed (${candidates.length} visible candidates)`);
