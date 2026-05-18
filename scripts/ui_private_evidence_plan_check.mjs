@@ -26,7 +26,7 @@ const simulationFlags = [
   "--simulate-private-validation-wrong-evidence-type",
   "--simulate-duplicate-evidence-record",
 ];
-const allowedFlags = new Set(["--json", ...simulationFlags]);
+const allowedFlags = new Set(["--json", "--capture-plan", ...simulationFlags]);
 const errors = [];
 const plan = [];
 
@@ -148,6 +148,87 @@ function requireExactStringArray(values, label, expectedValues) {
     fail(`${label} must match ${JSON.stringify(expectedValues)}`);
   }
   return seen;
+}
+
+function splitPrivateReference(reference) {
+  if (typeof reference !== "string" || !reference.includes(":")) return null;
+  const [alias, ...suffixParts] = reference.split(":");
+  const suffix = suffixParts.join(":");
+  if (!alias || !suffix) return null;
+  return { alias, suffix };
+}
+
+function capturePlanFromEvidencePlan() {
+  const aliasEntries = [
+    ...requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "rootAliases"),
+    ...requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "optionalRootAliases", { nonEmpty: false }),
+  ];
+  const aliases = new Map(aliasEntries.map((entry) => [entry.alias, entry]));
+  const roots = new Map();
+  for (const item of plan) {
+    const parsed = splitPrivateReference(item.privateReference);
+    if (!parsed || !aliases.has(parsed.alias)) {
+      fail(`${item.label}.privateReference must use a declared private root alias`);
+      continue;
+    }
+    const aliasEntry = aliases.get(parsed.alias);
+    const root = roots.get(parsed.alias) || {
+      alias: parsed.alias,
+      env: aliasEntry.env,
+      required: requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "requiredRoots").includes(aliasEntry.env),
+      recordCount: 0,
+      evidenceTypes: {},
+      verifierCommands: [],
+      records: [],
+    };
+    root.recordCount += 1;
+    root.evidenceTypes[item.type] = (root.evidenceTypes[item.type] || 0) + 1;
+    root.records.push({
+      type: item.type,
+      id: item.id,
+      platform: item.platform,
+      privateReference: item.privateReference,
+      relativeEvidencePath: `${parsed.suffix}/${item.evidenceFilename}`,
+      requiredFields: item.requiredFields,
+    });
+    roots.set(parsed.alias, root);
+  }
+  const verifierByAlias = new Map([
+    ["private-codex-ui-baselines", [
+      "node scripts/ui_private_baseline_verify.mjs --require-approved",
+      "node scripts/ui_private_performance_budget_verify.mjs --require-approved",
+    ]],
+    ["private-codex-ui-rendered-geometry", ["node scripts/ui_private_geometry_verify.mjs --require-approved"]],
+    ["private-codex-ui-copy-snapshots", ["node scripts/ui_private_copy_verify.mjs --require-approved"]],
+    ["private-codex-ui-rendered-drift", ["node scripts/ui_private_drift_verify.mjs --require-approved"]],
+    ["private-codex-ui-debt-audit", ["node scripts/ui_private_debt_audit_verify.mjs --require-approved"]],
+    ["private-codex-ui-mechanical-equivalence", ["node scripts/ui_private_evidence_verify.mjs --require-approved"]],
+  ]);
+  for (const [alias, root] of roots) {
+    root.verifierCommands = verifierByAlias.get(alias) || ["node scripts/ui_private_evidence_verify.mjs --require-approved"];
+  }
+  const blockers = requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockerEvidenceTypes")
+    .map((entry) => {
+      const evidenceTypes = requireArray(entry, `docs/ui/private-visual-validation.manifest.json.${entry?.decisionId || "unknown"}`, "evidenceTypes");
+      const recordCount = evidenceTypes.reduce((total, type) => total + (counts.get(type) || 0), 0);
+      const rootAliases = [...new Set(plan
+        .filter((item) => evidenceTypes.includes(item.type))
+        .map((item) => splitPrivateReference(item.privateReference)?.alias)
+        .filter(Boolean))];
+      return {
+        decisionId: entry.decisionId,
+        evidenceTypes,
+        recordCount,
+        rootAliases,
+      };
+    });
+  return {
+    schemaVersion: 1,
+    status: "external-pending-until-approved-private-evidence-exists",
+    totalRecords: plan.length,
+    roots: [...roots.values()].sort((a, b) => a.alias.localeCompare(b.alias)),
+    completionBlockers: blockers,
+  };
 }
 
 function addPlanItem(item) {
@@ -522,7 +603,9 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-if (args.includes("--json")) {
+if (args.includes("--capture-plan")) {
+  console.log(JSON.stringify(capturePlanFromEvidencePlan(), null, 2));
+} else if (args.includes("--json")) {
   console.log(JSON.stringify({ schemaVersion: 1, counts: Object.fromEntries(counts), evidence: plan }, null, 2));
 } else {
   const summary = [...counts.entries()].map(([type, count]) => `${type}:${count}`).join(", ");
