@@ -304,7 +304,7 @@ struct PlanCardView: View {
 
     private var reviewedExportContent: String {
         """
-        <!-- Clawix export labels: \(LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final. -->
+        <!-- Clawix export labels: \(LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final; human review required; sources and gaps required. -->
 
         \(content)
         """

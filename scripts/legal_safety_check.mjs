@@ -129,7 +129,49 @@ function assertLegalDocsAreBilingual() {
   }
 }
 
+function assertLegalVersionsAreAligned() {
+  const expectedVersion = "2026-05-18";
+  const legalDocs = [
+    "TERMS.md",
+    "PRIVACY.md",
+    "DISCLAIMER.md",
+    "SAFETY.md",
+    "REGULATED_DOMAINS.md",
+    "EULA.md",
+  ];
+  for (const file of legalDocs) {
+    requireSnippet(file, `Last updated: ${expectedVersion}`);
+  }
+  for (const [file, constants] of [
+    ["macos/Sources/Clawix/LegalSafety.swift", [
+      "termsVersion",
+      "privacyVersion",
+      "eulaVersion",
+      "disclaimerVersion",
+      "safetyVersion",
+      "regulatedDomainsVersion",
+    ]],
+    ["ios/Sources/Clawix/LegalSafety.swift", [
+      "termsVersion",
+      "privacyVersion",
+      "eulaVersion",
+      "disclaimerVersion",
+      "safetyVersion",
+      "regulatedDomainsVersion",
+    ]],
+  ]) {
+    const text = read(file);
+    for (const constant of constants) {
+      const pattern = new RegExp(`static let ${constant} = "${expectedVersion}"`);
+      if (!pattern.test(text)) {
+        fail(`${file} must keep ${constant} aligned to legal document version ${expectedVersion}`);
+      }
+    }
+  }
+}
+
 for (const file of [
+  "RELEASING.md",
   "TERMS.md",
   "PRIVACY.md",
   "DISCLAIMER.md",
@@ -138,6 +180,7 @@ for (const file of [
   "EULA.md",
   "SECURITY.md",
   "docs/legal-closure-decision-audit.md",
+  "docs/legal-external-pending-validation.md",
 ]) {
   read(file);
 }
@@ -149,11 +192,23 @@ requireSnippet("README.md", "SAFETY.md");
 requireSnippet("README.md", "REGULATED_DOMAINS.md");
 requireSnippet("README.md", "EULA.md");
 requireSnippet("README.md", "does not replace regulated professionals");
+requireSnippet("RELEASING.md", "GitHub Release Channel Checklist");
+requireSnippet("RELEASING.md", "App And Binary Channel Checklist");
+requireSnippet("RELEASING.md", "Web Channel Checklist");
+requireSnippet("RELEASING.md", "Store Channel Checklist");
+requireSnippet("RELEASING.md", "node scripts/legal_safety_check.mjs");
+requireSnippet("RELEASING.md", "explicit approval for that exact");
+requireSnippet("RELEASING.md", "Classify every new sensitive app surface, route, connector, provider");
+requireSnippet("RELEASING.md", "ClawJS regulated-domain safety policy");
+requireSnippet("RELEASING.md", "docs/legal-external-pending-validation.md");
 requireSnippet("CONSTITUTION.md", "Regulated domains are assistive, never final decision authorities");
 requireSnippet("AGENTS.md", "Regulated domains are assistive only");
 requireSnippet("docs/decision-map.md", "Regulated domains are assistive, not final decision authorities");
 requireSnippet("docs/decision-map.md", "Clawix Legal Closure Decision Audit");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");
+requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "acceptedDisclaimerVersion == LegalSafetyPolicy.disclaimerVersion");
+requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "acceptedSafetyVersion == LegalSafetyPolicy.safetyVersion");
+requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "acceptedRegulatedDomainsVersion == LegalSafetyPolicy.regulatedDomainsVersion");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "minimumAge = 18");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "sensitiveExportConfirmationRequired");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "requestSensitiveActionReview");
@@ -171,9 +226,11 @@ requireSnippet("macos/Sources/Clawix/ImagePreviewOverlay.swift", "downloadReview
 requireSnippet("macos/Sources/Clawix/PlanCardView.swift", "handleReviewedDownload");
 requireSnippet("macos/Sources/Clawix/PlanCardView.swift", "handleReviewedCopy");
 requireSnippet("macos/Sources/Clawix/PlanCardView.swift", "reviewedExportContent");
+requireSnippet("macos/Sources/Clawix/PlanCardView.swift", "human review required; sources and gaps required");
 requireSnippet("macos/Sources/Clawix/Dictation/ExportService.swift", "legal_labels");
 requireSnippet("macos/Sources/Clawix/Dictation/ExportService.swift", "\"legal\"");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "reviewedSensitiveOutputText");
+requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "human review required; sources and gaps required");
 requireSnippet("macos/Sources/Clawix/Life/LifeRegistry.swift", "legalGuardLabel");
 requireSnippet("macos/Sources/Clawix/Life/LifeHomeScreen.swift", "entry.legalGuardLabel");
 requireSnippet("macos/Sources/Clawix/Life/LifeSidebarSection.swift", "entry.legalGuardLabel");
@@ -186,17 +243,23 @@ requireSnippet("macos/Sources/Clawix/Settings/LegalSafetySettingsPage.swift", "P
 requireSnippet("macos/Sources/Clawix/Settings/LegalSafetySettingsPage.swift", "Provider terms remain the user's responsibility.");
 requireSnippet("macos/Sources/Clawix/Design/EditorExport.swift", "legalHTMLComment");
 requireSnippet("macos/Sources/Clawix/Design/EditorExport.swift", "<metadata>\\(legalPlainText)</metadata>");
+requireSnippet("macos/Sources/Clawix/Design/EditorExport.swift", "human review required; sources and gaps required");
 requireSnippet("ios/Sources/Clawix/Design/EditorView.swift", "requestExportReview(format");
 requireSnippet("ios/Sources/Clawix/Design/EditorView.swift", "Export or share sensitive data?");
 requireSnippet("ios/Sources/Clawix/Design/EditorExport.swift", "legalHTMLComment");
 requireSnippet("ios/Sources/Clawix/Design/EditorExport.swift", "<metadata>\\(legalPlainText)</metadata>");
+requireSnippet("ios/Sources/Clawix/Design/EditorExport.swift", "human review required; sources and gaps required");
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "pendingSensitiveImageAction");
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "Export or share sensitive data?");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "reviewedSensitiveOutputText");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "human review required; sources and gaps required");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "regulatedDecisionDisclaimer");
 requireSnippet("ios/Sources/Clawix/Life/LifeRegistry.swift", "legalGuardLabel");
 requireSnippet("ios/Sources/Clawix/Life/LifeRegistry.swift", "IOSLegalSafetyPolicy.regulatedDecisionDisclaimer");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "acceptedDisclaimerVersion == IOSLegalSafetyPolicy.disclaimerVersion");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "acceptedSafetyVersion == IOSLegalSafetyPolicy.safetyVersion");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "acceptedRegulatedDomainsVersion == IOSLegalSafetyPolicy.regulatedDomainsVersion");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "minimumAge = 18");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "hasAcceptedCurrentLegal");
 requireSnippet("ios/Sources/Clawix/LegalConsentSheet.swift", "I confirm I am at least 18 years old");
@@ -211,11 +274,17 @@ requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "988");
 requireSnippet("ios/Sources/Clawix/Bridge/BridgeStore.swift", "IOSLegalSafetyPolicy.crisisRefusal(for: trimmed)");
 requireSnippet("ios/Sources/Clawix/P2PChat/P2PChatView.swift", "IOSLegalSafetyPolicy.crisisRefusal(for: body)");
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "testSensitiveExportEntrypointsRequireLegalReview");
+requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "human review required; sources and gaps required");
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "testProviderBackedDictationRoutesRequireLegalProviderOptIn");
 requireSnippet("macos/Tests/ClawixMeshTests/LifeRegistryTests.swift", "testSensitiveLifeVerticalsExposeLegalGuardMetadata");
 requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedTermsVersion");
+requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedDisclaimerVersion");
+requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedSafetyVersion");
+requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedRegulatedDomainsVersion");
 requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.localAuditRetentionDays");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testAcceptCurrentLegalPersistsVersionedClickwrapState");
+requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testAnyLegalDocumentVersionMismatchForcesReacceptance");
+requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testReviewedSensitiveOutputTextPersistsHumanReviewAndSourcesGaps");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testOptInDoesNotBypassManualSupportOrExternalActionReview");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testLocalAuditRetentionDaysAreConfigurableAndPersistent");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testCrisisPromptReturnsRefusalAndEmergencyResources");
@@ -254,11 +323,22 @@ requireSnippet("EULA.md", "official Clawix binaries");
 requireSnippet("EULA.md", "Sensitive native permissions");
 requireSnippet("SECURITY.md", "Support diagnostics are manual opt-in");
 requireSnippet("SECURITY.md", "EXTERNAL PENDING");
+requireSnippet("tests/fixtures/README.md", "Synthetic fixtures shared across lanes live here.");
+requireSnippet("tests/fixtures/README.md", "Do not store real customer data");
 requireSnippet("docs/legal-closure-decision-audit.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
 requireSnippet("docs/legal-closure-decision-audit.md", "Closure state: `active_goal_not_complete`");
 requireSnippet("docs/legal-closure-decision-audit.md", "LCA-001");
 requireSnippet("docs/legal-closure-decision-audit.md", "LCA-033");
 requireSnippet("docs/legal-closure-decision-audit.md", "Required Evidence Spine");
+requireSnippet("docs/legal-closure-decision-audit.md", "docs/legal-external-pending-validation.md");
+requireSnippet("docs/legal-external-pending-validation.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
+requireSnippet("docs/legal-external-pending-validation.md", "Status: `active_goal_not_complete`");
+requireSnippet("docs/legal-external-pending-validation.md", "LEGAL-EXT-001");
+requireSnippet("docs/legal-external-pending-validation.md", "LEGAL-EXT-007");
+requireSnippet("docs/legal-external-pending-validation.md", "EXTERNAL PENDING");
+requireSnippet("docs/legal-external-pending-validation.md", "not passes");
+requireSnippet("docs/legal-external-pending-validation.md", "must not be downgraded to `EXTERNAL PENDING`");
+requireSnippet("docs/legal-external-pending-validation.md", "No row authorizes a push, tag, publish, upload, notarization, TestFlight");
 const legalClosureAudit = read("docs/legal-closure-decision-audit.md");
 const legalClosureIds = extractTableIds(legalClosureAudit, "LCA");
 if (legalClosureIds.size !== 33) {
@@ -270,6 +350,7 @@ for (let index = 1; index <= 33; index += 1) {
 }
 assertNoBannedMarketingClaims();
 assertLegalDocsAreBilingual();
+assertLegalVersionsAreAligned();
 
 if (failed) {
   process.exit(1);

@@ -50,7 +50,7 @@ enum EditorExport {
     }
 
     private static var legalPlainText: String {
-        "Clawix export labels: \(LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final."
+        "Clawix export labels: \(LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final; human review required; sources and gaps required."
     }
 
     static func writePNG(webView: WKWebView, to url: URL, completion: @escaping (Result<Void, Error>) -> Void) {

@@ -275,15 +275,18 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         let iosLegalSafetySource = try readProjectSource("../ios/Sources/Clawix/LegalSafety.swift")
         let iosChatDetailSource = try readProjectSource("../ios/Sources/Clawix/ChatDetail/ChatDetailView.swift")
         let iosAssistantMarkdownSource = try readProjectSource("../ios/Sources/Clawix/ChatDetail/AssistantMarkdownView.swift")
+        let iosEditorExportSource = try readProjectSource("../ios/Sources/Clawix/Design/EditorExport.swift")
 
         XCTAssertTrue(editorSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
         XCTAssertTrue(imagePreviewSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
         XCTAssertTrue(planCardSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
         XCTAssertTrue(planCardSource.contains("reviewedExportContent"))
+        XCTAssertTrue(planCardSource.contains("human review required; sources and gaps required"))
         XCTAssertTrue(exportServiceSource.contains("legal_labels"))
         XCTAssertTrue(exportServiceSource.contains("\"legal\""))
         XCTAssertTrue(editorExportSource.contains("legalHTMLComment"))
         XCTAssertTrue(editorExportSource.contains("<metadata>\\(legalPlainText)</metadata>"))
+        XCTAssertTrue(editorExportSource.contains("human review required; sources and gaps required"))
         XCTAssertTrue(transcriptSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview("))
         XCTAssertTrue(databaseSource.contains("kind.requiresSensitiveExportReview"))
         XCTAssertTrue(chatEntrySource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
@@ -295,6 +298,7 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         XCTAssertTrue(iosChatDetailSource.contains("IOSLegalSafetyPolicy.reviewedSensitiveOutputText(content)"))
         XCTAssertTrue(iosAssistantMarkdownSource.contains("Export or share sensitive data?"))
         XCTAssertTrue(iosAssistantMarkdownSource.contains("IOSLegalSafetyPolicy.reviewedSensitiveOutputText(code)"))
+        XCTAssertTrue(iosEditorExportSource.contains("human review required; sources and gaps required"))
     }
 
     func testIOSRequiresInitialLegalAcceptance() throws {
@@ -305,6 +309,9 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         XCTAssertTrue(iosLegalSafetySource.contains("termsVersion = \"2026-05-18\""))
         XCTAssertTrue(iosLegalSafetySource.contains("privacyVersion = \"2026-05-18\""))
         XCTAssertTrue(iosLegalSafetySource.contains("eulaVersion = \"2026-05-18\""))
+        XCTAssertTrue(iosLegalSafetySource.contains("acceptedDisclaimerVersion"))
+        XCTAssertTrue(iosLegalSafetySource.contains("acceptedSafetyVersion"))
+        XCTAssertTrue(iosLegalSafetySource.contains("acceptedRegulatedDomainsVersion"))
         XCTAssertTrue(iosLegalSafetySource.contains("minimumAge = 18"))
         XCTAssertTrue(iosLegalSafetySource.contains("hasAcceptedCurrentLegal"))
         XCTAssertTrue(iosLegalSafetySource.contains("IOSLegalSafetyDefaultsKeys.acceptedTermsVersion"))

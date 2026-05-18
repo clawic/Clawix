@@ -42,14 +42,20 @@ final class LegalSafetyTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedTermsVersion), LegalSafetyPolicy.termsVersion)
         XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedPrivacyVersion), LegalSafetyPolicy.privacyVersion)
         XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedEULAVersion), LegalSafetyPolicy.eulaVersion)
+        XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedDisclaimerVersion), LegalSafetyPolicy.disclaimerVersion)
+        XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedSafetyVersion), LegalSafetyPolicy.safetyVersion)
+        XCTAssertEqual(defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion), LegalSafetyPolicy.regulatedDomainsVersion)
         XCTAssertEqual(defaults.bool(forKey: LegalSafetyDefaultsKeys.adultConfirmed), true)
         XCTAssertNotNil(defaults.object(forKey: LegalSafetyDefaultsKeys.acceptedAt) as? Date)
     }
 
-    func testVersionMismatchForcesReacceptance() {
-        defaults.set("old", forKey: LegalSafetyDefaultsKeys.acceptedTermsVersion)
+    func testAnyLegalDocumentVersionMismatchForcesReacceptance() {
+        defaults.set(LegalSafetyPolicy.termsVersion, forKey: LegalSafetyDefaultsKeys.acceptedTermsVersion)
         defaults.set(LegalSafetyPolicy.privacyVersion, forKey: LegalSafetyDefaultsKeys.acceptedPrivacyVersion)
         defaults.set(LegalSafetyPolicy.eulaVersion, forKey: LegalSafetyDefaultsKeys.acceptedEULAVersion)
+        defaults.set(LegalSafetyPolicy.disclaimerVersion, forKey: LegalSafetyDefaultsKeys.acceptedDisclaimerVersion)
+        defaults.set("old", forKey: LegalSafetyDefaultsKeys.acceptedSafetyVersion)
+        defaults.set(LegalSafetyPolicy.regulatedDomainsVersion, forKey: LegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion)
         defaults.set(true, forKey: LegalSafetyDefaultsKeys.adultConfirmed)
 
         let store = LegalSafetyStore(defaults: defaults)
@@ -68,6 +74,20 @@ final class LegalSafetyTests: XCTestCase {
         XCTAssertTrue(review.labels.contains("not_professional_advice"))
         XCTAssertTrue(review.labels.contains("human_review_required"))
         XCTAssertTrue(review.labels.contains("sources_and_gaps_required"))
+    }
+
+    func testReviewedSensitiveOutputTextPersistsHumanReviewAndSourcesGaps() {
+        let store = LegalSafetyStore(defaults: defaults)
+
+        let reviewed = store.reviewedSensitiveOutputText("Draft summary")
+
+        XCTAssertTrue(reviewed.contains("draft_not_final"))
+        XCTAssertTrue(reviewed.contains("not_professional_advice"))
+        XCTAssertTrue(reviewed.contains("human_review_required"))
+        XCTAssertTrue(reviewed.contains("sources_and_gaps_required"))
+        XCTAssertTrue(reviewed.contains("human review required"))
+        XCTAssertTrue(reviewed.contains("sources and gaps required"))
+        XCTAssertTrue(reviewed.contains("disclaimer_version=2026-05-18"))
     }
 
     func testOptInDoesNotBypassManualSupportOrExternalActionReview() {

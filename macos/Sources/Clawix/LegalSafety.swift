@@ -99,6 +99,9 @@ enum LegalSafetyDefaultsKeys {
     static let acceptedTermsVersion = "Legal.AcceptedTermsVersion"
     static let acceptedPrivacyVersion = "Legal.AcceptedPrivacyVersion"
     static let acceptedEULAVersion = "Legal.AcceptedEULAVersion"
+    static let acceptedDisclaimerVersion = "Legal.AcceptedDisclaimerVersion"
+    static let acceptedSafetyVersion = "Legal.AcceptedSafetyVersion"
+    static let acceptedRegulatedDomainsVersion = "Legal.AcceptedRegulatedDomainsVersion"
     static let acceptedAt = "Legal.AcceptedAt"
     static let adultConfirmed = "Legal.AdultConfirmed"
     static let remoteSyncOptIn = "Legal.RemoteSyncOptIn"
@@ -117,6 +120,9 @@ final class LegalSafetyStore: ObservableObject {
     @Published private(set) var acceptedTermsVersion: String?
     @Published private(set) var acceptedPrivacyVersion: String?
     @Published private(set) var acceptedEULAVersion: String?
+    @Published private(set) var acceptedDisclaimerVersion: String?
+    @Published private(set) var acceptedSafetyVersion: String?
+    @Published private(set) var acceptedRegulatedDomainsVersion: String?
     @Published private(set) var acceptedAt: Date?
     @Published var adultConfirmed: Bool {
         didSet { defaults.set(adultConfirmed, forKey: LegalSafetyDefaultsKeys.adultConfirmed) }
@@ -142,6 +148,9 @@ final class LegalSafetyStore: ObservableObject {
         acceptedTermsVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedTermsVersion)
         acceptedPrivacyVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedPrivacyVersion)
         acceptedEULAVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedEULAVersion)
+        acceptedDisclaimerVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedDisclaimerVersion)
+        acceptedSafetyVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedSafetyVersion)
+        acceptedRegulatedDomainsVersion = defaults.string(forKey: LegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion)
         acceptedAt = defaults.object(forKey: LegalSafetyDefaultsKeys.acceptedAt) as? Date
         adultConfirmed = defaults.object(forKey: LegalSafetyDefaultsKeys.adultConfirmed) as? Bool ?? false
         remoteSyncOptIn = defaults.object(forKey: LegalSafetyDefaultsKeys.remoteSyncOptIn) as? Bool ?? false
@@ -156,6 +165,9 @@ final class LegalSafetyStore: ObservableObject {
         acceptedTermsVersion == LegalSafetyPolicy.termsVersion &&
         acceptedPrivacyVersion == LegalSafetyPolicy.privacyVersion &&
         acceptedEULAVersion == LegalSafetyPolicy.eulaVersion &&
+        acceptedDisclaimerVersion == LegalSafetyPolicy.disclaimerVersion &&
+        acceptedSafetyVersion == LegalSafetyPolicy.safetyVersion &&
+        acceptedRegulatedDomainsVersion == LegalSafetyPolicy.regulatedDomainsVersion &&
         adultConfirmed
     }
 
@@ -170,10 +182,16 @@ final class LegalSafetyStore: ObservableObject {
         acceptedTermsVersion = LegalSafetyPolicy.termsVersion
         acceptedPrivacyVersion = LegalSafetyPolicy.privacyVersion
         acceptedEULAVersion = LegalSafetyPolicy.eulaVersion
+        acceptedDisclaimerVersion = LegalSafetyPolicy.disclaimerVersion
+        acceptedSafetyVersion = LegalSafetyPolicy.safetyVersion
+        acceptedRegulatedDomainsVersion = LegalSafetyPolicy.regulatedDomainsVersion
         acceptedAt = now
         defaults.set(LegalSafetyPolicy.termsVersion, forKey: LegalSafetyDefaultsKeys.acceptedTermsVersion)
         defaults.set(LegalSafetyPolicy.privacyVersion, forKey: LegalSafetyDefaultsKeys.acceptedPrivacyVersion)
         defaults.set(LegalSafetyPolicy.eulaVersion, forKey: LegalSafetyDefaultsKeys.acceptedEULAVersion)
+        defaults.set(LegalSafetyPolicy.disclaimerVersion, forKey: LegalSafetyDefaultsKeys.acceptedDisclaimerVersion)
+        defaults.set(LegalSafetyPolicy.safetyVersion, forKey: LegalSafetyDefaultsKeys.acceptedSafetyVersion)
+        defaults.set(LegalSafetyPolicy.regulatedDomainsVersion, forKey: LegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion)
         defaults.set(now, forKey: LegalSafetyDefaultsKeys.acceptedAt)
     }
 
@@ -182,11 +200,17 @@ final class LegalSafetyStore: ObservableObject {
         acceptedTermsVersion = nil
         acceptedPrivacyVersion = nil
         acceptedEULAVersion = nil
+        acceptedDisclaimerVersion = nil
+        acceptedSafetyVersion = nil
+        acceptedRegulatedDomainsVersion = nil
         acceptedAt = nil
         for key in [
             LegalSafetyDefaultsKeys.acceptedTermsVersion,
             LegalSafetyDefaultsKeys.acceptedPrivacyVersion,
             LegalSafetyDefaultsKeys.acceptedEULAVersion,
+            LegalSafetyDefaultsKeys.acceptedDisclaimerVersion,
+            LegalSafetyDefaultsKeys.acceptedSafetyVersion,
+            LegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion,
             LegalSafetyDefaultsKeys.acceptedAt
         ] {
             defaults.removeObject(forKey: key)
@@ -229,7 +253,7 @@ final class LegalSafetyStore: ObservableObject {
     func reviewedSensitiveOutputText(_ text: String) -> String {
         let labels = LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")
         return """
-        <!-- Clawix export labels: \(labels); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final. -->
+        <!-- Clawix export labels: \(labels); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final; human review required; sources and gaps required. -->
         \(text)
         """
     }

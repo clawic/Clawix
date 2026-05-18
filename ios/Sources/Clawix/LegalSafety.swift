@@ -25,7 +25,7 @@ enum IOSLegalSafetyPolicy {
     static func reviewedSensitiveOutputText(_ text: String) -> String {
         let labels = defaultOutputLabels.joined(separator: ", ")
         return """
-        <!-- Clawix export labels: \(labels); disclaimer_version=\(disclaimerVersion); not professional advice; draft not final. -->
+        <!-- Clawix export labels: \(labels); disclaimer_version=\(disclaimerVersion); not professional advice; draft not final; human review required; sources and gaps required. -->
         \(text)
         """
     }
@@ -66,6 +66,9 @@ enum IOSLegalSafetyDefaultsKeys {
     static let acceptedTermsVersion = "Legal.AcceptedTermsVersion"
     static let acceptedPrivacyVersion = "Legal.AcceptedPrivacyVersion"
     static let acceptedEULAVersion = "Legal.AcceptedEULAVersion"
+    static let acceptedDisclaimerVersion = "Legal.AcceptedDisclaimerVersion"
+    static let acceptedSafetyVersion = "Legal.AcceptedSafetyVersion"
+    static let acceptedRegulatedDomainsVersion = "Legal.AcceptedRegulatedDomainsVersion"
     static let acceptedAt = "Legal.AcceptedAt"
     static let adultConfirmed = "Legal.AdultConfirmed"
 }
@@ -78,6 +81,9 @@ final class IOSLegalSafetyStore {
     private(set) var acceptedTermsVersion: String?
     private(set) var acceptedPrivacyVersion: String?
     private(set) var acceptedEULAVersion: String?
+    private(set) var acceptedDisclaimerVersion: String?
+    private(set) var acceptedSafetyVersion: String?
+    private(set) var acceptedRegulatedDomainsVersion: String?
     private(set) var acceptedAt: Date?
     var adultConfirmed: Bool
 
@@ -86,6 +92,9 @@ final class IOSLegalSafetyStore {
         acceptedTermsVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedTermsVersion)
         acceptedPrivacyVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedPrivacyVersion)
         acceptedEULAVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedEULAVersion)
+        acceptedDisclaimerVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedDisclaimerVersion)
+        acceptedSafetyVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedSafetyVersion)
+        acceptedRegulatedDomainsVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion)
         acceptedAt = defaults.object(forKey: IOSLegalSafetyDefaultsKeys.acceptedAt) as? Date
         adultConfirmed = defaults.object(forKey: IOSLegalSafetyDefaultsKeys.adultConfirmed) as? Bool ?? false
     }
@@ -94,6 +103,9 @@ final class IOSLegalSafetyStore {
         acceptedTermsVersion == IOSLegalSafetyPolicy.termsVersion &&
         acceptedPrivacyVersion == IOSLegalSafetyPolicy.privacyVersion &&
         acceptedEULAVersion == IOSLegalSafetyPolicy.eulaVersion &&
+        acceptedDisclaimerVersion == IOSLegalSafetyPolicy.disclaimerVersion &&
+        acceptedSafetyVersion == IOSLegalSafetyPolicy.safetyVersion &&
+        acceptedRegulatedDomainsVersion == IOSLegalSafetyPolicy.regulatedDomainsVersion &&
         adultConfirmed
     }
 
@@ -103,10 +115,16 @@ final class IOSLegalSafetyStore {
         acceptedTermsVersion = IOSLegalSafetyPolicy.termsVersion
         acceptedPrivacyVersion = IOSLegalSafetyPolicy.privacyVersion
         acceptedEULAVersion = IOSLegalSafetyPolicy.eulaVersion
+        acceptedDisclaimerVersion = IOSLegalSafetyPolicy.disclaimerVersion
+        acceptedSafetyVersion = IOSLegalSafetyPolicy.safetyVersion
+        acceptedRegulatedDomainsVersion = IOSLegalSafetyPolicy.regulatedDomainsVersion
         acceptedAt = now
         defaults.set(IOSLegalSafetyPolicy.termsVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedTermsVersion)
         defaults.set(IOSLegalSafetyPolicy.privacyVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedPrivacyVersion)
         defaults.set(IOSLegalSafetyPolicy.eulaVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedEULAVersion)
+        defaults.set(IOSLegalSafetyPolicy.disclaimerVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedDisclaimerVersion)
+        defaults.set(IOSLegalSafetyPolicy.safetyVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedSafetyVersion)
+        defaults.set(IOSLegalSafetyPolicy.regulatedDomainsVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedRegulatedDomainsVersion)
         defaults.set(now, forKey: IOSLegalSafetyDefaultsKeys.acceptedAt)
         defaults.set(adultConfirmed, forKey: IOSLegalSafetyDefaultsKeys.adultConfirmed)
     }
