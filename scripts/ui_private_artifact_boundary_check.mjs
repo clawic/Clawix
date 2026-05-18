@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -6,12 +7,44 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const uiDir = path.join(rootDir, "docs/ui");
 const expectedPrivateBaselineAlias = "private-codex-ui-baselines";
 const expectedPrivateAssignment = "outside-public-repo";
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_PRIVATE_ARTIFACT_BOUNDARY_SELF_TEST === "1";
 const errors = [];
 const privatePathOrSecretPattern = /\/Users\/|~\/|file:\/\/|[A-Z]:\\|BEGIN [A-Z ]*PRIVATE KEY|\bAKIA[0-9A-Z]{16}\b|\bsk-[A-Za-z0-9]{20,}\b/;
+const simulationFlags = [
+  "--simulate-public-ui-binary-artifact",
+  "--simulate-missing-private-baseline-alias",
+  "--simulate-missing-required-root",
+  "--simulate-unexpected-required-root",
+  "--simulate-required-root-without-alias",
+  "--simulate-duplicate-root-alias",
+  "--simulate-duplicate-root-env",
+  "--simulate-root-alias-missing-field",
+  "--simulate-root-alias-unsafe-manifest-path",
+  "--simulate-root-alias-wrong-manifest-alias-field",
+  "--simulate-optional-root-alias-wrong-env",
+  "--simulate-private-validation-command-missing-root",
+  "--simulate-public-screenshots-policy",
+  "--simulate-public-baselines-policy",
+  "--simulate-missing-public-manifest-store",
+  "--simulate-extra-public-repo-store",
+  "--simulate-public-baseline-may-store-raw-screenshot",
+  "--simulate-public-baseline-must-not-store-missing-secret",
+  "--simulate-public-visual-model-assignment",
+  "--simulate-public-visual-scope-assignment",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI private artifact boundary check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -110,6 +143,36 @@ function scanValue(value, label) {
   }
 }
 
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_PRIVATE_ARTIFACT_BOUNDARY_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-public-ui-binary-artifact"], "must not store private visual evidence in the public repo"],
+    [["--simulate-missing-private-baseline-alias"], "rootAliases must include private-codex-ui-baselines"],
+    [["--simulate-public-screenshots-policy"], "privateArtifactsPolicy.screenshots must be private"],
+    [["--simulate-public-visual-model-assignment"], "visual-model-allowlist.manifest.json.privateAssignment must be outside-public-repo"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for private artifact boundary validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
 const forbiddenExtensions = new Set([
   ".apng",
   ".avif",
@@ -127,6 +190,10 @@ const forbiddenExtensions = new Set([
   ".zip",
 ]);
 const allowedPublicUiExtensions = new Set([".json", ".md"]);
+
+if (!isSelfTest) {
+  runFailureSelfTests();
+}
 
 for (const file of walk(uiDir)) {
   const relativePath = path.relative(rootDir, file);
