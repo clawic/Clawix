@@ -4,12 +4,39 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_COMPONENT_EXTRACTION_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-wrong-minimum-call-sites",
+  "--simulate-inactive-manifest",
+  "--simulate-missing-performance-risk-signal",
+  "--simulate-wrong-mechanical-manifest",
+  "--simulate-missing-mechanical-evidence-field",
+  "--simulate-allowed-api-missing-forbid",
+  "--simulate-extra-allowed-api",
+  "--simulate-duplicate-allowed-api",
+  "--simulate-duplicate-policy",
+  "--simulate-policy-unknown-api",
+  "--simulate-required-policy-local-composition",
+  "--simulate-forbidden-policy-shared-api",
+  "--simulate-unsafe-source-root",
+  "--simulate-pattern-unknown-policy",
+  "--simulate-pattern-unknown-api",
+  "--simulate-pattern-missing-state-interaction-risk",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI component extraction check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -351,11 +378,20 @@ for (const sourceRoot of sourceRoots) {
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-wrong-minimum-call-sites", "minimumCallSites must be 2"],
+    ["--simulate-inactive-manifest", "status must be active"],
     ["--simulate-missing-performance-risk-signal", "requiredRiskSignals must include performance"],
+    ["--simulate-wrong-mechanical-manifest", "mechanicalEquivalence.manifestPath must reference docs/ui/mechanical-equivalence.manifest.json"],
+    ["--simulate-missing-mechanical-evidence-field", "mechanicalEquivalence.requiredEvidenceFields must include approvedScope"],
     ["--simulate-allowed-api-missing-forbid", "forbids must include unbounded-prop-bag"],
     ["--simulate-extra-allowed-api", "is not an approved component API"],
+    ["--simulate-duplicate-allowed-api", "allowedApis[3].id duplicates limited-slots"],
+    ["--simulate-duplicate-policy", "allowedPolicies[4].id duplicates required"],
+    ["--simulate-policy-unknown-api", "allowedPolicies[0].allowedApis includes unknown API unbounded-render-hook"],
     ["--simulate-required-policy-local-composition", "allowedPolicies.required must not allow local-composition"],
+    ["--simulate-forbidden-policy-shared-api", "allowedPolicies.forbidden must only allow local-composition"],
+    ["--simulate-pattern-unknown-policy", "sidebar-row.pattern.json.componentExtraction.policy must be defined"],
     ["--simulate-pattern-unknown-api", "sidebar-row.pattern.json.componentExtraction.api must be defined"],
     ["--simulate-pattern-missing-state-interaction-risk", "must include state or interaction"],
     ["--simulate-unsafe-source-root", "sourceAudit.roots[0] must be a safe relative path"],
