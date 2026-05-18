@@ -1,13 +1,42 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const errors = [];
+const isSelfTest = process.env.CLAWIX_UI_CRITICAL_CLEANUP_QUEUE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-queue",
+  "--simulate-wrong-source-debt-report",
+  "--simulate-wrong-allowlist-path",
+  "--simulate-completed-cleanup-with-pending-debt",
+  "--simulate-missing-queued-debt",
+  "--simulate-wrong-required-model",
+  "--simulate-wrong-visual-scope-source",
+  "--simulate-missing-blocker",
+  "--simulate-duplicate-blocker",
+  "--simulate-extra-queue-status",
+  "--simulate-duplicate-queue-status",
+  "--simulate-extra-required-item-field",
+  "--simulate-executable-nonvisual-action",
+  "--simulate-wrong-item-authorization",
+  "--simulate-item-wrong-scope-source",
+  "--simulate-unsupported-platform",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI critical cleanup queue check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -292,6 +321,42 @@ for (const debtId of debtItems.keys()) {
 }
 
 scanForLocalPaths(queue, queuePath);
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-inactive-queue", "status must be queued"],
+    ["--simulate-wrong-source-debt-report", "sourceDebtReport must be docs/ui/debt-report.registry.json"],
+    ["--simulate-wrong-allowlist-path", "visualModelAllowlist must be docs/ui/visual-model-allowlist.manifest.json"],
+    ["--simulate-completed-cleanup-with-pending-debt", "status must be completed only when docs/ui/debt-report.registry.json marks the debt resolved"],
+    ["--simulate-missing-queued-debt", "items must include debtId ui-debt-plan-question-card-raw-visual-values"],
+    ["--simulate-wrong-required-model", "requiredVisualModel must be active in docs/ui/visual-model-allowlist.manifest.json"],
+    ["--simulate-wrong-visual-scope-source", "visualScopeSource must be docs/ui/visual-change-scopes.manifest.json"],
+    ["--simulate-missing-blocker", "blockedUntil must include copy-snapshot"],
+    ["--simulate-duplicate-blocker", "blockedUntil duplicates"],
+    ["--simulate-extra-queue-status", "queueStatuses must not include ready-for-any-agent"],
+    ["--simulate-duplicate-queue-status", "queueStatuses duplicates"],
+    ["--simulate-extra-required-item-field", "requiredItemFields must not include implementationPatchPath"],
+    ["--simulate-executable-nonvisual-action", "allowedCurrentAction must keep cleanup non-executable for non-visual agents"],
+    ["--simulate-wrong-item-authorization", "requiredAuthorization must be visual-authorized-lane"],
+    ["--simulate-item-wrong-scope-source", "requiredVisualScopeSource must match docs/ui/critical-cleanup.queue.json.visualScopeSource"],
+    ["--simulate-unsupported-platform", "platforms contains unsupported visionos"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_CRITICAL_CLEANUP_QUEUE_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when critical cleanup queue evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
+    }
+  }
+}
 
 if (errors.length > 0) {
   console.error("UI critical cleanup queue check failed:");
