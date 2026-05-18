@@ -242,8 +242,9 @@ the public repo.
     gate manifest so future approval or mechanical-equivalence records cannot
     be omitted from final completion.
 45. Capture private evidence from the derived plan, not by hand-maintaining a
-    second checklist. Run `node scripts/ui_private_evidence_plan_check.mjs --json`
-    and group records by `privateReference` alias:
+    second checklist. Run
+    `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group
+    records by `privateReference` alias and private root environment:
     `private-codex-ui-baselines`, `private-codex-ui-rendered-geometry`,
     `private-codex-ui-copy-snapshots`, `private-codex-ui-rendered-drift`, and
     `private-codex-ui-debt-audit`. For each record, create the matching private
