@@ -1,10 +1,13 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_COMPLETION_SOURCE_VERIFY_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -87,6 +90,53 @@ function sourceBeforeFirstGoalEvent(records) {
   return sourceRecords.map(recordText).join("\n");
 }
 
+function runFailureSelfTests(goalEnv, sessionEnv) {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_COMPLETION_SOURCE_VERIFY_SELF_TEST: "1",
+  };
+  delete selfTestEnv[goalEnv];
+  delete selfTestEnv[sessionEnv];
+  delete selfTestEnv.CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION;
+  const missingGoalFile = path.join(os.tmpdir(), `clawix-ui-completion-goal-missing-${process.pid}.md`);
+  const missingSessionFile = path.join(os.tmpdir(), `clawix-ui-completion-session-missing-${process.pid}.jsonl`);
+  const tests = [
+    [[], {}, "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], {}, "received unknown flag --unknown-flag"],
+    [
+      ["--require-approved", "--simulate-missing-expected-decision-id"],
+      {},
+      "CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION",
+    ],
+    [
+      ["--require-approved"],
+      { [goalEnv]: rootDir, [sessionEnv]: rootDir },
+      `${goalEnv} must point outside the public repository`,
+    ],
+    [
+      ["--require-approved"],
+      { [goalEnv]: missingGoalFile, [sessionEnv]: missingSessionFile },
+      `${goalEnv} does not point to an existing file`,
+    ],
+  ];
+
+  for (const [testArgs, extraEnv, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: { ...selfTestEnv, ...extraEnv },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for private completion source verification`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}`);
+    }
+  }
+}
+
 if (!hasFlag("--require-approved")) {
   console.error("UI private completion source verification requires --require-approved.");
   process.exit(1);
@@ -152,6 +202,9 @@ if (errors.length > 0) {
 
 const goalEnv = manifest.privateGoalFileEnv;
 const sessionEnv = manifest.privateSourceSessionFileEnv;
+if (!isSelfTest) {
+  runFailureSelfTests(goalEnv, sessionEnv);
+}
 const missingEnv = [goalEnv, sessionEnv].filter((envName) => !process.env[envName]);
 if (missingEnv.length > 0) {
   console.error(`EXTERNAL PENDING: set ${missingEnv.join(", ")} to verify private completion sources.`);
