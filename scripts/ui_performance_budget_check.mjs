@@ -1,13 +1,55 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_PERFORMANCE_BUDGET_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-budget-registry",
+  "--simulate-extra-required-flow",
+  "--simulate-duplicate-required-flow",
+  "--simulate-extra-required-metric",
+  "--simulate-duplicate-required-metric",
+  "--simulate-extra-required-evidence-field",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-missing-required-flow",
+  "--simulate-missing-required-metric",
+  "--simulate-flow-extra-required-metric",
+  "--simulate-flow-duplicate-required-metric",
+  "--simulate-invalid-budget-status",
+  "--simulate-enforced-before-approved",
+  "--simulate-approved-before-private-baseline",
+  "--simulate-approved-registry-with-pending-flow",
+  "--simulate-perf-decision-missing-budget-registry",
+  "--simulate-perf-decision-missing-private-baselines",
+  "--simulate-perf-decision-missing-visual-validation",
+  "--simulate-perf-decision-missing-evidence-plan",
+  "--simulate-perf-decision-missing-evidence-verifier",
+  "--simulate-perf-decision-missing-visual-verifier",
+  "--simulate-perf-decision-missing-private-verifier",
+  "--simulate-perf-decision-missing-platform-evidence",
+  "--simulate-perf-decision-premature-complete",
+  "--simulate-approved-performance-budgets-stale-decision",
+  "--simulate-missing-private-baseline",
+  "--simulate-duplicate-private-baseline",
+  "--simulate-wrong-private-reference",
+  "--simulate-pending-registry-with-all-enforced",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI performance budget check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -430,6 +472,35 @@ if (errors.length > 0) {
   console.error("UI performance budget check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-inactive-budget-registry", "status must be pending-approved-baseline-capture or approved-baseline-enforced"],
+    ["--simulate-missing-required-flow", "flows must include web:chat-scroll"],
+    ["--simulate-missing-required-metric", "requiredMetrics must include memoryDeltaMb"],
+    ["--simulate-invalid-budget-status", "budgetStatus is invalid"],
+    ["--simulate-enforced-before-approved", "budgetStatus cannot be enforced before baselineStatus is approved"],
+    ["--simulate-approved-before-private-baseline", "baselineStatus cannot be approved before private baseline is approved"],
+    ["--simulate-missing-private-baseline", "must have matching docs/ui/private-baselines.manifest.json.flows entry"],
+    ["--simulate-wrong-private-reference", "privateBaselineReference must resolve to"],
+    ["--simulate-perf-decision-premature-complete", "status must remain open until private performance baselines are approved"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_PERFORMANCE_BUDGET_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI performance budget self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI performance budget check passed (${seen.size} flow budgets)`);
