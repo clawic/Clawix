@@ -1,11 +1,46 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const manifestPath = "docs/ui/private-baselines.manifest.json";
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_PRIVATE_BASELINE_MANIFEST_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-wrong-manifest-status",
+  "--simulate-wrong-private-root-alias",
+  "--simulate-verifier-without-approval",
+  "--simulate-missing-required-evidence-field",
+  "--simulate-extra-required-evidence-field",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-missing-critical-flow",
+  "--simulate-duplicate-critical-flow",
+  "--simulate-flow-extra-required-evidence",
+  "--simulate-flow-duplicate-required-evidence",
+  "--simulate-wrong-runner-id",
+  "--simulate-wrong-geometry-tolerance",
+  "--simulate-wrong-screenshot-tolerance",
+  "--simulate-unsafe-baseline-reference",
+  "--simulate-invalid-baseline-status",
+  "--simulate-approved-pending-reference",
+  "--simulate-approved-manifest-with-pending-flow",
+  "--simulate-pending-manifest-with-all-approved",
+  "--simulate-local-private-artifact-path",
+  "--simulate-extra-public-store",
+  "--simulate-duplicate-public-store",
+  "--simulate-extra-public-forbidden-store",
+  "--simulate-duplicate-public-forbidden-store",
+  "--simulate-baselines-decision-missing-manifest",
+  "--simulate-baselines-decision-missing-private-visual",
+  "--simulate-baselines-decision-missing-private-baseline-verifier",
+  "--simulate-baselines-decision-missing-platform-evidence",
+  "--simulate-baselines-decision-premature-complete",
+  "--simulate-approved-private-baselines-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 
 const requiredPlatforms = ["macos", "ios", "android", "web"];
 const requiredFlows = [
@@ -30,6 +65,13 @@ const requiredEvidence = [
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI private baseline manifest check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -115,6 +157,41 @@ function assertPublicSafeReference(reference, alias, label) {
     fail(`${label} must not contain a local absolute path`);
   }
   return suffix;
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_PRIVATE_BASELINE_MANIFEST_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-wrong-manifest-status"], "status must be pending-private-capture or approved-private-baselines"],
+    [["--simulate-verifier-without-approval"], "verificationCommand must require approved private baseline evidence"],
+    [["--simulate-missing-critical-flow"], "flows must include web:right-sidebar-browser-use"],
+    [["--simulate-unsafe-baseline-reference"], "privateBaselineReference must use a safe relative private reference"],
+    [["--simulate-baselines-decision-premature-complete"], "status must remain open until private baselines are captured and approved"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for private baseline manifest validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const manifest = readJson(manifestPath);
