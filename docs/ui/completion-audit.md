@@ -13,6 +13,9 @@ are re-read one by one.
   required; at least 9 user message records.
   Decision ids and choices must appear before the first `thread_goal_*` event.
 - Completion status: blocked by EXTERNAL PENDING private evidence.
+- Decision status semantics: `open` means EXTERNAL PENDING private evidence or
+  approval remains and blocks `update_goal`; only `verified-complete` counts
+  toward closure.
 - Goal update rule: Do not call update_goal until all decisions are verified-complete with evidence.
 - Private evidence plan: 166 records must be verified before completion.
 - Private approval evidence: 1 record(s) must be verified before completion.

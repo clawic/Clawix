@@ -146,6 +146,58 @@ function withTemporaryCompletionSources(sourceManifest, callback) {
   }
 }
 
+function withTemporaryPrivatePlaceholderRoots(callback) {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "clawix-ui-private-placeholders-"));
+  try {
+    const evidenceTemplateRoot = path.join(tempRoot, "evidence");
+    const approvalTemplateRoot = path.join(tempRoot, "approval");
+    const evidenceTemplateResult = spawnSync(
+      process.execPath,
+      [
+        path.join(rootDir, "scripts/ui_private_evidence_plan_check.mjs"),
+        "--write-template-root",
+        evidenceTemplateRoot,
+      ],
+      {
+        cwd: rootDir,
+        env: withoutPrivateCompletionEnv(),
+        encoding: "utf8",
+      },
+    );
+    if (evidenceTemplateResult.status !== 0) {
+      fail("scripts/ui_private_evidence_plan_check.mjs must write temporary placeholder evidence roots");
+      return callback({});
+    }
+    const approvalTemplateResult = spawnSync(
+      process.execPath,
+      [
+        path.join(rootDir, "scripts/ui_private_approval_verify.mjs"),
+        "--write-approval-template-root",
+        approvalTemplateRoot,
+      ],
+      {
+        cwd: rootDir,
+        env: withoutPrivateCompletionEnv(),
+        encoding: "utf8",
+      },
+    );
+    if (approvalTemplateResult.status !== 0) {
+      fail("scripts/ui_private_approval_verify.mjs must write temporary placeholder approval roots");
+      return callback({});
+    }
+    return callback({
+      CLAWIX_UI_PRIVATE_BASELINE_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-baselines"),
+      CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-rendered-geometry"),
+      CLAWIX_UI_PRIVATE_COPY_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-copy-snapshots"),
+      CLAWIX_UI_PRIVATE_DRIFT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-rendered-drift"),
+      CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-debt-audit"),
+      CLAWIX_UI_PRIVATE_APPROVAL_ROOT: path.join(approvalTemplateRoot, "private-codex-ui-approval"),
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
 function approvalRecords(approvalManifest) {
   const records = [];
   for (const [sourceIndex, source] of requireArray(approvalManifest, "docs/ui/approval-authority.manifest.json", "approvalSources").entries()) {
@@ -229,6 +281,9 @@ requireFields(manifest, manifestPath, [
   "privateVerifierScript",
   "privateApprovalVerifierScript",
   "completionStatusCommand",
+  "completionStatusRequiredBlockersWithoutPrivateRoots",
+  "completionStatusRequiredBlockersWithSourceReview",
+  "completionStatusRequiredBlockersWithPrivatePlaceholders",
   "finalVerificationCommand",
   "conditionalPrivateRoots",
   "requiredPublicChecks",
@@ -249,6 +304,18 @@ if (manifest?.privateApprovalVerifierScript !== "scripts/ui_private_approval_ver
 }
 if (manifest?.completionStatusCommand !== "node scripts/ui_private_completion_verify.mjs --completion-status") {
   fail(`${manifestPath}.completionStatusCommand must be node scripts/ui_private_completion_verify.mjs --completion-status`);
+}
+const requiredBlockersWithoutPrivateRoots = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithoutPrivateRoots");
+const requiredBlockersWithSourceReview = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithSourceReview");
+const requiredBlockersWithPrivatePlaceholders = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithPrivatePlaceholders");
+for (const blocker of [
+  ...requiredBlockersWithoutPrivateRoots,
+  ...requiredBlockersWithSourceReview,
+  ...requiredBlockersWithPrivatePlaceholders,
+]) {
+  if (typeof blocker !== "string" || blocker.length === 0 || /[A-Z_]/.test(blocker)) {
+    fail(`${manifestPath} completion status blocker ids must be stable lowercase strings`);
+  }
 }
 if (!String(manifest?.finalVerificationCommand || "").includes("scripts/ui_private_completion_verify.mjs --require-approved")) {
   fail(`${manifestPath}.finalVerificationCommand must require the private completion verifier`);
@@ -440,7 +507,7 @@ if (completionStatusResult.status !== 0) {
       fail(`${manifest.privateVerifierScript} --completion-status must include external-pending private source review without private source env`);
     }
     const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
-    for (const blockerId of ["open-decisions", "private-evidence-missing-root", "private-approval-missing-root", "private-source-review"]) {
+    for (const blockerId of requiredBlockersWithoutPrivateRoots) {
       if (!blockerIds.has(blockerId)) {
         fail(`${manifest.privateVerifierScript} --completion-status must include blockingSummary ${blockerId} without private roots`);
       }
@@ -593,7 +660,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       if (blockerIds.has("private-source-review")) {
         fail(`${manifest.privateVerifierScript} --completion-status must remove private-source-review blocker after source review passes`);
       }
-      for (const blockerId of ["open-decisions", "private-evidence-missing-root", "private-approval-missing-root"]) {
+      for (const blockerId of requiredBlockersWithSourceReview) {
         if (!blockerIds.has(blockerId)) {
           fail(`${manifest.privateVerifierScript} --completion-status must keep ${blockerId} blocker while private roots remain missing`);
         }
@@ -602,6 +669,55 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       fail(`${manifest.privateVerifierScript} --completion-status with temporary sources output must be valid JSON: ${error.message}`);
     }
   }
+
+  withTemporaryPrivatePlaceholderRoots((temporaryPrivateRootEnv) => {
+    const placeholderStatusResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, manifest.privateVerifierScript), "--completion-status"],
+      {
+        cwd: rootDir,
+        env: {
+          ...withoutPrivateCompletionEnv(),
+          ...temporaryEnv,
+          ...temporaryPrivateRootEnv,
+        },
+        encoding: "utf8",
+      },
+    );
+    if (placeholderStatusResult.status !== 0) {
+      fail(`${manifest.privateVerifierScript} --completion-status must pass with temporary private placeholder roots`);
+      return;
+    }
+    try {
+      const status = JSON.parse(placeholderStatusResult.stdout);
+      if (status.privateSourceReview?.status !== "passed") {
+        fail(`${manifest.privateVerifierScript} --completion-status must keep private source review passed with placeholder roots`);
+      }
+      if (status.privateEvidence?.totals?.placeholder !== 166 || status.privateEvidence?.totals?.candidate !== 0) {
+        fail(`${manifest.privateVerifierScript} --completion-status must classify temporary private evidence templates as placeholders`);
+      }
+      if (status.privateApproval?.counts?.placeholder !== activeApprovalRecords.length || status.privateApproval?.counts?.candidate !== 0) {
+        fail(`${manifest.privateVerifierScript} --completion-status must classify temporary private approval templates as placeholders`);
+      }
+      const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
+      for (const blockerId of requiredBlockersWithPrivatePlaceholders) {
+        if (!blockerIds.has(blockerId)) {
+          fail(`${manifest.privateVerifierScript} --completion-status must include ${blockerId} blocker while private roots contain placeholders`);
+        }
+      }
+      for (const blockerId of [
+        "private-evidence-missing-root",
+        "private-approval-missing-root",
+        "private-source-review",
+      ]) {
+        if (blockerIds.has(blockerId)) {
+          fail(`${manifest.privateVerifierScript} --completion-status must not keep ${blockerId} after placeholder roots and source review are present`);
+        }
+      }
+    } catch (error) {
+      fail(`${manifest.privateVerifierScript} --completion-status with temporary private placeholder roots output must be valid JSON: ${error.message}`);
+    }
+  });
 
   const result = spawnSync(
     process.execPath,

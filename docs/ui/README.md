@@ -129,7 +129,8 @@ the public repo.
 8. Keep decision verification evidence current with
    `scripts/ui_decision_verification_check.mjs`; open decisions must declare
    private evidence aliases covered by the derived evidence plan plus the
-   private verifiers that block closure.
+   private verifiers that block closure. In this manifest, open decisions are
+   explicitly `EXTERNAL PENDING` and block `update_goal`.
 9. Keep UI debt reports current with `scripts/ui_debt_report_check.mjs`; debt
    items are report-only outside a visual-authorized cleanup scope and
    opportunistic fixes stay forbidden.
@@ -246,7 +247,10 @@ the public repo.
     JSON output aggregates open decisions, private evidence counts, private
     approval counts, private goal/source-session review status, and the final
     command while keeping `updateGoalAllowed` false until `--require-approved`
-    passes.
+    passes. Its `blockingSummary` blocker IDs are declared in
+    `completion-gate.manifest.json` so public CI verifies missing-root,
+    passed-source-review, and placeholder-root closure reasons without private
+    artifacts.
 45. Capture private evidence from the derived plan, not by hand-maintaining a
     second checklist. Run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group

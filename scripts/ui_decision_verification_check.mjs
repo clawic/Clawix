@@ -13,6 +13,7 @@ const simulationFlags = [
   "--simulate-open-decision-without-private-blockers",
   "--simulate-wrong-conversation-id",
   "--simulate-missing-required-status",
+  "--simulate-missing-open-status-semantics",
   "--simulate-extra-required-status",
   "--simulate-duplicate-required-status",
   "--simulate-verified-with-remaining",
@@ -208,6 +209,7 @@ requireFields(decisionVerification, decisionPath, [
   "sourceSession",
   "completionRule",
   "statuses",
+  "statusSemantics",
   "decisions",
 ]);
 
@@ -225,6 +227,10 @@ if (args.has("--simulate-wrong-conversation-id") && decisionVerification) {
 
 if (args.has("--simulate-missing-required-status") && Array.isArray(decisionVerification?.statuses)) {
   decisionVerification.statuses = decisionVerification.statuses.filter((status) => status !== "open");
+}
+
+if (args.has("--simulate-missing-open-status-semantics") && Array.isArray(decisionVerification?.statusSemantics)) {
+  decisionVerification.statusSemantics = decisionVerification.statusSemantics.filter((entry) => entry?.status !== "open");
 }
 
 if (args.has("--simulate-extra-required-status") && Array.isArray(decisionVerification?.statuses)) {
@@ -318,6 +324,30 @@ const allowedStatuses = requireExactStringSet(
   `${decisionPath}.statuses`,
   ["open", "verified-complete"],
 );
+const statusSemantics = requireArray(decisionVerification, decisionPath, "statusSemantics");
+const statusSemanticsByStatus = new Map();
+for (const [index, entry] of statusSemantics.entries()) {
+  const label = `${decisionPath}.statusSemantics[${index}]`;
+  requireFields(entry, label, ["status", "meaning", "completionEffect"]);
+  if (!entry) continue;
+  if (statusSemanticsByStatus.has(entry.status)) fail(`${label}.status duplicates ${entry.status}`);
+  statusSemanticsByStatus.set(entry.status, entry);
+  if (!allowedStatuses.has(entry.status)) fail(`${label}.status is not an allowed decision status`);
+}
+for (const status of allowedStatuses) {
+  if (!statusSemanticsByStatus.has(status)) fail(`${decisionPath}.statusSemantics must describe ${status}`);
+}
+const openSemantics = statusSemanticsByStatus.get("open");
+if (!String(openSemantics?.meaning || "").includes("EXTERNAL PENDING")) {
+  fail(`${decisionPath}.statusSemantics.open must define open as EXTERNAL PENDING`);
+}
+if (openSemantics?.completionEffect !== "blocks-update-goal") {
+  fail(`${decisionPath}.statusSemantics.open.completionEffect must be blocks-update-goal`);
+}
+const verifiedSemantics = statusSemanticsByStatus.get("verified-complete");
+if (verifiedSemantics?.completionEffect !== "counts-toward-completion") {
+  fail(`${decisionPath}.statusSemantics.verified-complete.completionEffect must be counts-toward-completion`);
+}
 
 const expectedDecisions = [
   ["initial_scope", "Cross-platform desde dia 1"],
@@ -449,6 +479,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-open-decision-without-private-blockers", "is missing privateEvidence"],
     ["--simulate-wrong-conversation-id", "conversationId must stay pinned to the source conversation"],
     ["--simulate-missing-required-status", "statuses must include open"],
+    ["--simulate-missing-open-status-semantics", "statusSemantics must describe open"],
     ["--simulate-extra-required-status", "statuses must not include pending-private"],
     ["--simulate-duplicate-required-status", "statuses duplicates"],
     ["--simulate-verified-with-remaining", "cannot be verified-complete while remaining work is listed"],

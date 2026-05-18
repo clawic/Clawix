@@ -5,6 +5,18 @@
   "sourceSession": "private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001",
   "completionRule": "Do not complete the goal until every decision is re-read from the goal reference and source session, then marked verified-complete with evidence.",
   "statuses": ["open", "verified-complete"],
+  "statusSemantics": [
+    {
+      "status": "open",
+      "meaning": "EXTERNAL PENDING private evidence or private approval remains; the decision is non-complete and blocks update_goal.",
+      "completionEffect": "blocks-update-goal"
+    },
+    {
+      "status": "verified-complete",
+      "meaning": "All required evidence is verified, remaining work is empty, and the decision may count toward final completion.",
+      "completionEffect": "counts-toward-completion"
+    }
+  ],
   "decisions": [
     { "index": 1, "id": "initial_scope", "choice": "Cross-platform desde dia 1", "status": "open", "publicEvidence": ["docs/ui/interface-governance.config.json", "docs/ui/pattern-registry/patterns.registry.json", "docs/ui/visible-surfaces.inventory.json", "docs/ui/surface-baseline-coverage.manifest.json", "scripts/ui_surface_baseline_coverage_check.mjs", "scripts/ui_private_evidence_plan_check.mjs", "scripts/ui_private_evidence_verify.mjs"], "privateEvidence": ["private-codex-ui-baselines:surfaces/*", "private-codex-ui-rendered-geometry:surfaces/*", "private-codex-ui-copy-snapshots:surfaces/*"], "blockingVerifiers": ["scripts/ui_private_evidence_verify.mjs", "scripts/ui_private_baseline_verify.mjs", "scripts/ui_private_geometry_verify.mjs", "scripts/ui_private_copy_verify.mjs"], "remaining": ["Capture and approve private surface baseline artifacts for each coverage entry."] },
     { "index": 2, "id": "enforcement_mode", "choice": "Bloqueo estricto ya", "status": "open", "publicEvidence": ["scripts/ui_governance_guard.mjs", "scripts/ui_geometry_contract_check.mjs", "scripts/ui_rendered_drift_check.mjs", "scripts/ui_private_drift_verify.mjs", "docs/ui/rendered-drift.manifest.json", "scripts/test.sh"], "privateEvidence": ["private-codex-ui-rendered-drift:surfaces/*"], "blockingVerifiers": ["scripts/ui_private_drift_verify.mjs", "scripts/ui_private_visual_verify.mjs"], "remaining": ["Capture rendered drift results from private visual evidence."] },
