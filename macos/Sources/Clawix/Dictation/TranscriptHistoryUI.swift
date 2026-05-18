@@ -492,6 +492,7 @@ private struct TranscriptCleanupView: View {
 // MARK: - Backup
 
 private struct TranscriptBackupView: View {
+    @EnvironmentObject private var appState: AppState
     @State private var status: String?
 
     var body: some View {
@@ -503,10 +504,14 @@ private struct TranscriptBackupView: View {
 
             HStack(spacing: 10) {
                 Button("Export transcripts (CSV)") {
-                    Task { await exportCSV() }
+                    requestExportReview {
+                        Task { await exportCSV() }
+                    }
                 }
                 Button("Export settings (JSON)") {
-                    exportJSON()
+                    requestExportReview {
+                        exportJSON()
+                    }
                 }
                 Button("Import settings (JSON)") {
                     importJSON()
@@ -526,6 +531,14 @@ private struct TranscriptBackupView: View {
             }
         }
         .padding(20)
+    }
+
+    private func requestExportReview(_ onConfirm: @escaping () -> Void) {
+        LegalSafetyStore.shared.requestSensitiveActionReview(
+            action: .exportShare,
+            appState: appState,
+            onConfirm: onConfirm
+        )
     }
 
     private func exportCSV() async {

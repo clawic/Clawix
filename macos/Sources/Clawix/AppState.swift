@@ -317,6 +317,7 @@ final class AppState: ObservableObject {
     /// quoted across messages.
     @Published var chatCodeBlockWordWrap: Bool = true
     @Published var settingsCategory: SettingsCategory = .general
+    let legalSafety = LegalSafetyStore.shared
     /// User-selected interface language. Persisted via UserDefaults
     /// (suite `appPrefsSuite`, key `PreferredLanguage`). Changing
     /// this immediately re-applies the language process-wide

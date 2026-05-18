@@ -23,6 +23,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case macControl
     case databaseWorkbench
     case secrets
+    case legalSafety
     case identity
     case claw
     case telegram
@@ -52,6 +53,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .macControl:       return "Mac Control"
         case .databaseWorkbench: return "Database Workbench"
         case .secrets:          return "Secrets"
+        case .legalSafety:      return "Legal & Safety"
         case .identity:         return "Identity"
         case .claw:           return "ClawJS"
         case .telegram:         return "Telegram"
@@ -81,6 +83,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .macControl:       return "laptopcomputer"
         case .databaseWorkbench: return "cylinder.split.1x2"
         case .secrets:          return "lock.shield"
+        case .legalSafety:      return "exclamationmark.shield"
         case .identity:         return "fingerprint"
         case .claw:           return "shippingbox"
         case .telegram:         return "paperplane.fill"
@@ -107,6 +110,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .claw:           return .claw
         case .telegram:         return .telegram
         case .apps:             return .apps
+        case .legalSafety:      return nil
         default:                return nil
         }
     }
@@ -290,6 +294,7 @@ struct SettingsContent: View {
                     case .mcp:             MCPPage()
                     case .machines:        HostsPage()
                     case .secrets:         SecretsSettingsPage()
+                    case .legalSafety:     LegalSafetySettingsPage()
                     case .identity:        IdentitySettingsPage()
                     case .claw:          ClawJSSettingsPage()
                     case .telegram:        TelegramSettingsPage()

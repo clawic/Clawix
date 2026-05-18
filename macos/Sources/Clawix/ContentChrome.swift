@@ -284,6 +284,9 @@ struct ContentTopChrome: View {
         )) { request in
             ConfirmationDialog(request: request) { appState.pendingConfirmation = nil }
         }
+        .overlay {
+            LegalConsentGate(legal: appState.legalSafety)
+        }
     }
 }
 
