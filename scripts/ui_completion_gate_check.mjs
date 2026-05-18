@@ -5,10 +5,19 @@ import os from "node:os";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const rawArgs = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_COMPLETION_GATE_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--")) {
+    console.error(`UI completion gate check received unsupported public flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function read(relativePath) {
@@ -171,6 +180,39 @@ function requireConditionalRootContract({ rootsByEnv, env, condition, manifestPa
     fail(`${manifestPath}.conditionalPrivateRoots entry for ${env} must map to a private visual optional root alias`);
   }
 }
+
+function runFailureSelfTests() {
+  const selfTestEnv = { ...process.env, CLAWIX_UI_COMPLETION_GATE_SELF_TEST: "1" };
+  const tests = [
+    [["--unknown-flag"], "received unsupported public flag --unknown-flag"],
+    [["--simulate-no-open-decisions"], "received unsupported public flag --simulate-no-open-decisions"],
+    [["--simulate-verified-complete-with-remaining"], "received unsupported public flag --simulate-verified-complete-with-remaining"],
+    [["--simulate-open-decision-without-private-evidence"], "received unsupported public flag --simulate-open-decision-without-private-evidence"],
+    [["--simulate-missing-decision-blocker"], "received unsupported public flag --simulate-missing-decision-blocker"],
+    [["--simulate-stale-decision-blocker"], "received unsupported public flag --simulate-stale-decision-blocker"],
+    [["--simulate-open-decision-without-blocking-verifier"], "received unsupported public flag --simulate-open-decision-without-blocking-verifier"],
+    [["--simulate-open-decision-without-remaining"], "received unsupported public flag --simulate-open-decision-without-remaining"],
+    [["--simulate-verified-complete-with-private-evidence"], "received unsupported public flag --simulate-verified-complete-with-private-evidence"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for public completion gate argument validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) runFailureSelfTests();
 
 const manifestPath = "docs/ui/completion-gate.manifest.json";
 const manifest = readJson(manifestPath);
