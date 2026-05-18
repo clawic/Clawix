@@ -4,11 +4,38 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_COMPLETION_SOURCE_MANIFEST_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-unsafe-private-path",
+  "--simulate-wrong-goal-alias",
+  "--simulate-wrong-source-session-alias",
+  "--simulate-wrong-private-goal-env",
+  "--simulate-verifier-without-require-approved",
+  "--simulate-wrong-external-pending-exit-code",
+  "--simulate-wrong-decision-count",
+  "--simulate-missing-required-record-type",
+  "--simulate-zero-minimum-user-messages",
+  "--simulate-missing-expected-decision-id",
+  "--simulate-duplicate-expected-decision-id",
+  "--simulate-wrong-expected-decision-choice",
+  "--simulate-wrong-decision-conversation-id",
+  "--simulate-audit-missing-source-alias",
+  "--simulate-private-verifier-missing-snippet",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI completion source manifest check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function read(relativePath) {
@@ -68,6 +95,46 @@ function scanPublicSafety(value, label) {
   }
 }
 
+function runFailureSelfTests() {
+  const selfTestEnv = { ...process.env, CLAWIX_UI_COMPLETION_SOURCE_MANIFEST_SELF_TEST: "1" };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-unsafe-private-path"], "sourceSessionAlias must not publish a local private path"],
+    [["--simulate-wrong-goal-alias"], "goalReferenceAlias must match the private goal alias"],
+    [["--simulate-wrong-source-session-alias"], "sourceSessionAlias must match the private source session alias"],
+    [["--simulate-wrong-private-goal-env"], "privateGoalFileEnv must be CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE"],
+    [["--simulate-verifier-without-require-approved"], "verificationCommand must require the private completion source verifier"],
+    [["--simulate-wrong-external-pending-exit-code"], "externalPendingExitCode must be 2"],
+    [["--simulate-wrong-decision-count"], "expectedDecisionCount must be 39"],
+    [["--simulate-missing-required-record-type"], "requiredRecordTypes must include event_msg:thread_goal_updated"],
+    [["--simulate-zero-minimum-user-messages"], "minimumUserMessages must be a positive integer"],
+    [["--simulate-missing-expected-decision-id"], "expectedDecisionIds must contain expectedDecisionCount entries"],
+    [["--simulate-duplicate-expected-decision-id"], "expectedDecisionIds must contain expectedDecisionCount entries"],
+    [["--simulate-wrong-expected-decision-choice"], "expectedDecisions[0].choice must be"],
+    [["--simulate-wrong-decision-conversation-id"], "expectedConversationId must match docs/ui/decision-verification.json.conversationId"],
+    [["--simulate-audit-missing-source-alias"], "completion-audit.md must include private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001"],
+    [["--simulate-private-verifier-missing-snippet"], "ui_private_completion_source_verify.mjs must include sourceBeforeFirstGoalEvent"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI completion source manifest validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) runFailureSelfTests();
+
 const manifestPath = "docs/ui/completion-source.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
@@ -108,6 +175,9 @@ if (manifest) {
   }
   if (args.has("--simulate-missing-expected-decision-id") && Array.isArray(manifest.expectedDecisionIds)) {
     manifest.expectedDecisionIds = manifest.expectedDecisionIds.filter((id) => id !== "initial_scope");
+  }
+  if (args.has("--simulate-duplicate-expected-decision-id") && Array.isArray(manifest.expectedDecisionIds) && manifest.expectedDecisionIds[0]) {
+    manifest.expectedDecisionIds = [...manifest.expectedDecisionIds, manifest.expectedDecisionIds[0]];
   }
   if (args.has("--simulate-wrong-expected-decision-choice") && Array.isArray(manifest.expectedDecisions) && manifest.expectedDecisions[0]) {
     manifest.expectedDecisions[0] = {
