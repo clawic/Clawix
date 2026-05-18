@@ -6,10 +6,35 @@ import { privateRootAliasEntries } from "./ui_private_root_contract.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_DECISION_VERIFICATION_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-open-decision-without-private-blockers",
+  "--simulate-wrong-conversation-id",
+  "--simulate-missing-required-status",
+  "--simulate-extra-required-status",
+  "--simulate-duplicate-required-status",
+  "--simulate-verified-with-remaining",
+  "--simulate-open-without-remaining",
+  "--simulate-unsafe-public-evidence",
+  "--simulate-duplicate-public-evidence",
+  "--simulate-unplanned-private-evidence",
+  "--simulate-duplicate-private-evidence",
+  "--simulate-undelegated-blocking-verifier",
+  "--simulate-duplicate-blocking-verifier",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI decision verification check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -414,6 +439,39 @@ for (const [index, decision] of decisions.entries()) {
     const target = evidence.split("#", 1)[0];
     if (!fs.existsSync(path.join(rootDir, target))) {
       fail(`${evidenceLabel} points to missing target ${target}`);
+    }
+  }
+}
+
+if (errors.length === 0 && !isSelfTest && args.size === 0) {
+  for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-open-decision-without-private-blockers", "is missing privateEvidence"],
+    ["--simulate-wrong-conversation-id", "conversationId must stay pinned to the source conversation"],
+    ["--simulate-missing-required-status", "statuses must include open"],
+    ["--simulate-extra-required-status", "statuses must not include pending-private"],
+    ["--simulate-duplicate-required-status", "statuses duplicates"],
+    ["--simulate-verified-with-remaining", "cannot be verified-complete while remaining work is listed"],
+    ["--simulate-open-without-remaining", "must be verified-complete when no remaining work is listed"],
+    ["--simulate-unsafe-public-evidence", "must be a public-safe repo-relative reference"],
+    ["--simulate-duplicate-public-evidence", "publicEvidence duplicates"],
+    ["--simulate-unplanned-private-evidence", "is not covered by the derived private evidence plan"],
+    ["--simulate-duplicate-private-evidence", "privateEvidence duplicates"],
+    ["--simulate-undelegated-blocking-verifier", "must be delegated by docs/ui/private-visual-validation.manifest.json"],
+    ["--simulate-duplicate-blocking-verifier", "blockingVerifiers duplicates"],
+  ]) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
+      cwd: rootDir,
+      env: { ...process.env, CLAWIX_UI_DECISION_VERIFICATION_SELF_TEST: "1" },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${flag} must fail when decision verification evidence is removed`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${flag} output must include ${expectedOutput}`);
     }
   }
 }
