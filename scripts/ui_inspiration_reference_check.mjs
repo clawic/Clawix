@@ -1,10 +1,36 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_INSPIRATION_REFERENCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-incomplete-policy",
+  "--simulate-missing-required-reference",
+  "--simulate-canonical-reference",
+  "--simulate-http-reference",
+  "--simulate-duplicate-reference-id",
+  "--simulate-invalid-reference-id",
+  "--simulate-invalid-reference-url",
+  "--simulate-canonical-use-text",
+  "--simulate-required-reference-url-mismatch",
+  "--simulate-local-path-leak",
+  "--simulate-decision-evidence-missing-registry",
+  "--simulate-decision-evidence-missing-script",
+  "--simulate-external-pattern-reference",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI inspiration reference check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
 
 function fail(message) {
   errors.push(message);
@@ -194,6 +220,54 @@ if (errors.length > 0) {
   console.error("UI inspiration reference check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-incomplete-policy", "docs/ui/inspiration/references.registry.json.policy must mention non-canonical"],
+    [
+      "--simulate-missing-required-reference",
+      "docs/ui/inspiration/references.registry.json.references must include required inspiration reference playwright-snapshots",
+    ],
+    ["--simulate-canonical-reference", "docs/ui/inspiration/references.registry.json.references[0].canonical must remain false"],
+    ["--simulate-http-reference", "docs/ui/inspiration/references.registry.json.references[0].url must use https"],
+    ["--simulate-duplicate-reference-id", "docs/ui/inspiration/references.registry.json.references[6].id duplicates"],
+    ["--simulate-invalid-reference-id", "docs/ui/inspiration/references.registry.json.references[0].id must be a stable slug"],
+    ["--simulate-invalid-reference-url", "docs/ui/inspiration/references.registry.json.references[0].url must be a valid URL"],
+    ["--simulate-canonical-use-text", "docs/ui/inspiration/references.registry.json.references[0].use must not describe the reference as canonical"],
+    [
+      "--simulate-required-reference-url-mismatch",
+      "docs/ui/inspiration/references.registry.json.references playwright-snapshots must use https://playwright.dev/docs/test-snapshots",
+    ],
+    ["--simulate-local-path-leak", "docs/ui/inspiration/references.registry.json.references[0].use must not contain a local path"],
+    [
+      "--simulate-decision-evidence-missing-registry",
+      "docs/ui/decision-verification.json.decisions.external_references_policy.publicEvidence must include docs/ui/inspiration/references.registry.json",
+    ],
+    [
+      "--simulate-decision-evidence-missing-script",
+      "docs/ui/decision-verification.json.decisions.external_references_policy.publicEvidence must include scripts/ui_inspiration_reference_check.mjs",
+    ],
+    [
+      "--simulate-external-pattern-reference",
+      "docs/ui/pattern-registry/patterns/sidebar-row.pattern.json.canonicalReferences",
+    ],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_INSPIRATION_REFERENCE_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI inspiration reference self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI inspiration reference check passed (${seenIds.size} references)`);
