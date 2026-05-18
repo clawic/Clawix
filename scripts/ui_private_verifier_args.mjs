@@ -13,7 +13,10 @@ export function enforcePrivateVerifierArgs(args, {
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (!arg.startsWith("--")) continue;
+    if (!arg.startsWith("--")) {
+      console.error(`${label} received unexpected argument ${arg}.`);
+      process.exit(1);
+    }
     if (!allowed.has(arg)) {
       console.error(`${label} received unknown flag ${arg}.`);
       process.exit(1);

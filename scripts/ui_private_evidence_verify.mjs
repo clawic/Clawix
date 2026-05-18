@@ -473,6 +473,7 @@ if (!isSelfTest && !includePending) {
   for (const [testArgs, expectedOutput, extraEnv = {}] of [
     [[], "requires --require-approved"],
     [["--require-approved", "--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--require-approved", "unexpected-arg"], "received unexpected argument unexpected-arg"],
     [["--require-approved", "--include-pending"], "CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
