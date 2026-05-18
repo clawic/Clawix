@@ -88,6 +88,44 @@ final class RescueRepairContextTests: XCTestCase {
         XCTAssertEqual(seen[2], ["evolution", "dry-run", "--json", "--from", "v1", "--to", "current"])
     }
 
+    @MainActor
+    func testExporterWritesRedactedRescueContextJson() throws {
+        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("RescueRepairContextTests-\(UUID().uuidString)", isDirectory: true)
+        let destination = tempDir.appendingPathComponent("rescue-context.json")
+        let decision = RescueSurvivalPolicy.evaluate(signals: [.migrationFailure], availableRuntimeCount: 1)
+
+        let export = try RescueRepairContextExporter.write(
+            decision: decision,
+            evolutionEnvelopeData: Self.fixtureRepairEnvelope,
+            diagnosticFiles: [URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/last-resources.json")],
+            runtimeHealth: RescueRuntimeHealthSnapshot(
+                processCpuPercent: 95,
+                residentBytes: 1_024,
+                footprintBytes: 2_048,
+                bridgeReachable: true,
+                runtimeCount: 1
+            ),
+            destinationURL: destination
+        )
+
+        XCTAssertEqual(export.url, destination)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: destination.path))
+        let data = try Data(contentsOf: destination)
+        let text = String(decoding: data, as: UTF8.self)
+        XCTAssertFalse(text.contains("/Users/"))
+        XCTAssertFalse(text.contains("sk-"))
+        XCTAssertTrue(text.contains("explicit_approval_only"))
+
+        let decoded = try JSONDecoder().decode(RescueRepairContextPackage.self, from: data)
+        XCTAssertEqual(decoded.mode, .ephemeralChat)
+        XCTAssertEqual(decoded.evolutionStatus, "needs_approval")
+        XCTAssertEqual(decoded.diagnosticReferences.map(\.name), ["last-resources.json"])
+        XCTAssertEqual(decoded.suggestedPatch?.redacted, true)
+
+        try? FileManager.default.removeItem(at: tempDir)
+    }
+
     private static let fixtureRepairEnvelope = Data("""
     {
       "ok": true,

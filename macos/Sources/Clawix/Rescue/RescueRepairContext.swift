@@ -63,6 +63,11 @@ struct RescueRepairReceipt: Codable, Equatable {
     var status: String
 }
 
+struct RescueRepairContextExport: Equatable {
+    var url: URL
+    var package: RescueRepairContextPackage
+}
+
 enum RescueRepairContextBuilder {
     static func build(
         decision: RescueSurvivalDecision,
@@ -270,6 +275,57 @@ struct RescueEvolutionCommandClient {
             ])
         }
         return data
+    }
+}
+
+@MainActor
+enum RescueRepairContextExporter {
+    static func writeCurrentRescueContext() throws -> RescueRepairContextExport {
+        ResourceSampler.persistLastSample()
+        guard let destinationURL = ResourceSampler.diagnosticsFileURL(named: "rescue-context.json") else {
+            throw NSError(domain: "RescueRepairContextExporter", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Rescue diagnostics folder is unavailable."
+            ])
+        }
+
+        let lastResourcesURL = ResourceSampler.diagnosticsFileURL(named: "last-resources.json")
+        let evolutionData = try? RescueEvolutionCommandClient().repairReport()
+        let runtimeAvailable = ClawJSRuntime.isAvailable
+        let decision = RescueSurvivalPolicy.evaluate(
+            signals: runtimeAvailable ? [] : [.bridgeRuntimeDown],
+            availableRuntimeCount: runtimeAvailable ? 1 : 0
+        )
+        return try write(
+            decision: decision,
+            evolutionEnvelopeData: evolutionData,
+            diagnosticFiles: [lastResourcesURL].compactMap { $0 }.filter { FileManager.default.fileExists(atPath: $0.path) },
+            runtimeHealth: nil,
+            destinationURL: destinationURL
+        )
+    }
+
+    static func write(
+        decision: RescueSurvivalDecision,
+        evolutionEnvelopeData: Data?,
+        diagnosticFiles: [URL],
+        runtimeHealth: RescueRuntimeHealthSnapshot?,
+        destinationURL: URL
+    ) throws -> RescueRepairContextExport {
+        let package = RescueRepairContextBuilder.build(
+            decision: decision,
+            evolutionEnvelopeData: evolutionEnvelopeData,
+            diagnosticFiles: diagnosticFiles,
+            runtimeHealth: runtimeHealth
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(package)
+        try FileManager.default.createDirectory(
+            at: destinationURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try data.write(to: destinationURL, options: .atomic)
+        return RescueRepairContextExport(url: destinationURL, package: package)
     }
 }
 

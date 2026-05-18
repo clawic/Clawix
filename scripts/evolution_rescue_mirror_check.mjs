@@ -53,13 +53,18 @@ for (const snippet of [
 
 for (const snippet of [
   "RescueRepairContextPackage",
+  "RescueRepairContextExporter",
   "RescueEvolutionCommandClient",
   "claw evolution doctor",
   "claw evolution repair",
+  "rescue-context.json",
   "explicit_approval_only",
   "offline_unavailable",
   "redacted",
 ]) requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", snippet);
+
+requireSnippet("macos/Sources/Clawix/Settings/SettingsView+Controls.swift", "RescueRepairContextExporter.writeCurrentRescueContext");
+requireSnippet("docs/evolution/README.md", "rescue-context.json");
 
 if (fs.existsSync(siblingClawjs)) {
   const siblingAdr = path.join(siblingClawjs, "docs/adr/0030-post-v1-evolution-rescue-backbone.md");

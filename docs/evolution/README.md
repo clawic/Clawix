@@ -29,5 +29,10 @@ file references. If the bundled ClawJS CLI is unavailable, it still emits an
 offline diagnostics context so the app can launch and the user can continue
 with local rescue guidance.
 
+`Settings -> Diagnose Clawix Workspace issues` writes `rescue-context.json`
+next to `last-resources.json` in the local Diagnostics folder before opening
+it. That file is the stable handoff artifact for rescue agents and remains
+redacted/local unless the user explicitly approves sharing support diagnostics.
+
 Do not add legacy branches throughout UI code. Put old-version handling in
 framework migrators/adapters or Clawix host/UI rescue boundaries.

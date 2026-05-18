@@ -4,6 +4,11 @@ import SwiftUI
 enum SettingsUtilities {
     static func revealDiagnosticsFolder() {
         ResourceSampler.persistLastSample()
+        do {
+            _ = try RescueRepairContextExporter.writeCurrentRescueContext()
+        } catch {
+            ToastCenter.shared.show("Rescue context unavailable", icon: .warning)
+        }
         guard let file = ResourceSampler.diagnosticsFileURL(named: "last-resources.json") else {
             ToastCenter.shared.show("Diagnostics folder unavailable", icon: .error)
             return
