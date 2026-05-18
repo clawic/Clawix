@@ -20,10 +20,18 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
+const optionsWithValues = ["--write-approval-template-root"];
+
 enforcePrivateVerifierArgs(args, {
   label: "UI private approval verification",
-  allowedFlags: ["--require-approved"],
+  allowedFlags: ["--require-approved", "--approval-plan", "--approval-status", "--force-approval-template-root", ...optionsWithValues],
+  optionsWithValues,
 });
+
+function optionValue(name) {
+  const index = args.indexOf(name);
+  return index === -1 ? null : args[index + 1];
+}
 
 function readJsonFile(file, label) {
   if (!fs.existsSync(file)) {
@@ -146,9 +154,83 @@ function runFailureSelfTests(privateRootEnv) {
       fail(`self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}`);
     }
   }
+
+  const templateRoot = fs.mkdtempSync(path.join(os.tmpdir(), `clawix-ui-private-approval-template-${process.pid}-`));
+  const templateWrite = spawnSync(process.execPath, [
+    new URL(import.meta.url).pathname,
+    "--write-approval-template-root",
+    templateRoot,
+  ], {
+    cwd: rootDir,
+    env: selfTestEnv,
+    encoding: "utf8",
+  });
+  const templateWriteOutput = `${templateWrite.stdout || ""}${templateWrite.stderr || ""}`;
+  if (templateWrite.status !== 0) {
+    fail("self-test --write-approval-template-root must scaffold outside the public repository");
+  } else if (!templateWriteOutput.includes("UI private approval template root written")) {
+    fail("self-test --write-approval-template-root output must confirm template root write");
+  }
+
+  const templateStatus = spawnSync(process.execPath, [
+    new URL(import.meta.url).pathname,
+    "--approval-status",
+  ], {
+    cwd: rootDir,
+    env: {
+      ...selfTestEnv,
+      [privateRootEnv]: path.join(templateRoot, "private-codex-ui-approval"),
+    },
+    encoding: "utf8",
+  });
+  if (templateStatus.status !== 0) {
+    fail("self-test --approval-status must read generated approval templates");
+  } else {
+    try {
+      const status = JSON.parse(templateStatus.stdout);
+      if (status.counts?.placeholder !== approvals.length || status.counts?.candidate !== 0) {
+        fail("self-test generated approval templates must remain placeholders, not candidates");
+      }
+    } catch (error) {
+      fail(`self-test --approval-status output must be JSON: ${error.message}`);
+    }
+  }
+
+  const overwrite = spawnSync(process.execPath, [
+    new URL(import.meta.url).pathname,
+    "--write-approval-template-root",
+    templateRoot,
+  ], {
+    cwd: rootDir,
+    env: selfTestEnv,
+    encoding: "utf8",
+  });
+  const overwriteOutput = `${overwrite.stdout || ""}${overwrite.stderr || ""}`;
+  if (overwrite.status === 0) {
+    fail("self-test --write-approval-template-root must not overwrite existing approval templates without force");
+  } else if (!overwriteOutput.includes("already exists")) {
+    fail("self-test --write-approval-template-root overwrite output must include already exists");
+  }
+
+  const forceOverwrite = spawnSync(process.execPath, [
+    new URL(import.meta.url).pathname,
+    "--write-approval-template-root",
+    templateRoot,
+    "--force-approval-template-root",
+  ], {
+    cwd: rootDir,
+    env: selfTestEnv,
+    encoding: "utf8",
+  });
+  if (forceOverwrite.status !== 0) {
+    fail("self-test --force-approval-template-root must allow regenerating approval templates");
+  }
 }
 
-if (!hasFlag("--require-approved")) {
+const approvalPlanMode = hasFlag("--approval-plan");
+const approvalStatusMode = hasFlag("--approval-status");
+const writeTemplateRoot = optionValue("--write-approval-template-root");
+if (!hasFlag("--require-approved") && !approvalPlanMode && !approvalStatusMode && !writeTemplateRoot) {
   console.error("UI private approval verification requires --require-approved.");
   process.exit(1);
 }
@@ -175,17 +257,230 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-if (approvals.length === 0) {
-  console.log("UI private approval verification passed (0 approval records)");
-  process.exit(0);
-}
-
 let privateRootEnv;
 try {
   privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 } catch (error) {
   fail(error.message);
 }
+
+if (errors.length > 0) {
+  console.error("UI private approval verification failed:");
+  for (const error of errors) console.error(`- ${error}`);
+  process.exit(1);
+}
+
+function approvalPlanRecords() {
+  return approvals.map(({ source, record, label }) => {
+    const reference = record[source.privateApprovalField];
+    const parsed = splitReference(reference);
+    return {
+      sourceId: source.id,
+      sourcePath: source.path,
+      label,
+      privateApprovalReference: reference,
+      relativeEvidencePath: parsed?.alias === alias ? `${parsed.suffix}/${evidenceFilename}` : null,
+      requiredFields: requiredEvidenceFields,
+      publicRecordHash: publicRecordHash(record),
+    };
+  });
+}
+
+function approvalPlan() {
+  return {
+    schemaVersion: 1,
+    status: approvals.length === 0 ? "no-private-approval-records" : "external-pending-until-approved-private-approval-evidence-exists",
+    privateApprovalAlias: alias,
+    env: privateRootEnv,
+    evidenceFilename,
+    requiredFields: requiredEvidenceFields,
+    totalRecords: approvals.length,
+    records: approvalPlanRecords(),
+  };
+}
+
+function approvalStateForFile(privateRoot, relativeEvidencePath) {
+  if (!relativeEvidencePath) return "invalid-reference";
+  const evidencePath = path.join(privateRoot, relativeEvidencePath.split("/").join(path.sep));
+  if (!fs.existsSync(evidencePath)) return "missing-file";
+  let evidence = null;
+  try {
+    evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
+  } catch {
+    return "invalid-json";
+  }
+  if (evidence?._templateStatus === "placeholder-not-valid-evidence") return "placeholder";
+  return "candidate";
+}
+
+function approvalStatus() {
+  const plan = approvalPlan();
+  const counts = {
+    missingRoot: 0,
+    invalidRoot: 0,
+    invalidReference: 0,
+    missingFile: 0,
+    invalidJson: 0,
+    placeholder: 0,
+    candidate: 0,
+  };
+  const rootPathRaw = privateRootEnv ? process.env[privateRootEnv] : "";
+  if (!rootPathRaw) {
+    counts.missingRoot = plan.totalRecords;
+    return {
+      ...plan,
+      status: plan.totalRecords === 0 ? "no-private-approval-records" : "external-pending-missing-approval-root",
+      note: "Candidate approval evidence is not completion. Final closure requires --require-approved.",
+      counts,
+      records: plan.records.map((record) => ({ ...record, state: "missing-root", privateFile: null })),
+    };
+  }
+  const privateRoot = path.resolve(rootPathRaw);
+  const relativeToRepo = path.relative(rootDir, privateRoot);
+  if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
+    counts.invalidRoot = plan.totalRecords;
+    return {
+      ...plan,
+      status: "invalid-approval-root-inside-public-repo",
+      note: "Candidate approval evidence is not completion. Final closure requires --require-approved.",
+      counts,
+      records: plan.records.map((record) => ({ ...record, state: "invalid-root", privateFile: privateRoot })),
+    };
+  }
+  if (!fs.existsSync(privateRoot) || !fs.statSync(privateRoot).isDirectory()) {
+    counts.missingRoot = plan.totalRecords;
+    return {
+      ...plan,
+      status: "external-pending-approval-root-not-found",
+      note: "Candidate approval evidence is not completion. Final closure requires --require-approved.",
+      counts,
+      records: plan.records.map((record) => ({ ...record, state: "missing-root", privateFile: privateRoot })),
+    };
+  }
+  const records = plan.records.map((record) => {
+    const state = approvalStateForFile(privateRoot, record.relativeEvidencePath);
+    if (state === "invalid-reference") counts.invalidReference += 1;
+    else if (state === "missing-file") counts.missingFile += 1;
+    else if (state === "invalid-json") counts.invalidJson += 1;
+    else if (state === "placeholder") counts.placeholder += 1;
+    else if (state === "candidate") counts.candidate += 1;
+    return {
+      ...record,
+      state,
+      privateFile: record.relativeEvidencePath ? path.join(privateRoot, record.relativeEvidencePath.split("/").join(path.sep)) : null,
+    };
+  });
+  return {
+    ...plan,
+    status: plan.totalRecords === 0
+      ? "no-private-approval-records"
+      : counts.candidate === plan.totalRecords
+      ? "candidate-private-approval-evidence-present-run-approved-verifier"
+      : "external-pending-private-approval-evidence",
+    note: "Candidate approval evidence is not completion. Final closure requires --require-approved.",
+    counts,
+    records,
+  };
+}
+
+function assertOutsidePublicRepo(outputRootRaw) {
+  const outputRoot = path.resolve(outputRootRaw);
+  const relativeToRepo = path.relative(rootDir, outputRoot);
+  if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
+    fail("--write-approval-template-root must point outside the public repository");
+    return null;
+  }
+  return outputRoot;
+}
+
+function approvalTemplateForRecord(record) {
+  const template = {
+    _templateStatus: "placeholder-not-valid-evidence",
+    _templateNote: "Fill from private user approval evidence. Do not treat null placeholders as approval.",
+  };
+  for (const field of requiredEvidenceFields) {
+    if (field === "sourceId") template[field] = record.sourceId;
+    else if (field === "privateApprovalReference") template[field] = record.privateApprovalReference;
+    else if (field === "publicRecordHash") template[field] = record.publicRecordHash;
+    else template[field] = null;
+  }
+  return template;
+}
+
+function writeJsonTemplate(file, value, { force }) {
+  if (fs.existsSync(file) && !force) {
+    fail(`${file} already exists; pass --force-approval-template-root to overwrite generated approval templates`);
+    return;
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function writeApprovalTemplateRoot(outputRootRaw) {
+  const outputRoot = assertOutsidePublicRepo(outputRootRaw);
+  if (!outputRoot) return;
+  const plan = approvalPlan();
+  const force = hasFlag("--force-approval-template-root");
+  fs.mkdirSync(outputRoot, { recursive: true });
+  writeJsonTemplate(path.join(outputRoot, "approval-template-index.json"), {
+    schemaVersion: 1,
+    status: "placeholder-not-valid-evidence",
+    note: "Templates are field-shape checklists only. Replace null values with approved private user approval evidence before verification.",
+    privateApprovalAlias: plan.privateApprovalAlias,
+    env: plan.env,
+    evidenceFilename: plan.evidenceFilename,
+    totalRecords: plan.totalRecords,
+    records: plan.records.map((record) => ({
+      sourceId: record.sourceId,
+      sourcePath: record.sourcePath,
+      privateApprovalReference: record.privateApprovalReference,
+      relativeEvidencePath: record.relativeEvidencePath,
+      requiredFields: record.requiredFields,
+      publicRecordHash: record.publicRecordHash,
+    })),
+  }, { force });
+  for (const record of plan.records) {
+    if (!record.relativeEvidencePath) {
+      fail(`${record.label}.privateApprovalReference must use ${alias}:`);
+      continue;
+    }
+    writeJsonTemplate(path.join(outputRoot, alias, record.relativeEvidencePath), {
+      _rootAlias: alias,
+      _rootEnv: privateRootEnv,
+      _relativeEvidencePath: record.relativeEvidencePath,
+      ...approvalTemplateForRecord(record),
+    }, { force });
+  }
+  if (errors.length === 0) {
+    console.log(`UI private approval template root written (${plan.totalRecords} placeholder files): ${outputRoot}`);
+  }
+}
+
+if (writeTemplateRoot) {
+  writeApprovalTemplateRoot(writeTemplateRoot);
+  if (errors.length > 0) {
+    console.error("UI private approval verification failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+if (approvalPlanMode) {
+  console.log(JSON.stringify(approvalPlan(), null, 2));
+  process.exit(0);
+}
+
+if (approvalStatusMode) {
+  console.log(JSON.stringify(approvalStatus(), null, 2));
+  process.exit(0);
+}
+
+if (approvals.length === 0) {
+  console.log("UI private approval verification passed (0 approval records)");
+  process.exit(0);
+}
+
 if (!isSelfTest && privateRootEnv) {
   runFailureSelfTests(privateRootEnv);
 }
