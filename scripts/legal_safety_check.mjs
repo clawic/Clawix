@@ -29,6 +29,12 @@ function requireSnippet(relativePath, snippet) {
   }
 }
 
+function extractTableIds(text, prefix) {
+  return new Set(text.split(/\r?\n/)
+    .map((line) => line.match(new RegExp(`^\\|\\s*(${prefix}-\\d{3})\\s*\\|`))?.[1])
+    .filter(Boolean));
+}
+
 function walk(dir, predicate, files = []) {
   const absoluteDir = path.join(root, dir);
   if (!fs.existsSync(absoluteDir)) return files;
@@ -105,6 +111,7 @@ for (const file of [
   "REGULATED_DOMAINS.md",
   "EULA.md",
   "SECURITY.md",
+  "docs/legal-closure-decision-audit.md",
 ]) {
   read(file);
 }
@@ -119,6 +126,7 @@ requireSnippet("README.md", "does not replace regulated professionals");
 requireSnippet("CONSTITUTION.md", "Regulated domains are assistive, never final decision authorities");
 requireSnippet("AGENTS.md", "Regulated domains are assistive only");
 requireSnippet("docs/decision-map.md", "Regulated domains are assistive, not final decision authorities");
+requireSnippet("docs/decision-map.md", "Clawix Legal Closure Decision Audit");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "minimumAge = 18");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "sensitiveExportConfirmationRequired");
@@ -153,6 +161,20 @@ requireSnippet("EULA.md", "official Clawix binaries");
 requireSnippet("EULA.md", "Sensitive native permissions");
 requireSnippet("SECURITY.md", "Support diagnostics are manual opt-in");
 requireSnippet("SECURITY.md", "EXTERNAL PENDING");
+requireSnippet("docs/legal-closure-decision-audit.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
+requireSnippet("docs/legal-closure-decision-audit.md", "Closure state: `active_goal_not_complete`");
+requireSnippet("docs/legal-closure-decision-audit.md", "LCA-001");
+requireSnippet("docs/legal-closure-decision-audit.md", "LCA-033");
+requireSnippet("docs/legal-closure-decision-audit.md", "Required Evidence Spine");
+const legalClosureAudit = read("docs/legal-closure-decision-audit.md");
+const legalClosureIds = extractTableIds(legalClosureAudit, "LCA");
+if (legalClosureIds.size !== 33) {
+  fail(`docs/legal-closure-decision-audit.md must contain 33 LCA rows, found ${legalClosureIds.size}`);
+}
+for (let index = 1; index <= 33; index += 1) {
+  const id = `LCA-${String(index).padStart(3, "0")}`;
+  if (!legalClosureIds.has(id)) fail(`docs/legal-closure-decision-audit.md is missing ${id}`);
+}
 assertNoBannedMarketingClaims();
 
 if (failed) {
