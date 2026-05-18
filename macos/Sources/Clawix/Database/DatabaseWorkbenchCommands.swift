@@ -160,6 +160,16 @@ struct DatabaseWorkbenchCommands: View {
     }
 
     private func prepareOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        if kind.requiresSensitiveExportReview {
+            LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                prepareReviewedOperation(kind)
+            }
+            return
+        }
+        prepareReviewedOperation(kind)
+    }
+
+    private func prepareReviewedOperation(_ kind: DatabaseWorkbenchOperationKind) {
         let profile = profiles.profiles.first { $0.id == session.selectedProfileID } ?? profiles.profiles.first
         let plan = operations.perform(kind, profile: profile, activeSQL: session.activeSQL, preferences: prefs)
         session.appendOperationMessage(plan.message)
@@ -316,6 +326,16 @@ struct DatabaseWorkbenchMenuBarSection: View {
     }
 
     private func prepareOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        if kind.requiresSensitiveExportReview {
+            LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                prepareReviewedOperation(kind)
+            }
+            return
+        }
+        prepareReviewedOperation(kind)
+    }
+
+    private func prepareReviewedOperation(_ kind: DatabaseWorkbenchOperationKind) {
         let profile = profiles.profiles.first { $0.id == session.selectedProfileID } ?? profiles.profiles.first
         let plan = operations.perform(kind, profile: profile, activeSQL: session.activeSQL, preferences: prefs)
         session.appendOperationMessage(plan.message)

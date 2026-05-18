@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DatabaseWorkbenchSettingsPage: View {
+    @EnvironmentObject private var appState: AppState
     @ObservedObject private var prefs = DatabaseWorkbenchPreferences.shared
     @ObservedObject private var profiles = DatabaseConnectionProfileStore.shared
     @ObservedObject private var session = DatabaseWorkbenchSessionStore.shared
@@ -297,6 +298,16 @@ struct DatabaseWorkbenchSettingsPage: View {
     }
 
     private func prepareOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        if kind.requiresSensitiveExportReview {
+            LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                prepareReviewedOperation(kind)
+            }
+            return
+        }
+        prepareReviewedOperation(kind)
+    }
+
+    private func prepareReviewedOperation(_ kind: DatabaseWorkbenchOperationKind) {
         let profile = profiles.profiles.first { $0.id == DatabaseWorkbenchSessionStore.shared.selectedProfileID } ?? profiles.profiles.first
         let plan = operations.perform(kind, profile: profile, activeSQL: session.activeSQL, preferences: prefs)
         switch plan.status {

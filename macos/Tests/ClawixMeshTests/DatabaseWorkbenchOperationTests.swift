@@ -34,6 +34,20 @@ final class DatabaseWorkbenchOperationTests: XCTestCase {
         XCTAssertTrue(labels.contains("Run plugin script"))
     }
 
+    func test_sensitiveDatabaseExportsRequireLegalReview() {
+        XCTAssertTrue(DatabaseWorkbenchOperationKind.exportTable.requiresSensitiveExportReview)
+        XCTAssertTrue(DatabaseWorkbenchOperationKind.exportQuery.requiresSensitiveExportReview)
+        XCTAssertTrue(DatabaseWorkbenchOperationKind.backupDatabase.requiresSensitiveExportReview)
+
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.importCSV.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.importSQLDump.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.restoreDatabase.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.userManagement.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.processList.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.databaseSearch.requiresSensitiveExportReview)
+        XCTAssertFalse(DatabaseWorkbenchOperationKind.pluginScript.requiresSensitiveExportReview)
+    }
+
     func test_operationRequiresProfileBeforePlanning() {
         let plan = DatabaseWorkbenchOperationStore.plan(
             .exportQuery,

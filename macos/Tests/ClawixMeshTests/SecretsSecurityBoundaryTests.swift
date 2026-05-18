@@ -245,6 +245,10 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
             "Backup export must reauthenticate in the signed host before calling the Secrets backend."
         )
         XCTAssertTrue(
+            source.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"),
+            "Backup export must pass through the legal sensitive export/share review before writing a portable backup."
+        )
+        XCTAssertTrue(
             source.contains("exportEncryptedBackup(passphrase: passphrase, reauthSatisfied: true)"),
             "Backup export must pass explicit reauthSatisfied evidence to the backend."
         )

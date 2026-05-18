@@ -73,6 +73,15 @@ enum DatabaseWorkbenchOperationKind: String, Codable, CaseIterable, Identifiable
             return false
         }
     }
+
+    var requiresSensitiveExportReview: Bool {
+        switch self {
+        case .exportTable, .exportQuery, .backupDatabase:
+            return true
+        case .importCSV, .importSQLDump, .restoreDatabase, .userManagement, .processList, .databaseSearch, .pluginScript:
+            return false
+        }
+    }
 }
 
 struct DatabaseWorkbenchOperationPlan: Equatable {

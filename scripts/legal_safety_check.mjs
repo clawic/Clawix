@@ -29,6 +29,74 @@ function requireSnippet(relativePath, snippet) {
   }
 }
 
+function walk(dir, predicate, files = []) {
+  const absoluteDir = path.join(root, dir);
+  if (!fs.existsSync(absoluteDir)) return files;
+  for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
+    const relativePath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walk(relativePath, predicate, files);
+    } else if (predicate(relativePath)) {
+      files.push(relativePath);
+    }
+  }
+  return files;
+}
+
+function assertNoBannedMarketingClaims() {
+  const roots = [
+    "README.md",
+    "TERMS.md",
+    "PRIVACY.md",
+    "DISCLAIMER.md",
+    "SAFETY.md",
+    "REGULATED_DOMAINS.md",
+    "EULA.md",
+    "SECURITY.md",
+  ];
+  const extensions = new Set([".md", ".html", ".json", ".js", ".jsx", ".ts", ".tsx"]);
+  const scanned = [
+    ...roots,
+    ...walk("docs", (file) => extensions.has(path.extname(file))),
+    ...walk("web", (file) => extensions.has(path.extname(file))),
+    ...walk("packages", (file) => path.basename(file) === "README.md"),
+  ].filter((file) => ![
+    "docs/codebase-manifest.json",
+    "docs/persistent-surface-clawix.manifest.json",
+  ].includes(file));
+  const bannedClaims = [
+    "autopilot",
+    "compliance-ready",
+    "hipaa compliant",
+    "gdpr compliant",
+    "ai act compliant",
+    "fda approved",
+    "fda cleared",
+    "cfpb compliant",
+    "diagnose and treat",
+    "replaces a doctor",
+    "replaces a lawyer",
+    "replaces a therapist",
+    "provides legal advice",
+    "provides medical advice",
+    "provides financial advice",
+    "makes credit decisions",
+    "makes insurance decisions",
+    "makes employment decisions",
+    "makes admission decisions",
+    "submits regulated filings autonomously",
+    "send bank details",
+  ];
+  for (const file of scanned) {
+    const text = read(file).toLowerCase();
+    for (const claim of bannedClaims) {
+      if (text.includes(claim)) {
+        fail(`${file} contains banned or unqualified marketing/legal claim: ${claim}`);
+      }
+    }
+  }
+}
+
 for (const file of [
   "TERMS.md",
   "PRIVACY.md",
@@ -85,6 +153,7 @@ requireSnippet("EULA.md", "official Clawix binaries");
 requireSnippet("EULA.md", "Sensitive native permissions");
 requireSnippet("SECURITY.md", "Support diagnostics are manual opt-in");
 requireSnippet("SECURITY.md", "EXTERNAL PENDING");
+assertNoBannedMarketingClaims();
 
 if (failed) {
   process.exit(1);

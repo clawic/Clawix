@@ -326,6 +326,16 @@ struct DatabaseWorkbenchView: View {
     }
 
     private func prepareOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        if kind.requiresSensitiveExportReview {
+            LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                prepareReviewedOperation(kind)
+            }
+            return
+        }
+        prepareReviewedOperation(kind)
+    }
+
+    private func prepareReviewedOperation(_ kind: DatabaseWorkbenchOperationKind) {
         let plan = operations.perform(kind, profile: selectedProfile, activeSQL: session.activeSQL, preferences: prefs)
         session.appendOperationMessage(plan.message)
         switch plan.status {

@@ -399,6 +399,7 @@ private enum SecretsBackupFile {
 
 private struct BackupExportSheet: View {
     @EnvironmentObject private var vault: SecretsManager
+    @EnvironmentObject private var appState: AppState
     @Binding var isPresented: Bool
     @State private var passphrase: String = ""
     @State private var passphraseConfirm: String = ""
@@ -435,7 +436,7 @@ private struct BackupExportSheet: View {
                             isLoading: isWorking,
                             isEnabled: passphrase.count >= 8 && passphrase == passphraseConfirm
                         ) {
-                            export()
+                            requestExportReview()
                         }
                     }
                 }
@@ -446,11 +447,17 @@ private struct BackupExportSheet: View {
         .background(Color(white: 0.07))
     }
 
-    private func export() {
+    private func requestExportReview() {
         guard passphrase == passphraseConfirm, passphrase.count >= 8 else {
             error = "Passphrase too short or doesn't match."
             return
         }
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            exportReviewedBackup()
+        }
+    }
+
+    private func exportReviewedBackup() {
         isWorking = true
         Task {
             defer { isWorking = false }
