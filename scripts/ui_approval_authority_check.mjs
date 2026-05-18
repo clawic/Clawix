@@ -1,13 +1,42 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_APPROVAL_AUTHORITY_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-inactive-approval-authority",
+  "--simulate-missing-approval-source",
+  "--simulate-duplicate-approval-source",
+  "--simulate-unknown-approval-source",
+  "--simulate-missing-required-approval-source-id",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-wrong-approval-source-path",
+  "--simulate-wrong-approval-source-array-field",
+  "--simulate-wrong-private-approval-field",
+  "--simulate-missing-required-evidence-field",
+  "--simulate-missing-approved-at",
+  "--simulate-approved-by-not-user",
+  "--simulate-unsafe-private-approval-reference",
+  "--simulate-undeclared-required-status",
+  "--simulate-visual-proposal-approved-by-not-user",
+  "--simulate-approved-drift-by-not-user",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI approval authority check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -85,6 +114,52 @@ function requireSafePrivateReference(value, alias, label) {
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_APPROVAL_AUTHORITY_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-inactive-approval-authority"], "status must be active"],
+    [["--simulate-missing-approval-source"], "approvalSources must include exceptions"],
+    [["--simulate-duplicate-approval-source"], "id duplicates canon-promotions"],
+    [["--simulate-unknown-approval-source"], "id is not a governed approval source"],
+    [["--simulate-missing-required-approval-source-id"], "requiredApprovalSourceIds must include protected-surfaces"],
+    [["--simulate-duplicate-required-evidence-field"], "duplicates sourceId"],
+    [["--simulate-wrong-approval-source-path"], "path must be docs/ui/canon-promotions.registry.json"],
+    [["--simulate-wrong-approval-source-array-field"], "arrayField must be surfaces"],
+    [["--simulate-wrong-private-approval-field"], "privateApprovalField must be privateApprovalReference"],
+    [["--simulate-missing-required-evidence-field"], "requiredPrivateApprovalEvidenceFields must include approvalHash"],
+    [["--simulate-missing-approved-at"], "approvedAt must be an ISO date"],
+    [["--simulate-approved-by-not-user"], "approvedBy must be user"],
+    [["--simulate-unsafe-private-approval-reference"], "privateApprovalReference must use a safe relative private reference"],
+    [["--simulate-undeclared-required-status"], "approvalRequiredStatuses contains status not declared"],
+    [["--simulate-visual-proposal-approved-by-not-user"], "approvedBy must be user"],
+    [["--simulate-approved-drift-by-not-user"], "approvedBy must be user"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI approval authority validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const manifestPath = "docs/ui/approval-authority.manifest.json";
