@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
@@ -7,6 +9,7 @@ import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_COPY_VERIFY_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -102,6 +105,38 @@ function verifyCopyItems(value, label, allowedKinds) {
   }
 }
 
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_COPY_VERIFY_SELF_TEST: "1",
+    CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE: "",
+  };
+  const missingRoot = path.join(os.tmpdir(), `clawix-ui-private-copy-missing-${process.pid}`);
+  const tests = [
+    [[], "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--require-approved", "--include-pending"], "CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE"],
+    [["--require-approved", "--root", rootDir], "private copy root must be outside the public repository"],
+    [["--require-approved", "--root", missingRoot], `private copy root does not exist: ${path.resolve(missingRoot)}`],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for private copy verification`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}`);
+    }
+  }
+}
+
 const requireApproved = hasFlag("--require-approved");
 const includePending = hasFlag("--include-pending");
 const copyInventory = readJson("docs/ui/copy.inventory.json");
@@ -112,6 +147,10 @@ const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 if (!requireApproved) {
   console.error("UI private copy verification requires --require-approved.");
   process.exit(1);
+}
+
+if (!isSelfTest && !includePending) {
+  runFailureSelfTests();
 }
 
 const privateRootArg = optionValue("--root");
