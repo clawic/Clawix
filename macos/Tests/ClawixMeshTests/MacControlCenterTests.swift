@@ -103,6 +103,63 @@ final class MacControlCenterTests: XCTestCase {
         XCTAssertEqual(restored.pendingApprovals.first?.isProjectedToGlobalInbox, true)
     }
 
+    func testGlobalInboxProjectorCreatesApprovalThreadAndMessage() async throws {
+        let createdAt = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-05-18T08:00:00Z"))
+        let approval = MacControlPendingApproval(
+            id: "approval_mac_wifi",
+            requestId: "macreq_wifi",
+            capabilityId: "mac.wifi.connect",
+            risk: "high",
+            approverRoles: ["owner", "admin"],
+            reason: "Requires explicit Mac Control approval.",
+            createdAt: createdAt
+        )
+        let writer = RecordingGlobalInboxWriter()
+
+        let projection = try await MacControlGlobalInboxProjector.project(approval, using: writer)
+
+        XCTAssertEqual(projection.approvalRecordId, "approvals_1")
+        XCTAssertEqual(projection.inboxThreadId, "inbox_threads_1")
+        XCTAssertEqual(projection.inboxMessageId, "inbox_messages_1")
+        XCTAssertEqual(writer.created.map(\.collection), ["approvals", "inbox_threads", "inbox_messages"])
+        XCTAssertEqual(writer.created[0].data["kind"], .string("policy_gate"))
+        XCTAssertEqual(writer.created[0].data["status"], .string("pending"))
+        XCTAssertEqual(writer.created[0].data["policyReason"], .string("Requires explicit Mac Control approval."))
+        XCTAssertEqual(writer.created[1].data["channel"], .string("mac_control"))
+        XCTAssertEqual(writer.created[1].data["externalThreadId"], .string("approval_mac_wifi"))
+        XCTAssertEqual(writer.created[2].data["threadId"], .string("inbox_threads_1"))
+        XCTAssertEqual(writer.created[2].data["externalMessageId"], .string("macreq_wifi"))
+        XCTAssertEqual(
+            writer.created[2].data["attachments"],
+            .object([
+                "approvalRecordId": .string("approvals_1"),
+                "capabilityId": .string("mac.wifi.connect"),
+            ])
+        )
+    }
+
+    func testGlobalInboxProjectorCleansUpApprovalWhenThreadCreationFails() async throws {
+        let approval = MacControlPendingApproval(
+            id: "approval_mac_wifi",
+            requestId: "macreq_wifi",
+            capabilityId: "mac.wifi.connect",
+            risk: "high",
+            approverRoles: ["owner", "admin"],
+            reason: "Requires explicit Mac Control approval.",
+            createdAt: Date()
+        )
+        let writer = RecordingGlobalInboxWriter(failingCollection: "inbox_threads")
+
+        do {
+            _ = try await MacControlGlobalInboxProjector.project(approval, using: writer)
+            XCTFail("Projection should fail when inbox thread creation fails.")
+        } catch {
+            XCTAssertEqual(writer.deleted, [
+                RecordingGlobalInboxWriter.Deleted(collection: "approvals", id: "approvals_1"),
+            ])
+        }
+    }
+
     func testPermissionSnapshotIncludesPrivacyDataDomains() {
         let ids = Set(MacControlPermissionSnapshot.current.map(\.id))
 
@@ -125,5 +182,46 @@ final class MacControlCenterTests: XCTestCase {
             timelineURL: directory.appendingPathComponent("timeline.jsonl"),
             pendingApprovalsURL: directory.appendingPathComponent("pending-approvals.json")
         )
+    }
+}
+
+@MainActor
+private final class RecordingGlobalInboxWriter: MacControlGlobalInboxWriting {
+    struct Created: Equatable {
+        let collection: String
+        let data: [String: DBJSON]
+    }
+
+    struct Deleted: Equatable {
+        let collection: String
+        let id: String
+    }
+
+    enum Failure: Error {
+        case requested
+    }
+
+    private let failingCollection: String?
+    private var counters: [String: Int] = [:]
+    private(set) var created: [Created] = []
+    private(set) var deleted: [Deleted] = []
+
+    init(failingCollection: String? = nil) {
+        self.failingCollection = failingCollection
+    }
+
+    func createRecord(collection name: String, data: [String: DBJSON]) async throws -> DBRecord {
+        if name == failingCollection {
+            throw Failure.requested
+        }
+        let next = (counters[name] ?? 0) + 1
+        counters[name] = next
+        let id = "\(name)_\(next)"
+        created.append(Created(collection: name, data: data))
+        return DBRecord(id: id, createdAt: "2026-05-18T08:00:00Z", updatedAt: "2026-05-18T08:00:00Z", data: data)
+    }
+
+    func deleteRecord(collection name: String, id: String) async throws {
+        deleted.append(Deleted(collection: name, id: id))
     }
 }
