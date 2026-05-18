@@ -12,11 +12,11 @@ Make external integrations testable without unsafe live actions.
 
 1. Read the Integration QA Lab ADR/docs and the provider-specific docs.
 2. Capture or update the official provider surface snapshot with source URL, version, and date.
-3. Define or verify the governed connector context schema before closing the integration: accounts, workspaces, apps, products, environments, signing identities, defaults, fallbacks, required fields, and secret bindings.
+3. Define or verify the governed connector context schema before closing the integration: accounts, workspaces, apps, products, environments, signing identities, defaults, fallbacks, required fields, and `secret_ref` bindings.
 4. Maintain a coverage matrix classifying each capability as implemented, fixture-only, blocked, not applicable, cost-risk, auth-required, host-required, or destructive.
 5. Add hermetic fixtures and dry-run/interceptor paths before live tests.
 6. Keep live lanes opt-in, brokered, credential-safe, and explicit about cost/destructive risk.
-7. Run or document the provider context doctor/explain checks for required operations.
+7. Run or document the provider context doctor/explain checks for required operations, including approval and audit expectations.
 8. Report unavailable physical/provider prerequisites as `EXTERNAL PENDING`.
 
 ## Constraints
