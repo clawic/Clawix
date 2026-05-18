@@ -39,6 +39,16 @@ remote/sync/nodes/gateway CLI surfaces for UI, pairing, remote mesh status,
 sharing, authority handoff, remote conformance, and companion flows; it does
 not define a separate remote contract.
 
+Clawix route and UI work must treat the sibling ClawJS HTTP inventory as
+framework-owned. Current route anchors include `GET /v1/remote/conformance`,
+`GET /v1/remote/route-contracts`,
+`POST /v1/remote/compatibility/adapters`,
+`POST /v1/gateway/agent-service/executions`,
+`POST /v1/gateway/audit/receipts`,
+`POST /v1/sync/authority-handoffs`, and
+`POST /v1/mesh/invitations/accept`. These anchors exist to catch stale Clawix
+mirrors; ClawJS remains the source of truth for the complete method-route list.
+
 ## Enforcement
 
 Agents working on Clawix runtime, bridge, companion, host, permission, approval,

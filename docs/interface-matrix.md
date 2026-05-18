@@ -73,6 +73,27 @@ experimental switch. Every current surface must be one of:
 
 ## Guardrails
 
+### Remote Mesh Route Anchors
+
+Clawix does not own the remote service API inventory. It mirrors these anchors
+only to keep UI and bridge work routed to the sibling ClawJS source of truth:
+
+- Remote status and validation: `GET /v1/remote/conformance`,
+  `GET /v1/remote/external-pending`, `GET /v1/remote/route-contracts`,
+  `GET /v1/remote/provider-device-e2e-plan`, and
+  `POST /v1/remote/compatibility/adapters`.
+- Gateway projection: `GET /v1/gateway/conformance`,
+  `POST /v1/gateway/agent-service/evaluate`,
+  `POST /v1/gateway/agent-service/executions`, and
+  `POST /v1/gateway/audit/receipts`.
+- Sync and mesh: `GET /v1/sync/drivers`,
+  `POST /v1/sync/authority-handoffs`,
+  `POST /v1/mesh/invitations/accept`, `POST /v1/mesh/shares`, and
+  `POST /v1/mesh/revocations`.
+
+When these anchors drift, update ClawJS first, then update this mirror and
+`scripts/remote_canon_alignment_check.mjs`.
+
 - `schemaVersion` is retained for the bridge JSON wire contract and must be `1`.
 - Bridge docs and public wire names use `session`, not stable `chat`.
 - Public bridge names use `sendMessage`, `WireSession`, `sessionUpdated`, and

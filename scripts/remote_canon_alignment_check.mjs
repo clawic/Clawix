@@ -85,6 +85,19 @@ for (const snippet of [
 }
 
 for (const snippet of [
+  "GET /v1/remote/conformance",
+  "GET /v1/remote/route-contracts",
+  "POST /v1/remote/compatibility/adapters",
+  "POST /v1/gateway/agent-service/executions",
+  "POST /v1/gateway/audit/receipts",
+  "POST /v1/sync/authority-handoffs",
+  "POST /v1/mesh/invitations/accept",
+]) {
+  requireSnippet("docs/interface-matrix.md", snippet);
+  requireSnippet("docs/adr/0011-surface-route-graph.md", snippet);
+}
+
+for (const snippet of [
   "docs/adr/0022-remote-gateway-sync-redesign.md",
   "docs/relay.md",
 ]) {

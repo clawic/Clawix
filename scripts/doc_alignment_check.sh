@@ -588,6 +588,10 @@ if ! node "$ROOT_DIR/scripts/storage_boundary_guard.mjs"; then
   fail "storage boundary guard failed"
 fi
 
+if ! node "$ROOT_DIR/scripts/remote_canon_alignment_check.mjs"; then
+  fail "remote canon alignment check failed"
+fi
+
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1
 fi
