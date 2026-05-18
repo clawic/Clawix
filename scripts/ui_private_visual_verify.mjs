@@ -6,6 +6,7 @@ import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_VISUAL_VERIFY_SELF_TEST === "1";
 
 function hasFlag(name) {
   return args.includes(name);
@@ -37,6 +38,40 @@ function parseDelegate(command) {
   };
 }
 
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_VISUAL_VERIFY_SELF_TEST: "1",
+  };
+  for (const envName of requiredRoots) {
+    delete selfTestEnv[envName];
+  }
+  delete selfTestEnv.CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE;
+  const tests = [
+    [[], "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--require-approved", "--include-pending"], "CLAWIX_UI_ALLOW_PENDING_PRIVATE_EVIDENCE"],
+    [["--require-approved"], "EXTERNAL PENDING"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      console.error(`UI private visual verification self-test ${testArgs.join(" ") || "<no args>"} must fail.`);
+      process.exit(1);
+    }
+    if (!output.includes(expectedOutput)) {
+      console.error(`UI private visual verification self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}.`);
+      process.exit(1);
+    }
+  }
+}
+
 if (!requireApproved) {
   console.error("UI private visual verification requires --require-approved.");
   process.exit(1);
@@ -46,6 +81,10 @@ enforcePrivateVerifierArgs(args, {
   allowedFlags: ["--require-approved", "--include-pending"],
   testOnlyFlags: ["--include-pending"],
 });
+
+if (!isSelfTest) {
+  runFailureSelfTests();
+}
 
 const missingRoots = requiredRoots.filter((envName) => !process.env[envName]);
 if (missingRoots.length > 0) {
