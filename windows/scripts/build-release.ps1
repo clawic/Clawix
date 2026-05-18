@@ -10,9 +10,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $ROOT = Split-Path -Parent $PSScriptRoot
 $workspace = (Resolve-Path (Join-Path $ROOT "..\..\..")).Path
+$repoRoot = (Resolve-Path (Join-Path $ROOT "..")).Path
 
 . (Join-Path $PSScriptRoot "_emit_version.ps1")
 & (Join-Path $PSScriptRoot "public_hygiene_check.ps1")
+node (Join-Path $repoRoot "scripts\legal_safety_check.mjs")
 
 $thumb = $env:WIN_SIGN_THUMBPRINT
 if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; source .signing.env first" }

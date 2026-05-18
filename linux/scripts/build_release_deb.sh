@@ -12,11 +12,15 @@ set -euo pipefail
 
 ARCH=${CLAWIX_LINUX_ARCH:-$(dpkg --print-architecture 2>/dev/null || uname -m)}
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
 OUT_DIR="$LINUX_ROOT/release-output"
 VERSION="$(cat "$LINUX_ROOT/VERSION" | tr -d '\n[:space:]')"
+
+echo "[deb] legal safety preflight"
+node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
 mkdir -p "$OUT_DIR"
 WORK="$(mktemp -d)"

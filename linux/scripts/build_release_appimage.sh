@@ -22,6 +22,7 @@ set -euo pipefail
 
 ARCH=${CLAWIX_LINUX_ARCH:-$(uname -m)}
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
@@ -41,6 +42,9 @@ require appimagetool
 require zsyncmake
 require gpg
 : "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
+
+echo "[release] legal safety preflight"
+node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
 mkdir -p "$OUT_DIR"
 WORK="$(mktemp -d)"

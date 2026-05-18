@@ -16,7 +16,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
+
+echo "==> Legal safety preflight"
+node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
 # 0) Source .signing.env walking up.
 env_file=""

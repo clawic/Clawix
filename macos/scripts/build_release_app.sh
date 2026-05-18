@@ -17,6 +17,10 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NAME="Clawix"
 BUNDLE_DIR="$PROJECT_DIR/build/Release/${APP_NAME}.app"
 ICON_FILE="$PROJECT_DIR/Sources/Clawix/Resources/Clawix.icns"
+REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
+
+echo "==> Legal safety preflight"
+node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
 BUNDLE_ID_DEFAULT="com.example.clawix.desktop"
 for candidate in \
