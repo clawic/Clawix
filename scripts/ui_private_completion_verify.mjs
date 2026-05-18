@@ -6,6 +6,7 @@ import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_COMPLETION_VERIFY_SELF_TEST === "1";
 
 function hasFlag(name) {
   return args.includes(name);
@@ -33,6 +34,64 @@ function runScript(script, scriptArgs = ["--require-approved"]) {
   if (result.status !== 0) {
     console.error(`UI private completion verification failed at ${script}.`);
     process.exit(result.status || 1);
+  }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_COMPLETION_VERIFY_SELF_TEST: "1",
+  };
+  delete selfTestEnv.CLAWIX_UI_ALLOW_COMPLETION_SIMULATION;
+  const simulationEnv = {
+    ...selfTestEnv,
+    CLAWIX_UI_ALLOW_COMPLETION_SIMULATION: "1",
+  };
+  const tests = [
+    [[], selfTestEnv, "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], selfTestEnv, "received unknown flag --unknown-flag"],
+    [
+      ["--require-approved", "--skip-public-prerequisites", "--simulate-no-open-decisions"],
+      selfTestEnv,
+      "CLAWIX_UI_ALLOW_COMPLETION_SIMULATION",
+    ],
+    [
+      ["--require-approved", "--skip-public-prerequisites", "--simulate-missing-decision-blocker"],
+      simulationEnv,
+      "requires private visual decisionBlockers to include open decision initial_scope",
+    ],
+    [
+      ["--require-approved", "--skip-public-prerequisites", "--simulate-stale-decision-blocker"],
+      simulationEnv,
+      "found stale private visual decisionBlocker simulated_stale_decision",
+    ],
+    [
+      ["--require-approved", "--skip-public-prerequisites", "--simulate-open-decision-without-private-evidence"],
+      simulationEnv,
+      "requires open decision initial_scope to list private evidence aliases",
+    ],
+    [
+      ["--require-approved", "--skip-public-prerequisites", "--simulate-verified-complete-with-remaining"],
+      simulationEnv,
+      "requires verified-complete decision canonical_source to have no remaining work",
+    ],
+  ];
+
+  for (const [testArgs, env, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      console.error(`UI private completion verification self-test ${testArgs.join(" ") || "<no args>"} must fail.`);
+      process.exit(1);
+    }
+    if (!output.includes(expectedOutput)) {
+      console.error(`UI private completion verification self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}.`);
+      process.exit(1);
+    }
   }
 }
 
@@ -68,6 +127,9 @@ enforcePrivateVerifierArgs(args, {
 });
 
 const manifest = readJson("docs/ui/completion-gate.manifest.json");
+if (!isSelfTest) {
+  runFailureSelfTests();
+}
 runPublicPrerequisites(manifest);
 const decisionVerification = readJson(manifest.decisionVerificationPath || "docs/ui/decision-verification.json");
 const privateVisualValidation = readJson(manifest.privateVisualValidationManifestPath || "docs/ui/private-visual-validation.manifest.json");
