@@ -1,13 +1,49 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_SURFACE_BASELINE_COVERAGE_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-inactive-surface-baseline-manifest",
+  "--simulate-extra-allowed-baseline-status",
+  "--simulate-duplicate-allowed-baseline-status",
+  "--simulate-extra-required-evidence-field",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-mismatched-surface-reference",
+  "--simulate-duplicate-coverage-id",
+  "--simulate-missing-inventory-coverage",
+  "--simulate-invalid-baseline-status",
+  "--simulate-unsafe-geometry-reference",
+  "--simulate-unsafe-copy-reference",
+  "--simulate-missing-required-evidence",
+  "--simulate-extra-entry-required-evidence",
+  "--simulate-duplicate-entry-required-evidence",
+  "--simulate-approved-invalid-hash",
+  "--simulate-approved-manifest-with-pending-entry",
+  "--simulate-pending-manifest-with-all-approved",
+  "--simulate-missing-platform-scope",
+  "--simulate-initial-scope-missing-surface-manifest",
+  "--simulate-initial-scope-missing-private-geometry",
+  "--simulate-initial-scope-missing-copy-verifier",
+  "--simulate-initial-scope-premature-complete",
+  "--simulate-approved-surface-baselines-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI surface baseline coverage check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -82,6 +118,40 @@ function requireHash(value, label) {
   if (typeof value !== "string" || !/^[a-f0-9]{64}$/i.test(value)) {
     fail(`${label} must be a 64-character hex hash`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_SURFACE_BASELINE_COVERAGE_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-missing-platform-scope"], "coverage must include at least one android surface"],
+    [["--simulate-unsafe-geometry-reference"], "geometryEvidenceReference must use a safe relative private reference"],
+    [["--simulate-mismatched-surface-reference"], "privateBaselineReference must target"],
+    [["--simulate-initial-scope-premature-complete"], "status must remain open until private surface baseline, geometry, and copy artifacts are approved"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for surface baseline coverage validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const manifestPath = "docs/ui/surface-baseline-coverage.manifest.json";
