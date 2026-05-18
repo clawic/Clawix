@@ -1265,7 +1265,7 @@ final class AppState: ObservableObject {
                 pinned: chat.isPinned ? 1 : 0,
                 capturedAt: now
             )
-            bucketed[project.path, default: []].append(row)
+            bucketed[project.id.uuidString, default: []].append(row)
         }
         var perProjectRows: [SidebarSnapshotProjectRow] = []
         for var bucket in bucketed.values {
