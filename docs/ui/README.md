@@ -240,7 +240,13 @@ the public repo.
     public approval records require `CLAWIX_UI_PRIVATE_APPROVAL_ROOT` in the
     final verification command. Conditional private roots are declared in the
     gate manifest so future approval or mechanical-equivalence records cannot
-    be omitted from final completion.
+    be omitted from final completion. To inspect closure readiness without
+    attempting final approval, run
+    `node scripts/ui_private_completion_verify.mjs --completion-status`. The
+    JSON output aggregates open decisions, private evidence counts, private
+    approval counts, private goal/source-session review status, and the final
+    command while keeping `updateGoalAllowed` false until `--require-approved`
+    passes.
 45. Capture private evidence from the derived plan, not by hand-maintaining a
     second checklist. Run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group
@@ -293,6 +299,17 @@ the public repo.
     The approval root is required while public approval records exist.
 49. When private approval evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_approval_verify.mjs --require-approved`.
+    Before approval evidence is available, run
+    `node scripts/ui_private_approval_verify.mjs --approval-plan` to list the
+    public approval records that require private evidence, or run
+    `CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_approval_verify.mjs --approval-status`
+    to count missing files, placeholders, invalid JSON, and candidate approval
+    files. Candidate approval files are not closure; final completion still
+    requires `--require-approved`.
+    To scaffold approval placeholders outside the public repo, run
+    `node scripts/ui_private_approval_verify.mjs --write-approval-template-root <outside-repo-dir>`.
+    The generated files are invalid templates until replaced with approved
+    private user approval evidence.
 50. When private debt audit evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> node scripts/ui_private_debt_audit_verify.mjs --require-approved`.
     Debt audit evidence must include hashed `findingItems` so each private

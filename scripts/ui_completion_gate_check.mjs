@@ -228,6 +228,7 @@ requireFields(manifest, manifestPath, [
   "publicCheckScript",
   "privateVerifierScript",
   "privateApprovalVerifierScript",
+  "completionStatusCommand",
   "finalVerificationCommand",
   "conditionalPrivateRoots",
   "requiredPublicChecks",
@@ -245,6 +246,9 @@ if (manifest?.privateVerifierScript !== "scripts/ui_private_completion_verify.mj
 }
 if (manifest?.privateApprovalVerifierScript !== "scripts/ui_private_approval_verify.mjs") {
   fail(`${manifestPath}.privateApprovalVerifierScript must be scripts/ui_private_approval_verify.mjs`);
+}
+if (manifest?.completionStatusCommand !== "node scripts/ui_private_completion_verify.mjs --completion-status") {
+  fail(`${manifestPath}.completionStatusCommand must be node scripts/ui_private_completion_verify.mjs --completion-status`);
 }
 if (!String(manifest?.finalVerificationCommand || "").includes("scripts/ui_private_completion_verify.mjs --require-approved")) {
   fail(`${manifestPath}.finalVerificationCommand must require the private completion verifier`);
@@ -363,6 +367,9 @@ for (const snippet of [
   "--skip-public-prerequisites",
   "EXTERNAL PENDING",
   "process.exit(2)",
+  "--completion-status",
+  "privateSourceReview",
+  "updateGoalAllowed",
   "open decisions",
   "decisionBlockers",
   "--simulate-no-open-decisions",
@@ -398,6 +405,49 @@ if (unexpectedArgumentResult.status === 0 || unexpectedArgumentResult.status ===
 }
 if (!unexpectedArgumentOutput.includes("received unexpected argument unexpected-arg")) {
   fail(`${manifest.privateVerifierScript} must explain unexpected positional arguments`);
+}
+
+const completionStatusResult = spawnSync(process.execPath, [path.join(rootDir, manifest.privateVerifierScript), "--completion-status"], {
+  cwd: rootDir,
+  env: withoutPrivateCompletionEnv(),
+  encoding: "utf8",
+});
+if (completionStatusResult.status !== 0) {
+  fail(`${manifest.privateVerifierScript} --completion-status must produce public-safe status JSON without private roots`);
+} else {
+  try {
+    const status = JSON.parse(completionStatusResult.stdout);
+    if (status.updateGoalAllowed !== false) {
+      fail(`${manifest.privateVerifierScript} --completion-status must keep updateGoalAllowed false`);
+    }
+    if (status.decisions?.open !== 9) {
+      fail(`${manifest.privateVerifierScript} --completion-status must report 9 open decisions`);
+    }
+    if (!Array.isArray(status.decisions?.openDecisionIds) || !status.decisions.openDecisionIds.includes("initial_scope")) {
+      fail(`${manifest.privateVerifierScript} --completion-status must list open decision ids`);
+    }
+    if (!status.privateEvidence || status.privateEvidence.totalRecords !== 166) {
+      fail(`${manifest.privateVerifierScript} --completion-status must include private evidence totals`);
+    }
+    if (!status.privateApproval || status.privateApproval.totalRecords !== activeApprovalRecords.length) {
+      fail(`${manifest.privateVerifierScript} --completion-status must include private approval totals`);
+    }
+    if (
+      !status.privateSourceReview ||
+      status.privateSourceReview.exitCode !== manifest.externalPendingExitCode ||
+      status.privateSourceReview.status !== "external-pending"
+    ) {
+      fail(`${manifest.privateVerifierScript} --completion-status must include external-pending private source review without private source env`);
+    }
+    const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
+    for (const blockerId of ["open-decisions", "private-evidence-missing-root", "private-approval-missing-root", "private-source-review"]) {
+      if (!blockerIds.has(blockerId)) {
+        fail(`${manifest.privateVerifierScript} --completion-status must include blockingSummary ${blockerId} without private roots`);
+      }
+    }
+  } catch (error) {
+    fail(`${manifest.privateVerifierScript} --completion-status output must be valid JSON: ${error.message}`);
+  }
 }
 
 const decisionVerification = readJson(manifest?.decisionVerificationPath || "docs/ui/decision-verification.json");
@@ -519,6 +569,40 @@ if (simulatedClosedOutput.includes("open decisions block update_goal")) {
   fail(`${manifest.privateVerifierScript} must not report open decisions during closed-decision simulation`);
 }
 withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
+  const statusResult = spawnSync(
+    process.execPath,
+    [path.join(rootDir, manifest.privateVerifierScript), "--completion-status"],
+    {
+      cwd: rootDir,
+      env: { ...withoutPrivateCompletionEnv(), ...temporaryEnv },
+      encoding: "utf8",
+    },
+  );
+  if (statusResult.status !== 0) {
+    fail(`${manifest.privateVerifierScript} --completion-status must pass with temporary private source files`);
+  } else {
+    try {
+      const status = JSON.parse(statusResult.stdout);
+      if (status.privateSourceReview?.exitCode !== 0 || status.privateSourceReview?.status !== "passed") {
+        fail(`${manifest.privateVerifierScript} --completion-status must report passed private source review with temporary private source files`);
+      }
+      if (status.updateGoalAllowed !== false || status.decisions?.open !== 9) {
+        fail(`${manifest.privateVerifierScript} --completion-status must keep update_goal blocked even when private source review passes while decisions remain open`);
+      }
+      const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
+      if (blockerIds.has("private-source-review")) {
+        fail(`${manifest.privateVerifierScript} --completion-status must remove private-source-review blocker after source review passes`);
+      }
+      for (const blockerId of ["open-decisions", "private-evidence-missing-root", "private-approval-missing-root"]) {
+        if (!blockerIds.has(blockerId)) {
+          fail(`${manifest.privateVerifierScript} --completion-status must keep ${blockerId} blocker while private roots remain missing`);
+        }
+      }
+    } catch (error) {
+      fail(`${manifest.privateVerifierScript} --completion-status with temporary sources output must be valid JSON: ${error.message}`);
+    }
+  }
+
   const result = spawnSync(
     process.execPath,
     [path.join(rootDir, manifest.privateVerifierScript), "--require-approved", "--simulate-no-open-decisions", "--skip-public-prerequisites"],

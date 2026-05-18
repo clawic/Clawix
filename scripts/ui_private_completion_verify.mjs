@@ -37,6 +37,29 @@ function runScript(script, scriptArgs = ["--require-approved"]) {
   }
 }
 
+function runStatusScript(script, scriptArgs, extraEnv = {}) {
+  const result = spawnSync(process.execPath, [path.join(rootDir, script), ...scriptArgs], {
+    cwd: rootDir,
+    env: { ...process.env, ...extraEnv },
+    encoding: "utf8",
+  });
+  const output = `${result.stdout || ""}${result.stderr || ""}`;
+  let json = null;
+  try {
+    json = result.stdout ? JSON.parse(result.stdout) : null;
+  } catch {
+    json = null;
+  }
+  return {
+    script,
+    args: scriptArgs,
+    exitCode: result.status,
+    status: json?.status || (result.status === 0 ? "passed" : output.includes("EXTERNAL PENDING") ? "external-pending" : "failed"),
+    json,
+    outputPreview: output.split(/\n/).filter((line) => line.trim()).slice(0, 12),
+  };
+}
+
 function runFailureSelfTests() {
   const selfTestEnv = {
     ...process.env,
@@ -93,9 +116,34 @@ function runFailureSelfTests() {
       process.exit(1);
     }
   }
+
+  const statusResult = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--completion-status"], {
+    cwd: rootDir,
+    env: selfTestEnv,
+    encoding: "utf8",
+  });
+  if (statusResult.status !== 0) {
+    console.error("UI private completion verification self-test --completion-status must pass.");
+    process.exit(1);
+  }
+  try {
+    const status = JSON.parse(statusResult.stdout);
+    if (status.updateGoalAllowed !== false || status.decisions?.open !== 9) {
+      console.error("UI private completion verification self-test --completion-status must report blocked update_goal with 9 open decisions.");
+      process.exit(1);
+    }
+    if (!status.privateSourceReview || typeof status.privateSourceReview.exitCode !== "number") {
+      console.error("UI private completion verification self-test --completion-status must include privateSourceReview status.");
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(`UI private completion verification self-test --completion-status output must be JSON: ${error.message}.`);
+    process.exit(1);
+  }
 }
 
-if (!hasFlag("--require-approved")) {
+const completionStatusMode = hasFlag("--completion-status");
+if (!hasFlag("--require-approved") && !completionStatusMode) {
   console.error("UI private completion verification requires --require-approved.");
   process.exit(1);
 }
@@ -103,6 +151,7 @@ enforcePrivateVerifierArgs(args, {
   label: "UI private completion verification",
   allowedFlags: [
     "--require-approved",
+    "--completion-status",
     "--skip-public-prerequisites",
     "--simulate-no-open-decisions",
     "--simulate-missing-decision-blocker",
@@ -127,10 +176,6 @@ enforcePrivateVerifierArgs(args, {
 });
 
 const manifest = readJson("docs/ui/completion-gate.manifest.json");
-if (!isSelfTest) {
-  runFailureSelfTests();
-}
-runPublicPrerequisites(manifest);
 const decisionVerification = readJson(manifest.decisionVerificationPath || "docs/ui/decision-verification.json");
 const privateVisualValidation = readJson(manifest.privateVisualValidationManifestPath || "docs/ui/private-visual-validation.manifest.json");
 if (hasFlag("--simulate-missing-decision-blocker") && Array.isArray(privateVisualValidation.decisionBlockers)) {
@@ -195,6 +240,101 @@ for (const decision of decisions) {
   }
 }
 const actualOpenDecisions = decisions.filter((decision) => decision.status === "open");
+
+if (completionStatusMode) {
+  const privateEvidenceStatus = runStatusScript("scripts/ui_private_evidence_plan_check.mjs", ["--capture-decisions"]);
+  const privateApprovalStatus = runStatusScript("scripts/ui_private_approval_verify.mjs", ["--approval-status"]);
+  const privateSourceStatus = runStatusScript("scripts/ui_private_completion_source_verify.mjs", ["--require-approved"], {
+    CLAWIX_UI_COMPLETION_SOURCE_VERIFY_SELF_TEST: "1",
+  });
+  const verifiedCompleteDecisions = decisions.filter((decision) => decision.status === "verified-complete");
+  const openDecisionIds = actualOpenDecisions.map((decision) => decision.id);
+  const evidenceTotals = privateEvidenceStatus.json?.totals || {};
+  const approvalCounts = privateApprovalStatus.json?.counts || {};
+  const blockers = [];
+  if (openDecisionIds.length > 0) {
+    blockers.push({
+      id: "open-decisions",
+      status: "external-pending",
+      count: openDecisionIds.length,
+      details: openDecisionIds,
+    });
+  }
+  for (const [id, count] of [
+    ["private-evidence-missing-root", evidenceTotals.missingRoot || 0],
+    ["private-evidence-invalid-root", evidenceTotals.invalidRoot || 0],
+    ["private-evidence-missing-file", evidenceTotals.missingFile || 0],
+    ["private-evidence-invalid-json", evidenceTotals.invalidJson || 0],
+    ["private-evidence-placeholder", evidenceTotals.placeholder || 0],
+    ["private-evidence-candidate-not-approved", evidenceTotals.candidate || 0],
+    ["private-approval-missing-root", approvalCounts.missingRoot || 0],
+    ["private-approval-invalid-root", approvalCounts.invalidRoot || 0],
+    ["private-approval-invalid-reference", approvalCounts.invalidReference || 0],
+    ["private-approval-missing-file", approvalCounts.missingFile || 0],
+    ["private-approval-invalid-json", approvalCounts.invalidJson || 0],
+    ["private-approval-placeholder", approvalCounts.placeholder || 0],
+    ["private-approval-candidate-not-approved", approvalCounts.candidate || 0],
+  ]) {
+    if (count > 0) blockers.push({ id, status: "external-pending", count });
+  }
+  if (privateSourceStatus.status !== "passed") {
+    blockers.push({
+      id: "private-source-review",
+      status: privateSourceStatus.status,
+      count: 1,
+      details: privateSourceStatus.outputPreview,
+    });
+  }
+  const report = {
+    schemaVersion: 1,
+    status: openDecisionIds.length > 0
+      ? "external-pending-open-decisions"
+      : "pending-approved-private-verifiers",
+    updateGoalAllowed: false,
+    goalUpdateRule: manifest.goalUpdateRule,
+    finalVerificationCommand: manifest.finalVerificationCommand,
+    decisions: {
+      total: decisions.length,
+      verifiedComplete: verifiedCompleteDecisions.length,
+      open: actualOpenDecisions.length,
+      openDecisionIds,
+    },
+    privateEvidence: {
+      script: privateEvidenceStatus.script,
+      exitCode: privateEvidenceStatus.exitCode,
+      status: privateEvidenceStatus.status,
+      totalRecords: privateEvidenceStatus.json?.totalRecords ?? null,
+      totals: privateEvidenceStatus.json?.totals ?? null,
+      decisionCount: privateEvidenceStatus.json?.decisionCount ?? null,
+    },
+    privateApproval: {
+      script: privateApprovalStatus.script,
+      exitCode: privateApprovalStatus.exitCode,
+      status: privateApprovalStatus.status,
+      totalRecords: privateApprovalStatus.json?.totalRecords ?? null,
+      counts: privateApprovalStatus.json?.counts ?? null,
+    },
+    privateSourceReview: {
+      script: privateSourceStatus.script,
+      exitCode: privateSourceStatus.exitCode,
+      status: privateSourceStatus.status,
+      outputPreview: privateSourceStatus.outputPreview,
+    },
+    blockingSummary: {
+      totalBlockers: blockers.length,
+      blockers,
+    },
+    note: "This status is public-safe and does not prove completion. update_goal is allowed only after --require-approved exits 0.",
+  };
+  console.log(JSON.stringify(report, null, 2));
+  process.exit(0);
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
+}
+runPublicPrerequisites(manifest);
+
 const decisionBlockers = Array.isArray(privateVisualValidation.decisionBlockers)
   ? privateVisualValidation.decisionBlockers
   : [];
