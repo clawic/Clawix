@@ -23,4 +23,15 @@ final class LifeRegistryTests: XCTestCase {
         XCTAssertTrue(allEntries.contains { $0.id == "hydration" && $0.status == .devOnly })
         XCTAssertNotNil(LifeRegistry.entry(byId: "hydration", includeDevOnly: true))
     }
+
+    func testSensitiveLifeVerticalsExposeLegalGuardMetadata() {
+        let sensitiveEntries = LifeRegistry.entries(includeDevOnly: true).filter(\.sensitive)
+
+        XCTAssertFalse(sensitiveEntries.isEmpty)
+        XCTAssertTrue(sensitiveEntries.allSatisfy { $0.legalGuardLabel == "SENSITIVE" })
+        XCTAssertTrue(sensitiveEntries.allSatisfy { entry in
+            entry.legalGuardDescription?.contains("not professional advice") == true
+        })
+        XCTAssertNil(LifeRegistry.entry(byId: "sleep")?.legalGuardLabel)
+    }
 }

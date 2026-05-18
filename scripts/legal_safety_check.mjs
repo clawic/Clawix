@@ -111,6 +111,24 @@ function assertNoBannedMarketingClaims() {
   }
 }
 
+function assertLegalDocsAreBilingual() {
+  for (const file of [
+    "TERMS.md",
+    "PRIVACY.md",
+    "DISCLAIMER.md",
+    "SAFETY.md",
+    "REGULATED_DOMAINS.md",
+    "EULA.md",
+  ]) {
+    const text = read(file);
+    for (const snippet of ["## English", "## Espanol"]) {
+      if (!text.includes(snippet)) {
+        fail(`${file} must keep bilingual legal section ${snippet}`);
+      }
+    }
+  }
+}
+
 for (const file of [
   "TERMS.md",
   "PRIVACY.md",
@@ -156,10 +174,16 @@ requireSnippet("macos/Sources/Clawix/PlanCardView.swift", "reviewedExportContent
 requireSnippet("macos/Sources/Clawix/Dictation/ExportService.swift", "legal_labels");
 requireSnippet("macos/Sources/Clawix/Dictation/ExportService.swift", "\"legal\"");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "reviewedSensitiveOutputText");
+requireSnippet("macos/Sources/Clawix/Life/LifeRegistry.swift", "legalGuardLabel");
+requireSnippet("macos/Sources/Clawix/Life/LifeHomeScreen.swift", "entry.legalGuardLabel");
+requireSnippet("macos/Sources/Clawix/Life/LifeSidebarSection.swift", "entry.legalGuardLabel");
+requireSnippet("macos/Sources/Clawix/Life/LifeSettingsView.swift", "entry.legalGuardLabel");
 requireSnippet("macos/Sources/Clawix/Chat/ChatView+MessageEntry.swift", "reviewedSensitiveOutputText(content)");
 requireSnippet("macos/Sources/Clawix/QuickAsk/QuickAskMessageBubble.swift", "reviewedSensitiveOutputText(message.content)");
 requireSnippet("macos/Sources/Clawix/Dictation/Enhancement/EnhancementService.swift", "LegalSafetyStore.shared.providerDisclosureOptIn");
 requireSnippet("macos/Sources/Clawix/Dictation/DictationCoordinator.swift", "LegalSafetyStore.shared.providerDisclosureOptIn");
+requireSnippet("macos/Sources/Clawix/Settings/LegalSafetySettingsPage.swift", "Provider disclosure opt-in");
+requireSnippet("macos/Sources/Clawix/Settings/LegalSafetySettingsPage.swift", "Provider terms remain the user's responsibility.");
 requireSnippet("macos/Sources/Clawix/Design/EditorExport.swift", "legalHTMLComment");
 requireSnippet("macos/Sources/Clawix/Design/EditorExport.swift", "<metadata>\\(legalPlainText)</metadata>");
 requireSnippet("ios/Sources/Clawix/Design/EditorView.swift", "requestExportReview(format");
@@ -169,6 +193,9 @@ requireSnippet("ios/Sources/Clawix/Design/EditorExport.swift", "<metadata>\\(leg
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "pendingSensitiveImageAction");
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "Export or share sensitive data?");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "reviewedSensitiveOutputText");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "regulatedDecisionDisclaimer");
+requireSnippet("ios/Sources/Clawix/Life/LifeRegistry.swift", "legalGuardLabel");
+requireSnippet("ios/Sources/Clawix/Life/LifeRegistry.swift", "IOSLegalSafetyPolicy.regulatedDecisionDisclaimer");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "minimumAge = 18");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "hasAcceptedCurrentLegal");
@@ -185,11 +212,18 @@ requireSnippet("ios/Sources/Clawix/Bridge/BridgeStore.swift", "IOSLegalSafetyPol
 requireSnippet("ios/Sources/Clawix/P2PChat/P2PChatView.swift", "IOSLegalSafetyPolicy.crisisRefusal(for: body)");
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "testSensitiveExportEntrypointsRequireLegalReview");
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "testProviderBackedDictationRoutesRequireLegalProviderOptIn");
+requireSnippet("macos/Tests/ClawixMeshTests/LifeRegistryTests.swift", "testSensitiveLifeVerticalsExposeLegalGuardMetadata");
 requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedTermsVersion");
 requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.localAuditRetentionDays");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testAcceptCurrentLegalPersistsVersionedClickwrapState");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testOptInDoesNotBypassManualSupportOrExternalActionReview");
+requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testLocalAuditRetentionDaysAreConfigurableAndPersistent");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testCrisisPromptReturnsRefusalAndEmergencyResources");
+requireSnippet("macos/Tests/ClawixMeshTests/RescueRepairContextTests.swift", "testExporterWritesRedactedRescueContextJson");
+requireSnippet("macos/Tests/ClawixMeshTests/RescueRepairContextTests.swift", "explicit_approval_only");
+requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "promptsIncluded: false");
+requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "secretsIncluded: false");
+requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "fullLocalPathsIncluded: false");
 requireSnippet("macos/Tests/ClawixMeshTests/PersistentSurfaceRegistryTests.swift", "clawix.prefs.legal.sensitiveExportConfirmationRequired");
 requireSnippet("macos/scripts/build_release_app.sh", "Legal safety preflight");
 requireSnippet("macos/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
@@ -235,6 +269,7 @@ for (let index = 1; index <= 33; index += 1) {
   if (!legalClosureIds.has(id)) fail(`docs/legal-closure-decision-audit.md is missing ${id}`);
 }
 assertNoBannedMarketingClaims();
+assertLegalDocsAreBilingual();
 
 if (failed) {
   process.exit(1);

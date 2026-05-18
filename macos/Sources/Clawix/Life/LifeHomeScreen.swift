@@ -84,6 +84,18 @@ private struct LifeVerticalCard: View {
                                     .fill(Color.white.opacity(0.10))
                             )
                     }
+                    if let label = entry.legalGuardLabel {
+                        Text(label)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(Color.orange.opacity(0.85))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1.5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(Color.orange.opacity(0.12))
+                            )
+                            .help(entry.legalGuardDescription ?? "")
+                    }
                     Spacer()
                     if !enabled {
                         Text("OFF")

@@ -16,6 +16,7 @@ enum IOSLegalSafetyPolicy {
         "sources_and_gaps_required",
         "regulated_domain"
     ]
+    static let regulatedDecisionDisclaimer = "Clawix can help organize, search, summarize, label, and draft sensitive material, but it is not professional advice and must not be used as the final authority for regulated decisions."
 
     static var sensitiveCopyReviewMessage: String {
         "Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before copying or sharing sensitive material."

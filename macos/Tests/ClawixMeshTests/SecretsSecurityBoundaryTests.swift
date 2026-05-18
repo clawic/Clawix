@@ -318,6 +318,7 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     func testProviderBackedDictationRoutesRequireLegalProviderOptIn() throws {
         let enhancementSource = try readSource("Dictation/Enhancement/EnhancementService.swift")
         let coordinatorSource = try readSource("Dictation/DictationCoordinator.swift")
+        let legalSettingsSource = try readSource("Settings/LegalSafetySettingsPage.swift")
 
         XCTAssertTrue(enhancementSource.contains("LegalSafetyStore.shared.providerDisclosureOptIn"))
         XCTAssertTrue(enhancementSource.contains("provider route skipped: legal provider disclosure opt-in is off"))
@@ -325,6 +326,9 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         XCTAssertTrue(coordinatorSource.contains("LegalSafetyStore.shared.providerDisclosureOptIn"))
         XCTAssertTrue(coordinatorSource.contains("routed-stt skipped because legal provider disclosure opt-in is off"))
         XCTAssertTrue(coordinatorSource.contains("return nil"))
+        XCTAssertTrue(legalSettingsSource.contains("Provider disclosure opt-in"))
+        XCTAssertTrue(legalSettingsSource.contains("Provider terms remain the user's responsibility."))
+        XCTAssertTrue(legalSettingsSource.contains("isOn: $legal.providerDisclosureOptIn"))
     }
 
     func testCodexInstructionsWritesStaySentinelScopedAndConfirmed() throws {

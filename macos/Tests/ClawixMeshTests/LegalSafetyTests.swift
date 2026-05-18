@@ -83,6 +83,16 @@ final class LegalSafetyTests: XCTestCase {
         XCTAssertTrue(store.review(for: .externalAction).requiresConfirmation)
     }
 
+    func testLocalAuditRetentionDaysAreConfigurableAndPersistent() {
+        let store = LegalSafetyStore(defaults: defaults)
+
+        store.localAuditRetentionDays = 365
+
+        XCTAssertEqual(defaults.integer(forKey: LegalSafetyDefaultsKeys.localAuditRetentionDays), 365)
+        let reloaded = LegalSafetyStore(defaults: defaults)
+        XCTAssertEqual(reloaded.localAuditRetentionDays, 365)
+    }
+
     func testCrisisPromptReturnsRefusalAndEmergencyResources() {
         let refusal = LegalSafetyPolicy.crisisRefusal(for: "I want to kill myself")
 

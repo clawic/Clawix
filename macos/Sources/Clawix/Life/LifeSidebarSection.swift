@@ -86,6 +86,12 @@ struct LifeSidebarSection: View {
                     .font(.system(size: 12))
                     .foregroundColor(selected ? Palette.textPrimary : Palette.textSecondary)
                 Spacer()
+                if let label = entry.legalGuardLabel {
+                    Text(label)
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundColor(Color.orange.opacity(selected ? 0.90 : 0.65))
+                        .help(entry.legalGuardDescription ?? "")
+                }
                 if entry.status == .devOnly {
                     Text("DEV")
                         .font(.system(size: 8, weight: .semibold))

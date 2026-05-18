@@ -47,6 +47,14 @@ struct LifeRegistryEntry: Identifiable, Equatable, Codable {
     let packageName: String
     let servicePort: Int?
     let iconHint: String?
+
+    var legalGuardLabel: String? {
+        sensitive ? "SENSITIVE" : nil
+    }
+
+    var legalGuardDescription: String? {
+        sensitive ? IOSLegalSafetyPolicy.regulatedDecisionDisclaimer : nil
+    }
 }
 
 private struct RegistryEnvelope: Decodable {

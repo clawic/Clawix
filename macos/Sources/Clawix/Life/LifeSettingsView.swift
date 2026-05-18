@@ -89,9 +89,17 @@ struct LifeSettingsView: View {
             .toggleStyle(.switch)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.label)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Palette.textPrimary)
+                HStack(spacing: 6) {
+                    Text(entry.label)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Palette.textPrimary)
+                    if let label = entry.legalGuardLabel {
+                        Text(label)
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(Color.orange.opacity(0.85))
+                            .help(entry.legalGuardDescription ?? "")
+                    }
+                }
                 Text(entry.description)
                     .font(.system(size: 11))
                     .foregroundColor(Palette.textSecondary)
