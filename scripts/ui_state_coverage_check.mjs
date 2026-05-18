@@ -5,12 +5,36 @@ import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const today = new Date().toISOString().slice(0, 10);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_STATE_COVERAGE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-missing-required-state",
+  "--simulate-unknown-source-token-group",
+  "--simulate-empty-source-token-group",
+  "--simulate-missing-source-evidence-token",
+  "--simulate-invalid-gap-status",
+  "--simulate-expired-gap",
+  "--simulate-stale-gap",
+  "--simulate-unknown-gap-state",
+  "--simulate-duplicate-gap",
+  "--simulate-unsafe-source-root",
+  "--simulate-unmatched-scope",
+  "--simulate-unknown-pattern-reference",
+  "--simulate-pattern-missing-state",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI state coverage check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -284,6 +308,7 @@ for (const key of gapByKey.keys()) {
 
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-missing-required-state", "requiredStates must include error"],
     ["--simulate-unknown-source-token-group", "sourceTokenGroups contains unknown state decorative"],
     ["--simulate-empty-source-token-group", "sourceTokenGroups.error must not be empty"],
