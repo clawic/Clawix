@@ -22,6 +22,12 @@ REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
 echo "==> Legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
+if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "macos-app" ]]; then
+    echo "ERROR: macOS app release requires explicit approval for this exact action." >&2
+    echo "Set CLAWIX_RELEASE_APPROVED_FOR=macos-app only after fresh maintainer approval." >&2
+    exit 1
+fi
+
 BUNDLE_ID_DEFAULT="com.example.clawix.desktop"
 for candidate in \
     "${SIGN_IDENTITY_FILE:-}" \

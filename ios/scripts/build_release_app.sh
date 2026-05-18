@@ -22,6 +22,12 @@ cd "$PROJECT_DIR"
 echo "==> Legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
+if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "ios-archive" ]]; then
+    echo "ERROR: iOS archive release requires explicit approval for this exact action." >&2
+    echo "Set CLAWIX_RELEASE_APPROVED_FOR=ios-archive only after fresh maintainer approval." >&2
+    exit 1
+fi
+
 # 0) Source .signing.env walking up.
 env_file=""
 dir="$PROJECT_DIR"

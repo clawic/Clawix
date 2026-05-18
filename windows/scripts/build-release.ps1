@@ -16,6 +16,10 @@ $repoRoot = (Resolve-Path (Join-Path $ROOT "..")).Path
 & (Join-Path $PSScriptRoot "public_hygiene_check.ps1")
 node (Join-Path $repoRoot "scripts\legal_safety_check.mjs")
 
+if ($env:CLAWIX_RELEASE_APPROVED_FOR -ne "windows-msix") {
+    throw "Windows MSIX release requires explicit approval for this exact action. Set CLAWIX_RELEASE_APPROVED_FOR=windows-msix only after fresh maintainer approval."
+}
+
 $thumb = $env:WIN_SIGN_THUMBPRINT
 if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; source .signing.env first" }
 

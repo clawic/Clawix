@@ -21,8 +21,8 @@
 set -euo pipefail
 
 ARCH=${CLAWIX_LINUX_ARCH:-$(uname -m)}
-ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="$ROOT"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
@@ -41,10 +41,16 @@ require npm
 require appimagetool
 require zsyncmake
 require gpg
-: "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
 
 echo "[release] legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
+
+if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-appimage" ]]; then
+  echo "[release] ERROR: Linux AppImage release requires explicit approval for this exact action." >&2
+  echo "[release] Set CLAWIX_RELEASE_APPROVED_FOR=linux-appimage only after fresh maintainer approval." >&2
+  exit 1
+fi
+: "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
 
 mkdir -p "$OUT_DIR"
 WORK="$(mktemp -d)"

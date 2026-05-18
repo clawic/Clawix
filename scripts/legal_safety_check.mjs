@@ -191,6 +191,58 @@ function assertLegalVersionsAreAligned() {
   }
 }
 
+function assertNoCredentialLikePublicSecrets() {
+  const roots = [
+    "README.md",
+    "TERMS.md",
+    "PRIVACY.md",
+    "DISCLAIMER.md",
+    "SAFETY.md",
+    "REGULATED_DOMAINS.md",
+    "EULA.md",
+    "SECURITY.md",
+    "RELEASING.md",
+  ];
+  const extensions = new Set([".md", ".html", ".json", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".yml", ".yaml", ".swift", ".cs", ".ps1"]);
+  const scanned = [
+    ...roots,
+    ...walk("docs", (file) => extensions.has(path.extname(file))),
+    ...walk("web", (file) => extensions.has(path.extname(file))),
+    ...walk("apps", (file) => extensions.has(path.extname(file))),
+    ...walk("linux", (file) => extensions.has(path.extname(file))),
+    ...walk("windows", (file) => extensions.has(path.extname(file))),
+    ...walk("packages", (file) => extensions.has(path.extname(file))),
+    ...walk("macos", (file) => extensions.has(path.extname(file))),
+    ...walk("ios", (file) => extensions.has(path.extname(file))),
+    ...walk("tests", (file) => extensions.has(path.extname(file))),
+  ]
+    .filter((file, index, all) => all.indexOf(file) === index)
+    .filter((file) => fs.existsSync(path.join(root, file)))
+    .filter((file) => !file.includes("/node_modules/"))
+    .filter((file) => !file.includes("/web-dist/"))
+    .filter((file) => !file.includes("/.build/"))
+    .filter((file) => !file.includes("/build/"));
+  const patterns = [
+    ["github-token", /(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9_]{20,}/g],
+    ["openai-token", /(?<![A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}/g],
+    ["slack-token", /(?<![A-Za-z0-9])xox[baprs]-[A-Za-z0-9-]{20,}/g],
+    ["aws-access-key", /(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])/g],
+    ["google-api-key", /(?<![A-Za-z0-9])AIza[0-9A-Za-z_-]{20,}/g],
+    ["personal-email-domain", /\b[A-Za-z0-9._%+-]+@(gmail|yahoo|hotmail|outlook|icloud|me|live)\.(com|net|org)\b/gi],
+  ];
+  for (const file of scanned) {
+    const lines = read(file).split(/\r?\n/);
+    for (const [index, line] of lines.entries()) {
+      for (const [id, pattern] of patterns) {
+        pattern.lastIndex = 0;
+        if (pattern.test(line)) {
+          fail(`${file}:${index + 1} contains credential-like or personal fixture value (${id}); use synthetic placeholders or an explicit redaction test`);
+        }
+      }
+    }
+  }
+}
+
 for (const file of [
   "RELEASING.md",
   "TERMS.md",
@@ -317,13 +369,23 @@ requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "fullLoc
 requireSnippet("macos/Tests/ClawixMeshTests/PersistentSurfaceRegistryTests.swift", "clawix.prefs.legal.sensitiveExportConfirmationRequired");
 requireSnippet("macos/scripts/build_release_app.sh", "Legal safety preflight");
 requireSnippet("macos/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("macos/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
+requireSnippet("macos/scripts/build_release_app.sh", "macos-app");
 requireSnippet("ios/scripts/build_release_app.sh", "Legal safety preflight");
 requireSnippet("ios/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("ios/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
+requireSnippet("ios/scripts/build_release_app.sh", "ios-archive");
 requireSnippet("linux/scripts/build_release_appimage.sh", "legal safety preflight");
 requireSnippet("linux/scripts/build_release_appimage.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("linux/scripts/build_release_appimage.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
+requireSnippet("linux/scripts/build_release_appimage.sh", "linux-appimage");
 requireSnippet("linux/scripts/build_release_deb.sh", "legal safety preflight");
 requireSnippet("linux/scripts/build_release_deb.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("linux/scripts/build_release_deb.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
+requireSnippet("linux/scripts/build_release_deb.sh", "linux-deb");
 requireSnippet("windows/scripts/build-release.ps1", "legal_safety_check.mjs");
+requireSnippet("windows/scripts/build-release.ps1", "CLAWIX_RELEASE_APPROVED_FOR");
+requireSnippet("windows/scripts/build-release.ps1", "windows-msix");
 
 requireSnippet("TERMS.md", "provided \"as is\"");
 requireSnippet("TERMS.md", "laws of Spain and applicable European Union law");
@@ -373,6 +435,7 @@ assertExternalPendingLedger("docs/legal-external-pending-validation.md", 7);
 assertNoBannedMarketingClaims();
 assertLegalDocsAreBilingual();
 assertLegalVersionsAreAligned();
+assertNoCredentialLikePublicSecrets();
 
 if (failed) {
   process.exit(1);

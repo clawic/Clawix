@@ -22,6 +22,12 @@ VERSION="$(cat "$LINUX_ROOT/VERSION" | tr -d '\n[:space:]')"
 echo "[deb] legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 
+if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-deb" ]]; then
+  echo "[deb] ERROR: Linux deb release requires explicit approval for this exact action." >&2
+  echo "[deb] Set CLAWIX_RELEASE_APPROVED_FOR=linux-deb only after fresh maintainer approval." >&2
+  exit 1
+fi
+
 mkdir -p "$OUT_DIR"
 WORK="$(mktemp -d)"
 PKG_ROOT="$WORK/clawix_${VERSION}_${ARCH}"
