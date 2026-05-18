@@ -169,6 +169,14 @@ requireSnippet("ios/Sources/Clawix/Design/EditorExport.swift", "<metadata>\\(leg
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "pendingSensitiveImageAction");
 requireSnippet("ios/Sources/Clawix/ChatDetail/ImageViewerView.swift", "Export or share sensitive data?");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "reviewedSensitiveOutputText");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "minimumAge = 18");
+requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "hasAcceptedCurrentLegal");
+requireSnippet("ios/Sources/Clawix/LegalConsentSheet.swift", "I confirm I am at least 18 years old");
+requireSnippet("ios/Sources/Clawix/LegalConsentSheet.swift", "I accept the Terms, Privacy Notice, Disclaimer, Safety Policy, Regulated Domains policy, and EULA version 2026-05-18.");
+requireSnippet("ios/Sources/Clawix/LegalConsentSheet.swift", "Accept and continue");
+requireSnippet("ios/Sources/Clawix/ClawixApp.swift", "IOSLegalConsentSheet(legal: legal)");
+requireSnippet("ios/Sources/Clawix/ClawixApp.swift", "interactiveDismissDisabled(true)");
 requireSnippet("ios/Sources/Clawix/ChatDetail/ChatDetailView.swift", "IOSLegalSafetyPolicy.reviewedSensitiveOutputText(content)");
 requireSnippet("ios/Sources/Clawix/ChatDetail/AssistantMarkdownView.swift", "IOSLegalSafetyPolicy.reviewedSensitiveOutputText(code)");
 requireSnippet("ios/Sources/Clawix/LegalSafety.swift", "crisisRefusal(for text");

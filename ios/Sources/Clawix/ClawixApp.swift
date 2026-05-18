@@ -5,6 +5,7 @@ import ClawixCore
 struct ClawixApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var store = BridgeStore()
+    @State private var legal = IOSLegalSafetyStore.shared
     @State private var client: BridgeClient?
     @State private var creds: Credentials? = CredentialStore.shared.load()
 
@@ -27,6 +28,15 @@ struct ClawixApp: App {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 handleScenePhase(newPhase)
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { !legal.hasAcceptedCurrentLegal },
+                    set: { _ in }
+                )
+            ) {
+                IOSLegalConsentSheet(legal: legal)
+                    .interactiveDismissDisabled(true)
             }
         }
     }

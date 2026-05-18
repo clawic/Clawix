@@ -297,6 +297,24 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         XCTAssertTrue(iosAssistantMarkdownSource.contains("IOSLegalSafetyPolicy.reviewedSensitiveOutputText(code)"))
     }
 
+    func testIOSRequiresInitialLegalAcceptance() throws {
+        let iosAppSource = try readProjectSource("../ios/Sources/Clawix/ClawixApp.swift")
+        let iosLegalSafetySource = try readProjectSource("../ios/Sources/Clawix/LegalSafety.swift")
+        let iosLegalConsentSource = try readProjectSource("../ios/Sources/Clawix/LegalConsentSheet.swift")
+
+        XCTAssertTrue(iosLegalSafetySource.contains("termsVersion = \"2026-05-18\""))
+        XCTAssertTrue(iosLegalSafetySource.contains("privacyVersion = \"2026-05-18\""))
+        XCTAssertTrue(iosLegalSafetySource.contains("eulaVersion = \"2026-05-18\""))
+        XCTAssertTrue(iosLegalSafetySource.contains("minimumAge = 18"))
+        XCTAssertTrue(iosLegalSafetySource.contains("hasAcceptedCurrentLegal"))
+        XCTAssertTrue(iosLegalSafetySource.contains("IOSLegalSafetyDefaultsKeys.acceptedTermsVersion"))
+        XCTAssertTrue(iosLegalConsentSource.contains("I confirm I am at least 18 years old."))
+        XCTAssertTrue(iosLegalConsentSource.contains("I accept the Terms, Privacy Notice, Disclaimer, Safety Policy, Regulated Domains policy, and EULA version 2026-05-18."))
+        XCTAssertTrue(iosLegalConsentSource.contains("Accept and continue"))
+        XCTAssertTrue(iosAppSource.contains("IOSLegalConsentSheet(legal: legal)"))
+        XCTAssertTrue(iosAppSource.contains("interactiveDismissDisabled(true)"))
+    }
+
     func testProviderBackedDictationRoutesRequireLegalProviderOptIn() throws {
         let enhancementSource = try readSource("Dictation/Enhancement/EnhancementService.swift")
         let coordinatorSource = try readSource("Dictation/DictationCoordinator.swift")

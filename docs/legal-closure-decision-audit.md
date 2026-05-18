@@ -29,7 +29,7 @@ state.
 | LCA-008 | Allowed regulated use | Personal local use | Safety and Regulated Domains allow local records, summaries, searches, drafts, questions, and review prep. | External flows must stay opt-in. |
 | LCA-009 | Crisis policy | Refusal + resources | Disclaimer/Safety state Clawix is not an emergency service; macOS and iOS source guards refuse crisis/autolesion prompts locally with 988/112/local resources before model, bridge, remote, or P2P dispatch. | Signed binary smoke remains pending; keyword guard is not a clinical classifier. |
 | LCA-010 | Release legal gate | Maintainer approval enough | Public release docs and private workflow require explicit approval; direct macOS, iOS, Linux, and Windows release builders run `scripts/legal_safety_check.mjs` before packaging/signing. | Exact action approval remains required. |
-| LCA-011 | Terms acceptance | Initial clickwrap | `LegalConsentSheet` is non-dismissible and `LegalSafetyTests` verify current acceptance persistence. | Final signed build smoke still needed. |
+| LCA-011 | Terms acceptance | Initial clickwrap | macOS `LegalConsentSheet` is non-dismissible and `LegalSafetyTests` verify current acceptance persistence; iOS now has `IOSLegalConsentSheet` plus versioned `IOSLegalSafetyStore` acceptance state and source assertions. | Final signed build smoke still needed. |
 | LCA-012 | Binary policy | App EULA | `EULA.md` covers official Clawix binaries and native permissions. | Binary packaging must link current EULA. |
 | LCA-013 | Governing law/forum | Spain/EU | Terms and EULA include Spain and applicable EU law. | Mandatory local law may still apply. |
 | LCA-014 | Support data | Manual opt-in | Privacy, SECURITY, settings, persistent keys, and tests cover support diagnostics opt-in; app policy still requires manual confirmation before sharing support diagnostics. | Support export flows must remain redacted and opt-in. |
@@ -37,9 +37,9 @@ state.
 | LCA-016 | Sensitive drafts | Allowed with review | Safety docs and labels treat sensitive output as draft/review material. | Output surfaces must preserve labels. |
 | LCA-017 | Sensitive interpretation | Summary + questions | Safety docs allow summaries, questions, sources, and gaps rather than final advice. | App result surfaces must keep source/gap language. |
 | LCA-018 | External sensitive actions | Explicit review | `requestSensitiveActionReview` and tests keep external actions confirmation-gated. | Real provider actions remain explicit-approval work. |
-| LCA-019 | UI disclaimers | Contextual + remembered | Legal versions, disclaimer version, and settings persistence are app state. | Visual UI smoke must confirm current copy and controls. |
+| LCA-019 | UI disclaimers | Contextual + remembered | Legal versions, disclaimer version, settings persistence, macOS clickwrap state, and iOS clickwrap state are app state. | Visual UI smoke must confirm current copy and controls. |
 | LCA-020 | Legal languages | EN + ES | Public legal docs include English and Spanish sections. | Future edits must keep both languages aligned. |
-| LCA-021 | Minors | 18+ default | Clickwrap confirms 18+, legal defaults set minimum age 18, and docs state not directed to under-18 users. | Store age metadata remains pending before submission. |
+| LCA-021 | Minors | 18+ default | macOS and iOS clickwraps confirm 18+, legal defaults set minimum age 18, and docs state not directed to under-18 users. | Store age metadata remains pending before submission. |
 | LCA-022 | Sensitive visibility | Visible with guard | Sensitive domains remain visible for local app use with guardrails and labels. | UI must not hide warnings when showing domains. |
 | LCA-023 | Marketing cleanup | Conservative rewrite | Claim scanner covers README/docs/web/package text. | Re-run after marketing freeze. |
 | LCA-024 | Package disclaimers | README + CLI | README links legal docs and sibling ClawJS exposes `claw safety`. | Package docs must stay aligned with sibling release gates. |
