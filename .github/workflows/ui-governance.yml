@@ -98,6 +98,8 @@ jobs:
         run: node scripts/ui_private_baseline_manifest_check.mjs
       - name: Validate private evidence plan contract
         run: node scripts/ui_private_evidence_plan_check.mjs
+      - name: Validate private capture runner contract
+        run: node scripts/ui_private_capture_runner_check.mjs
       - name: Validate private visual validation contract
         run: node scripts/ui_private_visual_validation_manifest_check.mjs
       - name: Validate documentation alignment

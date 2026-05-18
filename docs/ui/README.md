@@ -261,6 +261,11 @@ the public repo.
     public repo. Evidence is not complete until the required fields from the
     plan, including `approvedByUserAt` and `approvedScope` where required, are
     present and pass the relevant private verifier.
+    Run `node scripts/ui_private_capture_runner_check.mjs` to verify that each
+    required private evidence record maps to exactly one public-safe candidate
+    capture planning runner. Use
+    `node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json`
+    to list the candidate files a private runner must produce before approval.
     To scaffold placeholder files for capture, run
     `node scripts/ui_private_evidence_plan_check.mjs --write-template-root <outside-repo-dir>`.
     The command refuses public-repo destinations and writes invalid templates

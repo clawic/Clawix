@@ -244,6 +244,7 @@ fast() {
   run node "$ROOT_DIR/scripts/ui_surface_inventory_check.mjs"
   run node "$ROOT_DIR/scripts/ui_private_baseline_manifest_check.mjs"
   run node "$ROOT_DIR/scripts/ui_private_evidence_plan_check.mjs"
+  run node "$ROOT_DIR/scripts/ui_private_capture_runner_check.mjs"
   run node "$ROOT_DIR/scripts/ui_private_visual_validation_manifest_check.mjs"
   run node "$ROOT_DIR/scripts/naming-shape-check.mjs"
   run node "$ROOT_DIR/scripts/source-size-check.mjs"
