@@ -266,6 +266,17 @@ the public repo.
     files, placeholders, invalid JSON, and candidate evidence by root and
     completion blocker. Candidate files are still not approval; final closure
     requires the private verifiers with `--require-approved`.
+    To execute the remaining work by closure package, run
+    `node scripts/ui_private_evidence_plan_check.mjs --capture-packages` with
+    the same private root environment. The output groups every private record
+    by evidence type, blocking decision, current state, required fields, and
+    verifier command so the nine open decisions can be reduced package by
+    package without hand-maintaining a private checklist.
+    To review closure from the decision side, run
+    `node scripts/ui_private_evidence_plan_check.mjs --capture-decisions`.
+    That output lists each open decision, its evidence packages, current
+    counts, required action, and blocking verifier commands from the same
+    derived plan.
 46. Close the nine open completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,

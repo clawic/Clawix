@@ -27,7 +27,7 @@ const simulationFlags = [
   "--simulate-duplicate-evidence-record",
 ];
 const optionsWithValues = new Set(["--write-template-root"]);
-const allowedFlags = new Set(["--json", "--capture-plan", "--capture-status", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
+const allowedFlags = new Set(["--json", "--capture-plan", "--capture-status", "--capture-packages", "--capture-decisions", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
 const errors = [];
 const plan = [];
 
@@ -361,52 +361,73 @@ function captureStatusForFile(rootPath, relativeEvidencePath) {
   return { state: "candidate", counts };
 }
 
+function privateRootState(root) {
+  const counts = emptyCaptureStatusCounts();
+  const rootPathRaw = process.env[root.env] || "";
+  if (!rootPathRaw) {
+    counts.missingRoot = root.recordCount;
+    return {
+      configured: false,
+      status: "external-pending-missing-root",
+      rootPath: null,
+      counts,
+      stateForRecord: () => "missing-root",
+    };
+  }
+  const rootPath = path.resolve(rootPathRaw);
+  const relativeToRepo = path.relative(rootDir, rootPath);
+  if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
+    counts.invalidRoot = root.recordCount;
+    return {
+      configured: true,
+      status: "invalid-root-inside-public-repo",
+      rootPath,
+      counts,
+      stateForRecord: () => "invalid-root",
+    };
+  }
+  if (!fs.existsSync(rootPath) || !fs.statSync(rootPath).isDirectory()) {
+    counts.missingRoot = root.recordCount;
+    return {
+      configured: true,
+      status: "external-pending-root-not-found",
+      rootPath,
+      counts,
+      stateForRecord: () => "missing-root",
+    };
+  }
+  return {
+    configured: true,
+    status: "configured",
+    rootPath,
+    counts,
+    stateForRecord: (record) => captureStatusForFile(rootPath, record.relativeEvidencePath).state,
+  };
+}
+
 function captureStatusFromEvidencePlan() {
   const capturePlan = capturePlanFromEvidencePlan();
   if (errors.length > 0) return null;
   const recordStates = new Map();
   const roots = capturePlan.roots.map((root) => {
-    const counts = emptyCaptureStatusCounts();
-    const rootPathRaw = process.env[root.env] || "";
+    const rootState = privateRootState(root);
     const rootStatus = {
       alias: root.alias,
       env: root.env,
       required: root.required,
       recordCount: root.recordCount,
-      configured: Boolean(rootPathRaw),
-      status: "external-pending-missing-root",
-      counts,
+      configured: rootState.configured,
+      status: rootState.status,
+      counts: rootState.counts,
     };
-    if (!rootPathRaw) {
-      counts.missingRoot = root.recordCount;
-      for (const record of root.records) {
-        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "missing-root");
-      }
-      return rootStatus;
-    }
-    const rootPath = path.resolve(rootPathRaw);
-    const relativeToRepo = path.relative(rootDir, rootPath);
-    if (!relativeToRepo.startsWith("..") && !path.isAbsolute(relativeToRepo)) {
-      counts.invalidRoot = root.recordCount;
-      rootStatus.status = "invalid-root-inside-public-repo";
-      for (const record of root.records) {
-        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "invalid-root");
-      }
-      return rootStatus;
-    }
-    if (!fs.existsSync(rootPath) || !fs.statSync(rootPath).isDirectory()) {
-      counts.missingRoot = root.recordCount;
-      rootStatus.status = "external-pending-root-not-found";
-      for (const record of root.records) {
-        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, "missing-root");
-      }
-      return rootStatus;
-    }
-    rootStatus.status = "configured";
     for (const record of root.records) {
-      const fileStatus = captureStatusForFile(rootPath, record.relativeEvidencePath);
-      addCaptureStatus(counts, fileStatus.counts);
-      recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, fileStatus.state);
+      if (rootState.status === "configured") {
+        const fileStatus = captureStatusForFile(rootState.rootPath, record.relativeEvidencePath);
+        addCaptureStatus(rootState.counts, fileStatus.counts);
+        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, fileStatus.state);
+      } else {
+        recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, rootState.stateForRecord(record));
+      }
     }
     return rootStatus;
   });
@@ -443,6 +464,128 @@ function captureStatusFromEvidencePlan() {
     totals,
     roots,
     completionBlockers,
+  };
+}
+
+function capturePackagesFromEvidencePlan() {
+  const capturePlan = capturePlanFromEvidencePlan();
+  if (errors.length > 0) return null;
+  const blockersByEvidenceType = new Map();
+  for (const blocker of capturePlan.completionBlockers) {
+    for (const evidenceType of blocker.evidenceTypes) {
+      const blockers = blockersByEvidenceType.get(evidenceType) || [];
+      blockers.push(blocker.decisionId);
+      blockersByEvidenceType.set(evidenceType, blockers);
+    }
+  }
+  const packageMap = new Map();
+  for (const root of capturePlan.roots) {
+    const rootState = privateRootState(root);
+    for (const record of root.records) {
+      const pkg = packageMap.get(record.type) || {
+        evidenceType: record.type,
+        recordCount: 0,
+        rootAliases: [],
+        blockers: [],
+        verifierCommands: [],
+        counts: emptyCaptureStatusCounts(),
+        records: [],
+      };
+      const state = rootState.status === "configured"
+        ? captureStatusForFile(rootState.rootPath, record.relativeEvidencePath).state
+        : rootState.stateForRecord(record);
+      const privateFile = rootState.rootPath
+        ? path.join(rootState.rootPath, record.relativeEvidencePath.split("/").join(path.sep))
+        : null;
+      pkg.recordCount += 1;
+      pkg.rootAliases.push(root.alias);
+      pkg.blockers.push(...(blockersByEvidenceType.get(record.type) || []));
+      pkg.verifierCommands.push(...root.verifierCommands);
+      if (state === "missing-root") pkg.counts.missingRoot += 1;
+      else if (state === "invalid-root") pkg.counts.invalidRoot += 1;
+      else if (state === "missing-file") pkg.counts.missingFile += 1;
+      else if (state === "invalid-json") pkg.counts.invalidJson += 1;
+      else if (state === "placeholder") pkg.counts.placeholder += 1;
+      else if (state === "candidate") pkg.counts.candidate += 1;
+      pkg.records.push({
+        id: record.id,
+        platform: record.platform,
+        privateReference: record.privateReference,
+        privateFile,
+        relativeEvidencePath: record.relativeEvidencePath,
+        state,
+        requiredFields: record.requiredFields,
+      });
+      packageMap.set(record.type, pkg);
+    }
+  }
+  const totals = emptyCaptureStatusCounts();
+  const packages = [...packageMap.values()].sort((a, b) => a.evidenceType.localeCompare(b.evidenceType)).map((pkg) => {
+    addCaptureStatus(totals, pkg.counts);
+    return {
+      ...pkg,
+      rootAliases: [...new Set(pkg.rootAliases)].sort(),
+      blockers: [...new Set(pkg.blockers)].sort(),
+      verifierCommands: [...new Set(pkg.verifierCommands)].sort(),
+    };
+  });
+  return {
+    schemaVersion: 1,
+    status: totals.candidate === capturePlan.totalRecords
+      ? "candidate-private-evidence-packages-present-run-approved-verifiers"
+      : "external-pending-private-evidence-packages",
+    note: "Packages are derived from public manifests and current private root env vars. Candidate files are not approval.",
+    totalRecords: capturePlan.totalRecords,
+    totals,
+    packages,
+  };
+}
+
+function captureDecisionsFromEvidencePlan() {
+  const capturePlan = capturePlanFromEvidencePlan();
+  if (errors.length > 0) return null;
+  const packagesReport = capturePackagesFromEvidencePlan();
+  if (errors.length > 0) return null;
+  const packagesByType = new Map(packagesReport.packages.map((pkg) => [pkg.evidenceType, pkg]));
+  const decisions = capturePlan.completionBlockers.map((blocker) => {
+    const counts = emptyCaptureStatusCounts();
+    const packages = blocker.evidenceTypes.map((evidenceType) => {
+      const pkg = packagesByType.get(evidenceType);
+      if (!pkg) {
+        fail(`capture decision ${blocker.decisionId} references missing evidence package ${evidenceType}`);
+        return null;
+      }
+      addCaptureStatus(counts, pkg.counts);
+      return {
+        evidenceType,
+        recordCount: pkg.recordCount,
+        rootAliases: pkg.rootAliases,
+        counts: pkg.counts,
+        verifierCommands: pkg.verifierCommands,
+      };
+    }).filter(Boolean);
+    return {
+      decisionId: blocker.decisionId,
+      status: counts.candidate === blocker.recordCount
+        ? "candidate-private-evidence-present-run-approved-verifiers"
+        : "external-pending-private-evidence",
+      recordCount: blocker.recordCount,
+      counts,
+      packages,
+      requiredAction: "Replace placeholders or missing private files with captured evidence, add explicit user approval metadata, then run the listed verifiers with --require-approved.",
+      externalDependency: "private capture plus human approval",
+    };
+  });
+  return {
+    schemaVersion: 1,
+    status: decisions.every((decision) => decision.status === "candidate-private-evidence-present-run-approved-verifiers")
+      ? "candidate-private-evidence-decisions-present-run-approved-verifiers"
+      : "external-pending-private-evidence-decisions",
+    note: "Decision status is derived from the private evidence plan and current private root env vars. Candidate files are not approval.",
+    totalRecords: capturePlan.totalRecords,
+    decisionCount: decisions.length,
+    totals: packagesReport.totals,
+    decisions,
   };
 }
 
@@ -908,6 +1051,22 @@ if (templateRoot) {
     process.exit(1);
   }
   console.log(JSON.stringify(status, null, 2));
+} else if (args.includes("--capture-packages")) {
+  const packages = capturePackagesFromEvidencePlan();
+  if (errors.length > 0) {
+    console.error("UI private evidence plan check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(JSON.stringify(packages, null, 2));
+} else if (args.includes("--capture-decisions")) {
+  const decisions = captureDecisionsFromEvidencePlan();
+  if (errors.length > 0) {
+    console.error("UI private evidence plan check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(JSON.stringify(decisions, null, 2));
 } else if (args.includes("--capture-plan")) {
   console.log(JSON.stringify(capturePlanFromEvidencePlan(), null, 2));
 } else if (args.includes("--json")) {
