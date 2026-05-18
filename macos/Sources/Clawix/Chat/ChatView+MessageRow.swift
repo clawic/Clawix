@@ -104,6 +104,12 @@ struct MessageRow: View, Equatable {
     var onEditUserMessage: (String) -> Void = { _ in }
     var onForkConversation: () -> Void = {}
     var onOpenImage: (URL) -> Void = { _ in }
+    var onCopyMessage: (String, @escaping () -> Void) -> Void = { content, copied in
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(content, forType: .string)
+        copied()
+    }
     var onPushToPublishing: (String) -> Void = { _ in }
     var publishingReady: Bool = false
     @State private var rowHovered = false
@@ -549,20 +555,18 @@ struct MessageRow: View, Equatable {
     }
 
     private func handleCopy() {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(message.content, forType: .string)
-
-        copyResetTask?.cancel()
-        withAnimation(.easeOut(duration: 0.15)) {
-            justCopied = true
-        }
-        copyResetTask = Task {
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.easeIn(duration: 0.2)) {
-                    justCopied = false
+        onCopyMessage(message.content) {
+            copyResetTask?.cancel()
+            withAnimation(.easeOut(duration: 0.15)) {
+                justCopied = true
+            }
+            copyResetTask = Task {
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.2)) {
+                        justCopied = false
+                    }
                 }
             }
         }

@@ -70,7 +70,7 @@ final class LegalSafetyTests: XCTestCase {
         XCTAssertTrue(review.labels.contains("sources_and_gaps_required"))
     }
 
-    func testOptInDoesNotBypassExternalActionReview() {
+    func testOptInDoesNotBypassManualSupportOrExternalActionReview() {
         let store = LegalSafetyStore(defaults: defaults)
         store.remoteSyncOptIn = true
         store.providerDisclosureOptIn = true
@@ -79,7 +79,7 @@ final class LegalSafetyTests: XCTestCase {
 
         XCTAssertFalse(store.review(for: .remoteSync).requiresConfirmation)
         XCTAssertFalse(store.review(for: .providerUse).requiresConfirmation)
-        XCTAssertFalse(store.review(for: .supportDiagnostics).requiresConfirmation)
+        XCTAssertTrue(store.review(for: .supportDiagnostics).requiresConfirmation)
         XCTAssertTrue(store.review(for: .externalAction).requiresConfirmation)
     }
 

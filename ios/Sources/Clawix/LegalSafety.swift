@@ -1,6 +1,34 @@
 import Foundation
+import Observation
 
 enum IOSLegalSafetyPolicy {
+    static let termsVersion = "2026-05-18"
+    static let privacyVersion = "2026-05-18"
+    static let eulaVersion = "2026-05-18"
+    static let safetyVersion = "2026-05-18"
+    static let regulatedDomainsVersion = "2026-05-18"
+    static let disclaimerVersion = "2026-05-18"
+    static let minimumAge = 18
+    static let defaultOutputLabels = [
+        "draft_not_final",
+        "not_professional_advice",
+        "human_review_required",
+        "sources_and_gaps_required",
+        "regulated_domain"
+    ]
+
+    static var sensitiveCopyReviewMessage: String {
+        "Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before copying or sharing sensitive material."
+    }
+
+    static func reviewedSensitiveOutputText(_ text: String) -> String {
+        let labels = defaultOutputLabels.joined(separator: ", ")
+        return """
+        <!-- Clawix export labels: \(labels); disclaimer_version=\(disclaimerVersion); not professional advice; draft not final. -->
+        \(text)
+        """
+    }
+
     static func crisisRefusal(for text: String) -> String? {
         let normalized = text
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
@@ -30,5 +58,55 @@ enum IOSLegalSafetyPolicy {
 
         Clawix is not an emergency service and does not provide therapy, diagnosis, treatment, or crisis counseling.
         """
+    }
+}
+
+enum IOSLegalSafetyDefaultsKeys {
+    static let acceptedTermsVersion = "Legal.AcceptedTermsVersion"
+    static let acceptedPrivacyVersion = "Legal.AcceptedPrivacyVersion"
+    static let acceptedEULAVersion = "Legal.AcceptedEULAVersion"
+    static let acceptedAt = "Legal.AcceptedAt"
+    static let adultConfirmed = "Legal.AdultConfirmed"
+}
+
+@Observable
+final class IOSLegalSafetyStore {
+    static let shared = IOSLegalSafetyStore()
+
+    private let defaults: UserDefaults
+    private(set) var acceptedTermsVersion: String?
+    private(set) var acceptedPrivacyVersion: String?
+    private(set) var acceptedEULAVersion: String?
+    private(set) var acceptedAt: Date?
+    var adultConfirmed: Bool
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        acceptedTermsVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedTermsVersion)
+        acceptedPrivacyVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedPrivacyVersion)
+        acceptedEULAVersion = defaults.string(forKey: IOSLegalSafetyDefaultsKeys.acceptedEULAVersion)
+        acceptedAt = defaults.object(forKey: IOSLegalSafetyDefaultsKeys.acceptedAt) as? Date
+        adultConfirmed = defaults.object(forKey: IOSLegalSafetyDefaultsKeys.adultConfirmed) as? Bool ?? false
+    }
+
+    var hasAcceptedCurrentLegal: Bool {
+        acceptedTermsVersion == IOSLegalSafetyPolicy.termsVersion &&
+        acceptedPrivacyVersion == IOSLegalSafetyPolicy.privacyVersion &&
+        acceptedEULAVersion == IOSLegalSafetyPolicy.eulaVersion &&
+        adultConfirmed
+    }
+
+    func acceptCurrentLegal(adultConfirmed: Bool = true) {
+        let now = Date()
+        self.adultConfirmed = adultConfirmed
+        acceptedTermsVersion = IOSLegalSafetyPolicy.termsVersion
+        acceptedPrivacyVersion = IOSLegalSafetyPolicy.privacyVersion
+        acceptedEULAVersion = IOSLegalSafetyPolicy.eulaVersion
+        acceptedAt = now
+        defaults.set(IOSLegalSafetyPolicy.termsVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedTermsVersion)
+        defaults.set(IOSLegalSafetyPolicy.privacyVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedPrivacyVersion)
+        defaults.set(IOSLegalSafetyPolicy.eulaVersion, forKey: IOSLegalSafetyDefaultsKeys.acceptedEULAVersion)
+        defaults.set(now, forKey: IOSLegalSafetyDefaultsKeys.acceptedAt)
+        defaults.set(adultConfirmed, forKey: IOSLegalSafetyDefaultsKeys.adultConfirmed)
     }
 }

@@ -270,6 +270,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         let exportServiceSource = try readSource("Dictation/ExportService.swift")
         let editorExportSource = try readSource("Design/EditorExport.swift")
         let databaseSource = try readSource("Database/DatabaseWorkbenchCommands.swift")
+        let chatEntrySource = try readSource("Chat/ChatView+MessageEntry.swift")
+        let quickAskSource = try readSource("QuickAsk/QuickAskMessageBubble.swift")
+        let iosLegalSafetySource = try readProjectSource("../ios/Sources/Clawix/LegalSafety.swift")
+        let iosChatDetailSource = try readProjectSource("../ios/Sources/Clawix/ChatDetail/ChatDetailView.swift")
+        let iosAssistantMarkdownSource = try readProjectSource("../ios/Sources/Clawix/ChatDetail/AssistantMarkdownView.swift")
 
         XCTAssertTrue(editorSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
         XCTAssertTrue(imagePreviewSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
@@ -281,6 +286,27 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         XCTAssertTrue(editorExportSource.contains("<metadata>\\(legalPlainText)</metadata>"))
         XCTAssertTrue(transcriptSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview("))
         XCTAssertTrue(databaseSource.contains("kind.requiresSensitiveExportReview"))
+        XCTAssertTrue(chatEntrySource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
+        XCTAssertTrue(chatEntrySource.contains("reviewedSensitiveOutputText(content)"))
+        XCTAssertTrue(quickAskSource.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState)"))
+        XCTAssertTrue(quickAskSource.contains("reviewedSensitiveOutputText(message.content)"))
+        XCTAssertTrue(iosLegalSafetySource.contains("reviewedSensitiveOutputText"))
+        XCTAssertTrue(iosChatDetailSource.contains("Export or share sensitive data?"))
+        XCTAssertTrue(iosChatDetailSource.contains("IOSLegalSafetyPolicy.reviewedSensitiveOutputText(content)"))
+        XCTAssertTrue(iosAssistantMarkdownSource.contains("Export or share sensitive data?"))
+        XCTAssertTrue(iosAssistantMarkdownSource.contains("IOSLegalSafetyPolicy.reviewedSensitiveOutputText(code)"))
+    }
+
+    func testProviderBackedDictationRoutesRequireLegalProviderOptIn() throws {
+        let enhancementSource = try readSource("Dictation/Enhancement/EnhancementService.swift")
+        let coordinatorSource = try readSource("Dictation/DictationCoordinator.swift")
+
+        XCTAssertTrue(enhancementSource.contains("LegalSafetyStore.shared.providerDisclosureOptIn"))
+        XCTAssertTrue(enhancementSource.contains("provider route skipped: legal provider disclosure opt-in is off"))
+        XCTAssertTrue(enhancementSource.contains("return raw"))
+        XCTAssertTrue(coordinatorSource.contains("LegalSafetyStore.shared.providerDisclosureOptIn"))
+        XCTAssertTrue(coordinatorSource.contains("routed-stt skipped because legal provider disclosure opt-in is off"))
+        XCTAssertTrue(coordinatorSource.contains("return nil"))
     }
 
     func testCodexInstructionsWritesStaySentinelScopedAndConfirmed() throws {

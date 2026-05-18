@@ -341,6 +341,7 @@ private struct AssistantCodeBlockView: View {
     let code: String
 
     @State private var copied = false
+    @State private var copyReviewPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -349,7 +350,7 @@ private struct AssistantCodeBlockView: View {
                     .font(BodyFont.system(size: 12, weight: .regular))
                     .foregroundStyle(Color(white: 0.55))
                 Spacer(minLength: 8)
-                Button(action: copy) {
+                Button(action: { copyReviewPresented = true }) {
                     ZStack {
                         if copied {
                             LucideIcon(.check, size: 19)
@@ -388,11 +389,19 @@ private struct AssistantCodeBlockView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
         )
+        .confirmationDialog("Export or share sensitive data?", isPresented: $copyReviewPresented, titleVisibility: .visible) {
+            Button("Copy code with labels") {
+                copyReviewed()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(IOSLegalSafetyPolicy.sensitiveCopyReviewMessage)
+        }
     }
 
-    private func copy() {
+    private func copyReviewed() {
         #if canImport(UIKit)
-        UIPasteboard.general.string = code
+        UIPasteboard.general.string = IOSLegalSafetyPolicy.reviewedSensitiveOutputText(code)
         #endif
         Haptics.success()
         withAnimation(.easeOut(duration: 0.18)) { copied = true }

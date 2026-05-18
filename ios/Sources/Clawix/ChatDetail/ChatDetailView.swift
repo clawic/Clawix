@@ -1202,15 +1202,24 @@ struct ImageViewerSelection: Identifiable {
 private struct MessageActions: View {
     let content: String
     @State private var copied: Bool = false
+    @State private var copyReviewPresented: Bool = false
 
     var body: some View {
         HStack(spacing: 18) {
             copyButton
         }
+        .confirmationDialog("Export or share sensitive data?", isPresented: $copyReviewPresented, titleVisibility: .visible) {
+            Button("Copy with labels") {
+                copyReviewed()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(IOSLegalSafetyPolicy.sensitiveCopyReviewMessage)
+        }
     }
 
     private var copyButton: some View {
-        Button(action: copy) {
+        Button(action: { copyReviewPresented = true }) {
             ZStack {
                 if copied {
                     LucideIcon(.check, size: 19)
@@ -1227,9 +1236,9 @@ private struct MessageActions: View {
         .buttonStyle(.plain)
     }
 
-    private func copy() {
+    private func copyReviewed() {
         #if canImport(UIKit)
-        UIPasteboard.general.string = content
+        UIPasteboard.general.string = IOSLegalSafetyPolicy.reviewedSensitiveOutputText(content)
         #endif
         Haptics.success()
         withAnimation(.easeOut(duration: 0.18)) { copied = true }

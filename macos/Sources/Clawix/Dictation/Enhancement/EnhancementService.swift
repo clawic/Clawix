@@ -84,6 +84,10 @@ final class EnhancementService {
             capability: .chat,
             store: AIAccountSecretsStore.shared
         ) else { return raw }
+        guard LegalSafetyStore.shared.providerDisclosureOptIn else {
+            NSLog("[Clawix.Enhancement] provider route skipped: legal provider disclosure opt-in is off")
+            return raw
+        }
 
         let clipboardText = defaults.bool(forKey: EnhancementSettings.clipboardContextKey)
             ? clipboardSnapshot()

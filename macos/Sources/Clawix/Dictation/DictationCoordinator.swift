@@ -586,6 +586,10 @@ final class DictationCoordinator: ObservableObject {
             capability: .stt,
             store: AIAccountSecretsStore.shared
         ) else { return nil }
+        guard LegalSafetyStore.shared.providerDisclosureOptIn else {
+            trace("transcribe: routed-stt skipped because legal provider disclosure opt-in is off")
+            return nil
+        }
         do {
             let client = try await AIClientFactory.client(for: routed.account, model: routed.model)
             let wav = WAVEncoder.encodePCM16(samples: samples)

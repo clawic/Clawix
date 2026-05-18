@@ -49,6 +49,14 @@ struct ChatMessageEntryView: View {
             onOpenImage: { url in
                 appState.imagePreviewURL = url
             },
+            onCopyMessage: { content, copied in
+                LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                    let pb = NSPasteboard.general
+                    pb.clearContents()
+                    pb.setString(LegalSafetyStore.shared.reviewedSensitiveOutputText(content), forType: .string)
+                    copied()
+                }
+            },
             onPushToPublishing: { body in
                 appState.navigate(to: .publishingComposer(prefillBody: body, prefillScheduleAt: nil))
             },

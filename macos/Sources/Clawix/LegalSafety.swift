@@ -203,7 +203,8 @@ final class LegalSafetyStore: ObservableObject {
             case .externalAction: return false
             }
         }()
-        let requiresConfirmation = sensitiveExportConfirmationRequired || !optInSatisfied || action == .externalAction
+        let alwaysRequiresConfirmation = action == .supportDiagnostics || action == .externalAction
+        let requiresConfirmation = sensitiveExportConfirmationRequired || !optInSatisfied || alwaysRequiresConfirmation
         return LegalSensitiveActionReview(
             requiresConfirmation: requiresConfirmation,
             labels: LegalSafetyPolicy.defaultOutputLabels,
@@ -223,6 +224,14 @@ final class LegalSafetyStore: ObservableObject {
 
         Labels: \(labels)
         """)
+    }
+
+    func reviewedSensitiveOutputText(_ text: String) -> String {
+        let labels = LegalSafetyPolicy.defaultOutputLabels.joined(separator: ", ")
+        return """
+        <!-- Clawix export labels: \(labels); disclaimer_version=\(LegalSafetyPolicy.disclaimerVersion); not professional advice; draft not final. -->
+        \(text)
+        """
     }
 
     func requestSensitiveActionReview(

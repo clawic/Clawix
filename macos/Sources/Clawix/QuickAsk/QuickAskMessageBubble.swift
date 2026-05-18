@@ -86,20 +86,22 @@ struct QuickAskMessageBubble: View {
     }
 
     private func handleCopy() {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        pb.setString(message.content, forType: .string)
+        LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.setString(LegalSafetyStore.shared.reviewedSensitiveOutputText(message.content), forType: .string)
 
-        copyResetTask?.cancel()
-        withAnimation(.easeOut(duration: 0.15)) {
-            justCopied = true
-        }
-        copyResetTask = Task {
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.easeIn(duration: 0.2)) {
-                    justCopied = false
+            copyResetTask?.cancel()
+            withAnimation(.easeOut(duration: 0.15)) {
+                justCopied = true
+            }
+            copyResetTask = Task {
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.2)) {
+                        justCopied = false
+                    }
                 }
             }
         }
