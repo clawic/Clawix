@@ -125,7 +125,7 @@ struct ContentView: View {
         switch visibleRoute {
         case .home, .search, .plugins, .project, .chat:
             return true
-        case .automations, .settings, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
+        case .automations, .settings, .rescue, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
              .indexHome, .marketplaceHome,
              .calendarHome, .contactsHome,
              .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent, .driveFolder,
@@ -151,6 +151,7 @@ struct ContentView: View {
         case .project: return "project"
         case .chat(let id): return "chat-\(id.uuidString)"
         case .settings: return "settings"
+        case .rescue: return "rescue"
         case .secretsHome: return "secrets"
         case .databaseHome: return "database"
         case .databaseWorkbench: return "database-workbench"
@@ -274,6 +275,7 @@ struct ContentView: View {
                             case .app(let id):   AppSurfaceView(appId: id)
                             case .chat(let id):  ChatView(chatId: id)
                             case .settings:      SettingsContent()
+                            case .rescue:        RescueDiagnosticsView()
                             case .secretsHome:   SecretsScreen()
                             case .databaseHome:  DatabaseScreen(mode: .admin)
                             case .databaseWorkbench: DatabaseWorkbenchView()

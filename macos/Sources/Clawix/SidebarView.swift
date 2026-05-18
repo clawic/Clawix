@@ -980,7 +980,7 @@ struct SidebarView: View {
                     }
                     if let rescueSummary = RescueRepairStatusSummary(decision: appState.rescueDecision) {
                         RescueRepairSidebarButton(summary: rescueSummary) {
-                            SettingsUtilities.revealDiagnosticsFolder()
+                            appState.openRescueSurface()
                         }
                     }
                     /*

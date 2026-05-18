@@ -46,6 +46,10 @@ enum SidebarRoute: Equatable {
     case appsHome
     case chat(UUID)
     case settings
+    /// Rescue diagnostics surface opened from launcher, sidebar repair state,
+    /// or `clawix://rescue`. It keeps repair/export reachable even when
+    /// normal project/history surfaces are degraded.
+    case rescue
     case secretsHome
     /// Database admin (3-pane explorer over all collections).
     case databaseHome
@@ -177,7 +181,7 @@ extension SidebarRoute {
             return .publishing
         case .lifeHome, .lifeVertical, .lifeSettings:
             return .life
-        case .home, .search, .plugins, .automations, .project, .chat, .settings,
+        case .home, .search, .plugins, .automations, .project, .chat, .settings, .rescue,
              .databaseCollection, .memoryHome, .driveAdmin, .drivePhotos,
              .driveDocuments, .driveRecent, .driveFolder:
             return nil

@@ -16,8 +16,16 @@ extension AppState {
 
     @discardableResult
     func openRescueDeepLink() -> Bool {
-        currentRoute = .settings
-        SettingsUtilities.revealDiagnosticsFolder()
+        openRescueSurface(exportDiagnostics: true)
+        return true
+    }
+
+    @discardableResult
+    func openRescueSurface(exportDiagnostics: Bool = true) -> Bool {
+        currentRoute = .rescue
+        if exportDiagnostics {
+            SettingsUtilities.revealDiagnosticsFolder()
+        }
         return true
     }
 

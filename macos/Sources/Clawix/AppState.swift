@@ -1617,6 +1617,8 @@ final class AppState: ObservableObject {
             currentRoute = .project
         case "settings":
             currentRoute = .settings
+        case "rescue":
+            currentRoute = .rescue
         case "chat":
             chats = [sampleChat]
             currentRoute = .chat(sampleChat.id)
@@ -1641,7 +1643,12 @@ final class AppState: ObservableObject {
 
     private func restorePersistedLaunchRoute() -> Bool {
         let defaults = Self.sidebarDefaults
-        guard defaults.string(forKey: Self.launchRouteKindKey) == "chat" else {
+        let kind = defaults.string(forKey: Self.launchRouteKindKey)
+        if kind == "rescue" {
+            currentRoute = .rescue
+            return true
+        }
+        guard kind == "chat" else {
             return false
         }
 
@@ -1671,6 +1678,10 @@ final class AppState: ObservableObject {
             }
         case .home:
             defaults.set("home", forKey: Self.launchRouteKindKey)
+            defaults.removeObject(forKey: Self.launchRouteChatUuidKey)
+            defaults.removeObject(forKey: Self.launchRouteThreadIdKey)
+        case .rescue:
+            defaults.set("rescue", forKey: Self.launchRouteKindKey)
             defaults.removeObject(forKey: Self.launchRouteChatUuidKey)
             defaults.removeObject(forKey: Self.launchRouteThreadIdKey)
         default:
