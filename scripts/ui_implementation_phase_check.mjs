@@ -1,10 +1,37 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_IMPLEMENTATION_PHASE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-manifest",
+  "--simulate-missing-allowed-action",
+  "--simulate-extra-allowed-action",
+  "--simulate-duplicate-allowed-action",
+  "--simulate-missing-forbidden-action",
+  "--simulate-extra-forbidden-action",
+  "--simulate-duplicate-forbidden-action",
+  "--simulate-unknown-phase",
+  "--simulate-wrong-foundation-status",
+  "--simulate-duplicate-phase",
+  "--simulate-missing-private-evidence-phase",
+  "--simulate-unsafe-evidence-reference",
+  "--simulate-missing-phase-evidence",
+  "--simulate-duplicate-phase-evidence",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI implementation phase check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
 
 function fail(message) {
   errors.push(message);
@@ -181,6 +208,55 @@ if (errors.length > 0) {
   console.error("UI implementation phase check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-inactive-manifest", "docs/ui/implementation-phases.manifest.json.status must be active"],
+    [
+      "--simulate-missing-allowed-action",
+      "docs/ui/implementation-phases.manifest.json.nonAuthorizedAllowedActions must include conceptual-proposal",
+    ],
+    [
+      "--simulate-extra-allowed-action",
+      "docs/ui/implementation-phases.manifest.json.nonAuthorizedAllowedActions must not include style-token-edit",
+    ],
+    ["--simulate-duplicate-allowed-action", "docs/ui/implementation-phases.manifest.json.nonAuthorizedAllowedActions duplicates"],
+    [
+      "--simulate-missing-forbidden-action",
+      "docs/ui/implementation-phases.manifest.json.nonAuthorizedForbiddenActions must include visual-ui",
+    ],
+    [
+      "--simulate-extra-forbidden-action",
+      "docs/ui/implementation-phases.manifest.json.nonAuthorizedForbiddenActions must not include private-evidence-wiring",
+    ],
+    ["--simulate-duplicate-forbidden-action", "docs/ui/implementation-phases.manifest.json.nonAuthorizedForbiddenActions duplicates"],
+    ["--simulate-unknown-phase", "docs/ui/implementation-phases.manifest.json.phases[0].id is not a required implementation phase"],
+    ["--simulate-wrong-foundation-status", "docs/ui/implementation-phases.manifest.json.phases[0].status must be complete"],
+    ["--simulate-duplicate-phase", "docs/ui/implementation-phases.manifest.json.phases[3].id duplicates"],
+    [
+      "--simulate-missing-private-evidence-phase",
+      "docs/ui/implementation-phases.manifest.json.phases must include private-evidence-capture",
+    ],
+    ["--simulate-unsafe-evidence-reference", "docs/ui/implementation-phases.manifest.json.phases[0].evidence[0] must be public-safe and repo-relative"],
+    ["--simulate-missing-phase-evidence", "docs/ui/implementation-phases.manifest.json.phases[0].evidence must not be empty"],
+    ["--simulate-duplicate-phase-evidence", "docs/ui/implementation-phases.manifest.json.phases"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_IMPLEMENTATION_PHASE_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI implementation phase self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI implementation phase check passed (${seen.size} phases)`);
