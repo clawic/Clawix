@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
@@ -7,6 +9,7 @@ import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const isSelfTest = process.env.CLAWIX_UI_APPROVAL_VERIFY_SELF_TEST === "1";
 const errors = [];
 
 function fail(message) {
@@ -114,6 +117,37 @@ function approvalRecords(manifest) {
   return records;
 }
 
+function runFailureSelfTests(privateRootEnv) {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_APPROVAL_VERIFY_SELF_TEST: "1",
+  };
+  delete selfTestEnv[privateRootEnv];
+  const missingRoot = path.join(os.tmpdir(), `clawix-ui-private-approval-missing-${process.pid}`);
+  const tests = [
+    [[], {}, "requires --require-approved"],
+    [["--require-approved", "--unknown-flag"], {}, "received unknown flag --unknown-flag"],
+    [["--require-approved"], { [privateRootEnv]: rootDir }, `${privateRootEnv} must point outside the public repository`],
+    [["--require-approved"], { [privateRootEnv]: missingRoot }, `${privateRootEnv} does not point to an existing directory`],
+  ];
+
+  for (const [testArgs, extraEnv, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: { ...selfTestEnv, ...extraEnv },
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for private approval verification`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} output must include ${expectedOutput}`);
+    }
+  }
+}
+
 if (!hasFlag("--require-approved")) {
   console.error("UI private approval verification requires --require-approved.");
   process.exit(1);
@@ -151,6 +185,9 @@ try {
   privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 } catch (error) {
   fail(error.message);
+}
+if (!isSelfTest && privateRootEnv) {
+  runFailureSelfTests(privateRootEnv);
 }
 if (!privateRootEnv || !process.env[privateRootEnv]) {
   console.error(`EXTERNAL PENDING: set ${privateRootEnv} to verify private approval evidence.`);
