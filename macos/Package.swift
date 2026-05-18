@@ -63,7 +63,8 @@ let package = Package(
             name: "ClawixMeshTests",
             dependencies: [
                 "Clawix",
-                .product(name: "ClawixCore", package: "ClawixCore")
+                .product(name: "ClawixCore", package: "ClawixCore"),
+                .product(name: "ClawHostKit", package: "host")
             ],
             path: "Tests/ClawixMeshTests"
         ),
