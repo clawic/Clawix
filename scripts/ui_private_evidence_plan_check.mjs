@@ -7,11 +7,38 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
 const argSet = new Set(args);
 const isSelfTest = process.env.CLAWIX_UI_PRIVATE_EVIDENCE_PLAN_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-unsafe-surface-baseline-reference",
+  "--simulate-unsafe-flow-baseline-reference",
+  "--simulate-path-evidence-filename",
+  "--simulate-duplicate-surface-required-field",
+  "--simulate-unsafe-surface-required-field",
+  "--simulate-empty-pattern-geometry-fields",
+  "--simulate-duplicate-pattern-geometry-field",
+  "--simulate-missing-rendered-drift-plan",
+  "--simulate-missing-performance-budget-fields",
+  "--simulate-flow-duplicate-required-field",
+  "--simulate-missing-surface-coverage-entry",
+  "--simulate-missing-pattern-registry-entry",
+  "--simulate-private-validation-wrong-evidence-plan-command",
+  "--simulate-private-validation-missing-blocker",
+  "--simulate-private-validation-extra-blocker",
+  "--simulate-private-validation-wrong-evidence-type",
+  "--simulate-duplicate-evidence-record",
+];
+const allowedFlags = new Set(["--json", ...simulationFlags]);
 const errors = [];
 const plan = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of args) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI private evidence plan check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -458,6 +485,7 @@ for (const [decisionId, evidenceTypes] of expectedDecisionEvidence.entries()) {
 
 if (errors.length === 0 && !isSelfTest && args.length === 0) {
   for (const [flag, expectedOutput] of [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-unsafe-surface-baseline-reference", "privateBaselineReference must use private-codex-ui-baselines:"],
     ["--simulate-unsafe-flow-baseline-reference", "privateBaselineReference must use a safe relative private reference"],
     ["--simulate-path-evidence-filename", "evidenceFilename must be a safe filename"],
