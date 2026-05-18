@@ -2,27 +2,5 @@
   "version": 1,
   "createdAt": "2026-05-17",
   "description": "Expiring Clawix baseline for pre-existing local meta-code that predates the discoverability registry.",
-  "entries": [
-    {
-      "id": "pre-existing-clawix-adr-route-inventory",
-      "owner": "clawix",
-      "reason": "Accepted Clawix ADRs created before ADR 0017 do not yet have per-artifact discovery route records.",
-      "reviewDate": "2026-08-17",
-      "frozenCount": 12,
-      "artifacts": [
-        "docs/adr/0001-claw-framework-host-boundary.md",
-        "docs/adr/0002-naming-and-stability-surfaces.md",
-        "docs/adr/0003-testing-architecture.md",
-        "docs/adr/0004-source-file-boundaries.md",
-        "docs/adr/0005-integration-qa-lab.md",
-        "docs/adr/0006-cli-agent-interface.md",
-        "docs/adr/0007-dual-human-programmatic-surfaces.md",
-        "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md",
-        "docs/adr/0009-agentic-naming-and-code-structure.md",
-        "docs/adr/0010-interface-governance.md",
-        "docs/adr/0011-surface-route-graph.md",
-        "docs/adr/0016-code-hygiene-program.md"
-      ]
-    }
-  ]
+  "entries": []
 }

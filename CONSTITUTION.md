@@ -13,6 +13,13 @@ When an agent or contributor faces a decision, this document is the highest
 authority. Project-level CLAUDE.md / AGENTS.md files defer to it. When local
 documents conflict with the constitution, the constitution wins.
 
+Durable meta-code decisions, workflow skills, guardrails, harnesses, route
+work, and UI governance artifacts must stay discoverable through the
+repository's generated discoverability router and registry. If an artifact
+shapes future behavior, agents must be able to find its canonical source from
+the repository entrypoints, task skill, decision map, and CLI discovery rather
+than relying on buried prose or source comments.
+
 ## Preamble
 
 We are building the canonical interface between humans and digital

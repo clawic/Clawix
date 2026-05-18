@@ -4,6 +4,276 @@
   "description": "Clawix projection of the ClawJS discoverability contract for local ADRs, UI governance, host validation, projected skills, and route work.",
   "artifacts": [
     {
+      "id": "adr-docs-adr-0001-claw-framework-host-boundary",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0001-claw-framework-host-boundary.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0001: Claw framework and host boundary",
+        "0001-claw-framework-host-boundary",
+        "ADR 0001"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0001: Claw framework and host boundary",
+          "expectPath": "docs/adr/0001-claw-framework-host-boundary.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0002-naming-and-stability-surfaces",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0002-naming-and-stability-surfaces.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0002: Naming and stability surfaces",
+        "0002-naming-and-stability-surfaces",
+        "ADR 0002"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0002: Naming and stability surfaces",
+          "expectPath": "docs/adr/0002-naming-and-stability-surfaces.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0003-testing-architecture",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0003-testing-architecture.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0003: Testing architecture",
+        "0003-testing-architecture",
+        "ADR 0003"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0003: Testing architecture",
+          "expectPath": "docs/adr/0003-testing-architecture.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0004-source-file-boundaries",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0004-source-file-boundaries.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0004: Source file boundaries",
+        "0004-source-file-boundaries",
+        "ADR 0004"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0004: Source file boundaries",
+          "expectPath": "docs/adr/0004-source-file-boundaries.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0005-integration-qa-lab",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0005-integration-qa-lab.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0005: Integration QA Lab",
+        "0005-integration-qa-lab",
+        "ADR 0005"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0005: Integration QA Lab",
+          "expectPath": "docs/adr/0005-integration-qa-lab.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0006-cli-agent-interface",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0006-cli-agent-interface.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0006: CLI agent interface",
+        "0006-cli-agent-interface",
+        "ADR 0006"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0006: CLI agent interface",
+          "expectPath": "docs/adr/0006-cli-agent-interface.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0007-dual-human-programmatic-surfaces",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0007-dual-human-programmatic-surfaces.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0007: Dual human and programmatic surfaces",
+        "0007-dual-human-programmatic-surfaces",
+        "ADR 0007"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0007: Dual human and programmatic surfaces",
+          "expectPath": "docs/adr/0007-dual-human-programmatic-surfaces.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0008-cli-jit-guidance-actor-assertions-resource-registry",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0008: CLI just-in-time guidance, actor assertions, and resource registry",
+        "0008-cli-jit-guidance-actor-assertions-resource-registry",
+        "ADR 0008"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0008: CLI just-in-time guidance, actor assertions, and resource registry",
+          "expectPath": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0009-agentic-naming-and-code-structure",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0009-agentic-naming-and-code-structure.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0009: Agentic naming and code structure",
+        "0009-agentic-naming-and-code-structure",
+        "ADR 0009"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0009: Agentic naming and code structure",
+          "expectPath": "docs/adr/0009-agentic-naming-and-code-structure.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0016-code-hygiene-program",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0016-code-hygiene-program.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0016: Code hygiene program",
+        "0016-code-hygiene-program",
+        "ADR 0016"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0016: Code hygiene program",
+          "expectPath": "docs/adr/0016-code-hygiene-program.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "clawix-discoverability-projection",
       "kind": "adr",
       "owner": "clawix",
@@ -11,12 +281,17 @@
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
         "docs/decision-map.md",
         "skills/adr-to-guardrail/SKILL.md",
         "skills/docs-alignment-update/SKILL.md",
         "skills/decision-map-maintenance/SKILL.md"
       ],
       "discoveryTerms": [
+        "ADR 0017: Discoverability and meta-code routing",
+        "0017-discoverability-and-meta-code-routing",
+        "ADR 0017",
         "discoverability",
         "meta-code routing",
         "Clawix projection"
@@ -34,6 +309,1161 @@
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "clawix-surface-route-graph",
+      "kind": "surface-route",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0011-surface-route-graph.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "skills/surface-route-work/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0011: Surface route graph mirror",
+        "0011-surface-route-graph",
+        "ADR 0011",
+        "surface route graph",
+        "Clawix bridge",
+        "runtime-critical"
+      ],
+      "searchQueries": [
+        {
+          "query": "surface route graph",
+          "expectPath": "docs/adr/0011-surface-route-graph.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "skill-skills-adr-to-guardrail",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/adr-to-guardrail/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "adr-to-guardrail",
+        "Turn a new or changed ADR into implemented behavior, routing docs, tests, and guardrails rather than leaving it as standalone prose."
+      ],
+      "searchQueries": [
+        {
+          "query": "adr-to-guardrail",
+          "expectPath": "skills/adr-to-guardrail/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-architecture-drift-repair",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/architecture-drift-repair/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "architecture-drift-repair",
+        "Repair confirmed architecture drift in small batches while preserving public canon and avoiding broad opportunistic refactors."
+      ],
+      "searchQueries": [
+        {
+          "query": "architecture-drift-repair",
+          "expectPath": "skills/architecture-drift-repair/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-brand-guidelines",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/brand-guidelines/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "brand-guidelines",
+        "Given an existing Style, generate a human-readable brand guidelines document covering colors, typography, voice, do/don't, imagery rules, and usage examples. Use when the user asks for a brand book, brand guide, or design system document."
+      ],
+      "searchQueries": [
+        {
+          "query": "brand-guidelines",
+          "expectPath": "skills/brand-guidelines/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-canonical-catalog-expansion",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/canonical-catalog-expansion/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "canonical-catalog-expansion",
+        "Add or improve canonical data catalog collections, fields, aliases, relations, evidence tags, docs, and tests."
+      ],
+      "searchQueries": [
+        {
+          "query": "canonical-catalog-expansion",
+          "expectPath": "skills/canonical-catalog-expansion/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-canvas-design",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/canvas-design/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "canvas-design",
+        "Apply the 90/10 visual-to-text rule when composing a piece on a canvas (poster, card, social post). Use when the deliverable lives on a single fixed surface where each element competes for attention."
+      ],
+      "searchQueries": [
+        {
+          "query": "canvas-design",
+          "expectPath": "skills/canvas-design/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-cli-agent-surface-work",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/cli-agent-surface-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "cli-agent-surface-work",
+        "Change the public agent-facing CLI surface while preserving registry-backed discovery, JSON envelopes, aliases, docs, and tests."
+      ],
+      "searchQueries": [
+        {
+          "query": "cli-agent-surface-work",
+          "expectPath": "skills/cli-agent-surface-work/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-hygiene-audit",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/code-hygiene-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-hygiene-audit",
+        "Audit ClawJS/Clawix code hygiene without editing code, producing categorized findings, baseline status, and validation evidence."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-hygiene-audit",
+          "expectPath": "skills/code-hygiene-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-hygiene-cleanup",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/code-hygiene-cleanup/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-hygiene-cleanup",
+        "Execute a bounded ClawJS/Clawix code hygiene cleanup campaign from an audit report, one category and repo at a time."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-hygiene-cleanup",
+          "expectPath": "skills/code-hygiene-cleanup/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-review-risk",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/code-review-risk/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-review-risk",
+        "Review changes for bugs, regressions, missing tests, safety gaps, public/private leaks, and architecture drift before stylistic comments."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-review-risk",
+          "expectPath": "skills/code-review-risk/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-commit-hygiene-public",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/commit-hygiene-public/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "commit-hygiene-public",
+        "Apply public, contributor-safe commit hygiene without maintainer-private automation, timestamps, ledger rules, or push policy."
+      ],
+      "searchQueries": [
+        {
+          "query": "commit-hygiene-public",
+          "expectPath": "skills/commit-hygiene-public/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-constitution-drift-audit",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/constitution-drift-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "constitution-drift-audit",
+        "Audit code, docs, tests, and registries against the Constitution, ADRs, and decision map without making broad repairs. Use when checking whether the repository is drifting away from accepted architecture."
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution-drift-audit",
+          "expectPath": "skills/constitution-drift-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-data-storage-boundary-review",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/data-storage-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "data-storage-boundary-review",
+        "Review storage placement across framework global data, workspace data, host state, sidecars, caches, vaults, and external sources."
+      ],
+      "searchQueries": [
+        {
+          "query": "data-storage-boundary-review",
+          "expectPath": "skills/data-storage-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-decision-map-maintenance",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/decision-map-maintenance/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "decision-map-maintenance",
+        "Keep decision maps as concise routers from decisions to canonical documents and validation guardrails."
+      ],
+      "searchQueries": [
+        {
+          "query": "decision-map-maintenance",
+          "expectPath": "skills/decision-map-maintenance/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-docs-alignment-update",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/docs-alignment-update/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "docs-alignment-update",
+        "Update docs, playbooks, shims, generated docs, and alignment checks so public instructions route to the right canonical sources."
+      ],
+      "searchQueries": [
+        {
+          "query": "docs-alignment-update",
+          "expectPath": "skills/docs-alignment-update/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-host-boundary-review",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/host-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "host-boundary-review",
+        "Review framework vs host ownership for permissions, approvals, grants, native execution, storage, daemons, and Clawix integration."
+      ],
+      "searchQueries": [
+        {
+          "query": "host-boundary-review",
+          "expectPath": "skills/host-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-host-dependent-validation",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/host-dependent-validation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "host-dependent-validation",
+        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, or signed native helpers."
+      ],
+      "searchQueries": [
+        {
+          "query": "host-dependent-validation",
+          "expectPath": "skills/host-dependent-validation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-integration-qa-lab",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/integration-qa-lab/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "integration-qa-lab",
+        "Build or review an external integration QA lab with official surface snapshots, coverage matrices, fixtures, opt-in live lanes, and safe credential handling."
+      ],
+      "searchQueries": [
+        {
+          "query": "integration-qa-lab",
+          "expectPath": "skills/integration-qa-lab/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-naming-surface-audit",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/naming-surface-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "naming-surface-audit",
+        "Audit and improve stable names, aliases, vocabulary, field casing, routes, ports, packages, and agent-search discoverability."
+      ],
+      "searchQueries": [
+        {
+          "query": "naming-surface-audit",
+          "expectPath": "skills/naming-surface-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-performance-investigation",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/performance-investigation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "performance-investigation",
+        "Investigate latency, freezes, memory growth, hitches, dropped frames, or perceived slowness with reproduction and instrumentation before optimizing."
+      ],
+      "searchQueries": [
+        {
+          "query": "performance-investigation",
+          "expectPath": "skills/performance-investigation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-public-hygiene-review",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/public-hygiene-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "public-hygiene-review",
+        "Review public repository changes for secrets, private paths, signing identities, bundle IDs, generated artifacts, local logs, and private workflow leaks."
+      ],
+      "searchQueries": [
+        {
+          "query": "public-hygiene-review",
+          "expectPath": "skills/public-hygiene-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-secrets-boundary-review",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/secrets-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "secrets-boundary-review",
+        "Review secret handling, brokered execution, redaction, vault boundaries, host approval, and public hygiene."
+      ],
+      "searchQueries": [
+        {
+          "query": "secrets-boundary-review",
+          "expectPath": "skills/secrets-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-source-file-boundary-refactor",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/source-file-boundary-refactor/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "source-file-boundary-refactor",
+        "Split or contain large source files according to the source-file boundary ADR without changing behavior opportunistically."
+      ],
+      "searchQueries": [
+        {
+          "query": "source-file-boundary-refactor",
+          "expectPath": "skills/source-file-boundary-refactor/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-style-apply",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/style-apply/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "style-apply",
+        "Apply a Style to any artifact in the workspace (presentation, card, poster, social post, web page). Use when the user says \"apply style X\", \"render this with style X\", or wants to reuse a saved style on a new piece."
+      ],
+      "searchQueries": [
+        {
+          "query": "style-apply",
+          "expectPath": "skills/style-apply/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-style-extract",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/style-extract/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "style-extract",
+        "Inspect a reference (web URL, image, PDF, screenshot) and propose a candidate Style for the workspace. Use when the user says \"save this style\", \"guarda este estilo\", or shares a reference and wants to reapply it later."
+      ],
+      "searchQueries": [
+        {
+          "query": "style-extract",
+          "expectPath": "skills/style-extract/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-surface-registry-alignment",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/surface-registry-alignment/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "surface-registry-alignment",
+        "Align stable paths, APIs, CLI commands, schemas, events, IDs, storage keys, and UI/programmatic parity with the surface registries."
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-registry-alignment",
+          "expectPath": "skills/surface-registry-alignment/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-surface-route-work",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/surface-route-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "surface-route-work",
+        "Work from a registered surface or transverse route by inspecting nodes, neighbors, edges, contracts, owners, tests, and gaps before editing."
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-route-work",
+          "expectPath": "skills/surface-route-work/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-template-render",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/template-render/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "template-render",
+        "Render a Template + data + Style into a final artifact in one of HTML, PDF, PNG, SVG or PPTX. Use whenever the user asks for a concrete deliverable like \"make me a poster\", \"render a card\", \"give me a one-pager\"."
+      ],
+      "searchQueries": [
+        {
+          "query": "template-render",
+          "expectPath": "skills/template-render/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-theme-factory",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/theme-factory/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "theme-factory",
+        "Produce variants of an existing Style by shifting tone (light/dark), density (compact/relaxed), or accent (palette rotation) while preserving the brand identity. Use when the user wants alternate themes derived from one brand."
+      ],
+      "searchQueries": [
+        {
+          "query": "theme-factory",
+          "expectPath": "skills/theme-factory/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-ui-canon-review",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/ui-canon-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "ui-canon-review",
+        "Review whether a Clawix UI pattern, visual decision, copy change, or component extraction belongs in canon, debt, exception, or protected-surface scope."
+      ],
+      "searchQueries": [
+        {
+          "query": "ui-canon-review",
+          "expectPath": "skills/ui-canon-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-ui-implementation-skill",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/ui-implementation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/ui/README.md"
+      ],
+      "discoveryTerms": [
+        "ui-implementation",
+        "Implement functional Clawix UI wiring while respecting visual mutation boundaries, pattern contracts, protected surfaces, and debt baselines.",
+        "ui implementation",
+        "mutation class",
+        "discovery registration"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui implementation",
+          "expectPath": "skills/ui-implementation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/ui_skill_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "skill-skills-ui-performance-budget",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/ui-performance-budget/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "ui-performance-budget",
+        "Capture and compare Clawix UI performance budgets for critical flows before optimizing visible or runtime UI behavior."
+      ],
+      "searchQueries": [
+        {
+          "query": "ui-performance-budget",
+          "expectPath": "skills/ui-performance-budget/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-visual-regression",
+      "kind": "skill",
+      "owner": "clawix",
+      "canonicalSource": "skills/visual-regression/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "visual-regression",
+        "Run and interpret Clawix UI geometry, screenshot, protected-surface, and debt-baseline checks without authorizing visual repair."
+      ],
+      "searchQueries": [
+        {
+          "query": "visual-regression",
+          "expectPath": "skills/visual-regression/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-check-clawjs-skills-sync",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/check-clawjs-skills-sync.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "check-clawjs-skills-sync",
+        "Check Clawjs Skills Sync"
+      ],
+      "searchQueries": [
+        {
+          "query": "check-clawjs-skills-sync",
+          "expectPath": "scripts/check-clawjs-skills-sync.mjs"
+        }
+      ],
+      "guard": "scripts/check-clawjs-skills-sync.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-code-hygiene-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/code-hygiene-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "code-hygiene-check",
+        "Code Hygiene Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "code-hygiene-check",
+          "expectPath": "scripts/code-hygiene-check.mjs"
+        }
+      ],
+      "guard": "scripts/code-hygiene-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-discoverability-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/discoverability-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "discoverability-check",
+        "Discoverability Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "discoverability-check",
+          "expectPath": "scripts/discoverability-check.mjs"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-interface-surface-guard",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/interface_surface_guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "interface_surface_guard",
+        "Interface Surface Guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "interface_surface_guard",
+          "expectPath": "scripts/interface_surface_guard.mjs"
+        }
+      ],
+      "guard": "scripts/interface_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-naming-shape-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/naming-shape-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "naming-shape-check",
+        "Naming Shape Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "naming-shape-check",
+          "expectPath": "scripts/naming-shape-check.mjs"
+        }
+      ],
+      "guard": "scripts/naming-shape-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-native-action-broker-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/native_action_broker_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "native_action_broker_check",
+        "Native Action Broker Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "native_action_broker_check",
+          "expectPath": "scripts/native_action_broker_check.mjs"
+        }
+      ],
+      "guard": "scripts/native_action_broker_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-native-permission-broker-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/native_permission_broker_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "native_permission_broker_check",
+        "Native Permission Broker Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "native_permission_broker_check",
+          "expectPath": "scripts/native_permission_broker_check.mjs"
+        }
+      ],
+      "guard": "scripts/native_permission_broker_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-package-surface-guard",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/package_surface_guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "package_surface_guard",
+        "Package Surface Guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "package_surface_guard",
+          "expectPath": "scripts/package_surface_guard.mjs"
+        }
+      ],
+      "guard": "scripts/package_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-remote-canon-alignment-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/remote_canon_alignment_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "remote_canon_alignment_check",
+        "Remote Canon Alignment Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "remote_canon_alignment_check",
+          "expectPath": "scripts/remote_canon_alignment_check.mjs"
+        }
+      ],
+      "guard": "scripts/remote_canon_alignment_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-source-size-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/source-size-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "source-size-check",
+        "Source Size Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "source-size-check",
+          "expectPath": "scripts/source-size-check.mjs"
+        }
+      ],
+      "guard": "scripts/source-size-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-storage-boundary-guard",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/storage_boundary_guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "storage_boundary_guard",
+        "Storage Boundary Guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "storage_boundary_guard",
+          "expectPath": "scripts/storage_boundary_guard.mjs"
+        }
+      ],
+      "guard": "scripts/storage_boundary_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-tracked-ignored-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/tracked-ignored-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "tracked-ignored-check",
+        "Tracked Ignored Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "tracked-ignored-check",
+          "expectPath": "scripts/tracked-ignored-check.mjs"
+        }
+      ],
+      "guard": "scripts/tracked-ignored-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-v1-surface-closure-audit-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/v1_surface_closure_audit_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "v1_surface_closure_audit_check",
+        "V1 Surface Closure Audit Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "v1_surface_closure_audit_check",
+          "expectPath": "scripts/v1_surface_closure_audit_check.mjs"
+        }
+      ],
+      "guard": "scripts/v1_surface_closure_audit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0010-interface-governance",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0010-interface-governance.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0010: Interface governance and visual mutation boundary",
+        "0010-interface-governance",
+        "ADR 0010"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0010: Interface governance and visual mutation boundary",
+          "expectPath": "docs/adr/0010-interface-governance.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
     },
     {
       "id": "clawix-ui-governance-discoverability",
@@ -61,54 +1491,1029 @@
       "reviewDate": "2026-08-17"
     },
     {
-      "id": "clawix-surface-route-graph",
-      "kind": "surface-route",
+      "id": "guard-scripts-ui-approval-authority-check",
+      "kind": "ui-governance",
       "owner": "clawix",
-      "canonicalSource": "docs/adr/0011-surface-route-graph.md",
+      "canonicalSource": "scripts/ui_approval_authority_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
-        "docs/decision-map.md",
-        "skills/surface-route-work/SKILL.md"
+        "docs/discoverability.md",
+        "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "surface route graph",
-        "Clawix bridge",
-        "runtime-critical"
+        "ui_approval_authority_check",
+        "Ui Approval Authority Check"
       ],
       "searchQueries": [
         {
-          "query": "surface route graph",
-          "expectPath": "docs/adr/0011-surface-route-graph.md"
+          "query": "ui_approval_authority_check",
+          "expectPath": "scripts/ui_approval_authority_check.mjs"
         }
       ],
-      "guard": "scripts/discoverability-check.mjs",
+      "guard": "scripts/ui_approval_authority_check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17"
+      "reviewDate": "2026-08-18"
     },
     {
-      "id": "clawix-ui-implementation-skill",
-      "kind": "skill",
+      "id": "guard-scripts-ui-canon-docs-check",
+      "kind": "ui-governance",
       "owner": "clawix",
-      "canonicalSource": "skills/ui-implementation/SKILL.md",
+      "canonicalSource": "scripts/ui_canon_docs_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
-        "docs/ui/README.md"
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ui implementation",
-        "mutation class",
-        "discovery registration"
+        "ui_canon_docs_check",
+        "Ui Canon Docs Check"
       ],
       "searchQueries": [
         {
-          "query": "ui implementation",
-          "expectPath": "skills/ui-implementation/SKILL.md"
+          "query": "ui_canon_docs_check",
+          "expectPath": "scripts/ui_canon_docs_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_canon_docs_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-canon-promotion-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_canon_promotion_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_canon_promotion_check",
+        "Ui Canon Promotion Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_canon_promotion_check",
+          "expectPath": "scripts/ui_canon_promotion_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_canon_promotion_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-canon-unit-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_canon_unit_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_canon_unit_check",
+        "Ui Canon Unit Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_canon_unit_check",
+          "expectPath": "scripts/ui_canon_unit_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_canon_unit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-completion-audit-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_completion_audit_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_completion_audit_check",
+        "Ui Completion Audit Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_completion_audit_check",
+          "expectPath": "scripts/ui_completion_audit_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_completion_audit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-completion-gate-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_completion_gate_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_completion_gate_check",
+        "Ui Completion Gate Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_completion_gate_check",
+          "expectPath": "scripts/ui_completion_gate_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_completion_gate_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-completion-source-manifest-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_completion_source_manifest_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_completion_source_manifest_check",
+        "Ui Completion Source Manifest Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_completion_source_manifest_check",
+          "expectPath": "scripts/ui_completion_source_manifest_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_completion_source_manifest_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-component-extraction-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_component_extraction_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_component_extraction_check",
+        "Ui Component Extraction Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_component_extraction_check",
+          "expectPath": "scripts/ui_component_extraction_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_component_extraction_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-copy-governance-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_copy_governance_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_copy_governance_check",
+        "Ui Copy Governance Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_copy_governance_check",
+          "expectPath": "scripts/ui_copy_governance_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_copy_governance_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-critical-cleanup-queue-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_critical_cleanup_queue_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_critical_cleanup_queue_check",
+        "Ui Critical Cleanup Queue Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_critical_cleanup_queue_check",
+          "expectPath": "scripts/ui_critical_cleanup_queue_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_critical_cleanup_queue_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-debt-audit-manifest-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_debt_audit_manifest_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_debt_audit_manifest_check",
+        "Ui Debt Audit Manifest Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_debt_audit_manifest_check",
+          "expectPath": "scripts/ui_debt_audit_manifest_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_debt_audit_manifest_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-debt-report-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_debt_report_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_debt_report_check",
+        "Ui Debt Report Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_debt_report_check",
+          "expectPath": "scripts/ui_debt_report_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_debt_report_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-decision-verification-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_decision_verification_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_decision_verification_check",
+        "Ui Decision Verification Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_decision_verification_check",
+          "expectPath": "scripts/ui_decision_verification_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_decision_verification_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-exception-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_exception_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_exception_check",
+        "Ui Exception Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_exception_check",
+          "expectPath": "scripts/ui_exception_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_exception_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-geometry-contract-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_geometry_contract_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_geometry_contract_check",
+        "Ui Geometry Contract Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_geometry_contract_check",
+          "expectPath": "scripts/ui_geometry_contract_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_geometry_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-governance-guard",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_governance_guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_governance_guard",
+        "Ui Governance Guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_governance_guard",
+          "expectPath": "scripts/ui_governance_guard.mjs"
+        }
+      ],
+      "guard": "scripts/ui_governance_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-implementation-evidence-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_implementation_evidence_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_implementation_evidence_check",
+        "Ui Implementation Evidence Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_implementation_evidence_check",
+          "expectPath": "scripts/ui_implementation_evidence_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_implementation_evidence_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-implementation-phase-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_implementation_phase_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_implementation_phase_check",
+        "Ui Implementation Phase Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_implementation_phase_check",
+          "expectPath": "scripts/ui_implementation_phase_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_implementation_phase_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-inspiration-reference-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_inspiration_reference_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_inspiration_reference_check",
+        "Ui Inspiration Reference Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_inspiration_reference_check",
+          "expectPath": "scripts/ui_inspiration_reference_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_inspiration_reference_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-mechanical-equivalence-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_mechanical_equivalence_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_mechanical_equivalence_check",
+        "Ui Mechanical Equivalence Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_mechanical_equivalence_check",
+          "expectPath": "scripts/ui_mechanical_equivalence_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_mechanical_equivalence_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-pattern-mutation-guard",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_pattern_mutation_guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_pattern_mutation_guard",
+        "Ui Pattern Mutation Guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_pattern_mutation_guard",
+          "expectPath": "scripts/ui_pattern_mutation_guard.mjs"
+        }
+      ],
+      "guard": "scripts/ui_pattern_mutation_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-pattern-performance-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_pattern_performance_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_pattern_performance_check",
+        "Ui Pattern Performance Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_pattern_performance_check",
+          "expectPath": "scripts/ui_pattern_performance_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_pattern_performance_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-performance-budget-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_performance_budget_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_performance_budget_check",
+        "Ui Performance Budget Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_performance_budget_check",
+          "expectPath": "scripts/ui_performance_budget_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_performance_budget_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-private-artifact-boundary-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_artifact_boundary_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_artifact_boundary_check",
+        "Ui Private Artifact Boundary Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_artifact_boundary_check",
+          "expectPath": "scripts/ui_private_artifact_boundary_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_artifact_boundary_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-private-baseline-manifest-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_baseline_manifest_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_baseline_manifest_check",
+        "Ui Private Baseline Manifest Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_baseline_manifest_check",
+          "expectPath": "scripts/ui_private_baseline_manifest_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_baseline_manifest_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-private-evidence-plan-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_evidence_plan_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_evidence_plan_check",
+        "Ui Private Evidence Plan Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_evidence_plan_check",
+          "expectPath": "scripts/ui_private_evidence_plan_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_evidence_plan_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-private-visual-validation-manifest-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_visual_validation_manifest_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_visual_validation_manifest_check",
+        "Ui Private Visual Validation Manifest Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_visual_validation_manifest_check",
+          "expectPath": "scripts/ui_private_visual_validation_manifest_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_visual_validation_manifest_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-protected-surface-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_protected_surface_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_protected_surface_check",
+        "Ui Protected Surface Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_protected_surface_check",
+          "expectPath": "scripts/ui_protected_surface_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_protected_surface_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-release-gate-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_release_gate_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_release_gate_check",
+        "Ui Release Gate Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_release_gate_check",
+          "expectPath": "scripts/ui_release_gate_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_release_gate_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-rendered-drift-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_rendered_drift_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_rendered_drift_check",
+        "Ui Rendered Drift Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_rendered_drift_check",
+          "expectPath": "scripts/ui_rendered_drift_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_rendered_drift_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-rendered-geometry-manifest-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_rendered_geometry_manifest_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_rendered_geometry_manifest_check",
+        "Ui Rendered Geometry Manifest Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_rendered_geometry_manifest_check",
+          "expectPath": "scripts/ui_rendered_geometry_manifest_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_rendered_geometry_manifest_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-skill-contract-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_skill_contract_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_skill_contract_check",
+        "Ui Skill Contract Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_skill_contract_check",
+          "expectPath": "scripts/ui_skill_contract_check.mjs"
         }
       ],
       "guard": "scripts/ui_skill_contract_check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17"
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-state-coverage-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_state_coverage_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_state_coverage_check",
+        "Ui State Coverage Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_state_coverage_check",
+          "expectPath": "scripts/ui_state_coverage_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_state_coverage_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-surface-baseline-coverage-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_surface_baseline_coverage_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_surface_baseline_coverage_check",
+        "Ui Surface Baseline Coverage Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_surface_baseline_coverage_check",
+          "expectPath": "scripts/ui_surface_baseline_coverage_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_surface_baseline_coverage_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-surface-inventory-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_surface_inventory_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_surface_inventory_check",
+        "Ui Surface Inventory Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_surface_inventory_check",
+          "expectPath": "scripts/ui_surface_inventory_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_surface_inventory_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-surface-reference-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_surface_reference_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_surface_reference_check",
+        "Ui Surface Reference Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_surface_reference_check",
+          "expectPath": "scripts/ui_surface_reference_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_surface_reference_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-visual-detector-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_visual_detector_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_visual_detector_check",
+        "Ui Visual Detector Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_visual_detector_check",
+          "expectPath": "scripts/ui_visual_detector_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_visual_detector_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-visual-guard-failure-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_visual_guard_failure_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_visual_guard_failure_check",
+        "Ui Visual Guard Failure Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_visual_guard_failure_check",
+          "expectPath": "scripts/ui_visual_guard_failure_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_visual_guard_failure_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-visual-model-allowlist-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_visual_model_allowlist_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_visual_model_allowlist_check",
+        "Ui Visual Model Allowlist Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_visual_model_allowlist_check",
+          "expectPath": "scripts/ui_visual_model_allowlist_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_visual_model_allowlist_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-visual-proposal-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_visual_proposal_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_visual_proposal_check",
+        "Ui Visual Proposal Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_visual_proposal_check",
+          "expectPath": "scripts/ui_visual_proposal_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_visual_proposal_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-visual-scope-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_visual_scope_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_visual_scope_check",
+        "Ui Visual Scope Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_visual_scope_check",
+          "expectPath": "scripts/ui_visual_scope_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_visual_scope_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
     }
   ]
 }

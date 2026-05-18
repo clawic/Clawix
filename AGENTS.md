@@ -12,11 +12,11 @@ Use this file as a router. Keep detailed procedures in docs, playbooks, and
 - Main router: `docs/decision-map.md`. It maps decision -> document ->
   validation and tells agents which canon/check applies.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
-  sibling ClawJS ADR 0017, and `docs/discoverability.registry.json`. New
-  durable ADRs, skills, guardrails, harnesses, docs routers, UI governance
-  artifacts, and route work must be reachable from `AGENTS.md`/`CLAUDE.md`, the
-  relevant skill, and local/ClawJS CLI discovery within two hops, or be
-  recorded as expiring baseline debt.
+  sibling ClawJS ADR 0017, `docs/discoverability.md`, and
+  `docs/discoverability.registry.json`. New durable ADRs, skills, guardrails,
+  harnesses, docs routers, UI governance artifacts, and route work must be
+  reachable from `AGENTS.md`/`CLAUDE.md`, the relevant skill, and local/ClawJS
+  CLI discovery within two hops, or be recorded as expiring baseline debt.
 - Claude Code shim: `CLAUDE.md` points back here and must remain short.
 - Visual canon: `STYLE.md`. Read it before changing user-facing screens,
   chrome, visual components, design tokens, icons, spacing, motion, or
@@ -46,7 +46,8 @@ Read the relevant canonical docs before changing their surfaces:
   `docs/relay.md`, and local `docs/decision-map.md`
 - CLI guidance/resource assertions: `docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md`
 - Discoverability/meta-code routing:
-  `docs/adr/0017-discoverability-and-meta-code-routing.md`
+  `docs/adr/0017-discoverability-and-meta-code-routing.md`,
+  `docs/discoverability.md`, and `docs/discoverability.registry.json`
 - Platform procedures: `playbooks/README.md` and the relevant platform
   playbook.
 
