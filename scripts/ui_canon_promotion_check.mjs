@@ -1,13 +1,39 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_CANON_PROMOTION_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-wrong-private-approval-alias",
+  "--simulate-missing-approved-status",
+  "--simulate-missing-required-promotion-field",
+  "--simulate-invalid-promotion-status",
+  "--simulate-unsupported-platform",
+  "--simulate-approved-by-agent",
+  "--simulate-invalid-approved-at",
+  "--simulate-local-private-reference",
+  "--simulate-invalid-baseline-hash",
+  "--simulate-approved-without-protected-surface",
+  "--simulate-approved-protected-hash-mismatch",
+  "--simulate-approved-platform-mismatch",
+  "--simulate-duplicate-promotion-id",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI canon promotion check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -88,6 +114,47 @@ function requireIsoDate(value, label) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(value))) {
     fail(`${label} must be an ISO date`);
   }
+}
+
+function runFailureSelfTests() {
+  const selfTestEnv = {
+    ...process.env,
+    CLAWIX_UI_CANON_PROMOTION_SELF_TEST: "1",
+  };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-wrong-private-approval-alias"], "privateApprovalAlias must be private-codex-ui-approval"],
+    [["--simulate-missing-approved-status"], "promotionStatuses must include approved"],
+    [["--simulate-missing-required-promotion-field"], "requiredPromotionFields must include geometryEvidenceHash"],
+    [["--simulate-invalid-promotion-status"], "status is invalid"],
+    [["--simulate-approved-by-agent"], "approvedBy must be user"],
+    [["--simulate-local-private-reference"], "privateBaselineReference must use private-codex-ui-baselines:"],
+    [["--simulate-invalid-baseline-hash"], "privateBaselineHash must be a 64-character hex hash"],
+    [["--simulate-approved-without-protected-surface"], "protectedSurfaceId must reference an approved protected surface"],
+    [["--simulate-approved-protected-hash-mismatch"], "privateBaselineHash must match protected surface simulated-protected-surface"],
+    [["--simulate-approved-platform-mismatch"], "platform must match protected surface simulated-protected-surface"],
+    [["--simulate-duplicate-promotion-id"], "id duplicates another promotion"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI canon promotion validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) {
+  runFailureSelfTests();
 }
 
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
