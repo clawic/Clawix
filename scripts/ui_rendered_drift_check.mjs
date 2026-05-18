@@ -1,14 +1,62 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const today = new Date().toISOString().slice(0, 10);
+const isSelfTest = process.env.CLAWIX_UI_RENDERED_DRIFT_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-verifier-mismatch",
+  "--simulate-inactive-rendered-drift",
+  "--simulate-extra-drift-category",
+  "--simulate-duplicate-drift-category",
+  "--simulate-missing-drift-category",
+  "--simulate-extra-report-status",
+  "--simulate-duplicate-report-status",
+  "--simulate-extra-blocking-report-status",
+  "--simulate-duplicate-blocking-report-status",
+  "--simulate-extra-approval-required-status",
+  "--simulate-duplicate-approval-required-status",
+  "--simulate-extra-required-report-field",
+  "--simulate-duplicate-required-report-field",
+  "--simulate-extra-required-evidence-field",
+  "--simulate-duplicate-required-evidence-field",
+  "--simulate-extra-approved-drift-evidence-field",
+  "--simulate-duplicate-approved-drift-evidence-field",
+  "--simulate-missing-failure-output-requirement",
+  "--simulate-extra-failure-output-requirement",
+  "--simulate-duplicate-failure-output-requirement",
+  "--simulate-duplicate-report",
+  "--simulate-missing-coverage-report",
+  "--simulate-unsafe-private-reference",
+  "--simulate-mismatched-private-reference",
+  "--simulate-expired-review",
+  "--simulate-invalid-report-status",
+  "--simulate-active-manifest-with-blocking-report",
+  "--simulate-pending-manifest-with-all-nonblocking",
+  "--simulate-report-extra-drift-category",
+  "--simulate-report-duplicate-drift-category",
+  "--simulate-enforcement-missing-rendered-drift",
+  "--simulate-enforcement-missing-private-drift-verifier",
+  "--simulate-enforcement-missing-private-drift-evidence",
+  "--simulate-enforcement-premature-complete",
+  "--simulate-active-drift-stale-decision",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI rendered drift check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -367,6 +415,35 @@ if (errors.length > 0) {
   console.error("UI rendered drift check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (!isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-verifier-mismatch", "verificationCommand must run scripts/ui_private_visual_verify.mjs"],
+    ["--simulate-missing-drift-category", "driftCategories must include copy"],
+    ["--simulate-missing-failure-output-requirement", "failureOutputRequirements must include required permission"],
+    ["--simulate-missing-coverage-report", "reports must include web-screens"],
+    ["--simulate-unsafe-private-reference", "privateDriftReportReference must use a safe relative private reference"],
+    ["--simulate-mismatched-private-reference", "privateDriftReportReference must target surfaces/"],
+    ["--simulate-active-manifest-with-blocking-report", "status cannot be active while"],
+    ["--simulate-enforcement-missing-private-drift-verifier", "blockingVerifiers must include scripts/ui_private_drift_verify.mjs"],
+    ["--simulate-enforcement-premature-complete", "status must remain open until private rendered drift evidence is captured"],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_RENDERED_DRIFT_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI rendered drift self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log(`UI rendered drift check passed (${seen.size} drift report routes)`);
