@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 // Modal sheet for creating or editing a Project. A project = title +
-// absolute folder path on disk. Used both from the sidebar ("+" button)
+// primary folder path on disk. Used both from the sidebar ("+" button)
 // and from project rows (edit on hover).
 
 struct ProjectEditorSheet: View {
@@ -17,8 +17,9 @@ struct ProjectEditorSheet: View {
 
     private var isEditing: Bool { context.project != nil }
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
-            && !path.trimmingCharacters(in: .whitespaces).isEmpty
+        let hasName = !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasPath = !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasName && (!isEditing || hasPath)
     }
 
     var body: some View {

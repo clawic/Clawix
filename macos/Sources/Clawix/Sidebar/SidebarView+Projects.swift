@@ -62,6 +62,7 @@ struct ProjectAccordion: View, Equatable {
     static func == (lhs: ProjectAccordion, rhs: ProjectAccordion) -> Bool {
         lhs.project.id == rhs.project.id
             && lhs.project.name == rhs.project.name
+            && lhs.project.folderState == rhs.project.folderState
             && lhs.expanded == rhs.expanded
             && lhs.showingExtended == rhs.showingExtended
             && lhs.menuOpen == rhs.menuOpen
@@ -106,6 +107,12 @@ struct ProjectAccordion: View, Equatable {
                         .font(BodyFont.system(size: 13.5, wght: 500))
                         .foregroundColor(Color(white: 0.94))
                         .lineLimit(1)
+                    if let label = project.folderState.label {
+                        Text(label)
+                            .font(BodyFont.system(size: 10.5, wght: 600))
+                            .foregroundColor(Color(white: 0.48))
+                            .lineLimit(1)
+                    }
                     Spacer(minLength: 6)
                 }
                 .padding(.leading, 8)

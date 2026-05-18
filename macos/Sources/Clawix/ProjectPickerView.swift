@@ -70,12 +70,22 @@ private struct ProjectRow: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(project.name)
-                        .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(Palette.textPrimary)
+                    HStack(spacing: 6) {
+                        Text(project.name)
+                            .font(BodyFont.system(size: 13, wght: 600))
+                            .foregroundColor(Palette.textPrimary)
+                            .lineLimit(1)
+                        if let label = project.folderState.label {
+                            Text(label)
+                                .font(BodyFont.system(size: 10.5, wght: 600))
+                                .foregroundColor(Palette.textTertiary)
+                                .lineLimit(1)
+                        }
+                    }
                     Text(project.path)
                         .font(BodyFont.system(size: 11, wght: 500))
                         .foregroundColor(Palette.textTertiary)
+                        .lineLimit(1)
                 }
 
                 Spacer()
