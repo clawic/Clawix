@@ -91,4 +91,46 @@ final class ClawJSProjectHandoffClientTests: XCTestCase {
         XCTAssertEqual(captured[0], ["project", "inspect", "/tmp/copied", "--workspace-id", "workspace-other", "--json"])
         XCTAssertEqual(captured[1], ["project", "detach", "/tmp/copied", "--reason", "finder-copy", "--json"])
     }
+
+    func testImportHandoffUsesPreviewAcceptanceAndWorkspaceId() throws {
+        var captured: [[String]] = []
+        let client = ClawJSProjectHandoffClient(runner: .init { args in
+            captured.append(args)
+            return """
+            {
+              "ok": true,
+              "data": {
+                "accepted": true,
+                "warnings": [],
+                "handoffKind": "claw.project.handoff",
+                "manifest": {
+                  "projectId": "portable",
+                  "name": "Portable",
+                  "title": "Portable",
+                  "attachment": { "state": "attached", "workspaceId": "workspace-other" }
+                }
+              }
+            }
+            """.data(using: .utf8)!
+        })
+
+        let result = try client.importHandoff(
+            handoffPath: "/tmp/project.clawexport",
+            projectPath: "/tmp/restored",
+            workspaceId: "workspace-other",
+            accept: true,
+            replaceDuplicate: true
+        )
+
+        XCTAssertEqual(result.accepted, true)
+        XCTAssertEqual(result.handoffKind, "claw.project.handoff")
+        XCTAssertEqual(result.manifest.attachment.workspaceId, "workspace-other")
+        XCTAssertEqual(captured, [[
+            "project", "import", "/tmp/project.clawexport", "/tmp/restored",
+            "--workspace-id", "workspace-other",
+            "--json",
+            "--accept",
+            "--replace",
+        ]])
+    }
 }

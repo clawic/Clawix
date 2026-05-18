@@ -31,6 +31,13 @@ struct ClawJSProjectHandoffClient {
         let manifest: Manifest
     }
 
+    struct ImportPreview: Decodable, Equatable {
+        let accepted: Bool
+        let warnings: [String]
+        let manifest: Manifest
+        let handoffKind: String
+    }
+
     private struct Envelope<T: Decodable>: Decodable {
         let data: T
     }
@@ -80,6 +87,23 @@ struct ClawJSProjectHandoffClient {
 
     func export(path: String, outputPath: String) throws {
         _ = try runner.run(["project", "export", path, "--output", outputPath, "--json"])
+    }
+
+    @discardableResult
+    func importHandoff(handoffPath: String, projectPath: String, workspaceId: String = Self.defaultWorkspaceId, accept: Bool = true, replaceDuplicate: Bool = false) throws -> ImportPreview {
+        var args = [
+            "project", "import", handoffPath, projectPath,
+            "--workspace-id", workspaceId,
+            "--json",
+        ]
+        if accept {
+            args += ["--accept"]
+        }
+        if replaceDuplicate {
+            args += ["--replace"]
+        }
+        let data = try runner.run(args)
+        return try JSONDecoder().decode(Envelope<ImportPreview>.self, from: data).data
     }
 
     static func syncProjectFolderBestEffort(_ project: Project, workspaceId: String = defaultWorkspaceId) {
