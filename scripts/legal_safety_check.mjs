@@ -35,6 +35,27 @@ function extractTableIds(text, prefix) {
     .filter(Boolean));
 }
 
+function assertExternalPendingLedger(relativePath, expectedCount) {
+  const text = read(relativePath);
+  const rows = text.split(/\r?\n/)
+    .map((line) => line.match(/^\|\s*(LEGAL-EXT-\d{3})\s*\|[^|]+\|[^|]+\|[^|]+\|\s*([^|]+?)\s*\|/))
+    .filter(Boolean)
+    .map((match) => ({ id: match[1], status: match[2].trim() }));
+  if (rows.length !== expectedCount) {
+    fail(`${relativePath} must contain ${expectedCount} LEGAL-EXT rows, found ${rows.length}`);
+  }
+  const ids = new Set(rows.map((row) => row.id));
+  for (let index = 1; index <= expectedCount; index += 1) {
+    const id = `LEGAL-EXT-${String(index).padStart(3, "0")}`;
+    if (!ids.has(id)) fail(`${relativePath} is missing ${id}`);
+  }
+  for (const row of rows) {
+    if (row.status !== "EXTERNAL PENDING") {
+      fail(`${relativePath} ${row.id} must have EXTERNAL PENDING status, found ${row.status}`);
+    }
+  }
+}
+
 function walk(dir, predicate, files = []) {
   const absoluteDir = path.join(root, dir);
   if (!fs.existsSync(absoluteDir)) return files;
@@ -348,6 +369,7 @@ for (let index = 1; index <= 33; index += 1) {
   const id = `LCA-${String(index).padStart(3, "0")}`;
   if (!legalClosureIds.has(id)) fail(`docs/legal-closure-decision-audit.md is missing ${id}`);
 }
+assertExternalPendingLedger("docs/legal-external-pending-validation.md", 7);
 assertNoBannedMarketingClaims();
 assertLegalDocsAreBilingual();
 assertLegalVersionsAreAligned();
