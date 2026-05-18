@@ -1,10 +1,38 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_IMPLEMENTATION_EVIDENCE_SELF_TEST === "1";
+const simulationFlags = [
+  "--simulate-inactive-manifest",
+  "--simulate-missing-evidence-field",
+  "--simulate-missing-mapping-kind",
+  "--simulate-missing-interactive-state",
+  "--simulate-missing-visual-model-check",
+  "--simulate-missing-private-data-ban",
+  "--simulate-missing-pr-template-snippet",
+  "--simulate-nonconceptual-proposal",
+  "--simulate-extra-evidence-field",
+  "--simulate-duplicate-evidence-field",
+  "--simulate-extra-mapping-kind",
+  "--simulate-duplicate-mapping-kind",
+  "--simulate-extra-allowed-mutation-class",
+  "--simulate-duplicate-public-check",
+  "--simulate-duplicate-private-data-ban",
+];
+const allowedFlags = new Set(simulationFlags);
 const errors = [];
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI implementation evidence check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
+}
 
 function fail(message) {
   errors.push(message);
@@ -251,6 +279,68 @@ if (errors.length > 0) {
   console.error("UI implementation evidence check failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
+  const selfTests = [
+    ["--unknown-flag", "received unknown flag --unknown-flag"],
+    ["--simulate-inactive-manifest", "docs/ui/implementation-evidence.manifest.json.status must be active"],
+    [
+      "--simulate-missing-evidence-field",
+      "docs/ui/implementation-evidence.manifest.json.requiredEvidenceFields must include visibleSurfaces",
+    ],
+    ["--simulate-missing-mapping-kind", "docs/ui/implementation-evidence.manifest.json.mappingKinds must include protected"],
+    [
+      "--simulate-missing-interactive-state",
+      "docs/ui/implementation-evidence.manifest.json.requiredInteractiveStates must include error",
+    ],
+    [
+      "--simulate-missing-visual-model-check",
+      "docs/ui/implementation-evidence.manifest.json.requiredPublicChecks must include node scripts/ui_visual_model_allowlist_check.mjs",
+    ],
+    [
+      "--simulate-missing-private-data-ban",
+      "docs/ui/implementation-evidence.manifest.json.privateDataPolicy.publicRepoMustNotStore must include private model assignment",
+    ],
+    [
+      "--simulate-missing-pr-template-snippet",
+      ".github/PULL_REQUEST_TEMPLATE.md is missing required snippet: Simulated required evidence line:",
+    ],
+    [
+      "--simulate-nonconceptual-proposal",
+      "docs/ui/implementation-evidence.manifest.json.proposalPath must point to docs/ui/visual-change-proposal.template.md",
+    ],
+    [
+      "--simulate-extra-evidence-field",
+      "docs/ui/implementation-evidence.manifest.json.requiredEvidenceFields must not include privateScreenshotPath",
+    ],
+    ["--simulate-duplicate-evidence-field", "docs/ui/implementation-evidence.manifest.json.requiredEvidenceFields duplicates"],
+    ["--simulate-extra-mapping-kind", "docs/ui/implementation-evidence.manifest.json.mappingKinds must not include private-baseline"],
+    ["--simulate-duplicate-mapping-kind", "docs/ui/implementation-evidence.manifest.json.mappingKinds duplicates"],
+    [
+      "--simulate-extra-allowed-mutation-class",
+      "docs/ui/implementation-evidence.manifest.json.allowedMutationClasses must not include presentation-cleanup",
+    ],
+    ["--simulate-duplicate-public-check", "docs/ui/implementation-evidence.manifest.json.requiredPublicChecks duplicates"],
+    [
+      "--simulate-duplicate-private-data-ban",
+      "docs/ui/implementation-evidence.manifest.json.privateDataPolicy.publicRepoMustNotStore duplicates",
+    ],
+  ];
+  const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
+  for (const [flag, expectedOutput] of selfTests) {
+    const result = spawnSync(process.execPath, [scriptPath, flag], {
+      cwd: rootDir,
+      encoding: "utf8",
+      env: { ...process.env, CLAWIX_UI_IMPLEMENTATION_EVIDENCE_SELF_TEST: "1" },
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0 || !output.includes(expectedOutput)) {
+      console.error(`UI implementation evidence self-test failed for ${flag}.`);
+      if (output) console.error(output.trim());
+      process.exit(1);
+    }
+  }
 }
 
 console.log("UI implementation evidence check passed");
