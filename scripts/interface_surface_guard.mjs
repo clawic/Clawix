@@ -54,6 +54,11 @@ if (registry.version !== 1) fail("interface registry version must be 1");
 if (registry.sourceConversationId !== "019e2727-cf2b-7c41-9feb-1fd2b5c77554") {
   fail("interface registry must reference the source conversation id");
 }
+requireSnippet("docs/pre-v1-version-governance.md", "claw inspect version-governance --json");
+requireSnippet("docs/pre-v1-version-governance.md", "pre_v1_mutable");
+requireSnippet("docs/pre-v1-version-governance.md", "Clawix consumes the canonical ClawJS version-governance policy");
+requireSnippet("docs/decision-map.md", "pre_v1_mutable");
+requireSnippet("docs/decision-map.md", "ADR 0025: Pre-V1 version governance");
 
 const allowedStatuses = new Set(["stable", "dev-only", "removed"]);
 const requiredFeatureFlags = new Set([

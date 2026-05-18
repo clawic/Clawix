@@ -11,6 +11,12 @@ public adoption, all accidental names in the host, bridge, CLI, paths, protocol,
 and docs must be corrected without preserving legacy compatibility unless a
 later task explicitly requires migration.
 
+Version governance is inherited from ClawJS ADR 0025. Until the user explicitly
+freezes V1, Clawix bridge and host `v1` labels are `pre_v1_mutable`
+coordination labels, not post-release compatibility promises. Clawix must
+consume `claw inspect version-governance --json` before creating any owned
+schema, protocol, API, file-format, or surface version bump.
+
 This ADR mirrors the canonical ClawJS naming ADR:
 `docs/adr/0001-naming-and-stability-surfaces.md` in the ClawJS repository.
 When implementing shared framework or public CLI behavior, the ClawJS ADR is the
