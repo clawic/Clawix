@@ -1,13 +1,51 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const isSelfTest = process.env.CLAWIX_UI_CANON_UNIT_SELF_TEST === "1";
 const errors = [];
+const simulationFlags = [
+  "--simulate-wrong-primary-unit",
+  "--simulate-inactive-canon-units",
+  "--simulate-absolute-pattern-registry",
+  "--simulate-wrong-promotion-registry",
+  "--simulate-wrong-approval-authority",
+  "--simulate-missing-allowed-status",
+  "--simulate-duplicate-allowed-status",
+  "--simulate-missing-required-unit-field",
+  "--simulate-duplicate-required-unit-field",
+  "--simulate-duplicate-unit",
+  "--simulate-unknown-unit",
+  "--simulate-wrong-unit-source",
+  "--simulate-wrong-unit-kind",
+  "--simulate-primary-requires-promotion",
+  "--simulate-narrower-no-promotion",
+  "--simulate-missing-surface-unit",
+  "--simulate-registry-wrong-notes-path",
+  "--simulate-registry-missing-platform",
+  "--simulate-registry-duplicate-pattern",
+  "--simulate-pattern-missing-mutation-class",
+  "--simulate-pattern-id-mismatch",
+  "--simulate-pattern-unknown-mutation-class",
+  "--simulate-pattern-duplicate-mutation-class",
+  "--simulate-pattern-empty-canonical-references",
+  "--simulate-promotion-unknown-pattern",
+];
+const allowedFlags = new Set(simulationFlags);
 
 function fail(message) {
   errors.push(message);
+}
+
+for (const arg of rawArgs) {
+  if (arg.startsWith("--") && !allowedFlags.has(arg)) {
+    console.error(`UI canon unit check received unknown flag ${arg}.`);
+    process.exit(1);
+  }
 }
 
 function readJson(relativePath) {
@@ -79,6 +117,56 @@ function requireRepoReference(reference, label) {
     fail(`${label} points to missing target ${reference}`);
   }
 }
+
+function runFailureSelfTests() {
+  const selfTestEnv = { ...process.env, CLAWIX_UI_CANON_UNIT_SELF_TEST: "1" };
+  const tests = [
+    [["--unknown-flag"], "received unknown flag --unknown-flag"],
+    [["--simulate-wrong-primary-unit"], "primaryUnit must be pattern"],
+    [["--simulate-inactive-canon-units"], "status must be active"],
+    [["--simulate-absolute-pattern-registry"], "patternRegistry must be public-safe and repo-relative"],
+    [["--simulate-wrong-promotion-registry"], "promotionRegistry must be docs/ui/canon-promotions.registry.json"],
+    [["--simulate-wrong-approval-authority"], "approvalAuthority must be docs/ui/approval-authority.manifest.json"],
+    [["--simulate-missing-allowed-status"], "allowedUnitStatuses must match"],
+    [["--simulate-duplicate-allowed-status"], "allowedUnitStatuses.values[3] duplicates candidate"],
+    [["--simulate-missing-required-unit-field"], "requiredUnitFields must match"],
+    [["--simulate-duplicate-required-unit-field"], "requiredUnitFields.values[5] duplicates id"],
+    [["--simulate-duplicate-unit"], "id duplicates pattern"],
+    [["--simulate-unknown-unit"], "id is not a governed canon unit"],
+    [["--simulate-wrong-unit-source"], "source must be docs/ui/component-extraction.manifest.json"],
+    [["--simulate-wrong-unit-kind"], "unitKind must be narrower-unit"],
+    [["--simulate-primary-requires-promotion"], "promotionRequired must be false for the primary canon unit"],
+    [["--simulate-narrower-no-promotion"], "promotionRequired must be true for narrower canon units"],
+    [["--simulate-missing-surface-unit"], "units must include surface"],
+    [["--simulate-registry-wrong-notes-path"], "notesPath must be docs/ui/pattern-registry/patterns/notes.md"],
+    [["--simulate-registry-missing-platform"], "platforms must match"],
+    [["--simulate-registry-duplicate-pattern"], "patterns[16] duplicates sidebar-section"],
+    [["--simulate-pattern-missing-mutation-class"], "mutationClass must be declared"],
+    [["--simulate-pattern-id-mismatch"], "id must match sidebar-row"],
+    [["--simulate-pattern-unknown-mutation-class"], "mutationClass contains unknown class unknown-ui"],
+    [["--simulate-pattern-duplicate-mutation-class"], "mutationClass[1] duplicates visual-ui"],
+    [["--simulate-pattern-empty-canonical-references"], "canonicalReferences must not be empty"],
+    [["--simulate-promotion-unknown-pattern"], "patterns references unknown pattern unknown-pattern"],
+  ];
+
+  for (const [testArgs, expectedOutput] of tests) {
+    const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...testArgs], {
+      cwd: rootDir,
+      env: selfTestEnv,
+      encoding: "utf8",
+    });
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    if (result.status === 0) {
+      fail(`self-test ${testArgs.join(" ")} must fail for UI canon unit validation`);
+      continue;
+    }
+    if (!output.includes(expectedOutput)) {
+      fail(`self-test ${testArgs.join(" ")} output must include ${expectedOutput}`);
+    }
+  }
+}
+
+if (!isSelfTest) runFailureSelfTests();
 
 const manifestPath = "docs/ui/canon-units.manifest.json";
 const manifest = readJson(manifestPath);
