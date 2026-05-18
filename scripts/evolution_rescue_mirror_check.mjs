@@ -22,6 +22,10 @@ for (const file of [
   "docs/adr/0018-evolution-rescue-backbone-mirror.md",
   "docs/evolution/README.md",
   "skills/compatibility-evolution-work/SKILL.md",
+  "macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift",
+  "macos/Sources/Clawix/Rescue/RescueRepairContext.swift",
+  "macos/Tests/ClawixMeshTests/RescueSurvivalPolicyTests.swift",
+  "macos/Tests/ClawixMeshTests/RescueRepairContextTests.swift",
 ]) requireFile(file);
 
 for (const snippet of [
@@ -38,6 +42,24 @@ requireSnippet("CONSTITUTION.md", "launch, chat, and agent-readable repair conte
 requireSnippet("AGENTS.md", "compatibility-evolution-work");
 requireSnippet("docs/decision-map.md", "Evolution and rescue backbone mirror");
 requireSnippet("scripts/check-clawjs-skills-sync.mjs", "\"compatibility-evolution-work\"");
+for (const snippet of [
+  "ephemeralChat",
+  "diagnosticsOnly",
+  "migrationFailure",
+  "bridgeRuntimeDown",
+  "highCPU",
+  "highMemory",
+]) requireSnippet("macos/Sources/Clawix/Rescue/RescueSurvivalPolicy.swift", snippet);
+
+for (const snippet of [
+  "RescueRepairContextPackage",
+  "RescueEvolutionCommandClient",
+  "claw evolution doctor",
+  "claw evolution repair",
+  "explicit_approval_only",
+  "offline_unavailable",
+  "redacted",
+]) requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", snippet);
 
 if (fs.existsSync(siblingClawjs)) {
   const siblingAdr = path.join(siblingClawjs, "docs/adr/0030-post-v1-evolution-rescue-backbone.md");
