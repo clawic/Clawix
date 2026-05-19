@@ -29,7 +29,7 @@ struct FileViewerPanel: View {
     @State private var copied = false
     @State private var moreMenuOpen = false
 
-    private enum LoadedBody: Equatable {
+    private enum LoadedBody: Equatable, Sendable {
         case loading
         case image(URL)
         case pdf(URL)
@@ -101,7 +101,7 @@ struct FileViewerPanel: View {
         .animation(MenuStyle.openAnimation, value: moreMenuOpen)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Preview of \(fileName)"))
-        .task(id: path) { reload() }
+        .task(id: path) { await reload() }
     }
 
     private var divider: some View {
@@ -282,15 +282,24 @@ struct FileViewerPanel: View {
 
     // MARK: - Loading
 
-    private func reload() {
+    private func reload() async {
         loaded = .loading
         let url = fileURL
-        Task.detached(priority: .userInitiated) {
-            let result: (LoadedBody, String) = Self.load(url: url)
-            await MainActor.run {
-                self.loaded = result.0
-                self.rawText = result.1
+        do {
+            let result: (LoadedBody, String) = try await CancellableBackgroundTask.run(priority: .userInitiated) {
+                try Task.checkCancellation()
+                let result = Self.load(url: url)
+                try Task.checkCancellation()
+                return result
             }
+            guard !Task.isCancelled else { return }
+            loaded = result.0
+            rawText = result.1
+        } catch is CancellationError {
+            return
+        } catch {
+            loaded = .unavailable(error.localizedDescription)
+            rawText = ""
         }
     }
 

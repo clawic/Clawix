@@ -6,7 +6,7 @@ import AppKit
 /// paragraphs with inline `code` / **bold** / [link](url), bullet and
 /// numbered lists, and fenced code blocks with the language label + copy
 /// affordance shown in the Codex Desktop reference.
-enum MarkdownBlock: Equatable {
+enum MarkdownBlock: Equatable, Sendable {
     case heading(level: Int, text: AttributedString)
     case paragraph(AttributedString)
     case bulletList([AttributedString])

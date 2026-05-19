@@ -531,11 +531,11 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(reports.contains(.partial(message: "Surface closed")))
     }
 
-    func testBridgeCancellableTaskCancelsDetachedBackgroundWork() async {
+    func testCancellableBackgroundTaskCancelsDetachedBackgroundWork() async {
         let started = expectation(description: "Detached bridge work started")
         let cancelled = expectation(description: "Detached bridge work cancelled")
         let task = Task {
-            try await AppBridgeCancellableTask.run {
+            try await CancellableBackgroundTask.run {
                 started.fulfill()
                 do {
                     try await Task.sleep(nanoseconds: 5_000_000_000)
