@@ -15,6 +15,7 @@ final class LocalModelsService: ObservableObject {
     typealias PullOperation = @MainActor (String) -> AsyncThrowingStream<LocalModelsClient.PullEvent, Error>
     typealias RefreshModelListOperation = @MainActor () async -> Void
     typealias EnableOperation = @MainActor (_ contextLength: Int, _ keepAlive: String) async -> Void
+    typealias ModelActionOperation = @MainActor (_ model: String) async throws -> Void
 
     static let shared = LocalModelsService()
 
@@ -77,6 +78,8 @@ final class LocalModelsService: ObservableObject {
     private let pullOperation: PullOperation
     private let refreshModelListOperation: RefreshModelListOperation?
     private let enableOperation: EnableOperation?
+    private let deleteOperation: ModelActionOperation?
+    private let unloadOperation: ModelActionOperation?
 
     private var cancellables: Set<AnyCancellable> = []
     private var pollTask: Task<Void, Never>?
@@ -84,13 +87,17 @@ final class LocalModelsService: ObservableObject {
     private var pullGenerations: [String: Int] = [:]
     private var enableTask: Task<Void, Never>?
     private var enableGeneration = 0
+    private var modelActionTasks: [ModelActionKey: Task<Void, Never>] = [:]
+    private var modelActionGenerations: [ModelActionKey: Int] = [:]
 
     init(
         defaults: UserDefaults = .standard,
         bindRuntimeState: Bool = true,
         pullOperation: PullOperation? = nil,
         refreshModelListOperation: RefreshModelListOperation? = nil,
-        enableOperation: EnableOperation? = nil
+        enableOperation: EnableOperation? = nil,
+        deleteOperation: ModelActionOperation? = nil,
+        unloadOperation: ModelActionOperation? = nil
     ) {
         self.defaults = defaults
         self.pullOperation = pullOperation ?? { model in
@@ -98,6 +105,8 @@ final class LocalModelsService: ObservableObject {
         }
         self.refreshModelListOperation = refreshModelListOperation
         self.enableOperation = enableOperation
+        self.deleteOperation = deleteOperation
+        self.unloadOperation = unloadOperation
         self.defaultModel = defaults.string(forKey: Self.defaultModelKey)
         self.keepAlive = defaults.string(forKey: Self.keepAliveKey) ?? "5m"
         self.contextLength = defaults.integer(forKey: Self.contextLengthKey) > 0
@@ -173,6 +182,7 @@ final class LocalModelsService: ObservableObject {
     func disable() {
         cancelEnable()
         cancelAllPulls()
+        cancelAllModelActions()
         daemon.stop()
     }
 
@@ -275,25 +285,84 @@ final class LocalModelsService: ObservableObject {
     }
 
     func delete(model: String) async {
-        guard daemon.isRunning else { return }
+        guard daemon.isRunning || deleteOperation != nil else { return }
+        let key = ModelActionKey(kind: .delete, model: model)
+        let generation = nextModelActionGeneration(for: key)
+        modelActionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runDelete(model: model, key: key, generation: generation)
+        }
+        modelActionTasks[key] = task
+        await task.value
+    }
+
+    private func runDelete(model: String, key: ModelActionKey, generation: Int) async {
         do {
-            try await client.delete(model: model)
+            if let deleteOperation {
+                try await deleteOperation(model)
+            } else {
+                try await client.delete(model: model)
+            }
+            try Task.checkCancellation()
+            guard isCurrentModelAction(key: key, generation: generation) else { return }
             if defaultModel == model { defaultModel = nil }
             actionError = nil
             await refreshModelList()
+            guard isCurrentModelAction(key: key, generation: generation) else { return }
         } catch {
+            guard !Task.isCancelled, isCurrentModelAction(key: key, generation: generation) else { return }
             actionError = "Could not delete \(model): \(error.localizedDescription)"
+        }
+        if isCurrentModelAction(key: key, generation: generation) {
+            modelActionTasks[key] = nil
         }
     }
 
     func unload(model: String) async {
-        guard daemon.isRunning else { return }
+        guard daemon.isRunning || unloadOperation != nil else { return }
+        let key = ModelActionKey(kind: .unload, model: model)
+        let generation = nextModelActionGeneration(for: key)
+        modelActionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runUnload(model: model, key: key, generation: generation)
+        }
+        modelActionTasks[key] = task
+        await task.value
+    }
+
+    private func runUnload(model: String, key: ModelActionKey, generation: Int) async {
         do {
-            try await client.unload(model: model)
+            if let unloadOperation {
+                try await unloadOperation(model)
+            } else {
+                try await client.unload(model: model)
+            }
+            try Task.checkCancellation()
+            guard isCurrentModelAction(key: key, generation: generation) else { return }
             actionError = nil
             await refreshModelList()
+            guard isCurrentModelAction(key: key, generation: generation) else { return }
         } catch {
+            guard !Task.isCancelled, isCurrentModelAction(key: key, generation: generation) else { return }
             actionError = "Could not unload \(model): \(error.localizedDescription)"
+        }
+        if isCurrentModelAction(key: key, generation: generation) {
+            modelActionTasks[key] = nil
+        }
+    }
+
+    func cancelModelAction(kind: ModelActionKind, model: String) {
+        let key = ModelActionKey(kind: kind, model: model)
+        bumpModelActionGeneration(for: key)
+        modelActionTasks[key]?.cancel()
+        modelActionTasks[key] = nil
+    }
+
+    func cancelAllModelActions() {
+        for key in Array(modelActionTasks.keys) {
+            cancelModelAction(kind: key.kind, model: key.model)
         }
     }
 
@@ -347,6 +416,20 @@ final class LocalModelsService: ObservableObject {
         enableGeneration == generation
     }
 
+    private func nextModelActionGeneration(for key: ModelActionKey) -> Int {
+        let generation = (modelActionGenerations[key] ?? 0) + 1
+        modelActionGenerations[key] = generation
+        return generation
+    }
+
+    private func bumpModelActionGeneration(for key: ModelActionKey) {
+        modelActionGenerations[key] = (modelActionGenerations[key] ?? 0) + 1
+    }
+
+    private func isCurrentModelAction(key: ModelActionKey, generation: Int) -> Bool {
+        modelActionGenerations[key] == generation
+    }
+
     // MARK: - Wire types for the UI
 
     struct Download: Equatable {
@@ -357,5 +440,15 @@ final class LocalModelsService: ObservableObject {
     enum DownloadState: Equatable {
         case running(progress: Double, status: String)
         case failed(String)
+    }
+
+    enum ModelActionKind: Hashable {
+        case delete
+        case unload
+    }
+
+    private struct ModelActionKey: Hashable {
+        let kind: ModelActionKind
+        let model: String
     }
 }

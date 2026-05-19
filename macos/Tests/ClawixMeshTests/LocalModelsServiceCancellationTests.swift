@@ -94,6 +94,69 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
         await task.value
     }
 
+    func testStartingSameUnloadCancelsStaleModelAction() async {
+        let slowStarted = expectation(description: "Slow model unload started")
+        let slowCancelled = expectation(description: "Slow model unload cancelled")
+        let fastStarted = expectation(description: "Fast model unload started")
+        var calls = 0
+        var refreshCount = 0
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {
+                refreshCount += 1
+            },
+            unloadOperation: { _ in
+                calls += 1
+                if calls == 1 {
+                    try await Self.slowModelAction(started: slowStarted, cancelled: slowCancelled)
+                } else {
+                    fastStarted.fulfill()
+                }
+            }
+        )
+
+        let first = Task { await service.unload(model: "llama3.2:1b") }
+        await fulfillment(of: [slowStarted], timeout: 1)
+
+        let second = Task { await service.unload(model: "llama3.2:1b") }
+
+        await fulfillment(of: [slowCancelled, fastStarted], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertNil(service.actionError)
+        XCTAssertEqual(refreshCount, 1)
+    }
+
+    func testDisableCancelsRunningModelActions() async {
+        let started = expectation(description: "Model delete started")
+        let cancelled = expectation(description: "Model delete cancelled")
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {},
+            deleteOperation: { _ in
+                try await Self.slowModelAction(started: started, cancelled: cancelled)
+            }
+        )
+
+        let task = Task { await service.delete(model: "mistral:latest") }
+        await fulfillment(of: [started], timeout: 1)
+
+        service.disable()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        await task.value
+        XCTAssertNil(service.actionError)
+    }
+
     private static func slowPullStream(
         started: XCTestExpectation,
         cancelled: XCTestExpectation
@@ -124,6 +187,19 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
             completed: nil,
             error: nil
         )
+    }
+
+    private static func slowModelAction(
+        started: XCTestExpectation,
+        cancelled: XCTestExpectation
+    ) async throws {
+        started.fulfill()
+        do {
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+        } catch is CancellationError {
+            cancelled.fulfill()
+            throw CancellationError()
+        }
     }
 
     private static func makeDefaults() -> UserDefaults {
