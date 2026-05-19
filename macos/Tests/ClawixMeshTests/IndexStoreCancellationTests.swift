@@ -3,6 +3,106 @@ import XCTest
 
 @MainActor
 final class IndexStoreCancellationTests: XCTestCase {
+    func testStartingSecondRunSearchSuppressesStaleRunPublication() async {
+        let staleStarted = expectation(description: "Stale run search started")
+        let staleReturned = expectation(description: "Stale run search returned")
+        let freshReturned = expectation(description: "Fresh run search returned")
+        let client = FakeIndexClient()
+        var calls = 0
+        client.onRunSearch = { id in
+            calls += 1
+            if calls == 1 {
+                staleStarted.fulfill()
+                try await Task.sleep(nanoseconds: 50_000_000)
+                staleReturned.fulfill()
+                return Self.run(id: "stale", searchId: id)
+            }
+            freshReturned.fulfill()
+            return Self.run(id: "fresh", searchId: id)
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        let first = Task { try? await store.runSearch(id: "search") }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { try? await store.runSearch(id: "search") }
+
+        await fulfillment(of: [staleReturned, freshReturned], timeout: 1)
+        _ = await first.value
+        _ = await second.value
+
+        XCTAssertEqual(store.runs.map(\.id), ["fresh"])
+        XCTAssertNil(store.state.errorMessage)
+    }
+
+    func testRunSearchGenerationsDoNotRecycleWhileStaleActionIsStillReturning() async {
+        let staleStarted = expectation(description: "Stale run search started")
+        let staleReturned = expectation(description: "Stale run search returned")
+        let secondReturned = expectation(description: "Second run search returned")
+        let thirdStarted = expectation(description: "Third run search started")
+        let client = FakeIndexClient()
+        var calls = 0
+        client.onRunSearch = { id in
+            calls += 1
+            switch calls {
+            case 1:
+                staleStarted.fulfill()
+                try await Task.sleep(nanoseconds: 80_000_000)
+                staleReturned.fulfill()
+                return Self.run(id: "stale", searchId: id)
+            case 2:
+                secondReturned.fulfill()
+                return Self.run(id: "second", searchId: id)
+            default:
+                thirdStarted.fulfill()
+                try await Task.sleep(nanoseconds: 150_000_000)
+                return Self.run(id: "third", searchId: id)
+            }
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        let first = Task { try? await store.runSearch(id: "search") }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { try? await store.runSearch(id: "search") }
+        await fulfillment(of: [secondReturned], timeout: 1)
+        _ = await second.value
+
+        let third = Task { try? await store.runSearch(id: "search") }
+        await fulfillment(of: [thirdStarted], timeout: 1)
+        await fulfillment(of: [staleReturned], timeout: 1)
+        _ = await first.value
+
+        XCTAssertEqual(store.runs.map(\.id), ["second"])
+
+        _ = await third.value
+        XCTAssertEqual(store.runs.map(\.id), ["third", "second"])
+        XCTAssertNil(store.state.errorMessage)
+    }
+
+    func testCancelInFlightWorkSuppressesIndexActionError() async {
+        let deleteStarted = expectation(description: "Delete search started")
+        let deleteReturned = expectation(description: "Delete search returned after teardown")
+        let client = FakeIndexClient()
+        client.onDeleteSearch = { _ in
+            deleteStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            deleteReturned.fulfill()
+            throw ClawJSIndexClient.Error.serviceNotReady
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        let task = Task { await store.deleteSearch(id: "search") }
+        await fulfillment(of: [deleteStarted], timeout: 1)
+
+        store.cancelInFlightWork()
+
+        await fulfillment(of: [deleteReturned], timeout: 1)
+        await task.value
+
+        XCTAssertNil(store.state.errorMessage)
+    }
+
     func testEntityDetailLoadCancelsStaleDetailRequest() async {
         let staleStarted = expectation(description: "Stale entity detail started")
         let staleCancelled = expectation(description: "Stale entity detail cancelled")
@@ -201,6 +301,34 @@ final class IndexStoreCancellationTests: XCTestCase {
             runId: nil
         )
     }
+
+    private static func run(id: String, searchId: String) -> ClawJSIndexClient.Run {
+        ClawJSIndexClient.Run(
+            id: id,
+            monitorId: nil,
+            searchId: searchId,
+            kind: "manual",
+            status: "succeeded",
+            startedAt: "2026-05-19T00:00:00Z",
+            endedAt: "2026-05-19T00:00:01Z",
+            codexSessionId: nil,
+            error: nil,
+            entitiesSeen: 1,
+            observationsCount: 1,
+            alertsFired: 0,
+            tokensIn: nil,
+            tokensOut: nil,
+            prompt: nil,
+            createdAt: "2026-05-19T00:00:00Z"
+        )
+    }
+}
+
+private extension IndexStore.State {
+    var errorMessage: String? {
+        if case .error(let message) = self { return message }
+        return nil
+    }
 }
 
 private final class FakeIndexClient: ClawJSIndexClienting {
@@ -211,6 +339,10 @@ private final class FakeIndexClient: ClawJSIndexClienting {
         throw ClawJSIndexClient.Error.serviceNotReady
     }
     var onHistory: (String, String) async throws -> [ClawJSIndexClient.HistoryPoint] = { _, _ in [] }
+    var onRunSearch: (String) async throws -> ClawJSIndexClient.Run = { _ in
+        throw ClawJSIndexClient.Error.serviceNotReady
+    }
+    var onDeleteSearch: (String) async throws -> Void = { _ in }
 
     func listTypes() async throws -> [ClawJSIndexClient.EntityType] {
         try await onListTypes()
@@ -238,10 +370,13 @@ private final class FakeIndexClient: ClawJSIndexClienting {
         throw ClawJSIndexClient.Error.serviceNotReady
     }
 
-    func deleteSearch(id: String) async throws {}
+    func deleteSearch(id: String) async throws {
+        try await onDeleteSearch(id)
+    }
 
     func runSearch(id: String, prompt: String?) async throws -> ClawJSIndexClient.Run {
-        throw ClawJSIndexClient.Error.serviceNotReady
+        _ = prompt
+        return try await onRunSearch(id)
     }
 
     func listMonitors() async throws -> [ClawJSIndexClient.Monitor] { [] }
