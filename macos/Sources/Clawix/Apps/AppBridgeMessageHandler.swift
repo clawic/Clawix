@@ -21,6 +21,8 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private let appsStore: AppsStore
     private weak var appState: AppState?
     private weak var databaseManager: DatabaseManager?
+    private let surfaceReporter: SurfaceRouteReporter
+    private var activeRequests: [String: Task<Void, Never>] = [:]
     /// In-memory KV cache mirroring the on-disk storage file. Reads are
     /// served from cache; writes flush to disk asynchronously so the JS
     /// promise resolves quickly and the disk lags behind by a few ms.
@@ -31,12 +33,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         slug: String,
         appsStore: AppsStore = .shared,
         appState: AppState?,
-        databaseManager: DatabaseManager? = nil
+        databaseManager: DatabaseManager? = nil,
+        surfaceReporter: SurfaceRouteReporter = .noop
     ) {
         self.slug = slug
         self.appsStore = appsStore
         self.appState = appState
         self.databaseManager = databaseManager
+        self.surfaceReporter = surfaceReporter
         super.init()
     }
 
@@ -98,13 +102,17 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 }
                 resolve(requestId: requestId, value: AppCapabilityCatalog.riskMap(for: record).bridgeValue)
             case "db.query":
-                Task { @MainActor [weak self] in
+                startTrackedRequest(requestId: requestId, label: "Database query") { [weak self] in
                     await self?.handleDBQuery(payload: payload, requestId: requestId)
                 }
             case "search.query":
-                Task { @MainActor [weak self] in
+                startTrackedRequest(requestId: requestId, label: "Search query") { [weak self] in
                     await self?.handleSearchQuery(payload: payload, requestId: requestId)
                 }
+            case "request.cancel":
+                let target = (payload["requestId"] as? String) ?? requestId
+                cancelTrackedRequest(target)
+                resolve(requestId: requestId, value: NSNull())
             case "ui.setTitle":
                 let title = (payload["title"] as? String) ?? ""
                 applyTitle(title)
@@ -140,6 +148,13 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private func reject(requestId: String, message: String) {
         guard let webView else { return }
         let js = "window.__clawixReject && window.__clawixReject(\(jsonEncoded(requestId)), \(jsonEncoded(message)));"
+        webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    private func progress(requestId: String, value: [String: Any]) {
+        guard let webView else { return }
+        let payload = encodeForJS(value)
+        let js = "window.__clawixDispatch && window.__clawixDispatch('request.progress', { requestId: \(jsonEncoded(requestId)), progress: \(payload) });"
         webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
@@ -309,8 +324,46 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
 
     // MARK: - Search + DB SDK bridge
 
+    private func startTrackedRequest(
+        requestId: String,
+        label: String,
+        operation: @escaping @MainActor () async -> Void
+    ) {
+        activeRequests[requestId]?.cancel()
+        surfaceReporter.loading(label, progress: 0)
+        let task = Task { @MainActor [weak self] in
+            await operation()
+            self?.activeRequests[requestId] = nil
+        }
+        activeRequests[requestId] = task
+    }
+
+    private func cancelTrackedRequest(_ requestId: String) {
+        activeRequests[requestId]?.cancel()
+        activeRequests[requestId] = nil
+        surfaceReporter.partial("Request cancelled")
+    }
+
+    private func reportQueryProgress(
+        requestId: String,
+        message: String,
+        progressValue: Double?,
+        partialCount: Int? = nil
+    ) {
+        surfaceReporter.loading(message, progress: progressValue)
+        var value: [String: Any] = ["message": message]
+        if let progressValue {
+            value["progress"] = min(max(progressValue, 0), 1)
+        }
+        if let partialCount {
+            value["partialCount"] = partialCount
+        }
+        progress(requestId: requestId, value: value)
+    }
+
     private func handleDBQuery(payload: [String: Any], requestId: String) async {
         do {
+            try Task.checkCancellation()
             try requireLocalWideCapability("db.query")
             guard let manager = databaseManager else {
                 reject(requestId: requestId, message: "Database bridge is unavailable")
@@ -321,6 +374,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 return
             }
             let query = try AppBridgeQueryDSL.dbQuery(from: payload)
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Querying \(query.collection)",
+                progressValue: 0.15
+            )
+            try Task.checkCancellation()
             let fetchLimit = query.hasClientSideFilters ? 500 : query.limit
             let response = try await manager.client.listRecords(
                 namespaceId: manager.currentNamespace,
@@ -330,7 +389,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 limit: fetchLimit,
                 offset: query.offset
             )
+            try Task.checkCancellation()
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Filtering \(query.collection)",
+                progressValue: 0.75
+            )
             let filtered = Array(query.postFilter(response.items).prefix(query.limit))
+            surfaceReporter.partial("Loaded \(filtered.count) \(query.collection) records")
             resolve(requestId: requestId, value: [
                 "collection": query.collection,
                 "items": filtered.map { AppBridgeQueryDSL.bridgeValue(collection: query.collection, record: $0) },
@@ -339,6 +405,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 "total": response.total ?? filtered.count,
                 "source": "db.query"
             ])
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Database query cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
         } catch {
             reject(requestId: requestId, message: error.localizedDescription)
         }
@@ -346,6 +416,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
 
     private func handleSearchQuery(payload: [String: Any], requestId: String) async {
         do {
+            try Task.checkCancellation()
             try requireLocalWideCapability("search.query")
             guard let manager = databaseManager else {
                 reject(requestId: requestId, message: "Search bridge is unavailable")
@@ -360,8 +431,16 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             let needle = query.query.lowercased()
             var items: [[String: Any]] = []
 
-            for collection in collections {
+            for (index, collection) in collections.enumerated() {
+                try Task.checkCancellation()
                 guard items.count < query.limit else { break }
+                let progressValue = collections.isEmpty ? nil : Double(index) / Double(max(collections.count, 1))
+                reportQueryProgress(
+                    requestId: requestId,
+                    message: "Searching \(collection)",
+                    progressValue: progressValue,
+                    partialCount: items.count
+                )
                 let response = try await manager.client.listRecords(
                     namespaceId: manager.currentNamespace,
                     collection: collection,
@@ -378,6 +457,17 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                     guard items.count < query.limit else { break }
                     items.append(AppBridgeQueryDSL.bridgeValue(collection: collection, record: record))
                 }
+                if !items.isEmpty {
+                    surfaceReporter.partial("Found \(items.count) results")
+                    progress(
+                        requestId: requestId,
+                        value: [
+                            "message": "Partial search results",
+                            "progress": Double(index + 1) / Double(max(collections.count, 1)),
+                            "partialCount": items.count
+                        ]
+                    )
+                }
             }
 
             resolve(requestId: requestId, value: [
@@ -387,6 +477,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 "limit": query.limit,
                 "source": "search.query"
             ])
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Search query cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
         } catch {
             reject(requestId: requestId, message: error.localizedDescription)
         }

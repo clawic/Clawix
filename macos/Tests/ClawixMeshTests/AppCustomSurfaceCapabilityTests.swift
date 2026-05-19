@@ -395,6 +395,10 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
     func testInjectedAppsSdkExposesSearchAndDBContracts() {
         XCTAssertTrue(ClawixAppsSDKJS.contains("search.query"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("request.progress"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("onProgress"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("opts.signal"))
         XCTAssertFalse(ClawixAppsSDKJS.lowercased().contains("sqlite"))
     }
 

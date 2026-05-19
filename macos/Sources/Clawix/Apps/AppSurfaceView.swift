@@ -46,7 +46,8 @@ struct AppSurfaceView: View {
                             loadState: $loadState,
                             appsStore: appsStore,
                             appState: appState,
-                            databaseManager: databaseManager
+                            databaseManager: databaseManager,
+                            surfaceReporter: surfaceReporter
                         )
                         .id("\(record.slug)-\(reloadToken)")
 
@@ -374,6 +375,7 @@ private struct AppSurfaceWebView: NSViewRepresentable {
     let appsStore: AppsStore
     let appState: AppState
     let databaseManager: DatabaseManager
+    let surfaceReporter: SurfaceRouteReporter
 
     func makeCoordinator() -> Coordinator {
         Coordinator(loadState: $loadState)
@@ -418,7 +420,8 @@ private struct AppSurfaceWebView: NSViewRepresentable {
             slug: slug,
             appsStore: appsStore,
             appState: appState,
-            databaseManager: databaseManager
+            databaseManager: databaseManager,
+            surfaceReporter: surfaceReporter
         )
         contentController.add(bridgeHandler, name: AppBridgeMessageHandler.messageName)
         context.coordinator.bridgeHandler = bridgeHandler

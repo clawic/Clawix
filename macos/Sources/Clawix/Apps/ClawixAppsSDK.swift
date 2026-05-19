@@ -17,18 +17,61 @@ let ClawixAppsSDKJS = #"""
   var seq = 0;
   var bridge = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.clawix) || null;
 
-  function send(op, payload) {
+  function send(op, payload, options) {
     if (!bridge) {
       return Promise.reject(new Error('clawix bridge unavailable: this surface is not a Clawix App'));
     }
+    options = options || {};
     var requestId = 'r-' + (++seq);
     return new Promise(function (resolve, reject) {
-      pending[requestId] = { resolve: resolve, reject: reject };
+      var settled = false;
+      var abortHandler = null;
+      function cleanup() {
+        delete pending[requestId];
+        if (options.signal && abortHandler) {
+          options.signal.removeEventListener('abort', abortHandler);
+        }
+      }
+      pending[requestId] = {
+        resolve: function (value) {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(value);
+        },
+        reject: function (err) {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(err);
+        },
+        onProgress: typeof options.onProgress === 'function' ? options.onProgress : null
+      };
+      if (options.signal) {
+        if (options.signal.aborted) {
+          cleanup();
+          reject(new Error('Request cancelled'));
+          return;
+        }
+        abortHandler = function () {
+          var entry = pending[requestId];
+          if (!entry) return;
+          try {
+            bridge.postMessage({
+              requestId: 'cancel-' + (++seq),
+              op: 'request.cancel',
+              payload: { requestId: requestId }
+            });
+          } catch (e) { /* native cancellation is best-effort */ }
+          entry.reject(new Error('Request cancelled'));
+        };
+        options.signal.addEventListener('abort', abortHandler, { once: true });
+      }
       try {
         bridge.postMessage({ requestId: requestId, op: op, payload: payload || {} });
       } catch (err) {
-        delete pending[requestId];
-        reject(err);
+        var entry = pending[requestId];
+        if (entry) entry.reject(err);
       }
     });
   }
@@ -37,16 +80,20 @@ let ClawixAppsSDKJS = #"""
   window.__clawixResolve = function (requestId, result) {
     var entry = pending[requestId];
     if (!entry) return;
-    delete pending[requestId];
     entry.resolve(result);
   };
   window.__clawixReject = function (requestId, message) {
     var entry = pending[requestId];
     if (!entry) return;
-    delete pending[requestId];
     entry.reject(new Error(message || 'clawix call failed'));
   };
   window.__clawixDispatch = function (eventName, data) {
+    if (eventName === 'request.progress' && data && data.requestId) {
+      var entry = pending[data.requestId];
+      if (entry && entry.onProgress) {
+        try { entry.onProgress(data.progress || null); } catch (e) { /* swallow progress errors */ }
+      }
+    }
     var bucket = listeners[eventName];
     if (!bucket) return;
     bucket.slice().forEach(function (cb) {
@@ -98,7 +145,7 @@ let ClawixAppsSDKJS = #"""
           query: String(opts.query || opts.text || ''),
           collections: Array.isArray(opts.collections) ? opts.collections : [],
           limit: opts.limit
-        });
+        }, { signal: opts.signal, onProgress: opts.onProgress });
       }
     },
     db: {
@@ -111,7 +158,7 @@ let ClawixAppsSDKJS = #"""
           sort: opts.sort,
           limit: opts.limit,
           offset: opts.offset
-        });
+        }, { signal: opts.signal, onProgress: opts.onProgress });
       }
     },
     ui: {
