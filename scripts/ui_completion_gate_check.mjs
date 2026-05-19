@@ -198,6 +198,36 @@ function withTemporaryPrivatePlaceholderRoots(callback) {
   }
 }
 
+function withTemporaryPrivateInvalidCandidateRoots(callback) {
+  return withTemporaryPrivatePlaceholderRoots((temporaryPrivateRootEnv) => {
+    const evidencePath = path.join(
+      temporaryPrivateRootEnv.CLAWIX_UI_PRIVATE_BASELINE_ROOT,
+      "macos",
+      "dropdown-open",
+      "evidence.json",
+    );
+    const evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
+    delete evidence._templateStatus;
+    fs.writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+    return callback(temporaryPrivateRootEnv);
+  });
+}
+
+function withTemporaryPrivateInvalidApprovalCandidateRoots(callback) {
+  return withTemporaryPrivatePlaceholderRoots((temporaryPrivateRootEnv) => {
+    const approvalPath = path.join(
+      temporaryPrivateRootEnv.CLAWIX_UI_PRIVATE_APPROVAL_ROOT,
+      "models",
+      "claude-opus-4.7",
+      "approval-evidence.json",
+    );
+    const approval = JSON.parse(fs.readFileSync(approvalPath, "utf8"));
+    delete approval._templateStatus;
+    fs.writeFileSync(approvalPath, `${JSON.stringify(approval, null, 2)}\n`);
+    return callback(temporaryPrivateRootEnv);
+  });
+}
+
 function approvalRecords(approvalManifest) {
   const records = [];
   for (const [sourceIndex, source] of requireArray(approvalManifest, "docs/ui/approval-authority.manifest.json", "approvalSources").entries()) {
@@ -280,10 +310,13 @@ requireFields(manifest, manifestPath, [
   "publicCheckScript",
   "privateVerifierScript",
   "privateApprovalVerifierScript",
+  "privateReviewBundleScript",
   "completionStatusCommand",
   "completionStatusRequiredBlockersWithoutPrivateRoots",
   "completionStatusRequiredBlockersWithSourceReview",
   "completionStatusRequiredBlockersWithPrivatePlaceholders",
+  "completionStatusRequiredBlockersWithInvalidCandidates",
+  "completionStatusRequiredBlockersWithInvalidApprovalCandidates",
   "finalVerificationCommand",
   "conditionalPrivateRoots",
   "requiredPublicChecks",
@@ -302,16 +335,23 @@ if (manifest?.privateVerifierScript !== "scripts/ui_private_completion_verify.mj
 if (manifest?.privateApprovalVerifierScript !== "scripts/ui_private_approval_verify.mjs") {
   fail(`${manifestPath}.privateApprovalVerifierScript must be scripts/ui_private_approval_verify.mjs`);
 }
+if (manifest?.privateReviewBundleScript !== "scripts/ui_private_review_bundle_check.mjs") {
+  fail(`${manifestPath}.privateReviewBundleScript must be scripts/ui_private_review_bundle_check.mjs`);
+}
 if (manifest?.completionStatusCommand !== "node scripts/ui_private_completion_verify.mjs --completion-status") {
   fail(`${manifestPath}.completionStatusCommand must be node scripts/ui_private_completion_verify.mjs --completion-status`);
 }
 const requiredBlockersWithoutPrivateRoots = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithoutPrivateRoots");
 const requiredBlockersWithSourceReview = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithSourceReview");
 const requiredBlockersWithPrivatePlaceholders = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithPrivatePlaceholders");
+const requiredBlockersWithInvalidCandidates = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithInvalidCandidates");
+const requiredBlockersWithInvalidApprovalCandidates = requireArray(manifest, manifestPath, "completionStatusRequiredBlockersWithInvalidApprovalCandidates");
 for (const blocker of [
   ...requiredBlockersWithoutPrivateRoots,
   ...requiredBlockersWithSourceReview,
   ...requiredBlockersWithPrivatePlaceholders,
+  ...requiredBlockersWithInvalidCandidates,
+  ...requiredBlockersWithInvalidApprovalCandidates,
 ]) {
   if (typeof blocker !== "string" || blocker.length === 0 || /[A-Z_]/.test(blocker)) {
     fail(`${manifestPath} completion status blocker ids must be stable lowercase strings`);
@@ -334,6 +374,7 @@ for (const relativePath of [
   manifest?.publicCheckScript,
   manifest?.privateVerifierScript,
   manifest?.privateApprovalVerifierScript,
+  manifest?.privateReviewBundleScript,
 ]) {
   if (!relativePath || relativePath.includes("..") || path.isAbsolute(relativePath)) {
     fail(`${manifestPath} contains an unsafe relative path ${relativePath}`);
@@ -498,6 +539,12 @@ if (completionStatusResult.status !== 0) {
     }
     if (!status.privateApproval || status.privateApproval.totalRecords !== activeApprovalRecords.length) {
       fail(`${manifest.privateVerifierScript} --completion-status must include private approval totals`);
+    }
+    if (!status.privateReviewBundles || status.privateReviewBundles.totalRecords !== 166 || status.privateReviewBundles.decisionCount !== 9) {
+      fail(`${manifest.privateVerifierScript} --completion-status must include private review bundle totals`);
+    }
+    if (!Array.isArray(status.privateReviewBundles?.decisions) || !status.privateReviewBundles.decisions.some((decision) => decision.decisionId === "initial_scope")) {
+      fail(`${manifest.privateVerifierScript} --completion-status must include private review bundle decision summaries`);
     }
     if (
       !status.privateSourceReview ||
@@ -699,6 +746,13 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       if (status.privateApproval?.counts?.placeholder !== activeApprovalRecords.length || status.privateApproval?.counts?.candidate !== 0) {
         fail(`${manifest.privateVerifierScript} --completion-status must classify temporary private approval templates as placeholders`);
       }
+      if (
+        status.privateReviewBundles?.captureTotals?.placeholder !== 166 ||
+        status.privateReviewBundles?.decisionCount !== 9 ||
+        status.privateReviewBundles?.totalRecords !== 166
+      ) {
+        fail(`${manifest.privateVerifierScript} --completion-status must include placeholder private review bundle readiness`);
+      }
       const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
       for (const blockerId of requiredBlockersWithPrivatePlaceholders) {
         if (!blockerIds.has(blockerId)) {
@@ -716,6 +770,140 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       }
     } catch (error) {
       fail(`${manifest.privateVerifierScript} --completion-status with temporary private placeholder roots output must be valid JSON: ${error.message}`);
+    }
+  });
+
+  withTemporaryPrivateInvalidCandidateRoots((temporaryPrivateRootEnv) => {
+    const invalidCandidateReportResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, "scripts/ui_private_evidence_plan_check.mjs"), "--capture-invalid-candidates"],
+      {
+        cwd: rootDir,
+        env: {
+          ...withoutPrivateCompletionEnv(),
+          ...temporaryPrivateRootEnv,
+        },
+        encoding: "utf8",
+      },
+    );
+    if (invalidCandidateReportResult.status !== 0) {
+      fail("scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates must pass with malformed private candidate roots");
+    } else {
+      try {
+        const report = JSON.parse(invalidCandidateReportResult.stdout);
+        if (report.invalidCandidateCount !== 1 || report.totals?.invalidCandidate !== 1) {
+          fail("scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates must report one malformed candidate");
+        }
+        const candidate = report.invalidCandidates?.[0];
+        if (
+          candidate?.relativeEvidencePath !== "macos/dropdown-open/evidence.json" ||
+          candidate?.rootAlias !== "private-codex-ui-baselines" ||
+          !candidate?.missingOrInvalidFields?.includes("geometryHash") ||
+          String(JSON.stringify(report)).includes(path.dirname(temporaryPrivateRootEnv.CLAWIX_UI_PRIVATE_BASELINE_ROOT))
+        ) {
+          fail("scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates must report public-safe relative candidate details");
+        }
+      } catch (error) {
+        fail(`scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates output must be valid JSON: ${error.message}`);
+      }
+    }
+
+    const invalidCandidateStatusResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, manifest.privateVerifierScript), "--completion-status"],
+      {
+        cwd: rootDir,
+        env: {
+          ...withoutPrivateCompletionEnv(),
+          ...temporaryEnv,
+          ...temporaryPrivateRootEnv,
+        },
+        encoding: "utf8",
+      },
+    );
+    if (invalidCandidateStatusResult.status !== 0) {
+      fail(`${manifest.privateVerifierScript} --completion-status must pass with malformed private candidate roots`);
+      return;
+    }
+    try {
+      const status = JSON.parse(invalidCandidateStatusResult.stdout);
+      if (status.privateEvidence?.totals?.invalidCandidate !== 1 || status.privateEvidence?.totals?.candidate !== 0) {
+        fail(`${manifest.privateVerifierScript} --completion-status must classify malformed private candidate evidence as invalidCandidate, not candidate`);
+      }
+      const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
+      for (const blockerId of requiredBlockersWithInvalidCandidates) {
+        if (!blockerIds.has(blockerId)) {
+          fail(`${manifest.privateVerifierScript} --completion-status must include ${blockerId} blocker while private roots contain invalid candidates`);
+        }
+      }
+    } catch (error) {
+      fail(`${manifest.privateVerifierScript} --completion-status with malformed private candidate roots output must be valid JSON: ${error.message}`);
+    }
+  });
+
+  withTemporaryPrivateInvalidApprovalCandidateRoots((temporaryPrivateRootEnv) => {
+    const invalidApprovalStatusResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, "scripts/ui_private_approval_verify.mjs"), "--approval-status"],
+      {
+        cwd: rootDir,
+        env: {
+          ...withoutPrivateCompletionEnv(),
+          ...temporaryPrivateRootEnv,
+        },
+        encoding: "utf8",
+      },
+    );
+    if (invalidApprovalStatusResult.status !== 0) {
+      fail("scripts/ui_private_approval_verify.mjs --approval-status must pass with malformed private approval candidate roots");
+    } else {
+      try {
+        const report = JSON.parse(invalidApprovalStatusResult.stdout);
+        if (report.counts?.invalidCandidate !== 1 || report.counts?.candidate !== 0) {
+          fail("scripts/ui_private_approval_verify.mjs --approval-status must classify malformed approval evidence as invalidCandidate, not candidate");
+        }
+        const approval = report.records?.[0];
+        if (
+          approval?.state !== "invalid-candidate" ||
+          !approval?.missingOrInvalidFields?.includes("approvalHash")
+        ) {
+          fail("scripts/ui_private_approval_verify.mjs --approval-status must report missing malformed approval fields");
+        }
+      } catch (error) {
+        fail(`scripts/ui_private_approval_verify.mjs --approval-status with malformed approval candidate roots output must be valid JSON: ${error.message}`);
+      }
+    }
+
+    const invalidApprovalCompletionStatusResult = spawnSync(
+      process.execPath,
+      [path.join(rootDir, manifest.privateVerifierScript), "--completion-status"],
+      {
+        cwd: rootDir,
+        env: {
+          ...withoutPrivateCompletionEnv(),
+          ...temporaryEnv,
+          ...temporaryPrivateRootEnv,
+        },
+        encoding: "utf8",
+      },
+    );
+    if (invalidApprovalCompletionStatusResult.status !== 0) {
+      fail(`${manifest.privateVerifierScript} --completion-status must pass with malformed private approval candidate roots`);
+      return;
+    }
+    try {
+      const status = JSON.parse(invalidApprovalCompletionStatusResult.stdout);
+      if (status.privateApproval?.counts?.invalidCandidate !== 1 || status.privateApproval?.counts?.candidate !== 0) {
+        fail(`${manifest.privateVerifierScript} --completion-status must classify malformed private approval evidence as invalidCandidate, not candidate`);
+      }
+      const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
+      for (const blockerId of requiredBlockersWithInvalidApprovalCandidates) {
+        if (!blockerIds.has(blockerId)) {
+          fail(`${manifest.privateVerifierScript} --completion-status must include ${blockerId} blocker while private approval root contains invalid candidates`);
+        }
+      }
+    } catch (error) {
+      fail(`${manifest.privateVerifierScript} --completion-status with malformed private approval candidate roots output must be valid JSON: ${error.message}`);
     }
   });
 

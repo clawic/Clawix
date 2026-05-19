@@ -212,6 +212,18 @@ if (manifest) {
   if (args.has("--simulate-wrong-candidate-capture-command")) {
     manifest.candidateCapturePlanCommand = "node scripts/ui_private_capture_plan.mjs --json";
   }
+  if (args.has("--simulate-missing-invalid-candidate-report-command")) {
+    delete manifest.invalidCandidateReportCommand;
+  }
+  if (args.has("--simulate-wrong-invalid-candidate-report-command")) {
+    manifest.invalidCandidateReportCommand = "node scripts/ui_private_evidence_plan_check.mjs --capture-status";
+  }
+  if (args.has("--simulate-missing-approval-review-bundle-command")) {
+    delete manifest.approvalReviewBundleCommand;
+  }
+  if (args.has("--simulate-wrong-approval-review-bundle-command")) {
+    manifest.approvalReviewBundleCommand = "node scripts/ui_private_review_bundle_check.mjs";
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -219,6 +231,8 @@ requireFields(manifest, manifestPath, [
   "policy",
   "verificationCommand",
   "evidencePlanCommand",
+  "invalidCandidateReportCommand",
+  "approvalReviewBundleCommand",
   "candidateCaptureRunnerManifestPath",
   "candidateCapturePlanCommand",
   "requiredApprovedScopeFields",
@@ -244,6 +258,12 @@ if (!String(manifest?.verificationCommand || "").includes("--require-approved"))
 }
 if (manifest?.evidencePlanCommand !== "node scripts/ui_private_evidence_plan_check.mjs --json") {
   fail(`${manifestPath}.evidencePlanCommand must run node scripts/ui_private_evidence_plan_check.mjs --json`);
+}
+if (manifest?.invalidCandidateReportCommand !== "node scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates") {
+  fail(`${manifestPath}.invalidCandidateReportCommand must run node scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates`);
+}
+if (manifest?.approvalReviewBundleCommand !== "node scripts/ui_private_review_bundle_check.mjs --json") {
+  fail(`${manifestPath}.approvalReviewBundleCommand must run node scripts/ui_private_review_bundle_check.mjs --json`);
 }
 if (manifest?.candidateCaptureRunnerManifestPath !== "docs/ui/private-capture-runners.manifest.json") {
   fail(`${manifestPath}.candidateCaptureRunnerManifestPath must be docs/ui/private-capture-runners.manifest.json`);
@@ -675,6 +695,7 @@ for (const script of [
   "scripts/ui_private_evidence_plan_check.mjs",
   "scripts/ui_private_capture_plan.mjs",
   "scripts/ui_private_capture_runner_check.mjs",
+  "scripts/ui_private_review_bundle_check.mjs",
   "scripts/ui_private_evidence_verify.mjs",
   "scripts/ui_private_approval_verify.mjs",
   "scripts/ui_private_baseline_verify.mjs",
@@ -699,6 +720,10 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-unknown-evidence-type", "evidenceTypes includes unknown-private-evidence"],
     ["--simulate-missing-candidate-capture-manifest", "is missing candidateCaptureRunnerManifestPath"],
     ["--simulate-wrong-candidate-capture-command", "candidateCapturePlanCommand must run node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json"],
+    ["--simulate-missing-invalid-candidate-report-command", "is missing invalidCandidateReportCommand"],
+    ["--simulate-wrong-invalid-candidate-report-command", "invalidCandidateReportCommand must run node scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates"],
+    ["--simulate-missing-approval-review-bundle-command", "is missing approvalReviewBundleCommand"],
+    ["--simulate-wrong-approval-review-bundle-command", "approvalReviewBundleCommand must run node scripts/ui_private_review_bundle_check.mjs --json"],
     ["--simulate-wrong-external-pending-code", "externalPendingExitCode must be 2"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {

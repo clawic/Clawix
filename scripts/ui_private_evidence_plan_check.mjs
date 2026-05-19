@@ -27,7 +27,17 @@ const simulationFlags = [
   "--simulate-duplicate-evidence-record",
 ];
 const optionsWithValues = new Set(["--write-template-root"]);
-const allowedFlags = new Set(["--json", "--capture-plan", "--capture-status", "--capture-packages", "--capture-decisions", "--force-template-root", ...optionsWithValues, ...simulationFlags]);
+const allowedFlags = new Set([
+  "--json",
+  "--capture-plan",
+  "--capture-status",
+  "--capture-packages",
+  "--capture-decisions",
+  "--capture-invalid-candidates",
+  "--force-template-root",
+  ...optionsWithValues,
+  ...simulationFlags,
+]);
 const errors = [];
 const plan = [];
 
@@ -634,6 +644,51 @@ function captureDecisionsFromEvidencePlan() {
   };
 }
 
+function captureInvalidCandidatesFromEvidencePlan() {
+  const capturePlan = capturePlanFromEvidencePlan();
+  if (errors.length > 0) return null;
+  const invalidCandidates = [];
+  const totals = emptyCaptureStatusCounts();
+  for (const root of capturePlan.roots) {
+    const rootState = privateRootState(root);
+    for (const record of root.records) {
+      if (rootState.status !== "configured") {
+        if (rootState.status === "external-pending-missing-root" || rootState.status === "external-pending-root-not-found") {
+          totals.missingRoot += 1;
+        } else if (rootState.status === "invalid-root-inside-public-repo") {
+          totals.invalidRoot += 1;
+        }
+        continue;
+      }
+      const fileStatus = captureStatusForFile(rootState.rootPath, record.relativeEvidencePath, record.requiredFields);
+      addCaptureStatus(totals, fileStatus.counts);
+      if (fileStatus.state !== "invalid-candidate") continue;
+      invalidCandidates.push({
+        evidenceType: record.type,
+        id: record.id,
+        platform: record.platform,
+        rootAlias: root.alias,
+        rootEnv: root.env,
+        privateReference: record.privateReference,
+        relativeEvidencePath: record.relativeEvidencePath,
+        missingOrInvalidFields: fileStatus.fieldErrors || [],
+        requiredFields: record.requiredFields,
+      });
+    }
+  }
+  return {
+    schemaVersion: 1,
+    status: invalidCandidates.length > 0
+      ? "invalid-private-candidate-evidence"
+      : "no-invalid-private-candidate-evidence",
+    note: "This report is public-safe: it lists private aliases and relative evidence paths, not local private root paths or raw artifacts.",
+    totalRecords: capturePlan.totalRecords,
+    totals,
+    invalidCandidateCount: invalidCandidates.length,
+    invalidCandidates,
+  };
+}
+
 function capturePlanFromEvidencePlan() {
   const aliasEntries = [
     ...requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "rootAliases"),
@@ -1112,6 +1167,14 @@ if (templateRoot) {
     process.exit(1);
   }
   console.log(JSON.stringify(decisions, null, 2));
+} else if (args.includes("--capture-invalid-candidates")) {
+  const invalidCandidates = captureInvalidCandidatesFromEvidencePlan();
+  if (errors.length > 0) {
+    console.error("UI private evidence plan check failed:");
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+  console.log(JSON.stringify(invalidCandidates, null, 2));
 } else if (args.includes("--capture-plan")) {
   console.log(JSON.stringify(capturePlanFromEvidencePlan(), null, 2));
 } else if (args.includes("--json")) {

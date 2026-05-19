@@ -279,8 +279,14 @@ the public repo.
     `node scripts/ui_private_evidence_plan_check.mjs --capture-status` with the
     private root environment variables set to count missing roots, missing
     files, placeholders, invalid JSON, and candidate evidence by root and
-    completion blocker. Candidate files are still not approval; final closure
-    requires the private verifiers with `--require-approved`.
+    completion blocker. `node scripts/ui_private_completion_verify.mjs --completion-status`
+    also includes a review-bundle summary for the nine open decisions.
+    Candidate files are still not approval; final closure requires the private
+    verifiers with `--require-approved`.
+    To isolate candidate files that are present but malformed, run
+    `node scripts/ui_private_evidence_plan_check.mjs --capture-invalid-candidates`.
+    The report is public-safe: it lists aliases, relative evidence paths, and
+    missing or invalid fields without local private root paths or raw artifacts.
     To execute the remaining work by closure package, run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-packages` with
     the same private root environment. The output groups every private record
@@ -292,6 +298,11 @@ the public repo.
     That output lists each open decision, its evidence packages, current
     counts, required action, and blocking verifier commands from the same
     derived plan.
+    To generate a public-safe private review bundle for human approval
+    planning, run `node scripts/ui_private_review_bundle_check.mjs --json`.
+    It groups each open decision by package, file state, relative private
+    evidence path, required fields, and verifier commands without publishing
+    private root paths or raw artifacts.
 46. Close the nine open completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,

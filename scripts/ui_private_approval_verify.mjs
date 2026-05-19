@@ -299,18 +299,54 @@ function approvalPlan() {
   };
 }
 
-function approvalStateForFile(privateRoot, relativeEvidencePath) {
-  if (!relativeEvidencePath) return "invalid-reference";
-  const evidencePath = path.join(privateRoot, relativeEvidencePath.split("/").join(path.sep));
-  if (!fs.existsSync(evidencePath)) return "missing-file";
+function approvalFieldErrorsForEvidence(evidence, record) {
+  const fieldErrors = [];
+  for (const field of requiredEvidenceFields) {
+    if (evidence?.[field] === undefined || evidence[field] === null || evidence[field] === "") {
+      fieldErrors.push(field);
+    }
+  }
+  if (evidence?.sourceId !== undefined && evidence.sourceId !== record.sourceId) fieldErrors.push("sourceId");
+  if (evidence?.privateApprovalReference !== undefined && evidence.privateApprovalReference !== record.privateApprovalReference) {
+    fieldErrors.push("privateApprovalReference");
+  }
+  if (evidence?.approvedBy !== undefined && evidence.approvedBy !== "user") fieldErrors.push("approvedBy");
+  if (evidence?.approvedAt !== undefined && (
+    typeof evidence.approvedAt !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}(?:T.+)?$/.test(evidence.approvedAt) ||
+    Number.isNaN(Date.parse(evidence.approvedAt))
+  )) {
+    fieldErrors.push("approvedAt");
+  }
+  for (const field of ["approvalHash", "publicRecordHash"]) {
+    if (
+      evidence?.[field] !== undefined &&
+      evidence[field] !== null &&
+      (typeof evidence[field] !== "string" || !/^[a-f0-9]{64}$/i.test(evidence[field]))
+    ) {
+      fieldErrors.push(field);
+    }
+  }
+  if (evidence?.publicRecordHash !== undefined && evidence.publicRecordHash !== record.publicRecordHash) {
+    fieldErrors.push("publicRecordHash");
+  }
+  return [...new Set(fieldErrors)];
+}
+
+function approvalStateForFile(privateRoot, record) {
+  if (!record.relativeEvidencePath) return { state: "invalid-reference", fieldErrors: [] };
+  const evidencePath = path.join(privateRoot, record.relativeEvidencePath.split("/").join(path.sep));
+  if (!fs.existsSync(evidencePath)) return { state: "missing-file", fieldErrors: [] };
   let evidence = null;
   try {
     evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
   } catch {
-    return "invalid-json";
+    return { state: "invalid-json", fieldErrors: [] };
   }
-  if (evidence?._templateStatus === "placeholder-not-valid-evidence") return "placeholder";
-  return "candidate";
+  if (evidence?._templateStatus === "placeholder-not-valid-evidence") return { state: "placeholder", fieldErrors: [] };
+  const fieldErrors = approvalFieldErrorsForEvidence(evidence, record);
+  if (fieldErrors.length > 0) return { state: "invalid-candidate", fieldErrors };
+  return { state: "candidate", fieldErrors: [] };
 }
 
 function approvalStatus() {
@@ -322,6 +358,7 @@ function approvalStatus() {
     missingFile: 0,
     invalidJson: 0,
     placeholder: 0,
+    invalidCandidate: 0,
     candidate: 0,
   };
   const rootPathRaw = privateRootEnv ? process.env[privateRootEnv] : "";
@@ -358,15 +395,18 @@ function approvalStatus() {
     };
   }
   const records = plan.records.map((record) => {
-    const state = approvalStateForFile(privateRoot, record.relativeEvidencePath);
+    const fileStatus = approvalStateForFile(privateRoot, record);
+    const state = fileStatus.state;
     if (state === "invalid-reference") counts.invalidReference += 1;
     else if (state === "missing-file") counts.missingFile += 1;
     else if (state === "invalid-json") counts.invalidJson += 1;
     else if (state === "placeholder") counts.placeholder += 1;
+    else if (state === "invalid-candidate") counts.invalidCandidate += 1;
     else if (state === "candidate") counts.candidate += 1;
     return {
       ...record,
       state,
+      missingOrInvalidFields: fileStatus.fieldErrors,
       privateFile: record.relativeEvidencePath ? path.join(privateRoot, record.relativeEvidencePath.split("/").join(path.sep)) : null,
     };
   });

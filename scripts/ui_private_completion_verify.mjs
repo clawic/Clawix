@@ -244,13 +244,18 @@ const actualOpenDecisions = decisions.filter((decision) => decision.status === "
 if (completionStatusMode) {
   const privateEvidenceStatus = runStatusScript("scripts/ui_private_evidence_plan_check.mjs", ["--capture-decisions"]);
   const privateApprovalStatus = runStatusScript("scripts/ui_private_approval_verify.mjs", ["--approval-status"]);
+  const privateReviewBundleStatus = runStatusScript(manifest.privateReviewBundleScript || "scripts/ui_private_review_bundle_check.mjs", ["--json"]);
+  const approvalCounts = privateApprovalStatus.json?.counts || {};
+  const privateApprovalVerification = approvalCounts.candidate > 0
+    ? runStatusScript("scripts/ui_private_approval_verify.mjs", ["--require-approved"])
+    : null;
   const privateSourceStatus = runStatusScript("scripts/ui_private_completion_source_verify.mjs", ["--require-approved"], {
     CLAWIX_UI_COMPLETION_SOURCE_VERIFY_SELF_TEST: "1",
   });
   const verifiedCompleteDecisions = decisions.filter((decision) => decision.status === "verified-complete");
   const openDecisionIds = actualOpenDecisions.map((decision) => decision.id);
   const evidenceTotals = privateEvidenceStatus.json?.totals || {};
-  const approvalCounts = privateApprovalStatus.json?.counts || {};
+  const approvalCandidateBlockerCount = privateApprovalVerification?.exitCode === 0 ? 0 : approvalCounts.candidate || 0;
   const blockers = [];
   if (openDecisionIds.length > 0) {
     blockers.push({
@@ -274,7 +279,8 @@ if (completionStatusMode) {
     ["private-approval-missing-file", approvalCounts.missingFile || 0],
     ["private-approval-invalid-json", approvalCounts.invalidJson || 0],
     ["private-approval-placeholder", approvalCounts.placeholder || 0],
-    ["private-approval-candidate-not-approved", approvalCounts.candidate || 0],
+    ["private-approval-invalid-candidate", approvalCounts.invalidCandidate || 0],
+    ["private-approval-candidate-not-approved", approvalCandidateBlockerCount],
   ]) {
     if (count > 0) blockers.push({ id, status: "external-pending", count });
   }
@@ -286,6 +292,30 @@ if (completionStatusMode) {
       details: privateSourceStatus.outputPreview,
     });
   }
+  if (privateReviewBundleStatus.status !== "passed" && privateReviewBundleStatus.status !== "private-review-bundles-capture-required" && privateReviewBundleStatus.status !== "private-review-bundles-ready-for-human-review") {
+    blockers.push({
+      id: "private-review-bundle-contract",
+      status: privateReviewBundleStatus.status,
+      count: 1,
+      details: privateReviewBundleStatus.outputPreview,
+    });
+  }
+  const privateReviewBundleJson = privateReviewBundleStatus.json || {};
+  const privateReviewBundleSummaries = Array.isArray(privateReviewBundleJson.bundles)
+    ? privateReviewBundleJson.bundles.map((bundle) => ({
+      decisionId: bundle.decisionId,
+      status: bundle.status,
+      recordCount: bundle.recordCount,
+      placeholders: bundle.placeholders,
+      missingRoots: bundle.missingRoots,
+      missingFiles: bundle.missingFiles,
+      invalidJson: bundle.invalidJson,
+      invalidCandidates: bundle.invalidCandidates,
+      candidates: bundle.candidates,
+      approvalReadiness: bundle.approvalReadiness,
+      packages: bundle.packages,
+    }))
+    : [];
   const report = {
     schemaVersion: 1,
     status: openDecisionIds.length > 0
@@ -314,6 +344,24 @@ if (completionStatusMode) {
       status: privateApprovalStatus.status,
       totalRecords: privateApprovalStatus.json?.totalRecords ?? null,
       counts: privateApprovalStatus.json?.counts ?? null,
+      verification: privateApprovalVerification
+        ? {
+          script: privateApprovalVerification.script,
+          exitCode: privateApprovalVerification.exitCode,
+          status: privateApprovalVerification.status,
+          outputPreview: privateApprovalVerification.outputPreview,
+        }
+        : null,
+    },
+    privateReviewBundles: {
+      script: privateReviewBundleStatus.script,
+      exitCode: privateReviewBundleStatus.exitCode,
+      status: privateReviewBundleStatus.status,
+      totalRecords: privateReviewBundleJson.totalRecords ?? null,
+      decisionCount: privateReviewBundleJson.decisionCount ?? null,
+      captureTotals: privateReviewBundleJson.captureTotals ?? null,
+      approval: privateReviewBundleJson.approval ?? null,
+      decisions: privateReviewBundleSummaries,
     },
     privateSourceReview: {
       script: privateSourceStatus.script,
