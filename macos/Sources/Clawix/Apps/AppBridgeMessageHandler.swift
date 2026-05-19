@@ -83,6 +83,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         super.init()
     }
 
+    deinit {
+        for task in activeRequests.values {
+            task.cancel()
+        }
+    }
+
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         // WebKit dispatches script messages on the main thread, which
         // matches our @MainActor isolation, so we can read the body
