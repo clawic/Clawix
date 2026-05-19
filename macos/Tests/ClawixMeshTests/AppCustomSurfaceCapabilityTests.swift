@@ -46,6 +46,24 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(riskMap.capabilityIds.contains("core.sqlite"))
     }
 
+    func testOrdinaryCapabilitiesCannotCarryHighRiskFlags() {
+        for descriptor in AppCapabilityCatalog.descriptors where descriptor.customAppAccess == .localWide {
+            XCTAssertEqual(descriptor.riskTier, .low, descriptor.id)
+            XCTAssertFalse(descriptor.interruptiveApproval, descriptor.id)
+            XCTAssertFalse(descriptor.touchesSecrets, descriptor.id)
+            XCTAssertFalse(descriptor.touchesNativeHost, descriptor.id)
+            XCTAssertFalse(descriptor.touchesPhysicalWorld, descriptor.id)
+            XCTAssertFalse(descriptor.destructive, descriptor.id)
+        }
+    }
+
+    func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
+        for descriptor in AppCapabilityCatalog.descriptors where descriptor.customAppAccess == .approvalRequired {
+            XCTAssertTrue(descriptor.interruptiveApproval, descriptor.id)
+            XCTAssertTrue(descriptor.riskTier == .high || descriptor.riskTier == .critical, descriptor.id)
+        }
+    }
+
     func testImportedOrUnknownCapabilitiesRequireReview() {
         let record = AppRecord(
             slug: "imported-panel",
