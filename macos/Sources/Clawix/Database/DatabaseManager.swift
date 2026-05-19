@@ -19,6 +19,7 @@ import ClawixCore
 ///   daemon (we observe `ClawJSServiceManager` snapshots).
 @MainActor
 final class DatabaseManager: ObservableObject {
+    typealias AdminTokenOperation = @MainActor () throws -> String
 
     enum State: Equatable {
         case loading
@@ -55,17 +56,24 @@ final class DatabaseManager: ObservableObject {
     private let isDisabled: Bool
 
     private var supervisorObserver: AnyCancellable?
-    private var bootstrapGeneration: UUID?
+    private var bootstrapTask: Task<Void, Never>?
+    private var bootstrapTimeoutTask: Task<Void, Never>?
+    private var bootstrapGeneration = 0
+    private let adminTokenOperation: AdminTokenOperation
 
     init(
         userDefaults: UserDefaults = .standard,
         client: (any DatabaseClienting)? = nil,
+        adminTokenOperation: AdminTokenOperation? = nil,
         attachSupervisor: Bool = true,
         initialState: State = .loading,
         initialCollections: [DBCollection] = []
     ) {
         self.userDefaults = userDefaults
         self.client = client ?? DatabaseClient()
+        self.adminTokenOperation = adminTokenOperation ?? {
+            try DatabaseAdminToken.currentAdminToken()
+        }
         self.isDisabled = ClawixEnv.isEnabled(ClawixEnv.databaseDisable)
         self.state = initialState
         self.collections = initialCollections
@@ -81,6 +89,16 @@ final class DatabaseManager: ObservableObject {
         }
         if attachSupervisor {
             attachSupervisorObserver()
+        }
+    }
+
+    deinit {
+        bootstrapTask?.cancel()
+        bootstrapTimeoutTask?.cancel()
+        for task in inFlight.values { task.cancel() }
+        for task in realtimeRefreshTasks.values { task.cancel() }
+        Task { @MainActor [realtime] in
+            realtime.disconnect()
         }
     }
 
@@ -102,7 +120,7 @@ final class DatabaseManager: ObservableObject {
                     await self.bootstrap()
                 }
             case .crashed, .blocked, .idle, .daemonUnavailable:
-                self.realtime.disconnect()
+                self.cancelSurfaceWork(disconnectRealtime: true)
                 self.collections = []
                 self.recordsByCollection = [:]
                 self.state = .failed(snap.state.unavailableReason ?? "Database service is unavailable.")
@@ -122,10 +140,20 @@ final class DatabaseManager: ObservableObject {
     func bootstrap(force: Bool = false) async {
         guard !isDisabled else { return }
         if case .ready = state, !force { return }
+        let generation = nextBootstrapGeneration()
+        bootstrapTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBootstrap(generation: generation)
+        }
+        bootstrapTask = task
+        await task.value
+    }
+
+    private func runBootstrap(generation: Int) async {
         state = .bootstrapping
-        let generation = UUID()
-        bootstrapGeneration = generation
-        Task { @MainActor [weak self] in
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 8_000_000_000)
             guard let self, self.bootstrapGeneration == generation else { return }
             if case .bootstrapping = self.state {
@@ -133,10 +161,16 @@ final class DatabaseManager: ObservableObject {
             }
         }
         do {
-            client.bearerToken = try DatabaseAdminToken.currentAdminToken()
+            client.bearerToken = try adminTokenOperation()
             _ = try await client.ensureNamespace(id: currentNamespace, displayName: "Clawix Local")
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
             let listedCollections = try await client.listCollections(namespaceId: currentNamespace)
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
             let collections = try await ensureArchivalFields(in: listedCollections)
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
             self.collections = collections.sorted { lhs, rhs in
                 if lhs.builtin != rhs.builtin { return lhs.builtin && !rhs.builtin }
                 return lhs.displayName < rhs.displayName
@@ -148,12 +182,13 @@ final class DatabaseManager: ObservableObject {
             realtime.connect()
             state = .ready
             lastError = nil
-            bootstrapGeneration = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentBootstrap(generation) else { return }
             state = .failed(error.localizedDescription)
             lastError = error.localizedDescription
-            bootstrapGeneration = nil
         }
+        finishBootstrapIfCurrent(generation)
     }
 
     private func ensureArchivalFields(in collections: [DBCollection]) async throws -> [DBCollection] {
@@ -205,6 +240,33 @@ final class DatabaseManager: ObservableObject {
         inFlight[name]?.cancel()
         inFlight[name] = nil
         recordRefreshGeneration[name, default: 0] += 1
+    }
+
+    func cancelCollectionSurfaceWork(collection name: String) {
+        cancelRecordRefresh(collection: name)
+        realtimeRefreshTasks[name]?.cancel()
+        realtimeRefreshTasks[name] = nil
+    }
+
+    func cancelSurfaceWork(disconnectRealtime: Bool = true) {
+        bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
+        if case .bootstrapping = state {
+            state = .loading
+        }
+        for name in Array(inFlight.keys) {
+            cancelRecordRefresh(collection: name)
+        }
+        for task in realtimeRefreshTasks.values { task.cancel() }
+        realtimeRefreshTasks.removeAll()
+        if disconnectRealtime {
+            realtime.disconnect()
+        } else {
+            realtime.unsubscribe()
+        }
     }
 
     func refreshRecords(collection name: String) async {
@@ -411,6 +473,22 @@ final class DatabaseManager: ObservableObject {
         if let decoded = try? JSONDecoder().decode([String: DBFilterState].self, from: data) {
             filterByCollection = decoded
         }
+    }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
     }
 
     private func persistFilterStates() {

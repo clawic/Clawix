@@ -44,6 +44,9 @@ struct CollectionView: View {
             manager.subscribeRealtime(collection: collection.name)
             await manager.refreshRecords(collection: collection.name)
         }
+        .onDisappear {
+            manager.cancelCollectionSurfaceWork(collection: collection.name)
+        }
         .onChange(of: filterState) { _, _ in
             // refresh handled by setFilterState; keep here as a safety net
         }

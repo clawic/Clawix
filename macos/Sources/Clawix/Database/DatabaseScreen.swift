@@ -33,6 +33,14 @@ struct DatabaseScreen: View {
             }
         }
         .background(Palette.background)
+        .task {
+            if case .loading = manager.state {
+                await manager.bootstrap()
+            }
+        }
+        .onDisappear {
+            manager.cancelSurfaceWork()
+        }
     }
 
     private var bootstrapPlaceholder: some View {

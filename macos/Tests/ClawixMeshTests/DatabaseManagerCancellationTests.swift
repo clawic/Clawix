@@ -4,6 +4,91 @@ import XCTest
 
 @MainActor
 final class DatabaseManagerCancellationTests: XCTestCase {
+    func testStartingSecondBootstrapCancelsStaleBootstrap() async throws {
+        let staleStarted = expectation(description: "Stale database bootstrap started")
+        let staleCancelled = expectation(description: "Stale database bootstrap cancelled")
+        let freshStarted = expectation(description: "Fresh database bootstrap started")
+        let client = FakeDatabaseClient()
+        client.onEnsureNamespace = { _, displayName in
+            client.ensureNamespaceCallCount += 1
+            if client.ensureNamespaceCallCount == 1 {
+                staleStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.namespace(displayName: displayName)
+            }
+            freshStarted.fulfill()
+            return Self.namespace(displayName: displayName)
+        }
+        client.onListCollections = { _ in
+            [Self.collection(name: "fresh")]
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            adminTokenOperation: { "test-token" },
+            attachSupervisor: false,
+            initialState: .loading
+        )
+
+        let first = Task { await manager.bootstrap(force: true) }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { await manager.bootstrap(force: true) }
+
+        await fulfillment(of: [staleCancelled, freshStarted], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertEqual(manager.state, .ready)
+        XCTAssertEqual(manager.collections.map(\.name), ["fresh"])
+    }
+
+    func testCancelSurfaceWorkSuppressesInFlightBootstrap() async throws {
+        let bootstrapStarted = expectation(description: "Database bootstrap started")
+        let bootstrapCancelled = expectation(description: "Database bootstrap cancelled")
+        let listUnexpected = expectation(description: "Database collection list should not run after surface cancellation")
+        listUnexpected.isInverted = true
+        let client = FakeDatabaseClient()
+        client.onEnsureNamespace = { _, displayName in
+            bootstrapStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                bootstrapCancelled.fulfill()
+                throw CancellationError()
+            }
+            return Self.namespace(displayName: displayName)
+        }
+        client.onListCollections = { _ in
+            listUnexpected.fulfill()
+            return [Self.collection(name: "unexpected")]
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            adminTokenOperation: { "test-token" },
+            attachSupervisor: false,
+            initialState: .loading
+        )
+
+        let task = Task { await manager.bootstrap(force: true) }
+        await fulfillment(of: [bootstrapStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [bootstrapCancelled], timeout: 1)
+        await task.value
+        await fulfillment(of: [listUnexpected], timeout: 0.05)
+
+        XCTAssertEqual(manager.state, .loading)
+        XCTAssertTrue(manager.collections.isEmpty)
+    }
+
     func testRecordReloadCancelsStaleCollectionRequest() async throws {
         let slowStarted = expectation(description: "Slow database request started")
         let slowCancelled = expectation(description: "Slow database request cancelled")
@@ -38,7 +123,39 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         manager.requestRefreshRecords(collection: "tasks")
 
         await fulfillment(of: [slowCancelled, fastReturned], timeout: 1)
+        try await Task.sleep(nanoseconds: 10_000_000)
         XCTAssertEqual(manager.records(for: "tasks").map(\.id), ["fast"])
+    }
+
+    func testCancelCollectionSurfaceWorkCancelsInFlightRecordRefresh() async throws {
+        let refreshStarted = expectation(description: "Database record refresh started")
+        let refreshCancelled = expectation(description: "Database record refresh cancelled")
+        let client = FakeDatabaseClient()
+        client.onListRecords = { _, _, _, _, _, _ in
+            refreshStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                refreshCancelled.fulfill()
+                throw CancellationError()
+            }
+            return DBListResponse(total: 1, items: [makeDatabaseRecord(id: "stale", title: "Stale")])
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+
+        manager.requestRefreshRecords(collection: "tasks")
+        await fulfillment(of: [refreshStarted], timeout: 1)
+
+        manager.cancelCollectionSurfaceWork(collection: "tasks")
+
+        await fulfillment(of: [refreshCancelled], timeout: 1)
+        XCTAssertTrue(manager.records(for: "tasks").isEmpty)
     }
 
     private func makeDefaults() throws -> UserDefaults {
@@ -63,12 +180,32 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         )
     }
 
+    private static func namespace(displayName: String?) -> DBNamespace {
+        DBNamespace(
+            id: "clawix-local",
+            displayName: displayName ?? "clawix-local",
+            createdAt: "2026-05-19T00:00:00Z",
+            updatedAt: "2026-05-19T00:00:00Z"
+        )
+    }
+
 }
 
 private final class FakeDatabaseClient: DatabaseClienting {
     var bearerToken: String? = "test-token"
     let origin = URL(string: "http://127.0.0.1:1")!
+    var ensureNamespaceCallCount = 0
+    var listCollectionsCallCount = 0
     var listRecordsCallCount = 0
+    var onEnsureNamespace: (String, String?) async throws -> DBNamespace = { id, displayName in
+        DBNamespace(
+            id: id,
+            displayName: displayName ?? id,
+            createdAt: "2026-05-19T00:00:00Z",
+            updatedAt: "2026-05-19T00:00:00Z"
+        )
+    }
+    var onListCollections: (String) async throws -> [DBCollection] = { _ in [] }
     var onListRecords: (
         String,
         String,
@@ -81,15 +218,13 @@ private final class FakeDatabaseClient: DatabaseClienting {
     }
 
     func ensureNamespace(id: String, displayName: String?) async throws -> DBNamespace {
-        DBNamespace(
-            id: id,
-            displayName: displayName ?? id,
-            createdAt: "2026-05-19T00:00:00Z",
-            updatedAt: "2026-05-19T00:00:00Z"
-        )
+        try await onEnsureNamespace(id, displayName)
     }
 
-    func listCollections(namespaceId: String) async throws -> [DBCollection] { [] }
+    func listCollections(namespaceId: String) async throws -> [DBCollection] {
+        listCollectionsCallCount += 1
+        return try await onListCollections(namespaceId)
+    }
 
     func updateCollection(
         namespaceId: String,
