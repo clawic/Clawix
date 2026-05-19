@@ -182,6 +182,53 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
         ])
     }
 
+    func testStartingSecondRegisterCancelsStaleRegistration() async {
+        let slowStarted = expectation(description: "Slow bot registration started")
+        let slowCancelled = expectation(description: "Slow bot registration cancelled")
+        let fastStarted = expectation(description: "Fast bot registration started")
+        var calls = 0
+        let store = TelegramBotsStore(
+            listBotsOperation: { [] },
+            registerBotOperation: { _, _, _ in
+                calls += 1
+                if calls == 1 {
+                    slowStarted.fulfill()
+                    do {
+                        try await Task.sleep(nanoseconds: 5_000_000_000)
+                    } catch is CancellationError {
+                        slowCancelled.fulfill()
+                        throw CancellationError()
+                    }
+                    return Self.envelope(stdout: "stale-register")
+                }
+                fastStarted.fulfill()
+                return Self.envelope(stdout: "fresh-register")
+            }
+        )
+
+        let first = Task {
+            await store.registerBot(secretName: "old", accountId: nil, label: nil)
+        }
+        await fulfillment(of: [slowStarted], timeout: 1)
+
+        let second = Task {
+            await store.registerBot(secretName: "new", accountId: nil, label: nil)
+        }
+
+        await fulfillment(of: [slowCancelled, fastStarted], timeout: 1)
+        let firstResult = await first.value
+        let secondResult = await second.value
+
+        if case .success = firstResult {
+            XCTFail("Stale registration unexpectedly succeeded")
+        }
+        guard case .success(let envelope) = secondResult else {
+            XCTFail("Fresh registration failed")
+            return
+        }
+        XCTAssertEqual(envelope.stdout, "fresh-register")
+    }
+
     private static func bot(id: String) -> TelegramBot {
         TelegramBot(
             id: id,

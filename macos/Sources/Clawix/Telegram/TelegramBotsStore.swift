@@ -10,6 +10,7 @@ final class TelegramBotsStore: ObservableObject {
     typealias ListBotsOperation = @MainActor () async throws -> [TelegramBot]
     typealias BotEnvelopeOperation = @MainActor (_ bot: TelegramBot) async throws -> ClawCliResult
     typealias BotChatsOperation = @MainActor (_ bot: TelegramBot, _ query: String?) async throws -> ClawCliResult
+    typealias RegisterBotOperation = @MainActor (_ secretName: String, _ accountId: String?, _ label: String?) async throws -> ClawCliResult
     typealias SetWebhookOperation = @MainActor (_ bot: TelegramBot, _ url: String, _ secretToken: String?) async throws -> ClawCliResult
     typealias SaveCommandsOperation = @MainActor (_ bot: TelegramBot, _ commands: [TelegramCommandSpec]) async throws -> ClawCliResult
     typealias SendMessageOperation = @MainActor (_ bot: TelegramBot, _ chatId: String, _ text: String, _ parseMode: String?) async throws -> ClawCliResult
@@ -35,6 +36,7 @@ final class TelegramBotsStore: ObservableObject {
 
     private let client: TelegramServiceClient
     private let listBotsOperation: ListBotsOperation
+    private let registerBotOperation: RegisterBotOperation
     private let reloadCommandsOperation: BotEnvelopeOperation
     private let reloadChatsOperation: BotChatsOperation
     private let startPollingOperation: BotEnvelopeOperation
@@ -49,10 +51,13 @@ final class TelegramBotsStore: ObservableObject {
     private var reloadGenerations: [ReloadKey: Int] = [:]
     private var actionTasks: [String: Task<Bool, Never>] = [:]
     private var actionGenerations: [String: Int] = [:]
+    private var registerTask: Task<Result<ClawCliResult, Swift.Error>, Never>?
+    private var registerGeneration = 0
 
     init(
         client: TelegramServiceClient = TelegramServiceClient(),
         listBotsOperation: ListBotsOperation? = nil,
+        registerBotOperation: RegisterBotOperation? = nil,
         reloadCommandsOperation: BotEnvelopeOperation? = nil,
         reloadChatsOperation: BotChatsOperation? = nil,
         startPollingOperation: BotEnvelopeOperation? = nil,
@@ -65,6 +70,9 @@ final class TelegramBotsStore: ObservableObject {
         self.client = client
         self.listBotsOperation = listBotsOperation ?? {
             try await client.listBots()
+        }
+        self.registerBotOperation = registerBotOperation ?? { secretName, accountId, label in
+            try await client.registerBot(secretName: secretName, accountId: accountId, label: label)
         }
         self.reloadCommandsOperation = reloadCommandsOperation ?? { bot in
             try await client.getCommands(botId: bot.id)
@@ -161,15 +169,40 @@ final class TelegramBotsStore: ObservableObject {
         accountId: String?,
         label: String?
     ) async -> Result<ClawCliResult, Swift.Error> {
-        do {
-            let result = try await client.registerBot(
+        let generation = nextRegisterGeneration()
+        registerTask?.cancel()
+        let task = Task<Result<ClawCliResult, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runRegisterBot(
                 secretName: secretName,
                 accountId: accountId,
-                label: label
+                label: label,
+                generation: generation
             )
+        }
+        registerTask = task
+        return await task.value
+    }
+
+    private func runRegisterBot(
+        secretName: String,
+        accountId: String?,
+        label: String?,
+        generation: Int
+    ) async -> Result<ClawCliResult, Swift.Error> {
+        do {
+            let result = try await registerBotOperation(secretName, accountId, label)
+            try Task.checkCancellation()
+            guard isCurrentRegister(generation: generation) else { return .failure(CancellationError()) }
             await refresh()
+            guard isCurrentRegister(generation: generation) else { return .failure(CancellationError()) }
+            registerTask = nil
             return .success(result)
+        } catch is CancellationError {
+            return .failure(CancellationError())
         } catch {
+            guard isCurrentRegister(generation: generation) else { return .failure(CancellationError()) }
+            registerTask = nil
             return .failure(error)
         }
     }
@@ -378,6 +411,15 @@ final class TelegramBotsStore: ObservableObject {
 
     private func isCurrentAction(botId: String, generation: Int) -> Bool {
         actionGenerations[botId] == generation
+    }
+
+    private func nextRegisterGeneration() -> Int {
+        registerGeneration += 1
+        return registerGeneration
+    }
+
+    private func isCurrentRegister(generation: Int) -> Bool {
+        registerGeneration == generation
     }
 
     private enum ReloadKind: Hashable {
