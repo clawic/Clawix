@@ -157,6 +157,10 @@ final class SystemTelemetryStatusItemController {
         menu.addItem(NSMenuItem.separator())
 
         if let snapshot = model.snapshot {
+            addHistoryGraphItems(to: menu, for: [widget], model: model)
+            if model.hasHistoryGraph(for: widget) {
+                menu.addItem(NSMenuItem.separator())
+            }
             for key in widget.metricKeys {
                 let value = snapshot.sample(for: key).map(Self.menuValue) ?? "Unavailable"
                 let item = NSMenuItem(title: "\(shortMetricName(key)): \(value)", action: nil, keyEquivalent: "")
@@ -215,6 +219,7 @@ final class SystemTelemetryStatusItemController {
         }
 
         if let snapshot = model.snapshot {
+            addHistoryGraphItems(to: menu, for: model.panelWidgets, model: model, limit: 3)
             menu.addItem(NSMenuItem.separator())
             let updated = NSMenuItem(title: "Updated \(snapshot.capturedAt)", action: nil, keyEquivalent: "")
             updated.isEnabled = false
@@ -252,6 +257,23 @@ final class SystemTelemetryStatusItemController {
             let item = NSMenuItem(title: row, action: nil, keyEquivalent: "")
             item.isEnabled = false
             menu.addItem(item)
+        }
+    }
+
+    private func addHistoryGraphItems(
+        to menu: NSMenu,
+        for widgets: [SystemTelemetryWidget],
+        model: SystemTelemetryMenuBarModel,
+        limit: Int = 1
+    ) {
+        var added = 0
+        for widget in widgets where added < limit {
+            guard let history = model.historyGraph(for: widget) else { continue }
+            let item = NSMenuItem()
+            item.view = SystemTelemetryHistoryGraphView(history: history, title: widget.title)
+            item.isEnabled = false
+            menu.addItem(item)
+            added += 1
         }
     }
 

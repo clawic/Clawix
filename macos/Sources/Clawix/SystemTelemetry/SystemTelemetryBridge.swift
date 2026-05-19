@@ -816,6 +816,20 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         return Self.sparkline(points: history.chart.points.map(\.value), width: width)
     }
 
+    func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory? {
+        guard widget.renderMode == "sparkline",
+              let metricKey = widget.metricKeys.first,
+              let history = histories[metricKey],
+              history.chart.points.count >= 2 else {
+            return nil
+        }
+        return history
+    }
+
+    func hasHistoryGraph(for widget: SystemTelemetryWidget) -> Bool {
+        historyGraph(for: widget) != nil
+    }
+
     func severity(for widget: SystemTelemetryWidget) -> SystemTelemetryMenuBarSeverity {
         guard let snapshot else {
             return .unavailable

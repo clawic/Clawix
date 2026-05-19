@@ -722,7 +722,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
     }
 
     @MainActor
-    func testMenuBarModelRendersSparklineFromHistoryChart() async {
+    func testMenuBarModelRendersSparklineFromHistoryChart() async throws {
         let bridge = SystemTelemetryBridge { request in
             switch (request.resource, request.action) {
             case ("widgets", "list"):
@@ -806,6 +806,12 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(model.histories["system.cpu.load1"]?.chart.source, "metric_samples")
         XCTAssertEqual(model.sparkline(for: "system.cpu.load1", width: 4), "▁▃▆█")
         XCTAssertEqual(model.title(for: model.widgets[0]), "CPU ▁▃▆█")
+        let graphHistory = model.historyGraph(for: model.widgets[0])
+        XCTAssertEqual(graphHistory?.chart.points.count, 4)
+        XCTAssertTrue(model.hasHistoryGraph(for: model.widgets[0]))
+        let graph = SystemTelemetryHistoryGraphView(history: try XCTUnwrap(graphHistory), title: "CPU")
+        XCTAssertEqual(graph.pointCount, 4)
+        XCTAssertEqual(graph.accessibilityLabel(), "CPU history graph")
     }
 
     @MainActor

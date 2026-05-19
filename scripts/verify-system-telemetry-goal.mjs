@@ -47,6 +47,7 @@ function assertNoForbiddenPublicNames() {
   ].map((chars) => String.fromCharCode(...chars).toLowerCase());
   const scanned = [
     "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift",
+    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift",
     "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift",
     "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift",
     "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift",
@@ -108,6 +109,8 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "providers = await nextProviders");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "histories = await nextHistories");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func sparkline(for metricKey: String");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory?");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func hasHistoryGraph(for widget: SystemTelemetryWidget) -> Bool");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let ticks = Array(\"▁▂▃▄▅▆▇█\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func combinedPanelTitle() -> String");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func providerStatusRows(limit: Int = 5) -> [String]");
@@ -127,7 +130,12 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private let historyReader = SystemTelemetryHistoryReader()");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "case (\"history\", \"get\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "historyReader.historyPayload");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addHistoryGraphItems(");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let refresh = NSMenuItem(title: \"Refresh\"");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "final class SystemTelemetryHistoryGraphView: NSView");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "setAccessibilityLabel(\"\\(title) history graph\")");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "history.chart.points");
 
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "final class SystemTelemetryMonitorRecorder");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "\"system\"");
@@ -156,6 +164,8 @@ function assertSwiftTestCoverage() {
     "testMenuBarModelIncludesPortableBothPlacement",
     "testMenuBarModelRendersStringSamplesForTextWidgets",
     "testMenuBarModelRendersSparklineFromHistoryChart",
+    "SystemTelemetryHistoryGraphView",
+    "CPU history graph",
     "testMonitorRecorderRecordsHostSnapshotThroughClawCLI",
     "minimum_interval",
     "testMonitorRecorderReportsUnavailableWithoutHostCommand",
