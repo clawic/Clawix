@@ -136,6 +136,109 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(receipts[0].outcome, .denied)
     }
 
+    func testSwiftSurfaceRunnerPlanRequiresOutOfProcessDSL() throws {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query", "db.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(
+                kind: .stack,
+                children: [
+                    AppSwiftSurfaceNode(kind: .text, text: "Dashboard"),
+                    AppSwiftSurfaceNode(
+                        kind: .button,
+                        text: "Search",
+                        action: AppSwiftSurfaceAction(
+                            invocation: .sdkRead,
+                            capabilityId: "search.query",
+                            operation: "search.query"
+                        )
+                    )
+                ]
+            ),
+            requestedCapabilities: ["search.query", "db.query"]
+        )
+
+        let plan = try AppSwiftSurfaceContract.runnerPlan(
+            app: app,
+            manifest: manifest,
+            manifestPath: "/tmp/swift-dashboard/surface.json"
+        )
+
+        XCTAssertEqual(plan.appId, app.id)
+        XCTAssertEqual(plan.protocolVersion, 1)
+        XCTAssertEqual(plan.outOfProcess, true)
+        XCTAssertEqual(plan.allowedCapabilities, ["db.query", "search.query"])
+    }
+
+    func testSwiftSurfaceDSLRejectsUnknownCapabilities() {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["unknown.future"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(kind: .text, text: "Dashboard"),
+            requestedCapabilities: ["unknown.future"]
+        )
+
+        XCTAssertThrowsError(try AppSwiftSurfaceContract.validate(manifest: manifest, for: app)) { error in
+            XCTAssertEqual(error as? AppSwiftSurfaceValidationError, .unknownCapability("unknown.future"))
+        }
+    }
+
+    func testSwiftSurfaceDSLRejectsHighRiskCapabilityAsRead() {
+        let app = AppRecord(
+            slug: "swift-iot-dashboard",
+            name: "Swift IoT Dashboard",
+            declaredCapabilities: ["iot.device.action.invoke"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(
+                kind: .button,
+                text: "Toggle",
+                action: AppSwiftSurfaceAction(
+                    invocation: .sdkRead,
+                    capabilityId: "iot.device.action.invoke",
+                    operation: "iot.device.toggle"
+                )
+            ),
+            requestedCapabilities: ["iot.device.action.invoke"]
+        )
+
+        XCTAssertThrowsError(try AppSwiftSurfaceContract.validate(manifest: manifest, for: app)) { error in
+            XCTAssertEqual(error as? AppSwiftSurfaceValidationError, .highRiskRead("iot.device.action.invoke"))
+        }
+    }
+
+    func testSwiftSurfaceDSLAllowsHighRiskOnlyAsApprovalAction() throws {
+        let app = AppRecord(
+            slug: "swift-iot-dashboard",
+            name: "Swift IoT Dashboard",
+            declaredCapabilities: ["iot.device.action.invoke"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(
+                kind: .button,
+                text: "Toggle",
+                action: AppSwiftSurfaceAction(
+                    invocation: .sdkAction,
+                    capabilityId: "iot.device.action.invoke",
+                    operation: "iot.device.toggle"
+                )
+            ),
+            requestedCapabilities: ["iot.device.action.invoke"]
+        )
+
+        XCTAssertNoThrow(try AppSwiftSurfaceContract.validate(manifest: manifest, for: app))
+    }
+
     func testImportedOrUnknownCapabilitiesRequireReview() {
         let record = AppRecord(
             slug: "imported-panel",
