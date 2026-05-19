@@ -157,6 +157,34 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
         XCTAssertNil(service.actionError)
     }
 
+    func testEndingPollingSuppressesStaleDaemonVersion() async {
+        let started = expectation(description: "Daemon version poll started")
+        let returned = expectation(description: "Daemon version poll returned")
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {},
+            daemonVersionOperation: {
+                started.fulfill()
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                returned.fulfill()
+                return "stale-version"
+            }
+        )
+
+        service.beginPolling()
+        await fulfillment(of: [started], timeout: 1)
+
+        service.endPolling()
+
+        await fulfillment(of: [returned], timeout: 1)
+        await Task.yield()
+        XCTAssertNil(service.runtimeVersion)
+    }
+
     private static func slowPullStream(
         started: XCTestExpectation,
         cancelled: XCTestExpectation

@@ -16,6 +16,7 @@ final class LocalModelsService: ObservableObject {
     typealias RefreshModelListOperation = @MainActor () async -> Void
     typealias EnableOperation = @MainActor (_ contextLength: Int, _ keepAlive: String) async -> Void
     typealias ModelActionOperation = @MainActor (_ model: String) async throws -> Void
+    typealias DaemonVersionOperation = @MainActor () async throws -> String
 
     static let shared = LocalModelsService()
 
@@ -80,9 +81,11 @@ final class LocalModelsService: ObservableObject {
     private let enableOperation: EnableOperation?
     private let deleteOperation: ModelActionOperation?
     private let unloadOperation: ModelActionOperation?
+    private let daemonVersionOperation: DaemonVersionOperation?
 
     private var cancellables: Set<AnyCancellable> = []
     private var pollTask: Task<Void, Never>?
+    private var pollGeneration = 0
     private var pullTasks: [String: Task<Void, Never>] = [:]
     private var pullGenerations: [String: Int] = [:]
     private var enableTask: Task<Void, Never>?
@@ -97,7 +100,8 @@ final class LocalModelsService: ObservableObject {
         refreshModelListOperation: RefreshModelListOperation? = nil,
         enableOperation: EnableOperation? = nil,
         deleteOperation: ModelActionOperation? = nil,
-        unloadOperation: ModelActionOperation? = nil
+        unloadOperation: ModelActionOperation? = nil,
+        daemonVersionOperation: DaemonVersionOperation? = nil
     ) {
         self.defaults = defaults
         self.pullOperation = pullOperation ?? { model in
@@ -107,6 +111,7 @@ final class LocalModelsService: ObservableObject {
         self.enableOperation = enableOperation
         self.deleteOperation = deleteOperation
         self.unloadOperation = unloadOperation
+        self.daemonVersionOperation = daemonVersionOperation
         self.defaultModel = defaults.string(forKey: Self.defaultModelKey)
         self.keepAlive = defaults.string(forKey: Self.keepAliveKey) ?? "5m"
         self.contextLength = defaults.integer(forKey: Self.contextLengthKey) > 0
@@ -183,6 +188,7 @@ final class LocalModelsService: ObservableObject {
         cancelEnable()
         cancelAllPulls()
         cancelAllModelActions()
+        endPolling()
         daemon.stop()
     }
 
@@ -192,15 +198,23 @@ final class LocalModelsService: ObservableObject {
 
     // MARK: - Model actions
 
-    func refreshModelList() async {
+    func refreshModelList(pollGeneration: Int? = nil) async {
+        guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
         if let refreshModelListOperation {
             await refreshModelListOperation()
+            guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
             return
         }
         guard daemon.isRunning else { return }
         do {
-            installedModels = try await client.tags()
-            loadedModels = try await client.ps()
+            let tags = try await client.tags()
+            try Task.checkCancellation()
+            guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
+            let runningModels = try await client.ps()
+            try Task.checkCancellation()
+            guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
+            installedModels = tags
+            loadedModels = runningModels
         } catch {
             // Soft-fail: leave the lists alone, the UI can show a stale
             // banner if desired.
@@ -372,25 +386,62 @@ final class LocalModelsService: ObservableObject {
 
     // MARK: - Polling
 
-    private func beginPolling() {
+    func beginPolling() {
         endPolling()
-        pollTask = Task { [weak self] in
-            while !Task.isCancelled {
-                await self?.refreshDaemonStatus()
-                await self?.refreshModelList()
+        let generation = nextPollGeneration()
+        pollTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled, self.isCurrentPoll(generation: generation) {
+                await self.refreshDaemonStatus(pollGeneration: generation)
+                guard !Task.isCancelled, self.isCurrentPoll(generation: generation) else { break }
+                await self.refreshModelList(pollGeneration: generation)
+                guard !Task.isCancelled, self.isCurrentPoll(generation: generation) else { break }
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
             }
         }
     }
 
-    private func endPolling() {
+    func endPolling() {
+        bumpPollGeneration()
         pollTask?.cancel()
         pollTask = nil
     }
 
-    private func refreshDaemonStatus() async {
-        guard daemon.isRunning else { return }
-        runtimeVersion = (try? await client.version())
+    private func refreshDaemonStatus(pollGeneration: Int? = nil) async {
+        guard daemon.isRunning || daemonVersionOperation != nil else { return }
+        guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
+        do {
+            let version: String
+            if let daemonVersionOperation {
+                version = try await daemonVersionOperation()
+            } else {
+                version = try await client.version()
+            }
+            try Task.checkCancellation()
+            guard isCurrentPollIfNeeded(generation: pollGeneration) else { return }
+            runtimeVersion = version
+        } catch {
+            // Soft-fail: leave the previous version visible until the next
+            // successful poll.
+        }
+    }
+
+    private func nextPollGeneration() -> Int {
+        pollGeneration += 1
+        return pollGeneration
+    }
+
+    private func bumpPollGeneration() {
+        pollGeneration += 1
+    }
+
+    private func isCurrentPoll(generation: Int) -> Bool {
+        pollGeneration == generation
+    }
+
+    private func isCurrentPollIfNeeded(generation: Int?) -> Bool {
+        guard let generation else { return true }
+        return isCurrentPoll(generation: generation)
     }
 
     private func nextPullGeneration(for model: String) -> Int {
