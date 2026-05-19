@@ -305,6 +305,11 @@ PY
         copy_overlay_package "$OVERLAY_CLI" "$CLAWJS_DEST/node_modules/@clawjs/cli"
         copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/cli/node_modules/@clawjs/core"
     fi
+    OVERLAY_SEARCH="$CLAWJS_DEV_OVERLAY/packages/clawjs-search"
+    if [[ -d "$OVERLAY_SEARCH" ]]; then
+        copy_overlay_package "$OVERLAY_SEARCH" "$CLAWJS_DEST/node_modules/@clawjs/search"
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/search/node_modules/@clawjs/core"
+    fi
     OVERLAY_DB="$CLAWJS_DEV_OVERLAY/packages/clawjs-database"
     if [[ -d "$OVERLAY_DB" ]]; then
         build_overlay_package "$OVERLAY_DB"
