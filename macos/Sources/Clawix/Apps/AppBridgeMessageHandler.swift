@@ -20,16 +20,23 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private let slug: String
     private let appsStore: AppsStore
     private weak var appState: AppState?
+    private weak var databaseManager: DatabaseManager?
     /// In-memory KV cache mirroring the on-disk storage file. Reads are
     /// served from cache; writes flush to disk asynchronously so the JS
     /// promise resolves quickly and the disk lags behind by a few ms.
     private var storageCache: [String: AppBridgeAnyCodable] = [:]
     private var storageLoaded = false
 
-    init(slug: String, appsStore: AppsStore = .shared, appState: AppState?) {
+    init(
+        slug: String,
+        appsStore: AppsStore = .shared,
+        appState: AppState?,
+        databaseManager: DatabaseManager? = nil
+    ) {
         self.slug = slug
         self.appsStore = appsStore
         self.appState = appState
+        self.databaseManager = databaseManager
         super.init()
     }
 
@@ -90,6 +97,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                     return
                 }
                 resolve(requestId: requestId, value: AppCapabilityCatalog.riskMap(for: record).bridgeValue)
+            case "db.query":
+                Task { @MainActor [weak self] in
+                    await self?.handleDBQuery(payload: payload, requestId: requestId)
+                }
+            case "search.query":
+                Task { @MainActor [weak self] in
+                    await self?.handleSearchQuery(payload: payload, requestId: requestId)
+                }
             case "ui.setTitle":
                 let title = (payload["title"] as? String) ?? ""
                 applyTitle(title)
@@ -241,6 +256,135 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         if record.name != trimmed {
             record.name = trimmed
             try? appsStore.update(record)
+        }
+    }
+
+    // MARK: - Search + DB SDK bridge
+
+    private func handleDBQuery(payload: [String: Any], requestId: String) async {
+        do {
+            try requireLocalWideCapability("db.query")
+            guard let manager = databaseManager else {
+                reject(requestId: requestId, message: "Database bridge is unavailable")
+                return
+            }
+            guard case .ready = manager.state else {
+                reject(requestId: requestId, message: "Database service is unavailable")
+                return
+            }
+            let query = try AppBridgeQueryDSL.dbQuery(from: payload)
+            let fetchLimit = query.hasClientSideFilters ? 500 : query.limit
+            let response = try await manager.client.listRecords(
+                namespaceId: manager.currentNamespace,
+                collection: query.collection,
+                filter: query.backendFilterJSON,
+                sort: query.sortString,
+                limit: fetchLimit,
+                offset: query.offset
+            )
+            let filtered = Array(query.postFilter(response.items).prefix(query.limit))
+            resolve(requestId: requestId, value: [
+                "collection": query.collection,
+                "items": filtered.map { AppBridgeQueryDSL.bridgeValue(collection: query.collection, record: $0) },
+                "limit": query.limit,
+                "offset": query.offset,
+                "total": response.total ?? filtered.count,
+                "source": "db.query"
+            ])
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func handleSearchQuery(payload: [String: Any], requestId: String) async {
+        do {
+            try requireLocalWideCapability("search.query")
+            guard let manager = databaseManager else {
+                reject(requestId: requestId, message: "Search bridge is unavailable")
+                return
+            }
+            guard case .ready = manager.state else {
+                reject(requestId: requestId, message: "Search service is unavailable")
+                return
+            }
+            let query = try AppBridgeQueryDSL.searchQuery(from: payload)
+            let collections = query.collections.isEmpty ? manager.collections.map(\.name) : query.collections
+            let needle = query.query.lowercased()
+            var items: [[String: Any]] = []
+
+            for collection in collections {
+                guard items.count < query.limit else { break }
+                let response = try await manager.client.listRecords(
+                    namespaceId: manager.currentNamespace,
+                    collection: collection,
+                    filter: nil,
+                    sort: "-updatedAt",
+                    limit: 100,
+                    offset: 0
+                )
+                let matches = response.items.filter { record in
+                    record.titleString.lowercased().contains(needle)
+                        || record.data.values.contains { $0.stringValue?.lowercased().contains(needle) == true }
+                }
+                for record in matches {
+                    guard items.count < query.limit else { break }
+                    items.append(AppBridgeQueryDSL.bridgeValue(collection: collection, record: record))
+                }
+            }
+
+            resolve(requestId: requestId, value: [
+                "query": query.query,
+                "collections": collections,
+                "items": items,
+                "limit": query.limit,
+                "source": "search.query"
+            ])
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func requireLocalWideCapability(_ capabilityId: String) throws {
+        guard let record = appsStore.record(forSlug: slug) else {
+            throw AppBridgeCapabilityError.appNotFound
+        }
+        guard case .allowed = AppCapabilityCatalog.activationGate(for: record) else {
+            throw AppBridgeCapabilityError.activationRequired
+        }
+        guard let descriptor = AppCapabilityCatalog.descriptor(id: capabilityId),
+              descriptor.customAppAccess == .localWide else {
+            throw AppBridgeCapabilityError.capabilityNotAllowed(capabilityId)
+        }
+
+        let declared = record.effectiveDeclaredCapabilities
+        if declared.isEmpty {
+            if record.effectiveOriginClass == .localUserAuthored || record.effectiveOriginClass == .system {
+                return
+            }
+            throw AppBridgeCapabilityError.capabilityNotDeclared(capabilityId)
+        }
+        guard declared.contains(capabilityId) else {
+            throw AppBridgeCapabilityError.capabilityNotDeclared(capabilityId)
+        }
+    }
+}
+
+private enum AppBridgeCapabilityError: LocalizedError {
+    case appNotFound
+    case activationRequired
+    case capabilityNotAllowed(String)
+    case capabilityNotDeclared(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .appNotFound:
+            return "App not found"
+        case .activationRequired:
+            return "App activation review is required before using this capability"
+        case .capabilityNotAllowed(let id):
+            return "Capability is not available to custom apps: \(id)"
+        case .capabilityNotDeclared(let id):
+            return "App manifest does not declare capability: \(id)"
         }
     }
 }

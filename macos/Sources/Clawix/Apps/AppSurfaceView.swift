@@ -21,6 +21,7 @@ struct AppSurfaceView: View {
     let appId: UUID
 
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject private var databaseManager: DatabaseManager
     @ObservedObject private var appsStore: AppsStore = .shared
     @State private var reloadToken: Int = 0
     @State private var loadState: AppSurfaceLoadState = .loading
@@ -41,7 +42,8 @@ struct AppSurfaceView: View {
                         reloadToken: reloadToken,
                         loadState: $loadState,
                         appsStore: appsStore,
-                        appState: appState
+                        appState: appState,
+                        databaseManager: databaseManager
                     )
                     .id("\(record.slug)-\(reloadToken)")
 
@@ -193,6 +195,7 @@ private struct AppSurfaceWebView: NSViewRepresentable {
     @Binding var loadState: AppSurfaceLoadState
     let appsStore: AppsStore
     let appState: AppState
+    let databaseManager: DatabaseManager
 
     func makeCoordinator() -> Coordinator {
         Coordinator(loadState: $loadState)
@@ -233,7 +236,12 @@ private struct AppSurfaceWebView: NSViewRepresentable {
         contentController.addUserScript(sdkScript)
 
         // 3. Bridge handler so window.clawix can post into Swift.
-        let bridgeHandler = AppBridgeMessageHandler(slug: slug, appsStore: appsStore, appState: appState)
+        let bridgeHandler = AppBridgeMessageHandler(
+            slug: slug,
+            appsStore: appsStore,
+            appState: appState,
+            databaseManager: databaseManager
+        )
         contentController.add(bridgeHandler, name: AppBridgeMessageHandler.messageName)
         context.coordinator.bridgeHandler = bridgeHandler
 

@@ -91,6 +91,29 @@ let ClawixAppsSDKJS = #"""
       list: function () { return send('capabilities.list'); },
       riskMap: function () { return send('capabilities.riskMap'); }
     },
+    search: {
+      query: function (opts) {
+        opts = opts || {};
+        return send('search.query', {
+          query: String(opts.query || opts.text || ''),
+          collections: Array.isArray(opts.collections) ? opts.collections : [],
+          limit: opts.limit
+        });
+      }
+    },
+    db: {
+      query: function (opts) {
+        opts = opts || {};
+        return send('db.query', {
+          collection: String(opts.collection || ''),
+          filter: opts.filter || {},
+          search: opts.search == null ? opts.query : opts.search,
+          sort: opts.sort,
+          limit: opts.limit,
+          offset: opts.offset
+        });
+      }
+    },
     ui: {
       setTitle: function (title) { return send('ui.setTitle', { title: String(title || '') }); },
       setBadge: function (text) {

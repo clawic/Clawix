@@ -138,4 +138,46 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.list"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.riskMap"))
     }
+
+    func testInjectedAppsSdkExposesSearchAndDBContracts() {
+        XCTAssertTrue(ClawixAppsSDKJS.contains("search.query"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
+        XCTAssertFalse(ClawixAppsSDKJS.lowercased().contains("sqlite"))
+    }
+
+    func testDBQueryDSLNormalizesFiltersSortAndLimits() throws {
+        let query = try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "tasks",
+            "filter": [
+                "status": "todo",
+                "archivedAt": ["isNull": true],
+                "priority": ["neq": "low"]
+            ],
+            "search": "launch",
+            "sort": "-updatedAt",
+            "limit": 999,
+            "offset": -10
+        ])
+
+        XCTAssertEqual(query.collection, "tasks")
+        XCTAssertEqual(query.search, "launch")
+        XCTAssertEqual(query.limit, 100)
+        XCTAssertEqual(query.offset, 0)
+        XCTAssertEqual(query.sort, DBFilterState.Sort(field: "updatedAt", descending: true))
+        XCTAssertEqual(query.backendFilterJSON?["status"] as? String, "todo")
+        XCTAssertEqual(query.filterChips.first(where: { $0.field == "archivedAt" })?.op, .isNull)
+        XCTAssertEqual(query.filterChips.first(where: { $0.field == "priority" })?.op, .neq)
+    }
+
+    func testSearchQueryDSLNormalizesCollectionsAndLimits() throws {
+        let query = try AppBridgeQueryDSL.searchQuery(from: [
+            "query": "agent",
+            "collections": ["tasks", "", "notes"],
+            "limit": 0
+        ])
+
+        XCTAssertEqual(query.query, "agent")
+        XCTAssertEqual(query.collections, ["tasks", "notes"])
+        XCTAssertEqual(query.limit, 1)
+    }
 }
