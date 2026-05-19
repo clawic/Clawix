@@ -10,6 +10,9 @@ final class TelegramBotsStore: ObservableObject {
     typealias ListBotsOperation = @MainActor () async throws -> [TelegramBot]
     typealias BotEnvelopeOperation = @MainActor (_ bot: TelegramBot) async throws -> ClawCliResult
     typealias BotChatsOperation = @MainActor (_ bot: TelegramBot, _ query: String?) async throws -> ClawCliResult
+    typealias SetWebhookOperation = @MainActor (_ bot: TelegramBot, _ url: String, _ secretToken: String?) async throws -> ClawCliResult
+    typealias SaveCommandsOperation = @MainActor (_ bot: TelegramBot, _ commands: [TelegramCommandSpec]) async throws -> ClawCliResult
+    typealias SendMessageOperation = @MainActor (_ bot: TelegramBot, _ chatId: String, _ text: String, _ parseMode: String?) async throws -> ClawCliResult
 
     @Published private(set) var bots: [TelegramBot] = []
     @Published private(set) var isLoading = false
@@ -34,16 +37,30 @@ final class TelegramBotsStore: ObservableObject {
     private let listBotsOperation: ListBotsOperation
     private let reloadCommandsOperation: BotEnvelopeOperation
     private let reloadChatsOperation: BotChatsOperation
+    private let startPollingOperation: BotEnvelopeOperation
+    private let stopPollingOperation: BotEnvelopeOperation
+    private let setWebhookOperation: SetWebhookOperation
+    private let clearWebhookOperation: BotEnvelopeOperation
+    private let saveCommandsOperation: SaveCommandsOperation
+    private let sendMessageOperation: SendMessageOperation
     private var refreshTask: Task<Void, Never>?
     private var refreshGeneration = 0
     private var reloadTasks: [ReloadKey: Task<Void, Never>] = [:]
     private var reloadGenerations: [ReloadKey: Int] = [:]
+    private var actionTasks: [String: Task<Bool, Never>] = [:]
+    private var actionGenerations: [String: Int] = [:]
 
     init(
         client: TelegramServiceClient = TelegramServiceClient(),
         listBotsOperation: ListBotsOperation? = nil,
         reloadCommandsOperation: BotEnvelopeOperation? = nil,
-        reloadChatsOperation: BotChatsOperation? = nil
+        reloadChatsOperation: BotChatsOperation? = nil,
+        startPollingOperation: BotEnvelopeOperation? = nil,
+        stopPollingOperation: BotEnvelopeOperation? = nil,
+        setWebhookOperation: SetWebhookOperation? = nil,
+        clearWebhookOperation: BotEnvelopeOperation? = nil,
+        saveCommandsOperation: SaveCommandsOperation? = nil,
+        sendMessageOperation: SendMessageOperation? = nil
     ) {
         self.client = client
         self.listBotsOperation = listBotsOperation ?? {
@@ -54,6 +71,29 @@ final class TelegramBotsStore: ObservableObject {
         }
         self.reloadChatsOperation = reloadChatsOperation ?? { bot, query in
             try await client.listChats(botId: bot.id, query: query)
+        }
+        self.startPollingOperation = startPollingOperation ?? { bot in
+            try await client.startPolling(botId: bot.id)
+        }
+        self.stopPollingOperation = stopPollingOperation ?? { bot in
+            try await client.stopPolling(botId: bot.id)
+        }
+        self.setWebhookOperation = setWebhookOperation ?? { bot, url, secretToken in
+            try await client.setWebhook(botId: bot.id, url: url, secretToken: secretToken)
+        }
+        self.clearWebhookOperation = clearWebhookOperation ?? { bot in
+            try await client.clearWebhook(botId: bot.id)
+        }
+        self.saveCommandsOperation = saveCommandsOperation ?? { bot, commands in
+            try await client.setCommands(botId: bot.id, commands: commands)
+        }
+        self.sendMessageOperation = sendMessageOperation ?? { bot, chatId, text, parseMode in
+            try await client.sendMessage(
+                botId: bot.id,
+                chatId: chatId,
+                body: .text(text),
+                parseMode: parseMode
+            )
         }
     }
 
@@ -135,25 +175,21 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     func startPolling(_ bot: TelegramBot) async {
-        await runAction(bot: bot) { try await self.client.startPolling(botId: bot.id) }
+        await runAction(bot: bot) { try await self.startPollingOperation(bot) }
     }
 
     func stopPolling(_ bot: TelegramBot) async {
-        await runAction(bot: bot) { try await self.client.stopPolling(botId: bot.id) }
+        await runAction(bot: bot) { try await self.stopPollingOperation(bot) }
     }
 
     func setWebhook(_ bot: TelegramBot, url: String, secretToken: String?) async {
         await runAction(bot: bot) {
-            try await self.client.setWebhook(
-                botId: bot.id,
-                url: url,
-                secretToken: secretToken
-            )
+            try await self.setWebhookOperation(bot, url, secretToken)
         }
     }
 
     func clearWebhook(_ bot: TelegramBot) async {
-        await runAction(bot: bot) { try await self.client.clearWebhook(botId: bot.id) }
+        await runAction(bot: bot) { try await self.clearWebhookOperation(bot) }
     }
 
     func reloadCommands(_ bot: TelegramBot) async {
@@ -193,10 +229,12 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     func saveCommands(_ bot: TelegramBot, commands: [TelegramCommandSpec]) async {
-        await runAction(bot: bot) {
-            try await self.client.setCommands(botId: bot.id, commands: commands)
+        let completed = await runAction(bot: bot) {
+            try await self.saveCommandsOperation(bot, commands)
         }
-        await reloadCommands(bot)
+        if completed {
+            await reloadCommands(bot)
+        }
     }
 
     func reloadChats(_ bot: TelegramBot, query: String? = nil) async {
@@ -247,27 +285,42 @@ final class TelegramBotsStore: ObservableObject {
         parseMode: String? = nil
     ) async {
         await runAction(bot: bot) {
-            try await self.client.sendMessage(
-                botId: bot.id,
-                chatId: chatId,
-                body: .text(text),
-                parseMode: parseMode
-            )
+            try await self.sendMessageOperation(bot, chatId, text, parseMode)
         }
     }
 
     // MARK: - Internal
 
+    @discardableResult
     private func runAction(
         bot: TelegramBot,
-        _ work: @escaping () async throws -> ClawCliResult
-    ) async {
+        _ work: @escaping @MainActor () async throws -> ClawCliResult
+    ) async -> Bool {
+        let generation = nextActionGeneration(for: bot.id)
+        actionTasks[bot.id]?.cancel()
+        let task = Task<Bool, Never> { @MainActor [weak self] in
+            guard let self else { return false }
+            return await self.runActionTask(bot: bot, generation: generation, work)
+        }
+        actionTasks[bot.id] = task
+        return await task.value
+    }
+
+    private func runActionTask(
+        bot: TelegramBot,
+        generation: Int,
+        _ work: @escaping @MainActor () async throws -> ClawCliResult
+    ) async -> Bool {
         inflight.insert(bot.id)
-        defer { inflight.remove(bot.id) }
         do {
             let envelope = try await work()
+            try Task.checkCancellation()
+            guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
             lastActionResult[bot.id] = envelope
+        } catch is CancellationError {
+            return false
         } catch {
+            guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
             lastActionResult[bot.id] = ClawCliResult(
                 ok: false,
                 exitCode: nil,
@@ -276,7 +329,14 @@ final class TelegramBotsStore: ObservableObject {
                 json: nil
             )
         }
+        guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
         await refresh()
+        if isCurrentAction(botId: bot.id, generation: generation) {
+            actionTasks[bot.id] = nil
+            inflight.remove(bot.id)
+            return true
+        }
+        return false
     }
 
     private func cancelAllReloads() {
@@ -308,6 +368,16 @@ final class TelegramBotsStore: ObservableObject {
 
     private func isCurrentReload(key: ReloadKey, generation: Int) -> Bool {
         reloadGenerations[key] == generation
+    }
+
+    private func nextActionGeneration(for botId: String) -> Int {
+        let generation = (actionGenerations[botId] ?? 0) + 1
+        actionGenerations[botId] = generation
+        return generation
+    }
+
+    private func isCurrentAction(botId: String, generation: Int) -> Bool {
+        actionGenerations[botId] == generation
     }
 
     private enum ReloadKind: Hashable {

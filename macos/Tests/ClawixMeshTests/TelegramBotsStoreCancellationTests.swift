@@ -91,6 +91,97 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.chats[bot.id])
     }
 
+    func testStartingSameActionCancelsStaleTelegramAction() async {
+        let slowStarted = expectation(description: "Slow Telegram action started")
+        let slowCancelled = expectation(description: "Slow Telegram action cancelled")
+        let fastStarted = expectation(description: "Fast Telegram action started")
+        let bot = Self.bot(id: "main")
+        var calls = 0
+        let store = TelegramBotsStore(
+            listBotsOperation: { [] },
+            startPollingOperation: { _ in
+                calls += 1
+                if calls == 1 {
+                    slowStarted.fulfill()
+                    do {
+                        try await Task.sleep(nanoseconds: 5_000_000_000)
+                    } catch is CancellationError {
+                        slowCancelled.fulfill()
+                        throw CancellationError()
+                    }
+                    return Self.envelope(stdout: "stale")
+                }
+                fastStarted.fulfill()
+                return Self.envelope(stdout: "fresh")
+            }
+        )
+
+        let first = Task { await store.startPolling(bot) }
+        await fulfillment(of: [slowStarted], timeout: 1)
+
+        let second = Task { await store.startPolling(bot) }
+
+        await fulfillment(of: [slowCancelled, fastStarted], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertEqual(store.lastActionResult[bot.id]?.stdout, "fresh")
+        XCTAssertFalse(store.inflight.contains(bot.id))
+    }
+
+    func testCancelledSaveCommandsDoesNotReloadCommands() async {
+        let slowStarted = expectation(description: "Slow command save started")
+        let slowCancelled = expectation(description: "Slow command save cancelled")
+        let fastStarted = expectation(description: "Fast command save started")
+        let bot = Self.bot(id: "main")
+        var saveCalls = 0
+        var reloadCalls = 0
+        let store = TelegramBotsStore(
+            listBotsOperation: { [] },
+            reloadCommandsOperation: { _ in
+                reloadCalls += 1
+                return Self.commandsEnvelope(command: "fresh")
+            },
+            saveCommandsOperation: { _, _ in
+                saveCalls += 1
+                if saveCalls == 1 {
+                    slowStarted.fulfill()
+                    do {
+                        try await Task.sleep(nanoseconds: 5_000_000_000)
+                    } catch is CancellationError {
+                        slowCancelled.fulfill()
+                        throw CancellationError()
+                    }
+                    return Self.envelope(stdout: "stale-save")
+                }
+                fastStarted.fulfill()
+                return Self.envelope(stdout: "fresh-save")
+            }
+        )
+
+        let first = Task {
+            await store.saveCommands(bot, commands: [
+                TelegramCommandSpec(command: "stale", description: "")
+            ])
+        }
+        await fulfillment(of: [slowStarted], timeout: 1)
+
+        let second = Task {
+            await store.saveCommands(bot, commands: [
+                TelegramCommandSpec(command: "fresh", description: "")
+            ])
+        }
+
+        await fulfillment(of: [slowCancelled, fastStarted], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertEqual(reloadCalls, 1)
+        XCTAssertEqual(store.commands[bot.id], [
+            TelegramCommandSpec(command: "fresh", description: "fresh command")
+        ])
+    }
+
     private static func bot(id: String) -> TelegramBot {
         TelegramBot(
             id: id,
@@ -124,6 +215,16 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
                     ])
                 ])
             ])
+        )
+    }
+
+    private static func envelope(stdout: String) -> ClawCliResult {
+        ClawCliResult(
+            ok: true,
+            exitCode: 0,
+            stdout: stdout,
+            stderr: "",
+            json: nil
         )
     }
 
