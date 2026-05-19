@@ -169,7 +169,6 @@ extension AppState {
     }
 
     private func hydrateHistoryFromClawJSSessions(threadId: String, chatId: UUID, blocking: Bool) {
-        let client = ClawJSSessionsClient.local()
         if blocking {
             // The bridge entry point is synchronous. Do not fall back to
             // scanning Codex rollouts here; the daemon/session sidecar is the
@@ -177,19 +176,61 @@ extension AppState {
             // can reach the service.
             return
         }
-        Task { @MainActor [weak self] in
+        guard sessionHistoryHydrationTasks[chatId] == nil else { return }
+        sessionHistoryHydrationTasks[chatId] = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.sessionHistoryHydrationTasks[chatId] = nil }
             do {
-                let records = try await client.listMessages(sessionId: threadId)
+                let records = try await self.loadClawJSSessionMessages(sessionId: threadId)
                 let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
-                self?.applyRolloutMessages(
+                self.applyRolloutMessages(
                     messages,
                     lastTurnInterrupted: false,
                     chatId: chatId
                 )
             } catch {
-                self?.appendRuntimeStatusError("Could not load ClawJS session history: \(error.localizedDescription)")
+                guard self.chat(byId: chatId)?.historyHydrated == false else { return }
+                self.appendRuntimeStatusError("Could not load ClawJS session history: \(error.localizedDescription)")
             }
         }
+    }
+
+    private func loadClawJSSessionMessages(sessionId: String) async throws -> [ClawJSSessionsClient.MessageRecord] {
+        var delay = sessionHistoryHydrationInitialDelayNanos
+        let attempts = max(1, sessionHistoryHydrationAttempts)
+        var lastError: Error?
+        for attempt in 1...attempts {
+            do {
+                return try await clawJSSessionsClientFactory().listMessages(sessionId: sessionId)
+            } catch {
+                lastError = error
+                guard attempt < attempts, Self.shouldRetryClawJSSessionHistory(error) else {
+                    throw error
+                }
+                try? await Task.sleep(nanoseconds: delay)
+                delay = min(delay * 2, 2_000_000_000)
+            }
+        }
+        throw lastError ?? ClawJSSessionsClient.Error.serviceNotReady
+    }
+
+    private static func shouldRetryClawJSSessionHistory(_ error: Error) -> Bool {
+        if let sessionsError = error as? ClawJSSessionsClient.Error {
+            switch sessionsError {
+            case .serviceNotReady, .transport:
+                return true
+            case .invalidURL, .http, .decoding, .encoding:
+                return false
+            }
+        }
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else { return false }
+        return [
+            NSURLErrorCannotConnectToHost,
+            NSURLErrorCannotFindHost,
+            NSURLErrorNetworkConnectionLost,
+            NSURLErrorTimedOut,
+        ].contains(nsError.code)
     }
 
     private static func chatMessage(fromClawJSSessionMessage record: ClawJSSessionsClient.MessageRecord) -> ChatMessage {

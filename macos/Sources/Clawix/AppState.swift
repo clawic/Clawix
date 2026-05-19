@@ -433,6 +433,10 @@ final class AppState: ObservableObject {
     var cachedWireSessions: [WireSession] = []
     var cachedWireMessagesByChat: [String: [WireMessage]] = [:]
     var optimisticUserMessageIdsByChat: [UUID: Set<UUID>] = [:]
+    var clawJSSessionsClientFactory: () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() }
+    var sessionHistoryHydrationTasks: [UUID: Task<Void, Never>] = [:]
+    var sessionHistoryHydrationAttempts = 8
+    var sessionHistoryHydrationInitialDelayNanos: UInt64 = 250_000_000
     /// Drives `SnapshotCache.save` after a quiet 500ms window. Each
     /// call cancels the previous in-flight task; streaming bursts and
     /// rapid chat updates collapse into a single write. The actual IO

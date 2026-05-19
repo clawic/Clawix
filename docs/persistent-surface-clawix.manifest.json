@@ -6510,6 +6510,7 @@
       ],
       "summary" : "Clawix UI enters the local bridge before the framework-owned daemon/runtime/session route continues in ClawJS.",
       "tests" : [
+        "macos/Tests/ClawixMeshTests/ChatHydrationTests.swift",
         "macos/Helpers/Bridged/Tests/e2e_bridge_daemon.py"
       ],
       "toId" : "clawix.bridge.local",
