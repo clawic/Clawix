@@ -53,11 +53,20 @@ final class CalendarStore: ObservableObject {
     private let backend: CalendarBackend
     private let calendar: Foundation.Calendar
     private let displayLocale: Locale
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
+    private var writeTask: Task<CalendarWriteResult, Never>?
+    private var writeGeneration = 0
 
     init(backend: CalendarBackend? = nil, calendar: Foundation.Calendar = .current) {
         self.backend = backend ?? CalendarStore.makeDefaultBackend()
         self.calendar = calendar
         self.displayLocale = CalendarStore.makeDisplayLocale()
+    }
+
+    deinit {
+        reloadTask?.cancel()
+        writeTask?.cancel()
     }
 
     private static func makeDefaultBackend() -> CalendarBackend {
@@ -92,10 +101,24 @@ final class CalendarStore: ObservableObject {
 
     func reload() async {
         let (start, end) = visibleRange(for: viewMode, anchor: selectedDate)
+        let generation = nextReloadGeneration()
+        reloadTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(start: start, end: end, generation: generation)
+        }
+        reloadTask = task
+        await task.value
+    }
+
+    private func runReload(start: Date, end: Date, generation: Int) async {
         let fetchedSources = await backend.loadSources()
+        if Task.isCancelled || !isCurrentReload(generation) { return }
         let fetchedEvents = await backend.loadEvents(start: start, end: end)
-        self.sources = fetchedSources
-        self.events = fetchedEvents
+        if Task.isCancelled || !isCurrentReload(generation) { return }
+        sources = fetchedSources
+        events = fetchedEvents
+        finishReloadIfCurrent(generation)
     }
 
     func setViewMode(_ mode: CalendarViewMode) {
@@ -219,7 +242,15 @@ final class CalendarStore: ObservableObject {
 
     func commitDraft() async {
         guard let draft = editingDraft else { return }
-        let result = await backend.save(draft: draft)
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<CalendarWriteResult, Never> { @MainActor [weak self] in
+            guard let self else { return .failure("Calendar store is unavailable.") }
+            return await self.backend.save(draft: draft)
+        }
+        writeTask = task
+        let result = await task.value
+        guard isCurrentWrite(generation), !Task.isCancelled else { return }
         switch result {
         case .success:
             editingDraft = nil
@@ -227,10 +258,19 @@ final class CalendarStore: ObservableObject {
         case .failure(let message):
             lastError = message
         }
+        finishWriteIfCurrent(generation)
     }
 
     func deleteEvent(_ event: CalendarEvent) async {
-        let result = await backend.delete(eventID: event.id)
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<CalendarWriteResult, Never> { @MainActor [weak self] in
+            guard let self else { return .failure("Calendar store is unavailable.") }
+            return await self.backend.delete(eventID: event.id)
+        }
+        writeTask = task
+        let result = await task.value
+        guard isCurrentWrite(generation), !Task.isCancelled else { return }
         switch result {
         case .success:
             if selectedEventID == event.id { selectedEventID = nil }
@@ -238,6 +278,7 @@ final class CalendarStore: ObservableObject {
         case .failure(let message):
             lastError = message
         }
+        finishWriteIfCurrent(generation)
     }
 
     func moveEvent(_ event: CalendarEvent, by minutes: Int) async {
@@ -267,11 +308,20 @@ final class CalendarStore: ObservableObject {
             isAllDay: event.isAllDay,
             calendarID: event.calendarID
         )
-        let result = await backend.save(draft: draft)
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<CalendarWriteResult, Never> { @MainActor [weak self] in
+            guard let self else { return .failure("Calendar store is unavailable.") }
+            return await self.backend.save(draft: draft)
+        }
+        writeTask = task
+        let result = await task.value
+        guard isCurrentWrite(generation), !Task.isCancelled else { return }
         if case .failure(let message) = result {
             lastError = message
         }
         await reload()
+        finishWriteIfCurrent(generation)
     }
 
     func visibleRange(for mode: CalendarViewMode, anchor: Date) -> (Date, Date) {
@@ -307,6 +357,37 @@ final class CalendarStore: ObservableObject {
 
     var foundationCalendar: Foundation.Calendar { calendar }
     var localeForDisplay: Locale { displayLocale }
+
+    private func nextReloadGeneration() -> Int {
+        reloadGeneration += 1
+        return reloadGeneration
+    }
+
+    private func isCurrentReload(_ generation: Int) -> Bool {
+        reloadGeneration == generation
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard isCurrentReload(generation) else { return }
+        reloadTask = nil
+    }
+
+    private func nextWriteGeneration() -> Int {
+        writeGeneration += 1
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        return writeGeneration
+    }
+
+    private func isCurrentWrite(_ generation: Int) -> Bool {
+        writeGeneration == generation
+    }
+
+    private func finishWriteIfCurrent(_ generation: Int) {
+        guard isCurrentWrite(generation) else { return }
+        writeTask = nil
+    }
 }
 
 enum CalendarWriteResult: Equatable {
