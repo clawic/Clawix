@@ -12,7 +12,10 @@ struct SurfaceRouterView: View {
     var body: some View {
         let entry = routeRegistryEntry
         let resolution = activeVariantResolution
-        let readinessMode: SurfaceRouteReadinessMode = resolution == nil ? entry.readinessMode : .childReported
+        let readinessMode = SurfaceRouteReadinessPolicy.mode(
+            for: entry,
+            hasActiveCustomVariant: resolution != nil
+        )
         ZStack(alignment: .topTrailing) {
             SurfaceRouteHost(
                 descriptor: entry.descriptor,

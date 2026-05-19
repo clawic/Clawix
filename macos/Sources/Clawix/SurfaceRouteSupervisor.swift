@@ -48,6 +48,15 @@ enum SurfaceRouteReadinessMode: String, Equatable, Hashable {
     case childReported
 }
 
+enum SurfaceRouteReadinessPolicy {
+    static func mode(
+        for entry: SurfaceRouteRegistryEntry,
+        hasActiveCustomVariant: Bool
+    ) -> SurfaceRouteReadinessMode {
+        hasActiveCustomVariant ? .childReported : entry.readinessMode
+    }
+}
+
 enum SurfaceRouteSupervisor {
     static func start(descriptor: SurfaceRouteDescriptor) -> SurfaceRouteSupervisionState {
         guard descriptor.requiresIndependentDegradation,

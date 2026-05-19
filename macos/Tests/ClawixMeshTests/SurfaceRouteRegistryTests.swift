@@ -72,6 +72,34 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testActiveCustomVariantForcesChildReportedReadiness() {
+        let builtInEntry = SurfaceRouteRegistry.entry(for: .databaseCollection("tasks"))
+        let directAppEntry = SurfaceRouteRegistry.entry(for: .app(UUID()))
+
+        XCTAssertEqual(
+            SurfaceRouteReadinessPolicy.mode(
+                for: builtInEntry,
+                hasActiveCustomVariant: false
+            ),
+            .immediateAfterFirstRender
+        )
+        XCTAssertEqual(
+            SurfaceRouteReadinessPolicy.mode(
+                for: builtInEntry,
+                hasActiveCustomVariant: true
+            ),
+            .childReported
+        )
+        XCTAssertEqual(
+            SurfaceRouteReadinessPolicy.mode(
+                for: directAppEntry,
+                hasActiveCustomVariant: false
+            ),
+            .childReported
+        )
+    }
+
     private static let allRepresentativeRoutes: [SidebarRoute] = [
         .home,
         .search,
