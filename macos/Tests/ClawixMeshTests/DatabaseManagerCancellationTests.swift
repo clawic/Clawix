@@ -158,6 +158,123 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertTrue(manager.records(for: "tasks").isEmpty)
     }
 
+    func testCancelSurfaceWorkSuppressesLateCreateRecordResult() async throws {
+        let createStarted = expectation(description: "Database create started")
+        let createReturned = expectation(description: "Database create returned after surface cancellation")
+        let client = FakeDatabaseClient()
+        client.onCreateRecord = { _, collection, _ in
+            createStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            createReturned.fulfill()
+            return makeDatabaseRecord(id: "stale", title: collection)
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+
+        let task = Task {
+            try await manager.createRecord(collection: "tasks", data: ["title": .string("Stale")])
+        }
+        await fulfillment(of: [createStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [createReturned], timeout: 1)
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled create unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected create error after surface cancellation: \(error)")
+        }
+
+        XCTAssertTrue(manager.records(for: "tasks").isEmpty)
+        XCTAssertNil(manager.lastError)
+    }
+
+    func testCancelSurfaceWorkSuppressesLateUpdateRecordError() async throws {
+        let updateStarted = expectation(description: "Database update started")
+        let updateReturned = expectation(description: "Database update returned after surface cancellation")
+        let client = FakeDatabaseClient()
+        client.onUpdateRecord = { _, _, id, _ in
+            updateStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            updateReturned.fulfill()
+            throw TestError(message: "stale update failed for \(id)")
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+
+        let task = Task {
+            try await manager.updateRecord(collection: "tasks", id: "stale", data: ["title": .string("Stale")])
+        }
+        await fulfillment(of: [updateStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [updateReturned], timeout: 1)
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled update unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected update error after surface cancellation: \(error)")
+        }
+
+        XCTAssertNil(manager.lastError)
+    }
+
+    func testCancelSurfaceWorkSuppressesLateDeleteRecordCacheMutation() async throws {
+        let deleteStarted = expectation(description: "Database delete started")
+        let deleteReturned = expectation(description: "Database delete returned after surface cancellation")
+        let client = FakeDatabaseClient()
+        client.onCreateRecord = { _, _, _ in
+            makeDatabaseRecord(id: "existing", title: "Existing")
+        }
+        client.onDeleteRecord = { _, _, id in
+            deleteStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            deleteReturned.fulfill()
+            return id == "existing"
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+        _ = try await manager.createRecord(collection: "tasks", data: ["title": .string("Existing")])
+
+        let task = Task {
+            try await manager.deleteRecord(collection: "tasks", id: "existing")
+        }
+        await fulfillment(of: [deleteStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [deleteReturned], timeout: 1)
+        do {
+            try await task.value
+            XCTFail("Cancelled delete unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected delete error after surface cancellation: \(error)")
+        }
+
+        XCTAssertEqual(manager.records(for: "tasks").map(\.id), ["existing"])
+        XCTAssertNil(manager.lastError)
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let suite = "DatabaseManagerCancellationTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -189,6 +306,11 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         )
     }
 
+    private struct TestError: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
 }
 
 private final class FakeDatabaseClient: DatabaseClienting {
@@ -215,6 +337,15 @@ private final class FakeDatabaseClient: DatabaseClienting {
         Int?
     ) async throws -> DBListResponse<DBRecord> = { _, _, _, _, _, _ in
         DBListResponse(total: 0, items: [])
+    }
+    var onCreateRecord: (String, String, [String: DBJSON]) async throws -> DBRecord = { _, _, _ in
+        makeDatabaseRecord(id: "created", title: "Created")
+    }
+    var onUpdateRecord: (String, String, String, [String: DBJSON]) async throws -> DBRecord = { _, _, id, _ in
+        makeDatabaseRecord(id: id, title: "Updated")
+    }
+    var onDeleteRecord: (String, String, String) async throws -> Bool = { _, _, _ in
+        true
     }
 
     func ensureNamespace(id: String, displayName: String?) async throws -> DBNamespace {
@@ -259,15 +390,15 @@ private final class FakeDatabaseClient: DatabaseClienting {
     }
 
     func createRecord(namespaceId: String, collection: String, data: [String: DBJSON]) async throws -> DBRecord {
-        makeDatabaseRecord(id: "created", title: "Created")
+        try await onCreateRecord(namespaceId, collection, data)
     }
 
     func updateRecord(namespaceId: String, collection: String, id: String, data: [String: DBJSON]) async throws -> DBRecord {
-        makeDatabaseRecord(id: id, title: "Updated")
+        try await onUpdateRecord(namespaceId, collection, id, data)
     }
 
     func deleteRecord(namespaceId: String, collection: String, id: String) async throws -> Bool {
-        true
+        try await onDeleteRecord(namespaceId, collection, id)
     }
 
     func downloadFile(fileId: String) async throws -> Data {
