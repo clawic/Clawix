@@ -49,6 +49,9 @@ struct MarketplaceScreen: View {
                 await manager.refresh()
             }
         }
+        .onDisappear {
+            manager.cancelSurfaceWork()
+        }
     }
 
     @ViewBuilder

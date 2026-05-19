@@ -5,6 +5,7 @@ import Foundation
 /// publishes the data the SwiftUI views render.
 @MainActor
 final class MarketplaceManager: ObservableObject {
+    typealias TokenOperation = @MainActor () -> String?
 
     enum State: Equatable {
         case idle
@@ -27,37 +28,62 @@ final class MarketplaceManager: ObservableObject {
     @Published private(set) var brokers: [ClawJSMarketplaceClient.Broker] = []
     @Published var selectedVertical: String? = nil
 
-    private var marketplace: ClawJSMarketplaceClient
+    private var marketplace: any ClawJSMarketplaceClienting
+    private let tokenOperation: TokenOperation
+    private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
 
-    init() {
-        let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
-            ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
-        let index = ClawJSIndexClient(bearerToken: token)
-        self.marketplace = ClawJSMarketplaceClient(indexClient: index)
+    init(
+        client: (any ClawJSMarketplaceClienting)? = nil,
+        tokenOperation: TokenOperation? = nil
+    ) {
+        self.tokenOperation = tokenOperation ?? {
+            ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
+                ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
+        }
+        if let client {
+            self.marketplace = client
+        } else {
+            let index = ClawJSIndexClient(bearerToken: self.tokenOperation())
+            self.marketplace = ClawJSMarketplaceClient(indexClient: index)
+        }
+    }
+
+    deinit {
+        refreshTask?.cancel()
     }
 
     func ensureToken() {
-        if marketplace.indexClient.bearerToken == nil {
-            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
-                ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
-            marketplace.indexClient.bearerToken = token
+        if marketplace.indexBearerToken == nil {
+            marketplace.indexBearerToken = tokenOperation()
         }
     }
 
     func refresh() async {
+        let generation = nextRefreshGeneration()
+        refreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runRefresh(generation: generation)
+        }
+        refreshTask = task
+        await task.value
+    }
+
+    private func runRefresh(generation: Int) async {
         ensureToken()
         state = .loading
         do {
             async let rootsTask = marketplace.listRoots()
-            async let devicesTask = marketplace.listDevices()
-            async let rolesTask = marketplace.listRoles()
+            async let devicesTask = marketplace.listDevices(rootKeyId: nil)
+            async let rolesTask = marketplace.listRoles(rootKeyId: nil, vertical: nil)
             async let nativeOffersTask = marketplace.listIntents(filter: .init(side: "offer", provenance: "native"))
             async let nativeWantsTask = marketplace.listIntents(filter: .init(side: "want", provenance: "native"))
             async let observedTask = marketplace.listIntents(filter: .init(provenance: "observed"))
-            async let receiptsTask = marketplace.listMatchReceipts()
-            async let inboundTask = marketplace.listInbound()
-            async let peerLevelsTask = marketplace.listPeerLevels()
-            async let brokersTask = marketplace.listBrokers()
+            async let receiptsTask = marketplace.listMatchReceipts(myRoleKeyId: nil, status: nil)
+            async let inboundTask = marketplace.listInbound(recipientRoleKeyId: nil)
+            async let peerLevelsTask = marketplace.listPeerLevels(myRoleKeyId: nil)
+            async let brokersTask = marketplace.listBrokers(vertical: nil)
 
             let (roots, devices, roles, nativeOffers, nativeWants, observed, receipts, inbound, peers, brokers) = try await (
                 rootsTask, devicesTask, rolesTask,
@@ -65,6 +91,8 @@ final class MarketplaceManager: ObservableObject {
                 receiptsTask, inboundTask, peerLevelsTask, brokersTask
             )
 
+            try Task.checkCancellation()
+            guard isCurrentRefresh(generation) else { return }
             self.roots = roots
             self.devices = devices
             self.roles = roles
@@ -87,9 +115,18 @@ final class MarketplaceManager: ObservableObject {
             self.peerLevels = peers
             self.brokers = brokers
             state = .ready
+        } catch is CancellationError {
         } catch {
+            guard isCurrentRefresh(generation) else { return }
             state = .error(error.localizedDescription)
         }
+        finishRefreshIfCurrent(generation)
+    }
+
+    func cancelSurfaceWork() {
+        refreshGeneration += 1
+        refreshTask?.cancel()
+        refreshTask = nil
     }
 
     func markRead(messageId: String) async {
@@ -110,5 +147,19 @@ final class MarketplaceManager: ObservableObject {
             return
         }
         await refresh()
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func isCurrentRefresh(_ generation: Int) -> Bool {
+        refreshGeneration == generation
+    }
+
+    private func finishRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentRefresh(generation) else { return }
+        refreshTask = nil
     }
 }

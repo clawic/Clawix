@@ -1,5 +1,20 @@
 import Foundation
 
+protocol ClawJSMarketplaceClienting {
+    var indexBearerToken: String? { get set }
+
+    func listRoots() async throws -> [ClawJSMarketplaceClient.RootKey]
+    func listDevices(rootKeyId: String?) async throws -> [ClawJSMarketplaceClient.DeviceKey]
+    func listRoles(rootKeyId: String?, vertical: String?) async throws -> [ClawJSMarketplaceClient.RoleKey]
+    func listIntents(filter: ClawJSMarketplaceClient.IntentFilter) async throws -> [ClawJSMarketplaceClient.Intent]
+    func updateIntentStatus(id: String, status: String) async throws
+    func listMatchReceipts(myRoleKeyId: String?, status: String?) async throws -> [ClawJSMarketplaceClient.MatchReceipt]
+    func listInbound(recipientRoleKeyId: String?) async throws -> [ClawJSMarketplaceClient.InboundMessage]
+    func markRead(messageId: String) async throws
+    func listPeerLevels(myRoleKeyId: String?) async throws -> [ClawJSMarketplaceClient.PeerLevel]
+    func listBrokers(vertical: String?) async throws -> [ClawJSMarketplaceClient.Broker]
+}
+
 /// Thin client for the marketplace/1.0.0 endpoints exposed by `@clawjs/index`.
 /// Cryptographic work (key generation, signing, sealed-box) is owned by the
 /// daemon-side `@clawjs/marketplace` package; this client only ferries blobs already
@@ -203,6 +218,13 @@ struct ClawJSMarketplaceClient {
 }
 
 private struct EmptyResponse: Decodable {}
+
+extension ClawJSMarketplaceClient: ClawJSMarketplaceClienting {
+    var indexBearerToken: String? {
+        get { indexClient.bearerToken }
+        set { indexClient.bearerToken = newValue }
+    }
+}
 
 extension ClawJSIndexClient {
     func send<T: Decodable>(_ path: String, method: String = "GET", body: Any? = nil) async throws -> T {

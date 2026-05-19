@@ -26,6 +26,9 @@ struct IdentitySettingsPage: View {
                 await manager.refresh()
             }
         }
+        .onDisappear {
+            manager.cancelSurfaceWork()
+        }
     }
 
     private var header: some View {
