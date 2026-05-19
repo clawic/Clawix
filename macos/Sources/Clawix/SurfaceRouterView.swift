@@ -7,18 +7,21 @@ struct SurfaceRouterView: View {
     @ObservedObject private var appsStore: AppsStore = .shared
     @ObservedObject private var variantDefaults: AppVariantDefaultsStore = .shared
     @State private var preferredOriginalTargets: Set<String> = []
+    @State private var supervisionState: SurfaceRouteSupervisionState = .ready(surfaceID: "initial")
 
     var body: some View {
         let descriptor = route.surfaceDescriptor
         ZStack(alignment: .topTrailing) {
-            Group {
+            SurfaceRouteHost(
+                descriptor: descriptor,
+                state: $supervisionState
+            ) {
                 if let resolution = activeVariantResolution {
                     AppSurfaceView(appId: resolution.appId)
                 } else {
                     routedSurface
                 }
             }
-            .id(descriptor.id)
 
             if let control = variantControl {
                 AppVariantOriginalRouteControl(
@@ -178,6 +181,90 @@ struct SurfaceRouterView: View {
             case .lifeSettings:
                 LifeSettingsView()
         }
+    }
+}
+
+private struct SurfaceRouteHost<Content: View>: View {
+    let descriptor: SurfaceRouteDescriptor
+    @Binding var state: SurfaceRouteSupervisionState
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ZStack {
+            content()
+                .id(descriptor.id)
+
+            overlay
+        }
+        .onAppear { state = SurfaceRouteSupervisor.start(descriptor: descriptor) }
+        .onChange(of: descriptor.id) { _, _ in
+            state = SurfaceRouteSupervisor.start(descriptor: descriptor)
+        }
+        .task(id: descriptor.id) {
+            await supervise()
+        }
+    }
+
+    @ViewBuilder
+    private var overlay: some View {
+        switch state {
+        case .loading(let surfaceID, _) where surfaceID == descriptor.id:
+            VStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Loading surface")
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color(white: 0.72))
+            }
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(white: 0.08).opacity(0.86))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+            )
+            .allowsHitTesting(false)
+        case .degraded(let surfaceID, let reason) where surfaceID == descriptor.id:
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                Text("Surface unavailable")
+                    .font(BodyFont.system(size: 17, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                Text(reason)
+                    .font(BodyFont.system(size: 13.5, wght: 400))
+                    .foregroundColor(Color(white: 0.66))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Palette.background.opacity(0.92))
+        default:
+            EmptyView()
+        }
+    }
+
+    private func supervise() async {
+        state = SurfaceRouteSupervisor.start(descriptor: descriptor)
+        guard case .loading(_, let timeoutSeconds) = state else { return }
+        await Task.yield()
+        guard !Task.isCancelled else {
+            state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)
+            return
+        }
+        state = SurfaceRouteSupervisor.markReady(state: state, descriptor: descriptor)
+
+        let nanoseconds = UInt64(max(0, timeoutSeconds) * 1_000_000_000)
+        try? await Task.sleep(nanoseconds: nanoseconds)
+        guard !Task.isCancelled else {
+            state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)
+            return
+        }
+        state = SurfaceRouteSupervisor.timeout(state: state, descriptor: descriptor)
     }
 }
 
