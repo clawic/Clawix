@@ -86,6 +86,21 @@ function runEvidencePlan() {
   }
 }
 
+function runCaptureRunnerCheck() {
+  const result = spawnSync(process.execPath, [path.join(rootDir, "scripts/ui_private_capture_runner_check.mjs")], {
+    cwd: rootDir,
+    env: { ...process.env, CLAWIX_UI_PRIVATE_CAPTURE_RUNNER_SELF_TEST: "1" },
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail("private capture runner contract must pass before private visual validation can be verified");
+    const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
+    if (output) {
+      for (const line of output.split("\n")) fail(`private capture runner: ${line}`);
+    }
+  }
+}
+
 function approvalRecordCount() {
   const approvalAuthorityPath = "docs/ui/approval-authority.manifest.json";
   const approvalAuthority = readJson(approvalAuthorityPath);
@@ -191,6 +206,12 @@ if (manifest) {
   if (args.has("--simulate-wrong-external-pending-code")) {
     manifest.externalPendingExitCode = 1;
   }
+  if (args.has("--simulate-missing-candidate-capture-manifest")) {
+    delete manifest.candidateCaptureRunnerManifestPath;
+  }
+  if (args.has("--simulate-wrong-candidate-capture-command")) {
+    manifest.candidateCapturePlanCommand = "node scripts/ui_private_capture_plan.mjs --json";
+  }
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -198,6 +219,8 @@ requireFields(manifest, manifestPath, [
   "policy",
   "verificationCommand",
   "evidencePlanCommand",
+  "candidateCaptureRunnerManifestPath",
+  "candidateCapturePlanCommand",
   "requiredApprovedScopeFields",
   "requiredRoots",
   "rootAliases",
@@ -208,6 +231,7 @@ requireFields(manifest, manifestPath, [
   "externalPendingExitCode",
 ]);
 const evidencePlan = runEvidencePlan();
+runCaptureRunnerCheck();
 
 if (manifest?.status !== "active") {
   fail(`${manifestPath}.status must be active`);
@@ -220,6 +244,12 @@ if (!String(manifest?.verificationCommand || "").includes("--require-approved"))
 }
 if (manifest?.evidencePlanCommand !== "node scripts/ui_private_evidence_plan_check.mjs --json") {
   fail(`${manifestPath}.evidencePlanCommand must run node scripts/ui_private_evidence_plan_check.mjs --json`);
+}
+if (manifest?.candidateCaptureRunnerManifestPath !== "docs/ui/private-capture-runners.manifest.json") {
+  fail(`${manifestPath}.candidateCaptureRunnerManifestPath must be docs/ui/private-capture-runners.manifest.json`);
+}
+if (manifest?.candidateCapturePlanCommand !== "node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json") {
+  fail(`${manifestPath}.candidateCapturePlanCommand must run node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json`);
 }
 if (manifest?.externalPendingExitCode !== 2) {
   fail(`${manifestPath}.externalPendingExitCode must be 2`);
@@ -643,6 +673,8 @@ for (const script of [
   "scripts/ui_private_verifier_args.mjs",
   "scripts/ui_private_visual_verify.mjs",
   "scripts/ui_private_evidence_plan_check.mjs",
+  "scripts/ui_private_capture_plan.mjs",
+  "scripts/ui_private_capture_runner_check.mjs",
   "scripts/ui_private_evidence_verify.mjs",
   "scripts/ui_private_approval_verify.mjs",
   "scripts/ui_private_baseline_verify.mjs",
@@ -665,6 +697,8 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-extra-optional-root-alias", "optionalRootAliases must exactly match optional private aliases"],
     ["--simulate-missing-decision-blocker", "decisionBlockers must include open decision copy_governance"],
     ["--simulate-unknown-evidence-type", "evidenceTypes includes unknown-private-evidence"],
+    ["--simulate-missing-candidate-capture-manifest", "is missing candidateCaptureRunnerManifestPath"],
+    ["--simulate-wrong-candidate-capture-command", "candidateCapturePlanCommand must run node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json"],
     ["--simulate-wrong-external-pending-code", "externalPendingExitCode must be 2"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {

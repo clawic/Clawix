@@ -59,6 +59,20 @@ function requireFields(object, label, fields) {
   }
 }
 
+function requireStringArray(object, label, field, { nonEmpty = true } = {}) {
+  const values = requireArray(object, label, field, { nonEmpty });
+  const seen = new Set();
+  for (const value of values) {
+    if (typeof value !== "string" || value.length === 0) {
+      fail(`${label}.${field} must only include non-empty strings`);
+      continue;
+    }
+    if (seen.has(value)) fail(`${label}.${field} duplicates ${value}`);
+    seen.add(value);
+  }
+  return values;
+}
+
 function scanPublicSafe(value, label) {
   if (Array.isArray(value)) {
     value.forEach((child, index) => scanPublicSafe(child, `${label}[${index}]`));
@@ -95,6 +109,24 @@ function runPlan(runnerId) {
     return JSON.parse(result.stdout);
   } catch (error) {
     fail(`scripts/ui_private_capture_plan.mjs output for ${runnerId} must be valid JSON: ${error.message}`);
+    return null;
+  }
+}
+
+function runCaptureDecisions() {
+  const result = spawnSync(
+    process.execPath,
+    [path.join(rootDir, "scripts/ui_private_evidence_plan_check.mjs"), "--capture-decisions", "--json"],
+    { cwd: rootDir, encoding: "utf8" },
+  );
+  if (result.status !== 0) {
+    fail("scripts/ui_private_evidence_plan_check.mjs must emit capture decisions");
+    return null;
+  }
+  try {
+    return JSON.parse(result.stdout);
+  } catch (error) {
+    fail(`scripts/ui_private_evidence_plan_check.mjs capture decisions output must be valid JSON: ${error.message}`);
     return null;
   }
 }
@@ -151,6 +183,7 @@ for (const forbidden of ["raw-screenshot", "raw-geometry-dump", "local-absolute-
 
 const runners = requireArray(manifest, manifestPath, "runners");
 const runnerIds = new Set();
+const plans = [];
 for (const [index, runner] of runners.entries()) {
   const label = `${manifestPath}.runners[${index}]`;
   requireFields(runner, label, ["id", "platforms", "evidenceTypes", "planCommand", "outputAliases", "requiresHumanApproval"]);
@@ -162,6 +195,73 @@ for (const [index, runner] of runners.entries()) {
   }
   const plan = runPlan(runner?.id);
   if (plan && plan.requiresHumanApproval !== true) fail(`${label} capture plan must require human approval`);
+  if (plan) {
+    plans.push(plan);
+    requireFields(plan, `${label} capture plan`, ["packages", "decisionImpacts", "records"]);
+    const packageRecordCount = requireArray(plan, `${label} capture plan`, "packages").reduce((total, pkg, packageIndex) => {
+      const packageLabel = `${label} capture plan.packages[${packageIndex}]`;
+      requireFields(pkg, packageLabel, ["evidenceType", "recordCount", "rootAliases", "blockers", "verifierCommands"]);
+      requireStringArray(pkg, packageLabel, "rootAliases");
+      requireStringArray(pkg, packageLabel, "blockers");
+      requireStringArray(pkg, packageLabel, "verifierCommands");
+      if (!new Set(runner.evidenceTypes || []).has(pkg?.evidenceType)) {
+        fail(`${packageLabel}.evidenceType must be covered by runner ${runner.id}`);
+      }
+      return total + (Number.isInteger(pkg?.recordCount) ? pkg.recordCount : 0);
+    }, 0);
+    if (packageRecordCount !== plan.recordCount) {
+      fail(`${label} capture plan package record counts must equal recordCount`);
+    }
+    for (const [decisionIndex, decision] of requireArray(plan, `${label} capture plan`, "decisionImpacts").entries()) {
+      const decisionLabel = `${label} capture plan.decisionImpacts[${decisionIndex}]`;
+      requireFields(decision, decisionLabel, ["decisionId", "recordCount", "evidenceTypes", "packages", "status", "requiredAction"]);
+      requireStringArray(decision, decisionLabel, "evidenceTypes");
+      if (decision?.status !== manifest?.candidateEvidenceStatus) {
+        fail(`${decisionLabel}.status must be ${manifest?.candidateEvidenceStatus}`);
+      }
+      if (!new Set(visualValidation?.decisionBlockers || []).has(decision?.decisionId)) {
+        fail(`${decisionLabel}.decisionId must be an open private visual blocker`);
+      }
+      const decisionPackageCount = requireArray(decision, decisionLabel, "packages").reduce((total, pkg, packageIndex) => {
+        const packageLabel = `${decisionLabel}.packages[${packageIndex}]`;
+        requireFields(pkg, packageLabel, ["evidenceType", "recordCount"]);
+        return total + (Number.isInteger(pkg?.recordCount) ? pkg.recordCount : 0);
+      }, 0);
+      if (decisionPackageCount !== decision?.recordCount) {
+        fail(`${decisionLabel} package record counts must equal recordCount`);
+      }
+    }
+  }
+}
+
+const plannedRecordCount = plans.reduce((total, plan) => total + (Number.isInteger(plan?.recordCount) ? plan.recordCount : 0), 0);
+if (plannedRecordCount !== (evidencePlan.evidence || []).length) {
+  fail(`candidate capture plans must cover exactly ${(evidencePlan.evidence || []).length} evidence records`);
+}
+
+const captureDecisions = runCaptureDecisions();
+if (captureDecisions) {
+  const expectedDecisionCounts = new Map((captureDecisions.decisions || []).map((decision) => [decision.decisionId, decision.recordCount]));
+  const actualDecisionCounts = new Map();
+  for (const plan of plans) {
+    for (const decision of plan.decisionImpacts || []) {
+      actualDecisionCounts.set(
+        decision.decisionId,
+        (actualDecisionCounts.get(decision.decisionId) || 0) + (Number.isInteger(decision.recordCount) ? decision.recordCount : 0),
+      );
+    }
+  }
+  for (const [decisionId, expectedCount] of expectedDecisionCounts) {
+    const actualCount = actualDecisionCounts.get(decisionId) || 0;
+    if (actualCount !== expectedCount) {
+      fail(`candidate capture decision impact for ${decisionId} must total ${expectedCount} records`);
+    }
+  }
+  for (const decisionId of actualDecisionCounts.keys()) {
+    if (!expectedDecisionCounts.has(decisionId)) {
+      fail(`candidate capture decision impact includes unexpected decision ${decisionId}`);
+    }
+  }
 }
 
 for (const flow of requireArray(baselines, "docs/ui/private-baselines.manifest.json", "flows")) {
