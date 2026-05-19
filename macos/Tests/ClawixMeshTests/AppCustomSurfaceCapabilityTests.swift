@@ -485,12 +485,21 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(data?["title"] as? String, "Launch")
         XCTAssertNil(data?["apiKey"])
         XCTAssertEqual(bridge["redactedFields"] as? [String], ["apiKey"])
+        XCTAssertEqual(bridge["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
 
         let facets = AppBridgeQueryDSL.facetBridgeValue(records: records, fields: ["status", "apiKey"])
         let statusFacet = facets["status"] as? [[String: Any]]
         XCTAssertEqual(statusFacet?.first?["value"] as? String, "todo")
         XCTAssertEqual(statusFacet?.first?["count"] as? Int, 2)
         XCTAssertNil(facets["apiKey"])
+    }
+
+    func testBridgeRedactionPolicyMatchesSharedCustomAppContract() {
+        XCTAssertEqual(AppBridgeRedactionPolicy.policyId, "claw.customApps.redaction.v1")
+        XCTAssertTrue(AppBridgeRedactionPolicy.isSensitiveField("api_key"))
+        XCTAssertTrue(AppBridgeRedactionPolicy.isSensitiveField("refresh-token"))
+        XCTAssertTrue(AppBridgeRedactionPolicy.isSensitiveField("private key"))
+        XCTAssertFalse(AppBridgeRedactionPolicy.isSensitiveField("displayName"))
     }
 
     func testNextCursorOnlyAppearsWhenMoreResultsMayExist() {

@@ -123,7 +123,7 @@ enum AppBridgeQueryDSL {
         var data: [String: Any] = [:]
         var redactedFields: [String] = []
         for (key, value) in record.data {
-            if isSensitiveField(key) {
+            if AppBridgeRedactionPolicy.isSensitiveField(key) {
                 redactedFields.append(key)
                 continue
             }
@@ -136,7 +136,8 @@ enum AppBridgeQueryDSL {
             "createdAt": record.createdAt,
             "updatedAt": record.updatedAt,
             "data": data,
-            "redactedFields": redactedFields.sorted()
+            "redactedFields": redactedFields.sorted(),
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
         ]
     }
 
@@ -149,7 +150,7 @@ enum AppBridgeQueryDSL {
 
     static func facetBridgeValue(records: [DBRecord], fields: [String]) -> [String: Any] {
         var facets: [String: Any] = [:]
-        for field in fields where !isSensitiveField(field) {
+        for field in fields where !AppBridgeRedactionPolicy.isSensitiveField(field) {
             var counts: [String: Int] = [:]
             for record in records {
                 guard let value = record.data[field],
@@ -235,22 +236,6 @@ enum AppBridgeQueryDSL {
         if let string = value as? String { return string }
         if let number = value as? NSNumber { return number.stringValue }
         return ""
-    }
-
-    private static func isSensitiveField(_ field: String) -> Bool {
-        let normalized = field
-            .lowercased()
-            .replacingOccurrences(of: "_", with: "")
-            .replacingOccurrences(of: "-", with: "")
-            .replacingOccurrences(of: " ", with: "")
-        return normalized.contains("secret")
-            || normalized.contains("password")
-            || normalized.contains("credential")
-            || normalized.contains("apikey")
-            || normalized.contains("accesstoken")
-            || normalized.contains("refreshtoken")
-            || normalized.contains("privatetoken")
-            || normalized.contains("privatekey")
     }
 
     private static func facetKey(_ value: DBJSON) -> String? {
