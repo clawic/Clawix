@@ -44,6 +44,9 @@ struct IoTScreen: View {
                 try? await manager.refreshAll()
             }
         }
+        .onDisappear {
+            manager.cancelSurfaceWork()
+        }
         .onChange(of: manager.approvals) { _, approvals in
             // Auto-open the catastrophic modal when a new
             // restricted-risk approval lands. Constitution VII.4 marks

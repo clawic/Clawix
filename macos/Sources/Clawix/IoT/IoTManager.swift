@@ -18,6 +18,7 @@ import Combine
 /// surface. The SSE stream keeps the snapshots fresh between fetches.
 @MainActor
 final class IoTManager: NSObject, ObservableObject {
+    typealias AdminTokenOperation = @MainActor () -> String?
 
     enum State: Equatable {
         case loading
@@ -45,21 +46,42 @@ final class IoTManager: NSObject, ObservableObject {
     @Published private(set) var pendingApprovalsCount: Int = 0
     @Published private(set) var lastAdapterFailure: String?
 
-    private(set) var client = IoTClient()
+    private(set) var client: any IoTClienting
 
     private var supervisorObserver: AnyCancellable?
-    private var bootstrapGeneration: UUID?
+    private var bootstrapTask: Task<Void, Never>?
+    private var bootstrapTimeoutTask: Task<Void, Never>?
+    private var refreshTask: Task<Void, Error>?
+    private var bootstrapGeneration = 0
+    private var refreshGeneration = 0
+    private let adminTokenOperation: AdminTokenOperation
     private var sseTask: URLSessionDataTask?
     private var sseSession: URLSession!
     private var sseBuffer = Data()
 
-    override init() {
+    init(
+        client: (any IoTClienting)? = nil,
+        adminTokenOperation: AdminTokenOperation? = nil,
+        attachSupervisor: Bool = true
+    ) {
+        self.client = client ?? IoTClient()
+        self.adminTokenOperation = adminTokenOperation ?? {
+            IoTAdminToken.currentAdminToken()
+        }
         super.init()
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = .infinity
         config.waitsForConnectivity = true
         self.sseSession = URLSession(configuration: config, delegate: self, delegateQueue: nil)
-        attachSupervisorObserver()
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
+    }
+
+    deinit {
+        bootstrapTask?.cancel()
+        bootstrapTimeoutTask?.cancel()
+        refreshTask?.cancel()
     }
 
     // MARK: - Supervisor wiring
@@ -77,6 +99,7 @@ final class IoTManager: NSObject, ObservableObject {
                     await self.bootstrap()
                 }
             case .crashed, .blocked, .idle, .daemonUnavailable:
+                self.cancelSurfaceWork()
                 self.disconnectSSE()
                 self.devices = []
                 self.areas = []
@@ -95,50 +118,84 @@ final class IoTManager: NSObject, ObservableObject {
 
     func bootstrap() async {
         if case .ready = state { return }
+        let generation = nextBootstrapGeneration()
+        bootstrapTask?.cancel()
+        refreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBootstrap(generation: generation)
+        }
+        bootstrapTask = task
+        await task.value
+    }
+
+    private func runBootstrap(generation: Int) async {
         state = .bootstrapping
-        let generation = UUID()
-        bootstrapGeneration = generation
-        Task { @MainActor [weak self] in
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 8_000_000_000)
             guard let self, self.bootstrapGeneration == generation else { return }
             if case .bootstrapping = self.state {
                 self.state = .failed("IoT service did not become ready within 8 seconds.")
             }
         }
-        client.bearerToken = IoTAdminToken.currentAdminToken()
+        client.bearerToken = adminTokenOperation()
         do {
             async let toolsTask = client.listTools()
             async let homesTask = client.listHomes()
             let catalog = try await toolsTask
             let homes = try await homesTask
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
             self.availableTools = catalog.tools
             self.catalogGeneratedAt = ISO8601DateFormatter().date(from: catalog.generatedAt)
             self.homes = homes
             self.currentHomeId = homes.first(where: { $0.isDefault })?.id ?? homes.first?.id
             try await refreshAll()
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
             connectSSE()
             state = .ready
             lastError = nil
-            bootstrapGeneration = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentBootstrap(generation) else { return }
             state = .failed(error.localizedDescription)
             lastError = error.localizedDescription
-            bootstrapGeneration = nil
         }
+        finishBootstrapIfCurrent(generation)
     }
 
     func refreshAll() async throws {
+        let generation = nextRefreshGeneration()
         let homeId = currentHomeId
+        refreshTask?.cancel()
+        let task = Task<Void, Error> { @MainActor [weak self] in
+            guard let self else { return }
+            try await self.runRefreshAll(generation: generation, homeId: homeId)
+        }
+        refreshTask = task
+        try await task.value
+    }
+
+    private func runRefreshAll(generation: Int, homeId: String?) async throws {
+        defer { finishRefreshIfCurrent(generation) }
         async let devicesTask = client.listDevices(homeId: homeId)
         async let areasTask = client.listAreas(homeId: homeId)
         async let scenesTask = client.listScenes(homeId: homeId)
         async let automationsTask = client.listAutomations(homeId: homeId)
         async let approvalsTask = client.listApprovals(homeId: homeId)
-        self.devices = try await devicesTask
-        self.areas = try await areasTask
-        self.scenes = try await scenesTask
-        self.automations = try await automationsTask
+        let devices = try await devicesTask
+        let areas = try await areasTask
+        let scenes = try await scenesTask
+        let automations = try await automationsTask
         let approvals = try await approvalsTask
+        try Task.checkCancellation()
+        guard isCurrentRefresh(generation) else { return }
+        self.devices = devices
+        self.areas = areas
+        self.scenes = scenes
+        self.automations = automations
         self.approvals = approvals
         self.pendingApprovalsCount = approvals.filter { $0.status == "pending" }.count
     }
@@ -149,6 +206,7 @@ final class IoTManager: NSObject, ObservableObject {
         do {
             try await refreshAll()
             lastError = nil
+        } catch is CancellationError {
         } catch {
             lastError = error.localizedDescription
         }
@@ -250,16 +308,37 @@ final class IoTManager: NSObject, ObservableObject {
     }
 
     private func scheduleRefreshAfterChange() {
-        Task { await refreshAllReportingErrors() }
+        requestRefreshAllReportingErrors()
     }
 
-    private func refreshAllReportingErrors() async {
-        do {
-            try await refreshAll()
-            lastError = nil
-        } catch {
-            lastError = error.localizedDescription
+    private func requestRefreshAllReportingErrors() {
+        let generation = nextRefreshGeneration()
+        let homeId = currentHomeId
+        refreshTask?.cancel()
+        refreshTask = Task<Void, Error> { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await self.runRefreshAll(generation: generation, homeId: homeId)
+                guard self.isCurrentRefresh(generation) else { return }
+                self.lastError = nil
+            } catch is CancellationError {
+            } catch {
+                guard self.isCurrentRefresh(generation) else { return }
+                self.lastError = error.localizedDescription
+            }
         }
+    }
+
+    func cancelSurfaceWork() {
+        bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
+        refreshGeneration += 1
+        refreshTask?.cancel()
+        refreshTask = nil
+        disconnectSSE()
     }
 
     func startDiscovery(timeoutMs: Int? = nil) async throws {
@@ -412,6 +491,36 @@ final class IoTManager: NSObject, ObservableObject {
     private func disconnectSSE() {
         sseTask?.cancel()
         sseTask = nil
+    }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func isCurrentRefresh(_ generation: Int) -> Bool {
+        refreshGeneration == generation
+    }
+
+    private func finishRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentRefresh(generation) else { return }
+        refreshTask = nil
     }
 
     fileprivate func handleSSEEvent(type: String, payload: [String: Any]?) {

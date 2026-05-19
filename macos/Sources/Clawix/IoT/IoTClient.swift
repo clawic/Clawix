@@ -1,5 +1,30 @@
 import Foundation
 
+protocol IoTClienting {
+    var origin: URL { get }
+    var bearerToken: String? { get set }
+
+    func health() async -> Bool
+    func listTools() async throws -> RemoteToolCatalog
+    func invokeTool(id: String, arguments: [String: Any]) async throws -> RemoteToolInvocationResult
+    func listHomes() async throws -> [HomeRecord]
+    func listDevices(homeId: String?) async throws -> [IoTDeviceRecord]
+    func listAreas(homeId: String?) async throws -> [AreaRecord]
+    func listScenes(homeId: String?) async throws -> [SceneRecord]
+    func listAutomations(homeId: String?) async throws -> [AutomationRecord]
+    func listApprovals(homeId: String?) async throws -> [ApprovalRecord]
+    func runAction(_ request: IoTActionRequest, homeId: String?) async throws -> IoTActionResult
+    func activateScene(sceneId: String, homeId: String?) async throws -> IoTActionResult
+    func setAutomationEnabled(automationId: String, enabled: Bool, homeId: String?) async throws -> AutomationRecord
+    func runAutomation(automationId: String, homeId: String?) async throws -> IoTActionResult
+    func approveApproval(approvalId: String, homeId: String?) async throws -> IoTActionResult
+    func denyApproval(approvalId: String, homeId: String?) async throws -> ApprovalRecord
+    func addDevice(input: IoTClient.AddDeviceInput) async throws -> IoTDeviceRecord
+    func removeDevice(deviceId: String, homeId: String?) async throws
+    func startDiscovery(timeoutMs: Int?) async throws
+    func stopDiscovery() async throws
+}
+
 /// HTTP client for the clawjs-iot daemon.
 ///
 /// The stable surface includes:
@@ -267,6 +292,8 @@ struct IoTClient {
         return try JSONDecoder().decode(T.self, from: data)
     }
 }
+
+extension IoTClient: IoTClienting {}
 
 // MARK: - Response envelopes
 
