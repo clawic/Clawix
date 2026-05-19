@@ -14,6 +14,7 @@ import Combine
 final class LocalModelsService: ObservableObject {
     typealias PullOperation = @MainActor (String) -> AsyncThrowingStream<LocalModelsClient.PullEvent, Error>
     typealias RefreshModelListOperation = @MainActor () async -> Void
+    typealias EnableOperation = @MainActor (_ contextLength: Int, _ keepAlive: String) async -> Void
 
     static let shared = LocalModelsService()
 
@@ -75,23 +76,28 @@ final class LocalModelsService: ObservableObject {
     private let defaults: UserDefaults
     private let pullOperation: PullOperation
     private let refreshModelListOperation: RefreshModelListOperation?
+    private let enableOperation: EnableOperation?
 
     private var cancellables: Set<AnyCancellable> = []
     private var pollTask: Task<Void, Never>?
     private var pullTasks: [String: Task<Void, Never>] = [:]
     private var pullGenerations: [String: Int] = [:]
+    private var enableTask: Task<Void, Never>?
+    private var enableGeneration = 0
 
     init(
         defaults: UserDefaults = .standard,
         bindRuntimeState: Bool = true,
         pullOperation: PullOperation? = nil,
-        refreshModelListOperation: RefreshModelListOperation? = nil
+        refreshModelListOperation: RefreshModelListOperation? = nil,
+        enableOperation: EnableOperation? = nil
     ) {
         self.defaults = defaults
         self.pullOperation = pullOperation ?? { model in
             LocalModelsClient.shared.pull(model: model)
         }
         self.refreshModelListOperation = refreshModelListOperation
+        self.enableOperation = enableOperation
         self.defaultModel = defaults.string(forKey: Self.defaultModelKey)
         self.keepAlive = defaults.string(forKey: Self.keepAliveKey) ?? "5m"
         self.contextLength = defaults.integer(forKey: Self.contextLengthKey) > 0
@@ -124,20 +130,48 @@ final class LocalModelsService: ObservableObject {
     /// chain: install if not present, start daemon, sync model list.
     /// Safe to call again; each step is idempotent.
     func enable() async {
+        let generation = nextEnableGeneration()
+        enableTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runEnable(generation: generation)
+        }
+        enableTask = task
+        await task.value
+    }
+
+    func cancelEnable() {
+        enableGeneration += 1
+        enableTask?.cancel()
+        enableTask = nil
+    }
+
+    private func runEnable(generation: Int) async {
+        if let enableOperation {
+            await enableOperation(contextLength, keepAlive)
+            guard !Task.isCancelled, isCurrentEnable(generation: generation) else { return }
+            enableTask = nil
+            return
+        }
         if !installer.isInstalled {
             await installer.install()
+            guard !Task.isCancelled, isCurrentEnable(generation: generation) else { return }
             // If install failed, the installer state will reflect it and
             // we don't proceed. The UI surfaces the error from
             // `runtimeState`.
             guard installer.isInstalled else { return }
         }
         await daemon.start(numCtx: contextLength, keepAlive: keepAlive)
+        guard !Task.isCancelled, isCurrentEnable(generation: generation) else { return }
         await refreshDaemonStatus()
+        guard isCurrentEnable(generation: generation) else { return }
+        enableTask = nil
     }
 
     /// "Toggle OFF". Stops the daemon. The runtime stays installed so a
     /// re-enable doesn't have to re-download.
     func disable() {
+        cancelEnable()
         cancelAllPulls()
         daemon.stop()
     }
@@ -302,6 +336,15 @@ final class LocalModelsService: ObservableObject {
 
     private func isCurrentPull(model: String, generation: Int) -> Bool {
         pullGenerations[model] == generation
+    }
+
+    private func nextEnableGeneration() -> Int {
+        enableGeneration += 1
+        return enableGeneration
+    }
+
+    private func isCurrentEnable(generation: Int) -> Bool {
+        enableGeneration == generation
     }
 
     // MARK: - Wire types for the UI

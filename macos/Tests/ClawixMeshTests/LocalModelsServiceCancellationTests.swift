@@ -63,6 +63,37 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
         XCTAssertNil(service.downloads["mistral:latest"])
     }
 
+    func testCancelEnableStopsRunningRuntimeActivation() async {
+        let started = expectation(description: "Local runtime activation started")
+        let cancelled = expectation(description: "Local runtime activation cancelled")
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {},
+            enableOperation: { _, _ in
+                started.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                } catch {
+                    XCTFail("Unexpected enable cancellation error: \(error)")
+                }
+            }
+        )
+
+        let task = Task { await service.enable() }
+        await fulfillment(of: [started], timeout: 1)
+
+        service.cancelEnable()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        await task.value
+    }
+
     private static func slowPullStream(
         started: XCTestExpectation,
         cancelled: XCTestExpectation
