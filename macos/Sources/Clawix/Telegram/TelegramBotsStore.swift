@@ -7,6 +7,9 @@ import SwiftUI
 /// is cancelled on disappear.
 @MainActor
 final class TelegramBotsStore: ObservableObject {
+    typealias ListBotsOperation = @MainActor () async throws -> [TelegramBot]
+    typealias BotEnvelopeOperation = @MainActor (_ bot: TelegramBot) async throws -> ClawCliResult
+    typealias BotChatsOperation = @MainActor (_ bot: TelegramBot, _ query: String?) async throws -> ClawCliResult
 
     @Published private(set) var bots: [TelegramBot] = []
     @Published private(set) var isLoading = false
@@ -28,17 +31,37 @@ final class TelegramBotsStore: ObservableObject {
     @Published private(set) var commands: [String: [TelegramCommandSpec]] = [:]
 
     private let client: TelegramServiceClient
+    private let listBotsOperation: ListBotsOperation
+    private let reloadCommandsOperation: BotEnvelopeOperation
+    private let reloadChatsOperation: BotChatsOperation
     private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
+    private var reloadTasks: [ReloadKey: Task<Void, Never>] = [:]
+    private var reloadGenerations: [ReloadKey: Int] = [:]
 
-    init(client: TelegramServiceClient = TelegramServiceClient()) {
+    init(
+        client: TelegramServiceClient = TelegramServiceClient(),
+        listBotsOperation: ListBotsOperation? = nil,
+        reloadCommandsOperation: BotEnvelopeOperation? = nil,
+        reloadChatsOperation: BotChatsOperation? = nil
+    ) {
         self.client = client
+        self.listBotsOperation = listBotsOperation ?? {
+            try await client.listBots()
+        }
+        self.reloadCommandsOperation = reloadCommandsOperation ?? { bot in
+            try await client.getCommands(botId: bot.id)
+        }
+        self.reloadChatsOperation = reloadChatsOperation ?? { bot, query in
+            try await client.listChats(botId: bot.id, query: query)
+        }
     }
 
     // MARK: - Lifecycle
 
     func startRefreshing() {
         refreshTask?.cancel()
-        refreshTask = Task { [weak self] in
+        refreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
             await self.refresh()
             while !Task.isCancelled {
@@ -50,13 +73,15 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     func stopRefreshing() {
+        refreshGeneration += 1
         refreshTask?.cancel()
         refreshTask = nil
+        isLoading = false
+        cancelAllReloads()
     }
 
     func resetForUnavailableService() {
-        refreshTask?.cancel()
-        refreshTask = nil
+        stopRefreshing()
         bots = []
         isLoading = false
         lastError = nil
@@ -65,14 +90,26 @@ final class TelegramBotsStore: ObservableObject {
     // MARK: - Listing
 
     func refresh() async {
+        let generation = nextRefreshGeneration()
+        await runRefresh(generation: generation)
+    }
+
+    private func runRefresh(generation: Int) async {
         isLoading = true
-        defer { isLoading = false }
         do {
-            let next = try await client.listBots()
+            let next = try await listBotsOperation()
+            try Task.checkCancellation()
+            guard isCurrentRefresh(generation: generation) else { return }
             self.bots = next
             self.lastError = nil
+            self.isLoading = false
+        } catch is CancellationError {
+            guard isCurrentRefresh(generation: generation) else { return }
+            self.isLoading = false
         } catch {
+            guard isCurrentRefresh(generation: generation) else { return }
             self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.isLoading = false
         }
     }
 
@@ -120,11 +157,28 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     func reloadCommands(_ bot: TelegramBot) async {
+        let key = ReloadKey(kind: .commands, botId: bot.id)
+        let generation = nextReloadGeneration(for: key)
+        reloadTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReloadCommands(bot, key: key, generation: generation)
+        }
+        reloadTasks[key] = task
+        await task.value
+    }
+
+    private func runReloadCommands(_ bot: TelegramBot, key: ReloadKey, generation: Int) async {
         do {
-            let envelope = try await client.getCommands(botId: bot.id)
+            let envelope = try await reloadCommandsOperation(bot)
+            try Task.checkCancellation()
+            guard isCurrentReload(key: key, generation: generation) else { return }
             commands[bot.id] = TelegramCommandSpec.extract(from: envelope.json)
             lastActionResult[bot.id] = envelope
+        } catch is CancellationError {
+            return
         } catch {
+            guard isCurrentReload(key: key, generation: generation) else { return }
             lastActionResult[bot.id] = ClawCliResult(
                 ok: false,
                 exitCode: nil,
@@ -132,6 +186,9 @@ final class TelegramBotsStore: ObservableObject {
                 stderr: error.localizedDescription,
                 json: nil
             )
+        }
+        if isCurrentReload(key: key, generation: generation) {
+            reloadTasks[key] = nil
         }
     }
 
@@ -143,11 +200,33 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     func reloadChats(_ bot: TelegramBot, query: String? = nil) async {
+        let key = ReloadKey(kind: .chats, botId: bot.id)
+        let generation = nextReloadGeneration(for: key)
+        reloadTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReloadChats(bot, query: query, key: key, generation: generation)
+        }
+        reloadTasks[key] = task
+        await task.value
+    }
+
+    private func runReloadChats(
+        _ bot: TelegramBot,
+        query: String?,
+        key: ReloadKey,
+        generation: Int
+    ) async {
         do {
-            let envelope = try await client.listChats(botId: bot.id, query: query)
+            let envelope = try await reloadChatsOperation(bot, query)
+            try Task.checkCancellation()
+            guard isCurrentReload(key: key, generation: generation) else { return }
             chats[bot.id] = TelegramChatsExtractor.extract(from: envelope.json)
             lastActionResult[bot.id] = envelope
+        } catch is CancellationError {
+            return
         } catch {
+            guard isCurrentReload(key: key, generation: generation) else { return }
             lastActionResult[bot.id] = ClawCliResult(
                 ok: false,
                 exitCode: nil,
@@ -155,6 +234,9 @@ final class TelegramBotsStore: ObservableObject {
                 stderr: error.localizedDescription,
                 json: nil
             )
+        }
+        if isCurrentReload(key: key, generation: generation) {
+            reloadTasks[key] = nil
         }
     }
 
@@ -195,5 +277,46 @@ final class TelegramBotsStore: ObservableObject {
             )
         }
         await refresh()
+    }
+
+    private func cancelAllReloads() {
+        for key in Array(reloadTasks.keys) {
+            bumpReloadGeneration(for: key)
+            reloadTasks[key]?.cancel()
+            reloadTasks[key] = nil
+        }
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func isCurrentRefresh(generation: Int) -> Bool {
+        refreshGeneration == generation
+    }
+
+    private func nextReloadGeneration(for key: ReloadKey) -> Int {
+        let generation = (reloadGenerations[key] ?? 0) + 1
+        reloadGenerations[key] = generation
+        return generation
+    }
+
+    private func bumpReloadGeneration(for key: ReloadKey) {
+        reloadGenerations[key] = (reloadGenerations[key] ?? 0) + 1
+    }
+
+    private func isCurrentReload(key: ReloadKey, generation: Int) -> Bool {
+        reloadGenerations[key] == generation
+    }
+
+    private enum ReloadKind: Hashable {
+        case commands
+        case chats
+    }
+
+    private struct ReloadKey: Hashable {
+        let kind: ReloadKind
+        let botId: String
     }
 }
