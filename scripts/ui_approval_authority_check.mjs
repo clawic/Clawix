@@ -25,6 +25,7 @@ const simulationFlags = [
   "--simulate-undeclared-required-status",
   "--simulate-visual-proposal-approved-by-not-user",
   "--simulate-approved-drift-by-not-user",
+  "--simulate-approved-debt-audit-by-not-user",
 ];
 const allowedFlags = new Set(simulationFlags);
 
@@ -139,6 +140,7 @@ function runFailureSelfTests() {
     [["--simulate-undeclared-required-status"], "approvalRequiredStatuses contains status not declared"],
     [["--simulate-visual-proposal-approved-by-not-user"], "approvedBy must be user"],
     [["--simulate-approved-drift-by-not-user"], "approvedBy must be user"],
+    [["--simulate-approved-debt-audit-by-not-user"], "approvedBy must be user"],
   ];
 
   for (const [testArgs, expectedOutput] of tests) {
@@ -299,6 +301,16 @@ const canonicalSources = new Map([
     approvedAtField: "approvedAt",
     privateApprovalField: "privateApprovalReference",
   }],
+  ["debt-audit", {
+    path: "docs/ui/debt-audit.manifest.json",
+    arrayField: "entries",
+    statusField: "auditStatus",
+    statusValuesField: "auditStatuses",
+    approvalRequiredStatuses: ["audited-approved"],
+    approvedByField: "approvedBy",
+    approvedAtField: "approvedAt",
+    privateApprovalField: "privateApprovalReference",
+  }],
 ]);
 const canonicalSourceIds = [...canonicalSources.keys()];
 const requiredSourceIds = requireUniqueStrings(
@@ -397,6 +409,23 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
         approvedBy: "agent",
         approvedAt: "2026-05-17",
         privateApprovalReference: "private-codex-ui-approval:rendered-drift/macos-root-chrome",
+      },
+    ];
+  }
+  if (registry && source.id === "debt-audit" && args.has("--simulate-approved-debt-audit-by-not-user")) {
+    registry.entries = [
+      ...(Array.isArray(registry.entries) ? registry.entries : []),
+      {
+        debtId: "simulated-approved-debt-audit",
+        scope: "macos/Sources/Clawix/SimulatedDebt.swift",
+        platforms: ["macos"],
+        surfaceCoverageId: "macos-design-debt",
+        auditStatus: "audited-approved",
+        privateDebtAuditReference: "private-codex-ui-debt-audit:macos/simulated-approved-debt-audit",
+        requiredEvidence: registry.requiredEvidenceFields || [],
+        approvedBy: "agent",
+        approvedAt: "2026-05-19",
+        privateApprovalReference: "private-codex-ui-approval:debt-audit/simulated-approved-debt-audit",
       },
     ];
   }

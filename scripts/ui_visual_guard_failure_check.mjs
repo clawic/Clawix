@@ -73,6 +73,7 @@ function buildApprovalFixture() {
     "docs/ui/visual-proposals.registry.json",
     "docs/ui/exceptions.registry.json",
     "docs/ui/rendered-drift.manifest.json",
+    "docs/ui/debt-audit.manifest.json",
   ]) {
     copyFixtureFile(fixtureRoot, relativePath);
   }

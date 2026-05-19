@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "active",
-  "policy": "Only the user can approve canon promotions, protected surfaces, visual scopes, visual proposal handoffs, and exception records. Empty registries are valid; future approval records must stay public-safe and reference private approval evidence.",
+  "policy": "Only the user can approve canon promotions, protected surfaces, visual scopes, visual proposal handoffs, exception records, approved rendered drift, and audited UI debt. Empty registries are valid; future approval records must stay public-safe and reference private approval evidence.",
   "privateApprovalAlias": "private-codex-ui-approval",
   "evidenceFilename": "approval-evidence.json",
   "requiredPrivateApprovalEvidenceFields": ["sourceId", "privateApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"],
@@ -12,7 +12,8 @@
     "visual-model-allowlist",
     "visual-proposals",
     "exceptions",
-    "rendered-drift"
+    "rendered-drift",
+    "debt-audit"
   ],
   "approvalSources": [
     {
@@ -76,6 +77,17 @@
       "statusField": "status",
       "statusValuesField": "reportStatuses",
       "approvalRequiredStatuses": ["approved-drift"],
+      "approvedByField": "approvedBy",
+      "approvedAtField": "approvedAt",
+      "privateApprovalField": "privateApprovalReference"
+    },
+    {
+      "id": "debt-audit",
+      "path": "docs/ui/debt-audit.manifest.json",
+      "arrayField": "entries",
+      "statusField": "auditStatus",
+      "statusValuesField": "auditStatuses",
+      "approvalRequiredStatuses": ["audited-approved"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
       "privateApprovalField": "privateApprovalReference"
