@@ -22,6 +22,7 @@ final class ProfileSurfaceStore: ObservableObject {
     @Published private(set) var peers: [ClawJSProfileClient.PeerDirectoryEntry] = []
     @Published private(set) var feedEntries: [ClawJSProfileClient.FeedEntry] = []
     @Published private(set) var chatThreads: [ClawJSProfileClient.ChatThread] = []
+    @Published private(set) var chatMessagesByPeer: [String: [ClawJSProfileClient.ChatMessage]] = [:]
     @Published private(set) var marketplaceIntents: [ClawJSProfileClient.DiscoveredIntent] = []
 
     @Published var selectedVertical: String?
@@ -36,6 +37,8 @@ final class ProfileSurfaceStore: ObservableObject {
     private var feedRefreshGeneration = 0
     private var chatsRefreshTask: Task<Void, Never>?
     private var chatsRefreshGeneration = 0
+    private var messageLoadTasks: [String: Task<[ClawJSProfileClient.ChatMessage], Error>] = [:]
+    private var messageLoadGenerations: [String: Int] = [:]
     private var marketplaceRefreshTask: Task<Void, Never>?
     private var marketplaceRefreshGeneration = 0
 
@@ -59,6 +62,7 @@ final class ProfileSurfaceStore: ObservableObject {
         bootstrapTask?.cancel()
         feedRefreshTask?.cancel()
         chatsRefreshTask?.cancel()
+        messageLoadTasks.values.forEach { $0.cancel() }
         marketplaceRefreshTask?.cancel()
     }
 
@@ -221,9 +225,17 @@ final class ProfileSurfaceStore: ObservableObject {
         chatsRefreshGeneration += 1
         chatsRefreshTask?.cancel()
         chatsRefreshTask = nil
+        cancelMessageLoadTasks()
         marketplaceRefreshGeneration += 1
         marketplaceRefreshTask?.cancel()
         marketplaceRefreshTask = nil
+    }
+
+    func cancelChatSurfaceWork() {
+        chatsRefreshGeneration += 1
+        chatsRefreshTask?.cancel()
+        chatsRefreshTask = nil
+        cancelMessageLoadTasks()
     }
 
     func cancelFeedSurfaceWork() {
@@ -291,12 +303,40 @@ final class ProfileSurfaceStore: ObservableObject {
 
     func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage {
         ensureToken()
-        return try await client.sendMessage(peer: peer, body: body)
+        let message = try await client.sendMessage(peer: peer, body: body)
+        chatMessagesByPeer[peer, default: []].append(message)
+        return message
+    }
+
+    func messages(forPeer peer: String) -> [ClawJSProfileClient.ChatMessage] {
+        chatMessagesByPeer[peer] ?? []
     }
 
     func loadMessages(peer: String) async throws -> [ClawJSProfileClient.ChatMessage] {
+        let generation = nextMessageLoadGeneration(for: peer)
+        messageLoadTasks[peer]?.cancel()
+        let task = Task<[ClawJSProfileClient.ChatMessage], Error> { @MainActor [weak self] in
+            guard let self else { return [] }
+            return try await self.runMessageLoad(peer: peer, generation: generation)
+        }
+        messageLoadTasks[peer] = task
+        do {
+            let messages = try await task.value
+            finishMessageLoadIfCurrent(peer: peer, generation: generation)
+            return messages
+        } catch {
+            finishMessageLoadIfCurrent(peer: peer, generation: generation)
+            throw error
+        }
+    }
+
+    private func runMessageLoad(peer: String, generation: Int) async throws -> [ClawJSProfileClient.ChatMessage] {
         ensureToken()
-        return try await client.listMessages(peer: peer, limit: 100, before: nil)
+        let messages = try await client.listMessages(peer: peer, limit: 100, before: nil)
+        try Task.checkCancellation()
+        guard isCurrentMessageLoad(peer: peer, generation: generation) else { throw CancellationError() }
+        chatMessagesByPeer[peer] = messages
+        return messages
     }
 
     func expressInterest(intentId: String) async throws -> ClawJSProfileClient.ExpressInterestResult {
@@ -344,6 +384,29 @@ final class ProfileSurfaceStore: ObservableObject {
     private func finishChatsRefreshIfCurrent(_ generation: Int) {
         guard isCurrentChatsRefresh(generation) else { return }
         chatsRefreshTask = nil
+    }
+
+    private func nextMessageLoadGeneration(for peer: String) -> Int {
+        let generation = (messageLoadGenerations[peer] ?? 0) + 1
+        messageLoadGenerations[peer] = generation
+        return generation
+    }
+
+    private func isCurrentMessageLoad(peer: String, generation: Int) -> Bool {
+        messageLoadGenerations[peer] == generation
+    }
+
+    private func finishMessageLoadIfCurrent(peer: String, generation: Int) {
+        guard isCurrentMessageLoad(peer: peer, generation: generation) else { return }
+        messageLoadTasks[peer] = nil
+    }
+
+    private func cancelMessageLoadTasks() {
+        for peer in messageLoadTasks.keys {
+            messageLoadGenerations[peer, default: 0] += 1
+        }
+        messageLoadTasks.values.forEach { $0.cancel() }
+        messageLoadTasks.removeAll()
     }
 
     private func nextMarketplaceRefreshGeneration() -> Int {

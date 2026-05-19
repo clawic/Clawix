@@ -134,6 +134,110 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
         XCTAssertTrue(store.feedEntries.isEmpty)
     }
 
+    func testStartingSecondMessageLoadCancelsStalePeerLoad() async {
+        let staleStarted = expectation(description: "Stale message load started")
+        let staleCancelled = expectation(description: "Stale message load cancelled")
+        let freshReturned = expectation(description: "Fresh message load returned")
+        let client = FakeProfileClient()
+        var calls = 0
+        client.onListMessages = { peer, _, _ in
+            XCTAssertEqual(peer, "peer")
+            calls += 1
+            if calls == 1 {
+                staleStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return [makeChatMessage(id: "stale")]
+            }
+            freshReturned.fulfill()
+            return [makeChatMessage(id: "fresh")]
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let first = Task { try? await store.loadMessages(peer: "peer") }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { try? await store.loadMessages(peer: "peer") }
+
+        await fulfillment(of: [staleCancelled, freshReturned], timeout: 1)
+        _ = await first.value
+        _ = await second.value
+        XCTAssertEqual(store.messages(forPeer: "peer").map(\.id), ["fresh"])
+    }
+
+    func testStaleMessageLoadCannotOverwriteFreshPeerMessages() async {
+        let staleStarted = expectation(description: "Stale message load started")
+        let staleReturned = expectation(description: "Stale message load returned")
+        let freshReturned = expectation(description: "Fresh message load returned")
+        let client = FakeProfileClient()
+        var calls = 0
+        client.onListMessages = { _, _, _ in
+            calls += 1
+            if calls == 1 {
+                staleStarted.fulfill()
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                staleReturned.fulfill()
+                return [makeChatMessage(id: "stale")]
+            }
+            freshReturned.fulfill()
+            return [makeChatMessage(id: "fresh")]
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let first = Task { try? await store.loadMessages(peer: "peer") }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { try? await store.loadMessages(peer: "peer") }
+
+        await fulfillment(of: [freshReturned, staleReturned], timeout: 1)
+        _ = await first.value
+        _ = await second.value
+        XCTAssertEqual(store.messages(forPeer: "peer").map(\.id), ["fresh"])
+    }
+
+    func testCancelChatSurfaceWorkSuppressesInFlightMessageLoad() async {
+        let loadStarted = expectation(description: "Message load started")
+        let loadCancelled = expectation(description: "Message load cancelled")
+        let client = FakeProfileClient()
+        client.onListMessages = { _, _, _ in
+            loadStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                loadCancelled.fulfill()
+                throw CancellationError()
+            }
+            return [makeChatMessage(id: "stale")]
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let task = Task { try? await store.loadMessages(peer: "peer") }
+        await fulfillment(of: [loadStarted], timeout: 1)
+
+        store.cancelChatSurfaceWork()
+
+        await fulfillment(of: [loadCancelled], timeout: 1)
+        _ = await task.value
+        XCTAssertTrue(store.messages(forPeer: "peer").isEmpty)
+    }
+
+    func testSendMessagePublishesThroughStoreMessages() async throws {
+        let client = FakeProfileClient()
+        client.onSendMessage = { peer, body in
+            XCTAssertEqual(peer, "peer")
+            return makeChatMessage(id: body)
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        _ = try await store.sendMessage(peer: "peer", body: "sent")
+
+        XCTAssertEqual(store.messages(forPeer: "peer").map(\.id), ["sent"])
+    }
+
 }
 
 private func makeProfile(alias: String) -> ClawJSProfileClient.Profile {
@@ -218,6 +322,12 @@ private final class FakeProfileClient: ClawJSProfileClienting, @unchecked Sendab
     var indexBearerToken: String?
     var onMe: () async throws -> ClawJSProfileClient.Profile? = { nil }
     var onListFeed: (String?, String?, String?, Int) async throws -> [ClawJSProfileClient.FeedEntry] = { _, _, _, _ in [] }
+    var onListMessages: (String, Int, Int?) async throws -> [ClawJSProfileClient.ChatMessage] = { peer, _, _ in
+        [makeChatMessage(id: peer)]
+    }
+    var onSendMessage: (String, String) async throws -> ClawJSProfileClient.ChatMessage = { _, body in
+        makeChatMessage(id: body)
+    }
 
     func initProfile(alias: String, mnemonic: String?, passphrase: String?) async throws -> ClawJSProfileClient.InitResponse {
         ClawJSProfileClient.InitResponse(profile: makeProfile(alias: alias), mnemonic: mnemonic ?? "mnemonic")
@@ -274,11 +384,11 @@ private final class FakeProfileClient: ClawJSProfileClienting, @unchecked Sendab
     }
 
     func listMessages(peer: String, limit: Int, before: Int?) async throws -> [ClawJSProfileClient.ChatMessage] {
-        [makeChatMessage(id: peer)]
+        try await onListMessages(peer, limit, before)
     }
 
     func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage {
-        makeChatMessage(id: peer)
+        try await onSendMessage(peer, body)
     }
 
     func discoveredIntents(vertical: String?, geoZone: String?, tag: String?, priceBand: Int?, limit: Int) async throws -> [ClawJSProfileClient.DiscoveredIntent] {

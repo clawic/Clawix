@@ -3,7 +3,6 @@ import SwiftUI
 struct P2PChatScreen: View {
     @ObservedObject var store: ProfileSurfaceStore
     @State private var selectedThreadId: String?
-    @State private var messages: [ClawJSProfileClient.ChatMessage] = []
     @State private var draft: String = ""
     @State private var isSending = false
 
@@ -15,6 +14,9 @@ struct P2PChatScreen: View {
         }
         .background(Color.black)
         .task { await store.refreshChats() }
+        .onDisappear {
+            store.cancelChatSurfaceWork()
+        }
     }
 
     // MARK: - Sidebar
@@ -54,7 +56,7 @@ struct P2PChatScreen: View {
             VStack(spacing: 0) {
                 ThreadHeader(thread: thread)
                 Divider().background(Color.white.opacity(0.06))
-                MessagesList(messages: messages, currentAlias: thread.peer.handle.alias)
+                MessagesList(messages: store.messages(forPeer: thread.peer.handle.fingerprint), currentAlias: thread.peer.handle.alias)
                 Divider().background(Color.white.opacity(0.06))
                 composer(thread: thread)
             }
@@ -108,11 +110,7 @@ struct P2PChatScreen: View {
     // MARK: - Side-effects
 
     private func loadMessages(for thread: ClawJSProfileClient.ChatThread) async {
-        do {
-            self.messages = try await store.loadMessages(peer: thread.peer.handle.fingerprint)
-        } catch {
-            self.messages = []
-        }
+        _ = try? await store.loadMessages(peer: thread.peer.handle.fingerprint)
     }
 
     private func send(thread: ClawJSProfileClient.ChatThread) async {
@@ -121,8 +119,7 @@ struct P2PChatScreen: View {
         isSending = true
         defer { isSending = false }
         do {
-            let sent = try await store.sendMessage(peer: thread.peer.handle.fingerprint, body: body)
-            self.messages.append(sent)
+            _ = try await store.sendMessage(peer: thread.peer.handle.fingerprint, body: body)
             self.draft = ""
         } catch {
             // Silent for now; an error toast would land here.
