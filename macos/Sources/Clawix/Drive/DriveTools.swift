@@ -85,7 +85,7 @@ enum DriveTools {
     static func organize(itemId: String, newParentId: String? = nil, newName: String? = nil) async throws -> ClawJSDriveClient.DriveItemDetail {
         let store = try require()
         if let newName = newName {
-            _ = try await store.client.updateItem(itemId, name: newName)
+            _ = try await store.client.updateItem(itemId, name: newName, starred: nil, parentId: nil)
         }
         if let newParentId = newParentId {
             return try await store.client.moveItem(itemId, parentId: newParentId)

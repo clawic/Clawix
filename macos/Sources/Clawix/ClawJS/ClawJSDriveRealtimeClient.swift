@@ -1,5 +1,15 @@
 import Foundation
 
+@MainActor
+protocol ClawJSDriveRealtimeClienting: AnyObject {
+    var onEvent: ((ClawJSDriveRealtimeClient.Event) -> Void)? { get set }
+    var onDisconnect: ((Swift.Error?) -> Void)? { get set }
+
+    func setToken(_ token: String?)
+    func subscribe(parentId: String?, itemId: String?, kinds: [String]?)
+    func stop()
+}
+
 /// WebSocket client for the Drive realtime endpoint (`GET /v1/realtime`).
 /// Manages a single subscription to either the active folder, an item, or
 /// the global stream. Reconnect with backoff `1/2/4/8/16/60s`. The owner
@@ -157,3 +167,5 @@ final class ClawJSDriveRealtimeClient {
         }
     }
 }
+
+extension ClawJSDriveRealtimeClient: ClawJSDriveRealtimeClienting {}

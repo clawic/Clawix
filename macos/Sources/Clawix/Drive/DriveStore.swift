@@ -14,6 +14,7 @@ extension Notification.Name {
 /// this object so views can drive optimistic updates.
 @MainActor
 final class DriveStore: ObservableObject {
+    typealias AdminTokenOperation = @MainActor () throws -> String
 
     enum State: Equatable {
         case loading
@@ -34,100 +35,192 @@ final class DriveStore: ObservableObject {
     @Published var thumbnailCache: [String: Data] = [:]
     @Published var pendingRefresh: Date = Date()
 
-    let client: ClawJSDriveClient
-    let realtime: ClawJSDriveRealtimeClient
+    let client: any ClawJSDriveClienting
+    let realtime: any ClawJSDriveRealtimeClienting
 
     private var refreshTask: Task<Void, Never>?
     private var bootstrapTask: Task<Void, Never>?
-    private var bootGeneration: UUID?
+    private var bootstrapTimeoutTask: Task<Void, Never>?
+    private var refreshGeneration = 0
+    private var bootGeneration = 0
+    private let adminTokenOperation: AdminTokenOperation
     private var supervisorObserver: AnyCancellable?
 
     init(
-        client: ClawJSDriveClient? = nil,
-        realtime: ClawJSDriveRealtimeClient? = nil,
+        client: (any ClawJSDriveClienting)? = nil,
+        realtime: (any ClawJSDriveRealtimeClienting)? = nil,
+        adminTokenOperation: AdminTokenOperation? = nil,
+        attachSupervisor: Bool = true
     ) {
         self.client = client ?? ClawJSDriveClient()
         self.realtime = realtime ?? ClawJSDriveRealtimeClient()
+        self.adminTokenOperation = adminTokenOperation ?? {
+            try DriveAdminToken.currentAdminToken()
+        }
         configureRealtime()
-        attachSupervisorObserver()
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
+    }
+
+    deinit {
+        refreshTask?.cancel()
+        bootstrapTask?.cancel()
+        bootstrapTimeoutTask?.cancel()
     }
 
     // MARK: - Lifecycle
 
     func boot() {
         guard bootstrapTask == nil else { return }
-        let generation = UUID()
+        let generation = nextBootGeneration()
         bootGeneration = generation
-        bootstrapTask = Task { @MainActor in
-            let timeout = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                guard let self, self.bootGeneration == generation else { return }
-                switch self.state {
-                case .loading, .authenticating:
-                    self.state = .error("Drive service did not become ready within 8 seconds.")
-                default:
-                    break
-                }
-            }
-            await ensureLoggedIn()
-            await refresh()
-            timeout.cancel()
-            if bootGeneration == generation { bootGeneration = nil }
-            bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBoot(generation: generation)
         }
+    }
+
+    private func runBoot(generation: Int) async {
+        bootstrapTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard let self, self.bootGeneration == generation else { return }
+            switch self.state {
+            case .loading, .authenticating:
+                self.state = .error("Drive service did not become ready within 8 seconds.")
+            default:
+                break
+            }
+        }
+        await ensureLoggedIn()
+        guard isCurrentBoot(generation), !Task.isCancelled else { return }
+        guard case .ready = state else {
+            finishBootIfCurrent(generation)
+            return
+        }
+        await refresh()
+        guard isCurrentBoot(generation), !Task.isCancelled else { return }
+        finishBootIfCurrent(generation)
     }
 
     func ensureLoggedIn() async {
         self.state = .authenticating
         do {
-            let token = try DriveAdminToken.currentAdminToken()
+            let token = try adminTokenOperation()
             client.bearerToken = token
             self.realtime.setToken(token)
-            self.realtime.subscribe()
+            self.realtime.subscribe(parentId: nil, itemId: nil, kinds: nil)
             self.state = .ready
         } catch {
             self.state = .error("Drive auth failed: \(error.localizedDescription)")
         }
     }
 
+    func cancelSurfaceWork() {
+        bootGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
+        refreshGeneration += 1
+        refreshTask?.cancel()
+        refreshTask = nil
+        realtime.stop()
+    }
+
     // MARK: - Refresh
 
     func refresh() async {
+        let generation = nextRefreshGeneration()
+        let view = currentView
+        let parentId = currentParentId
+        let textQuery = query.isEmpty ? nil : query
+        refreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runRefresh(
+                generation: generation,
+                view: view,
+                parentId: parentId,
+                query: textQuery,
+                delayNanoseconds: nil
+            )
+        }
+        refreshTask = task
+        await task.value
+    }
+
+    private func requestRefresh(delayNanoseconds: UInt64? = nil) {
+        let generation = nextRefreshGeneration()
+        let view = currentView
+        let parentId = currentParentId
+        let textQuery = query.isEmpty ? nil : query
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runRefresh(
+                generation: generation,
+                view: view,
+                parentId: parentId,
+                query: textQuery,
+                delayNanoseconds: delayNanoseconds
+            )
+        }
+    }
+
+    private func runRefresh(
+        generation: Int,
+        view: String,
+        parentId: String?,
+        query: String?,
+        delayNanoseconds: UInt64?
+    ) async {
+        if let delayNanoseconds {
+            do {
+                try await Task.sleep(nanoseconds: delayNanoseconds)
+            } catch {
+                return
+            }
+        }
         do {
-            async let listing = client.listItems(view: currentView, parentId: currentParentId, query: query.isEmpty ? nil : query)
+            async let listing = client.listItems(view: view, parentId: parentId, query: query)
             async let bootstrap = client.bootstrap()
             let result = try await listing
-            self.items = result.items
-            self.counts = result.counts
-            self.breadcrumbs = result.breadcrumbs
+            try Task.checkCancellation()
+            guard isCurrentRefresh(generation) else { return }
+            items = result.items
+            counts = result.counts
+            breadcrumbs = result.breadcrumbs
             _ = try? await bootstrap
-            self.lastError = nil
-            self.pendingRefresh = Date()
+            try Task.checkCancellation()
+            guard isCurrentRefresh(generation) else { return }
+            lastError = nil
+            pendingRefresh = Date()
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            guard isCurrentRefresh(generation) else { return }
+            lastError = error.localizedDescription
         }
+        finishRefreshIfCurrent(generation)
     }
 
     // MARK: - Mutations (optimistic where reasonable)
 
     func setParent(_ parentId: String?) {
         self.currentParentId = parentId
-        Task { @MainActor in await refresh() }
+        requestRefresh()
     }
 
     func setView(_ view: String) {
         self.currentView = view
         self.currentParentId = nil
-        Task { @MainActor in await refresh() }
+        requestRefresh()
     }
 
     func setQuery(_ query: String) {
         self.query = query
-        refreshTask?.cancel()
-        refreshTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 200_000_000)
-            await refresh()
-        }
+        requestRefresh(delayNanoseconds: 200_000_000)
     }
 
     func createFolder(name: String, parentId: String?) async {
@@ -193,7 +286,7 @@ final class DriveStore: ObservableObject {
     func replaceDuplicate(existingId: String, fileURL: URL, parentId: String?) async {
         do {
             _ = try await client.trashItem(existingId)
-            _ = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId)
+            _ = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId, duplicatePolicy: nil)
             await refresh()
             self.lastError = nil
         } catch {
@@ -204,7 +297,7 @@ final class DriveStore: ObservableObject {
 
     func star(_ itemId: String, starred: Bool) async {
         do {
-            _ = try await client.updateItem(itemId, starred: starred)
+            _ = try await client.updateItem(itemId, name: nil, starred: starred, parentId: nil)
             await refresh()
         } catch {
             self.lastError = error.localizedDescription
@@ -213,7 +306,7 @@ final class DriveStore: ObservableObject {
 
     func rename(_ itemId: String, newName: String) async {
         do {
-            _ = try await client.updateItem(itemId, name: newName)
+            _ = try await client.updateItem(itemId, name: newName, starred: nil, parentId: nil)
             await refresh()
         } catch {
             self.lastError = error.localizedDescription
@@ -235,8 +328,11 @@ final class DriveStore: ObservableObject {
         if let cached = thumbnailCache[itemId] { return cached }
         do {
             let data = try await client.loadThumbnailBytes(itemId, size: size)
+            try Task.checkCancellation()
             thumbnailCache[itemId] = data
             return data
+        } catch is CancellationError {
+            return nil
         } catch {
             return nil
         }
@@ -249,7 +345,7 @@ final class DriveStore: ObservableObject {
             guard let self else { return }
             // Refresh listing if event affects current parent or current view.
             if event.parentId == self.currentParentId || event.itemId != nil {
-                Task { @MainActor in await self.refresh() }
+                self.requestRefresh()
             }
         }
         realtime.onDisconnect = { _ in /* backoff handled internally */ }
@@ -264,6 +360,7 @@ final class DriveStore: ObservableObject {
                     self.boot()
                 }
             case .blocked, .crashed, .daemonUnavailable, .idle:
+                self.cancelSurfaceWork()
                 self.items = []
                 self.breadcrumbs = []
                 self.state = .error(snap.state.unavailableReason ?? "Drive service is unavailable.")
@@ -273,5 +370,36 @@ final class DriveStore: ObservableObject {
                 }
             }
         }
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func isCurrentRefresh(_ generation: Int) -> Bool {
+        refreshGeneration == generation
+    }
+
+    private func finishRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentRefresh(generation) else { return }
+        refreshTask = nil
+    }
+
+    private func nextBootGeneration() -> Int {
+        bootGeneration += 1
+        return bootGeneration
+    }
+
+    private func isCurrentBoot(_ generation: Int) -> Bool {
+        bootGeneration == generation
+    }
+
+    private func finishBootIfCurrent(_ generation: Int) {
+        guard isCurrentBoot(generation) else { return }
+        bootGeneration = 0
+        bootstrapTimeoutTask?.cancel()
+        bootstrapTimeoutTask = nil
+        bootstrapTask = nil
     }
 }

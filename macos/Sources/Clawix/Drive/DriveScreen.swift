@@ -44,6 +44,9 @@ struct DriveScreen: View {
             DriveTools.bind(store)
             presentPendingQuickUploadIfReady()
         }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
         .onChange(of: mode) { _, _ in applyMode() }
         .onChange(of: appState.driveQuickUploadRequestID) { _, _ in
             presentPendingQuickUploadIfReady()

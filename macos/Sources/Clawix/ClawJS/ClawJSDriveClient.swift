@@ -1,5 +1,39 @@
 import Foundation
 
+protocol ClawJSDriveClienting: AnyObject {
+    var bearerToken: String? { get set }
+
+    func bootstrap() async throws -> ClawJSDriveClient.BootstrapResponse
+    func listItems(view: String, parentId: String?, query: String?) async throws -> ClawJSDriveClient.ListItemsResponse
+    func getItem(_ id: String) async throws -> ClawJSDriveClient.DriveItemDetail
+    func markViewed(_ id: String) async throws
+    func createFolder(name: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail
+    func updateItem(_ id: String, name: String?, starred: Bool?, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail
+    func moveItem(_ id: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail
+    func trashItem(_ id: String) async throws -> ClawJSDriveClient.DriveItemDetail
+    func restoreItem(_ id: String) async throws -> ClawJSDriveClient.DriveItemDetail
+    func deleteItem(_ id: String) async throws -> Bool
+    func upload(filePath: URL, parentId: String?, duplicatePolicy: String?) async throws -> ClawJSDriveClient.DriveItemDetail
+    func uploadBytes(_ data: Data, fileName: String, mimeType: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail
+    func downloadItem(_ id: String, to destination: URL) async throws
+    func loadThumbnailBytes(_ id: String, size: Int) async throws -> Data
+    func getExif(_ id: String) async throws -> ClawJSDriveClient.ExifRecord?
+    func searchText(_ query: String) async throws -> [ClawJSDriveClient.DriveItem]
+    func searchSemantic(_ query: String, limit: Int) async throws -> [ClawJSDriveClient.SemanticResult]
+    func listAllShares(_ itemId: String) async throws -> ClawJSDriveClient.AllSharesResponse
+    func createReadShare(_ itemId: String, label: String) async throws -> ClawJSDriveClient.CreateReadShareResponse
+    func createTailnetShare(_ itemId: String) async throws -> ClawJSDriveClient.TailnetShareRecord
+    func createTunnelShare(_ itemId: String) async throws -> ClawJSDriveClient.TunnelShareRecord
+    func createAgentShare(
+        _ itemId: String,
+        capabilityKind: String,
+        ttlMinutes: Int,
+        reason: String?,
+        agentName: String
+    ) async throws -> ClawJSDriveClient.CreateAgentShareResponse
+    func ensureProjectFolder(slug: String) async throws -> String
+}
+
 /// HTTP client for the bundled `@clawjs/drive` service. Mirrors the wire
 /// shape of `clawjs/drive/src/server/app.ts` and the types declared in
 /// `clawjs/drive/src/shared/types.ts`. Replicates the pattern of
@@ -528,6 +562,8 @@ final class ClawJSDriveClient {
         }
     }
 }
+
+extension ClawJSDriveClient: ClawJSDriveClienting {}
 
 private extension Data {
     mutating func appendString(_ string: String) {
