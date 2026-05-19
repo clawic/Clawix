@@ -4,6 +4,8 @@ import CryptoKit
 /// Installs and verifies the local LLM runtime outside the app bundle.
 @MainActor
 final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
+    typealias DownloadOperation = @MainActor () async throws -> URL
+    typealias ArchiveOperation = @Sendable (_ tarball: URL) async throws -> Void
 
     static let shared = LocalModelsRuntimeInstaller()
 
@@ -31,10 +33,23 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
     private var session: URLSession?
     private var downloadTask: URLSessionDownloadTask?
     private var continuation: CheckedContinuation<URL, Error>?
+    private let downloadOperation: DownloadOperation?
+    private let verifyOperation: ArchiveOperation?
+    private let extractOperation: ArchiveOperation?
 
-    private override init() {
+    init(
+        downloadOperation: DownloadOperation? = nil,
+        verifyOperation: ArchiveOperation? = nil,
+        extractOperation: ArchiveOperation? = nil,
+        refreshOnInit: Bool = true
+    ) {
+        self.downloadOperation = downloadOperation
+        self.verifyOperation = verifyOperation
+        self.extractOperation = extractOperation
         super.init()
-        refresh()
+        if refreshOnInit {
+            refresh()
+        }
     }
 
     // MARK: - Public API
@@ -62,18 +77,26 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         do {
             try Self.prepareParentDirectory()
 
-            let tarball = try await download()
-            try await Task.detached(priority: .userInitiated) {
+            let tarball: URL
+            if let downloadOperation {
+                tarball = try await downloadOperation()
+            } else {
+                tarball = try await download()
+            }
+            try Task.checkCancellation()
+            try await runArchiveOperation(tarball: tarball, injected: verifyOperation) {
                 try Self.verify(tarball: tarball)
-            }.value
+            }
+            try Task.checkCancellation()
 
             self.state = .extracting
 
-            try await Task.detached(priority: .userInitiated) {
-                try Self.extract(tarball: tarball)
+            try await runArchiveOperation(tarball: tarball, injected: extractOperation) {
+                try await Self.extract(tarball: tarball)
                 try Self.writeVersionFile()
                 try? FileManager.default.removeItem(at: tarball)
-            }.value
+            }
+            try Task.checkCancellation()
 
             self.state = .installed(version: Self.pinnedVersion)
         } catch is CancellationError {
@@ -86,6 +109,9 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
     func cancel() {
         downloadTask?.cancel()
         downloadTask = nil
+        session?.invalidateAndCancel()
+        session = nil
+        resumeContinuation(with: .failure(CancellationError()))
     }
 
     func uninstall() throws {
@@ -166,9 +192,29 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         guard let cont = continuation else { return }
         continuation = nil
         downloadTask = nil
+        session = nil
         switch result {
         case .success(let url): cont.resume(returning: url)
         case .failure(let err): cont.resume(throwing: err)
+        }
+    }
+
+    private func runArchiveOperation(
+        tarball: URL,
+        injected: ArchiveOperation?,
+        fallback: @escaping @Sendable () async throws -> Void
+    ) async throws {
+        if let injected {
+            try await injected(tarball)
+            return
+        }
+        let task = Task.detached(priority: .userInitiated) {
+            try await fallback()
+        }
+        try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
         }
     }
 
@@ -179,6 +225,7 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         defer { try? handle.close() }
         var hasher = SHA256()
         while true {
+            try Task.checkCancellation()
             let chunk = autoreleasepool { (try? handle.read(upToCount: 1 << 20)) ?? Data() }
             if chunk.isEmpty { break }
             hasher.update(data: chunk)
@@ -189,7 +236,7 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         }
     }
 
-    private nonisolated static func extract(tarball: URL) throws {
+    private nonisolated static func extract(tarball: URL) async throws {
         let fm = FileManager.default
         if fm.fileExists(atPath: runtimeRoot.path) {
             try fm.removeItem(at: runtimeRoot)
@@ -202,11 +249,24 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         let stderrPipe = Pipe()
         tar.standardError = stderrPipe
         tar.standardOutput = Pipe()
-        try tar.run()
-        tar.waitUntilExit()
-        guard tar.terminationStatus == 0 else {
+
+        let terminationStatus = try await withTaskCancellationHandler {
+            try tar.run()
+            return await withCheckedContinuation { continuation in
+                tar.terminationHandler = { process in
+                    continuation.resume(returning: process.terminationStatus)
+                }
+            }
+        } onCancel: {
+            if tar.isRunning {
+                tar.terminate()
+            }
+        }
+
+        try Task.checkCancellation()
+        guard terminationStatus == 0 else {
             let data = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-            let message = String(data: data, encoding: .utf8) ?? "exit \(tar.terminationStatus)"
+            let message = String(data: data, encoding: .utf8) ?? "exit \(terminationStatus)"
             throw InstallerError.extractionFailed(message: message)
         }
 
