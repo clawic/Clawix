@@ -449,6 +449,25 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(ClawixAppsSDKJS.lowercased().contains("sqlite"))
     }
 
+    func testBridgeOperationPolicyDoesNotExposeEscapeHatches() {
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("search.query"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("db.query"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.contracts"))
+
+        for operation in AppBridgeOperationPolicy.forbiddenEscapeHatchOperations {
+            XCTAssertFalse(AppBridgeOperationPolicy.isAllowed(operation), operation)
+            XCTAssertFalse(ClawixAppsSDKJS.contains(operation), operation)
+        }
+
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.contains("sqlite") })
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("secrets.") })
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("cli.") })
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("fs.") })
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("process.") })
+        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("native.") })
+    }
+
     func testResourceRegistryReadsOnlyRegisteredPathResources() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
@@ -475,22 +494,32 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(read.bridgeValue["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
     }
 
-    func testResourceRegistryRejectsUnregisteredAndNonFileResources() throws {
+    func testResourceRegistryRejectsUnregisteredDirectoryAndNonFileResources() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
+        let registeredDirectory = root.appendingPathComponent("folder", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: registeredDirectory, withIntermediateDirectories: true)
 
         let secret = makeResource(
             id: "res_secretref1",
             kind: "secret-ref",
             locator: AppResourceLocator(kind: "secret-ref", value: "vault://demo")
         )
-        try writeResources([secret], to: registryRoot)
+        let directory = makeResource(
+            id: "res_directory1",
+            kind: "folder",
+            locator: AppResourceLocator(kind: "path", value: registeredDirectory.path)
+        )
+        try writeResources([secret, directory], to: registryRoot)
 
         let store = AppResourceRegistryStore(directory: registryRoot)
         let read = try store.read("res_secretref1")
         XCTAssertNil(read.content)
         XCTAssertEqual(read.error, "Resource res_secretref1 is not a readable filesystem path.")
+        let directoryRead = try store.read("res_directory1")
+        XCTAssertNil(directoryRead.content)
+        XCTAssertEqual(directoryRead.error, "Resource res_directory1 is a directory.")
         XCTAssertThrowsError(try store.read("res_missing1"))
     }
 

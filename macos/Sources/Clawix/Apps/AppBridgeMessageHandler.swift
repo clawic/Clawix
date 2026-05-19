@@ -2,6 +2,42 @@ import AppKit
 import Foundation
 import WebKit
 
+enum AppBridgeOperationPolicy {
+    static let allowedOperations: Set<String> = [
+        "agent.callTool",
+        "agent.sendMessage",
+        "capabilities.contracts",
+        "capabilities.list",
+        "capabilities.riskMap",
+        "db.query",
+        "request.cancel",
+        "resources.list",
+        "resources.read",
+        "search.query",
+        "storage.delete",
+        "storage.get",
+        "storage.keys",
+        "storage.set",
+        "ui.openExternal",
+        "ui.setBadge",
+        "ui.setTitle"
+    ]
+
+    static let forbiddenEscapeHatchOperations: Set<String> = [
+        "cli.exec",
+        "fs.readFile",
+        "host.execute",
+        "native.permissions.request",
+        "process.spawn",
+        "secrets.read",
+        "sqlite.query"
+    ]
+
+    static func isAllowed(_ operation: String) -> Bool {
+        allowedOperations.contains(operation)
+    }
+}
+
 /// Native side of the `window.clawix` SDK. WebKit calls into here
 /// whenever the app posts a message via
 /// `window.webkit.messageHandlers.clawix.postMessage(...)`. The handler
@@ -61,6 +97,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             return
         }
         let payload = (dict["payload"] as? [String: Any]) ?? [:]
+        guard AppBridgeOperationPolicy.isAllowed(op) else {
+            reject(requestId: requestId, message: "Unknown op: \(op)")
+            return
+        }
         do {
             switch op {
             case "storage.get":
