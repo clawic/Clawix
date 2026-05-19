@@ -104,6 +104,9 @@ struct EditorView: View {
                     if draft == nil { draft = store.document(id: documentId) }
                 }
                 .onChange(of: documentId) { _, _ in draft = store.document(id: documentId) }
+                .onDisappear {
+                    store.cancelSurfaceWork()
+                }
                 .alert("Delete \(document.name)?", isPresented: $pendingDelete) {
                     Button("Cancel", role: .cancel) {}
                     Button("Delete", role: .destructive) { performDelete() }

@@ -10,18 +10,43 @@ import Foundation
 /// Template manifests.
 @MainActor
 final class EditorStore: ObservableObject {
+    typealias LoadOperation = @MainActor (_ rootURL: URL, _ manifestName: String) async throws -> EditorSnapshot
+
+    struct EditorSnapshot: Sendable {
+        let documents: [EditorDocument]
+    }
+
     static let shared = EditorStore()
 
     @Published private(set) var documents: [EditorDocument] = []
+    @Published private(set) var isLoading = false
 
     private let rootURL: URL
     private let fileManager: FileManager
+    private let manifestName = "document.json"
+    private let loadOperation: LoadOperation
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
 
-    init(rootURL: URL? = nil, fileManager: FileManager = .default) {
+    init(
+        rootURL: URL? = nil,
+        fileManager: FileManager = .default,
+        autoLoad: Bool = true,
+        loadOperation: LoadOperation? = nil
+    ) {
         self.fileManager = fileManager
         self.rootURL = rootURL ?? EditorStore.defaultRootURL(fileManager: fileManager)
+        self.loadOperation = loadOperation ?? { rootURL, manifestName in
+            try await EditorStore.loadSnapshot(rootURL: rootURL, manifestName: manifestName)
+        }
         ensureRootExists()
-        reloadFromDisk()
+        if autoLoad {
+            reloadFromDisk()
+        }
+    }
+
+    deinit {
+        reloadTask?.cancel()
     }
 
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
@@ -30,34 +55,64 @@ final class EditorStore: ObservableObject {
     }
 
     func documentDir(for id: String) -> URL { rootURL.appendingPathComponent(id) }
-    func documentManifestURL(for id: String) -> URL { documentDir(for: id).appendingPathComponent("document.json") }
+    func documentManifestURL(for id: String) -> URL { documentDir(for: id).appendingPathComponent(manifestName) }
     func document(id: String) -> EditorDocument? { documents.first(where: { $0.id == id }) }
 
     func reloadFromDisk() {
         ensureRootExists()
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: rootURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            documents = []
-            return
+        _ = startReload()
+    }
+
+    func refresh() async {
+        await startReload().value
+    }
+
+    func cancelSurfaceWork() {
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        isLoading = false
+    }
+
+    @discardableResult
+    private func startReload() -> Task<Void, Never> {
+        reloadGeneration += 1
+        let generation = reloadGeneration
+        reloadTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(generation: generation)
         }
-        var found: [EditorDocument] = []
-        for entry in entries {
-            var isDir: ObjCBool = false
-            guard fileManager.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
-            let manifestURL = entry.appendingPathComponent("document.json")
-            guard fileManager.fileExists(atPath: manifestURL.path) else { continue }
-            do {
-                let data = try Data(contentsOf: manifestURL)
-                let document = try JSONDecoder().decode(EditorDocument.self, from: data)
-                found.append(document)
-            } catch {
-                continue
-            }
+        reloadTask = task
+        return task
+    }
+
+    private func runReload(generation: Int) async {
+        guard generation == reloadGeneration else { return }
+        isLoading = true
+        do {
+            let snapshot = try await loadOperation(rootURL, manifestName)
+            try Task.checkCancellation()
+            guard generation == reloadGeneration else { return }
+            apply(snapshot)
+            finishReloadIfCurrent(generation)
+        } catch is CancellationError {
+            finishReloadIfCurrent(generation)
+        } catch {
+            guard generation == reloadGeneration else { return }
+            apply(EditorSnapshot(documents: []))
+            finishReloadIfCurrent(generation)
         }
-        documents = found.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard generation == reloadGeneration else { return }
+        isLoading = false
+        reloadTask = nil
+    }
+
+    private func apply(_ snapshot: EditorSnapshot) {
+        documents = snapshot.documents.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     @discardableResult
@@ -75,6 +130,7 @@ final class EditorStore: ObservableObject {
             updatedAt: now
         )
         try persist(document)
+        upsertInMemory(document)
         reloadFromDisk()
         return document
     }
@@ -96,6 +152,7 @@ final class EditorStore: ObservableObject {
         if fileManager.fileExists(atPath: dir.path) {
             try fileManager.removeItem(at: dir)
         }
+        documents.removeAll { $0.id == document.id }
         reloadFromDisk()
     }
 
@@ -129,6 +186,15 @@ final class EditorStore: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(document)
         try data.write(to: documentManifestURL(for: document.id), options: .atomic)
+    }
+
+    private func upsertInMemory(_ document: EditorDocument) {
+        if let index = documents.firstIndex(where: { $0.id == document.id }) {
+            documents[index] = document
+        } else {
+            documents.append(document)
+        }
+        documents.sort { $0.updatedAt > $1.updatedAt }
     }
 
     private func seededSlotValues(for template: TemplateManifest) -> [String: SlotValue] {
@@ -182,5 +248,37 @@ final class EditorStore: ObservableObject {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter.string(from: Date())
+    }
+
+    private static func loadSnapshot(rootURL: URL, manifestName: String) async throws -> EditorSnapshot {
+        try await Task.detached(priority: .utility) {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: rootURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                return EditorSnapshot(documents: [])
+            }
+
+            var found: [EditorDocument] = []
+            let decoder = JSONDecoder()
+            for entry in entries {
+                try Task.checkCancellation()
+                var isDir: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
+                let manifestURL = entry.appendingPathComponent(manifestName)
+                guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }
+                do {
+                    let data = try Data(contentsOf: manifestURL)
+                    let document = try decoder.decode(EditorDocument.self, from: data)
+                    found.append(document)
+                } catch {
+                    // A malformed editor document should not prevent the
+                    // rest of the editor library from loading.
+                    continue
+                }
+            }
+            return EditorSnapshot(documents: found)
+        }.value
     }
 }
