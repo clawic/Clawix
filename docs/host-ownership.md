@@ -95,7 +95,9 @@ app evidence before they clear `EXTERNAL PENDING`.
 `NativeSystemSearchSourceBridge` builds bounded native snapshots through
 `MacControlActionBroker` and emits Search documents with brokered `hostBroker`
 actions; framework/Node indexing consumes those documents but does not read
-macOS state or execute native actions directly.
+macOS state or execute native actions directly. The source is opt-in: the
+Keyboard Shortcuts settings page exposes a manual native/system rebuild control
+for Shortcuts, and nothing enables native/system indexing automatically.
 
 The transport contract is the v1 host command contract. XPC is the final macOS
 transport. Unix socket and HTTP transports are allowed for development, tests,
