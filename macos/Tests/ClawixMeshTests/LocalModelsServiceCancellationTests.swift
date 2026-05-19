@@ -94,6 +94,37 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
         await task.value
     }
 
+    func testCancelInstallStopsRunningRuntimeActivation() async {
+        let started = expectation(description: "Local runtime install activation started")
+        let cancelled = expectation(description: "Local runtime install activation cancelled")
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {},
+            enableOperation: { _, _ in
+                started.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                } catch {
+                    XCTFail("Unexpected install cancellation error: \(error)")
+                }
+            }
+        )
+
+        let task = Task { await service.enable() }
+        await fulfillment(of: [started], timeout: 1)
+
+        service.cancelInstall()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        await task.value
+    }
+
     func testStartingSameUnloadCancelsStaleModelAction() async {
         let slowStarted = expectation(description: "Slow model unload started")
         let slowCancelled = expectation(description: "Slow model unload cancelled")

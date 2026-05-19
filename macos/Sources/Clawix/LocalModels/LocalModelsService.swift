@@ -193,6 +193,7 @@ final class LocalModelsService: ObservableObject {
     }
 
     func cancelInstall() {
+        cancelEnable()
         installer.cancel()
     }
 
