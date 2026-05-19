@@ -18,27 +18,53 @@ import Foundation
 /// ```
 @MainActor
 final class DesignStore: ObservableObject {
+    typealias LoadOperation = @MainActor (_ rootURL: URL) async throws -> DesignSnapshot
+
+    struct DesignSnapshot: Sendable {
+        let styles: [StyleManifest]
+        let templates: [TemplateManifest]
+        let references: [ReferenceManifest]
+    }
+
     static let shared = DesignStore()
 
     @Published private(set) var styles: [StyleManifest] = []
     @Published private(set) var templates: [TemplateManifest] = []
     @Published private(set) var references: [ReferenceManifest] = []
+    @Published private(set) var isLoading = false
 
     private let rootURL: URL
     private let fileManager: FileManager
+    private let loadOperation: LoadOperation
     private var pollingTimer: Timer?
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
 
-    init(rootURL: URL? = nil, fileManager: FileManager = .default) {
+    init(
+        rootURL: URL? = nil,
+        fileManager: FileManager = .default,
+        autoLoad: Bool = true,
+        startPolling: Bool = true,
+        loadOperation: LoadOperation? = nil
+    ) {
         self.fileManager = fileManager
         self.rootURL = rootURL ?? DesignStore.defaultRootURL(fileManager: fileManager)
+        self.loadOperation = loadOperation ?? { rootURL in
+            try await DesignStore.loadSnapshot(rootURL: rootURL)
+        }
         ensureLayoutExists()
         seedBuiltinsIfNeeded()
-        reloadFromDisk()
-        startPolling()
+        if autoLoad {
+            reloadFromDisk()
+        }
+        if startPolling {
+            startPollingTimer()
+        }
     }
 
     deinit {
         pollingTimer?.invalidate()
+        reloadTask?.cancel()
     }
 
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
@@ -81,9 +107,55 @@ final class DesignStore: ObservableObject {
     // MARK: - Refresh
 
     func reloadFromDisk() {
-        styles = readAllStyles()
-        templates = readAllTemplates()
-        references = readAllReferences()
+        _ = startReload()
+    }
+
+    func refresh() async {
+        await startReload().value
+    }
+
+    func cancelSurfaceWork() {
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        isLoading = false
+    }
+
+    @discardableResult
+    private func startReload() -> Task<Void, Never> {
+        reloadGeneration += 1
+        let generation = reloadGeneration
+        reloadTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(generation: generation)
+        }
+        reloadTask = task
+        return task
+    }
+
+    private func runReload(generation: Int) async {
+        guard generation == reloadGeneration else { return }
+        isLoading = true
+        do {
+            let snapshot = try await loadOperation(rootURL)
+            try Task.checkCancellation()
+            guard generation == reloadGeneration else { return }
+            styles = snapshot.styles
+            templates = snapshot.templates
+            references = snapshot.references
+            finishReloadIfCurrent(generation)
+        } catch is CancellationError {
+            finishReloadIfCurrent(generation)
+        } catch {
+            finishReloadIfCurrent(generation)
+        }
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard generation == reloadGeneration else { return }
+        isLoading = false
+        reloadTask = nil
     }
 
     // MARK: - Internals
@@ -107,51 +179,6 @@ final class DesignStore: ObservableObject {
                 try? writeTemplate(manifest)
             }
         }
-    }
-
-    private func readAllStyles() -> [StyleManifest] {
-        guard let entries = try? fileManager.contentsOfDirectory(at: stylesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
-            return []
-        }
-        var out: [StyleManifest] = []
-        for entry in entries {
-            let manifestPath = entry.appendingPathComponent("STYLE.md")
-            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
-            if let manifest = try? DesignSerializer.parseStyle(content) {
-                out.append(manifest)
-            }
-        }
-        return out.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private func readAllTemplates() -> [TemplateManifest] {
-        guard let entries = try? fileManager.contentsOfDirectory(at: templatesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
-            return []
-        }
-        var out: [TemplateManifest] = []
-        for entry in entries {
-            let manifestPath = entry.appendingPathComponent("TEMPLATE.md")
-            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
-            if let manifest = try? DesignSerializer.parseTemplate(content) {
-                out.append(manifest)
-            }
-        }
-        return out
-    }
-
-    private func readAllReferences() -> [ReferenceManifest] {
-        guard let entries = try? fileManager.contentsOfDirectory(at: referencesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
-            return []
-        }
-        var out: [ReferenceManifest] = []
-        for entry in entries {
-            let manifestPath = entry.appendingPathComponent("REFERENCE.md")
-            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
-            if let manifest = try? DesignSerializer.parseReference(content) {
-                out.append(manifest)
-            }
-        }
-        return out.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     // MARK: - Public mutations
@@ -316,7 +343,7 @@ final class DesignStore: ObservableObject {
         try payload.data(using: .utf8)?.write(to: dir.appendingPathComponent("TEMPLATE.md"), options: .atomic)
     }
 
-    private func startPolling() {
+    private func startPollingTimer() {
         let timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.reloadFromDisk()
@@ -325,5 +352,65 @@ final class DesignStore: ObservableObject {
         timer.tolerance = 1.0
         RunLoop.main.add(timer, forMode: .common)
         pollingTimer = timer
+    }
+
+    private static func loadSnapshot(rootURL: URL) async throws -> DesignSnapshot {
+        try await Task.detached(priority: .utility) {
+            let stylesRootURL = rootURL.appendingPathComponent("styles")
+            let templatesRootURL = rootURL.appendingPathComponent("templates")
+            let referencesRootURL = rootURL.appendingPathComponent("references")
+            let styles = readAllStyles(from: stylesRootURL)
+            try Task.checkCancellation()
+            let templates = readAllTemplates(from: templatesRootURL)
+            try Task.checkCancellation()
+            let references = readAllReferences(from: referencesRootURL)
+            try Task.checkCancellation()
+            return DesignSnapshot(styles: styles, templates: templates, references: references)
+        }.value
+    }
+
+    private nonisolated static func readAllStyles(from stylesRootURL: URL) -> [StyleManifest] {
+        guard let entries = try? FileManager.default.contentsOfDirectory(at: stylesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+            return []
+        }
+        var out: [StyleManifest] = []
+        for entry in entries {
+            let manifestPath = entry.appendingPathComponent("STYLE.md")
+            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
+            if let manifest = try? DesignSerializer.parseStyle(content) {
+                out.append(manifest)
+            }
+        }
+        return out.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private nonisolated static func readAllTemplates(from templatesRootURL: URL) -> [TemplateManifest] {
+        guard let entries = try? FileManager.default.contentsOfDirectory(at: templatesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+            return []
+        }
+        var out: [TemplateManifest] = []
+        for entry in entries {
+            let manifestPath = entry.appendingPathComponent("TEMPLATE.md")
+            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
+            if let manifest = try? DesignSerializer.parseTemplate(content) {
+                out.append(manifest)
+            }
+        }
+        return out
+    }
+
+    private nonisolated static func readAllReferences(from referencesRootURL: URL) -> [ReferenceManifest] {
+        guard let entries = try? FileManager.default.contentsOfDirectory(at: referencesRootURL, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+            return []
+        }
+        var out: [ReferenceManifest] = []
+        for entry in entries {
+            let manifestPath = entry.appendingPathComponent("REFERENCE.md")
+            guard let content = try? String(contentsOf: manifestPath, encoding: .utf8) else { continue }
+            if let manifest = try? DesignSerializer.parseReference(content) {
+                out.append(manifest)
+            }
+        }
+        return out.sorted { $0.updatedAt > $1.updatedAt }
     }
 }
