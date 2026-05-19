@@ -9,11 +9,20 @@ import Combine
 /// mutations flow through this object.
 @MainActor
 final class PublishingWorkspaceStore: ObservableObject {
+    typealias ListFamiliesOperation = @MainActor () async throws -> [ClawJSPublishingClient.Family]
+    typealias ListChannelsOperation = @MainActor (_ workspaceId: String) async throws -> [ClawJSPublishingClient.ChannelAccount]
     typealias ListPostsOperation = @MainActor (
         _ workspaceId: String,
         _ from: Date,
         _ to: Date
     ) async throws -> [ClawJSPublishingClient.Post]
+    typealias ConnectChannelOperation = @MainActor (
+        _ workspaceId: String,
+        _ familyId: String,
+        _ payload: [String: String]
+    ) async throws -> ClawJSPublishingClient.ChannelAccount
+    typealias DisconnectChannelOperation = @MainActor (_ workspaceId: String, _ accountId: String) async throws -> Bool
+    typealias ProbeChannelOperation = @MainActor (_ workspaceId: String, _ accountId: String) async throws -> Bool
 
     enum State: Equatable {
         case idle
@@ -30,26 +39,59 @@ final class PublishingWorkspaceStore: ObservableObject {
     @Published private(set) var lastError: String?
 
     let client: ClawJSPublishingClient
+    private let listFamiliesOperation: ListFamiliesOperation
+    private let listChannelsOperation: ListChannelsOperation
     private let listPostsOperation: ListPostsOperation
+    private let connectChannelOperation: ConnectChannelOperation
+    private let disconnectChannelOperation: DisconnectChannelOperation
+    private let probeChannelOperation: ProbeChannelOperation
 
     nonisolated static let workspaceKey = "clawix.publishing.workspaceId.v1"
 
     private var bootstrapTask: Task<Void, Never>?
+    private var familiesRefreshTask: Task<Void, Never>?
+    private var familiesRefreshGeneration = 0
+    private var channelsRefreshTask: Task<Void, Never>?
+    private var channelsRefreshGeneration = 0
     private var calendarRefreshTask: Task<Void, Never>?
     private var calendarRefreshGeneration = 0
+    private var connectTasks: [String: Task<Result<ClawJSPublishingClient.ChannelAccount, Swift.Error>, Never>] = [:]
+    private var connectGenerations: [String: Int] = [:]
+    private var channelActionTasks: [String: Task<Void, Never>] = [:]
+    private var channelActionGenerations: [String: Int] = [:]
     private var supervisorObserver: AnyCancellable?
 
     init(
         client: ClawJSPublishingClient? = nil,
+        listFamiliesOperation: ListFamiliesOperation? = nil,
+        listChannelsOperation: ListChannelsOperation? = nil,
         listPostsOperation: ListPostsOperation? = nil,
+        connectChannelOperation: ConnectChannelOperation? = nil,
+        disconnectChannelOperation: DisconnectChannelOperation? = nil,
+        probeChannelOperation: ProbeChannelOperation? = nil,
         attachSupervisor: Bool = true,
         initialState: State = .idle,
         workspaceId initialWorkspaceId: String? = nil
     ) {
         let resolvedClient = client ?? ClawJSPublishingClient()
         self.client = resolvedClient
+        self.listFamiliesOperation = listFamiliesOperation ?? {
+            try await resolvedClient.listFamilies()
+        }
+        self.listChannelsOperation = listChannelsOperation ?? { workspaceId in
+            try await resolvedClient.listChannels(workspaceId: workspaceId)
+        }
         self.listPostsOperation = listPostsOperation ?? { workspaceId, from, to in
             try await resolvedClient.listPosts(workspaceId: workspaceId, from: from, to: to)
+        }
+        self.connectChannelOperation = connectChannelOperation ?? { workspaceId, familyId, payload in
+            try await resolvedClient.connectChannel(workspaceId: workspaceId, familyId: familyId, payload: payload)
+        }
+        self.disconnectChannelOperation = disconnectChannelOperation ?? { workspaceId, accountId in
+            try await resolvedClient.disconnectChannel(workspaceId: workspaceId, accountId: accountId)
+        }
+        self.probeChannelOperation = probeChannelOperation ?? { workspaceId, accountId in
+            try await resolvedClient.probeChannel(workspaceId: workspaceId, accountId: accountId)
         }
         let stored = initialWorkspaceId ?? UserDefaults.standard.string(forKey: Self.workspaceKey)
         self.workspaceId = (stored?.isEmpty == false) ? stored : nil
@@ -62,7 +104,11 @@ final class PublishingWorkspaceStore: ObservableObject {
 
     deinit {
         bootstrapTask?.cancel()
+        familiesRefreshTask?.cancel()
+        channelsRefreshTask?.cancel()
         calendarRefreshTask?.cancel()
+        for task in connectTasks.values { task.cancel() }
+        for task in channelActionTasks.values { task.cancel() }
     }
 
     // MARK: - Lifecycle
@@ -110,9 +156,21 @@ final class PublishingWorkspaceStore: ObservableObject {
     func reset(reason: String) {
         bootstrapTask?.cancel()
         bootstrapTask = nil
+        familiesRefreshGeneration += 1
+        familiesRefreshTask?.cancel()
+        familiesRefreshTask = nil
+        channelsRefreshGeneration += 1
+        channelsRefreshTask?.cancel()
+        channelsRefreshTask = nil
         calendarRefreshGeneration += 1
         calendarRefreshTask?.cancel()
         calendarRefreshTask = nil
+        for task in connectTasks.values { task.cancel() }
+        connectTasks.removeAll()
+        connectGenerations.removeAll()
+        for task in channelActionTasks.values { task.cancel() }
+        channelActionTasks.removeAll()
+        channelActionGenerations.removeAll()
         families = []
         channels = []
         posts = []
@@ -143,22 +201,56 @@ final class PublishingWorkspaceStore: ObservableObject {
 
     func refreshFamilies() async {
         guard state == .ready else { return }
+        let generation = nextFamiliesRefreshGeneration()
+        familiesRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runFamiliesRefresh(generation: generation)
+        }
+        familiesRefreshTask = task
+        await task.value
+    }
+
+    private func runFamiliesRefresh(generation: Int) async {
         do {
-            families = try await client.listFamilies()
+            let families = try await listFamiliesOperation()
+            try Task.checkCancellation()
+            guard isCurrentFamiliesRefresh(generation) else { return }
+            self.families = families
             lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentFamiliesRefresh(generation) else { return }
             lastError = error.localizedDescription
         }
+        finishFamiliesRefreshIfCurrent(generation)
     }
 
     func refreshChannels() async {
         guard let workspaceId, state == .ready else { return }
+        let generation = nextChannelsRefreshGeneration()
+        channelsRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runChannelsRefresh(workspaceId: workspaceId, generation: generation)
+        }
+        channelsRefreshTask = task
+        await task.value
+    }
+
+    private func runChannelsRefresh(workspaceId: String, generation: Int) async {
         do {
-            channels = try await client.listChannels(workspaceId: workspaceId)
+            let channels = try await listChannelsOperation(workspaceId)
+            try Task.checkCancellation()
+            guard isCurrentChannelsRefresh(generation) else { return }
+            self.channels = channels
             lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentChannelsRefresh(generation) else { return }
             lastError = error.localizedDescription
         }
+        finishChannelsRefreshIfCurrent(generation)
     }
 
     func refreshCalendar(from: Date, to: Date) async {
@@ -192,32 +284,117 @@ final class PublishingWorkspaceStore: ObservableObject {
 
     func connect(familyId: String, payload: [String: String]) async throws -> ClawJSPublishingClient.ChannelAccount {
         guard let workspaceId else { throw ClawJSPublishingClient.Error.serviceNotReady }
-        let account = try await client.connectChannel(
-            workspaceId: workspaceId,
-            familyId: familyId,
-            payload: payload
-        )
-        channels.append(account)
-        return account
+        let generation = nextConnectGeneration(key: familyId)
+        connectTasks[familyId]?.cancel()
+        let task = Task<Result<ClawJSPublishingClient.ChannelAccount, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runConnect(
+                key: familyId,
+                generation: generation,
+                workspaceId: workspaceId,
+                familyId: familyId,
+                payload: payload
+            )
+        }
+        connectTasks[familyId] = task
+        switch await task.value {
+        case .success(let account): return account
+        case .failure(let error): throw error
+        }
+    }
+
+    private func runConnect(
+        key: String,
+        generation: Int,
+        workspaceId: String,
+        familyId: String,
+        payload: [String: String]
+    ) async -> Result<ClawJSPublishingClient.ChannelAccount, Swift.Error> {
+        do {
+            let account = try await connectChannelOperation(
+                workspaceId,
+                familyId,
+                payload
+            )
+            try Task.checkCancellation()
+            guard isCurrentConnect(key: key, generation: generation) else { return .failure(CancellationError()) }
+            upsertChannel(account)
+            lastError = nil
+            finishConnectIfCurrent(key: key, generation: generation)
+            return .success(account)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentConnect(key: key, generation: generation) else { return .failure(CancellationError()) }
+            lastError = error.localizedDescription
+            finishConnectIfCurrent(key: key, generation: generation)
+            return .failure(error)
+        }
     }
 
     func disconnect(account: ClawJSPublishingClient.ChannelAccount) async {
         guard let workspaceId else { return }
+        let key = "disconnect:\(account.id)"
+        let generation = nextChannelActionGeneration(key: key)
+        channelActionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runDisconnect(key: key, generation: generation, workspaceId: workspaceId, account: account)
+        }
+        channelActionTasks[key] = task
+        await task.value
+    }
+
+    private func runDisconnect(
+        key: String,
+        generation: Int,
+        workspaceId: String,
+        account: ClawJSPublishingClient.ChannelAccount
+    ) async {
         do {
-            _ = try await client.disconnectChannel(workspaceId: workspaceId, accountId: account.id)
+            _ = try await disconnectChannelOperation(workspaceId, account.id)
+            try Task.checkCancellation()
+            guard isCurrentChannelAction(key: key, generation: generation) else { return }
             channels.removeAll { $0.id == account.id }
+            lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentChannelAction(key: key, generation: generation) else { return }
             lastError = error.localizedDescription
         }
+        finishChannelActionIfCurrent(key: key, generation: generation)
     }
 
     func probe(account: ClawJSPublishingClient.ChannelAccount) async {
         guard let workspaceId else { return }
+        let key = "probe:\(account.id)"
+        let generation = nextChannelActionGeneration(key: key)
+        channelActionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runProbe(key: key, generation: generation, workspaceId: workspaceId, account: account)
+        }
+        channelActionTasks[key] = task
+        await task.value
+    }
+
+    private func runProbe(
+        key: String,
+        generation: Int,
+        workspaceId: String,
+        account: ClawJSPublishingClient.ChannelAccount
+    ) async {
         do {
-            _ = try await client.probeChannel(workspaceId: workspaceId, accountId: account.id)
+            _ = try await probeChannelOperation(workspaceId, account.id)
+            try Task.checkCancellation()
+            guard isCurrentChannelAction(key: key, generation: generation) else { return }
+            lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentChannelAction(key: key, generation: generation) else { return }
             lastError = error.localizedDescription
         }
+        finishChannelActionIfCurrent(key: key, generation: generation)
     }
 
     @discardableResult
@@ -256,6 +433,42 @@ final class PublishingWorkspaceStore: ObservableObject {
         }
     }
 
+    private func upsertChannel(_ account: ClawJSPublishingClient.ChannelAccount) {
+        if let index = channels.firstIndex(where: { $0.id == account.id }) {
+            channels[index] = account
+        } else {
+            channels.append(account)
+        }
+    }
+
+    private func nextFamiliesRefreshGeneration() -> Int {
+        familiesRefreshGeneration += 1
+        return familiesRefreshGeneration
+    }
+
+    private func isCurrentFamiliesRefresh(_ generation: Int) -> Bool {
+        familiesRefreshGeneration == generation
+    }
+
+    private func finishFamiliesRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentFamiliesRefresh(generation) else { return }
+        familiesRefreshTask = nil
+    }
+
+    private func nextChannelsRefreshGeneration() -> Int {
+        channelsRefreshGeneration += 1
+        return channelsRefreshGeneration
+    }
+
+    private func isCurrentChannelsRefresh(_ generation: Int) -> Bool {
+        channelsRefreshGeneration == generation
+    }
+
+    private func finishChannelsRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentChannelsRefresh(generation) else { return }
+        channelsRefreshTask = nil
+    }
+
     private func nextCalendarRefreshGeneration() -> Int {
         calendarRefreshGeneration += 1
         return calendarRefreshGeneration
@@ -268,5 +481,35 @@ final class PublishingWorkspaceStore: ObservableObject {
     private func finishCalendarRefreshIfCurrent(_ generation: Int) {
         guard isCurrentCalendarRefresh(generation) else { return }
         calendarRefreshTask = nil
+    }
+
+    private func nextConnectGeneration(key: String) -> Int {
+        let generation = (connectGenerations[key] ?? 0) + 1
+        connectGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentConnect(key: String, generation: Int) -> Bool {
+        connectGenerations[key] == generation
+    }
+
+    private func finishConnectIfCurrent(key: String, generation: Int) {
+        guard isCurrentConnect(key: key, generation: generation) else { return }
+        connectTasks.removeValue(forKey: key)
+    }
+
+    private func nextChannelActionGeneration(key: String) -> Int {
+        let generation = (channelActionGenerations[key] ?? 0) + 1
+        channelActionGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentChannelAction(key: String, generation: Int) -> Bool {
+        channelActionGenerations[key] == generation
+    }
+
+    private func finishChannelActionIfCurrent(key: String, generation: Int) {
+        guard isCurrentChannelAction(key: key, generation: generation) else { return }
+        channelActionTasks.removeValue(forKey: key)
     }
 }
