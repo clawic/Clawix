@@ -74,6 +74,136 @@ struct AppSwiftSurfaceRunnerPlan: Equatable, Hashable {
     var allowedCapabilities: [String]
 }
 
+struct AppSwiftSurfaceRunnerLaunch: Equatable, Hashable {
+    var plan: AppSwiftSurfaceRunnerPlan
+    var executablePath: String
+    var timeoutSeconds: TimeInterval
+
+    init(
+        plan: AppSwiftSurfaceRunnerPlan,
+        executablePath: String,
+        timeoutSeconds: TimeInterval = 10
+    ) {
+        self.plan = plan
+        self.executablePath = executablePath
+        self.timeoutSeconds = timeoutSeconds
+    }
+}
+
+struct AppSwiftSurfaceRunnerResult: Equatable, Hashable {
+    var pid: Int32?
+    var exitCode: Int32?
+    var timedOut: Bool
+    var stderr: String
+
+    init(pid: Int32? = nil, exitCode: Int32? = nil, timedOut: Bool = false, stderr: String = "") {
+        self.pid = pid
+        self.exitCode = exitCode
+        self.timedOut = timedOut
+        self.stderr = stderr
+    }
+}
+
+enum AppSwiftSurfaceRunnerState: Equatable, Hashable {
+    case idle
+    case launching
+    case running(pid: Int32)
+    case exited(code: Int32)
+    case crashed(reason: String)
+    case timedOut(seconds: TimeInterval)
+}
+
+protocol AppSwiftSurfaceRunnerExecuting {
+    func run(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerResult
+}
+
+final class AppSwiftSurfaceRunnerSupervisor {
+    private let executor: AppSwiftSurfaceRunnerExecuting
+    private(set) var state: AppSwiftSurfaceRunnerState = .idle
+
+    init(executor: AppSwiftSurfaceRunnerExecuting = AppSwiftSurfaceProcessExecutor()) {
+        self.executor = executor
+    }
+
+    @discardableResult
+    func launch(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerState {
+        guard launch.plan.outOfProcess else {
+            state = .crashed(reason: "Swift surface runner must be out-of-process.")
+            return state
+        }
+        state = .launching
+        let result = executor.run(launch)
+        state = Self.classify(result: result, timeoutSeconds: launch.timeoutSeconds)
+        return state
+    }
+
+    static func classify(
+        result: AppSwiftSurfaceRunnerResult,
+        timeoutSeconds: TimeInterval
+    ) -> AppSwiftSurfaceRunnerState {
+        if result.timedOut {
+            return .timedOut(seconds: timeoutSeconds)
+        }
+        if let exitCode = result.exitCode, exitCode == 0 {
+            return .exited(code: exitCode)
+        }
+        let reason = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let exitCode = result.exitCode {
+            return .crashed(reason: reason.isEmpty ? "Swift surface runner exited with status \(exitCode)." : reason)
+        }
+        return .crashed(reason: reason.isEmpty ? "Swift surface runner did not return an exit status." : reason)
+    }
+}
+
+struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
+    func run(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerResult {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: launch.executablePath)
+        process.arguments = [
+            "--manifest", launch.plan.manifestPath,
+            "--protocol-version", String(launch.plan.protocolVersion),
+            "--app-slug", launch.plan.appSlug
+        ]
+
+        let stderr = Pipe()
+        process.standardError = stderr
+
+        do {
+            try process.run()
+        } catch {
+            return AppSwiftSurfaceRunnerResult(
+                pid: nil,
+                exitCode: nil,
+                timedOut: false,
+                stderr: "spawn failed: \(error.localizedDescription)"
+            )
+        }
+
+        let finished = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in finished.signal() }
+        let timeout = DispatchTimeInterval.milliseconds(Int(launch.timeoutSeconds * 1_000))
+        let deadline = DispatchTime.now() + timeout
+        if finished.wait(timeout: deadline) == .timedOut {
+            process.terminate()
+            return AppSwiftSurfaceRunnerResult(
+                pid: process.processIdentifier,
+                exitCode: nil,
+                timedOut: true,
+                stderr: "Swift surface runner timed out."
+            )
+        }
+
+        let data = stderr.fileHandleForReading.readDataToEndOfFile()
+        let stderrText = String(data: data, encoding: .utf8) ?? ""
+        return AppSwiftSurfaceRunnerResult(
+            pid: process.processIdentifier,
+            exitCode: process.terminationStatus,
+            timedOut: false,
+            stderr: stderrText
+        )
+    }
+}
+
 enum AppSwiftSurfaceContract {
     static let protocolVersion = 1
 

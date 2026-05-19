@@ -239,6 +239,52 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertNoThrow(try AppSwiftSurfaceContract.validate(manifest: manifest, for: app))
     }
 
+    func testSwiftSurfaceRunnerSupervisorClassifiesCleanExit() throws {
+        let launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: 0)
+        )
+        let supervisor = AppSwiftSurfaceRunnerSupervisor(executor: RecordingSwiftRunnerExecutor(result: launch.result))
+
+        let state = supervisor.launch(launch.launch)
+
+        XCTAssertEqual(state, .exited(code: 0))
+        XCTAssertEqual(supervisor.state, .exited(code: 0))
+    }
+
+    func testSwiftSurfaceRunnerSupervisorConvertsCrashToSurfaceState() throws {
+        let launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: 9, stderr: "runner crashed")
+        )
+        let supervisor = AppSwiftSurfaceRunnerSupervisor(executor: RecordingSwiftRunnerExecutor(result: launch.result))
+
+        let state = supervisor.launch(launch.launch)
+
+        XCTAssertEqual(state, .crashed(reason: "runner crashed"))
+    }
+
+    func testSwiftSurfaceRunnerSupervisorConvertsTimeoutToSurfaceState() throws {
+        let launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: nil, timedOut: true)
+        )
+        let supervisor = AppSwiftSurfaceRunnerSupervisor(executor: RecordingSwiftRunnerExecutor(result: launch.result))
+
+        let state = supervisor.launch(launch.launch)
+
+        XCTAssertEqual(state, .timedOut(seconds: 3))
+    }
+
+    func testSwiftSurfaceRunnerSupervisorRejectsInProcessPlans() throws {
+        var launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: 0)
+        ).launch
+        launch.plan.outOfProcess = false
+        let supervisor = AppSwiftSurfaceRunnerSupervisor(executor: RecordingSwiftRunnerExecutor(result: .init(pid: 42, exitCode: 0)))
+
+        let state = supervisor.launch(launch)
+
+        XCTAssertEqual(state, .crashed(reason: "Swift surface runner must be out-of-process."))
+    }
+
     func testImportedOrUnknownCapabilitiesRequireReview() {
         let record = AppRecord(
             slug: "imported-panel",
@@ -426,5 +472,49 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         return defaults
+    }
+
+    private func makeSwiftRunnerLaunch(
+        result: AppSwiftSurfaceRunnerResult
+    ) throws -> (launch: AppSwiftSurfaceRunnerLaunch, result: AppSwiftSurfaceRunnerResult) {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(
+                kind: .button,
+                text: "Search",
+                action: AppSwiftSurfaceAction(
+                    invocation: .sdkRead,
+                    capabilityId: "search.query",
+                    operation: "search.query"
+                )
+            ),
+            requestedCapabilities: ["search.query"]
+        )
+        let plan = try AppSwiftSurfaceContract.runnerPlan(
+            app: app,
+            manifest: manifest,
+            manifestPath: "/tmp/swift-dashboard/surface.json"
+        )
+        return (
+            AppSwiftSurfaceRunnerLaunch(
+                plan: plan,
+                executablePath: "/tmp/clawix-swift-surface-runner",
+                timeoutSeconds: 3
+            ),
+            result
+        )
+    }
+}
+
+private struct RecordingSwiftRunnerExecutor: AppSwiftSurfaceRunnerExecuting {
+    let result: AppSwiftSurfaceRunnerResult
+
+    func run(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerResult {
+        result
     }
 }
