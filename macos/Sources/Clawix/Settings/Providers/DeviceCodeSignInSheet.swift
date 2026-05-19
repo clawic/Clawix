@@ -9,17 +9,7 @@ struct DeviceCodeSignInSheet: View {
     let flavor: DeviceCodeFlavor
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var store = AIAccountStoreObservable.shared
-
-    @State private var deviceCode: GitHubCopilotDeviceFlow.DeviceCode?
-    @State private var error: String?
-    @State private var phase: Phase = .requesting
-
-    enum Phase {
-        case requesting
-        case waiting
-        case done
-    }
+    @StateObject private var coordinator = DeviceCodeSignInCoordinator()
 
     var body: some View {
         VStack(spacing: 18) {
@@ -28,14 +18,14 @@ struct DeviceCodeSignInSheet: View {
                 .font(BodyFont.system(size: 16, weight: .semibold))
                 .foregroundColor(Palette.textPrimary)
 
-            switch phase {
+            switch coordinator.phase {
             case .requesting:
                 ProgressView()
                 Text("Requesting device code…")
                     .font(BodyFont.system(size: 12))
                     .foregroundColor(Palette.textSecondary)
             case .waiting:
-                if let deviceCode {
+                if let deviceCode = coordinator.deviceCode {
                     waitingContent(deviceCode)
                 }
             case .done:
@@ -44,7 +34,7 @@ struct DeviceCodeSignInSheet: View {
                     .foregroundColor(Color.green)
             }
 
-            if let error {
+            if let error = coordinator.error {
                 Text(error)
                     .font(BodyFont.system(size: 11.5))
                     .foregroundColor(Color.red.opacity(0.9))
@@ -59,7 +49,14 @@ struct DeviceCodeSignInSheet: View {
         .padding(28)
         .frame(width: 380)
         .background(Palette.background)
-        .onAppear { Task { await runFlow() } }
+        .onAppear {
+            coordinator.start {
+                dismiss()
+            }
+        }
+        .onDisappear {
+            coordinator.cancel()
+        }
     }
 
     @ViewBuilder
@@ -97,26 +94,4 @@ struct DeviceCodeSignInSheet: View {
         }
     }
 
-    private func runFlow() async {
-        let flow = GitHubCopilotDeviceFlow()
-        do {
-            phase = .requesting
-            let device = try await flow.requestDeviceCode()
-            deviceCode = device
-            phase = .waiting
-            NSWorkspace.shared.open(device.verificationUri)
-            let accessToken = try await flow.pollAccessToken(
-                deviceCode: device.deviceCode,
-                interval: device.interval,
-                expiresAt: device.expiresAt
-            )
-            _ = try flow.persistAccount(githubAccessToken: accessToken, accountEmail: nil)
-            store.refresh()
-            phase = .done
-            try? await Task.sleep(nanoseconds: 800_000_000)
-            dismiss()
-        } catch {
-            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
-    }
 }
