@@ -338,6 +338,33 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "adr-docs-adr-0019-sdk-first-custom-surfaces-and-nonblocking-shell",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0019: SDK-first custom surfaces and nonblocking shell mirror",
+        "0019-sdk-first-custom-surfaces-and-nonblocking-shell",
+        "ADR 0019"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0019: SDK-first custom surfaces and nonblocking shell mirror",
+          "expectPath": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "owner": "clawix",
@@ -2217,31 +2244,6 @@
       "reviewDate": "2026-08-18"
     },
     {
-      "id": "guard-scripts-ui-private-evidence-plan-check",
-      "kind": "ui-governance",
-      "owner": "clawix",
-      "canonicalSource": "scripts/ui_private_evidence_plan_check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "ui_private_evidence_plan_check",
-        "Ui Private Evidence Plan Check"
-      ],
-      "searchQueries": [
-        {
-          "query": "ui_private_evidence_plan_check",
-          "expectPath": "scripts/ui_private_evidence_plan_check.mjs"
-        }
-      ],
-      "guard": "scripts/ui_private_evidence_plan_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
       "id": "guard-scripts-ui-private-capture-runner-check",
       "kind": "ui-governance",
       "owner": "clawix",
@@ -2263,6 +2265,31 @@
         }
       ],
       "guard": "scripts/ui_private_capture_runner_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-private-evidence-plan-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_evidence_plan_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_evidence_plan_check",
+        "Ui Private Evidence Plan Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_evidence_plan_check",
+          "expectPath": "scripts/ui_private_evidence_plan_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_evidence_plan_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
