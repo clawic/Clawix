@@ -12,6 +12,8 @@ import Combine
 /// directly.
 @MainActor
 final class LocalModelsService: ObservableObject {
+    typealias PullOperation = @MainActor (String) -> AsyncThrowingStream<LocalModelsClient.PullEvent, Error>
+    typealias RefreshModelListOperation = @MainActor () async -> Void
 
     static let shared = LocalModelsService()
 
@@ -43,7 +45,7 @@ final class LocalModelsService: ObservableObject {
     /// relaunches.
     @Published var defaultModel: String? {
         didSet {
-            UserDefaults.standard.set(defaultModel, forKey: Self.defaultModelKey)
+            defaults.set(defaultModel, forKey: Self.defaultModelKey)
         }
     }
 
@@ -51,12 +53,12 @@ final class LocalModelsService: ObservableObject {
     /// start. Format accepted by upstream: durations like "5m", "1h",
     /// "-1" (forever), "0" (immediate).
     @Published var keepAlive: String {
-        didSet { UserDefaults.standard.set(keepAlive, forKey: Self.keepAliveKey) }
+        didSet { defaults.set(keepAlive, forKey: Self.keepAliveKey) }
     }
 
     /// Default `num_ctx`. Persisted; applied at next daemon start.
     @Published var contextLength: Int {
-        didSet { UserDefaults.standard.set(contextLength, forKey: Self.contextLengthKey) }
+        didSet { defaults.set(contextLength, forKey: Self.contextLengthKey) }
     }
 
     // MARK: - Persistence keys
@@ -70,17 +72,33 @@ final class LocalModelsService: ObservableObject {
     private let installer = LocalModelsRuntimeInstaller.shared
     private let daemon = LocalModelsDaemon.shared
     private let client = LocalModelsClient.shared
+    private let defaults: UserDefaults
+    private let pullOperation: PullOperation
+    private let refreshModelListOperation: RefreshModelListOperation?
 
     private var cancellables: Set<AnyCancellable> = []
     private var pollTask: Task<Void, Never>?
+    private var pullTasks: [String: Task<Void, Never>] = [:]
+    private var pullGenerations: [String: Int] = [:]
 
-    private init() {
-        let defaults = UserDefaults.standard
+    init(
+        defaults: UserDefaults = .standard,
+        bindRuntimeState: Bool = true,
+        pullOperation: PullOperation? = nil,
+        refreshModelListOperation: RefreshModelListOperation? = nil
+    ) {
+        self.defaults = defaults
+        self.pullOperation = pullOperation ?? { model in
+            LocalModelsClient.shared.pull(model: model)
+        }
+        self.refreshModelListOperation = refreshModelListOperation
         self.defaultModel = defaults.string(forKey: Self.defaultModelKey)
         self.keepAlive = defaults.string(forKey: Self.keepAliveKey) ?? "5m"
         self.contextLength = defaults.integer(forKey: Self.contextLengthKey) > 0
             ? defaults.integer(forKey: Self.contextLengthKey)
             : 4_096
+
+        guard bindRuntimeState else { return }
 
         // Mirror the lower-layer publishers so the UI only has to bind
         // to one ObservableObject.
@@ -120,6 +138,7 @@ final class LocalModelsService: ObservableObject {
     /// "Toggle OFF". Stops the daemon. The runtime stays installed so a
     /// re-enable doesn't have to re-download.
     func disable() {
+        cancelAllPulls()
         daemon.stop()
     }
 
@@ -130,6 +149,10 @@ final class LocalModelsService: ObservableObject {
     // MARK: - Model actions
 
     func refreshModelList() async {
+        if let refreshModelListOperation {
+            await refreshModelListOperation()
+            return
+        }
         guard daemon.isRunning else { return }
         do {
             installedModels = try await client.tags()
@@ -145,12 +168,40 @@ final class LocalModelsService: ObservableObject {
     /// retained so the UI can show "failed, retry"; clear via
     /// `dismissDownloadError(for:)`.
     func pull(model: String) async {
+        let generation = nextPullGeneration(for: model)
+        pullTasks[model]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runPull(model: model, generation: generation)
+        }
+        pullTasks[model] = task
+        await task.value
+    }
+
+    func cancelPull(model: String) {
+        bumpPullGeneration(for: model)
+        pullTasks[model]?.cancel()
+        pullTasks[model] = nil
+        if case .running = downloads[model]?.state {
+            downloads[model] = nil
+        }
+    }
+
+    func cancelAllPulls() {
+        for model in Array(pullTasks.keys) {
+            cancelPull(model: model)
+        }
+    }
+
+    private func runPull(model: String, generation: Int) async {
         downloads[model] = Download(
             model: model,
             state: .running(progress: 0, status: "starting…")
         )
         do {
-            for try await event in client.pull(model: model) {
+            for try await event in pullOperation(model) {
+                try Task.checkCancellation()
+                guard isCurrentPull(model: model, generation: generation) else { return }
                 let total = event.total ?? 1
                 let completed = event.completed ?? 0
                 let progress = total > 0 ? Double(completed) / Double(total) : 0
@@ -159,14 +210,23 @@ final class LocalModelsService: ObservableObject {
                     state: .running(progress: progress, status: event.status ?? "")
                 )
             }
+            try Task.checkCancellation()
+            guard isCurrentPull(model: model, generation: generation) else { return }
             downloads[model] = nil
             await refreshModelList()
             if defaultModel == nil { defaultModel = model }
+        } catch is CancellationError {
+            guard isCurrentPull(model: model, generation: generation) else { return }
+            downloads[model] = nil
         } catch {
+            guard isCurrentPull(model: model, generation: generation) else { return }
             downloads[model] = Download(
                 model: model,
                 state: .failed(error.localizedDescription)
             )
+        }
+        if isCurrentPull(model: model, generation: generation) {
+            pullTasks[model] = nil
         }
     }
 
@@ -228,6 +288,20 @@ final class LocalModelsService: ObservableObject {
     private func refreshDaemonStatus() async {
         guard daemon.isRunning else { return }
         runtimeVersion = (try? await client.version())
+    }
+
+    private func nextPullGeneration(for model: String) -> Int {
+        let generation = (pullGenerations[model] ?? 0) + 1
+        pullGenerations[model] = generation
+        return generation
+    }
+
+    private func bumpPullGeneration(for model: String) {
+        pullGenerations[model] = (pullGenerations[model] ?? 0) + 1
+    }
+
+    private func isCurrentPull(model: String, generation: Int) -> Bool {
+        pullGenerations[model] == generation
     }
 
     // MARK: - Wire types for the UI

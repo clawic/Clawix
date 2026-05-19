@@ -142,11 +142,17 @@ extension LocalModelsPage {
             }
             switch download.state {
             case .running(let progress, let status):
+                HStack {
+                    Text(status)
+                        .font(BodyFont.system(size: 10.5))
+                        .foregroundColor(Palette.textSecondary)
+                    Spacer()
+                    Button("Cancel") { service.cancelPull(model: download.model) }
+                        .buttonStyle(.borderless)
+                        .font(BodyFont.system(size: 11))
+                }
                 ProgressView(value: progress)
                     .progressViewStyle(.linear)
-                Text(status)
-                    .font(BodyFont.system(size: 10.5))
-                    .foregroundColor(Palette.textSecondary)
             case .failed(let message):
                 Text(message)
                     .font(BodyFont.system(size: 11))
