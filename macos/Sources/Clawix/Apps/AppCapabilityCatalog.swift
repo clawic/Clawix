@@ -4,6 +4,9 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var id: String
     var title: String
     var summary: String
+    var inputSchemaRef: String? = nil
+    var outputSchemaRef: String? = nil
+    var eventSchemaRefs: AppCapabilityEventSchemaRefs? = nil
     var customAppAccess: AppCapabilityAccess
     var redactionPolicyRef: String? = nil
     var riskTier: AppCapabilityRiskTier
@@ -12,6 +15,12 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var touchesNativeHost: Bool
     var touchesPhysicalWorld: Bool
     var destructive: Bool
+}
+
+struct AppCapabilityEventSchemaRefs: Codable, Equatable, Hashable {
+    var cancel: String?
+    var progress: String?
+    var partial: String?
 }
 
 enum AppCapabilityAccess: String, Codable, Equatable, Hashable {
@@ -48,12 +57,30 @@ enum AppActivationGate: Equatable {
 
 enum AppCapabilityCatalog {
     static let source = "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+    static let searchQuerySchemaRef = "claw.search.query.v1"
+    static let searchResultsSchemaRef = "claw.search.results.v1"
+    static let dbQuerySchemaRef = "claw.db.query.v1"
+    static let dbRecordsSchemaRef = "claw.db.records.v1"
+    static let resourcesReadSchemaRef = "claw.resources.read.v1"
+    static let resourcesPayloadSchemaRef = "claw.resources.payload.v1"
+    static let requestCancelSchemaRef = "claw.customApp.request.cancel.v1"
+    static let requestProgressSchemaRef = "claw.customApp.request.progress.v1"
+    static let requestPartialSchemaRef = "claw.customApp.request.partial.v1"
+
+    static let readEventSchemaRefs = AppCapabilityEventSchemaRefs(
+        cancel: requestCancelSchemaRef,
+        progress: requestProgressSchemaRef,
+        partial: requestPartialSchemaRef
+    )
 
     static let descriptors: [AppCapabilityDescriptor] = [
         AppCapabilityDescriptor(
             id: "search.query",
             title: "Search query",
             summary: "Federated framework search through the SDK/bridge, not direct indexes.",
+            inputSchemaRef: searchQuerySchemaRef,
+            outputSchemaRef: searchResultsSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
@@ -67,6 +94,9 @@ enum AppCapabilityCatalog {
             id: "db.query",
             title: "Database query",
             summary: "Structured local collection queries through the framework contract, not direct SQLite.",
+            inputSchemaRef: dbQuerySchemaRef,
+            outputSchemaRef: dbRecordsSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
@@ -80,6 +110,9 @@ enum AppCapabilityCatalog {
             id: "resources.read",
             title: "Resource read",
             summary: "Read registered resources through resource contracts.",
+            inputSchemaRef: resourcesReadSchemaRef,
+            outputSchemaRef: resourcesPayloadSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
@@ -208,6 +241,25 @@ extension AppCapabilityDescriptor {
         if let redactionPolicyRef {
             value["redactionPolicyRef"] = redactionPolicyRef
         }
+        if let inputSchemaRef {
+            value["inputSchemaRef"] = inputSchemaRef
+        }
+        if let outputSchemaRef {
+            value["outputSchemaRef"] = outputSchemaRef
+        }
+        if let eventSchemaRefs {
+            value["eventSchemaRefs"] = eventSchemaRefs.bridgeValue
+        }
+        return value
+    }
+}
+
+extension AppCapabilityEventSchemaRefs {
+    var bridgeValue: [String: Any] {
+        var value: [String: Any] = [:]
+        if let cancel { value["cancel"] = cancel }
+        if let progress { value["progress"] = progress }
+        if let partial { value["partial"] = partial }
         return value
     }
 }
