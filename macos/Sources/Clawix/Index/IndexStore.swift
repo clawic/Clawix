@@ -29,14 +29,27 @@ final class IndexStore: ObservableObject {
     @Published var selectedSubtypeFilter: String? = nil
     @Published var fullTextQuery: String = ""
 
-    private var client: ClawJSIndexClient
+    private var client: any ClawJSIndexClienting
     private var supervisorObserver: AnyCancellable?
+    private var refreshTask: Task<Void, Never>?
+    private var entityLoadTask: Task<Void, Never>?
+    private var refreshGeneration = 0
+    private var entityLoadGeneration = 0
 
-    init() {
-        let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
-            ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
-        self.client = ClawJSIndexClient(bearerToken: token)
-        attachSupervisorObserver()
+    init(
+        client: (any ClawJSIndexClienting)? = nil,
+        attachSupervisor: Bool = true
+    ) {
+        if let client {
+            self.client = client
+        } else {
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
+                ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
+            self.client = ClawJSIndexClient(bearerToken: token)
+        }
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
     }
 
     private func attachSupervisorObserver() {
@@ -45,7 +58,7 @@ final class IndexStore: ObservableObject {
             .sink { [weak self] snapshots in
                 guard let self else { return }
                 if let snap = snapshots[.index], snap.state.isReady, self.state == .idle {
-                    Task { await self.refresh() }
+                    self.requestRefresh()
                 }
             }
     }
@@ -62,7 +75,34 @@ final class IndexStore: ObservableObject {
         state = .error(error.localizedDescription)
     }
 
+    func requestRefresh() {
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            await self?.refresh()
+        }
+    }
+
+    func requestLoadEntities() {
+        entityLoadTask?.cancel()
+        entityLoadTask = Task { @MainActor [weak self] in
+            await self?.loadEntities()
+        }
+    }
+
+    func cancelInFlightWork() {
+        refreshTask?.cancel()
+        refreshTask = nil
+        entityLoadTask?.cancel()
+        entityLoadTask = nil
+        refreshGeneration += 1
+        entityLoadGeneration += 1
+    }
+
     func refresh() async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        entityLoadTask?.cancel()
+        entityLoadGeneration += 1
         ensureToken()
         state = .loading
         do {
@@ -77,6 +117,11 @@ final class IndexStore: ObservableObject {
             let (types, countsResp, searches, monitors, runs, alertsResp, tags, collections) = try await (
                 typesTask, countsTask, searchesTask, monitorsTask, runsTask, alertsTask, tagsTask, collectionsTask
             )
+            try Task.checkCancellation()
+            guard generation == refreshGeneration else { return }
+            let entities = try await fetchEntities(limit: 500)
+            try Task.checkCancellation()
+            guard generation == refreshGeneration else { return }
             self.types = types
             var countsMap: [String: Int] = [:]
             for entry in countsResp.counts { countsMap[entry.typeName] = entry.total }
@@ -88,7 +133,7 @@ final class IndexStore: ObservableObject {
             self.unreadAlerts = alertsResp.unread
             self.tags = tags
             self.collections = collections
-            await loadEntities()
+            self.entities = entities
             for alert in alertsResp.alerts where alert.ackAt == nil {
                 let entityTitle = alert.entityId.flatMap { id in
                     self.entities.first { $0.id == id }?.title
@@ -96,19 +141,41 @@ final class IndexStore: ObservableObject {
                 IndexNotificationsBridge.shared.surface(alert, entityTitle: entityTitle)
             }
             state = .ready
+            if generation == refreshGeneration {
+                refreshTask = nil
+            }
+        } catch is CancellationError {
+            if generation == refreshGeneration {
+                state = .idle
+                refreshTask = nil
+            }
         } catch {
-            state = .error(error.localizedDescription)
+            if generation == refreshGeneration {
+                state = .error(error.localizedDescription)
+                refreshTask = nil
+            }
         }
     }
 
     func loadEntities() async {
+        entityLoadGeneration += 1
+        let generation = entityLoadGeneration
         ensureToken()
-        var payload: [String: AnyJSON] = ["limit": .number(500)]
-        if let typeFilter = selectedTypeFilter { payload["type"] = .string(typeFilter) }
         do {
-            self.entities = try await client.listEntities(payload: payload)
+            let entities = try await fetchEntities(limit: 500)
+            try Task.checkCancellation()
+            guard generation == entityLoadGeneration else { return }
+            self.entities = entities
+            entityLoadTask = nil
+        } catch is CancellationError {
+            if generation == entityLoadGeneration {
+                entityLoadTask = nil
+            }
         } catch {
-            self.entities = []
+            if generation == entityLoadGeneration {
+                self.entities = []
+                entityLoadTask = nil
+            }
         }
     }
 
@@ -117,29 +184,25 @@ final class IndexStore: ObservableObject {
         let trimmed = fullTextQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return entities }
         do {
-            struct Response: Decodable { let entities: [ClawJSIndexClient.Entity] }
-            return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[ClawJSIndexClient.Entity], Swift.Error>) in
-                Task {
-                    do {
-                        let raw = try await client.listEntities(payload: [
-                            "limit": .number(200),
-                            "type": selectedTypeFilter.map { AnyJSON.string($0) } ?? .null,
-                        ].compactMapValues { value -> AnyJSON? in
-                            if case .null = value { return nil }
-                            return value
-                        })
-                        continuation.resume(returning: raw.filter { entity in
-                            let haystack = (entity.title ?? "") + " " + (entity.sourceUrl ?? "")
-                            return haystack.localizedCaseInsensitiveContains(trimmed)
-                        })
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
+            let raw = try await fetchEntities(limit: 200)
+            try Task.checkCancellation()
+            return raw.filter { entity in
+                let haystack = (entity.title ?? "") + " " + (entity.sourceUrl ?? "")
+                return haystack.localizedCaseInsensitiveContains(trimmed)
             }
+        } catch is CancellationError {
+            return entities
         } catch {
             return entities
         }
+    }
+
+    private func fetchEntities(limit: Double) async throws -> [ClawJSIndexClient.Entity] {
+        var payload: [String: AnyJSON] = ["limit": .number(limit)]
+        if let typeFilter = selectedTypeFilter {
+            payload["type"] = .string(typeFilter)
+        }
+        return try await client.listEntities(payload: payload)
     }
 
     func detail(for id: String) async throws -> ClawJSIndexClient.EntityDetailResponse {

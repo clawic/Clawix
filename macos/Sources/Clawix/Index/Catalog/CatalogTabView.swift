@@ -80,7 +80,7 @@ private struct TypeSidebar: View {
                     accent: .white.opacity(0.7)
                 ) {
                     store.selectedTypeFilter = nil
-                    Task { await store.loadEntities() }
+                    store.requestLoadEntities()
                 }
                 .padding(.top, 8)
 
@@ -94,7 +94,7 @@ private struct TypeSidebar: View {
                         accent: meta.accent
                     ) {
                         store.selectedTypeFilter = meta.typeName
-                        Task { await store.loadEntities() }
+                        store.requestLoadEntities()
                     }
                 }
 
@@ -109,7 +109,7 @@ private struct TypeSidebar: View {
                             accent: meta.accent
                         ) {
                             store.selectedTypeFilter = meta.typeName
-                            Task { await store.loadEntities() }
+                            store.requestLoadEntities()
                         }
                     }
                 }

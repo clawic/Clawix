@@ -1,5 +1,41 @@
 import Foundation
 
+protocol ClawJSIndexClienting {
+    var bearerToken: String? { get set }
+
+    func listTypes() async throws -> [ClawJSIndexClient.EntityType]
+    func countsByType() async throws -> ClawJSIndexClient.CountsResponse
+    func listEntities(payload: [String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity]
+    func getEntity(id: String) async throws -> ClawJSIndexClient.EntityDetailResponse
+    func history(entityId: String, field: String) async throws -> [ClawJSIndexClient.HistoryPoint]
+    func listSearches() async throws -> [ClawJSIndexClient.Search]
+    func createSearch(payload: [String: AnyJSON]) async throws -> ClawJSIndexClient.Search
+    func deleteSearch(id: String) async throws
+    func runSearch(id: String, prompt: String?) async throws -> ClawJSIndexClient.Run
+    func listMonitors() async throws -> [ClawJSIndexClient.Monitor]
+    func createMonitor(payload: [String: AnyJSON]) async throws -> ClawJSIndexClient.Monitor
+    func fireMonitor(id: String) async throws -> ClawJSIndexClient.Run
+    func listRuns(monitorId: String?) async throws -> [ClawJSIndexClient.Run]
+    func getRun(id: String) async throws -> ClawJSIndexClient.RunDetail
+    func listAlerts() async throws -> ClawJSIndexClient.AlertsResponse
+    func ackAlert(id: String) async throws
+    func listTags() async throws -> [ClawJSIndexClient.Tag]
+    func applyTag(entityId: String, name: String, color: String?) async throws -> ClawJSIndexClient.Tag
+    func listCollections() async throws -> [ClawJSIndexClient.Collection]
+    func createCollection(name: String, description: String?) async throws -> ClawJSIndexClient.Collection
+    func addToCollection(collectionId: String, entityId: String) async throws
+}
+
+extension ClawJSIndexClienting {
+    func runSearch(id: String) async throws -> ClawJSIndexClient.Run {
+        try await runSearch(id: id, prompt: nil)
+    }
+
+    func listRuns() async throws -> [ClawJSIndexClient.Run] {
+        try await listRuns(monitorId: nil)
+    }
+}
+
 /// HTTP client for `@clawjs/index` running on the registered search port. Mirrors
 /// `ClawJSDatabaseClient` and talks to the routes documented in
 /// `packages/clawjs-index/src/app.ts`.
@@ -455,6 +491,8 @@ struct ClawJSIndexClient {
         }
     }
 }
+
+extension ClawJSIndexClient: ClawJSIndexClienting {}
 
 /// Coerces our `AnyJSON` enum (and dictionaries thereof) into the
 /// `Any` graph `JSONSerialization` accepts.

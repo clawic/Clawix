@@ -30,7 +30,7 @@ struct IndexScreen: View {
                 store: store,
                 activeTab: $activeTab,
                 onCreateSearch: { showCreateSearchSheet = true },
-                onRefresh: { Task { await store.refresh() } }
+                onRefresh: { store.requestRefresh() }
             )
             CardDivider()
             Group {
@@ -52,8 +52,11 @@ struct IndexScreen: View {
         .background(Color.black.opacity(0.001))
         .task {
             if store.state == .idle {
-                await store.refresh()
+                store.requestRefresh()
             }
+        }
+        .onDisappear {
+            store.cancelInFlightWork()
         }
         .sheet(isPresented: $showCreateSearchSheet) {
             SearchEditorSheet(store: store, onDismiss: { showCreateSearchSheet = false })
