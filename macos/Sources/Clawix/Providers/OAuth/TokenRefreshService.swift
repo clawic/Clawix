@@ -10,28 +10,53 @@ final class TokenRefreshService: ObservableObject {
     static let shared = TokenRefreshService()
 
     private var timer: Timer?
+    private var tickTask: Task<Void, Never>?
     private var failures: [UUID: Int] = [:]
     private let maxFailures = 3
     private let lookahead: TimeInterval = 5 * 60
-    private let interval: TimeInterval = 60
+    private let interval: TimeInterval
+    private let tickOperation: (@MainActor () async -> Void)?
+
+    init(interval: TimeInterval = 60, tickOperation: (@MainActor () async -> Void)? = nil) {
+        self.interval = interval
+        self.tickOperation = tickOperation
+    }
 
     func start() {
         guard timer == nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.tick() }
+            Task { @MainActor in self?.scheduleTick() }
         }
-        Task { @MainActor in await tick() }
+        scheduleTick()
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        tickTask?.cancel()
+        tickTask = nil
+    }
+
+    private func scheduleTick() {
+        tickTask?.cancel()
+        tickTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await tick()
+            if !Task.isCancelled {
+                tickTask = nil
+            }
+        }
     }
 
     func tick() async {
+        if let tickOperation {
+            await tickOperation()
+            return
+        }
         let store = AIAccountSecretsStore.shared
         let accounts = (try? store.listAccounts()) ?? []
         for account in accounts {
+            guard !Task.isCancelled else { return }
             guard case .oauth(let flavor) = account.authMethod, account.isEnabled else { continue }
             do {
                 guard try store.hasCredentialField(accountId: account.id, fieldName: "refresh_token") else { continue }
@@ -44,6 +69,7 @@ final class TokenRefreshService: ObservableObject {
                 case .anthropicClaudeAi:
                     tokens = try await AnthropicOAuthStrategy().refresh(account: account)
                 }
+                try Task.checkCancellation()
                 guard let refreshedRefreshToken = tokens.refreshToken else {
                     throw AIClientError.provider("OAuth refresh did not return a replacement refresh token.")
                 }
@@ -70,6 +96,7 @@ final class TokenRefreshService: ObservableObject {
                 }
             }
         }
+        guard !Task.isCancelled else { return }
         AIAccountStoreObservable.shared.refresh()
     }
 }
