@@ -17,16 +17,23 @@ final class MCPClawJSAdapterTests: XCTestCase {
         XCTAssertEqual(persistence.savedServers.map(\.tomlIdentifier), ["browser", "notes"])
     }
 
-    func testStoreCancelSuppressesLateMCPReload() async {
+    func testStoreCancelCancelsInFlightMCPReload() async {
         let loadStarted = expectation(description: "MCP load started")
-        let loadReturned = expectation(description: "MCP load returned after teardown")
+        let loadCancelled = expectation(description: "MCP load cancelled after teardown")
+        let loadReturned = expectation(description: "MCP load should not return after teardown")
+        loadReturned.isInverted = true
         let persistence = FakeMCPPersistence(servers: [
             MCPServerConfig(name: "stale", command: "node")
         ])
         persistence.onLoad = {
             loadStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            loadReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                loadReturned.fulfill()
+            } catch is CancellationError {
+                loadCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = MCPServersStore(persistence: persistence, autoLoad: false)
 
@@ -34,23 +41,30 @@ final class MCPClawJSAdapterTests: XCTestCase {
         await fulfillment(of: [loadStarted], timeout: 1)
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [loadReturned], timeout: 1)
+        await fulfillment(of: [loadCancelled, loadReturned], timeout: 1)
         await task.value
         XCTAssertTrue(store.servers.isEmpty)
         XCTAssertFalse(store.isLoading)
         XCTAssertNil(store.lastError)
     }
 
-    func testSecondMCPReloadSuppressesFirstStaleResult() async {
+    func testSecondMCPReloadCancelsFirstStaleResult() async {
         let staleStarted = expectation(description: "Stale MCP load started")
-        let staleReturned = expectation(description: "Stale MCP load returned")
+        let staleCancelled = expectation(description: "Stale MCP load cancelled")
+        let staleReturned = expectation(description: "Stale MCP load should not return")
+        staleReturned.isInverted = true
         let freshReturned = expectation(description: "Fresh MCP load returned")
         let persistence = SequencedMCPPersistence { call in
             if call == 1 {
                 staleStarted.fulfill()
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                staleReturned.fulfill()
-                return [MCPServerConfig(name: "stale", command: "node")]
+                do {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                    staleReturned.fulfill()
+                    return [MCPServerConfig(name: "stale", command: "node")]
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
             }
             freshReturned.fulfill()
             return [MCPServerConfig(name: "fresh", command: "node")]
@@ -61,11 +75,39 @@ final class MCPClawJSAdapterTests: XCTestCase {
         await fulfillment(of: [staleStarted], timeout: 1)
         let second = Task { await store.refresh() }
 
-        await fulfillment(of: [freshReturned, staleReturned], timeout: 1)
+        await fulfillment(of: [freshReturned, staleCancelled, staleReturned], timeout: 1)
         await first.value
         await second.value
         XCTAssertEqual(store.servers.map(\.name), ["fresh"])
         XCTAssertFalse(store.isLoading)
+        XCTAssertNil(store.lastError)
+    }
+
+    func testStoreCancelCancelsInFlightMCPSave() async {
+        let saveStarted = expectation(description: "MCP save started")
+        let saveCancelled = expectation(description: "MCP save cancelled after teardown")
+        let saveReturned = expectation(description: "MCP save should not return after teardown")
+        saveReturned.isInverted = true
+        let persistence = FakeMCPPersistence(servers: [])
+        persistence.onSave = { servers in
+            XCTAssertEqual(servers.map(\.name), ["notes"])
+            saveStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                saveReturned.fulfill()
+            } catch is CancellationError {
+                saveCancelled.fulfill()
+                throw CancellationError()
+            }
+        }
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+
+        store.upsert(MCPServerConfig(name: "notes", command: "node"))
+        await fulfillment(of: [saveStarted], timeout: 1)
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [saveCancelled, saveReturned], timeout: 1)
+        XCTAssertFalse(store.isSaving)
         XCTAssertNil(store.lastError)
     }
 
@@ -143,7 +185,8 @@ final class MCPClawJSAdapterTests: XCTestCase {
 private final class FakeMCPPersistence: MCPServersPersistence {
     private var current: [MCPServerConfig]
     private(set) var savedServers: [MCPServerConfig] = []
-    var onLoad: (() async -> Void)?
+    var onLoad: (() async throws -> Void)?
+    var onSave: (([MCPServerConfig]) async throws -> Void)?
     private var saveContinuation: CheckedContinuation<Void, Never>?
 
     init(servers: [MCPServerConfig]) {
@@ -151,11 +194,12 @@ private final class FakeMCPPersistence: MCPServersPersistence {
     }
 
     func loadServers() async throws -> [MCPServerConfig] {
-        await onLoad?()
+        try await onLoad?()
         return current
     }
 
     func saveServers(_ servers: [MCPServerConfig]) async throws {
+        try await onSave?(servers)
         savedServers = servers
         current = servers
         saveContinuation?.resume()
