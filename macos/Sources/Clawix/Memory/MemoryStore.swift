@@ -13,6 +13,16 @@ final class MemoryStore: ObservableObject {
     typealias StatsOperation = @MainActor () async throws -> ClawJSMemoryClient.MemoryStatsResponse
     typealias SearchOperation = @MainActor (_ query: String) async throws -> ClawJSMemoryClient.SearchResponse
     typealias DoctorOperation = @MainActor () async throws -> ClawJSMemoryClient.DoctorResponse
+    typealias CreateNoteOperation = @MainActor (
+        _ input: ClawJSMemoryClient.CreateNoteInput
+    ) async throws -> ClawJSMemoryClient.CreateNoteResponse
+    typealias UpdateNoteOperation = @MainActor (
+        _ id: String,
+        _ patch: ClawJSMemoryClient.UpdateNotePatch,
+        _ editor: String
+    ) async throws -> ClawJSMemoryClient.UpdateNoteResponse
+    typealias DeleteNoteOperation = @MainActor (_ id: String) async throws -> ClawJSMemoryClient.DeleteNoteResponse
+    typealias PromoteCaptureOperation = @MainActor (_ id: String) async throws -> ClawJSMemoryClient.PromoteResponse
 
     enum State: Equatable {
         case idle
@@ -35,11 +45,23 @@ final class MemoryStore: ObservableObject {
     private let statsOperation: StatsOperation
     private let searchOperation: SearchOperation
     private let doctorOperation: DoctorOperation
+    private let createNoteOperation: CreateNoteOperation
+    private let updateNoteOperation: UpdateNoteOperation
+    private let deleteNoteOperation: DeleteNoteOperation
+    private let promoteCaptureOperation: PromoteCaptureOperation
     private var refreshTask: Task<Void, Never>?
     private var refreshTimeoutTask: Task<Void, Never>?
     private var refreshGeneration = 0
     private var searchTask: Task<Void, Never>?
     private var searchGeneration = 0
+    private var createTask: Task<Result<ClawJSMemoryClient.CreateNoteResponse, Swift.Error>, Never>?
+    private var createGeneration = 0
+    private var updateTasks: [String: Task<Result<ClawJSMemoryClient.UpdateNoteResponse, Swift.Error>, Never>] = [:]
+    private var updateGenerations: [String: Int] = [:]
+    private var deleteTasks: [String: Task<Result<ClawJSMemoryClient.DeleteNoteResponse, Swift.Error>, Never>] = [:]
+    private var deleteGenerations: [String: Int] = [:]
+    private var promoteTasks: [String: Task<Result<ClawJSMemoryClient.PromoteResponse, Swift.Error>, Never>] = [:]
+    private var promoteGenerations: [String: Int] = [:]
     private var activeSearchQuery: String?
     private var supervisorObserver: AnyCancellable?
 
@@ -50,6 +72,10 @@ final class MemoryStore: ObservableObject {
         statsOperation: StatsOperation? = nil,
         searchOperation: SearchOperation? = nil,
         doctorOperation: DoctorOperation? = nil,
+        createNoteOperation: CreateNoteOperation? = nil,
+        updateNoteOperation: UpdateNoteOperation? = nil,
+        deleteNoteOperation: DeleteNoteOperation? = nil,
+        promoteCaptureOperation: PromoteCaptureOperation? = nil,
         attachSupervisor: Bool = true
     ) {
         self.client = client
@@ -68,6 +94,18 @@ final class MemoryStore: ObservableObject {
         self.doctorOperation = doctorOperation ?? {
             try await client.doctor()
         }
+        self.createNoteOperation = createNoteOperation ?? { input in
+            try await client.createNote(input)
+        }
+        self.updateNoteOperation = updateNoteOperation ?? { id, patch, editor in
+            try await client.updateNote(id: id, patch: patch, editor: editor)
+        }
+        self.deleteNoteOperation = deleteNoteOperation ?? { id in
+            try await client.deleteNote(id: id)
+        }
+        self.promoteCaptureOperation = promoteCaptureOperation ?? { id in
+            try await client.promoteCapture(id: id)
+        }
         if attachSupervisor {
             attachSupervisorObserver()
         }
@@ -77,6 +115,10 @@ final class MemoryStore: ObservableObject {
         refreshTask?.cancel()
         refreshTimeoutTask?.cancel()
         searchTask?.cancel()
+        createTask?.cancel()
+        for task in updateTasks.values { task.cancel() }
+        for task in deleteTasks.values { task.cancel() }
+        for task in promoteTasks.values { task.cancel() }
     }
 
     // MARK: - Loading
@@ -224,6 +266,7 @@ final class MemoryStore: ObservableObject {
         refreshTimeoutTask?.cancel()
         refreshTimeoutTask = nil
         clearSearch()
+        cancelMutationTasks()
         notes = []
         captures = []
         stats = nil
@@ -234,9 +277,17 @@ final class MemoryStore: ObservableObject {
 
     @discardableResult
     func create(_ input: ClawJSMemoryClient.CreateNoteInput) async throws -> ClawJSMemoryClient.CreateNoteResponse {
-        let response = try await client.createNote(input)
-        await refresh()
-        return response
+        let generation = nextCreateGeneration()
+        createTask?.cancel()
+        let task = Task<Result<ClawJSMemoryClient.CreateNoteResponse, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runCreate(input: input, generation: generation)
+        }
+        createTask = task
+        switch await task.value {
+        case .success(let response): return response
+        case .failure(let error): throw error
+        }
     }
 
     @discardableResult
@@ -245,23 +296,137 @@ final class MemoryStore: ObservableObject {
         patch: ClawJSMemoryClient.UpdateNotePatch,
         editor: String = "user"
     ) async throws -> ClawJSMemoryClient.UpdateNoteResponse {
-        let response = try await client.updateNote(id: id, patch: patch, editor: editor)
-        await refresh()
-        return response
+        let generation = nextUpdateGeneration(key: id)
+        updateTasks[id]?.cancel()
+        let task = Task<Result<ClawJSMemoryClient.UpdateNoteResponse, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runUpdate(id: id, patch: patch, editor: editor, generation: generation)
+        }
+        updateTasks[id] = task
+        switch await task.value {
+        case .success(let response): return response
+        case .failure(let error): throw error
+        }
     }
 
     @discardableResult
     func delete(id: String) async throws -> ClawJSMemoryClient.DeleteNoteResponse {
-        let response = try await client.deleteNote(id: id)
-        await refresh()
-        return response
+        let generation = nextDeleteGeneration(key: id)
+        deleteTasks[id]?.cancel()
+        let task = Task<Result<ClawJSMemoryClient.DeleteNoteResponse, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runDelete(id: id, generation: generation)
+        }
+        deleteTasks[id] = task
+        switch await task.value {
+        case .success(let response): return response
+        case .failure(let error): throw error
+        }
     }
 
     @discardableResult
     func promote(captureId: String) async throws -> ClawJSMemoryClient.PromoteResponse {
-        let response = try await client.promoteCapture(id: captureId)
-        await refresh()
-        return response
+        let generation = nextPromoteGeneration(key: captureId)
+        promoteTasks[captureId]?.cancel()
+        let task = Task<Result<ClawJSMemoryClient.PromoteResponse, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runPromote(captureId: captureId, generation: generation)
+        }
+        promoteTasks[captureId] = task
+        switch await task.value {
+        case .success(let response): return response
+        case .failure(let error): throw error
+        }
+    }
+
+    private func runCreate(
+        input: ClawJSMemoryClient.CreateNoteInput,
+        generation: Int
+    ) async -> Result<ClawJSMemoryClient.CreateNoteResponse, Swift.Error> {
+        do {
+            let response = try await createNoteOperation(input)
+            try Task.checkCancellation()
+            guard isCurrentCreate(generation) else { return .failure(CancellationError()) }
+            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentCreate(generation) else { return .failure(CancellationError()) }
+            finishCreateIfCurrent(generation)
+            return .success(response)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentCreate(generation) else { return .failure(CancellationError()) }
+            finishCreateIfCurrent(generation)
+            return .failure(error)
+        }
+    }
+
+    private func runUpdate(
+        id: String,
+        patch: ClawJSMemoryClient.UpdateNotePatch,
+        editor: String,
+        generation: Int
+    ) async -> Result<ClawJSMemoryClient.UpdateNoteResponse, Swift.Error> {
+        do {
+            let response = try await updateNoteOperation(id, patch, editor)
+            try Task.checkCancellation()
+            guard isCurrentUpdate(key: id, generation: generation) else { return .failure(CancellationError()) }
+            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentUpdate(key: id, generation: generation) else { return .failure(CancellationError()) }
+            finishUpdateIfCurrent(key: id, generation: generation)
+            return .success(response)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentUpdate(key: id, generation: generation) else { return .failure(CancellationError()) }
+            finishUpdateIfCurrent(key: id, generation: generation)
+            return .failure(error)
+        }
+    }
+
+    private func runDelete(
+        id: String,
+        generation: Int
+    ) async -> Result<ClawJSMemoryClient.DeleteNoteResponse, Swift.Error> {
+        do {
+            let response = try await deleteNoteOperation(id)
+            try Task.checkCancellation()
+            guard isCurrentDelete(key: id, generation: generation) else { return .failure(CancellationError()) }
+            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentDelete(key: id, generation: generation) else { return .failure(CancellationError()) }
+            finishDeleteIfCurrent(key: id, generation: generation)
+            return .success(response)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentDelete(key: id, generation: generation) else { return .failure(CancellationError()) }
+            finishDeleteIfCurrent(key: id, generation: generation)
+            return .failure(error)
+        }
+    }
+
+    private func runPromote(
+        captureId: String,
+        generation: Int
+    ) async -> Result<ClawJSMemoryClient.PromoteResponse, Swift.Error> {
+        do {
+            let response = try await promoteCaptureOperation(captureId)
+            try Task.checkCancellation()
+            guard isCurrentPromote(key: captureId, generation: generation) else { return .failure(CancellationError()) }
+            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentPromote(key: captureId, generation: generation) else { return .failure(CancellationError()) }
+            finishPromoteIfCurrent(key: captureId, generation: generation)
+            return .success(response)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentPromote(key: captureId, generation: generation) else { return .failure(CancellationError()) }
+            finishPromoteIfCurrent(key: captureId, generation: generation)
+            return .failure(error)
+        }
     }
 
     private func scheduleRefreshTimeout(generation: Int) {
@@ -302,5 +467,79 @@ final class MemoryStore: ObservableObject {
     private func finishSearchIfCurrent(_ generation: Int) {
         guard isCurrentSearch(generation) else { return }
         searchTask = nil
+    }
+
+    private func cancelMutationTasks() {
+        createGeneration += 1
+        createTask?.cancel()
+        createTask = nil
+        for task in updateTasks.values { task.cancel() }
+        updateTasks.removeAll()
+        updateGenerations.removeAll()
+        for task in deleteTasks.values { task.cancel() }
+        deleteTasks.removeAll()
+        deleteGenerations.removeAll()
+        for task in promoteTasks.values { task.cancel() }
+        promoteTasks.removeAll()
+        promoteGenerations.removeAll()
+    }
+
+    private func nextCreateGeneration() -> Int {
+        createGeneration += 1
+        return createGeneration
+    }
+
+    private func isCurrentCreate(_ generation: Int) -> Bool {
+        createGeneration == generation
+    }
+
+    private func finishCreateIfCurrent(_ generation: Int) {
+        guard isCurrentCreate(generation) else { return }
+        createTask = nil
+    }
+
+    private func nextUpdateGeneration(key: String) -> Int {
+        let generation = (updateGenerations[key] ?? 0) + 1
+        updateGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentUpdate(key: String, generation: Int) -> Bool {
+        updateGenerations[key] == generation
+    }
+
+    private func finishUpdateIfCurrent(key: String, generation: Int) {
+        guard isCurrentUpdate(key: key, generation: generation) else { return }
+        updateTasks.removeValue(forKey: key)
+    }
+
+    private func nextDeleteGeneration(key: String) -> Int {
+        let generation = (deleteGenerations[key] ?? 0) + 1
+        deleteGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentDelete(key: String, generation: Int) -> Bool {
+        deleteGenerations[key] == generation
+    }
+
+    private func finishDeleteIfCurrent(key: String, generation: Int) {
+        guard isCurrentDelete(key: key, generation: generation) else { return }
+        deleteTasks.removeValue(forKey: key)
+    }
+
+    private func nextPromoteGeneration(key: String) -> Int {
+        let generation = (promoteGenerations[key] ?? 0) + 1
+        promoteGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentPromote(key: String, generation: Int) -> Bool {
+        promoteGenerations[key] == generation
+    }
+
+    private func finishPromoteIfCurrent(key: String, generation: Int) {
+        guard isCurrentPromote(key: key, generation: generation) else { return }
+        promoteTasks.removeValue(forKey: key)
     }
 }
