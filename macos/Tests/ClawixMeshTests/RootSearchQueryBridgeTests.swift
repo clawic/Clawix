@@ -71,6 +71,80 @@ final class RootSearchQueryBridgeTests: XCTestCase {
         ])
         XCTAssertEqual(response.data.omittedSources?.first?.source, "native.system")
     }
+
+    func testRootSearchActionPlanUsesDryRunAndDecodesHostRequest() throws {
+        let runner = RecordingRootSearchRunner(output: """
+        {
+          "ok": true,
+          "data": {
+            "plan": {
+              "id": "search-action:native.system:shortcut:daily-plan:run",
+              "resultId": "native.system:shortcut:daily-plan",
+              "actionId": "run",
+              "risk": "system",
+              "requiresApproval": true,
+              "status": "planned",
+              "hostRequest": {
+                "system": "mac-control",
+                "schemaVersion": 1,
+                "requestId": "searchreq_daily_plan",
+                "capabilityId": "mac.shortcut.run",
+                "actor": {
+                  "kind": "user_ui",
+                  "id": "user:clawix.root-search",
+                  "role": "owner"
+                },
+                "target": {
+                  "kind": "shortcut",
+                  "name": "Daily Plan",
+                  "selector": {
+                    "source": "native.system"
+                  }
+                },
+                "arguments": {
+                  "name": "Daily Plan",
+                  "resultId": "native.system:shortcut:daily-plan",
+                  "actionId": "run",
+                  "source": "native.system",
+                  "domain": "native"
+                },
+                "dryRun": true,
+                "reason": "Run native Shortcut from Search result",
+                "approved": false,
+                "command": {
+                  "resource": "mac",
+                  "action": "plan",
+                  "requestJsonFlag": "request-json"
+                }
+              }
+            }
+          }
+        }
+        """)
+
+        let planData = try RootSearchQueryBridge.actionPlanData(
+            resultId: "native.system:shortcut:daily-plan",
+            actionId: "run",
+            runner: RootSearchQueryBridge.ClawSearchCommandRunner(run: runner.run)
+        )
+        let nativeRequest = try SearchHostActionBridge.nativeRequest(
+            from: planData,
+            host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
+        )
+
+        XCTAssertEqual(runner.calls, [[
+            "search", "actions", "execute",
+            "native.system:shortcut:daily-plan", "run",
+            "--dry-run",
+            "--actor", "user:clawix.root-search",
+            "--surface", "clawix.root_search",
+            "--json",
+        ]])
+        XCTAssertEqual(nativeRequest.capabilityId, "mac.shortcut.run")
+        XCTAssertEqual(nativeRequest.actor.kind, "user_ui")
+        XCTAssertEqual(nativeRequest.target?.name, "Daily Plan")
+        XCTAssertEqual(nativeRequest.dryRun, true)
+    }
 }
 
 private final class RecordingRootSearchRunner {

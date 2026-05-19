@@ -1,28 +1,31 @@
 import ClawHostKit
 import Foundation
 
-struct SearchHostActionExecutionPlan: Decodable, Equatable {
+struct SearchHostActionExecutionPlan: Codable, Equatable {
     let id: String
     let resultId: String
     let actionId: String
+    let risk: String?
+    let requiresApproval: Bool?
+    let status: String?
     let hostRequest: SearchHostActionRequestTemplate?
 }
 
-struct SearchHostActionRequestTemplate: Decodable, Equatable {
-    struct Actor: Decodable, Equatable {
+struct SearchHostActionRequestTemplate: Codable, Equatable {
+    struct Actor: Codable, Equatable {
         let kind: String
         let id: String
         let role: String?
     }
 
-    struct Target: Decodable, Equatable {
+    struct Target: Codable, Equatable {
         let kind: String
         let id: String?
         let name: String?
         let selector: [String: String]?
     }
 
-    struct Command: Decodable, Equatable {
+    struct Command: Codable, Equatable {
         let resource: String
         let action: String
         let requestJsonFlag: String

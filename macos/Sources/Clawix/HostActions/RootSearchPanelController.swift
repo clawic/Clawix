@@ -57,11 +57,29 @@ final class RootSearchPanelStore: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var results: [RootSearchResult] = []
     @Published private(set) var omittedSources: [RootSearchOmittedSource] = []
+    @Published private(set) var actionPlans: [String: ActionPlanState] = [:]
 
     private var searchTask: Task<Void, Never>?
+    private var actionTask: Task<Void, Never>?
+
+    enum ActionPlanState: Equatable {
+        case planning
+        case planned(String)
+        case error(String)
+
+        var message: String {
+            switch self {
+            case .planning:
+                return "Planning"
+            case .planned(let message), .error(let message):
+                return message
+            }
+        }
+    }
 
     deinit {
         searchTask?.cancel()
+        actionTask?.cancel()
     }
 
     func submit() {
@@ -69,12 +87,14 @@ final class RootSearchPanelStore: ObservableObject {
         guard !trimmed.isEmpty else {
             results = []
             omittedSources = []
+            actionPlans = [:]
             state = .idle
             return
         }
 
         searchTask?.cancel()
         state = .loading
+        actionPlans = [:]
         searchTask = Task { [trimmed, profile] in
             do {
                 let response = try RootSearchQueryBridge.query(trimmed, profile: profile)
@@ -90,6 +110,77 @@ final class RootSearchPanelStore: ObservableObject {
                 self.state = .error(error.localizedDescription)
             }
         }
+    }
+
+    func actionState(result: RootSearchResult, action: RootSearchAction) -> ActionPlanState? {
+        actionPlans[actionPlanKey(resultId: result.id, actionId: action.id)]
+    }
+
+    func planAction(result: RootSearchResult, action: RootSearchAction) {
+        let key = actionPlanKey(resultId: result.id, actionId: action.id)
+        actionPlans[key] = .planning
+        actionTask?.cancel()
+        actionTask = Task { [resultId = result.id, actionId = action.id, key] in
+            do {
+                let searchPlan = try RootSearchQueryBridge.actionPlan(resultId: resultId, actionId: actionId)
+                guard searchPlan.hostRequest != nil else {
+                    self.actionPlans[key] = .planned(Self.summary(for: searchPlan))
+                    return
+                }
+                let planData = try JSONEncoder().encode(searchPlan)
+                let requestData = try SearchHostActionBridge.nativeRequestData(
+                    from: planData,
+                    host: Self.hostIdentity()
+                )
+                let nativePlanData = try NativeMacActionWire.planJSON(for: requestData)
+                let nativePlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: nativePlanData)
+                self.actionPlans[key] = .planned(Self.summary(for: nativePlan))
+            } catch is CancellationError {
+                return
+            } catch {
+                self.actionPlans[key] = .error(error.localizedDescription)
+            }
+        }
+    }
+
+    private func actionPlanKey(resultId: String, actionId: String) -> String {
+        "\(resultId)::\(actionId)"
+    }
+
+    private static func summary(for plan: NativeMacActionWirePlan) -> String {
+        if let blocked = plan.blockedReasons.first {
+            return "Blocked: \(blocked)"
+        }
+        if plan.requiredApprovals.isEmpty {
+            return plan.executable ? "Ready for signed-host execution" : "Planned"
+        }
+        return "Approval required: \(plan.requiredApprovals.first?.risk ?? plan.risk)"
+    }
+
+    private static func summary(for plan: SearchHostActionExecutionPlan) -> String {
+        if plan.requiresApproval == true {
+            return "Approval required: \(plan.risk ?? "brokered")"
+        }
+        return "Brokered by Search: \(plan.status ?? "planned")"
+    }
+
+    private static func hostIdentity() -> NativeMacActionWireHost {
+        NativeMacActionWireHost(
+            hostId: ProcessInfo.processInfo.hostName,
+            bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+            signingIdentity: nil,
+            teamId: nil,
+            appVariant: appVariant,
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        )
+    }
+
+    private static var appVariant: String {
+        #if DEBUG
+        return "debug"
+        #else
+        return "release"
+        #endif
     }
 }
 
@@ -182,7 +273,11 @@ struct RootSearchPanel: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(store.results) { result in
-                            RootSearchResultRow(result: result)
+                            RootSearchResultRow(
+                                result: result,
+                                actionState: { action in store.actionState(result: result, action: action) },
+                                onPlanAction: { action in store.planAction(result: result, action: action) }
+                            )
                         }
                     }
                     .padding(18)
@@ -195,6 +290,8 @@ struct RootSearchPanel: View {
 
 private struct RootSearchResultRow: View {
     let result: RootSearchResult
+    let actionState: (RootSearchAction) -> RootSearchPanelStore.ActionPlanState?
+    let onPlanAction: (RootSearchAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -225,15 +322,48 @@ private struct RootSearchResultRow: View {
                     .lineLimit(2)
             }
             if let actions = result.actions, !actions.isEmpty {
-                Text("\(actions.count) brokered action\(actions.count == 1 ? "" : "s")")
-                    .font(BodyFont.system(size: 10.5, wght: 600))
-                    .foregroundColor(Palette.textSecondary)
+                HStack(spacing: 8) {
+                    ForEach(actions, id: \.id) { action in
+                        Button {
+                            onPlanAction(action)
+                        } label: {
+                            Text(action.label)
+                                .font(BodyFont.system(size: 10.5, wght: 650))
+                                .foregroundColor(Palette.textPrimary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Palette.cardHover)
+                                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(actionState(action) == .planning)
+                        .accessibilityLabel("Plan \(action.label)")
+                    }
+                    if let state = actions.compactMap({ actionState($0) }).last {
+                        Text(state.message)
+                            .font(BodyFont.system(size: 10.5, wght: 600))
+                            .foregroundColor(actionStateColor(state))
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                }
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Palette.cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func actionStateColor(_ state: RootSearchPanelStore.ActionPlanState) -> Color {
+        switch state {
+        case .planning:
+            return Palette.textSecondary
+        case .planned:
+            return Palette.pastelBlue
+        case .error:
+            return .orange
+        }
     }
 }
 

@@ -38,10 +38,20 @@ struct RootSearchOmittedSource: Decodable, Equatable {
     let message: String?
 }
 
+struct RootSearchActionPlanResponse: Decodable, Equatable {
+    let ok: Bool
+    let data: RootSearchActionPlanData
+}
+
+struct RootSearchActionPlanData: Decodable, Equatable {
+    let plan: SearchHostActionExecutionPlan
+}
+
 enum RootSearchQueryBridgeError: Error, LocalizedError {
     case emptyQuery
     case commandFailed(String)
     case invalidResponse
+    case invalidActionPlan
 
     var errorDescription: String? {
         switch self {
@@ -51,6 +61,8 @@ enum RootSearchQueryBridgeError: Error, LocalizedError {
             return message
         case .invalidResponse:
             return "Root Search returned an invalid response."
+        case .invalidActionPlan:
+            return "Root Search returned an invalid action plan."
         }
     }
 }
@@ -84,6 +96,49 @@ enum RootSearchQueryBridge {
         let response = try JSONDecoder().decode(RootSearchQueryResponse.self, from: output)
         guard response.ok else { throw RootSearchQueryBridgeError.invalidResponse }
         return response
+    }
+
+    static func actionPlan(
+        resultId: String,
+        actionId: String,
+        actor: String = "user:clawix.root-search",
+        surface: String = "clawix.root_search",
+        runner: ClawSearchCommandRunner? = nil
+    ) throws -> SearchHostActionExecutionPlan {
+        let resultId = resultId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let actionId = actionId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !resultId.isEmpty, !actionId.isEmpty else {
+            throw RootSearchQueryBridgeError.invalidActionPlan
+        }
+
+        let args = [
+            "search", "actions", "execute", resultId, actionId,
+            "--dry-run",
+            "--actor", actor,
+            "--surface", surface,
+            "--json",
+        ]
+        let output = try (runner ?? defaultRunner()).run(args)
+        let response = try JSONDecoder().decode(RootSearchActionPlanResponse.self, from: output)
+        guard response.ok else { throw RootSearchQueryBridgeError.invalidActionPlan }
+        return response.data.plan
+    }
+
+    static func actionPlanData(
+        resultId: String,
+        actionId: String,
+        actor: String = "user:clawix.root-search",
+        surface: String = "clawix.root_search",
+        runner: ClawSearchCommandRunner? = nil
+    ) throws -> Data {
+        let plan = try actionPlan(
+            resultId: resultId,
+            actionId: actionId,
+            actor: actor,
+            surface: surface,
+            runner: runner
+        )
+        return try JSONEncoder().encode(plan)
     }
 
     private static func defaultRunner() -> ClawSearchCommandRunner {
