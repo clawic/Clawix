@@ -38,6 +38,22 @@ enum AppBridgeOperationPolicy {
     }
 }
 
+enum AppBridgeCancellableTask {
+    static func run<T: Sendable>(
+        priority: TaskPriority = .utility,
+        operation: @Sendable @escaping () async throws -> T
+    ) async throws -> T {
+        let task = Task.detached(priority: priority) {
+            try await operation()
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+}
+
 /// Native side of the `window.clawix` SDK. WebKit calls into here
 /// whenever the app posts a message via
 /// `window.webkit.messageHandlers.clawix.postMessage(...)`. The handler
@@ -621,9 +637,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 message: "Listing resources",
                 progressValue: 0.2
             )
-            let resources = try await Task.detached {
-                try registry.list(status: status, kind: kind)
-            }.value
+            let resources = try await AppBridgeCancellableTask.run {
+                try Task.checkCancellation()
+                let resources = try registry.list(status: status, kind: kind)
+                try Task.checkCancellation()
+                return resources
+            }
             try Task.checkCancellation()
             let bridgedResources = resources.map(\.bridgeValue)
             partial(requestId: requestId, value: [
@@ -660,9 +679,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 message: "Reading resource",
                 progressValue: 0.2
             )
-            let result = try await Task.detached {
-                try registry.read(id, maxBytes: maxBytes)
-            }.value
+            let result = try await AppBridgeCancellableTask.run {
+                try Task.checkCancellation()
+                let result = try registry.read(id, maxBytes: maxBytes)
+                try Task.checkCancellation()
+                return result
+            }
             try Task.checkCancellation()
             partial(requestId: requestId, value: result.bridgeValue)
             resolve(requestId: requestId, value: result.bridgeValue)

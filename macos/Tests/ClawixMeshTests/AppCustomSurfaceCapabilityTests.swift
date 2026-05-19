@@ -531,6 +531,35 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(reports.contains(.partial(message: "Surface closed")))
     }
 
+    func testBridgeCancellableTaskCancelsDetachedBackgroundWork() async {
+        let started = expectation(description: "Detached bridge work started")
+        let cancelled = expectation(description: "Detached bridge work cancelled")
+        let task = Task {
+            try await AppBridgeCancellableTask.run {
+                started.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                    throw CancellationError()
+                }
+                return "completed"
+            }
+        }
+
+        await fulfillment(of: [started], timeout: 1)
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            XCTFail("Expected detached bridge work to be cancelled.")
+        } catch is CancellationError {
+            await fulfillment(of: [cancelled], timeout: 1)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testResourceRegistryReadsOnlyRegisteredPathResources() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
