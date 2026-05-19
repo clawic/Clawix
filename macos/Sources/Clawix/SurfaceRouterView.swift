@@ -6,24 +6,70 @@ struct SurfaceRouterView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject private var appsStore: AppsStore = .shared
     @ObservedObject private var variantDefaults: AppVariantDefaultsStore = .shared
+    @State private var preferredOriginalTargets: Set<String> = []
 
     var body: some View {
-        Group {
-            if let resolution = variantResolution {
-                AppSurfaceView(appId: resolution.appId)
-            } else {
-                routedSurface
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let resolution = activeVariantResolution {
+                    AppSurfaceView(appId: resolution.appId)
+                } else {
+                    routedSurface
+                }
+            }
+
+            if let control = variantControl {
+                AppVariantOriginalRouteControl(
+                    appName: control.appName,
+                    scope: control.resolution.scope,
+                    isShowingOriginal: control.isShowingOriginal,
+                    onShowOriginal: { preferredOriginalTargets.insert(control.resolution.routeTarget) },
+                    onShowVariant: { preferredOriginalTargets.remove(control.resolution.routeTarget) }
+                )
+                .padding(.top, 12)
+                .padding(.trailing, 12)
             }
         }
     }
 
-    private var variantResolution: AppVariantResolution? {
-        guard let target = route.appVariantRouteTarget else { return nil }
+    private var activeVariantResolution: AppVariantResolution? {
+        guard let target = normalizedVariantTarget,
+              !preferredOriginalTargets.contains(target) else {
+            return nil
+        }
+        return defaultVariantResolution
+    }
+
+    private var defaultVariantResolution: AppVariantResolution? {
+        guard let target = normalizedVariantTarget else { return nil }
         return variantDefaults.resolution(
             for: target,
             workspaceId: appState.selectedProject?.id,
             appsStore: appsStore
         )
+    }
+
+    private var normalizedVariantTarget: String? {
+        route.appVariantRouteTarget.map(AppVariantDefaultsStore.normalizedRouteTarget)
+    }
+
+    private var variantControl: AppVariantOriginalRouteControlModel? {
+        guard let target = normalizedVariantTarget,
+              let resolution = defaultVariantResolution,
+              resolution.originalRouteAvailable else {
+            return nil
+        }
+        let record = appsStore.record(forId: resolution.appId)
+        return AppVariantOriginalRouteControlModel(
+            resolution: resolution,
+            appName: displayName(for: record),
+            isShowingOriginal: preferredOriginalTargets.contains(target)
+        )
+    }
+
+    private func displayName(for record: AppRecord?) -> String {
+        let name = record?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? "Custom view" : name
     }
 
     @ViewBuilder
@@ -130,5 +176,50 @@ struct SurfaceRouterView: View {
             case .lifeSettings:
                 LifeSettingsView()
         }
+    }
+}
+
+private struct AppVariantOriginalRouteControlModel {
+    var resolution: AppVariantResolution
+    var appName: String
+    var isShowingOriginal: Bool
+}
+
+private struct AppVariantOriginalRouteControl: View {
+    let appName: String
+    let scope: AppVariantDefaultScope
+    let isShowingOriginal: Bool
+    let onShowOriginal: () -> Void
+    let onShowVariant: () -> Void
+
+    var body: some View {
+        Button {
+            isShowingOriginal ? onShowVariant() : onShowOriginal()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: isShowingOriginal ? "square.grid.2x2" : "arrow.uturn.backward")
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 18, height: 18)
+                Text(isShowingOriginal ? appName : "Original")
+                    .font(BodyFont.system(size: 12.5, wght: 600))
+                    .lineLimit(1)
+                Text(scope.rawValue)
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Color(white: 0.58))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(white: 0.10).opacity(0.88))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 0.7)
+        )
+        .foregroundColor(Color(white: 0.92))
+        .buttonStyle(.plain)
+        .help(isShowingOriginal ? "Show custom variant" : "Show original surface")
     }
 }
