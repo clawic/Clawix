@@ -3,6 +3,85 @@ import XCTest
 
 @MainActor
 final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
+    func testResetCancelsInFlightBootstrap() async {
+        let bootstrapStarted = expectation(description: "Bootstrap started")
+        let bootstrapCancelled = expectation(description: "Bootstrap cancelled")
+        let store = PublishingWorkspaceStore(
+            bootstrapAvailabilityOperation: { nil },
+            bootstrapOperation: {
+                bootstrapStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    bootstrapCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return .init(
+                    workspaceId: "stale-workspace",
+                    families: [Self.family(id: "stale")],
+                    channels: [Self.account(id: "stale", familyId: "stale")]
+                )
+            },
+            attachSupervisor: false
+        )
+
+        store.bootstrap()
+        await fulfillment(of: [bootstrapStarted], timeout: 1)
+
+        store.reset(reason: "Publishing stopped")
+
+        await fulfillment(of: [bootstrapCancelled], timeout: 1)
+        await Task.yield()
+
+        XCTAssertEqual(store.state, .unavailable("Publishing stopped"))
+        XCTAssertTrue(store.families.isEmpty)
+        XCTAssertTrue(store.channels.isEmpty)
+    }
+
+    func testStaleBootstrapCannotOverwriteFreshBootstrap() async {
+        let staleStarted = expectation(description: "Stale bootstrap started")
+        let staleReturned = expectation(description: "Stale bootstrap returned")
+        let freshStarted = expectation(description: "Fresh bootstrap started")
+        var calls = 0
+        let store = PublishingWorkspaceStore(
+            bootstrapAvailabilityOperation: { nil },
+            bootstrapOperation: {
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    staleReturned.fulfill()
+                    return .init(
+                        workspaceId: "stale-workspace",
+                        families: [Self.family(id: "stale")],
+                        channels: [Self.account(id: "stale", familyId: "stale")]
+                    )
+                }
+                freshStarted.fulfill()
+                return .init(
+                    workspaceId: "fresh-workspace",
+                    families: [Self.family(id: "fresh")],
+                    channels: [Self.account(id: "fresh", familyId: "fresh")]
+                )
+            },
+            attachSupervisor: false
+        )
+
+        store.bootstrap()
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Retry bootstrap")
+        store.bootstrap()
+
+        await fulfillment(of: [freshStarted, staleReturned], timeout: 1)
+        await Task.yield()
+
+        XCTAssertEqual(store.state, .ready)
+        XCTAssertEqual(store.workspaceId, "fresh-workspace")
+        XCTAssertEqual(store.families.map(\.id), ["fresh"])
+        XCTAssertEqual(store.channels.map(\.id), ["fresh"])
+    }
+
     func testStartingSecondFamiliesRefreshCancelsStaleRefresh() async {
         let staleStarted = expectation(description: "Stale families refresh started")
         let staleCancelled = expectation(description: "Stale families refresh cancelled")

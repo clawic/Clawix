@@ -9,6 +9,14 @@ import Combine
 /// mutations flow through this object.
 @MainActor
 final class PublishingWorkspaceStore: ObservableObject {
+    struct BootstrapResult {
+        let workspaceId: String?
+        let families: [ClawJSPublishingClient.Family]
+        let channels: [ClawJSPublishingClient.ChannelAccount]
+    }
+
+    typealias BootstrapAvailabilityOperation = @MainActor () -> String?
+    typealias BootstrapOperation = @MainActor () async throws -> BootstrapResult
     typealias ListFamiliesOperation = @MainActor () async throws -> [ClawJSPublishingClient.Family]
     typealias ListChannelsOperation = @MainActor (_ workspaceId: String) async throws -> [ClawJSPublishingClient.ChannelAccount]
     typealias ListPostsOperation = @MainActor (
@@ -39,6 +47,8 @@ final class PublishingWorkspaceStore: ObservableObject {
     @Published private(set) var lastError: String?
 
     let client: ClawJSPublishingClient
+    private let bootstrapAvailabilityOperation: BootstrapAvailabilityOperation
+    private let bootstrapOperation: BootstrapOperation?
     private let listFamiliesOperation: ListFamiliesOperation
     private let listChannelsOperation: ListChannelsOperation
     private let listPostsOperation: ListPostsOperation
@@ -49,6 +59,7 @@ final class PublishingWorkspaceStore: ObservableObject {
     nonisolated static let workspaceKey = "clawix.publishing.workspaceId.v1"
 
     private var bootstrapTask: Task<Void, Never>?
+    private var bootstrapGeneration = 0
     private var familiesRefreshTask: Task<Void, Never>?
     private var familiesRefreshGeneration = 0
     private var channelsRefreshTask: Task<Void, Never>?
@@ -63,6 +74,8 @@ final class PublishingWorkspaceStore: ObservableObject {
 
     init(
         client: ClawJSPublishingClient? = nil,
+        bootstrapAvailabilityOperation: BootstrapAvailabilityOperation? = nil,
+        bootstrapOperation: BootstrapOperation? = nil,
         listFamiliesOperation: ListFamiliesOperation? = nil,
         listChannelsOperation: ListChannelsOperation? = nil,
         listPostsOperation: ListPostsOperation? = nil,
@@ -75,6 +88,14 @@ final class PublishingWorkspaceStore: ObservableObject {
     ) {
         let resolvedClient = client ?? ClawJSPublishingClient()
         self.client = resolvedClient
+        self.bootstrapAvailabilityOperation = bootstrapAvailabilityOperation ?? {
+            let snapshot = ClawJSServiceManager.shared.snapshots[.publishing]
+            guard snapshot?.state.isReady == true else {
+                return snapshot?.state.unavailableReason ?? "Publishing service is not running."
+            }
+            return nil
+        }
+        self.bootstrapOperation = bootstrapOperation
         self.listFamiliesOperation = listFamiliesOperation ?? {
             try await resolvedClient.listFamilies()
         }
@@ -118,42 +139,68 @@ final class PublishingWorkspaceStore: ObservableObject {
     /// flight is a no-op.
     func bootstrap() {
         guard bootstrapTask == nil else { return }
-        let snapshot = ClawJSServiceManager.shared.snapshots[.publishing]
-        guard snapshot?.state.isReady == true else {
-            state = .unavailable(snapshot?.state.unavailableReason ?? "Publishing service is not running.")
+        if let unavailableReason = bootstrapAvailabilityOperation() {
+            state = .unavailable(unavailableReason)
             return
         }
+        let generation = nextBootstrapGeneration()
         state = .bootstrapping
         bootstrapTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.bootstrapTask = nil }
-            do {
-                guard let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .publishing) else {
-                    throw NSError(domain: "PublishingWorkspaceStore", code: 1, userInfo: [
-                        NSLocalizedDescriptionKey: "Publishing admin token is available only to the host process that launched the service."
-                    ])
-                }
-                self.client.bearerToken = token
-                try await self.ensureDefaultWorkspace()
-                async let families = self.client.listFamilies()
-                async let channels = self.client.listChannels(workspaceId: self.workspaceId ?? "")
-                let resolvedFamilies = try await families
-                let resolvedChannels = try await channels
-                self.families = resolvedFamilies
-                self.channels = resolvedChannels
-                self.state = .ready
-                self.lastError = nil
-            } catch {
-                self.state = .unavailable(error.localizedDescription)
-                self.lastError = error.localizedDescription
-            }
+            await self.runBootstrap(generation: generation)
         }
+    }
+
+    private func runBootstrap(generation: Int) async {
+        do {
+            let result: BootstrapResult
+            if let bootstrapOperation {
+                result = try await bootstrapOperation()
+            } else {
+                result = try await performDefaultBootstrap()
+            }
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
+            workspaceId = result.workspaceId
+            client.workspaceId = result.workspaceId
+            families = result.families
+            channels = result.channels
+            state = .ready
+            lastError = nil
+        } catch is CancellationError {
+        } catch {
+            guard isCurrentBootstrap(generation) else { return }
+            state = .unavailable(error.localizedDescription)
+            lastError = error.localizedDescription
+        }
+        finishBootstrapIfCurrent(generation)
+    }
+
+    private func performDefaultBootstrap() async throws -> BootstrapResult {
+        guard let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .publishing) else {
+            throw NSError(domain: "PublishingWorkspaceStore", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Publishing admin token is available only to the host process that launched the service."
+            ])
+        }
+        client.bearerToken = token
+        try await ensureDefaultWorkspace()
+        let resolvedWorkspaceId = workspaceId
+        async let families = listFamiliesOperation()
+        async let channels = listChannelsOperation(resolvedWorkspaceId ?? "")
+        let resolvedFamilies = try await families
+        let resolvedChannels = try await channels
+        return BootstrapResult(
+            workspaceId: resolvedWorkspaceId,
+            families: resolvedFamilies,
+            channels: resolvedChannels
+        )
     }
 
     /// Drops any in-memory state. Used when the supervisor reports the
     /// service is down so views render an empty state instead of stale
     /// data from a previous boot.
     func reset(reason: String) {
+        bootstrapGeneration += 1
         bootstrapTask?.cancel()
         bootstrapTask = nil
         familiesRefreshGeneration += 1
@@ -439,6 +486,20 @@ final class PublishingWorkspaceStore: ObservableObject {
         } else {
             channels.append(account)
         }
+    }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
     }
 
     private func nextFamiliesRefreshGeneration() -> Int {
