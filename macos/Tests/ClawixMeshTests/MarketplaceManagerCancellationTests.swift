@@ -95,6 +95,67 @@ final class MarketplaceManagerCancellationTests: XCTestCase {
         await task.value
         XCTAssertTrue(manager.roots.isEmpty)
     }
+
+    func testCancelSurfaceWorkSuppressesLateMarkReadError() async {
+        let markStarted = expectation(description: "Marketplace mark read started")
+        let markReturned = expectation(description: "Marketplace mark read returned after teardown")
+        let client = FakeMarketplaceClient()
+        client.onMarkRead = { _ in
+            markStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            markReturned.fulfill()
+            throw MarketplaceTestError.serviceNotReady
+        }
+        let manager = MarketplaceManager(client: client, tokenOperation: { "token" })
+
+        let task = Task { await manager.markRead(messageId: "message") }
+        await fulfillment(of: [markStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [markReturned], timeout: 1)
+        await task.value
+        XCTAssertNil(manager.state.errorMessage)
+    }
+
+    func testCancelSurfaceWorkSuppressesLateIntentStatusRefresh() async {
+        let updateStarted = expectation(description: "Marketplace intent update started")
+        let updateReturned = expectation(description: "Marketplace intent update returned after teardown")
+        let refreshStarted = expectation(description: "Marketplace refresh should not start")
+        refreshStarted.isInverted = true
+        let client = FakeMarketplaceClient()
+        client.onUpdateIntentStatus = { _, _ in
+            updateStarted.fulfill()
+            try await Task.sleep(nanoseconds: 50_000_000)
+            updateReturned.fulfill()
+        }
+        client.onListRoots = {
+            refreshStarted.fulfill()
+            return [makeRoot(id: "unexpected")]
+        }
+        let manager = MarketplaceManager(client: client, tokenOperation: { "token" })
+
+        let task = Task { await manager.updateIntentStatus(id: "intent", status: "withdrawn") }
+        await fulfillment(of: [updateStarted], timeout: 1)
+
+        manager.cancelSurfaceWork()
+
+        await fulfillment(of: [updateReturned, refreshStarted], timeout: 1)
+        await task.value
+        XCTAssertTrue(manager.roots.isEmpty)
+        XCTAssertNil(manager.state.errorMessage)
+    }
+}
+
+private extension MarketplaceManager.State {
+    var errorMessage: String? {
+        if case .error(let message) = self { return message }
+        return nil
+    }
+}
+
+private enum MarketplaceTestError: Error {
+    case serviceNotReady
 }
 
 private func makeRoot(id: String) -> ClawJSMarketplaceClient.RootKey {
@@ -212,6 +273,8 @@ private final class FakeMarketplaceClient: ClawJSMarketplaceClienting, @unchecke
     var onListRoots: () async throws -> [ClawJSMarketplaceClient.RootKey] = {
         [makeRoot(id: "root")]
     }
+    var onUpdateIntentStatus: (String, String) async throws -> Void = { _, _ in }
+    var onMarkRead: (String) async throws -> Void = { _ in }
 
     func listRoots() async throws -> [ClawJSMarketplaceClient.RootKey] {
         try await onListRoots()
@@ -232,7 +295,9 @@ private final class FakeMarketplaceClient: ClawJSMarketplaceClienting, @unchecke
         return [makeIntent(id: filter.side ?? "intent", side: filter.side ?? "offer", provenance: filter.provenance ?? "native")]
     }
 
-    func updateIntentStatus(id: String, status: String) async throws {}
+    func updateIntentStatus(id: String, status: String) async throws {
+        try await onUpdateIntentStatus(id, status)
+    }
 
     func listMatchReceipts(myRoleKeyId: String?, status: String?) async throws -> [ClawJSMarketplaceClient.MatchReceipt] {
         [makeReceipt()]
@@ -242,7 +307,9 @@ private final class FakeMarketplaceClient: ClawJSMarketplaceClienting, @unchecke
         [makeInbound()]
     }
 
-    func markRead(messageId: String) async throws {}
+    func markRead(messageId: String) async throws {
+        try await onMarkRead(messageId)
+    }
 
     func listPeerLevels(myRoleKeyId: String?) async throws -> [ClawJSMarketplaceClient.PeerLevel] {
         [makePeerLevel()]

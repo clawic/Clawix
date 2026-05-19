@@ -32,6 +32,7 @@ final class MarketplaceManager: ObservableObject {
     private let tokenOperation: TokenOperation
     private var refreshTask: Task<Void, Never>?
     private var refreshGeneration = 0
+    private var actionGenerations: [MarketplaceActionKey: Int] = [:]
 
     init(
         client: (any ClawJSMarketplaceClienting)? = nil,
@@ -125,25 +126,44 @@ final class MarketplaceManager: ObservableObject {
 
     func cancelSurfaceWork() {
         refreshGeneration += 1
+        for key in Array(actionGenerations.keys) {
+            actionGenerations[key, default: 0] += 1
+        }
         refreshTask?.cancel()
         refreshTask = nil
     }
 
     func markRead(messageId: String) async {
+        let key = MarketplaceActionKey(kind: .markRead, id: messageId)
+        let generation = nextActionGeneration(for: key)
         ensureToken()
         do {
             try await marketplace.markRead(messageId: messageId)
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { return }
+            finishActionIfCurrent(key: key, generation: generation)
+        } catch is CancellationError {
         } catch {
+            guard isCurrentAction(key: key, generation: generation) else { return }
             state = .error(error.localizedDescription)
+            finishActionIfCurrent(key: key, generation: generation)
         }
     }
 
     func updateIntentStatus(id: String, status: String) async {
+        let key = MarketplaceActionKey(kind: .updateIntentStatus, id: "\(id):\(status)")
+        let generation = nextActionGeneration(for: key)
         ensureToken()
         do {
             try await marketplace.updateIntentStatus(id: id, status: status)
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { return }
+            finishActionIfCurrent(key: key, generation: generation)
+        } catch is CancellationError {
         } catch {
+            guard isCurrentAction(key: key, generation: generation) else { return }
             state = .error(error.localizedDescription)
+            finishActionIfCurrent(key: key, generation: generation)
             return
         }
         await refresh()
@@ -161,5 +181,30 @@ final class MarketplaceManager: ObservableObject {
     private func finishRefreshIfCurrent(_ generation: Int) {
         guard isCurrentRefresh(generation) else { return }
         refreshTask = nil
+    }
+
+    private func nextActionGeneration(for key: MarketplaceActionKey) -> Int {
+        let generation = (actionGenerations[key] ?? 0) + 1
+        actionGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentAction(key: MarketplaceActionKey, generation: Int) -> Bool {
+        actionGenerations[key] == generation
+    }
+
+    private func finishActionIfCurrent(key: MarketplaceActionKey, generation: Int) {
+        guard isCurrentAction(key: key, generation: generation) else { return }
+        actionGenerations[key] = generation
+    }
+
+    private struct MarketplaceActionKey: Hashable {
+        let kind: Kind
+        let id: String
+
+        enum Kind: Hashable {
+            case markRead
+            case updateIntentStatus
+        }
     }
 }
