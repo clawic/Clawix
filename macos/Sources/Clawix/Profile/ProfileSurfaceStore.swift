@@ -6,6 +6,7 @@ import Foundation
 /// schedules background refreshes.
 @MainActor
 final class ProfileSurfaceStore: ObservableObject {
+    typealias TokenOperation = @MainActor () -> String?
 
     enum LoadState: Equatable {
         case idle
@@ -27,85 +28,218 @@ final class ProfileSurfaceStore: ObservableObject {
     @Published var selectedGroupId: String?
     @Published var feedKeywords: String = ""
 
-    private var client: ClawJSProfileClient
+    private var client: any ClawJSProfileClienting
+    private let tokenOperation: TokenOperation
+    private var bootstrapTask: Task<Void, Never>?
+    private var bootstrapGeneration = 0
+    private var feedRefreshTask: Task<Void, Never>?
+    private var feedRefreshGeneration = 0
+    private var chatsRefreshTask: Task<Void, Never>?
+    private var chatsRefreshGeneration = 0
+    private var marketplaceRefreshTask: Task<Void, Never>?
+    private var marketplaceRefreshGeneration = 0
 
-    init() {
-        let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
-            ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
-        let index = ClawJSIndexClient(bearerToken: token)
-        self.client = ClawJSProfileClient(indexClient: index)
+    init(
+        client: (any ClawJSProfileClienting)? = nil,
+        tokenOperation: TokenOperation? = nil
+    ) {
+        self.tokenOperation = tokenOperation ?? {
+            ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
+                ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
+        }
+        if let client {
+            self.client = client
+        } else {
+            let index = ClawJSIndexClient(bearerToken: self.tokenOperation())
+            self.client = ClawJSProfileClient(indexClient: index)
+        }
+    }
+
+    deinit {
+        bootstrapTask?.cancel()
+        feedRefreshTask?.cancel()
+        chatsRefreshTask?.cancel()
+        marketplaceRefreshTask?.cancel()
     }
 
     func ensureToken() {
-        if client.indexClient.bearerToken == nil {
-            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
-                ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
-            client.indexClient.bearerToken = token
+        if client.indexBearerToken == nil {
+            client.indexBearerToken = tokenOperation()
         }
     }
 
     // MARK: - Bootstrap
 
     func bootstrap() async {
+        let generation = nextBootstrapGeneration()
+        bootstrapTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBootstrap(generation: generation)
+        }
+        bootstrapTask = task
+        await task.value
+    }
+
+    private func runBootstrap(generation: Int) async {
         ensureToken()
         loadState = .loading
         do {
             async let me = client.me()
             async let groups = client.listGroups()
-            async let blocks = client.listBlocks()
+            async let blocks = client.listBlocks(vertical: nil)
             async let peers = client.listPeers()
-            async let feed = client.listFeed(limit: 100)
+            async let feed = client.listFeed(vertical: nil, groupId: nil, keywords: nil, limit: 100)
             async let chats = client.listChats()
-            async let intents = client.discoveredIntents(limit: 100)
-            self.me = try await me
-            self.groups = try await groups
-            self.ownBlocks = try await blocks
-            self.peers = try await peers
-            self.feedEntries = try await feed
-            self.chatThreads = try await chats
-            self.marketplaceIntents = try await intents
+            async let intents = client.discoveredIntents(vertical: nil, geoZone: nil, tag: nil, priceBand: nil, limit: 100)
+            let loadedMe = try await me
+            let loadedGroups = try await groups
+            let loadedBlocks = try await blocks
+            let loadedPeers = try await peers
+            let loadedFeed = try await feed
+            let loadedChats = try await chats
+            let loadedIntents = try await intents
+            try Task.checkCancellation()
+            guard isCurrentBootstrap(generation) else { return }
+            self.me = loadedMe
+            self.groups = loadedGroups
+            self.ownBlocks = loadedBlocks
+            self.peers = loadedPeers
+            self.feedEntries = loadedFeed
+            self.chatThreads = loadedChats
+            self.marketplaceIntents = loadedIntents
             loadState = .ready
+        } catch is CancellationError {
         } catch {
+            guard isCurrentBootstrap(generation) else { return }
             loadState = .error(error.localizedDescription)
         }
+        finishBootstrapIfCurrent(generation)
     }
 
     func refreshFeed() async {
+        let generation = nextFeedRefreshGeneration()
+        let vertical = selectedVertical
+        let groupId = selectedGroupId
+        let keywords = feedKeywords.isEmpty ? nil : feedKeywords
+        feedRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runFeedRefresh(
+                generation: generation,
+                vertical: vertical,
+                groupId: groupId,
+                keywords: keywords
+            )
+        }
+        feedRefreshTask = task
+        await task.value
+    }
+
+    private func runFeedRefresh(generation: Int, vertical: String?, groupId: String?, keywords: String?) async {
         ensureToken()
         do {
-            self.feedEntries = try await client.listFeed(
-                vertical: selectedVertical,
-                groupId: selectedGroupId,
-                keywords: feedKeywords.isEmpty ? nil : feedKeywords,
+            let entries = try await client.listFeed(
+                vertical: vertical,
+                groupId: groupId,
+                keywords: keywords,
                 limit: 100,
             )
+            try Task.checkCancellation()
+            guard isCurrentFeedRefresh(generation) else { return }
+            self.feedEntries = entries
+        } catch is CancellationError {
         } catch {
+            guard isCurrentFeedRefresh(generation) else { return }
             loadState = .error(error.localizedDescription)
         }
+        finishFeedRefreshIfCurrent(generation)
     }
 
     func refreshChats() async {
+        let generation = nextChatsRefreshGeneration()
+        chatsRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runChatsRefresh(generation: generation)
+        }
+        chatsRefreshTask = task
+        await task.value
+    }
+
+    private func runChatsRefresh(generation: Int) async {
         ensureToken()
-        do { self.chatThreads = try await client.listChats() }
-        catch { loadState = .error(error.localizedDescription) }
+        do {
+            let threads = try await client.listChats()
+            try Task.checkCancellation()
+            guard isCurrentChatsRefresh(generation) else { return }
+            self.chatThreads = threads
+        } catch is CancellationError {
+        } catch {
+            guard isCurrentChatsRefresh(generation) else { return }
+            loadState = .error(error.localizedDescription)
+        }
+        finishChatsRefreshIfCurrent(generation)
     }
 
     func refreshMarketplace() async {
+        let generation = nextMarketplaceRefreshGeneration()
+        let vertical = selectedVertical
+        marketplaceRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runMarketplaceRefresh(generation: generation, vertical: vertical)
+        }
+        marketplaceRefreshTask = task
+        await task.value
+    }
+
+    private func runMarketplaceRefresh(generation: Int, vertical: String?) async {
         ensureToken()
         do {
-            self.marketplaceIntents = try await client.discoveredIntents(
-                vertical: selectedVertical, limit: 100,
+            let intents = try await client.discoveredIntents(
+                vertical: vertical, geoZone: nil, tag: nil, priceBand: nil, limit: 100,
             )
+            try Task.checkCancellation()
+            guard isCurrentMarketplaceRefresh(generation) else { return }
+            self.marketplaceIntents = intents
+        } catch is CancellationError {
         } catch {
+            guard isCurrentMarketplaceRefresh(generation) else { return }
             loadState = .error(error.localizedDescription)
         }
+        finishMarketplaceRefreshIfCurrent(generation)
+    }
+
+    func cancelSurfaceWork() {
+        bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
+        feedRefreshGeneration += 1
+        feedRefreshTask?.cancel()
+        feedRefreshTask = nil
+        chatsRefreshGeneration += 1
+        chatsRefreshTask?.cancel()
+        chatsRefreshTask = nil
+        marketplaceRefreshGeneration += 1
+        marketplaceRefreshTask?.cancel()
+        marketplaceRefreshTask = nil
+    }
+
+    func cancelFeedSurfaceWork() {
+        bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
+        feedRefreshGeneration += 1
+        feedRefreshTask?.cancel()
+        feedRefreshTask = nil
     }
 
     // MARK: - Mutations
 
     func initProfile(alias: String, mnemonic: String?) async throws -> ClawJSProfileClient.InitResponse {
         ensureToken()
-        let resp = try await client.initProfile(alias: alias, mnemonic: mnemonic)
+        let resp = try await client.initProfile(alias: alias, mnemonic: mnemonic, passphrase: nil)
         self.me = resp.profile
         return resp
     }
@@ -152,7 +286,7 @@ final class ProfileSurfaceStore: ObservableObject {
 
     func issueCapability(blockId: String, level: String, ttlSeconds: Int? = nil) async throws -> ClawJSProfileClient.Capability {
         ensureToken()
-        return try await client.issueCapability(blockId: blockId, level: level, ttlSeconds: ttlSeconds)
+        return try await client.issueCapability(blockId: blockId, level: level, issuedToHex: nil, ttlSeconds: ttlSeconds)
     }
 
     func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage {
@@ -162,11 +296,67 @@ final class ProfileSurfaceStore: ObservableObject {
 
     func loadMessages(peer: String) async throws -> [ClawJSProfileClient.ChatMessage] {
         ensureToken()
-        return try await client.listMessages(peer: peer, limit: 100)
+        return try await client.listMessages(peer: peer, limit: 100, before: nil)
     }
 
     func expressInterest(intentId: String) async throws -> ClawJSProfileClient.ExpressInterestResult {
         ensureToken()
-        return try await client.expressInterest(intentId: intentId)
+        return try await client.expressInterest(intentId: intentId, template: nil)
+    }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
+    }
+
+    private func nextFeedRefreshGeneration() -> Int {
+        feedRefreshGeneration += 1
+        return feedRefreshGeneration
+    }
+
+    private func isCurrentFeedRefresh(_ generation: Int) -> Bool {
+        feedRefreshGeneration == generation
+    }
+
+    private func finishFeedRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentFeedRefresh(generation) else { return }
+        feedRefreshTask = nil
+    }
+
+    private func nextChatsRefreshGeneration() -> Int {
+        chatsRefreshGeneration += 1
+        return chatsRefreshGeneration
+    }
+
+    private func isCurrentChatsRefresh(_ generation: Int) -> Bool {
+        chatsRefreshGeneration == generation
+    }
+
+    private func finishChatsRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentChatsRefresh(generation) else { return }
+        chatsRefreshTask = nil
+    }
+
+    private func nextMarketplaceRefreshGeneration() -> Int {
+        marketplaceRefreshGeneration += 1
+        return marketplaceRefreshGeneration
+    }
+
+    private func isCurrentMarketplaceRefresh(_ generation: Int) -> Bool {
+        marketplaceRefreshGeneration == generation
+    }
+
+    private func finishMarketplaceRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentMarketplaceRefresh(generation) else { return }
+        marketplaceRefreshTask = nil
     }
 }

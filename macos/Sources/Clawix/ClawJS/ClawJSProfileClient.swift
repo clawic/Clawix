@@ -2,6 +2,29 @@ import Foundation
 
 private struct ProfileEmptyResponse: Decodable {}
 
+protocol ClawJSProfileClienting {
+    var indexBearerToken: String? { get set }
+
+    func initProfile(alias: String, mnemonic: String?, passphrase: String?) async throws -> ClawJSProfileClient.InitResponse
+    func me() async throws -> ClawJSProfileClient.Profile?
+    func setHandle(alias: String) async throws -> ClawJSProfileClient.Profile
+    func listBlocks(vertical: String?) async throws -> [ClawJSProfileClient.Block]
+    func createBlock(_ input: ClawJSProfileClient.CreateBlockInput) async throws -> ClawJSProfileClient.Block
+    func deleteBlock(_ blockId: String) async throws
+    func listGroups() async throws -> [ClawJSProfileClient.Group]
+    func createGroup(id: String, label: String?) async throws -> ClawJSProfileClient.Group
+    func addMember(groupId: String, rootPubkeyHex: String) async throws -> ClawJSProfileClient.Group
+    func issueCapability(blockId: String, level: String, issuedToHex: String?, ttlSeconds: Int?) async throws -> ClawJSProfileClient.Capability
+    func listPeers() async throws -> [ClawJSProfileClient.PeerDirectoryEntry]
+    func pairByFingerprint(pairingLink: String) async throws -> ClawJSProfileClient.Handle
+    func listFeed(vertical: String?, groupId: String?, keywords: String?, limit: Int) async throws -> [ClawJSProfileClient.FeedEntry]
+    func listChats() async throws -> [ClawJSProfileClient.ChatThread]
+    func listMessages(peer: String, limit: Int, before: Int?) async throws -> [ClawJSProfileClient.ChatMessage]
+    func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage
+    func discoveredIntents(vertical: String?, geoZone: String?, tag: String?, priceBand: Int?, limit: Int) async throws -> [ClawJSProfileClient.DiscoveredIntent]
+    func expressInterest(intentId: String, template: String?) async throws -> ClawJSProfileClient.ExpressInterestResult
+}
+
 /// HTTP client for the Profile surface exposed by `@clawjs/index`.
 /// Wraps `/v1/profile/*`, `/v1/feed`, `/v1/chats/*`, `/v1/marketplace/*` and
 /// `/v1/peers/*`. The daemon-side `@clawjs/profile` package owns all crypto;
@@ -363,5 +386,12 @@ struct ClawJSProfileClient {
         var c = URLComponents()
         c.queryItems = items
         return c.percentEncodedQuery.map { "?\($0)" } ?? ""
+    }
+}
+
+extension ClawJSProfileClient: ClawJSProfileClienting {
+    var indexBearerToken: String? {
+        get { indexClient.bearerToken }
+        set { indexClient.bearerToken = newValue }
     }
 }

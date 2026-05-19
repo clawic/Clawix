@@ -31,6 +31,9 @@ struct FeedScreen: View {
         }
         .background(Color.black)
         .task { await store.bootstrap() }
+        .onDisappear {
+            store.cancelFeedSurfaceWork()
+        }
         .onChange(of: store.feedKeywords) { _, _ in
             Task { await store.refreshFeed() }
         }
