@@ -174,6 +174,38 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(plan.allowedCapabilities, ["db.query", "search.query"])
     }
 
+    func testSwiftSurfaceManifestDecodesAndRunnerPathIsExplicit() throws {
+        let json = """
+        {
+          "schemaVersion": 1,
+          "requestedCapabilities": ["search.query"],
+          "root": {
+            "kind": "button",
+            "text": "Search",
+            "action": {
+              "invocation": "sdkRead",
+              "capabilityId": "search.query",
+              "operation": "search.query"
+            },
+            "children": []
+          }
+        }
+        """.data(using: .utf8)!
+
+        let manifest = try AppSwiftSurfaceContract.decodeManifest(data: json)
+
+        XCTAssertEqual(manifest.schemaVersion, 1)
+        XCTAssertEqual(manifest.requestedCapabilities, ["search.query"])
+        XCTAssertNil(AppSwiftSurfaceContract.runnerExecutablePath(environment: [:]))
+        XCTAssertNil(
+            AppSwiftSurfaceContract.runnerExecutablePath(environment: ["CLAWIX_SWIFT_SURFACE_RUNNER": "   "])
+        )
+        XCTAssertEqual(
+            AppSwiftSurfaceContract.runnerExecutablePath(environment: ["CLAWIX_SWIFT_SURFACE_RUNNER": "/tmp/runner"]),
+            "/tmp/runner"
+        )
+    }
+
     func testSwiftSurfaceDSLRejectsUnknownCapabilities() {
         let app = AppRecord(
             slug: "swift-dashboard",

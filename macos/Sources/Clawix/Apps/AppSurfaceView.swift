@@ -35,19 +35,29 @@ struct AppSurfaceView: View {
             if let record {
                 switch AppCapabilityCatalog.activationGate(for: record) {
                 case .allowed:
-                    AppSurfaceWebView(
-                        appId: appId,
-                        slug: record.slug,
-                        appName: record.name,
-                        reloadToken: reloadToken,
-                        loadState: $loadState,
-                        appsStore: appsStore,
-                        appState: appState,
-                        databaseManager: databaseManager
-                    )
-                    .id("\(record.slug)-\(reloadToken)")
+                    switch record.effectiveSurfaceKind {
+                    case .web:
+                        AppSurfaceWebView(
+                            appId: appId,
+                            slug: record.slug,
+                            appName: record.name,
+                            reloadToken: reloadToken,
+                            loadState: $loadState,
+                            appsStore: appsStore,
+                            appState: appState,
+                            databaseManager: databaseManager
+                        )
+                        .id("\(record.slug)-\(reloadToken)")
 
-                    surfaceStateOverlay
+                        surfaceStateOverlay
+                    case .swiftDeclarative:
+                        AppSwiftSurfaceHostView(
+                            record: record,
+                            reloadToken: reloadToken,
+                            appsStore: appsStore
+                        )
+                        .id("\(record.slug)-swift-\(reloadToken)")
+                    }
                 case .reviewRequired(let riskMap):
                     AppActivationReviewGate(
                         record: record,
@@ -185,6 +195,124 @@ struct AppSurfaceView: View {
             EmptyView()
         }
     }
+}
+
+private struct AppSwiftSurfaceHostView: View {
+    let record: AppRecord
+    let reloadToken: Int
+    let appsStore: AppsStore
+
+    @State private var state: AppSwiftSurfaceHostState = .loading
+
+    var body: some View {
+        Group {
+            switch state {
+            case .loading:
+                VStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading Swift surface")
+                        .font(BodyFont.system(size: 13, wght: 500))
+                        .foregroundColor(Color(white: 0.72))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .ready(let plan):
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(record.name)
+                        .font(BodyFont.system(size: 22, wght: 650))
+                        .foregroundColor(Palette.textPrimary)
+                    Text("Swift surface runner exited cleanly.")
+                        .font(BodyFont.system(size: 13.5, wght: 400))
+                        .foregroundColor(Color(white: 0.66))
+                    Text(plan.allowedCapabilities.joined(separator: ", ").nilIfEmpty ?? "No declared capabilities")
+                        .font(BodyFont.system(size: 12.5, wght: 400))
+                        .foregroundColor(Color(white: 0.56))
+                }
+                .padding(28)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            case .failed(let message):
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                    Text("Swift surface unavailable")
+                        .font(BodyFont.system(size: 17, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                    Text(message)
+                        .font(BodyFont.system(size: 13.5, wght: 400))
+                        .foregroundColor(Color(white: 0.66))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 420)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .background(Palette.background)
+        .task(id: reloadToken) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        state = .loading
+        guard let manifestBytes = appsStore.readFile(
+            slug: record.slug,
+            relativePath: AppSwiftSurfaceContract.manifestFilename
+        )?.data else {
+            state = .failed("Missing \(AppSwiftSurfaceContract.manifestFilename).")
+            return
+        }
+        do {
+            let manifest = try AppSwiftSurfaceContract.decodeManifest(data: manifestBytes)
+            let manifestPath = appsStore.directory(forSlug: record.slug)
+                .appendingPathComponent(AppSwiftSurfaceContract.manifestFilename)
+                .path
+            let plan = try AppSwiftSurfaceContract.runnerPlan(
+                app: record,
+                manifest: manifest,
+                manifestPath: manifestPath
+            )
+            guard let executablePath = AppSwiftSurfaceContract.runnerExecutablePath() else {
+                state = .failed("Swift surface runner is not configured.")
+                return
+            }
+            let launch = AppSwiftSurfaceRunnerLaunch(
+                plan: plan,
+                executablePath: executablePath
+            )
+            let runnerState = await Task.detached(priority: .userInitiated) {
+                AppSwiftSurfaceRunnerSupervisor().launch(launch)
+            }.value
+            state = Self.hostState(for: runnerState, plan: plan)
+        } catch {
+            state = .failed(error.localizedDescription)
+        }
+    }
+
+    static func hostState(
+        for runnerState: AppSwiftSurfaceRunnerState,
+        plan: AppSwiftSurfaceRunnerPlan
+    ) -> AppSwiftSurfaceHostState {
+        switch runnerState {
+        case .exited(code: 0):
+            return .ready(plan)
+        case .exited(let code):
+            return .failed("Swift surface runner exited with status \(code).")
+        case .crashed(let reason):
+            return .failed(reason)
+        case .timedOut(let seconds):
+            return .failed("Swift surface runner timed out after \(Int(seconds)) seconds.")
+        case .idle, .launching, .running:
+            return .failed("Swift surface runner did not complete.")
+        }
+    }
+}
+
+private enum AppSwiftSurfaceHostState: Equatable {
+    case loading
+    case ready(AppSwiftSurfaceRunnerPlan)
+    case failed(String)
 }
 
 private struct AppSurfaceWebView: NSViewRepresentable {

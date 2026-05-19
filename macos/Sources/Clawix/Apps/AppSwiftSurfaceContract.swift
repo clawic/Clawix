@@ -206,6 +206,7 @@ struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
 
 enum AppSwiftSurfaceContract {
     static let protocolVersion = 1
+    static let manifestFilename = "surface.json"
 
     static func validate(manifest: AppSwiftSurfaceManifest, for app: AppRecord) throws {
         guard app.effectiveSurfaceKind == .swiftDeclarative else {
@@ -219,6 +220,10 @@ enum AppSwiftSurfaceContract {
             try validateCapability(capability, declared: declared, app: app)
         }
         try validateNode(manifest.root, declared: declared, app: app)
+    }
+
+    static func decodeManifest(data: Data) throws -> AppSwiftSurfaceManifest {
+        try JSONDecoder().decode(AppSwiftSurfaceManifest.self, from: data)
     }
 
     static func runnerPlan(
@@ -235,6 +240,12 @@ enum AppSwiftSurfaceContract {
             protocolVersion: protocolVersion,
             allowedCapabilities: manifest.requestedCapabilities.sorted()
         )
+    }
+
+    static func runnerExecutablePath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+        let value = environment["CLAWIX_SWIFT_SURFACE_RUNNER"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return value?.isEmpty == false ? value : nil
     }
 
     private static func validateNode(
