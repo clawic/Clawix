@@ -33,6 +33,69 @@ final class NativeSystemSearchSourceBridgeTests: XCTestCase {
         XCTAssertEqual(snapshot.state, "external_pending")
         XCTAssertTrue(snapshot.documents.isEmpty)
     }
+
+    func testRebuildShortcutsIndexFeedsSignedHostSnapshotToClawSearch() throws {
+        let nativeRunner = ShortcutListRunner(output: "Daily Plan\nInbox Review\n")
+        let clawRunner = RecordingClawSearchRunner(output: """
+        {"ok":true,"data":{"rebuilt":true,"reindexed":2,"indexedBySource":{"native.system":2},"pendingSources":[]}}
+        """)
+
+        let result = try NativeSystemSearchSourceBridge.rebuildShortcutsIndex(
+            actorId: "clawix.test",
+            dataDir: "/tmp/claw-search-data",
+            nativeRunner: nativeRunner,
+            clawRunner: NativeSystemSearchSourceBridge.ClawSearchCommandRunner(run: clawRunner.run)
+        )
+
+        XCTAssertEqual(result.ok, true)
+        XCTAssertEqual(result.data.reindexed, 2)
+        XCTAssertEqual(result.data.indexedBySource["native.system"], 2)
+        XCTAssertEqual(result.data.pendingSources, [])
+        XCTAssertEqual(clawRunner.calls.count, 1)
+        let args = try XCTUnwrap(clawRunner.calls.first)
+        XCTAssertEqual(Array(args.prefix(6)), [
+            "search", "rebuild",
+            "--source", "native.system",
+            "--profile", "full",
+        ])
+        XCTAssertTrue(args.contains("--native-system-snapshot-json"))
+        XCTAssertTrue(args.contains("--actor"))
+        XCTAssertTrue(args.contains("clawix.test"))
+        XCTAssertTrue(args.contains("--surface"))
+        XCTAssertTrue(args.contains("clawix.native_system_search"))
+        XCTAssertTrue(args.contains("--data-dir"))
+        XCTAssertTrue(args.contains("/tmp/claw-search-data"))
+
+        let snapshotIndex = try XCTUnwrap(args.firstIndex(of: "--native-system-snapshot-json"))
+        let snapshotJSON = args[snapshotIndex + 1]
+        let snapshotData = try XCTUnwrap(snapshotJSON.data(using: .utf8))
+        let snapshot = try JSONDecoder().decode(NativeSystemSearchSourceSnapshot.self, from: snapshotData)
+        XCTAssertEqual(snapshot.source, "native.system")
+        XCTAssertEqual(snapshot.state, "enabled")
+        XCTAssertEqual(snapshot.documents.map(\.title), ["Daily Plan", "Inbox Review"])
+        XCTAssertEqual(snapshot.documents.first?.actions.first?.hostBroker.capabilityId, "mac.shortcut.run")
+    }
+
+    func testRebuildShortcutsIndexPropagatesExternalPendingSnapshot() throws {
+        let nativeRunner = ShortcutListRunner(output: "", error: NativeSystemSearchSourceBridgeTestError.failed)
+        let clawRunner = RecordingClawSearchRunner(output: """
+        {"ok":true,"data":{"rebuilt":true,"reindexed":0,"indexedBySource":{"native.system":0},"pendingSources":[]}}
+        """)
+
+        let result = try NativeSystemSearchSourceBridge.rebuildShortcutsIndex(
+            nativeRunner: nativeRunner,
+            clawRunner: NativeSystemSearchSourceBridge.ClawSearchCommandRunner(run: clawRunner.run)
+        )
+
+        XCTAssertEqual(result.data.reindexed, 0)
+        let args = try XCTUnwrap(clawRunner.calls.first)
+        let snapshotIndex = try XCTUnwrap(args.firstIndex(of: "--native-system-snapshot-json"))
+        let snapshotJSON = args[snapshotIndex + 1]
+        let snapshotData = try XCTUnwrap(snapshotJSON.data(using: .utf8))
+        let snapshot = try JSONDecoder().decode(NativeSystemSearchSourceSnapshot.self, from: snapshotData)
+        XCTAssertEqual(snapshot.state, "external_pending")
+        XCTAssertEqual(snapshot.documents, [])
+    }
 }
 
 private enum NativeSystemSearchSourceBridgeTestError: Error {
@@ -68,5 +131,19 @@ private final class ShortcutListRunner: NativeMacActionCommandRunning {
 
     func runNative(_ action: String, arguments: [String]) throws -> String {
         ""
+    }
+}
+
+private final class RecordingClawSearchRunner {
+    private let output: String
+    private(set) var calls: [[String]] = []
+
+    init(output: String) {
+        self.output = output
+    }
+
+    func run(_ arguments: [String]) throws -> Data {
+        calls.append(arguments)
+        return Data(output.utf8)
     }
 }

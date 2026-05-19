@@ -43,8 +43,24 @@ struct NativeSystemSearchSourceSnapshot: Codable, Equatable {
     let documents: [NativeSystemSearchSourceDocument]
 }
 
+struct NativeSystemSearchIndexResult: Decodable, Equatable {
+    struct DataPayload: Decodable, Equatable {
+        let rebuilt: Bool
+        let reindexed: Int
+        let indexedBySource: [String: Int]
+        let pendingSources: [String]
+    }
+
+    let ok: Bool
+    let data: DataPayload
+}
+
 enum NativeSystemSearchSourceBridge {
     static let sourceId = "native.system"
+
+    struct ClawSearchCommandRunner {
+        var run: ([String]) throws -> Data
+    }
 
     @MainActor
     static func shortcutsSnapshot(
@@ -73,6 +89,31 @@ enum NativeSystemSearchSourceBridge {
             state: "enabled",
             documents: names.map(shortcutDocument)
         )
+    }
+
+    @MainActor
+    static func rebuildShortcutsIndex(
+        actorId: String = "clawix.native-system-search",
+        dataDir: String? = nil,
+        nativeRunner: NativeMacActionCommandRunning = NativeMacActionProcessRunner(),
+        clawRunner: ClawSearchCommandRunner? = nil
+    ) throws -> NativeSystemSearchIndexResult {
+        let snapshot = shortcutsSnapshot(actorId: actorId, runner: nativeRunner)
+        let snapshotJSON = try json(snapshot)
+        var args = [
+            "search", "rebuild",
+            "--source", sourceId,
+            "--profile", "full",
+            "--native-system-snapshot-json", snapshotJSON,
+            "--actor", actorId,
+            "--surface", "clawix.native_system_search",
+            "--json",
+        ]
+        if let dataDir, !dataDir.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            args += ["--data-dir", dataDir]
+        }
+        let output = try (clawRunner ?? defaultClawSearchRunner()).run(args)
+        return try JSONDecoder().decode(NativeSystemSearchIndexResult.self, from: output)
     }
 
     private static func shortcutDocument(name: String) -> NativeSystemSearchSourceDocument {
@@ -124,5 +165,44 @@ enum NativeSystemSearchSourceBridge {
         }
         let trimmed = output.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
         return trimmed.isEmpty ? "shortcut" : trimmed
+    }
+
+    private static func json<T: Encodable>(_ value: T) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try encoder.encode(value)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
+    @MainActor
+    private static func defaultClawSearchRunner() -> ClawSearchCommandRunner {
+        ClawSearchCommandRunner { args in
+            guard ClawJSRuntime.isAvailable else {
+                throw NSError(domain: "NativeSystemSearchSourceBridge", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "ClawJS bundle is not available in this build."
+                ])
+            }
+            let process = Process()
+            process.executableURL = ClawJSRuntime.nodeBinaryURL
+            process.arguments = [ClawJSRuntime.cliScriptURL.path] + args
+            process.currentDirectoryURL = ClawJSServiceManager.workspaceURL
+            process.environment = ClawJSServiceManager.cliEnvironment()
+
+            let stdout = Pipe()
+            let stderr = Pipe()
+            process.standardOutput = stdout
+            process.standardError = stderr
+            try process.run()
+            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            let err = stderr.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else {
+                let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "native system Search indexing failed"
+                throw NSError(domain: "NativeSystemSearchSourceBridge", code: Int(process.terminationStatus), userInfo: [
+                    NSLocalizedDescriptionKey: message.trimmingCharacters(in: .whitespacesAndNewlines)
+                ])
+            }
+            return data
+        }
     }
 }
