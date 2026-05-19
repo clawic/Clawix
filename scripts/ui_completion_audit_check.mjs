@@ -33,6 +33,8 @@ const simulationFlags = [
   "--simulate-unknown-status",
   "--simulate-source-session-alias-mismatch",
   "--simulate-wrong-conversation-id",
+  "--simulate-missing-critical-macos-slice-progress",
+  "--simulate-missing-critical-macos-slice-audit-row",
 ];
 const allowedFlags = new Set(simulationFlags);
 
@@ -256,6 +258,15 @@ if (args.has("--simulate-source-session-alias-mismatch")) {
 if (args.has("--simulate-wrong-conversation-id")) {
   decisionVerification.conversationId = "other";
 }
+if (args.has("--simulate-missing-critical-macos-slice-progress") && Array.isArray(decisionVerification?.decisions)) {
+  delete decisionVerification.decisions.find((decision) => decision?.id === "initial_scope")?.externalPendingLedger?.sliceProgress;
+}
+if (args.has("--simulate-missing-critical-macos-slice-audit-row")) {
+  audit = audit.replace(
+    "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline, geometry, and copy roots after explicit approval. |\n",
+    "",
+  );
+}
 scanPublicSafety(audit, auditPath);
 
 if (completionSource?.goalReferenceAlias !== decisionVerification?.goalReference) {
@@ -393,6 +404,114 @@ for (const entry of decisionBlockerEvidenceTypes) {
   if (!audit.includes(actionRow)) fail(`${auditPath} must include unresolved blocker action row ${actionRow}`);
 }
 
+const criticalMacosSlice = {
+  sliceId: "critical-macos-ui-evidence-2026-05-19",
+  scope: ["macos-root-chrome", "macos-sidebar", "macos-chat-and-composer"],
+  status: "approval-ready-external-pending",
+  publicSafeEvidence: [
+    "36 private evidence records captured outside the public repo for the critical macOS slice",
+    "private review bundle is locked with normalized evidence hashes and a 7-day review window",
+    "slice preflight is ready-for-explicit-approval with 9 ok checks",
+    "real private records remain unapproved until explicit user approval",
+  ],
+  remainingForSlice: [
+    "explicit user approval for the critical macOS private evidence records",
+    "private finalizer run against the real private evidence root",
+    "require-approved private verifier and completion audit rerun",
+  ],
+  decisions: {
+    initial_scope: {
+      evidenceTypes: ["surface-baseline", "surface-geometry", "surface-copy"],
+      auditRow: "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline, geometry, and copy roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+    },
+    enforcement_mode: {
+      evidenceTypes: ["rendered-drift"],
+      auditRow: "| `enforcement_mode` | critical macOS `rendered-drift` evidence captured privately | Run `scripts/ui_private_drift_verify.mjs --require-approved` with the private drift root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_drift_verify.mjs --require-approved",
+    },
+    visual_baselines_location: {
+      evidenceTypes: ["critical-flow-baseline", "surface-baseline", "rendered-drift"],
+      auditRow: "| `visual_baselines_location` | critical macOS `critical-flow-baseline`, `surface-baseline`, and `rendered-drift` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and drift roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+    },
+    alignment_validation: {
+      evidenceTypes: ["surface-geometry", "pattern-geometry", "surface-baseline"],
+      auditRow: "| `alignment_validation` | critical macOS `surface-geometry`, `pattern-geometry`, and `surface-baseline` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private geometry and baseline roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+    },
+    copy_governance: {
+      evidenceTypes: ["surface-copy"],
+      auditRow: "| `copy_governance` | critical macOS `surface-copy` evidence captured privately | Run `scripts/ui_private_copy_verify.mjs --require-approved` with the private copy root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_copy_verify.mjs --require-approved",
+    },
+    v1_pattern_set: {
+      evidenceTypes: ["surface-baseline", "pattern-geometry"],
+      auditRow: "| `v1_pattern_set` | critical macOS `surface-baseline` and `pattern-geometry` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and geometry roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+    },
+    perf_budget_source: {
+      evidenceTypes: ["performance-budget"],
+      auditRow: "| `perf_budget_source` | available critical macOS `performance-budget` evidence captured privately | Run `scripts/ui_private_performance_budget_verify.mjs --require-approved` with the private baseline root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_performance_budget_verify.mjs --require-approved",
+    },
+    size_contracts: {
+      evidenceTypes: ["pattern-geometry"],
+      auditRow: "| `size_contracts` | critical macOS `pattern-geometry` evidence captured privately | Run `scripts/ui_private_geometry_verify.mjs --require-approved` with the private geometry root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_geometry_verify.mjs --require-approved",
+    },
+  },
+};
+
+if (!audit.includes("## Critical macOS slice narrowing")) {
+  fail(`${auditPath} must include the critical macOS slice narrowing section`);
+}
+if (!audit.includes("This is not visual approval.")) {
+  fail(`${auditPath} critical macOS slice narrowing must state it is not visual approval`);
+}
+const sliceDecisionIds = Object.keys(criticalMacosSlice.decisions);
+const decisionsWithSliceProgress = decisions.filter((decision) => decision?.externalPendingLedger?.sliceProgress);
+if (!arrayEquals(decisionsWithSliceProgress.map((decision) => decision.id), sliceDecisionIds)) {
+  fail(`${decisionPath} sliceProgress decisions must exactly match the critical macOS slice decisions`);
+}
+for (const [decisionId, expectedSlice] of Object.entries(criticalMacosSlice.decisions)) {
+  const decision = decisions.find((candidate) => candidate.id === decisionId);
+  const label = `${decisionPath}.${decisionId}.externalPendingLedger.sliceProgress`;
+  const sliceProgress = decision?.externalPendingLedger?.sliceProgress;
+  if (!sliceProgress) {
+    fail(`${label} must describe the critical macOS slice progress`);
+    continue;
+  }
+  if (decision.status !== "blocked-external-pending") {
+    fail(`${decisionPath}.${decisionId} must remain blocked-external-pending until explicit approval`);
+  }
+  if (sliceProgress.sliceId !== criticalMacosSlice.sliceId) fail(`${label}.sliceId must be ${criticalMacosSlice.sliceId}`);
+  if (sliceProgress.status !== criticalMacosSlice.status) fail(`${label}.status must be ${criticalMacosSlice.status}`);
+  if (!arrayEquals(sliceProgress.scope || [], criticalMacosSlice.scope)) fail(`${label}.scope must match the critical macOS surfaces`);
+  if (!arrayEquals(sliceProgress.publicSafeEvidence || [], criticalMacosSlice.publicSafeEvidence)) {
+    fail(`${label}.publicSafeEvidence must match the public-safe slice evidence summary`);
+  }
+  if (!arrayEquals(sliceProgress.remainingForSlice || [], criticalMacosSlice.remainingForSlice)) {
+    fail(`${label}.remainingForSlice must preserve explicit approval and require-approved verification`);
+  }
+  if (!arrayEquals(sliceProgress.evidenceTypes || [], expectedSlice.evidenceTypes)) {
+    fail(`${label}.evidenceTypes must match the narrowed evidence types`);
+  }
+  if (sliceProgress.blockingCommand !== expectedSlice.blockingCommand) {
+    fail(`${label}.blockingCommand must match the public-safe reentry command`);
+  }
+  if (!String(sliceProgress.reentryCondition || "").includes("explicit user approval")) {
+    fail(`${label}.reentryCondition must require explicit user approval`);
+  }
+  const remainingLine = `Critical macOS slice (${criticalMacosSlice.scope.join(", ")}) has captured private ${expectedSlice.evidenceTypes.join(", ")} evidence and is narrowed to explicit approval plus require-approved verification; full cross-platform/noncritical closure remains external pending.`;
+  if (!requireArray(decision, `${decisionPath}.${decisionId}`, "remaining").includes(remainingLine)) {
+    fail(`${decisionPath}.${decisionId}.remaining must include the narrowed critical macOS slice line`);
+  }
+  if (!audit.includes(expectedSlice.auditRow)) {
+    fail(`${auditPath} must include critical macOS slice row for ${decisionId}`);
+  }
+}
+
 const rowPattern = /^\| (\d+) \| `([^`]+)` \| ([^|]+) \| ([^|]+) \|$/gm;
 const rows = [];
 let match;
@@ -509,6 +628,8 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-unknown-status", "status is not an allowed status"],
     ["--simulate-source-session-alias-mismatch", "sourceSession must match"],
     ["--simulate-wrong-conversation-id", "conversationId must match"],
+    ["--simulate-missing-critical-macos-slice-progress", "sliceProgress must describe the critical macOS slice progress"],
+    ["--simulate-missing-critical-macos-slice-audit-row", "must include critical macOS slice row for initial_scope"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
       cwd: rootDir,

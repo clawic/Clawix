@@ -60,6 +60,28 @@ re-read one by one.
 | `perf_budget_source` | 24 `performance-budget` | `scripts/ui_private_performance_budget_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Approved performance budgets require private critical-flow measurements and explicit human approval. | private performance measurement + human approval |
 | `size_contracts` | 59 `pattern-geometry` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Measured geometry clauses require private rendered measurement and explicit human approval. | private rendered measurement + human approval |
 
+## Critical macOS slice narrowing
+
+The durable slice `critical-macos-ui-evidence-2026-05-19` narrows eight of the
+nine private-evidence blockers without publishing private screenshots, copy
+snapshots, raw visual values, local paths, or approval artifacts. The private
+review packet contains 36 captured records for `macos-root-chrome`,
+`macos-sidebar`, and `macos-chat-and-composer`; its public-safe state is
+`approval-ready-external-pending`. This is not visual approval. The remaining
+slice work is explicit user approval, real private finalizer execution, and the
+listed `--require-approved` verifier rerun.
+
+| Decision | Slice evidence narrowed | Remaining public-safe reentry |
+| --- | --- | --- |
+| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline, geometry, and copy roots after explicit approval. |
+| `enforcement_mode` | critical macOS `rendered-drift` evidence captured privately | Run `scripts/ui_private_drift_verify.mjs --require-approved` with the private drift root after explicit approval. |
+| `visual_baselines_location` | critical macOS `critical-flow-baseline`, `surface-baseline`, and `rendered-drift` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and drift roots after explicit approval. |
+| `alignment_validation` | critical macOS `surface-geometry`, `pattern-geometry`, and `surface-baseline` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private geometry and baseline roots after explicit approval. |
+| `copy_governance` | critical macOS `surface-copy` evidence captured privately | Run `scripts/ui_private_copy_verify.mjs --require-approved` with the private copy root after explicit approval. |
+| `v1_pattern_set` | critical macOS `surface-baseline` and `pattern-geometry` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and geometry roots after explicit approval. |
+| `perf_budget_source` | available critical macOS `performance-budget` evidence captured privately | Run `scripts/ui_private_performance_budget_verify.mjs --require-approved` with the private baseline root after explicit approval. |
+| `size_contracts` | critical macOS `pattern-geometry` evidence captured privately | Run `scripts/ui_private_geometry_verify.mjs --require-approved` with the private geometry root after explicit approval. |
+
 | # | Decision | Status | Completion evidence state |
 | --- | --- | --- | --- |
 | 1 | `initial_scope` | blocked-external-pending | EXTERNAL PENDING: public cross-platform coverage is enforced; exact platform captures are ledgered until private baseline, geometry, copy, and human approval are available. |
