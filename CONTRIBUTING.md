@@ -8,6 +8,10 @@
 - For architecture, storage, naming, host, validation, release, or privacy
   decisions, start from [docs/decision-map.md](docs/decision-map.md). It points
   to the canonical source and the guardrail expected for each decision.
+- For official builds, source/community builds, forks, compatibility claims,
+  marks, or app identity, start from
+  [ADR 0020](docs/adr/0020-open-standard-official-trust-mirror.md),
+  [FORKS.md](FORKS.md), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Local setup
 
@@ -36,6 +40,9 @@ The hygiene gate (`macos/scripts/public_hygiene_check.sh`) blocks publishing whe
 ## Pull requests
 
 - Keep commit messages in `type(scope): description` form. Examples: `feat(mac/composer): add model menu popup`, `fix(mac/sidebar): resolve overlap on long names`, `chore(repo): update hygiene globs`.
+- Add a `Signed-off-by: Name <email>` line to commits under the lightweight
+  [DCO](DCO). This certifies contribution provenance without adding a broad
+  Contributor License Agreement.
 - Update docs and the changelog if the change is user-facing.
 - Run `bash macos/scripts/public_hygiene_check.sh` before pushing.
 - Keep PR scope narrow. Two unrelated changes are two pull requests.

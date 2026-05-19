@@ -13,6 +13,8 @@ compiled resources, screenshots, documentation examples, or any other form:
 
 - the Clawix name, product name, and project identity;
 - the Clawix logo, app icon, wordmark, logomark, and SVG mark;
+- official app build, update-channel, download, release, documentation,
+  website, support, and package identity;
 - custom icon artwork, glyphs, symbols, and visual mark geometry;
 - custom typefaces, custom font files, and typography assets;
 - brand colors, brand compositions, marketing images, banners, screenshots,
@@ -35,6 +37,9 @@ If you distribute a modified version, fork, derivative work, competing product,
 or independently branded build, you must remove or replace the Reserved
 Materials and use a clearly distinct name, logo, icon set, visual identity, and
 product presentation.
+
+Truthful compatibility statements are allowed when they do not imply official
+status, endorsement, or control by the Clawix maintainers.
 
 Third-party materials
 ---------------------

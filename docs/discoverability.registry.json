@@ -365,6 +365,35 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "adr-docs-adr-0020-open-standard-official-trust-mirror",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0020-open-standard-official-trust-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0020: Open standard and official trust mirror",
+        "0020-open-standard-official-trust-mirror",
+        "ADR 0020",
+        "official trust compatibility",
+        "Clawix official builds"
+      ],
+      "searchQueries": [
+        {
+          "query": "official trust compatibility",
+          "expectPath": "docs/adr/0020-open-standard-official-trust-mirror.md"
+        }
+      ],
+      "guard": "scripts/open_source_canonicity_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "owner": "clawix",
@@ -1413,6 +1442,33 @@
         }
       ],
       "guard": "scripts/native_permission_broker_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-open-source-canonicity-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/open_source_canonicity_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "open_source_canonicity_check",
+        "Open Source Canonicity Check",
+        "open source canonicity guard",
+        "Clawix official trust guardrail"
+      ],
+      "searchQueries": [
+        {
+          "query": "open_source_canonicity_check",
+          "expectPath": "scripts/open_source_canonicity_check.mjs"
+        }
+      ],
+      "guard": "scripts/open_source_canonicity_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },

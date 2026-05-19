@@ -29,6 +29,10 @@ You may use the Clawix name in plain text only when necessary to:
 These uses must be truthful, non-confusing, and must not imply sponsorship,
 endorsement, affiliation, or official status.
 
+Compatibility language is allowed when true. Official language is reserved for
+upstream-maintained or explicitly authorized Clawix builds, channels, marks,
+and release artifacts.
+
 ## Forks and derivatives
 
 Forks, modified builds, redistributions, templates, commercial products, hosted

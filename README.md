@@ -130,6 +130,11 @@ The marketing version lives in [`macos/VERSION`](./macos/VERSION). It is the sin
 > Pre-public compatibility is not preserved unless an ADR grants a bounded exception; obsolete beta, experimental, or legacy paths are removed or hidden during the v1 surface closure.
 >
 > Clawix may help with sensitive local records, summaries, searches, and non-final drafts, but it does not replace regulated professionals or make final medical, mental health, legal, financial, insurance, employment, education, government, emergency, or physical-safety decisions. See [SAFETY.md](SAFETY.md) and [REGULATED_DOMAINS.md](REGULATED_DOMAINS.md).
+>
+> Official Clawix builds are maintained by upstream. Source builds, community
+> builds, forks, and compatible products are allowed by the license when they
+> use distinct identity and do not imply official status. See [FORKS.md](./FORKS.md),
+> [NOTICE](./NOTICE), and [TRADEMARKS.md](./TRADEMARKS.md).
 
 ## Privacy guarantee for contributors
 
@@ -147,6 +152,9 @@ The Clawix name, logo, app icon, custom icons, custom typefaces, SVG marks,
 brand assets, screenshots, marketing assets, and visual identity are reserved
 and are not licensed under MIT. See [NOTICE](./NOTICE) and
 [TRADEMARKS.md](./TRADEMARKS.md).
+
+Forks and compatible builds are welcome when they use distinct identity and do
+not imply official Clawix status. See [FORKS.md](./FORKS.md).
 
 ## Star History
 

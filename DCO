@@ -1,0 +1,23 @@
+Developer Certificate of Origin (lightweight)
+=============================================
+
+Clawix uses the same lightweight sign-off model as ClawJS.
+
+By adding a `Signed-off-by: Name <email>` line to a commit, you certify that:
+
+1. You wrote the contribution, or you have the right to submit it under the
+   repository license.
+2. You understand that the contribution and your sign-off may be public.
+3. You are not knowingly submitting material that violates someone else's
+   rights.
+4. You agree that the contribution may be distributed under the license used by
+   the files you changed.
+
+Example:
+
+```
+Signed-off-by: Ada Lovelace <ada@example.com>
+```
+
+This DCO is intended to keep contribution provenance lightweight. It is not a
+Contributor License Agreement.

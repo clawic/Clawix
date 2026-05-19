@@ -53,6 +53,10 @@ Read the relevant canonical docs before changing their surfaces:
   `docs/adr/0022-remote-gateway-sync-redesign.md`, sibling ClawJS
   `docs/relay.md`, and local `docs/decision-map.md`
 - CLI guidance/resource assertions: `docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md`
+- Open standard, official trust, forks, and compatibility:
+  sibling ClawJS `docs/adr/0033-open-standard-official-trust.md`,
+  `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`,
+  `TRADEMARKS.md`, and `NOTICE`
 - Discoverability/meta-code routing:
   `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`
@@ -142,6 +146,10 @@ Use the relevant skill instead of loading long instructions into context:
   resolution, domain APIs, SDK, and CLI.
 - Clawix owns native UI, visual state, host identity, review/approval surfaces,
   and host-specific operational state.
+- MIT-licensed forks, commercial use, source builds, and compatible
+  implementations are legitimate; `official Clawix` is reserved for upstream
+  app builds, channels, marks, and visual identity, while truthful compatible
+  claims must not imply endorsement.
 - Clawix UI canon is governed by `docs/adr/0010-interface-governance.md` and
   `docs/ui/`. Non-authorized agents must not change visual/copy/layout
   decisions; they report drift and leave conceptual proposals instead.

@@ -24,7 +24,10 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
 5. Classify every new sensitive app surface, route, connector, provider,
    export/share path, demo, or docs claim against the ClawJS regulated-domain
    safety policy before treating the release candidate as complete.
-6. Record any unavailable physical, provider, store, signed-host, or share-sheet
+6. Confirm official/source/community/compatible wording remains aligned with
+   [ADR 0020](docs/adr/0020-open-standard-official-trust-mirror.md),
+   [FORKS.md](FORKS.md), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md).
+7. Record any unavailable physical, provider, store, signed-host, or share-sheet
    validation in `docs/legal-external-pending-validation.md` as
    `EXTERNAL PENDING`; do not treat it as passed.
 
@@ -35,7 +38,9 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
    credentials, signing details, or production user data.
 3. Confirm the GitHub release body links current legal docs and EULA where a
    binary or app artifact is attached.
-4. Create tags or GitHub releases only after explicit approval for that exact
+4. Link current fork/rebrand and trademark docs when app or binary artifacts
+   could be confused with source or community builds.
+5. Create tags or GitHub releases only after explicit approval for that exact
    GitHub action.
 
 ## App And Binary Channel Checklist
