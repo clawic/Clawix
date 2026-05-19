@@ -32,6 +32,7 @@ final class MarketplaceManager: ObservableObject {
     private let tokenOperation: TokenOperation
     private var refreshTask: Task<Void, Never>?
     private var refreshGeneration = 0
+    private var actionTasks: [MarketplaceActionKey: Task<Void, Never>] = [:]
     private var actionGenerations: [MarketplaceActionKey: Int] = [:]
 
     init(
@@ -52,6 +53,9 @@ final class MarketplaceManager: ObservableObject {
 
     deinit {
         refreshTask?.cancel()
+        for task in actionTasks.values {
+            task.cancel()
+        }
     }
 
     func ensureToken() {
@@ -129,6 +133,10 @@ final class MarketplaceManager: ObservableObject {
         for key in Array(actionGenerations.keys) {
             actionGenerations[key, default: 0] += 1
         }
+        for task in actionTasks.values {
+            task.cancel()
+        }
+        actionTasks.removeAll()
         refreshTask?.cancel()
         refreshTask = nil
     }
@@ -136,6 +144,16 @@ final class MarketplaceManager: ObservableObject {
     func markRead(messageId: String) async {
         let key = MarketplaceActionKey(kind: .markRead, id: messageId)
         let generation = nextActionGeneration(for: key)
+        actionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runMarkRead(messageId: messageId, key: key, generation: generation)
+        }
+        actionTasks[key] = task
+        await task.value
+    }
+
+    private func runMarkRead(messageId: String, key: MarketplaceActionKey, generation: Int) async {
         ensureToken()
         do {
             try await marketplace.markRead(messageId: messageId)
@@ -143,6 +161,7 @@ final class MarketplaceManager: ObservableObject {
             guard isCurrentAction(key: key, generation: generation) else { return }
             finishActionIfCurrent(key: key, generation: generation)
         } catch is CancellationError {
+            return
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
             state = .error(error.localizedDescription)
@@ -153,6 +172,16 @@ final class MarketplaceManager: ObservableObject {
     func updateIntentStatus(id: String, status: String) async {
         let key = MarketplaceActionKey(kind: .updateIntentStatus, id: "\(id):\(status)")
         let generation = nextActionGeneration(for: key)
+        actionTasks[key]?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runUpdateIntentStatus(id: id, status: status, key: key, generation: generation)
+        }
+        actionTasks[key] = task
+        await task.value
+    }
+
+    private func runUpdateIntentStatus(id: String, status: String, key: MarketplaceActionKey, generation: Int) async {
         ensureToken()
         do {
             try await marketplace.updateIntentStatus(id: id, status: status)
@@ -160,6 +189,7 @@ final class MarketplaceManager: ObservableObject {
             guard isCurrentAction(key: key, generation: generation) else { return }
             finishActionIfCurrent(key: key, generation: generation)
         } catch is CancellationError {
+            return
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
             state = .error(error.localizedDescription)
@@ -195,6 +225,7 @@ final class MarketplaceManager: ObservableObject {
 
     private func finishActionIfCurrent(key: MarketplaceActionKey, generation: Int) {
         guard isCurrentAction(key: key, generation: generation) else { return }
+        actionTasks[key] = nil
         actionGenerations[key] = generation
     }
 

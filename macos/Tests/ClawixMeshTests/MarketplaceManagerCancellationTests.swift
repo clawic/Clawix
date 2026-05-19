@@ -96,14 +96,18 @@ final class MarketplaceManagerCancellationTests: XCTestCase {
         XCTAssertTrue(manager.roots.isEmpty)
     }
 
-    func testCancelSurfaceWorkSuppressesLateMarkReadError() async {
+    func testCancelSurfaceWorkCancelsInFlightMarkRead() async {
         let markStarted = expectation(description: "Marketplace mark read started")
-        let markReturned = expectation(description: "Marketplace mark read returned after teardown")
+        let markCancelled = expectation(description: "Marketplace mark read cancelled")
         let client = FakeMarketplaceClient()
         client.onMarkRead = { _ in
             markStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            markReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                markCancelled.fulfill()
+                throw CancellationError()
+            }
             throw MarketplaceTestError.serviceNotReady
         }
         let manager = MarketplaceManager(client: client, tokenOperation: { "token" })
@@ -113,21 +117,25 @@ final class MarketplaceManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [markReturned], timeout: 1)
+        await fulfillment(of: [markCancelled], timeout: 1)
         await task.value
         XCTAssertNil(manager.state.errorMessage)
     }
 
-    func testCancelSurfaceWorkSuppressesLateIntentStatusRefresh() async {
+    func testCancelSurfaceWorkCancelsInFlightIntentStatusUpdate() async {
         let updateStarted = expectation(description: "Marketplace intent update started")
-        let updateReturned = expectation(description: "Marketplace intent update returned after teardown")
+        let updateCancelled = expectation(description: "Marketplace intent update cancelled")
         let refreshStarted = expectation(description: "Marketplace refresh should not start")
         refreshStarted.isInverted = true
         let client = FakeMarketplaceClient()
         client.onUpdateIntentStatus = { _, _ in
             updateStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            updateReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                updateCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         client.onListRoots = {
             refreshStarted.fulfill()
@@ -140,7 +148,7 @@ final class MarketplaceManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [updateReturned, refreshStarted], timeout: 1)
+        await fulfillment(of: [updateCancelled, refreshStarted], timeout: 1)
         await task.value
         XCTAssertTrue(manager.roots.isEmpty)
         XCTAssertNil(manager.state.errorMessage)
