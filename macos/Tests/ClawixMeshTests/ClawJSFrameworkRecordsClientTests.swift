@@ -279,6 +279,46 @@ final class ClawJSFrameworkRecordsClientTests: XCTestCase {
         XCTAssertTrue(calls.contains(["connections", "list", "--for-host", "true", "--json"]))
     }
 
+    func testAgentEntityAsyncMutationsUseHostUnredactedMode() async throws {
+        var calls: [[String]] = []
+        let client = ClawJSFrameworkRecordsClient(asyncRunner: .init { args in
+            calls.append(args)
+            return Data(#"{"ok":true,"data":{}}"#.utf8)
+        })
+        var agent = Agent.defaultCodex()
+        agent.id = "agent.async"
+        var personality = AgentPersonality.newDraft()
+        personality.id = "personality.async"
+        var collection = SkillCollection.newDraft()
+        collection.id = "collection.async"
+        var connection = Connection.newDraft(service: .telegram)
+        connection.id = "connection.async"
+
+        try await client.upsertAgentAsync(agent)
+        try await client.deleteAgentAsync(id: agent.id)
+        try await client.upsertPersonalityAsync(personality)
+        try await client.deletePersonalityAsync(id: personality.id)
+        try await client.upsertSkillCollectionAsync(collection)
+        try await client.deleteSkillCollectionAsync(id: collection.id)
+        try await client.upsertConnectionAsync(connection, secretRef: "vault://connections/connection.async")
+        try await client.deleteConnectionAsync(id: connection.id)
+
+        XCTAssertTrue(calls.contains { $0.starts(with: ["agents", "upsert", "agent.async"]) && $0.contains("--for-host") })
+        XCTAssertTrue(calls.contains(["agents", "delete", "agent.async", "--for-host", "true", "--json"]))
+        XCTAssertTrue(calls.contains { $0.starts(with: ["personalities", "upsert", "personality.async"]) && $0.contains("--for-host") })
+        XCTAssertTrue(calls.contains(["personalities", "delete", "personality.async", "--for-host", "true", "--json"]))
+        XCTAssertTrue(calls.contains { $0.starts(with: ["skill-collections", "upsert", "collection.async"]) && $0.contains("--for-host") })
+        XCTAssertTrue(calls.contains(["skill-collections", "delete", "collection.async", "--for-host", "true", "--json"]))
+        let connectionCall = calls.first { $0.starts(with: ["connections", "upsert", "connection.async", "--record"]) }
+        XCTAssertNotNil(connectionCall)
+        let recordIndex = connectionCall?.firstIndex(of: "--record")
+        let record = recordIndex.flatMap { connectionCall?[$0 + 1] } ?? "{}"
+        let object = try JSONSerialization.jsonObject(with: Data(record.utf8)) as? [String: Any]
+        XCTAssertEqual(object?["secretRef"] as? String, "vault://connections/connection.async")
+        XCTAssertEqual(connectionCall?.contains("--for-host"), true)
+        XCTAssertTrue(calls.contains(["connections", "delete", "connection.async", "--for-host", "true", "--json"]))
+    }
+
     func testSkillsStorePersistsCatalogAndActiveStateThroughFrameworkRecords() throws {
         var calls: [[String]] = []
         let client = ClawJSFrameworkRecordsClient(runner: .init { args in

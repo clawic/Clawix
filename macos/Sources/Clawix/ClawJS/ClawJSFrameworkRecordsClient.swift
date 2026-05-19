@@ -76,11 +76,15 @@ struct ClawJSFrameworkRecordsClient {
     private let asyncRunner: AsyncCommandRunner
 
     init(runner: CommandRunner? = nil, asyncRunner: AsyncCommandRunner? = nil) {
-        self.runner = runner ?? CommandRunner { args in
+        let resolvedRunner = runner ?? CommandRunner { args in
             try Self.runClawJS(args: args)
         }
+        self.runner = resolvedRunner
         self.asyncRunner = asyncRunner ?? AsyncCommandRunner { args in
-            try await Self.runClawJSAsync(args: args)
+            if runner != nil {
+                return try resolvedRunner.run(args)
+            }
+            return try await Self.runClawJSAsync(args: args)
         }
     }
 
@@ -168,8 +172,16 @@ struct ClawJSFrameworkRecordsClient {
         _ = try runner.run(["agents", "upsert", agent.id, "--record", try Self.json(agent), "--for-host", "true", "--json"])
     }
 
+    func upsertAgentAsync(_ agent: Agent) async throws {
+        _ = try await asyncRunner.run(["agents", "upsert", agent.id, "--record", try Self.json(agent), "--for-host", "true", "--json"])
+    }
+
     func deleteAgent(id: String) throws {
         _ = try runner.run(["agents", "delete", id, "--for-host", "true", "--json"])
+    }
+
+    func deleteAgentAsync(id: String) async throws {
+        _ = try await asyncRunner.run(["agents", "delete", id, "--for-host", "true", "--json"])
     }
 
     func listPersonalities() throws -> [AgentPersonality] {
@@ -186,8 +198,16 @@ struct ClawJSFrameworkRecordsClient {
         _ = try runner.run(["personalities", "upsert", personality.id, "--record", try Self.json(personality), "--for-host", "true", "--json"])
     }
 
+    func upsertPersonalityAsync(_ personality: AgentPersonality) async throws {
+        _ = try await asyncRunner.run(["personalities", "upsert", personality.id, "--record", try Self.json(personality), "--for-host", "true", "--json"])
+    }
+
     func deletePersonality(id: String) throws {
         _ = try runner.run(["personalities", "delete", id, "--for-host", "true", "--json"])
+    }
+
+    func deletePersonalityAsync(id: String) async throws {
+        _ = try await asyncRunner.run(["personalities", "delete", id, "--for-host", "true", "--json"])
     }
 
     func listSkillCollections() throws -> [SkillCollection] {
@@ -204,8 +224,16 @@ struct ClawJSFrameworkRecordsClient {
         _ = try runner.run(["skill-collections", "upsert", collection.id, "--record", try Self.json(collection), "--for-host", "true", "--json"])
     }
 
+    func upsertSkillCollectionAsync(_ collection: SkillCollection) async throws {
+        _ = try await asyncRunner.run(["skill-collections", "upsert", collection.id, "--record", try Self.json(collection), "--for-host", "true", "--json"])
+    }
+
     func deleteSkillCollection(id: String) throws {
         _ = try runner.run(["skill-collections", "delete", id, "--for-host", "true", "--json"])
+    }
+
+    func deleteSkillCollectionAsync(id: String) async throws {
+        _ = try await asyncRunner.run(["skill-collections", "delete", id, "--for-host", "true", "--json"])
     }
 
     func listConnections() throws -> [Connection] {
@@ -222,8 +250,16 @@ struct ClawJSFrameworkRecordsClient {
         _ = try runner.run(["connections", "upsert", connection.id, "--record", try Self.connectionJson(connection, secretRef: secretRef), "--for-host", "true", "--json"])
     }
 
+    func upsertConnectionAsync(_ connection: Connection, secretRef: String? = nil) async throws {
+        _ = try await asyncRunner.run(["connections", "upsert", connection.id, "--record", try Self.connectionJson(connection, secretRef: secretRef), "--for-host", "true", "--json"])
+    }
+
     func deleteConnection(id: String) throws {
         _ = try runner.run(["connections", "delete", id, "--for-host", "true", "--json"])
+    }
+
+    func deleteConnectionAsync(id: String) async throws {
+        _ = try await asyncRunner.run(["connections", "delete", id, "--for-host", "true", "--json"])
     }
 
     func listProviderRoutes() throws -> [ProviderRoute] {

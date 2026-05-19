@@ -65,6 +65,39 @@ final class AgentStoreCancellationTests: XCTestCase {
         store.cancelSurfaceWork()
     }
 
+    func testFrameworkUpsertAgentReturnsBeforeAsyncPersistenceCompletes() async {
+        let upsertStarted = expectation(description: "Async framework upsert started")
+        let upsertFinished = expectation(description: "Async framework upsert finished")
+        let client = ClawJSFrameworkRecordsClient(
+            runner: .init { _ in
+                XCTFail("AgentStore should not use synchronous framework persistence for agent upsert")
+                return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+            },
+            asyncRunner: .init { args in
+                if args.starts(with: ["agents", "upsert", "agent.instant"]) {
+                    upsertStarted.fulfill()
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    upsertFinished.fulfill()
+                    return Data(#"{"ok":true,"data":{}}"#.utf8)
+                }
+                return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+            }
+        )
+        let store = AgentStore(
+            home: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true),
+            frameworkClient: client,
+            autoLoad: false
+        )
+
+        store.upsertAgent(Self.agent(id: "agent.instant"))
+
+        XCTAssertEqual(store.agents.map(\.id), ["agent.instant"])
+        await fulfillment(of: [upsertStarted], timeout: 1)
+        XCTAssertEqual(store.agents.map(\.id), ["agent.instant"])
+        await fulfillment(of: [upsertFinished], timeout: 1)
+        store.cancelSurfaceWork()
+    }
+
     private func makeStore(
         loadOperation: @escaping AgentStore.LoadOperation
     ) -> AgentStore {

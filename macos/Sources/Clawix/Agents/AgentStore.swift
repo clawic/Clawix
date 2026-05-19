@@ -239,9 +239,11 @@ final class AgentStore: ObservableObject {
         if let frameworkClient {
             var copy = agent
             copy.updatedAt = Date()
-            try? frameworkClient.upsertAgent(copy)
             upsertInMemory(copy)
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.upsertAgentAsync(copy)
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forAgent: agent.id)
@@ -270,9 +272,11 @@ final class AgentStore: ObservableObject {
     func deleteAgent(id: String) {
         guard let agent = agent(id: id), !agent.isBuiltin else { return }
         if let frameworkClient {
-            try? frameworkClient.deleteAgent(id: id)
             agents.removeAll { $0.id == id }
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.deleteAgentAsync(id: id)
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forAgent: id)
@@ -462,9 +466,11 @@ final class AgentStore: ObservableObject {
         if let frameworkClient {
             var copy = p
             copy.updatedAt = Date()
-            try? frameworkClient.upsertPersonality(copy)
             upsertInMemory(copy)
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.upsertPersonalityAsync(copy)
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forAgentPersonality: p.id)
@@ -478,18 +484,21 @@ final class AgentStore: ObservableObject {
 
     func deleteAgentPersonality(id: String) {
         if let frameworkClient {
-            try? frameworkClient.deletePersonality(id: id)
-            for var agent in agents where agent.personalityIds.contains(id) {
-                agent.personalityIds.removeAll { $0 == id }
-                try? frameworkClient.upsertAgent(agent)
-            }
+            let affectedAgents = agents.filter { $0.personalityIds.contains(id) }
             personalities.removeAll { $0.id == id }
             agents = agents.map { agent in
                 var copy = agent
                 copy.personalityIds.removeAll { $0 == id }
                 return copy
             }
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.deletePersonalityAsync(id: id)
+                for var agent in affectedAgents {
+                    agent.personalityIds.removeAll { $0 == id }
+                    try? await frameworkClient.upsertAgentAsync(agent)
+                }
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forAgentPersonality: id)
@@ -559,9 +568,11 @@ final class AgentStore: ObservableObject {
         if let frameworkClient {
             var copy = c
             copy.updatedAt = Date()
-            try? frameworkClient.upsertSkillCollection(copy)
             upsertInMemory(copy)
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.upsertSkillCollectionAsync(copy)
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forCollection: c.id)
@@ -575,18 +586,21 @@ final class AgentStore: ObservableObject {
 
     func deleteCollection(id: String) {
         if let frameworkClient {
-            try? frameworkClient.deleteSkillCollection(id: id)
-            for var agent in agents where agent.skillCollectionIds.contains(id) {
-                agent.skillCollectionIds.removeAll { $0 == id }
-                try? frameworkClient.upsertAgent(agent)
-            }
+            let affectedAgents = agents.filter { $0.skillCollectionIds.contains(id) }
             skillCollections.removeAll { $0.id == id }
             agents = agents.map { agent in
                 var copy = agent
                 copy.skillCollectionIds.removeAll { $0 == id }
                 return copy
             }
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.deleteSkillCollectionAsync(id: id)
+                for var agent in affectedAgents {
+                    agent.skillCollectionIds.removeAll { $0 == id }
+                    try? await frameworkClient.upsertAgentAsync(agent)
+                }
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forCollection: id)
@@ -650,9 +664,11 @@ final class AgentStore: ObservableObject {
         if let frameworkClient {
             var copy = c
             copy.updatedAt = Date()
-            try? frameworkClient.upsertConnection(copy)
             upsertInMemory(copy)
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.upsertConnectionAsync(copy)
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forConnection: c.id)
@@ -714,9 +730,11 @@ final class AgentStore: ObservableObject {
             )
             if var connection = connection(id: connectionId), let frameworkClient {
                 connection.updatedAt = Date()
-                try? frameworkClient.upsertConnection(connection, secretRef: "vault://connections/\(connectionId)")
                 upsertInMemory(connection)
-                reloadAll()
+                Task { @MainActor [weak self] in
+                    try? await frameworkClient.upsertConnectionAsync(connection, secretRef: "vault://connections/\(connectionId)")
+                    await self?.refresh()
+                }
             }
         } catch {
             return
@@ -746,18 +764,21 @@ final class AgentStore: ObservableObject {
 
     func deleteConnection(id: String) {
         if let frameworkClient {
-            try? frameworkClient.deleteConnection(id: id)
-            for var agent in agents where agent.integrationBindings.contains(where: { $0.connectionId == id }) {
-                agent.integrationBindings.removeAll { $0.connectionId == id }
-                try? frameworkClient.upsertAgent(agent)
-            }
+            let affectedAgents = agents.filter { $0.integrationBindings.contains(where: { $0.connectionId == id }) }
             connections.removeAll { $0.id == id }
             agents = agents.map { agent in
                 var copy = agent
                 copy.integrationBindings.removeAll { $0.connectionId == id }
                 return copy
             }
-            reloadAll()
+            Task { @MainActor [weak self] in
+                try? await frameworkClient.deleteConnectionAsync(id: id)
+                for var agent in affectedAgents {
+                    agent.integrationBindings.removeAll { $0.connectionId == id }
+                    try? await frameworkClient.upsertAgentAsync(agent)
+                }
+                await self?.refresh()
+            }
             return
         }
         let folder = dir(forConnection: id)
