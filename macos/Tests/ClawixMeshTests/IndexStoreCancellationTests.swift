@@ -3,6 +3,35 @@ import XCTest
 
 @MainActor
 final class IndexStoreCancellationTests: XCTestCase {
+    func testCancelInFlightWorkSuppressesRefreshAndReturnsToIdle() async {
+        let refreshStarted = expectation(description: "Index refresh started")
+        let refreshCancelled = expectation(description: "Index refresh cancelled")
+        let client = FakeIndexClient()
+        client.onListTypes = {
+            refreshStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                refreshCancelled.fulfill()
+                throw CancellationError()
+            }
+            return []
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        let task = Task { await store.refresh() }
+        await fulfillment(of: [refreshStarted], timeout: 1)
+
+        store.cancelInFlightWork()
+
+        await fulfillment(of: [refreshCancelled], timeout: 1)
+        await task.value
+
+        XCTAssertEqual(store.state, .idle)
+        XCTAssertTrue(store.types.isEmpty)
+        XCTAssertTrue(store.entities.isEmpty)
+    }
+
     func testEntityReloadCancelsStaleFilterRequest() async {
         let slowStarted = expectation(description: "Slow entity request started")
         let slowCancelled = expectation(description: "Slow entity request cancelled")
@@ -36,6 +65,7 @@ final class IndexStoreCancellationTests: XCTestCase {
         store.requestLoadEntities()
 
         await fulfillment(of: [slowCancelled, fastReturned], timeout: 1)
+        try? await Task.sleep(nanoseconds: 10_000_000)
         XCTAssertEqual(store.entities.map(\.id), ["fast"])
     }
 
@@ -58,9 +88,12 @@ final class IndexStoreCancellationTests: XCTestCase {
 
 private final class FakeIndexClient: ClawJSIndexClienting {
     var bearerToken: String? = "test-token"
+    var onListTypes: () async throws -> [ClawJSIndexClient.EntityType] = { [] }
     var onListEntities: ([String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity] = { _ in [] }
 
-    func listTypes() async throws -> [ClawJSIndexClient.EntityType] { [] }
+    func listTypes() async throws -> [ClawJSIndexClient.EntityType] {
+        try await onListTypes()
+    }
 
     func countsByType() async throws -> ClawJSIndexClient.CountsResponse {
         ClawJSIndexClient.CountsResponse(counts: [])

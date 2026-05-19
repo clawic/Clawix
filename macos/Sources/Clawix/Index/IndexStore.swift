@@ -52,6 +52,11 @@ final class IndexStore: ObservableObject {
         }
     }
 
+    deinit {
+        refreshTask?.cancel()
+        entityLoadTask?.cancel()
+    }
+
     private func attachSupervisorObserver() {
         supervisorObserver = ClawJSServiceManager.shared.$snapshots
             .receive(on: RunLoop.main)
@@ -76,17 +81,11 @@ final class IndexStore: ObservableObject {
     }
 
     func requestRefresh() {
-        refreshTask?.cancel()
-        refreshTask = Task { @MainActor [weak self] in
-            await self?.refresh()
-        }
+        _ = startRefresh()
     }
 
     func requestLoadEntities() {
-        entityLoadTask?.cancel()
-        entityLoadTask = Task { @MainActor [weak self] in
-            await self?.loadEntities()
-        }
+        _ = startEntityLoad()
     }
 
     func cancelInFlightWork() {
@@ -96,13 +95,31 @@ final class IndexStore: ObservableObject {
         entityLoadTask = nil
         refreshGeneration += 1
         entityLoadGeneration += 1
+        if state == .loading {
+            state = .idle
+        }
     }
 
     func refresh() async {
-        refreshGeneration += 1
-        let generation = refreshGeneration
+        await startRefresh().value
+    }
+
+    @discardableResult
+    private func startRefresh() -> Task<Void, Never> {
+        let generation = nextRefreshGeneration()
         entityLoadTask?.cancel()
         entityLoadGeneration += 1
+        refreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runRefresh(generation: generation)
+        }
+        refreshTask = task
+        return task
+    }
+
+    private func runRefresh(generation: Int) async {
+        guard generation == refreshGeneration else { return }
         ensureToken()
         state = .loading
         do {
@@ -141,42 +158,75 @@ final class IndexStore: ObservableObject {
                 IndexNotificationsBridge.shared.surface(alert, entityTitle: entityTitle)
             }
             state = .ready
-            if generation == refreshGeneration {
-                refreshTask = nil
-            }
+            finishRefreshIfCurrent(generation)
         } catch is CancellationError {
             if generation == refreshGeneration {
                 state = .idle
-                refreshTask = nil
+                finishRefreshIfCurrent(generation)
             }
         } catch {
             if generation == refreshGeneration {
                 state = .error(error.localizedDescription)
-                refreshTask = nil
+                finishRefreshIfCurrent(generation)
             }
         }
     }
 
     func loadEntities() async {
-        entityLoadGeneration += 1
-        let generation = entityLoadGeneration
+        await startEntityLoad().value
+    }
+
+    @discardableResult
+    private func startEntityLoad() -> Task<Void, Never> {
+        let generation = nextEntityLoadGeneration()
+        entityLoadTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runLoadEntities(generation: generation)
+        }
+        entityLoadTask = task
+        return task
+    }
+
+    private func runLoadEntities(generation: Int) async {
+        guard generation == entityLoadGeneration else { return }
         ensureToken()
         do {
             let entities = try await fetchEntities(limit: 500)
             try Task.checkCancellation()
             guard generation == entityLoadGeneration else { return }
             self.entities = entities
-            entityLoadTask = nil
+            finishEntityLoadIfCurrent(generation)
         } catch is CancellationError {
             if generation == entityLoadGeneration {
-                entityLoadTask = nil
+                finishEntityLoadIfCurrent(generation)
             }
         } catch {
             if generation == entityLoadGeneration {
                 self.entities = []
-                entityLoadTask = nil
+                finishEntityLoadIfCurrent(generation)
             }
         }
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func finishRefreshIfCurrent(_ generation: Int) {
+        guard generation == refreshGeneration else { return }
+        refreshTask = nil
+    }
+
+    private func nextEntityLoadGeneration() -> Int {
+        entityLoadGeneration += 1
+        return entityLoadGeneration
+    }
+
+    private func finishEntityLoadIfCurrent(_ generation: Int) {
+        guard generation == entityLoadGeneration else { return }
+        entityLoadTask = nil
     }
 
     func searchEntitiesFullText() async -> [ClawJSIndexClient.Entity] {
