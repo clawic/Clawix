@@ -61,10 +61,10 @@ final class ClawJSServiceManager: ObservableObject {
         .publishing: "CLAW_PUBLISHING_TOKEN",
     ]
 
-    private let bridgeService: BackgroundBridgeService
+    private let bridgeServiceOverride: BackgroundBridgeService?
 
-    private init(bridgeService: BackgroundBridgeService = .shared) {
-        self.bridgeService = bridgeService
+    private init(bridgeService: BackgroundBridgeService? = nil) {
+        self.bridgeServiceOverride = bridgeService
         let now = Date()
         var seed: [ClawJSService: ClawJSServiceSnapshot] = [:]
         for service in ClawJSService.allCases {
@@ -86,6 +86,7 @@ final class ClawJSServiceManager: ObservableObject {
     /// probes daemon-owned loopback ports first, then falls back locally for
     /// surfaces the daemon does not provide.
     func start() async {
+        let bridgeService = activeBridgeService
         if bridgeService.isDaemonReachable {
             await startDaemonAwareServices()
             return
@@ -99,6 +100,7 @@ final class ClawJSServiceManager: ObservableObject {
     /// the restart counter so a service in `.crashed (budget exhausted)`
     /// gets another shot. Used by the Settings UI's "Restart" button.
     func restart(_ service: ClawJSService) async {
+        let bridgeService = activeBridgeService
         restartTasks[service]?.cancel()
         restartTasks[service] = nil
         let stoppedLocalProcess = await stopTrackedProcess(for: service)
@@ -120,6 +122,10 @@ final class ClawJSServiceManager: ObservableObject {
             return
         }
         await launchLocal(service)
+    }
+
+    private var activeBridgeService: BackgroundBridgeService {
+        bridgeServiceOverride ?? BackgroundBridgeService.shared
     }
 
     private func stopTrackedProcess(for service: ClawJSService) async -> Bool {
