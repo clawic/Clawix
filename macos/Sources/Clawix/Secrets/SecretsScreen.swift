@@ -39,7 +39,12 @@ struct SecretsScreen: View {
         .task {
             if case .openFailed = vault.state {
                 await vault.load()
+            } else if case .loading = vault.state {
+                await vault.load()
             }
+        }
+        .onDisappear {
+            vault.cancelSurfaceWork()
         }
         .sheet(isPresented: Binding(
             get: { vault.pendingApprovals.first != nil },

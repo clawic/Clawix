@@ -36,6 +36,8 @@ final class PendingApprovalRequest: ObservableObject, Identifiable {
 
 @MainActor
 final class SecretsManager: ObservableObject {
+    typealias ServiceStateOperation = @MainActor () async throws -> ClawJSSecretsClient.SecretsServiceState
+
     struct EmergencyKit: Equatable {
         let recoveryPhrase: [String]
         let secretKey: String
@@ -92,40 +94,39 @@ final class SecretsManager: ObservableObject {
 
     var autoLockMinutes: Int = 5
     private var autoLockTask: Task<Void, Never>?
+    private var loadTimeoutTask: Task<Void, Never>?
     private var lifecycle: SecretsLifecycle?
     private var loadGeneration: UUID?
 
     private let client: ClawJSSecretsClient
+    private let serviceStateOperation: ServiceStateOperation?
 
-    init() {
-        self.client = ClawJSSecretsClient.local()
+    init(
+        client: ClawJSSecretsClient? = nil,
+        autoLoad: Bool = true,
+        serviceStateOperation: ServiceStateOperation? = nil
+    ) {
+        self.client = client ?? ClawJSSecretsClient.local()
+        self.serviceStateOperation = serviceStateOperation
         self.lifecycle = SecretsLifecycle(attaching: self)
         if Self.isDisabledForLaunch {
             self.state = .openFailed("Secrets service disabled for this launch.")
             self.lastError = "Secrets service disabled for this launch."
             return
         }
-        Task { await load() }
-    }
-
-    init(client: ClawJSSecretsClient) {
-        self.client = client
-        self.lifecycle = SecretsLifecycle(attaching: self)
-        if Self.isDisabledForLaunch {
-            self.state = .openFailed("Secrets service disabled for this launch.")
-            self.lastError = "Secrets service disabled for this launch."
-            return
+        if autoLoad {
+            Task { await load() }
         }
-        Task { await load() }
     }
 
     // MARK: - Lifecycle
 
     func load() async {
-        state = .loading
         let generation = UUID()
         loadGeneration = generation
-        Task { @MainActor [weak self] in
+        loadTimeoutTask?.cancel()
+        state = .loading
+        loadTimeoutTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 8_000_000_000)
             guard let self, self.loadGeneration == generation else { return }
             if case .loading = self.state {
@@ -135,32 +136,60 @@ final class SecretsManager: ObservableObject {
             }
         }
         do {
-            let serviceState = try await client.state()
+            let serviceState = try await readServiceState()
+            guard isCurrentLoad(generation) else { return }
             if !serviceState.initialized {
                 #if DEBUG
                 if ClawixEnv.isEnabled(ClawixEnv.dummyMode) {
                     await autoBootstrapDummyVault()
+                    finishLoadIfCurrent(generation)
                     return
                 }
                 #endif
                 state = .uninitialized
-                loadGeneration = nil
+                finishLoadIfCurrent(generation)
                 return
             }
             if serviceState.unlocked {
-                try await mountStores(seedDefaultVault: false)
+                try await mountStores(seedDefaultVault: false, loadGeneration: generation)
+                guard isCurrentLoad(generation) else { return }
                 state = .unlocked
                 scheduleAutoLock()
             } else {
                 state = .locked
             }
-            loadGeneration = nil
+            finishLoadIfCurrent(generation)
         } catch {
+            guard isCurrentLoad(generation) else { return }
             let message = Self.userFacingError(error)
             state = .openFailed(message)
             lastError = message
-            loadGeneration = nil
+            finishLoadIfCurrent(generation)
         }
+    }
+
+    func cancelSurfaceWork() {
+        loadGeneration = nil
+        loadTimeoutTask?.cancel()
+        loadTimeoutTask = nil
+    }
+
+    private func readServiceState() async throws -> ClawJSSecretsClient.SecretsServiceState {
+        if let serviceStateOperation {
+            return try await serviceStateOperation()
+        }
+        return try await client.state()
+    }
+
+    private func isCurrentLoad(_ generation: UUID) -> Bool {
+        !Task.isCancelled && loadGeneration == generation
+    }
+
+    private func finishLoadIfCurrent(_ generation: UUID) {
+        guard loadGeneration == generation else { return }
+        loadGeneration = nil
+        loadTimeoutTask?.cancel()
+        loadTimeoutTask = nil
     }
 
     #if DEBUG
@@ -464,7 +493,7 @@ final class SecretsManager: ObservableObject {
 
     // MARK: - Mount
 
-    private func mountStores(seedDefaultVault: Bool) async throws {
+    private func mountStores(seedDefaultVault: Bool, loadGeneration generation: UUID? = nil) async throws {
         let storeShim = ClawJSSecretsStore(client: client)
         let auditShim = ClawJSAuditStore(client: client)
         let grantsShim = ClawJSGrantStore(client: client)
@@ -480,6 +509,7 @@ final class SecretsManager: ObservableObject {
             }
         }
 
+        if let generation, !isCurrentLoad(generation) { return }
         self.store = storeShim
         self.audit = auditShim
         self.grants = grantsShim
@@ -495,6 +525,7 @@ final class SecretsManager: ObservableObject {
         let grants = try? await Task.detached(priority: .userInitiated) {
             try grantsShim.listActive()
         }.value
+        if let generation, !isCurrentLoad(generation) { return }
         self.vaults = vaults ?? []
         self.secrets = secrets ?? []
         self.trashedSecrets = trashed ?? []
