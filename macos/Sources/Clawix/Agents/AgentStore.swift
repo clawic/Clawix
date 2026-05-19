@@ -23,6 +23,14 @@ import SecretsVault
 ///
 @MainActor
 final class AgentStore: ObservableObject {
+    typealias LoadOperation = @MainActor (_ home: URL, _ frameworkClient: ClawJSFrameworkRecordsClient?) async throws -> AgentSnapshot
+
+    struct AgentSnapshot {
+        let agents: [Agent]
+        let personalities: [AgentPersonality]
+        let skillCollections: [SkillCollection]
+        let connections: [Connection]
+    }
 
     static let shared = AgentStore()
 
@@ -32,25 +40,43 @@ final class AgentStore: ObservableObject {
     @Published private(set) var personalities: [AgentPersonality] = []
     @Published private(set) var skillCollections: [SkillCollection] = []
     @Published private(set) var connections: [Connection] = []
+    @Published private(set) var isLoading = false
 
     // MARK: - Init
 
-    init(home: URL? = nil, frameworkClient: ClawJSFrameworkRecordsClient? = nil) {
+    init(
+        home: URL? = nil,
+        frameworkClient: ClawJSFrameworkRecordsClient? = nil,
+        autoLoad: Bool = true,
+        loadOperation: LoadOperation? = nil
+    ) {
         if let home {
             self.home = home
         } else {
             self.home = AgentStore.defaultHome()
         }
         self.frameworkClient = frameworkClient ?? (home == nil ? .shared : nil)
+        self.loadOperation = loadOperation ?? { home, frameworkClient in
+            try await AgentStore.loadSnapshot(home: home, frameworkClient: frameworkClient)
+        }
         if self.frameworkClient == nil {
             ensureDirectories()
             ensureBuiltins()
         }
-        reloadAll()
+        if autoLoad {
+            reloadAll()
+        }
+    }
+
+    deinit {
+        reloadTask?.cancel()
     }
 
     private let home: URL
     private let frameworkClient: ClawJSFrameworkRecordsClient?
+    private let loadOperation: LoadOperation
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
 
     private static func defaultHome() -> URL {
         if let override = ProcessInfo.processInfo.environment[ClawEnv.home],
@@ -85,25 +111,62 @@ final class AgentStore: ObservableObject {
     // MARK: - Reload
 
     func reloadAll() {
-        if let frameworkClient {
-            do {
-                agents = try frameworkClient.listAgents()
-                personalities = try frameworkClient.listPersonalities()
-                skillCollections = try frameworkClient.listSkillCollections()
-                connections = try frameworkClient.listConnections()
-                return
-            } catch {
-                agents = [Agent.defaultCodex()]
-                personalities = []
-                skillCollections = []
-                connections = []
-                return
-            }
+        _ = startReload()
+    }
+
+    func refresh() async {
+        await startReload().value
+    }
+
+    func cancelSurfaceWork() {
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        isLoading = false
+    }
+
+    @discardableResult
+    private func startReload() -> Task<Void, Never> {
+        reloadGeneration += 1
+        let generation = reloadGeneration
+        reloadTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(generation: generation)
         }
-        agents = loadAgents()
-        personalities = loadPersonalities()
-        skillCollections = loadCollections()
-        connections = loadConnections()
+        reloadTask = task
+        return task
+    }
+
+    private func runReload(generation: Int) async {
+        guard generation == reloadGeneration else { return }
+        isLoading = true
+        do {
+            let snapshot = try await loadOperation(home, frameworkClient)
+            try Task.checkCancellation()
+            guard generation == reloadGeneration else { return }
+            apply(snapshot)
+            finishReloadIfCurrent(generation)
+        } catch is CancellationError {
+            finishReloadIfCurrent(generation)
+        } catch {
+            guard generation == reloadGeneration else { return }
+            apply(AgentSnapshot(agents: [Agent.defaultCodex()], personalities: [], skillCollections: [], connections: []))
+            finishReloadIfCurrent(generation)
+        }
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard generation == reloadGeneration else { return }
+        isLoading = false
+        reloadTask = nil
+    }
+
+    private func apply(_ snapshot: AgentSnapshot) {
+        agents = snapshot.agents
+        personalities = snapshot.personalities
+        skillCollections = snapshot.skillCollections
+        connections = snapshot.connections
     }
 
     // MARK: - Builtins
@@ -165,19 +228,7 @@ final class AgentStore: ObservableObject {
     // MARK: - Agents
 
     private func loadAgents() -> [Agent] {
-        var result: [Agent] = []
-        let entries = (try? FileManager.default.contentsOfDirectory(at: agentsDir,
-                                                                    includingPropertiesForKeys: nil)) ?? []
-        for url in entries {
-            if let agent = readAgent(from: url) {
-                result.append(agent)
-            }
-        }
-        result.sort { lhs, rhs in
-            if lhs.isBuiltin != rhs.isBuiltin { return lhs.isBuiltin && !rhs.isBuiltin }
-            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-        }
-        return result
+        Self.loadAgents(from: agentsDir)
     }
 
     func agent(id: String) -> Agent? {
@@ -189,6 +240,7 @@ final class AgentStore: ObservableObject {
             var copy = agent
             copy.updatedAt = Date()
             try? frameworkClient.upsertAgent(copy)
+            upsertInMemory(copy)
             reloadAll()
             return
         }
@@ -197,6 +249,7 @@ final class AgentStore: ObservableObject {
         var copy = agent
         copy.updatedAt = Date()
         try? writeAgent(copy, into: folder)
+        upsertInMemory(copy)
         reloadAll()
     }
 
@@ -218,11 +271,13 @@ final class AgentStore: ObservableObject {
         guard let agent = agent(id: id), !agent.isBuiltin else { return }
         if let frameworkClient {
             try? frameworkClient.deleteAgent(id: id)
+            agents.removeAll { $0.id == id }
             reloadAll()
             return
         }
         let folder = dir(forAgent: id)
         try? FileManager.default.removeItem(at: folder)
+        agents.removeAll { $0.id == id }
         reloadAll()
     }
 
@@ -302,6 +357,10 @@ final class AgentStore: ObservableObject {
     }
 
     private func readAgent(from folder: URL) -> Agent? {
+        Self.readAgent(from: folder)
+    }
+
+    nonisolated private static func readAgent(from folder: URL) -> Agent? {
         let yamlPath = folder.appendingPathComponent("agent.yaml")
         guard let yamlText = try? String(contentsOf: yamlPath, encoding: .utf8) else { return nil }
         let yaml = SimpleYaml.parse(yamlText)
@@ -392,14 +451,7 @@ final class AgentStore: ObservableObject {
     // MARK: - Personalities
 
     private func loadPersonalities() -> [AgentPersonality] {
-        var result: [AgentPersonality] = []
-        let entries = (try? FileManager.default.contentsOfDirectory(at: personalitiesDir,
-                                                                    includingPropertiesForKeys: nil)) ?? []
-        for url in entries {
-            if let p = readAgentPersonality(from: url) { result.append(p) }
-        }
-        result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        return result
+        Self.loadPersonalities(from: personalitiesDir)
     }
 
     func personality(id: String) -> AgentPersonality? {
@@ -411,6 +463,7 @@ final class AgentStore: ObservableObject {
             var copy = p
             copy.updatedAt = Date()
             try? frameworkClient.upsertPersonality(copy)
+            upsertInMemory(copy)
             reloadAll()
             return
         }
@@ -419,6 +472,7 @@ final class AgentStore: ObservableObject {
         var copy = p
         copy.updatedAt = Date()
         try? writeAgentPersonality(copy, into: folder)
+        upsertInMemory(copy)
         reloadAll()
     }
 
@@ -429,11 +483,18 @@ final class AgentStore: ObservableObject {
                 agent.personalityIds.removeAll { $0 == id }
                 try? frameworkClient.upsertAgent(agent)
             }
+            personalities.removeAll { $0.id == id }
+            agents = agents.map { agent in
+                var copy = agent
+                copy.personalityIds.removeAll { $0 == id }
+                return copy
+            }
             reloadAll()
             return
         }
         let folder = dir(forAgentPersonality: id)
         try? FileManager.default.removeItem(at: folder)
+        personalities.removeAll { $0.id == id }
         // Drop references from any agent that had it plugged in.
         for var agent in agents where agent.personalityIds.contains(id) {
             agent.personalityIds.removeAll { $0 == id }
@@ -460,6 +521,10 @@ final class AgentStore: ObservableObject {
     }
 
     private func readAgentPersonality(from folder: URL) -> AgentPersonality? {
+        Self.readAgentPersonality(from: folder)
+    }
+
+    nonisolated private static func readAgentPersonality(from folder: URL) -> AgentPersonality? {
         let yamlPath = folder.appendingPathComponent("personality.yaml")
         guard let yamlText = try? String(contentsOf: yamlPath, encoding: .utf8) else { return nil }
         let yaml = SimpleYaml.parse(yamlText)
@@ -483,14 +548,7 @@ final class AgentStore: ObservableObject {
     // MARK: - Skill Collections
 
     private func loadCollections() -> [SkillCollection] {
-        var result: [SkillCollection] = []
-        let entries = (try? FileManager.default.contentsOfDirectory(at: collectionsDir,
-                                                                    includingPropertiesForKeys: nil)) ?? []
-        for url in entries {
-            if let c = readCollection(from: url) { result.append(c) }
-        }
-        result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        return result
+        Self.loadCollections(from: collectionsDir)
     }
 
     func collection(id: String) -> SkillCollection? {
@@ -502,6 +560,7 @@ final class AgentStore: ObservableObject {
             var copy = c
             copy.updatedAt = Date()
             try? frameworkClient.upsertSkillCollection(copy)
+            upsertInMemory(copy)
             reloadAll()
             return
         }
@@ -510,6 +569,7 @@ final class AgentStore: ObservableObject {
         var copy = c
         copy.updatedAt = Date()
         try? writeCollection(copy, into: folder)
+        upsertInMemory(copy)
         reloadAll()
     }
 
@@ -520,11 +580,18 @@ final class AgentStore: ObservableObject {
                 agent.skillCollectionIds.removeAll { $0 == id }
                 try? frameworkClient.upsertAgent(agent)
             }
+            skillCollections.removeAll { $0.id == id }
+            agents = agents.map { agent in
+                var copy = agent
+                copy.skillCollectionIds.removeAll { $0 == id }
+                return copy
+            }
             reloadAll()
             return
         }
         let folder = dir(forCollection: id)
         try? FileManager.default.removeItem(at: folder)
+        skillCollections.removeAll { $0.id == id }
         for var agent in agents where agent.skillCollectionIds.contains(id) {
             agent.skillCollectionIds.removeAll { $0 == id }
             upsertAgent(agent)
@@ -548,6 +615,10 @@ final class AgentStore: ObservableObject {
     }
 
     private func readCollection(from folder: URL) -> SkillCollection? {
+        Self.readCollection(from: folder)
+    }
+
+    nonisolated private static func readCollection(from folder: URL) -> SkillCollection? {
         let yamlPath = folder.appendingPathComponent("collection.yaml")
         guard let yamlText = try? String(contentsOf: yamlPath, encoding: .utf8) else { return nil }
         let yaml = SimpleYaml.parse(yamlText)
@@ -568,14 +639,7 @@ final class AgentStore: ObservableObject {
     // MARK: - Connections
 
     private func loadConnections() -> [Connection] {
-        var result: [Connection] = []
-        let entries = (try? FileManager.default.contentsOfDirectory(at: connectionsDir,
-                                                                    includingPropertiesForKeys: nil)) ?? []
-        for url in entries {
-            if let c = readConnection(from: url) { result.append(c) }
-        }
-        result.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
-        return result
+        Self.loadConnections(from: connectionsDir)
     }
 
     func connection(id: String) -> Connection? {
@@ -587,6 +651,7 @@ final class AgentStore: ObservableObject {
             var copy = c
             copy.updatedAt = Date()
             try? frameworkClient.upsertConnection(copy)
+            upsertInMemory(copy)
             reloadAll()
             return
         }
@@ -595,6 +660,7 @@ final class AgentStore: ObservableObject {
         var copy = c
         copy.updatedAt = Date()
         try? writeConnection(copy, into: folder)
+        upsertInMemory(copy)
         reloadAll()
     }
 
@@ -649,6 +715,7 @@ final class AgentStore: ObservableObject {
             if var connection = connection(id: connectionId), let frameworkClient {
                 connection.updatedAt = Date()
                 try? frameworkClient.upsertConnection(connection, secretRef: "vault://connections/\(connectionId)")
+                upsertInMemory(connection)
                 reloadAll()
             }
         } catch {
@@ -684,11 +751,18 @@ final class AgentStore: ObservableObject {
                 agent.integrationBindings.removeAll { $0.connectionId == id }
                 try? frameworkClient.upsertAgent(agent)
             }
+            connections.removeAll { $0.id == id }
+            agents = agents.map { agent in
+                var copy = agent
+                copy.integrationBindings.removeAll { $0.connectionId == id }
+                return copy
+            }
             reloadAll()
             return
         }
         let folder = dir(forConnection: id)
         try? FileManager.default.removeItem(at: folder)
+        connections.removeAll { $0.id == id }
         for var agent in agents where agent.integrationBindings.contains(where: { $0.connectionId == id }) {
             agent.integrationBindings.removeAll { $0.connectionId == id }
             upsertAgent(agent)
@@ -716,6 +790,10 @@ final class AgentStore: ObservableObject {
     }
 
     private func readConnection(from folder: URL) -> Connection? {
+        Self.readConnection(from: folder)
+    }
+
+    nonisolated private static func readConnection(from folder: URL) -> Connection? {
         let yamlPath = folder.appendingPathComponent("connection.yaml")
         guard let yamlText = try? String(contentsOf: yamlPath, encoding: .utf8) else { return nil }
         let yaml = SimpleYaml.parse(yamlText)
@@ -756,6 +834,117 @@ final class AgentStore: ObservableObject {
             parts.append(agent.instructionsFreeText)
         }
         return parts.joined(separator: "\n\n---\n\n")
+    }
+
+    private func upsertInMemory(_ agent: Agent) {
+        if let index = agents.firstIndex(where: { $0.id == agent.id }) {
+            agents[index] = agent
+        } else {
+            agents.append(agent)
+        }
+        agents.sort { lhs, rhs in
+            if lhs.isBuiltin != rhs.isBuiltin { return lhs.isBuiltin && !rhs.isBuiltin }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private func upsertInMemory(_ personality: AgentPersonality) {
+        if let index = personalities.firstIndex(where: { $0.id == personality.id }) {
+            personalities[index] = personality
+        } else {
+            personalities.append(personality)
+        }
+        personalities.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func upsertInMemory(_ collection: SkillCollection) {
+        if let index = skillCollections.firstIndex(where: { $0.id == collection.id }) {
+            skillCollections[index] = collection
+        } else {
+            skillCollections.append(collection)
+        }
+        skillCollections.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func upsertInMemory(_ connection: Connection) {
+        if let index = connections.firstIndex(where: { $0.id == connection.id }) {
+            connections[index] = connection
+        } else {
+            connections.append(connection)
+        }
+        connections.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+    }
+
+    private static func loadSnapshot(
+        home: URL,
+        frameworkClient: ClawJSFrameworkRecordsClient?
+    ) async throws -> AgentSnapshot {
+        if let frameworkClient {
+            do {
+                return AgentSnapshot(
+                    agents: try await frameworkClient.listAgentsAsync(),
+                    personalities: try await frameworkClient.listPersonalitiesAsync(),
+                    skillCollections: try await frameworkClient.listSkillCollectionsAsync(),
+                    connections: try await frameworkClient.listConnectionsAsync()
+                )
+            } catch {
+                return AgentSnapshot(agents: [Agent.defaultCodex()], personalities: [], skillCollections: [], connections: [])
+            }
+        }
+
+        return await Task.detached(priority: .utility) {
+            AgentSnapshot(
+                agents: loadAgents(from: home.appendingPathComponent("agents", isDirectory: true)),
+                personalities: loadPersonalities(from: home.appendingPathComponent("personalities", isDirectory: true)),
+                skillCollections: loadCollections(from: home.appendingPathComponent("skill-collections", isDirectory: true)),
+                connections: loadConnections(from: home.appendingPathComponent("connections", isDirectory: true))
+            )
+        }.value
+    }
+
+    nonisolated private static func loadAgents(from agentsDir: URL) -> [Agent] {
+        var result: [Agent] = []
+        let entries = (try? FileManager.default.contentsOfDirectory(at: agentsDir, includingPropertiesForKeys: nil)) ?? []
+        for url in entries {
+            if let agent = readAgent(from: url) {
+                result.append(agent)
+            }
+        }
+        result.sort { lhs, rhs in
+            if lhs.isBuiltin != rhs.isBuiltin { return lhs.isBuiltin && !rhs.isBuiltin }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+        return result
+    }
+
+    nonisolated private static func loadPersonalities(from personalitiesDir: URL) -> [AgentPersonality] {
+        var result: [AgentPersonality] = []
+        let entries = (try? FileManager.default.contentsOfDirectory(at: personalitiesDir, includingPropertiesForKeys: nil)) ?? []
+        for url in entries {
+            if let p = readAgentPersonality(from: url) { result.append(p) }
+        }
+        result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return result
+    }
+
+    nonisolated private static func loadCollections(from collectionsDir: URL) -> [SkillCollection] {
+        var result: [SkillCollection] = []
+        let entries = (try? FileManager.default.contentsOfDirectory(at: collectionsDir, includingPropertiesForKeys: nil)) ?? []
+        for url in entries {
+            if let c = readCollection(from: url) { result.append(c) }
+        }
+        result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return result
+    }
+
+    nonisolated private static func loadConnections(from connectionsDir: URL) -> [Connection] {
+        var result: [Connection] = []
+        let entries = (try? FileManager.default.contentsOfDirectory(at: connectionsDir, includingPropertiesForKeys: nil)) ?? []
+        for url in entries {
+            if let c = readConnection(from: url) { result.append(c) }
+        }
+        result.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
+        return result
     }
 
     /// Audit-log entry. Append-only file under

@@ -6,6 +6,10 @@ struct ClawJSFrameworkRecordsClient {
         var run: ([String]) throws -> Data
     }
 
+    struct AsyncCommandRunner {
+        var run: ([String]) async throws -> Data
+    }
+
     struct SnippetRecord: Decodable, Equatable {
         let id: String
         let slug: String
@@ -69,10 +73,14 @@ struct ClawJSFrameworkRecordsClient {
     static let shared = ClawJSFrameworkRecordsClient()
 
     private let runner: CommandRunner
+    private let asyncRunner: AsyncCommandRunner
 
-    init(runner: CommandRunner? = nil) {
+    init(runner: CommandRunner? = nil, asyncRunner: AsyncCommandRunner? = nil) {
         self.runner = runner ?? CommandRunner { args in
             try Self.runClawJS(args: args)
+        }
+        self.asyncRunner = asyncRunner ?? AsyncCommandRunner { args in
+            try await Self.runClawJSAsync(args: args)
         }
     }
 
@@ -151,6 +159,11 @@ struct ClawJSFrameworkRecordsClient {
         return try Self.decoder.decode(Envelope<ListResponse<Agent>>.self, from: data).data.items
     }
 
+    func listAgentsAsync() async throws -> [Agent] {
+        let data = try await asyncRunner.run(["agents", "list", "--for-host", "true", "--json"])
+        return try Self.decoder.decode(Envelope<ListResponse<Agent>>.self, from: data).data.items
+    }
+
     func upsertAgent(_ agent: Agent) throws {
         _ = try runner.run(["agents", "upsert", agent.id, "--record", try Self.json(agent), "--for-host", "true", "--json"])
     }
@@ -161,6 +174,11 @@ struct ClawJSFrameworkRecordsClient {
 
     func listPersonalities() throws -> [AgentPersonality] {
         let data = try runner.run(["personalities", "list", "--for-host", "true", "--json"])
+        return try Self.decoder.decode(Envelope<ListResponse<AgentPersonality>>.self, from: data).data.items
+    }
+
+    func listPersonalitiesAsync() async throws -> [AgentPersonality] {
+        let data = try await asyncRunner.run(["personalities", "list", "--for-host", "true", "--json"])
         return try Self.decoder.decode(Envelope<ListResponse<AgentPersonality>>.self, from: data).data.items
     }
 
@@ -177,6 +195,11 @@ struct ClawJSFrameworkRecordsClient {
         return try Self.decoder.decode(Envelope<ListResponse<SkillCollection>>.self, from: data).data.items
     }
 
+    func listSkillCollectionsAsync() async throws -> [SkillCollection] {
+        let data = try await asyncRunner.run(["skill-collections", "list", "--for-host", "true", "--json"])
+        return try Self.decoder.decode(Envelope<ListResponse<SkillCollection>>.self, from: data).data.items
+    }
+
     func upsertSkillCollection(_ collection: SkillCollection) throws {
         _ = try runner.run(["skill-collections", "upsert", collection.id, "--record", try Self.json(collection), "--for-host", "true", "--json"])
     }
@@ -187,6 +210,11 @@ struct ClawJSFrameworkRecordsClient {
 
     func listConnections() throws -> [Connection] {
         let data = try runner.run(["connections", "list", "--for-host", "true", "--json"])
+        return try Self.decoder.decode(Envelope<ListResponse<Connection>>.self, from: data).data.items
+    }
+
+    func listConnectionsAsync() async throws -> [Connection] {
+        let data = try await asyncRunner.run(["connections", "list", "--for-host", "true", "--json"])
         return try Self.decoder.decode(Envelope<ListResponse<Connection>>.self, from: data).data.items
     }
 
@@ -298,5 +326,108 @@ struct ClawJSFrameworkRecordsClient {
             ])
         }
         return data
+    }
+
+    private static func runClawJSAsync(args: [String]) async throws -> Data {
+        let context = await MainActor.run {
+            FrameworkRecordsProcessContext(
+                executableURL: ClawJSRuntime.nodeBinaryURL,
+                cliScriptURL: ClawJSRuntime.cliScriptURL,
+                workspaceURL: ClawJSServiceManager.workspaceURL,
+                environment: ClawJSServiceManager.cliEnvironment()
+            )
+        }
+        let cancellation = FrameworkRecordsProcessCancellation()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .utility).async {
+                    do {
+                        continuation.resume(returning: try runClawJSSynchronously(
+                            args: args,
+                            context: context,
+                            cancellation: cancellation
+                        ))
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        } onCancel: {
+            cancellation.cancel()
+        }
+    }
+
+    nonisolated private static func runClawJSSynchronously(
+        args: [String],
+        context: FrameworkRecordsProcessContext,
+        cancellation: FrameworkRecordsProcessCancellation
+    ) throws -> Data {
+        guard ClawJSRuntime.isAvailable else {
+            throw NSError(domain: "ClawJSFrameworkRecordsClient", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "ClawJS bundle is not available in this build."
+            ])
+        }
+        let process = Process()
+        process.executableURL = context.executableURL
+        process.arguments = [context.cliScriptURL.path] + args
+        process.currentDirectoryURL = context.workspaceURL
+        process.environment = context.environment
+
+        let stdout = Pipe()
+        let stderr = Pipe()
+        process.standardOutput = stdout
+        process.standardError = stderr
+        guard cancellation.attach(process) else {
+            throw CancellationError()
+        }
+        try process.run()
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        let err = stderr.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        if cancellation.isCancelled {
+            throw CancellationError()
+        }
+        guard process.terminationStatus == 0 else {
+            let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw framework records failed"
+            throw NSError(domain: "ClawJSFrameworkRecordsClient", code: Int(process.terminationStatus), userInfo: [
+                NSLocalizedDescriptionKey: message.trimmingCharacters(in: .whitespacesAndNewlines)
+            ])
+        }
+        return data
+    }
+}
+
+private struct FrameworkRecordsProcessContext: Sendable {
+    let executableURL: URL
+    let cliScriptURL: URL
+    let workspaceURL: URL
+    let environment: [String: String]
+}
+
+private final class FrameworkRecordsProcessCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    func attach(_ process: Process) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !cancelled else { return false }
+        self.process = process
+        return true
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        let process = process
+        lock.unlock()
+        process?.terminate()
     }
 }

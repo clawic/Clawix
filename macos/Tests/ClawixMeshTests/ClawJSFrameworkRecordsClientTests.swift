@@ -227,6 +227,58 @@ final class ClawJSFrameworkRecordsClientTests: XCTestCase {
         XCTAssertEqual(object?["secretRef"] as? String, "vault://connections/connection.telegram.ops")
     }
 
+    func testAgentEntityAsyncListsUseHostUnredactedMode() async throws {
+        var calls: [[String]] = []
+        let client = ClawJSFrameworkRecordsClient(asyncRunner: .init { args in
+            calls.append(args)
+            if args == ["agents", "list", "--for-host", "true", "--json"] {
+                return Data("""
+                {
+                  "ok": true,
+                  "data": {
+                    "items": [
+                      {
+                        "id": "agent.async",
+                        "name": "Async",
+                        "role": "Operations",
+                        "runtime": "codex",
+                        "model": "gpt-5.1",
+                        "avatar": { "kind": "logoTint", "tintHex": "#7C9CFF" },
+                        "instructionsFreeText": "Watch deploys",
+                        "personalityIds": [],
+                        "skillAllowlist": [],
+                        "skillCollectionIds": [],
+                        "secretAllowlist": ["vault://agents/async"],
+                        "secretTags": [],
+                        "projectIds": [],
+                        "integrationBindings": [],
+                        "autonomyLevel": "act_limited",
+                        "autonomyOverrides": [],
+                        "delegation": { "allowedSubagents": [], "scopeInherits": false },
+                        "createdAt": "2026-05-15T10:00:00Z",
+                        "updatedAt": "2026-05-15T10:00:00Z",
+                        "isBuiltin": false
+                      }
+                    ]
+                  }
+                }
+                """.utf8)
+            }
+            return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+        })
+
+        let agents = try await client.listAgentsAsync()
+        _ = try await client.listPersonalitiesAsync()
+        _ = try await client.listSkillCollectionsAsync()
+        _ = try await client.listConnectionsAsync()
+
+        XCTAssertEqual(agents.first?.secretAllowlist, ["vault://agents/async"])
+        XCTAssertTrue(calls.contains(["agents", "list", "--for-host", "true", "--json"]))
+        XCTAssertTrue(calls.contains(["personalities", "list", "--for-host", "true", "--json"]))
+        XCTAssertTrue(calls.contains(["skill-collections", "list", "--for-host", "true", "--json"]))
+        XCTAssertTrue(calls.contains(["connections", "list", "--for-host", "true", "--json"]))
+    }
+
     func testSkillsStorePersistsCatalogAndActiveStateThroughFrameworkRecords() throws {
         var calls: [[String]] = []
         let client = ClawJSFrameworkRecordsClient(runner: .init { args in
