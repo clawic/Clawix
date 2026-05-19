@@ -12,9 +12,17 @@ import Foundation
 /// "write a manifest + files; the sidebar will pick it up".
 @MainActor
 final class AppsStore: ObservableObject {
+    typealias LoadOperation = @MainActor (_ rootURL: URL, _ manifestName: String) async throws -> AppsSnapshot
+
+    struct AppsSnapshot: Sendable {
+        let apps: [AppRecord]
+        let mtimes: [String: Date]
+    }
+
     static let shared = AppsStore()
 
     @Published private(set) var apps: [AppRecord] = []
+    @Published private(set) var isLoading = false
 
     /// Effective sort: pinned first, then most-recently-opened, then
     /// most-recently-created. Used by every consumer (sidebar, grid).
@@ -25,24 +33,38 @@ final class AppsStore: ObservableObject {
     private let rootURL: URL
     private let fileManager: FileManager
     private let manifestName = "manifest.json"
+    private let loadOperation: LoadOperation
     private var pollingTimer: Timer?
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
     /// Last-known mtime per slug; used to detect agent-side file changes
     /// without diffing every file's bytes on each poll.
     private var lastSeenMtime: [String: Date] = [:]
 
     init(
         rootURL: URL? = nil,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        autoLoad: Bool = true,
+        startPolling: Bool = true,
+        loadOperation: LoadOperation? = nil
     ) {
         self.fileManager = fileManager
         self.rootURL = rootURL ?? AppsStore.defaultRootURL(fileManager: fileManager)
+        self.loadOperation = loadOperation ?? { rootURL, manifestName in
+            try await AppsStore.loadSnapshot(rootURL: rootURL, manifestName: manifestName)
+        }
         ensureRootExists()
-        reloadFromDisk()
-        startPolling()
+        if autoLoad {
+            reloadFromDisk()
+        }
+        if startPolling {
+            startPollingTimer()
+        }
     }
 
     deinit {
         pollingTimer?.invalidate()
+        reloadTask?.cancel()
     }
 
     /// `~/.claw/apps`. Apps are framework resources; Clawix only renders
@@ -56,43 +78,63 @@ final class AppsStore: ObservableObject {
     /// when the manifest mtime hasn't moved.
     func reloadFromDisk() {
         ensureRootExists()
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: rootURL,
-            includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            apps = []
-            return
-        }
+        _ = startReload()
+    }
 
-        var found: [AppRecord] = []
-        var newMtimes: [String: Date] = [:]
-        for entry in entries {
-            var isDir: ObjCBool = false
-            guard fileManager.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
-            let manifestURL = entry.appendingPathComponent(manifestName)
-            guard fileManager.fileExists(atPath: manifestURL.path) else { continue }
-            do {
-                let mtime = (try manifestURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-                let data = try Data(contentsOf: manifestURL)
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                let record = try decoder.decode(AppRecord.self, from: data)
-                found.append(record)
-                newMtimes[record.slug] = mtime
-            } catch {
-                // Don't crash if a manifest is malformed; just skip it
-                // so the agent (or the user) can fix it without losing
-                // the rest of the index.
-                continue
-            }
+    func refresh() async {
+        await startReload().value
+    }
+
+    func cancelSurfaceWork() {
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        isLoading = false
+    }
+
+    @discardableResult
+    private func startReload() -> Task<Void, Never> {
+        reloadGeneration += 1
+        let generation = reloadGeneration
+        reloadTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(generation: generation)
         }
-        // Reflect deletions: if a slug is gone from disk, drop it.
-        let sortedFound = found.sorted(by: AppsStore.compareForSidebar)
+        reloadTask = task
+        return task
+    }
+
+    private func runReload(generation: Int) async {
+        guard generation == reloadGeneration else { return }
+        isLoading = true
+        do {
+            let snapshot = try await loadOperation(rootURL, manifestName)
+            try Task.checkCancellation()
+            guard generation == reloadGeneration else { return }
+            apply(snapshot)
+            finishReloadIfCurrent(generation)
+        } catch is CancellationError {
+            finishReloadIfCurrent(generation)
+        } catch {
+            guard generation == reloadGeneration else { return }
+            apply(AppsSnapshot(apps: [], mtimes: [:]))
+            finishReloadIfCurrent(generation)
+        }
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard generation == reloadGeneration else { return }
+        isLoading = false
+        reloadTask = nil
+    }
+
+    private func apply(_ snapshot: AppsSnapshot) {
+        let sortedFound = snapshot.apps.sorted(by: AppsStore.compareForSidebar)
         if sortedFound != apps.sorted(by: AppsStore.compareForSidebar) {
             apps = sortedFound
         }
-        lastSeenMtime = newMtimes
+        lastSeenMtime = snapshot.mtimes
     }
 
     // MARK: - CRUD
@@ -142,6 +184,7 @@ final class AppsStore: ObservableObject {
             let placeholder = AppsStore.placeholderIndexHTML(name: name)
             try? placeholder.data(using: .utf8)?.write(to: indexURL, options: .atomic)
         }
+        upsertInMemory(record)
         reloadFromDisk()
         return record
     }
@@ -153,6 +196,7 @@ final class AppsStore: ObservableObject {
         var updated = record
         updated.updatedAt = Date()
         try writeManifest(updated)
+        upsertInMemory(updated)
         reloadFromDisk()
     }
 
@@ -163,6 +207,7 @@ final class AppsStore: ObservableObject {
         if fileManager.fileExists(atPath: dir.path) {
             try fileManager.removeItem(at: dir)
         }
+        removeInMemory(record)
         reloadFromDisk()
     }
 
@@ -172,6 +217,7 @@ final class AppsStore: ObservableObject {
         var updated = record
         updated.lastOpenedAt = Date()
         try? writeManifest(updated)
+        upsertInMemory(updated)
         reloadFromDisk()
     }
 
@@ -236,6 +282,20 @@ final class AppsStore: ObservableObject {
         try data.write(to: manifestURL, options: .atomic)
     }
 
+    private func upsertInMemory(_ record: AppRecord) {
+        if let index = apps.firstIndex(where: { $0.id == record.id || $0.slug == record.slug }) {
+            apps[index] = record
+        } else {
+            apps.append(record)
+        }
+        apps = apps.sorted(by: AppsStore.compareForSidebar)
+    }
+
+    private func removeInMemory(_ record: AppRecord) {
+        apps.removeAll { $0.id == record.id || $0.slug == record.slug }
+        lastSeenMtime[record.slug] = nil
+    }
+
     private func uniqueSlug(preferred: String?, name: String) throws -> String {
         let base = AppsStore.normalizedSlug(from: preferred?.isEmpty == false ? preferred! : name)
         guard !base.isEmpty else {
@@ -280,7 +340,7 @@ final class AppsStore: ObservableObject {
         return lhs.createdAt > rhs.createdAt
     }
 
-    private func startPolling() {
+    private func startPollingTimer() {
         // 4s is fast enough that the agent writing a new manifest is
         // visible "in the next breath" without burning CPU.
         let timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
@@ -291,6 +351,42 @@ final class AppsStore: ObservableObject {
         timer.tolerance = 1.0
         RunLoop.main.add(timer, forMode: .common)
         pollingTimer = timer
+    }
+
+    private static func loadSnapshot(rootURL: URL, manifestName: String) async throws -> AppsSnapshot {
+        try await Task.detached(priority: .utility) {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: rootURL,
+                includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                return AppsSnapshot(apps: [], mtimes: [:])
+            }
+
+            var found: [AppRecord] = []
+            var newMtimes: [String: Date] = [:]
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            for entry in entries {
+                try Task.checkCancellation()
+                var isDir: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
+                let manifestURL = entry.appendingPathComponent(manifestName)
+                guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }
+                do {
+                    let mtime = (try manifestURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                    let data = try Data(contentsOf: manifestURL)
+                    let record = try decoder.decode(AppRecord.self, from: data)
+                    found.append(record)
+                    newMtimes[record.slug] = mtime
+                } catch {
+                    // Keep malformed manifests local to their app folder so
+                    // one broken custom surface cannot break the Apps shell.
+                    continue
+                }
+            }
+            return AppsSnapshot(apps: found, mtimes: newMtimes)
+        }.value
     }
 
     static func guessMimeType(forPath path: String) -> String {
