@@ -9,6 +9,7 @@ import SwiftUI
 /// any `AIAccountStore`.
 @MainActor
 final class AIAccountStoreObservable: ObservableObject {
+    typealias ListAccountsOperation = @MainActor () async throws -> [ProviderAccount]
 
     static let shared = AIAccountStoreObservable()
 
@@ -16,19 +17,59 @@ final class AIAccountStoreObservable: ObservableObject {
     @Published var lastError: String?
 
     private let store: AIAccountStore
+    private let listAccountsOperation: ListAccountsOperation
+    private var refreshTask: Task<Void, Never>?
+    private var refreshGeneration = 0
 
-    init(store: AIAccountStore = AIAccountSecretsStore.shared) {
+    init(
+        store: AIAccountStore = AIAccountSecretsStore.shared,
+        refreshImmediately: Bool = true,
+        listAccountsOperation: ListAccountsOperation? = nil
+    ) {
         self.store = store
-        refresh()
+        self.listAccountsOperation = listAccountsOperation ?? {
+            try await CancellableBackgroundTask.run(priority: .userInitiated) {
+                try store.listAccounts()
+            }
+        }
+        if refreshImmediately {
+            refresh()
+        }
+    }
+
+    deinit {
+        refreshTask?.cancel()
     }
 
     func refresh() {
-        do {
-            accounts = try store.listAccounts()
-        } catch {
-            accounts = []
-            lastError = (error as? AIAccountStoreError).map(humanize) ?? error.localizedDescription
+        refreshGeneration += 1
+        let currentGeneration = refreshGeneration
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let latestAccounts = try await listAccountsOperation()
+                try Task.checkCancellation()
+                guard currentGeneration == refreshGeneration else { return }
+                accounts = latestAccounts
+                lastError = nil
+                refreshTask = nil
+            } catch is CancellationError {
+                guard currentGeneration == refreshGeneration else { return }
+                refreshTask = nil
+            } catch {
+                guard currentGeneration == refreshGeneration else { return }
+                accounts = []
+                lastError = (error as? AIAccountStoreError).map(humanize) ?? error.localizedDescription
+                refreshTask = nil
+            }
         }
+    }
+
+    func cancelRefresh() {
+        refreshGeneration += 1
+        refreshTask?.cancel()
+        refreshTask = nil
     }
 
     func accounts(for provider: ProviderID) -> [ProviderAccount] {
