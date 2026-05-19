@@ -69,9 +69,18 @@ final class ContactsStore: ObservableObject {
     @Published var editingSmartGroupID: String? = nil
 
     let backend: ContactsBackend
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = 0
+    private var writeTask: Task<Void, Never>?
+    private var writeGeneration = 0
 
     init(backend: ContactsBackend? = nil) {
         self.backend = backend ?? ContactsStore.makeDefaultBackend()
+    }
+
+    deinit {
+        reloadTask?.cancel()
+        writeTask?.cancel()
     }
 
     private static func makeDefaultBackend() -> ContactsBackend {
@@ -100,16 +109,32 @@ final class ContactsStore: ObservableObject {
     }
 
     func reload() async {
+        let generation = nextReloadGeneration()
+        reloadTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runReload(generation: generation)
+        }
+        reloadTask = task
+        await task.value
+    }
+
+    private func runReload(generation: Int) async {
         async let a = backend.loadAccounts()
         async let g = backend.loadGroups()
         async let c = backend.loadContacts()
         let (loadedAccounts, loadedGroups, loadedContacts) = await (a, g, c)
-        self.accounts = loadedAccounts
-        self.groups = loadedGroups
-        self.contacts = loadedContacts
-        if selectedContactID == nil, let first = filteredContacts.first {
-            selectedContactID = first.id
+        guard isCurrentReload(generation), !Task.isCancelled else { return }
+        accounts = loadedAccounts
+        groups = loadedGroups
+        contacts = loadedContacts
+        let visibleContacts = filteredContacts
+        if let selectedContactID, !visibleContacts.contains(where: { $0.id == selectedContactID }) {
+            self.selectedContactID = visibleContacts.first?.id
+        } else if selectedContactID == nil, let first = visibleContacts.first {
+            self.selectedContactID = first.id
         }
+        finishReloadIfCurrent(generation)
     }
 
     var accountsByID: [String: ContactsAccount] {
@@ -265,17 +290,37 @@ final class ContactsStore: ObservableObject {
 
     func commit(_ contact: Contact) async {
         guard !isReadOnly else { return }
-        _ = await backend.save(contact)
-        await reload()
-        selectedContactID = contact.id
-        isEditing = false
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.save(contact)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.selectedContactID = contact.id
+            self.isEditing = false
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func delete(_ contactID: String) async {
         guard !isReadOnly else { return }
-        _ = await backend.delete(contactID)
-        if selectedContactID == contactID { selectedContactID = nil }
-        await reload()
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.delete(contactID)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            if self.selectedContactID == contactID { self.selectedContactID = nil }
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func toggleFavorite(_ contactID: String) async {
@@ -292,32 +337,73 @@ final class ContactsStore: ObservableObject {
 
     func performMerge() async {
         guard !isReadOnly, mergeCandidateIDs.count >= 2 else { return }
-        _ = await backend.merge(Array(mergeCandidateIDs))
-        mergeCandidateIDs.removeAll()
-        isMergeOpen = false
-        await reload()
+        let ids = Array(mergeCandidateIDs)
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.merge(ids)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.mergeCandidateIDs.removeAll()
+            self.isMergeOpen = false
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func toggleGroupMembership(contactID: String, groupID: String) async {
         guard !isReadOnly else { return }
         guard let c = contactsByID[contactID] else { return }
         let included = !c.groupIDs.contains(groupID)
-        _ = await backend.toggleMembership(contactID: contactID, groupID: groupID, included: included)
-        await reload()
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.toggleMembership(contactID: contactID, groupID: groupID, included: included)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func saveSmartGroup(_ group: ContactsGroup) async {
         guard !isReadOnly else { return }
-        _ = await backend.saveGroup(group)
-        editingSmartGroupID = nil
-        await reload()
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.saveGroup(group)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.editingSmartGroupID = nil
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func deleteGroup(_ groupID: String) async {
         guard !isReadOnly else { return }
-        _ = await backend.deleteGroup(groupID)
-        if case .group(let id) = selection, id == groupID { selection = .allContacts }
-        await reload()
+        let generation = nextWriteGeneration()
+        writeTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            _ = await self.backend.deleteGroup(groupID)
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            if case .group(let id) = self.selection, id == groupID { self.selection = .allContacts }
+            await self.reload()
+            guard self.isCurrentWrite(generation), !Task.isCancelled else { return }
+            self.finishWriteIfCurrent(generation)
+        }
+        writeTask = task
+        await task.value
     }
 
     func encodeVCard(for contact: Contact) -> Data? {
@@ -365,6 +451,37 @@ final class ContactsStore: ObservableObject {
         }
         .sorted { $0.1 < $1.1 }
         .map { $0.0 }
+    }
+
+    private func nextReloadGeneration() -> Int {
+        reloadGeneration += 1
+        return reloadGeneration
+    }
+
+    private func isCurrentReload(_ generation: Int) -> Bool {
+        reloadGeneration == generation
+    }
+
+    private func finishReloadIfCurrent(_ generation: Int) {
+        guard isCurrentReload(generation) else { return }
+        reloadTask = nil
+    }
+
+    private func nextWriteGeneration() -> Int {
+        writeGeneration += 1
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        return writeGeneration
+    }
+
+    private func isCurrentWrite(_ generation: Int) -> Bool {
+        writeGeneration == generation
+    }
+
+    private func finishWriteIfCurrent(_ generation: Int) {
+        guard isCurrentWrite(generation) else { return }
+        writeTask = nil
     }
 }
 
