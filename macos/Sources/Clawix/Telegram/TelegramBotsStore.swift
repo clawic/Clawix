@@ -126,6 +126,8 @@ final class TelegramBotsStore: ObservableObject {
         refreshTask = nil
         isLoading = false
         cancelAllReloads()
+        cancelAllActions()
+        cancelRegistration()
     }
 
     func resetForUnavailableService() {
@@ -199,6 +201,8 @@ final class TelegramBotsStore: ObservableObject {
             registerTask = nil
             return .success(result)
         } catch is CancellationError {
+            guard isCurrentRegister(generation: generation) else { return .failure(CancellationError()) }
+            registerTask = nil
             return .failure(CancellationError())
         } catch {
             guard isCurrentRegister(generation: generation) else { return .failure(CancellationError()) }
@@ -351,6 +355,9 @@ final class TelegramBotsStore: ObservableObject {
             guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
             lastActionResult[bot.id] = envelope
         } catch is CancellationError {
+            guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
+            actionTasks[bot.id] = nil
+            inflight.remove(bot.id)
             return false
         } catch {
             guard isCurrentAction(botId: bot.id, generation: generation) else { return false }
@@ -378,6 +385,21 @@ final class TelegramBotsStore: ObservableObject {
             reloadTasks[key]?.cancel()
             reloadTasks[key] = nil
         }
+    }
+
+    private func cancelAllActions() {
+        for botId in Array(actionTasks.keys) {
+            actionGenerations[botId] = (actionGenerations[botId] ?? 0) + 1
+            actionTasks[botId]?.cancel()
+            actionTasks[botId] = nil
+            inflight.remove(botId)
+        }
+    }
+
+    private func cancelRegistration() {
+        registerGeneration += 1
+        registerTask?.cancel()
+        registerTask = nil
     }
 
     private func nextRefreshGeneration() -> Int {

@@ -129,6 +129,41 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
         XCTAssertFalse(store.inflight.contains(bot.id))
     }
 
+    func testStopRefreshingCancelsInFlightAction() async {
+        let started = expectation(description: "Telegram action started")
+        let cancelled = expectation(description: "Telegram action cancelled")
+        let bot = Self.bot(id: "main")
+        var refreshCalls = 0
+        let store = TelegramBotsStore(
+            listBotsOperation: {
+                refreshCalls += 1
+                return []
+            },
+            startPollingOperation: { _ in
+                started.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.envelope(stdout: "stale")
+            }
+        )
+
+        let task = Task { await store.startPolling(bot) }
+        await fulfillment(of: [started], timeout: 1)
+
+        store.stopRefreshing()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        await task.value
+
+        XCTAssertFalse(store.inflight.contains(bot.id))
+        XCTAssertNil(store.lastActionResult[bot.id])
+        XCTAssertEqual(refreshCalls, 0)
+    }
+
     func testCancelledSaveCommandsDoesNotReloadCommands() async {
         let slowStarted = expectation(description: "Slow command save started")
         let slowCancelled = expectation(description: "Slow command save cancelled")
@@ -227,6 +262,45 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
             return
         }
         XCTAssertEqual(envelope.stdout, "fresh-register")
+    }
+
+    func testResetForUnavailableServiceCancelsInFlightRegistration() async {
+        let started = expectation(description: "Bot registration started")
+        let cancelled = expectation(description: "Bot registration cancelled")
+        var refreshCalls = 0
+        let store = TelegramBotsStore(
+            listBotsOperation: {
+                refreshCalls += 1
+                return [Self.bot(id: "stale")]
+            },
+            registerBotOperation: { _, _, _ in
+                started.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.envelope(stdout: "stale-register")
+            }
+        )
+
+        let task = Task {
+            await store.registerBot(secretName: "main", accountId: nil, label: nil)
+        }
+        await fulfillment(of: [started], timeout: 1)
+
+        store.resetForUnavailableService()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        let result = await task.value
+
+        if case .success = result {
+            XCTFail("Cancelled registration unexpectedly succeeded")
+        }
+        XCTAssertTrue(store.bots.isEmpty)
+        XCTAssertNil(store.lastError)
+        XCTAssertEqual(refreshCalls, 0)
     }
 
     private static func bot(id: String) -> TelegramBot {
