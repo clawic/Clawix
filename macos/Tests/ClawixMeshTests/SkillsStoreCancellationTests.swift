@@ -1,0 +1,80 @@
+import XCTest
+@testable import Clawix
+
+@MainActor
+final class SkillsStoreCancellationTests: XCTestCase {
+    func testCancelSurfaceWorkSuppressesLateSyncPublication() async {
+        let syncStarted = expectation(description: "Skill sync started")
+        let syncReturned = expectation(description: "Skill sync returned after teardown")
+        let staleDate = Date(timeIntervalSince1970: 100)
+        let store = SkillsStore(
+            seedBuiltins: false,
+            frameworkClient: Self.emptyFrameworkClient(),
+            syncOperation: {
+                syncStarted.fulfill()
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                syncReturned.fulfill()
+                return staleDate
+            }
+        )
+
+        let task = Task { await store.syncNow() }
+        await fulfillment(of: [syncStarted], timeout: 1)
+        XCTAssertEqual(store.pendingOperation, "Syncing")
+
+        store.cancelSurfaceWork()
+
+        XCTAssertNil(store.pendingOperation)
+        await fulfillment(of: [syncReturned], timeout: 1)
+        await task.value
+
+        XCTAssertNil(store.lastSyncedAt)
+        XCTAssertNil(store.pendingOperation)
+    }
+
+    func testStartingSecondSyncSuppressesStaleFirstResult() async {
+        let staleStarted = expectation(description: "Stale skill sync started")
+        let staleReturned = expectation(description: "Stale skill sync returned")
+        let freshStarted = expectation(description: "Fresh skill sync started")
+        let staleDate = Date(timeIntervalSince1970: 100)
+        let freshDate = Date(timeIntervalSince1970: 200)
+        var calls = 0
+        let store = SkillsStore(
+            seedBuiltins: false,
+            frameworkClient: Self.emptyFrameworkClient(),
+            syncOperation: {
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    try? await Task.sleep(nanoseconds: 80_000_000)
+                    staleReturned.fulfill()
+                    return staleDate
+                }
+                freshStarted.fulfill()
+                return freshDate
+            }
+        )
+
+        let first = Task { await store.syncNow() }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { await store.syncNow() }
+
+        await fulfillment(of: [freshStarted, staleReturned], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertEqual(store.lastSyncedAt, freshDate)
+        XCTAssertNil(store.pendingOperation)
+    }
+
+    private static func emptyFrameworkClient() -> ClawJSFrameworkRecordsClient {
+        ClawJSFrameworkRecordsClient(runner: .init { args in
+            if args == ["skills", "list", "--json", "--kind", "clawix_skill"] ||
+                args == ["skills", "list", "--json", "--kind", "clawix_state"] {
+                return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+            }
+            return Data(#"{"ok":true,"data":{}}"#.utf8)
+        })
+    }
+}

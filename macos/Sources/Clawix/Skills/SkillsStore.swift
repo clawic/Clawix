@@ -8,6 +8,7 @@ import Combine
 /// the moment the user makes them.
 @MainActor
 final class SkillsStore: ObservableObject {
+    typealias SyncOperation = @MainActor () async throws -> Date
 
     // MARK: - Public state
 
@@ -41,15 +42,30 @@ final class SkillsStore: ObservableObject {
     // MARK: - Init / seed
 
     private let frameworkClient: ClawJSFrameworkRecordsClient?
+    private let syncOperation: SyncOperation
+    private var syncTask: Task<Void, Never>?
+    private var syncGeneration = 0
 
-    init(seedBuiltins: Bool = true, frameworkClient: ClawJSFrameworkRecordsClient? = nil) {
+    init(
+        seedBuiltins: Bool = true,
+        frameworkClient: ClawJSFrameworkRecordsClient? = nil,
+        syncOperation: SyncOperation? = nil
+    ) {
         self.frameworkClient = frameworkClient ?? .shared
+        self.syncOperation = syncOperation ?? {
+            try await Task.sleep(nanoseconds: 200_000_000)
+            return Date()
+        }
         if seedBuiltins {
             installSeedCatalog()
             installSeedSyncTargets()
         }
         loadUserCatalogFromFramework()
         loadActiveFromFramework()
+    }
+
+    deinit {
+        syncTask?.cancel()
     }
 
     // MARK: - Catalog queries
@@ -230,10 +246,32 @@ final class SkillsStore: ObservableObject {
     /// `claw.skills.sync()` in ClawJS and stream progress; the seed
     /// implementation just touches `lastSyncedAt`.
     func syncNow() async {
+        let generation = nextSyncGeneration()
+        syncTask?.cancel()
         pendingOperation = "Syncing"
-        // Real implementation: bridge call.
-        try? await Task.sleep(nanoseconds: 200_000_000)
-        lastSyncedAt = Date()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let syncedAt = try await self.syncOperation()
+                try Task.checkCancellation()
+                guard self.isCurrentSync(generation) else { return }
+                self.lastSyncedAt = syncedAt
+            } catch is CancellationError {
+            } catch {
+                // Existing sync behavior intentionally does not surface
+                // bridge errors yet; keep this path quiet until the
+                // bridge streams structured progress/errors.
+            }
+            self.finishSyncIfCurrent(generation)
+        }
+        syncTask = task
+        await task.value
+    }
+
+    func cancelSurfaceWork() {
+        syncGeneration += 1
+        syncTask?.cancel()
+        syncTask = nil
         pendingOperation = nil
     }
 
@@ -406,6 +444,21 @@ final class SkillsStore: ObservableObject {
 
     private func shortId() -> String {
         String(UUID().uuidString.prefix(6).lowercased())
+    }
+
+    private func nextSyncGeneration() -> Int {
+        syncGeneration += 1
+        return syncGeneration
+    }
+
+    private func isCurrentSync(_ generation: Int) -> Bool {
+        syncGeneration == generation
+    }
+
+    private func finishSyncIfCurrent(_ generation: Int) {
+        guard isCurrentSync(generation) else { return }
+        pendingOperation = nil
+        syncTask = nil
     }
 
     /// Trivial template renderer for the freeze path. Replaces

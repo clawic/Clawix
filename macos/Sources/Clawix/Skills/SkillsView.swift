@@ -53,6 +53,9 @@ struct SkillsView: View {
             // local fallback the seed already ran in init.
             _ = storeRefreshToken
         }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
     }
 
     // MARK: - Header
