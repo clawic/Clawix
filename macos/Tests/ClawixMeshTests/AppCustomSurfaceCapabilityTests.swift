@@ -180,4 +180,76 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(query.collections, ["tasks", "notes"])
         XCTAssertEqual(query.limit, 1)
     }
+
+    @MainActor
+    func testVariantDefaultsResolveWorkspaceBeforeUserDefaultAndPreserveOriginal() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let appsStore = AppsStore(rootURL: root)
+        let defaults = try makeDefaults()
+        let store = AppVariantDefaultsStore(userDefaults: defaults)
+        let workspaceId = UUID()
+
+        let userVariant = AppRecord(
+            slug: "tasks-user-variant",
+            name: "Tasks User Variant",
+            routeTarget: "database/tasks",
+            variant: AppVariantMetadata(originalRoute: "database/tasks", defaultScope: "user"),
+            protectedRoutePolicy: .variantOnly
+        )
+        let workspaceVariant = AppRecord(
+            slug: "tasks-workspace-variant",
+            name: "Tasks Workspace Variant",
+            routeTarget: "database/tasks",
+            variant: AppVariantMetadata(originalRoute: "database/tasks", defaultScope: "workspace"),
+            protectedRoutePolicy: .variantOnly
+        )
+        try appsStore.update(userVariant)
+        try appsStore.update(workspaceVariant)
+
+        try store.setDefault(app: userVariant, scope: .user)
+        try store.setDefault(app: workspaceVariant, scope: .workspace, workspaceId: workspaceId)
+
+        let scoped = store.resolution(
+            for: "database/tasks",
+            workspaceId: workspaceId,
+            appsStore: appsStore
+        )
+        XCTAssertEqual(scoped?.appId, workspaceVariant.id)
+        XCTAssertEqual(scoped?.scope, .workspace)
+        XCTAssertEqual(scoped?.originalRouteAvailable, true)
+
+        let fallback = store.resolution(for: "database/tasks", appsStore: appsStore)
+        XCTAssertEqual(fallback?.appId, userVariant.id)
+        XCTAssertEqual(fallback?.scope, .user)
+
+        let original = store.resolution(
+            for: "database/tasks",
+            workspaceId: workspaceId,
+            appsStore: appsStore,
+            preferOriginal: true
+        )
+        XCTAssertNil(original)
+    }
+
+    @MainActor
+    func testVariantDefaultsRejectProtectedReplacementWithoutVariantPolicy() throws {
+        let defaults = try makeDefaults()
+        let store = AppVariantDefaultsStore(userDefaults: defaults)
+        let unsafe = AppRecord(
+            slug: "secrets-replacement",
+            name: "Secrets Replacement",
+            routeTarget: "secrets",
+            protectedRoutePolicy: .none
+        )
+
+        XCTAssertThrowsError(try store.setDefault(app: unsafe, scope: .user))
+    }
+
+    private func makeDefaults() throws -> UserDefaults {
+        let suite = "AppCustomSurfaceCapabilityTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+        return defaults
+    }
 }

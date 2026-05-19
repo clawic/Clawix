@@ -3,9 +3,32 @@ import SwiftUI
 struct SurfaceRouterView: View {
     let route: SidebarRoute
 
+    @EnvironmentObject private var appState: AppState
+    @ObservedObject private var appsStore: AppsStore = .shared
+    @ObservedObject private var variantDefaults: AppVariantDefaultsStore = .shared
+
     var body: some View {
         Group {
-            switch route {
+            if let resolution = variantResolution {
+                AppSurfaceView(appId: resolution.appId)
+            } else {
+                routedSurface
+            }
+        }
+    }
+
+    private var variantResolution: AppVariantResolution? {
+        guard let target = route.appVariantRouteTarget else { return nil }
+        return variantDefaults.resolution(
+            for: target,
+            workspaceId: appState.selectedProject?.id,
+            appsStore: appsStore
+        )
+    }
+
+    @ViewBuilder
+    private var routedSurface: some View {
+        switch route {
             case .home:
                 MainContentView()
             case .search:
@@ -106,7 +129,6 @@ struct SurfaceRouterView: View {
                 LifeVerticalScreen(verticalId: id)
             case .lifeSettings:
                 LifeSettingsView()
-            }
         }
     }
 }
