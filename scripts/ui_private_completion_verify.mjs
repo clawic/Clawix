@@ -127,6 +127,10 @@ function runFailureSelfTests() {
     process.exit(1);
   }
   try {
+    if (/\/Users\/|file:\/\/|\bAPPROVE\b|current-slice-captures|\.png\b|[a-f0-9]{64}|approvedByUserAt|approvedScope/.test(statusResult.stdout)) {
+      console.error("UI private completion verification self-test --completion-status must remain public-safe.");
+      process.exit(1);
+    }
     const status = JSON.parse(statusResult.stdout);
     if (status.updateGoalAllowed !== false || status.decisions?.open !== 0 || status.decisions?.blockedExternalPending !== 9 || status.decisions?.unresolved !== 9) {
       console.error("UI private completion verification self-test --completion-status must report blocked update_goal with 0 open decisions and 9 blocked decisions.");
@@ -134,6 +138,20 @@ function runFailureSelfTests() {
     }
     if (!status.privateSourceReview || typeof status.privateSourceReview.exitCode !== "number") {
       console.error("UI private completion verification self-test --completion-status must include privateSourceReview status.");
+      process.exit(1);
+    }
+    if (
+      status.criticalMacosSliceProgress?.decisionCount !== 8 ||
+      status.criticalMacosSliceProgress?.status !== "approval-ready-external-pending" ||
+      status.criticalMacosSliceProgress?.capturedRecordCount !== 36 ||
+      status.criticalMacosSliceProgress?.approvedRecordCount !== 0 ||
+      status.criticalMacosSliceProgress?.directBlockerCount !== 0 ||
+      status.criticalMacosSliceProgress?.approvalState !== "awaiting-explicit-user-approval" ||
+      !status.criticalMacosSliceProgress?.nextRequiredActions?.includes("explicit user approval for the critical macOS private evidence records") ||
+      status.criticalMacosSliceProgress?.completionBlocker?.reason !== "explicit-user-approval-required" ||
+      !status.criticalMacosSliceProgress?.decisionIds?.includes("initial_scope")
+    ) {
+      console.error("UI private completion verification self-test --completion-status must include critical macOS slice progress.");
       process.exit(1);
     }
   } catch (error) {
@@ -277,6 +295,30 @@ if (completionStatusMode) {
   const verifiedCompleteDecisions = decisions.filter((decision) => decision.status === "verified-complete");
   const openDecisionIds = actualOpenDecisions.map((decision) => decision.id);
   const blockedDecisionIds = actualBlockedDecisions.map((decision) => decision.id);
+  const criticalMacosSliceDecisions = decisions
+    .filter((decision) => decision?.externalPendingLedger?.sliceProgress)
+    .map((decision) => {
+      const sliceProgress = decision.externalPendingLedger.sliceProgress;
+      return {
+        decisionId: decision.id,
+        decisionStatus: decision.status,
+        sliceId: sliceProgress.sliceId,
+        sliceStatus: sliceProgress.status,
+        capturedRecordCount: sliceProgress.capturedRecordCount ?? null,
+        approvedRecordCount: sliceProgress.approvedRecordCount ?? null,
+        directBlockerCount: sliceProgress.directBlockerCount ?? null,
+        approvalState: sliceProgress.approvalState ?? null,
+        scope: sliceProgress.scope || [],
+        evidenceTypes: sliceProgress.evidenceTypes || [],
+        remainingForSlice: sliceProgress.remainingForSlice || [],
+        blockingCommand: sliceProgress.blockingCommand,
+      };
+    });
+  const criticalMacosSliceStatuses = [...new Set(criticalMacosSliceDecisions.map((decision) => decision.sliceStatus).filter(Boolean))];
+  const criticalMacosSliceScopes = criticalMacosSliceDecisions
+    .map((decision) => JSON.stringify(decision.scope || []))
+    .filter((scope, index, scopes) => scopes.indexOf(scope) === index)
+    .map((scope) => JSON.parse(scope));
   const evidenceTotals = privateEvidenceStatus.json?.totals || {};
   const approvalCandidateBlockerCount = privateApprovalVerification?.exitCode === 0 ? 0 : approvalCounts.candidate || 0;
   const blockers = [];
@@ -396,6 +438,27 @@ if (completionStatusMode) {
       captureTotals: privateReviewBundleJson.captureTotals ?? null,
       approval: privateReviewBundleJson.approval ?? null,
       decisions: privateReviewBundleSummaries,
+    },
+    criticalMacosSliceProgress: {
+      status: criticalMacosSliceStatuses.length === 1 ? criticalMacosSliceStatuses[0] : "mixed-or-missing",
+      sliceId: criticalMacosSliceDecisions[0]?.sliceId || null,
+      decisionCount: criticalMacosSliceDecisions.length,
+      decisionIds: criticalMacosSliceDecisions.map((decision) => decision.decisionId),
+      capturedRecordCount: criticalMacosSliceDecisions[0]?.capturedRecordCount ?? null,
+      approvedRecordCount: criticalMacosSliceDecisions[0]?.approvedRecordCount ?? null,
+      directBlockerCount: criticalMacosSliceDecisions[0]?.directBlockerCount ?? null,
+      approvalState: criticalMacosSliceDecisions[0]?.approvalState ?? null,
+      nextRequiredActions: criticalMacosSliceDecisions[0]?.remainingForSlice || [],
+      completionBlocker: {
+        classification: "external_pending",
+        reason: criticalMacosSliceDecisions[0]?.approvalState === "awaiting-explicit-user-approval"
+          ? "explicit-user-approval-required"
+          : "private-verification-required",
+        updateGoalAllowed: false,
+      },
+      scopes: criticalMacosSliceScopes,
+      decisions: criticalMacosSliceDecisions,
+      note: "Public-safe summary only. This does not approve visual evidence or replace the --require-approved private verifier.",
     },
     privateSourceReview: {
       script: privateSourceStatus.script,

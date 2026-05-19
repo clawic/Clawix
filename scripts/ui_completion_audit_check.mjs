@@ -408,6 +408,10 @@ const criticalMacosSlice = {
   sliceId: "critical-macos-ui-evidence-2026-05-19",
   scope: ["macos-root-chrome", "macos-sidebar", "macos-chat-and-composer"],
   status: "approval-ready-external-pending",
+  capturedRecordCount: 36,
+  approvedRecordCount: 0,
+  directBlockerCount: 0,
+  approvalState: "awaiting-explicit-user-approval",
   publicSafeEvidence: [
     "36 private evidence records captured outside the public repo for the critical macOS slice",
     "private review bundle is locked with normalized evidence hashes and a 7-day review window",
@@ -487,6 +491,18 @@ for (const [decisionId, expectedSlice] of Object.entries(criticalMacosSlice.deci
   }
   if (sliceProgress.sliceId !== criticalMacosSlice.sliceId) fail(`${label}.sliceId must be ${criticalMacosSlice.sliceId}`);
   if (sliceProgress.status !== criticalMacosSlice.status) fail(`${label}.status must be ${criticalMacosSlice.status}`);
+  if (sliceProgress.capturedRecordCount !== criticalMacosSlice.capturedRecordCount) {
+    fail(`${label}.capturedRecordCount must be ${criticalMacosSlice.capturedRecordCount}`);
+  }
+  if (sliceProgress.approvedRecordCount !== criticalMacosSlice.approvedRecordCount) {
+    fail(`${label}.approvedRecordCount must remain ${criticalMacosSlice.approvedRecordCount} until explicit approval`);
+  }
+  if (sliceProgress.directBlockerCount !== criticalMacosSlice.directBlockerCount) {
+    fail(`${label}.directBlockerCount must be ${criticalMacosSlice.directBlockerCount}`);
+  }
+  if (sliceProgress.approvalState !== criticalMacosSlice.approvalState) {
+    fail(`${label}.approvalState must be ${criticalMacosSlice.approvalState}`);
+  }
   if (!arrayEquals(sliceProgress.scope || [], criticalMacosSlice.scope)) fail(`${label}.scope must match the critical macOS surfaces`);
   if (!arrayEquals(sliceProgress.publicSafeEvidence || [], criticalMacosSlice.publicSafeEvidence)) {
     fail(`${label}.publicSafeEvidence must match the public-safe slice evidence summary`);
