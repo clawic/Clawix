@@ -8,6 +8,11 @@ import Foundation
 /// simpler (loading → ready → error).
 @MainActor
 final class MemoryStore: ObservableObject {
+    typealias ListNotesOperation = @MainActor () async throws -> [ClawJSMemoryClient.MemoryNote]
+    typealias ListCapturesOperation = @MainActor () async throws -> [ClawJSMemoryClient.Capture]
+    typealias StatsOperation = @MainActor () async throws -> ClawJSMemoryClient.MemoryStatsResponse
+    typealias SearchOperation = @MainActor (_ query: String) async throws -> ClawJSMemoryClient.SearchResponse
+    typealias DoctorOperation = @MainActor () async throws -> ClawJSMemoryClient.DoctorResponse
 
     enum State: Equatable {
         case idle
@@ -25,14 +30,53 @@ final class MemoryStore: ObservableObject {
     @Published var isSearching: Bool = false
 
     let client: ClawJSMemoryClient
+    private let listNotesOperation: ListNotesOperation
+    private let listCapturesOperation: ListCapturesOperation
+    private let statsOperation: StatsOperation
+    private let searchOperation: SearchOperation
+    private let doctorOperation: DoctorOperation
+    private var refreshTask: Task<Void, Never>?
+    private var refreshTimeoutTask: Task<Void, Never>?
+    private var refreshGeneration = 0
     private var searchTask: Task<Void, Never>?
+    private var searchGeneration = 0
     private var activeSearchQuery: String?
-    private var refreshGeneration: UUID?
     private var supervisorObserver: AnyCancellable?
 
-    init(client: ClawJSMemoryClient = .init()) {
+    init(
+        client: ClawJSMemoryClient = .init(),
+        listNotesOperation: ListNotesOperation? = nil,
+        listCapturesOperation: ListCapturesOperation? = nil,
+        statsOperation: StatsOperation? = nil,
+        searchOperation: SearchOperation? = nil,
+        doctorOperation: DoctorOperation? = nil,
+        attachSupervisor: Bool = true
+    ) {
         self.client = client
-        attachSupervisorObserver()
+        self.listNotesOperation = listNotesOperation ?? {
+            try await client.listNotes()
+        }
+        self.listCapturesOperation = listCapturesOperation ?? {
+            try await client.listCaptures()
+        }
+        self.statsOperation = statsOperation ?? {
+            try await client.stats()
+        }
+        self.searchOperation = searchOperation ?? { query in
+            try await client.search(query: query)
+        }
+        self.doctorOperation = doctorOperation ?? {
+            try await client.doctor()
+        }
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
+    }
+
+    deinit {
+        refreshTask?.cancel()
+        refreshTimeoutTask?.cancel()
+        searchTask?.cancel()
     }
 
     // MARK: - Loading
@@ -42,39 +86,49 @@ final class MemoryStore: ObservableObject {
     /// the notes call fails (captures + stats are best-effort).
     func refresh() async {
         state = .loading
-        let generation = UUID()
-        refreshGeneration = generation
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 8_000_000_000)
-            guard let self, self.refreshGeneration == generation else { return }
-            if case .loading = self.state {
-                self.state = .error("Memory service did not become ready within 8 seconds.")
-            }
+        let generation = nextRefreshGeneration()
+        refreshTask?.cancel()
+        refreshTimeoutTask?.cancel()
+        scheduleRefreshTimeout(generation: generation)
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runRefresh(generation: generation)
         }
+        refreshTask = task
+        await task.value
+    }
+
+    private func runRefresh(generation: Int) async {
         do {
-            async let notesTask = client.listNotes()
-            async let capturesTask: [ClawJSMemoryClient.Capture] = (try? await client.listCaptures()) ?? []
-            async let statsTask: ClawJSMemoryClient.MemoryStatsResponse? = (try? await client.stats())
-            self.notes = try await notesTask
-            self.captures = await capturesTask
-            self.stats = await statsTask
-            self.state = .ready
-            self.refreshGeneration = nil
+            async let notesTask = listNotesOperation()
+            async let capturesTask: [ClawJSMemoryClient.Capture] = (try? await listCapturesOperation()) ?? []
+            async let statsTask: ClawJSMemoryClient.MemoryStatsResponse? = (try? await statsOperation())
+            let notes = try await notesTask
+            let captures = await capturesTask
+            let stats = await statsTask
+            try Task.checkCancellation()
+            guard isCurrentRefresh(generation) else { return }
+            self.notes = notes
+            self.captures = captures
+            self.stats = stats
+            state = .ready
             await refreshActiveSearchIfNeeded()
+        } catch is CancellationError {
         } catch let error as ClawJSMemoryClient.Error {
-            self.state = .error(error.localizedDescription)
-            self.refreshGeneration = nil
+            guard isCurrentRefresh(generation) else { return }
+            state = .error(error.localizedDescription)
         } catch {
-            self.state = .error(error.localizedDescription)
-            self.refreshGeneration = nil
+            guard isCurrentRefresh(generation) else { return }
+            state = .error(error.localizedDescription)
         }
+        finishRefreshIfCurrent(generation)
     }
 
     /// Just probes the daemon and updates `doctor`. Does not affect
     /// `state` so a doctor refresh from the Settings page does not show
     /// a transient loading shimmer over the list.
     func runDoctor() async {
-        doctor = try? await client.doctor()
+        doctor = try? await doctorOperation()
     }
 
     // MARK: - Search
@@ -82,39 +136,25 @@ final class MemoryStore: ObservableObject {
     /// Debounced search. Cancels the previous in-flight request and
     /// dispatches a new one after 300 ms of typing pause.
     func search(_ query: String) {
+        let generation = nextSearchGeneration()
         searchTask?.cancel()
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             activeSearchQuery = nil
             isSearching = false
             lastSearch = nil
+            searchTask = nil
             return
         }
         activeSearchQuery = trimmed
-        searchTask = Task { [client] in
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            if Task.isCancelled { return }
-            await MainActor.run { self.isSearching = true }
-            do {
-                let response = try await client.search(query: trimmed)
-                if Task.isCancelled { return }
-                await MainActor.run {
-                    guard self.activeSearchQuery == trimmed else { return }
-                    self.lastSearch = response
-                    self.isSearching = false
-                }
-            } catch {
-                if Task.isCancelled { return }
-                await MainActor.run {
-                    guard self.activeSearchQuery == trimmed else { return }
-                    self.lastSearch = nil
-                    self.isSearching = false
-                }
-            }
+        searchTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runSearch(query: trimmed, generation: generation, debounce: true)
         }
     }
 
     func clearSearch() {
+        searchGeneration += 1
         searchTask?.cancel()
         searchTask = nil
         activeSearchQuery = nil
@@ -124,15 +164,38 @@ final class MemoryStore: ObservableObject {
 
     private func refreshActiveSearchIfNeeded() async {
         guard let query = activeSearchQuery else { return }
+        let generation = nextSearchGeneration()
         searchTask?.cancel()
         searchTask = nil
         isSearching = true
-        do {
-            lastSearch = try await client.search(query: query)
-        } catch {
-            lastSearch = nil
+        await runSearch(query: query, generation: generation, debounce: false)
+    }
+
+    private func runSearch(query: String, generation: Int, debounce: Bool) async {
+        if debounce {
+            do {
+                try await Task.sleep(nanoseconds: 300_000_000)
+            } catch {
+                return
+            }
         }
-        isSearching = false
+        do {
+            try Task.checkCancellation()
+            guard isCurrentSearch(generation), activeSearchQuery == query else { return }
+            isSearching = true
+            let response = try await searchOperation(query)
+            try Task.checkCancellation()
+            guard isCurrentSearch(generation), activeSearchQuery == query else { return }
+            lastSearch = response
+            isSearching = false
+            finishSearchIfCurrent(generation)
+        } catch is CancellationError {
+        } catch {
+            guard isCurrentSearch(generation), activeSearchQuery == query else { return }
+            lastSearch = nil
+            isSearching = false
+            finishSearchIfCurrent(generation)
+        }
     }
 
     private func attachSupervisorObserver() {
@@ -147,14 +210,24 @@ final class MemoryStore: ObservableObject {
                     break
                 }
             case .blocked, .crashed, .daemonUnavailable, .idle:
-                self.notes = []
-                self.captures = []
-                self.stats = nil
-                self.state = .error(snap.state.unavailableReason ?? "Memory service is unavailable.")
+                self.reset(reason: snap.state.unavailableReason ?? "Memory service is unavailable.")
             case .starting:
                 if self.state != .ready { self.state = .loading }
             }
         }
+    }
+
+    func reset(reason: String) {
+        refreshGeneration += 1
+        refreshTask?.cancel()
+        refreshTask = nil
+        refreshTimeoutTask?.cancel()
+        refreshTimeoutTask = nil
+        clearSearch()
+        notes = []
+        captures = []
+        stats = nil
+        state = .error(reason)
     }
 
     // MARK: - Mutations
@@ -189,5 +262,45 @@ final class MemoryStore: ObservableObject {
         let response = try await client.promoteCapture(id: captureId)
         await refresh()
         return response
+    }
+
+    private func scheduleRefreshTimeout(generation: Int) {
+        refreshTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard let self, self.isCurrentRefresh(generation) else { return }
+            if case .loading = self.state {
+                self.state = .error("Memory service did not become ready within 8 seconds.")
+            }
+        }
+    }
+
+    private func nextRefreshGeneration() -> Int {
+        refreshGeneration += 1
+        return refreshGeneration
+    }
+
+    private func isCurrentRefresh(_ generation: Int) -> Bool {
+        refreshGeneration == generation
+    }
+
+    private func finishRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentRefresh(generation) else { return }
+        refreshTask = nil
+        refreshTimeoutTask?.cancel()
+        refreshTimeoutTask = nil
+    }
+
+    private func nextSearchGeneration() -> Int {
+        searchGeneration += 1
+        return searchGeneration
+    }
+
+    private func isCurrentSearch(_ generation: Int) -> Bool {
+        searchGeneration == generation
+    }
+
+    private func finishSearchIfCurrent(_ generation: Int) {
+        guard isCurrentSearch(generation) else { return }
+        searchTask = nil
     }
 }
