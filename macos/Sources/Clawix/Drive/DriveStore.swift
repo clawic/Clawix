@@ -44,6 +44,7 @@ final class DriveStore: ObservableObject {
     private var refreshGeneration = 0
     private var bootGeneration = 0
     private var mutationGeneration = 0
+    private var thumbnailGeneration = 0
     private let adminTokenOperation: AdminTokenOperation
     private var supervisorObserver: AnyCancellable?
 
@@ -128,6 +129,7 @@ final class DriveStore: ObservableObject {
         refreshTask?.cancel()
         refreshTask = nil
         mutationGeneration += 1
+        thumbnailGeneration += 1
         realtime.stop()
     }
 
@@ -374,9 +376,11 @@ final class DriveStore: ObservableObject {
 
     func thumbnail(for itemId: String, size: Int = 256) async -> Data? {
         if let cached = thumbnailCache[itemId] { return cached }
+        let generation = thumbnailGeneration
         do {
             let data = try await client.loadThumbnailBytes(itemId, size: size)
             try Task.checkCancellation()
+            guard isCurrentThumbnail(generation) else { return nil }
             thumbnailCache[itemId] = data
             return data
         } catch is CancellationError {
@@ -450,6 +454,10 @@ final class DriveStore: ObservableObject {
     private func publishMutationError(_ error: Swift.Error, generation: Int) {
         guard isCurrentMutation(generation) else { return }
         lastError = error.localizedDescription
+    }
+
+    private func isCurrentThumbnail(_ generation: Int) -> Bool {
+        thumbnailGeneration == generation
     }
 
     private func nextBootGeneration() -> Int {

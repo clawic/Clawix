@@ -215,6 +215,31 @@ final class DriveStoreCancellationTests: XCTestCase {
         XCTAssertEqual(refreshCalls, 0)
     }
 
+    func testCancelSurfaceWorkSuppressesInFlightThumbnailCacheWrite() async {
+        let thumbnailStarted = expectation(description: "Drive thumbnail load started")
+        let thumbnailReturned = expectation(description: "Drive thumbnail load returned")
+        let client = FakeDriveClient()
+        client.onLoadThumbnailBytes = { id, _ in
+            thumbnailStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            thumbnailReturned.fulfill()
+            return Data(id.utf8)
+        }
+        let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
+
+        let task = Task {
+            await store.thumbnail(for: "late-thumbnail")
+        }
+        await fulfillment(of: [thumbnailStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [thumbnailReturned], timeout: 1)
+        let result = await task.value
+        XCTAssertNil(result)
+        XCTAssertNil(store.thumbnailCache["late-thumbnail"])
+    }
+
     private static func response(ids: [String]) -> ClawJSDriveClient.ListItemsResponse {
         ClawJSDriveClient.ListItemsResponse(
             items: ids.map { item(id: $0) },
@@ -277,6 +302,9 @@ private final class FakeDriveClient: ClawJSDriveClienting, @unchecked Sendable {
         makeDriveDetail(id: fileName)
     }
     var onMarkViewed: (String) async throws -> Void = { _ in }
+    var onLoadThumbnailBytes: (String, Int) async throws -> Data = { id, _ in
+        Data(id.utf8)
+    }
 
     func bootstrap() async throws -> ClawJSDriveClient.BootstrapResponse {
         ClawJSDriveClient.BootstrapResponse(counts: .init(myDrive: 0, recent: 0, starred: 0, shared: 0, trash: 0))
@@ -331,7 +359,7 @@ private final class FakeDriveClient: ClawJSDriveClienting, @unchecked Sendable {
     }
 
     func loadThumbnailBytes(_ id: String, size: Int) async throws -> Data {
-        Data(id.utf8)
+        try await onLoadThumbnailBytes(id, size)
     }
 
     func getExif(_ id: String) async throws -> ClawJSDriveClient.ExifRecord? { nil }
