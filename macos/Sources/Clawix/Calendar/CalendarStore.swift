@@ -107,6 +107,9 @@ final class CalendarStore: ObservableObject {
         reloadGeneration += 1
         reloadTask?.cancel()
         reloadTask = nil
+        writeGeneration += 1
+        writeTask?.cancel()
+        writeTask = nil
         if access == .requesting {
             access = .unknown
         }

@@ -213,6 +213,46 @@ final class ContactsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.contacts.map(\.id), ["remaining"])
     }
 
+    func testCancelSurfaceWorkSuppressesInFlightCommit() async {
+        let saveStarted = expectation(description: "Contact save started")
+        let saveCancelled = expectation(description: "Contact save cancelled")
+        let reloadUnexpected = expectation(description: "Contacts reload should not run after write cancellation")
+        reloadUnexpected.isInverted = true
+        let backend = Backend()
+        backend.saveHandler = { contact in
+            saveStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                saveCancelled.fulfill()
+                return .failure(TestError.cancelled)
+            } catch {
+                return .failure(TestError.cancelled)
+            }
+            return .success(contact)
+        }
+        backend.loadContactsHandler = {
+            reloadUnexpected.fulfill()
+            return [Self.contact(id: "unexpected")]
+        }
+        let store = ContactsStore(backend: backend)
+        store.isEditing = true
+        store.selectedContactID = "existing"
+
+        let task = Task { await store.commit(Self.contact(id: "stale")) }
+        await fulfillment(of: [saveStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [saveCancelled], timeout: 1)
+        await task.value
+        await fulfillment(of: [reloadUnexpected], timeout: 0.05)
+
+        XCTAssertTrue(store.contacts.isEmpty)
+        XCTAssertEqual(store.selectedContactID, "existing")
+        XCTAssertTrue(store.isEditing)
+    }
+
     private static func contact(id: String) -> Contact {
         Contact(
             id: id,

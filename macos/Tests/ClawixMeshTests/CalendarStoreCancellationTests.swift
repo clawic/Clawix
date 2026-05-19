@@ -220,6 +220,45 @@ final class CalendarStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.events.map(\.id), ["remaining"])
     }
 
+    func testCancelSurfaceWorkSuppressesInFlightCommit() async {
+        let saveStarted = expectation(description: "Calendar save started")
+        let saveCancelled = expectation(description: "Calendar save cancelled")
+        let reloadUnexpected = expectation(description: "Calendar reload should not run after write cancellation")
+        reloadUnexpected.isInverted = true
+        let backend = Backend()
+        backend.saveHandler = { _ in
+            saveStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                saveCancelled.fulfill()
+                return .failure("cancelled")
+            } catch {
+                return .failure("failed")
+            }
+            return .success
+        }
+        backend.loadSourcesHandler = {
+            reloadUnexpected.fulfill()
+            return [Self.source(id: "unexpected")]
+        }
+        let store = CalendarStore(backend: backend, calendar: Self.calendar)
+        store.editingDraft = Self.draft(id: "event", title: "Stale")
+
+        let task = Task { await store.commitDraft() }
+        await fulfillment(of: [saveStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [saveCancelled], timeout: 1)
+        await task.value
+        await fulfillment(of: [reloadUnexpected], timeout: 0.05)
+
+        XCTAssertEqual(store.editingDraft?.title, "Stale")
+        XCTAssertNil(store.lastError)
+        XCTAssertTrue(store.events.isEmpty)
+    }
+
     private static let calendar = Foundation.Calendar(identifier: .gregorian)
 
     private static func date(_ day: Int, hour: Int = 9) -> Date {
