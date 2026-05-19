@@ -8,6 +8,7 @@ import ClawixCore
 // and only honours mesh write/read calls for the local user. Pure
 // URLSession + Codable; no shared state.
 enum MeshClientError: LocalizedError, Equatable {
+    case cancelled
     case daemonUnreachable
     case http(status: Int, body: String)
     case decoding(String)
@@ -16,6 +17,8 @@ enum MeshClientError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
+        case .cancelled:
+            return "Operation cancelled."
         case .daemonUnreachable:
             return "Background bridge is off. Enable Run bridge in background from Settings → General before pairing machines."
         case .http(let status, let body):
@@ -30,9 +33,23 @@ enum MeshClientError: LocalizedError, Equatable {
     }
 }
 
+protocol MeshClienting {
+    func identity() async throws -> NodeIdentity
+    func peers() async throws -> [PeerRecord]
+    func link(host: String, httpPort: Int, token: String, profile: PeerPermissionProfile) async throws -> PeerRecord
+    func workspaces() async throws -> [RemoteWorkspace]
+    func addWorkspace(path: String, label: String?) async throws -> RemoteWorkspace
+    func startRemoteJob(peerId: String, workspacePath: String, prompt: String, jobId: String?) async throws -> RemoteJob
+    func job(id: String) async throws -> MeshClient.JobOutput
+    func upsertHost(_ host: HostInput, sshSecret: SshSecretInput?) async throws -> PeerRecord
+    func revokePeer(nodeId: String) async throws
+    func unrevokePeer(nodeId: String) async throws
+    func removeHost(nodeId: String) async throws
+}
+
 /// Loopback-only HTTP client for the daemon's /v1/mesh/* surface. Lives
 /// for the lifetime of the app; methods are async and re-entrant.
-struct MeshClient {
+struct MeshClient: MeshClienting {
     /// UserDefaults key the explorer / E2E tests flip when they want
     /// the app to talk to a fake daemon on a different port.
     static let httpPortDefaultsKey = "ClawixMesh.HTTPPort.v1"

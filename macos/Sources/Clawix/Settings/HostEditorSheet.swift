@@ -97,6 +97,9 @@ struct HostEditorSheet: View {
         }
         .frame(width: 520)
         .sheetStandardBackground()
+        .onDisappear {
+            store.cancelHostsSurfaceWork()
+        }
     }
 
     private var header: some View {

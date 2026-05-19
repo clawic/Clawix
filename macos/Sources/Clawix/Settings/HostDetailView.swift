@@ -40,6 +40,9 @@ struct HostDetailView: View {
         .onAppear {
             workspaceDraft = store.remoteWorkspace(for: peer.nodeId)
         }
+        .onDisappear {
+            store.cancelHostsSurfaceWork()
+        }
         .alert("Revoke this host?", isPresented: $revokeConfirm) {
             Button("Cancel", role: .cancel) { }
             Button("Revoke", role: .destructive) {
@@ -313,4 +316,3 @@ private struct DetailCard<Content: View>: View {
         )
     }
 }
-

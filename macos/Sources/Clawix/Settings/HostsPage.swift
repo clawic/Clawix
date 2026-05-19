@@ -35,6 +35,9 @@ struct HostsPage: View {
         .task {
             await store.refreshAll()
         }
+        .onDisappear {
+            store.cancelHostsSurfaceWork()
+        }
         .sheet(item: $editorItem) { _ in
             HostEditorSheet(
                 store: store,
