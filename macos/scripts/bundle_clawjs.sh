@@ -376,6 +376,7 @@ PY
             run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
         )
         rm -rf "$CLAWJS_DEST/node_modules/@clawjs/sessions/node_modules/better-sqlite3"
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/sessions/node_modules/@clawjs/core"
     fi
     # Secrets server: launchers resolve `<HERE>/../../../secrets/dist/server.js`
     # from @clawjs/cli/bin, i.e. node_modules/secrets/dist/server.js.
