@@ -712,7 +712,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
     }
 
     private func loadHistories(for widgets: [SystemTelemetryWidget]) async -> [String: SystemTelemetryHistory] {
-        let metricKeys = Set(widgets.filter { $0.renderMode == "sparkline" }.flatMap(\.metricKeys))
+        let metricKeys = Set(widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys))
         guard !metricKeys.isEmpty else { return [:] }
 
         var next: [String: SystemTelemetryHistory] = [:]
@@ -817,7 +817,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
     }
 
     func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory? {
-        guard widget.renderMode == "sparkline",
+        guard Self.supportsHistoryGraph(widget),
               let metricKey = widget.metricKeys.first,
               let history = histories[metricKey],
               history.chart.points.count >= 2 else {
@@ -902,6 +902,10 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
             let index = min(ticks.count - 1, max(0, Int((normalized * Double(ticks.count - 1)).rounded())))
             return ticks[index]
         })
+    }
+
+    private static func supportsHistoryGraph(_ widget: SystemTelemetryWidget) -> Bool {
+        widget.renderMode == "sparkline" || widget.renderMode == "chart"
     }
 
     private static func downsample(points: [Double], width: Int) -> [Double] {

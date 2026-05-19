@@ -49,13 +49,30 @@ function resolveClawCliForSeeding() {
   return ["claw"];
 }
 
+function appTelemetryEnvironment() {
+  const supportRoot = path.join(os.homedir(), "Library", "Application Support", "Clawix", "clawjs");
+  return {
+    HOME: path.join(supportRoot, "home"),
+    CLAW_WORKSPACE: path.join(supportRoot, "workspace"),
+    CLAW_HOME: path.join(os.homedir(), ".claw"),
+    CLAW_DATA_DIR: supportRoot,
+    CLAW_DB_PATH: path.join(supportRoot, "claw.sqlite"),
+    CLAW_FILES_DIR: path.join(supportRoot, "files"),
+  };
+}
+
 function seedLocalMonitorHistory() {
   if (!args.has("--seed-local-history")) return;
   const command = resolveClawCliForSeeding();
   const [executable, ...prefixArgs] = command;
+  const env = appTelemetryEnvironment();
+  fs.mkdirSync(env.HOME, { recursive: true });
+  fs.mkdirSync(env.CLAW_WORKSPACE, { recursive: true });
+  fs.mkdirSync(env.CLAW_FILES_DIR, { recursive: true });
   for (let index = 0; index < 2; index += 1) {
     run(executable, [...prefixArgs, "system", "snapshot", "--record", "true", "--json"], {
-      cwd: rootDir,
+      cwd: env.CLAW_WORKSPACE,
+      env,
       timeout: 60_000,
     });
     if (index === 0) {
@@ -135,6 +152,7 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func sparkline(for metricKey: String");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory?");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func hasHistoryGraph(for widget: SystemTelemetryWidget) -> Bool");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "widget.renderMode == \"sparkline\" || widget.renderMode == \"chart\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let ticks = Array(\"▁▂▃▄▅▆▇█\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func combinedPanelTitle() -> String");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func providerStatusRows(limit: Int = 5) -> [String]");
@@ -142,6 +160,7 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "\"history\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "\"--range\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "CommanderCore.JSONValue.from(any: payload)");
+  requireSnippet("macos/scripts/bundle_clawjs.sh", "packages/clawjs-search");
 }
 
 function assertStatusItemAndRecorder() {
@@ -191,6 +210,8 @@ function assertSwiftTestCoverage() {
     "testMenuBarModelRendersSparklineFromHistoryChart",
     "SystemTelemetryHistoryGraphView",
     "CPU history graph",
+    "testMenuBarModelLoadsHistoryGraphForChartWidgets",
+    "Hardware Overview",
     "testMonitorRecorderRecordsHostSnapshotThroughClawCLI",
     "minimum_interval",
     "testMonitorRecorderReportsUnavailableWithoutHostCommand",
@@ -252,9 +273,16 @@ tell application "System Events"
     set targetItem to first menu bar item of menu bar 2 whose title is "System OK"
     click targetItem
     delay 0.3
-    set itemNames to name of every menu item of menu 1 of targetItem
+    set itemNames to {}
+    repeat with menuItem in menu items of menu 1 of targetItem
+      try
+        set end of itemNames to (name of menuItem as text)
+      on error
+        set end of itemNames to ""
+      end try
+    end repeat
     key code 53
-    return itemNames
+    return itemNames as text
   end tell
 end tell
 `;

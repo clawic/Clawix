@@ -1331,4 +1331,79 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(model.title(for: model.widgets[2]), "Build !")
         XCTAssertEqual(model.severity(for: model.widgets[2]), .warning)
     }
+
+    @MainActor
+    func testMenuBarModelLoadsHistoryGraphForChartWidgets() async {
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array([
+                            .object([
+                                "id": .string("hardware-overview"),
+                                "title": .string("Hardware Overview"),
+                                "placement": .string("panel"),
+                                "metric_keys": .array([
+                                    .string("system.cpu.load1"),
+                                ]),
+                                "render_mode": .string("chart"),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            case ("history", "get"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "metric": .object(["key": .string("system.cpu.load1")]),
+                        "rangeMs": .integer(3600000),
+                        "retention": .object(["status": .string("recorded")]),
+                        "chart": .object([
+                            "kind": .string("line"),
+                            "metricKey": .string("system.cpu.load1"),
+                            "unit": .string("count"),
+                            "source": .string("metric_samples"),
+                            "empty": .bool(false),
+                            "points": .array([
+                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
+                                .object(["t": .integer(2), "value": .number(3), "sourceId": .string("system.telemetry.local")]),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([
+                            .object([
+                                "key": .string("system.cpu.load1"),
+                                "value": .number(1.25),
+                                "unit": .string("load"),
+                                "capturedAt": .string("2026-05-18T12:00:00Z"),
+                            ]),
+                        ]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        await model.refresh()
+
+        XCTAssertEqual(model.panelWidgets.map(\.id), ["hardware-overview"])
+        XCTAssertEqual(model.historyGraph(for: model.panelWidgets[0])?.chart.points.count, 2)
+        XCTAssertTrue(model.hasHistoryGraph(for: model.panelWidgets[0]))
+    }
 }
