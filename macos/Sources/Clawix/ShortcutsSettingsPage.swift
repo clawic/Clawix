@@ -12,6 +12,16 @@ struct ShortcutsSettingsPage: View {
         VStack(alignment: .leading, spacing: 0) {
             PageHeader(title: "Keyboard Shortcuts")
 
+            SectionLabel(title: "Search")
+            SettingsCard {
+                ShortcutSettingRow(
+                    title: "Root Search",
+                    detail: "Open framework Root Search without changing Command-G chat search.",
+                    name: .rootSearch
+                )
+            }
+            Spacer().frame(height: 16)
+
             SectionLabel(title: "Terminal")
             SettingsCard {
                 ShortcutSettingRow(

@@ -843,6 +843,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // opts in from Settings → Voice to Text.
         DictationOverlay.shared.install(coordinator: DictationCoordinator.shared)
         DictationHotkeyMonitor.shared.bootstrap(coordinator: DictationCoordinator.shared)
+        SearchEntrypointShortcutsInstaller.installIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

@@ -8,8 +8,8 @@ final class SearchEntrypointShortcutBrokerTests: XCTestCase {
 
         XCTAssertEqual(root?.bindingId, "search.root.global")
         XCTAssertEqual(root?.queryScope, "framework")
-        XCTAssertEqual(root?.state, .externalPending)
-        XCTAssertNil(root?.routeTarget)
+        XCTAssertEqual(root?.state, .ready)
+        XCTAssertEqual(root?.routeTarget, "root-search")
         XCTAssertNil(root?.reservedChord)
 
         XCTAssertEqual(chat?.bindingId, "search.chat.current")
@@ -79,5 +79,19 @@ final class SearchEntrypointShortcutBrokerTests: XCTestCase {
         XCTAssertEqual(pending.state, .externalPending)
         XCTAssertTrue(ready.allowed)
         XCTAssertEqual(ready.state, .ready)
+    }
+
+    func testRootSearchDefaultShortcutTargetsSignedHostPanel() {
+        let decision = SearchEntrypointShortcutBroker.validate(
+            SearchEntrypointShortcutRequest(
+                entrypointId: SearchEntrypointShortcutBroker.rootEntrypointId,
+                bindingId: SearchEntrypointShortcutBroker.rootBindingId,
+                chord: SearchEntrypointShortcutBroker.rootDefaultChord,
+                routeTarget: SearchEntrypointShortcutBroker.rootRouteTarget
+            )
+        )
+
+        XCTAssertTrue(decision.allowed)
+        XCTAssertEqual(decision.state, .ready)
     }
 }

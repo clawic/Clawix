@@ -86,8 +86,10 @@ Search host-native entrypoints keep Root Search and conversation search
 separate. `SearchEntrypointShortcutBroker` treats `Command-G` as the
 conversations-only `search.chat.current` binding and rejects attempts to bind
 Root Search to that chord or to Clawix's conversations-only `search` route.
-Root Search remains `external_pending` until a signed host supplies a distinct
-route target and validates the global shortcut.
+Clawix supplies the distinct signed-host `root-search` panel target through
+`SearchEntrypointShortcutsInstaller` and the default Option-Command-Space
+binding; physical shortcut and native-permission validation still need signed
+app evidence before they clear `EXTERNAL PENDING`.
 
 `native.system` Search ingestion is host-owned. Clawix's
 `NativeSystemSearchSourceBridge` builds bounded native snapshots through

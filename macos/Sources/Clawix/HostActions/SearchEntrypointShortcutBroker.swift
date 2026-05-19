@@ -33,6 +33,8 @@ struct SearchEntrypointShortcutDecision: Equatable {
 enum SearchEntrypointShortcutBroker {
     static let rootEntrypointId = "root-search"
     static let rootBindingId = "search.root.global"
+    static let rootRouteTarget = "root-search"
+    static let rootDefaultChord = "Option-Command-Space"
     static let chatEntrypointId = "chat-search"
     static let chatBindingId = "search.chat.current"
     static let conversationsRouteTarget = "search"
@@ -44,12 +46,12 @@ enum SearchEntrypointShortcutBroker {
                 entrypointId: rootEntrypointId,
                 bindingId: rootBindingId,
                 queryScope: "framework",
-                routeTarget: nil,
+                routeTarget: rootRouteTarget,
                 owner: "signed_host",
-                state: .externalPending,
+                state: .ready,
                 reservedChord: nil,
                 notes: [
-                    "Root Search requires a host-owned route target before a global shortcut can be bound.",
+                    "Root Search opens the signed-host root-search panel route target.",
                     "Root Search must not reuse the Command-G conversations-only search route.",
                 ]
             ),
