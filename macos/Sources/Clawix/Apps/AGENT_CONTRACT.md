@@ -94,6 +94,14 @@ That's it. The app shows up in the sidebar in <5s.
     the tool is in `permissions.allowedTools`. Currently always rejects
     until ClawJS tool dispatch is wired; the prompt records the user's
     approval for that request.
+  - `clawix.search.query(opts)` and `clawix.db.query(opts)` — SDK bridge
+    reads for framework Search/DB contracts with limits, cursors, facets,
+    progress, cancellation, and shared redaction policy metadata.
+  - `clawix.resources.list(opts)` and `clawix.resources.read(idOrOpts)` —
+    SDK bridge reads for registered framework resources only. They resolve
+    resources from `~/.claw/resources/resources.json` (or the configured
+    `CLAW_RESOURCES_DIR`/`CLAW_HOME` location), do not accept arbitrary
+    unregistered paths, cap file reads, and reject non-file resources.
   - `clawix.ui.{setTitle,setBadge,openExternal}` — best-effort UI hooks
   - `clawix.events.on('focus' | 'blur', cb)` — focus events fire from
     the SDK when the WKWebView gains/loses keyboard focus

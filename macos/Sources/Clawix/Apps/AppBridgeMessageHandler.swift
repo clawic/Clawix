@@ -21,6 +21,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private let appsStore: AppsStore
     private weak var appState: AppState?
     private weak var databaseManager: DatabaseManager?
+    private let resourceRegistry: AppResourceRegistryStore
     private let surfaceReporter: SurfaceRouteReporter
     private var activeRequests: [String: Task<Void, Never>] = [:]
     /// In-memory KV cache mirroring the on-disk storage file. Reads are
@@ -34,12 +35,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         appsStore: AppsStore = .shared,
         appState: AppState?,
         databaseManager: DatabaseManager? = nil,
+        resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),
         surfaceReporter: SurfaceRouteReporter = .noop
     ) {
         self.slug = slug
         self.appsStore = appsStore
         self.appState = appState
         self.databaseManager = databaseManager
+        self.resourceRegistry = resourceRegistry
         self.surfaceReporter = surfaceReporter
         super.init()
     }
@@ -108,6 +111,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "search.query":
                 startTrackedRequest(requestId: requestId, label: "Search query") { [weak self] in
                     await self?.handleSearchQuery(payload: payload, requestId: requestId)
+                }
+            case "resources.list":
+                startTrackedRequest(requestId: requestId, label: "Resource list") { [weak self] in
+                    await self?.handleResourcesList(payload: payload, requestId: requestId)
+                }
+            case "resources.read":
+                startTrackedRequest(requestId: requestId, label: "Resource read") { [weak self] in
+                    await self?.handleResourceRead(payload: payload, requestId: requestId)
                 }
             case "request.cancel":
                 let target = (payload["requestId"] as? String) ?? requestId
@@ -509,6 +520,71 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         } catch {
             reject(requestId: requestId, message: error.localizedDescription)
         }
+    }
+
+    private func handleResourcesList(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("resources.read")
+            let status = sanitizedOptionalString(payload["status"])
+            let kind = sanitizedOptionalString(payload["kind"])
+            let registry = resourceRegistry
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Listing resources",
+                progressValue: 0.2
+            )
+            let resources = try await Task.detached {
+                try registry.list(status: status, kind: kind)
+            }.value
+            try Task.checkCancellation()
+            resolve(requestId: requestId, value: [
+                "items": resources.map(\.bridgeValue),
+                "source": "resources.list"
+            ])
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Resource list cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func handleResourceRead(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("resources.read")
+            let id = ((payload["id"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !id.isEmpty else {
+                reject(requestId: requestId, message: "resources.read requires an id.")
+                return
+            }
+            let maxBytes = payload["maxBytes"] as? Int ?? 64_000
+            let registry = resourceRegistry
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Reading resource",
+                progressValue: 0.2
+            )
+            let result = try await Task.detached {
+                try registry.read(id, maxBytes: maxBytes)
+            }.value
+            try Task.checkCancellation()
+            resolve(requestId: requestId, value: result.bridgeValue)
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Resource read cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func sanitizedOptionalString(_ value: Any?) -> String? {
+        guard let string = value as? String else { return nil }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func requireLocalWideCapability(_ capabilityId: String) throws {

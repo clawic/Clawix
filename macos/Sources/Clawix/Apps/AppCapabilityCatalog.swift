@@ -5,6 +5,7 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var title: String
     var summary: String
     var customAppAccess: AppCapabilityAccess
+    var redactionPolicyRef: String? = nil
     var riskTier: AppCapabilityRiskTier
     var interruptiveApproval: Bool
     var touchesSecrets: Bool
@@ -54,6 +55,7 @@ enum AppCapabilityCatalog {
             title: "Search query",
             summary: "Federated framework search through the SDK/bridge, not direct indexes.",
             customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
             touchesSecrets: false,
@@ -66,6 +68,7 @@ enum AppCapabilityCatalog {
             title: "Database query",
             summary: "Structured local collection queries through the framework contract, not direct SQLite.",
             customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
             touchesSecrets: false,
@@ -78,6 +81,7 @@ enum AppCapabilityCatalog {
             title: "Resource read",
             summary: "Read registered resources through resource contracts.",
             customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
             touchesSecrets: false,
@@ -189,7 +193,7 @@ enum AppCapabilityCatalog {
 
 extension AppCapabilityDescriptor {
     var bridgeValue: [String: Any] {
-        [
+        var value: [String: Any] = [
             "id": id,
             "title": title,
             "summary": summary,
@@ -201,6 +205,10 @@ extension AppCapabilityDescriptor {
             "touchesPhysicalWorld": touchesPhysicalWorld,
             "destructive": destructive
         ]
+        if let redactionPolicyRef {
+            value["redactionPolicyRef"] = redactionPolicyRef
+        }
+        return value
     }
 }
 

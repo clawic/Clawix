@@ -166,6 +166,23 @@ let ClawixAppsSDKJS = #"""
         }, { signal: opts.signal, onProgress: opts.onProgress });
       }
     },
+    resources: {
+      list: function (opts) {
+        opts = opts || {};
+        return send('resources.list', {
+          status: opts.status == null ? null : String(opts.status),
+          kind: opts.kind == null ? null : String(opts.kind)
+        }, { signal: opts.signal, onProgress: opts.onProgress });
+      },
+      read: function (idOrOpts, opts) {
+        var input = typeof idOrOpts === 'object' && idOrOpts !== null ? idOrOpts : (opts || {});
+        var id = typeof idOrOpts === 'string' ? idOrOpts : String(input.id || '');
+        return send('resources.read', {
+          id: id,
+          maxBytes: input.maxBytes
+        }, { signal: input.signal, onProgress: input.onProgress });
+      }
+    },
     ui: {
       setTitle: function (title) { return send('ui.setTitle', { title: String(title || '') }); },
       setBadge: function (text) {

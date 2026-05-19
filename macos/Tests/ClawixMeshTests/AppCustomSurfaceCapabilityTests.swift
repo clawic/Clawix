@@ -57,6 +57,15 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
     }
 
+    func testOrdinaryReadCapabilitiesExposeSharedRedactionPolicy() {
+        let ordinary = AppCapabilityCatalog.descriptors.filter { $0.customAppAccess == .localWide }
+        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.read", "search.query"])
+        for descriptor in ordinary {
+            XCTAssertEqual(descriptor.redactionPolicyRef, AppBridgeRedactionPolicy.policyId, descriptor.id)
+            XCTAssertEqual(descriptor.bridgeValue["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
+        }
+    }
+
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
         for descriptor in AppCapabilityCatalog.descriptors where descriptor.customAppAccess == .approvalRequired {
             XCTAssertTrue(descriptor.interruptiveApproval, descriptor.id)
@@ -395,6 +404,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
     func testInjectedAppsSdkExposesSearchAndDBContracts() {
         XCTAssertTrue(ClawixAppsSDKJS.contains("search.query"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("resources.read"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("resources.list"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.progress"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("onProgress"))
@@ -402,6 +413,51 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("opts.cursor"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("opts.facets"))
         XCTAssertFalse(ClawixAppsSDKJS.lowercased().contains("sqlite"))
+    }
+
+    func testResourceRegistryReadsOnlyRegisteredPathResources() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
+        let fileURL = root.appendingPathComponent("instruction.md", isDirectory: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try "read me\nand keep going".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let resource = makeResource(
+            id: "res_instruction1",
+            kind: "instruction",
+            locator: AppResourceLocator(kind: "path", value: fileURL.path),
+            label: "Instruction"
+        )
+        try writeResources([resource], to: registryRoot)
+
+        let store = AppResourceRegistryStore(directory: registryRoot)
+        XCTAssertEqual(try store.list(kind: "instruction").map(\.id), ["res_instruction1"])
+
+        let read = try store.read("res_instruction1", maxBytes: 7)
+        XCTAssertEqual(read.content, "read me")
+        XCTAssertEqual(read.truncated, true)
+        XCTAssertNil(read.error)
+        XCTAssertEqual(read.bridgeValue["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
+    }
+
+    func testResourceRegistryRejectsUnregisteredAndNonFileResources() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let secret = makeResource(
+            id: "res_secretref1",
+            kind: "secret-ref",
+            locator: AppResourceLocator(kind: "secret-ref", value: "vault://demo")
+        )
+        try writeResources([secret], to: registryRoot)
+
+        let store = AppResourceRegistryStore(directory: registryRoot)
+        let read = try store.read("res_secretref1")
+        XCTAssertNil(read.content)
+        XCTAssertEqual(read.error, "Resource res_secretref1 is not a readable filesystem path.")
+        XCTAssertThrowsError(try store.read("res_missing1"))
     }
 
     func testDBQueryDSLNormalizesFiltersSortAndLimits() throws {
@@ -595,6 +651,41 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         return defaults
+    }
+
+    private func makeResource(
+        id: String,
+        kind: String,
+        locator: AppResourceLocator,
+        label: String? = nil
+    ) -> AppResourceRecord {
+        AppResourceRecord(
+            schemaVersion: 1,
+            id: id,
+            kind: kind,
+            status: "active",
+            locator: locator,
+            scope: [:],
+            label: label,
+            fingerprint: nil,
+            bookmark: nil,
+            fileIdentity: nil,
+            createdAt: "2026-05-19T00:00:00Z",
+            updatedAt: "2026-05-19T00:00:00Z",
+            lastSeenAt: nil,
+            missingSince: nil
+        )
+    }
+
+    private func writeResources(_ resources: [AppResourceRecord], to directory: URL) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let state = AppResourceRegistryState(
+            schemaVersion: 1,
+            resources: resources,
+            updatedAt: "2026-05-19T00:00:00Z"
+        )
+        let data = try JSONEncoder().encode(state)
+        try data.write(to: directory.appendingPathComponent(AppResourceRegistryStore.stateFileName))
     }
 
     private func makeSwiftRunnerLaunch(
