@@ -238,6 +238,46 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.messages(forPeer: "peer").map(\.id), ["sent"])
     }
 
+    func testCancelChatSurfaceWorkSuppressesInFlightSendMessage() async {
+        let sendStarted = expectation(description: "P2P send started")
+        let sendReturned = expectation(description: "P2P send returned after teardown")
+        let client = FakeProfileClient()
+        client.onSendMessage = { peer, body in
+            XCTAssertEqual(peer, "peer")
+            XCTAssertEqual(body, "stale")
+            sendStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            sendReturned.fulfill()
+            return makeChatMessage(id: "stale")
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let task = Task { try? await store.sendMessage(peer: "peer", body: "stale") }
+        await fulfillment(of: [sendStarted], timeout: 1)
+
+        store.cancelChatSurfaceWork()
+
+        await fulfillment(of: [sendReturned], timeout: 1)
+        let result = await task.value
+        XCTAssertNil(result)
+        XCTAssertTrue(store.messages(forPeer: "peer").isEmpty)
+    }
+
+    func testConcurrentSendsRemainValidWhileChatSurfaceIsCurrent() async throws {
+        let client = FakeProfileClient()
+        client.onSendMessage = { _, body in
+            try? await Task.sleep(nanoseconds: body == "first" ? 60_000_000 : 10_000_000)
+            return makeChatMessage(id: body)
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        async let first = store.sendMessage(peer: "peer", body: "first")
+        async let second = store.sendMessage(peer: "peer", body: "second")
+        _ = try await [first, second]
+
+        XCTAssertEqual(Set(store.messages(forPeer: "peer").map(\.id)), Set(["first", "second"]))
+    }
+
 }
 
 private func makeProfile(alias: String) -> ClawJSProfileClient.Profile {

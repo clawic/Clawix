@@ -39,6 +39,8 @@ final class ProfileSurfaceStore: ObservableObject {
     private var chatsRefreshGeneration = 0
     private var messageLoadTasks: [String: Task<[ClawJSProfileClient.ChatMessage], Error>] = [:]
     private var messageLoadGenerations: [String: Int] = [:]
+    private var messageSendTasks: [UUID: Task<ClawJSProfileClient.ChatMessage, Error>] = [:]
+    private var messageSendGeneration = 0
     private var marketplaceRefreshTask: Task<Void, Never>?
     private var marketplaceRefreshGeneration = 0
 
@@ -63,6 +65,7 @@ final class ProfileSurfaceStore: ObservableObject {
         feedRefreshTask?.cancel()
         chatsRefreshTask?.cancel()
         messageLoadTasks.values.forEach { $0.cancel() }
+        messageSendTasks.values.forEach { $0.cancel() }
         marketplaceRefreshTask?.cancel()
     }
 
@@ -226,6 +229,7 @@ final class ProfileSurfaceStore: ObservableObject {
         chatsRefreshTask?.cancel()
         chatsRefreshTask = nil
         cancelMessageLoadTasks()
+        cancelMessageSendTasks()
         marketplaceRefreshGeneration += 1
         marketplaceRefreshTask?.cancel()
         marketplaceRefreshTask = nil
@@ -236,6 +240,7 @@ final class ProfileSurfaceStore: ObservableObject {
         chatsRefreshTask?.cancel()
         chatsRefreshTask = nil
         cancelMessageLoadTasks()
+        cancelMessageSendTasks()
     }
 
     func cancelFeedSurfaceWork() {
@@ -302,10 +307,25 @@ final class ProfileSurfaceStore: ObservableObject {
     }
 
     func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage {
-        ensureToken()
-        let message = try await client.sendMessage(peer: peer, body: body)
-        chatMessagesByPeer[peer, default: []].append(message)
-        return message
+        let generation = currentMessageSendGeneration()
+        let taskId = UUID()
+        let task = Task<ClawJSProfileClient.ChatMessage, Error> { @MainActor [weak self] in
+            guard let self else { throw CancellationError() }
+            return try await self.runMessageSend(
+                peer: peer,
+                body: body,
+                generation: generation
+            )
+        }
+        messageSendTasks[taskId] = task
+        do {
+            let message = try await task.value
+            finishMessageSend(taskId: taskId)
+            return message
+        } catch {
+            finishMessageSend(taskId: taskId)
+            throw error
+        }
     }
 
     func messages(forPeer peer: String) -> [ClawJSProfileClient.ChatMessage] {
@@ -337,6 +357,15 @@ final class ProfileSurfaceStore: ObservableObject {
         guard isCurrentMessageLoad(peer: peer, generation: generation) else { throw CancellationError() }
         chatMessagesByPeer[peer] = messages
         return messages
+    }
+
+    private func runMessageSend(peer: String, body: String, generation: Int) async throws -> ClawJSProfileClient.ChatMessage {
+        ensureToken()
+        let message = try await client.sendMessage(peer: peer, body: body)
+        try Task.checkCancellation()
+        guard isCurrentMessageSend(generation) else { throw CancellationError() }
+        chatMessagesByPeer[peer, default: []].append(message)
+        return message
     }
 
     func expressInterest(intentId: String) async throws -> ClawJSProfileClient.ExpressInterestResult {
@@ -407,6 +436,24 @@ final class ProfileSurfaceStore: ObservableObject {
         }
         messageLoadTasks.values.forEach { $0.cancel() }
         messageLoadTasks.removeAll()
+    }
+
+    private func currentMessageSendGeneration() -> Int {
+        messageSendGeneration
+    }
+
+    private func isCurrentMessageSend(_ generation: Int) -> Bool {
+        messageSendGeneration == generation
+    }
+
+    private func finishMessageSend(taskId: UUID) {
+        messageSendTasks[taskId] = nil
+    }
+
+    private func cancelMessageSendTasks() {
+        messageSendGeneration += 1
+        messageSendTasks.values.forEach { $0.cancel() }
+        messageSendTasks.removeAll()
     }
 
     private func nextMarketplaceRefreshGeneration() -> Int {
