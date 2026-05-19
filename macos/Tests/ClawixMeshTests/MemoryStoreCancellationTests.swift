@@ -242,6 +242,58 @@ final class MemoryStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.notes.map(\.id), ["fresh"])
     }
 
+    func testResetThenSameKeyUpdateDoesNotRecycleStaleGeneration() async throws {
+        let staleStarted = expectation(description: "Stale update started")
+        let staleReturned = expectation(description: "Stale update returned after reset")
+        let freshStarted = expectation(description: "Fresh update started")
+        let releaseStale = AsyncGate()
+        var calls = 0
+        let store = MemoryStore(
+            listNotesOperation: { [Self.note(id: "fresh")] },
+            listCapturesOperation: { [] },
+            statsOperation: { Self.stats(total: 1) },
+            updateNoteOperation: { id, _, _ in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    await releaseStale.wait()
+                    staleReturned.fulfill()
+                    throw TestError(message: "stale update failed")
+                }
+                freshStarted.fulfill()
+                return Self.updateResponse(id: id)
+            },
+            attachSupervisor: false
+        )
+
+        let first = Task {
+            try await store.update(id: "note", patch: Self.updatePatch(title: "Stale"))
+        }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Memory stopped")
+        let second = Task {
+            try await store.update(id: "note", patch: Self.updatePatch(title: "Fresh"))
+        }
+        await fulfillment(of: [freshStarted], timeout: 1)
+
+        await releaseStale.open()
+
+        await fulfillment(of: [staleReturned], timeout: 1)
+        do {
+            _ = try await first.value
+            XCTFail("Stale update unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected stale update error after reset: \(error)")
+        }
+        let response = try await second.value
+
+        XCTAssertEqual(response.id, "note")
+        XCTAssertEqual(store.state, .ready)
+        XCTAssertEqual(store.notes.map(\.id), ["fresh"])
+    }
+
     func testStartingSecondDeleteCancelsStaleDelete() async throws {
         let staleStarted = expectation(description: "Stale delete started")
         let staleCancelled = expectation(description: "Stale delete cancelled")
@@ -293,6 +345,58 @@ final class MemoryStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.notes.map(\.id), ["remaining"])
     }
 
+    func testResetThenSameKeyDeleteDoesNotRecycleStaleGeneration() async throws {
+        let staleStarted = expectation(description: "Stale delete started")
+        let staleReturned = expectation(description: "Stale delete returned after reset")
+        let freshStarted = expectation(description: "Fresh delete started")
+        let releaseStale = AsyncGate()
+        var calls = 0
+        let store = MemoryStore(
+            listNotesOperation: { [Self.note(id: "remaining")] },
+            listCapturesOperation: { [] },
+            statsOperation: { Self.stats(total: 1) },
+            deleteNoteOperation: { id in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    await releaseStale.wait()
+                    staleReturned.fulfill()
+                    throw TestError(message: "stale delete failed")
+                }
+                freshStarted.fulfill()
+                return Self.deleteResponse(id: id)
+            },
+            attachSupervisor: false
+        )
+
+        let first = Task {
+            try await store.delete(id: "note")
+        }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Memory stopped")
+        let second = Task {
+            try await store.delete(id: "note")
+        }
+        await fulfillment(of: [freshStarted], timeout: 1)
+
+        await releaseStale.open()
+
+        await fulfillment(of: [staleReturned], timeout: 1)
+        do {
+            _ = try await first.value
+            XCTFail("Stale delete unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected stale delete error after reset: \(error)")
+        }
+        let response = try await second.value
+
+        XCTAssertTrue(response.deleted)
+        XCTAssertEqual(store.state, .ready)
+        XCTAssertEqual(store.notes.map(\.id), ["remaining"])
+    }
+
     func testResetCancelsInFlightPromote() async {
         let promoteStarted = expectation(description: "Promote started")
         let promoteCancelled = expectation(description: "Promote cancelled")
@@ -327,6 +431,58 @@ final class MemoryStoreCancellationTests: XCTestCase {
         }
 
         XCTAssertEqual(store.state, .error("Memory stopped"))
+    }
+
+    func testResetThenSameKeyPromoteDoesNotRecycleStaleGeneration() async throws {
+        let staleStarted = expectation(description: "Stale promote started")
+        let staleReturned = expectation(description: "Stale promote returned after reset")
+        let freshStarted = expectation(description: "Fresh promote started")
+        let releaseStale = AsyncGate()
+        var calls = 0
+        let store = MemoryStore(
+            listNotesOperation: { [Self.note(id: "promoted-capture")] },
+            listCapturesOperation: { [] },
+            statsOperation: { Self.stats(total: 1) },
+            promoteCaptureOperation: { id in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    await releaseStale.wait()
+                    staleReturned.fulfill()
+                    throw TestError(message: "stale promote failed")
+                }
+                freshStarted.fulfill()
+                return Self.promoteResponse(id: id)
+            },
+            attachSupervisor: false
+        )
+
+        let first = Task {
+            try await store.promote(captureId: "capture")
+        }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Memory stopped")
+        let second = Task {
+            try await store.promote(captureId: "capture")
+        }
+        await fulfillment(of: [freshStarted], timeout: 1)
+
+        await releaseStale.open()
+
+        await fulfillment(of: [staleReturned], timeout: 1)
+        do {
+            _ = try await first.value
+            XCTFail("Stale promote unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected stale promote error after reset: \(error)")
+        }
+        let response = try await second.value
+
+        XCTAssertTrue(response.promoted)
+        XCTAssertEqual(store.state, .ready)
+        XCTAssertEqual(store.notes.map(\.id), ["promoted-capture"])
     }
 
     private static func note(id: String) -> ClawJSMemoryClient.MemoryNote {
@@ -417,5 +573,29 @@ final class MemoryStoreCancellationTests: XCTestCase {
             minScore: nil,
             results: []
         )
+    }
+
+    private struct TestError: Error, LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
+    }
+
+    private actor AsyncGate {
+        private var continuation: CheckedContinuation<Void, Never>?
+        private var isOpen = false
+
+        func wait() async {
+            if isOpen { return }
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+            }
+        }
+
+        func open() {
+            guard !isOpen else { return }
+            isOpen = true
+            continuation?.resume()
+            continuation = nil
+        }
     }
 }

@@ -475,13 +475,19 @@ final class MemoryStore: ObservableObject {
         createTask = nil
         for task in updateTasks.values { task.cancel() }
         updateTasks.removeAll()
-        updateGenerations.removeAll()
+        for key in Array(updateGenerations.keys) {
+            updateGenerations[key, default: 0] += 1
+        }
         for task in deleteTasks.values { task.cancel() }
         deleteTasks.removeAll()
-        deleteGenerations.removeAll()
+        for key in Array(deleteGenerations.keys) {
+            deleteGenerations[key, default: 0] += 1
+        }
         for task in promoteTasks.values { task.cancel() }
         promoteTasks.removeAll()
-        promoteGenerations.removeAll()
+        for key in Array(promoteGenerations.keys) {
+            promoteGenerations[key, default: 0] += 1
+        }
     }
 
     private func nextCreateGeneration() -> Int {
