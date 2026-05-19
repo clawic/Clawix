@@ -32,6 +32,9 @@ struct ProfileEditor: View {
         }
         .background(Color.black)
         .task { await store.bootstrap() }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
     }
 
     // MARK: - Header

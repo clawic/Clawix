@@ -22,6 +22,9 @@ struct PairingScreen: View {
         }
         .padding(24)
         .background(Color.black)
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
     }
 
     private var header: some View {

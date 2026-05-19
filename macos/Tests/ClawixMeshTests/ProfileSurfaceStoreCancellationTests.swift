@@ -278,6 +278,54 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
         XCTAssertEqual(Set(store.messages(forPeer: "peer").map(\.id)), Set(["first", "second"]))
     }
 
+    func testCancelSurfaceWorkSuppressesInFlightProfileRename() async {
+        let renameStarted = expectation(description: "Profile rename started")
+        let renameReturned = expectation(description: "Profile rename returned after teardown")
+        let client = FakeProfileClient()
+        client.onSetHandle = { alias in
+            XCTAssertEqual(alias, "stale")
+            renameStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            renameReturned.fulfill()
+            return makeProfile(alias: alias)
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let task = Task { try? await store.renameHandle(to: "stale") }
+        await fulfillment(of: [renameStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [renameReturned], timeout: 1)
+        let result: Void? = await task.value
+        XCTAssertNil(result)
+        XCTAssertNil(store.me)
+    }
+
+    func testCancelSurfaceWorkSuppressesInFlightBlockCreation() async {
+        let blockStarted = expectation(description: "Block creation started")
+        let blockReturned = expectation(description: "Block creation returned after teardown")
+        let client = FakeProfileClient()
+        client.onCreateBlock = { input in
+            XCTAssertEqual(input.archetype, "note")
+            blockStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            blockReturned.fulfill()
+            return makeBlock(id: "stale")
+        }
+        let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
+
+        let task = Task { try? await store.createBlock(makeCreateBlockInput(archetype: "note")) }
+        await fulfillment(of: [blockStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [blockReturned], timeout: 1)
+        let result: Void? = await task.value
+        XCTAssertNil(result)
+        XCTAssertTrue(store.ownBlocks.isEmpty)
+    }
+
 }
 
 private func makeProfile(alias: String) -> ClawJSProfileClient.Profile {
@@ -308,6 +356,18 @@ private func makeBlock(id: String) -> ClawJSProfileClient.Block {
         createdAt: 1,
         updatedAt: 1,
         version: 1
+    )
+}
+
+private func makeCreateBlockInput(archetype: String) -> ClawJSProfileClient.CreateBlockInput {
+    ClawJSProfileClient.CreateBlockInput(
+        vertical: "work",
+        archetype: archetype,
+        audience: .init(groups: []),
+        fieldsPerLevel: [:],
+        content: nil,
+        overlay: nil,
+        trackingRef: nil
     )
 }
 
@@ -368,6 +428,12 @@ private final class FakeProfileClient: ClawJSProfileClienting, @unchecked Sendab
     var onSendMessage: (String, String) async throws -> ClawJSProfileClient.ChatMessage = { _, body in
         makeChatMessage(id: body)
     }
+    var onSetHandle: (String) async throws -> ClawJSProfileClient.Profile = { alias in
+        makeProfile(alias: alias)
+    }
+    var onCreateBlock: (ClawJSProfileClient.CreateBlockInput) async throws -> ClawJSProfileClient.Block = { input in
+        makeBlock(id: input.archetype)
+    }
 
     func initProfile(alias: String, mnemonic: String?, passphrase: String?) async throws -> ClawJSProfileClient.InitResponse {
         ClawJSProfileClient.InitResponse(profile: makeProfile(alias: alias), mnemonic: mnemonic ?? "mnemonic")
@@ -378,7 +444,7 @@ private final class FakeProfileClient: ClawJSProfileClienting, @unchecked Sendab
     }
 
     func setHandle(alias: String) async throws -> ClawJSProfileClient.Profile {
-        makeProfile(alias: alias)
+        try await onSetHandle(alias)
     }
 
     func listBlocks(vertical: String?) async throws -> [ClawJSProfileClient.Block] {
@@ -386,7 +452,7 @@ private final class FakeProfileClient: ClawJSProfileClienting, @unchecked Sendab
     }
 
     func createBlock(_ input: ClawJSProfileClient.CreateBlockInput) async throws -> ClawJSProfileClient.Block {
-        makeBlock(id: input.archetype)
+        try await onCreateBlock(input)
     }
 
     func deleteBlock(_ blockId: String) async throws {}
