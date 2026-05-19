@@ -8,8 +8,7 @@ struct OAuthSignInSheet: View {
     let flavor: OAuthFlavor
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var coordinator = OAuthCoordinator()
-    @State private var error: String?
+    @StateObject private var flow = OAuthSignInFlowCoordinator()
     @State private var didStart = false
 
     var body: some View {
@@ -18,13 +17,14 @@ struct OAuthSignInSheet: View {
             Text("Sign in with \(provider.displayName)")
                 .font(BodyFont.system(size: 16, weight: .semibold))
                 .foregroundColor(Palette.textPrimary)
-            if coordinator.inFlight {
+            switch flow.state {
+            case .running:
                 Text("Complete the flow in your browser…")
                     .font(BodyFont.system(size: 12))
                     .foregroundColor(Palette.textSecondary)
                 ProgressView()
                     .controlSize(.small)
-            } else if let error {
+            case .failed(let error):
                 Text(error)
                     .font(BodyFont.system(size: 12))
                     .foregroundColor(Color.red.opacity(0.9))
@@ -32,10 +32,14 @@ struct OAuthSignInSheet: View {
                     .padding(.horizontal, 16)
                 Button("Try again") { startFlow() }
                     .buttonStyle(.bordered)
-            } else {
+            case .idle:
                 Text("A browser window will open shortly.")
                     .font(BodyFont.system(size: 12))
                     .foregroundColor(Palette.textSecondary)
+            case .done:
+                Text("Connected.")
+                    .font(BodyFont.system(size: 13, wght: 600))
+                    .foregroundColor(Color.green)
             }
             Button("Cancel") { dismiss() }
                 .buttonStyle(.plain)
@@ -50,19 +54,14 @@ struct OAuthSignInSheet: View {
                 startFlow()
             }
         }
+        .onDisappear {
+            flow.cancel()
+        }
     }
 
     private func startFlow() {
-        error = nil
-        Task { @MainActor in
-            do {
-                _ = try await coordinator.signIn(flavor: flavor)
-                dismiss()
-            } catch let coordError as OAuthCoordinator.CoordinatorError {
-                error = coordError.errorDescription
-            } catch {
-                self.error = error.localizedDescription
-            }
+        flow.start(flavor: flavor) {
+            dismiss()
         }
     }
 }

@@ -30,6 +30,10 @@ final class OAuthCoordinator: NSObject, ObservableObject {
 
     private var session: ASWebAuthenticationSession?
 
+    deinit {
+        session?.cancel()
+    }
+
     /// Runs the full flow for `flavor` and persists a new account on
     /// success. Returns the new account.
     func signIn(flavor: OAuthFlavor) async throws -> ProviderAccount {
@@ -38,6 +42,7 @@ final class OAuthCoordinator: NSObject, ObservableObject {
         let strategy = OAuthRegistry.strategy(for: flavor)
         let authorization = strategy.startAuthorization()
         let callbackURL = try await runWebSession(start: authorization.url, scheme: "clawix")
+        try Task.checkCancellation()
         guard let comps = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
               let returnedState = comps.queryItems?.first(where: { $0.name == "state" })?.value
         else {
@@ -50,6 +55,7 @@ final class OAuthCoordinator: NSObject, ObservableObject {
             throw CoordinatorError.missingCode
         }
         let tokens = try await strategy.exchangeCode(code, verifier: authorization.codeVerifier)
+        try Task.checkCancellation()
         let store = AIAccountSecretsStore.shared
         let label = labelFromTokens(tokens, store: store, providerId: strategy.providerId)
         let draft = ProviderAccountDraft(
@@ -65,6 +71,12 @@ final class OAuthCoordinator: NSObject, ObservableObject {
         let account = try store.createAccount(draft)
         AIAccountStoreObservable.shared.refresh()
         return account
+    }
+
+    func cancel() {
+        session?.cancel()
+        session = nil
+        inFlight = false
     }
 
     private func labelFromTokens(_ tokens: OAuthTokens, store: AIAccountStore, providerId: ProviderID) -> String {
