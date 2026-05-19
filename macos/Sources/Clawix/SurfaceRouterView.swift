@@ -193,6 +193,7 @@ private struct SurfaceRouteHost<Content: View>: View {
         ZStack {
             content()
                 .id(descriptor.id)
+                .environment(\.surfaceRouteReporter, reporter)
 
             overlay
         }
@@ -208,11 +209,16 @@ private struct SurfaceRouteHost<Content: View>: View {
     @ViewBuilder
     private var overlay: some View {
         switch state {
-        case .loading(let surfaceID, _) where surfaceID == descriptor.id:
+        case .loading(let surfaceID, _, let message, let progress) where surfaceID == descriptor.id:
             VStack(spacing: 10) {
-                ProgressView()
-                    .controlSize(.small)
-                Text("Loading surface")
+                if let progress {
+                    ProgressView(value: progress)
+                        .frame(width: 160)
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Text(message ?? "Loading surface")
                     .font(BodyFont.system(size: 13, wght: 500))
                     .foregroundColor(Color(white: 0.72))
             }
@@ -226,31 +232,68 @@ private struct SurfaceRouteHost<Content: View>: View {
                     .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
             )
             .allowsHitTesting(false)
-        case .degraded(let surfaceID, let reason) where surfaceID == descriptor.id:
-            VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
-                Text("Surface unavailable")
-                    .font(BodyFont.system(size: 17, wght: 600))
-                    .foregroundColor(Palette.textPrimary)
-                Text(reason)
-                    .font(BodyFont.system(size: 13.5, wght: 400))
-                    .foregroundColor(Color(white: 0.66))
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 420)
+        case .partial(let surfaceID, let message) where surfaceID == descriptor.id:
+            VStack {
+                Spacer()
+                Text(message)
+                    .font(BodyFont.system(size: 12.5, wght: 500))
+                    .foregroundColor(Color(white: 0.72))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color(white: 0.08).opacity(0.78))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                    )
+                    .padding(.bottom, 16)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Palette.background.opacity(0.92))
+            .allowsHitTesting(false)
+        case .degraded(let surfaceID, let reason) where surfaceID == descriptor.id:
+            blockingStatus(title: "Surface unavailable", message: reason)
+        case .error(let surfaceID, let message) where surfaceID == descriptor.id:
+            blockingStatus(title: "Surface failed", message: message)
+        case .unavailable(let surfaceID, let reason) where surfaceID == descriptor.id:
+            blockingStatus(title: "Surface unavailable", message: reason)
         default:
             EmptyView()
         }
     }
 
+    private var reporter: SurfaceRouteReporter {
+        SurfaceRouteReporter(surfaceID: descriptor.id) { report in
+            state = SurfaceRouteSupervisor.apply(
+                report: report,
+                state: state,
+                descriptor: descriptor
+            )
+        }
+    }
+
+    private func blockingStatus(title: String, message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+            Text(title)
+                .font(BodyFont.system(size: 17, wght: 600))
+                .foregroundColor(Palette.textPrimary)
+            Text(message)
+                .font(BodyFont.system(size: 13.5, wght: 400))
+                .foregroundColor(Color(white: 0.66))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 420)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.background.opacity(0.92))
+    }
+
     private func supervise() async {
         state = SurfaceRouteSupervisor.start(descriptor: descriptor)
-        guard case .loading(_, let timeoutSeconds) = state else { return }
+        guard case .loading(_, let timeoutSeconds, _, _) = state else { return }
         await Task.yield()
         guard !Task.isCancelled else {
             state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)

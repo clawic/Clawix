@@ -16,8 +16,85 @@ final class SurfaceRouteSupervisorTests: XCTestCase {
 
         let state = SurfaceRouteSupervisor.start(descriptor: descriptor)
 
-        XCTAssertEqual(state, .loading(surfaceID: "database:tasks", timeoutSeconds: 5))
+        XCTAssertEqual(
+            state,
+            .loading(
+                surfaceID: "database:tasks",
+                timeoutSeconds: 5,
+                message: nil,
+                progress: nil
+            )
+        )
         XCTAssertFalse(state.isTerminal)
+    }
+
+    func testSurfaceReportsCanUpdateProgressPartialAndReady() {
+        let descriptor = SidebarRoute.databaseCollection("tasks").surfaceDescriptor
+        let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)
+
+        let progress = SurfaceRouteSupervisor.apply(
+            report: .loading(message: "Loading rows", progress: 1.2),
+            state: loading,
+            descriptor: descriptor
+        )
+        XCTAssertEqual(
+            progress,
+            .loading(
+                surfaceID: "database:tasks",
+                timeoutSeconds: 5,
+                message: "Loading rows",
+                progress: 1
+            )
+        )
+
+        let partial = SurfaceRouteSupervisor.apply(
+            report: .partial(message: "Showing cached rows"),
+            state: progress,
+            descriptor: descriptor
+        )
+        XCTAssertEqual(partial, .partial(surfaceID: "database:tasks", message: "Showing cached rows"))
+        XCTAssertFalse(partial.isTerminal)
+
+        XCTAssertEqual(
+            SurfaceRouteSupervisor.apply(report: .ready, state: partial, descriptor: descriptor),
+            .ready(surfaceID: "database:tasks")
+        )
+    }
+
+    func testSurfaceReportsCanMarkErrorAndUnavailable() {
+        let descriptor = SidebarRoute.app(UUID(uuidString: "00000000-0000-0000-0000-000000000001")!).surfaceDescriptor
+        let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)
+
+        XCTAssertEqual(
+            SurfaceRouteSupervisor.apply(
+                report: .error(message: "Bridge failed"),
+                state: loading,
+                descriptor: descriptor
+            ),
+            .error(surfaceID: descriptor.id, message: "Bridge failed")
+        )
+        XCTAssertEqual(
+            SurfaceRouteSupervisor.apply(
+                report: .unavailable(reason: "App record is unavailable."),
+                state: loading,
+                descriptor: descriptor
+            ),
+            .unavailable(surfaceID: descriptor.id, reason: "App record is unavailable.")
+        )
+    }
+
+    func testCoreRoutesIgnoreLoadingReports() {
+        let descriptor = SidebarRoute.rescue.surfaceDescriptor
+        let ready = SurfaceRouteSupervisor.start(descriptor: descriptor)
+
+        XCTAssertEqual(
+            SurfaceRouteSupervisor.apply(
+                report: .loading(message: "Ignored", progress: 0.5),
+                state: ready,
+                descriptor: descriptor
+            ),
+            .ready(surfaceID: "rescue")
+        )
     }
 
     func testTimeoutOnlyDegradesCurrentLoadingSurface() {
@@ -38,7 +115,12 @@ final class SurfaceRouteSupervisorTests: XCTestCase {
 
     func testCancelIgnoresStaleSurfaceState() {
         let descriptor = SidebarRoute.driveAdmin.surfaceDescriptor
-        let stale = SurfaceRouteSupervisionState.loading(surfaceID: "calendar", timeoutSeconds: 5)
+        let stale = SurfaceRouteSupervisionState.loading(
+            surfaceID: "calendar",
+            timeoutSeconds: 5,
+            message: nil,
+            progress: nil
+        )
 
         XCTAssertEqual(
             SurfaceRouteSupervisor.cancel(state: stale, descriptor: descriptor),

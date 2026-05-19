@@ -22,6 +22,7 @@ struct AppSurfaceView: View {
 
     @EnvironmentObject var appState: AppState
     @EnvironmentObject private var databaseManager: DatabaseManager
+    @Environment(\.surfaceRouteReporter) private var surfaceReporter
     @ObservedObject private var appsStore: AppsStore = .shared
     @State private var reloadToken: Int = 0
     @State private var loadState: AppSurfaceLoadState = .loading
@@ -77,10 +78,19 @@ struct AppSurfaceView: View {
         }
         .background(Palette.background)
         .onAppear {
-            if let record { appsStore.markOpened(record) }
+            if let record {
+                appsStore.markOpened(record)
+                reportRecordState(record)
+            } else {
+                surfaceReporter.unavailable("App record is unavailable.")
+            }
+        }
+        .onChange(of: loadState) { _, newState in
+            reportLoadState(newState)
         }
         .onChange(of: reloadToken) { _, _ in
             loadState = .loading
+            surfaceReporter.loading("Reloading app")
         }
         .task(id: reloadToken) {
             try? await Task.sleep(nanoseconds: 15_000_000_000)
@@ -148,6 +158,28 @@ struct AppSurfaceView: View {
         reloadToken &+= 1
     }
 
+    private func reportRecordState(_ record: AppRecord) {
+        switch AppCapabilityCatalog.activationGate(for: record) {
+        case .allowed:
+            reportLoadState(loadState)
+        case .reviewRequired:
+            surfaceReporter.partial("Review required before this app can run.")
+        case .blockedUnknownCapabilities(let unknown):
+            surfaceReporter.unavailable("Unsupported capabilities: \(unknown.joined(separator: ", ")).")
+        }
+    }
+
+    private func reportLoadState(_ state: AppSurfaceLoadState) {
+        switch state {
+        case .loading:
+            surfaceReporter.loading("Loading app")
+        case .ready:
+            surfaceReporter.ready()
+        case .failed(let message):
+            surfaceReporter.error(message)
+        }
+    }
+
     @ViewBuilder
     private var surfaceStateOverlay: some View {
         switch loadState {
@@ -202,6 +234,7 @@ private struct AppSwiftSurfaceHostView: View {
     let reloadToken: Int
     let appsStore: AppsStore
 
+    @Environment(\.surfaceRouteReporter) private var surfaceReporter
     @State private var state: AppSwiftSurfaceHostState = .loading
 
     var body: some View {
@@ -249,6 +282,12 @@ private struct AppSwiftSurfaceHostView: View {
             }
         }
         .background(Palette.background)
+        .onAppear {
+            reportHostState(state)
+        }
+        .onChange(of: state) { _, newState in
+            reportHostState(newState)
+        }
         .task(id: reloadToken) {
             await load()
         }
@@ -287,6 +326,17 @@ private struct AppSwiftSurfaceHostView: View {
             state = Self.hostState(for: runnerState, plan: plan)
         } catch {
             state = .failed(error.localizedDescription)
+        }
+    }
+
+    private func reportHostState(_ state: AppSwiftSurfaceHostState) {
+        switch state {
+        case .loading:
+            surfaceReporter.loading("Loading Swift surface")
+        case .ready:
+            surfaceReporter.ready()
+        case .failed(let message):
+            surfaceReporter.degraded(message)
         }
     }
 
