@@ -17,13 +17,16 @@ struct RemoteAccessSettingsPage: View {
     @AppStorage(ClawixPersistentSurfaceKeys.remoteTenantId) private var savedTenantId: String = ""
 
     @State private var pasteToken: String = ""
-    @State private var status: Status = .idle
-    @State private var inFlight: Bool = false
+    @StateObject private var store: RemoteAccessSettingsStore
 
-    private enum Status: Equatable {
-        case idle
-        case info(String)
-        case error(String)
+    @MainActor
+    init() {
+        _store = StateObject(wrappedValue: RemoteAccessSettingsStore())
+    }
+
+    @MainActor
+    init(store: RemoteAccessSettingsStore) {
+        _store = StateObject(wrappedValue: store)
     }
 
     var body: some View {
@@ -41,6 +44,7 @@ struct RemoteAccessSettingsPage: View {
             }
             .thinScrollers()
         }
+        .onDisappear { store.cancelInFlight() }
     }
 
     private var header: some View {
@@ -77,10 +81,14 @@ struct RemoteAccessSettingsPage: View {
                     .textFieldStyle(.roundedBorder)
                 HStack(spacing: 8) {
                     Button("Send magic link") {
-                        Task { await sendMagicLink() }
+                        store.sendMagicLink(
+                            coordinatorUrlString: coordinatorUrlString,
+                            email: email,
+                            deviceLabel: Host.current().localizedName ?? "Mac"
+                        )
                     }
-                    .disabled(inFlight || coordinatorUrlString.isEmpty || !email.contains("@"))
-                    if inFlight { ProgressView().controlSize(.small) }
+                    .disabled(store.inFlight || coordinatorUrlString.isEmpty || !email.contains("@"))
+                    if store.inFlight { ProgressView().controlSize(.small) }
                 }
                 Divider().padding(.vertical, 4)
                 Text("Paste the token from the email confirmation:")
@@ -88,9 +96,20 @@ struct RemoteAccessSettingsPage: View {
                 TextField("mlk_…", text: $pasteToken)
                     .textFieldStyle(.roundedBorder)
                 Button("Register this Mac") {
-                    Task { await consumeToken() }
+                    store.consumeToken(
+                        coordinatorUrlString: coordinatorUrlString,
+                        token: pasteToken,
+                        deviceLabel: Host.current().localizedName ?? "Mac",
+                        platformVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+                        irohNodeID: PairingService.shared.irohNodeID
+                    ) { session in
+                        savedDeviceId = session.deviceId
+                        savedTenantId = session.tenantId
+                        pasteToken = ""
+                        RelayCredentialStore.storeRefreshToken(session.refreshToken, forDeviceId: session.deviceId)
+                    }
                 }
-                .disabled(inFlight || pasteToken.isEmpty)
+                .disabled(store.inFlight || pasteToken.isEmpty)
                 statusView
             }
         }
@@ -104,7 +123,10 @@ struct RemoteAccessSettingsPage: View {
                     LabeledContent("Device id") { Text(savedDeviceId).font(.system(size: 11, design: .monospaced)) }
                     LabeledContent("Tenant") { Text(savedTenantId).font(.system(size: 11, design: .monospaced)) }
                     Button("Forget this Mac on the coordinator") {
-                        Task { await forget() }
+                        store.forget {
+                            savedDeviceId = ""
+                            savedTenantId = ""
+                        }
                     }
                     .controlSize(.small)
                 }
@@ -114,7 +136,7 @@ struct RemoteAccessSettingsPage: View {
 
     @ViewBuilder
     private var statusView: some View {
-        switch status {
+        switch store.status {
         case .idle:
             EmptyView()
         case .info(let message):
@@ -151,60 +173,175 @@ struct RemoteAccessSettingsPage: View {
                 .stroke(Color.secondary.opacity(0.18), lineWidth: 0.5)
         )
     }
+}
 
-    private func currentClient() -> CoordinatorClient? {
-        guard let url = URL(string: coordinatorUrlString) else { return nil }
-        return CoordinatorClient(baseURL: url)
+@MainActor
+final class RemoteAccessSettingsStore: ObservableObject {
+    typealias RequestMagicLinkOperation = @MainActor (
+        _ baseURL: URL,
+        _ email: String,
+        _ deviceLabel: String?,
+        _ platform: String?
+    ) async throws -> Void
+
+    typealias ConsumeMagicLinkOperation = @MainActor (
+        _ baseURL: URL,
+        _ token: String,
+        _ deviceLabel: String?,
+        _ platform: String?,
+        _ platformVersion: String?,
+        _ irohNodeID: String?
+    ) async throws -> CoordinatorClient.DeviceSession
+
+    typealias SessionHandler = @MainActor (CoordinatorClient.DeviceSession) -> Void
+
+    enum Status: Equatable {
+        case idle
+        case info(String)
+        case error(String)
     }
 
-    private func sendMagicLink() async {
-        guard let client = currentClient() else {
-            status = .error("Invalid coordinator URL")
-            return
-        }
-        inFlight = true
-        defer { inFlight = false }
-        do {
-            try await client.requestMagicLink(
+    @Published private(set) var status: Status = .idle
+    @Published private(set) var inFlight: Bool = false
+
+    private let requestMagicLinkOperation: RequestMagicLinkOperation
+    private let consumeMagicLinkOperation: ConsumeMagicLinkOperation
+    private var task: Task<Void, Never>?
+    private var generation = 0
+
+    init(
+        requestMagicLinkOperation: RequestMagicLinkOperation? = nil,
+        consumeMagicLinkOperation: ConsumeMagicLinkOperation? = nil
+    ) {
+        self.requestMagicLinkOperation = requestMagicLinkOperation ?? { baseURL, email, deviceLabel, platform in
+            try await CoordinatorClient(baseURL: baseURL).requestMagicLink(
                 email: email,
-                deviceLabel: Host.current().localizedName ?? "Mac",
-                platform: "macos"
+                deviceLabel: deviceLabel,
+                platform: platform
             )
-            status = .info("Magic link sent to \(email). Open it on this Mac, then paste the token below.")
-        } catch {
-            status = .error(error.localizedDescription)
+        }
+        self.consumeMagicLinkOperation = consumeMagicLinkOperation ?? { baseURL, token, deviceLabel, platform, platformVersion, irohNodeID in
+            try await CoordinatorClient(baseURL: baseURL).consumeMagicLink(
+                token: token,
+                deviceLabel: deviceLabel,
+                platform: platform,
+                platformVersion: platformVersion,
+                irohNodeID: irohNodeID
+            )
         }
     }
 
-    private func consumeToken() async {
-        guard let client = currentClient() else {
+    deinit {
+        task?.cancel()
+    }
+
+    @discardableResult
+    func sendMagicLink(
+        coordinatorUrlString: String,
+        email: String,
+        deviceLabel: String?,
+        platform: String? = "macos"
+    ) -> Task<Void, Never>? {
+        guard let baseURL = Self.coordinatorURL(from: coordinatorUrlString) else {
             status = .error("Invalid coordinator URL")
-            return
+            return nil
         }
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let generation = nextGeneration()
+        task?.cancel()
         inFlight = true
-        defer { inFlight = false }
-        do {
-            let session = try await client.consumeMagicLink(
-                token: pasteToken.trimmingCharacters(in: .whitespacesAndNewlines),
-                deviceLabel: Host.current().localizedName ?? "Mac",
-                platform: "macos",
-                platformVersion: ProcessInfo.processInfo.operatingSystemVersionString,
-                irohNodeID: PairingService.shared.irohNodeID
-            )
-            savedDeviceId = session.deviceId
-            savedTenantId = session.tenantId
-            pasteToken = ""
-            status = .info("This Mac is registered as \(session.deviceId). Refresh token stashed locally.")
-            RelayCredentialStore.storeRefreshToken(session.refreshToken, forDeviceId: session.deviceId)
-        } catch {
-            status = .error(error.localizedDescription)
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await self.requestMagicLinkOperation(baseURL, trimmedEmail, deviceLabel, platform)
+                try Task.checkCancellation()
+                guard self.isCurrent(generation) else { return }
+                self.status = .info("Magic link sent to \(trimmedEmail). Open it on this Mac, then paste the token below.")
+            } catch is CancellationError {
+            } catch {
+                guard self.isCurrent(generation) else { return }
+                self.status = .error(error.localizedDescription)
+            }
+            self.finishIfCurrent(generation)
         }
+        self.task = task
+        return task
     }
 
-    private func forget() async {
-        savedDeviceId = ""
-        savedTenantId = ""
+    @discardableResult
+    func consumeToken(
+        coordinatorUrlString: String,
+        token: String,
+        deviceLabel: String?,
+        platform: String? = "macos",
+        platformVersion: String?,
+        irohNodeID: String?,
+        onSession: @escaping SessionHandler
+    ) -> Task<Void, Never>? {
+        guard let baseURL = Self.coordinatorURL(from: coordinatorUrlString) else {
+            status = .error("Invalid coordinator URL")
+            return nil
+        }
+        let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        let generation = nextGeneration()
+        task?.cancel()
+        inFlight = true
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let session = try await self.consumeMagicLinkOperation(
+                    baseURL,
+                    trimmedToken,
+                    deviceLabel,
+                    platform,
+                    platformVersion,
+                    irohNodeID
+                )
+                try Task.checkCancellation()
+                guard self.isCurrent(generation) else { return }
+                onSession(session)
+                self.status = .info("This Mac is registered as \(session.deviceId). Refresh token stashed locally.")
+            } catch is CancellationError {
+            } catch {
+                guard self.isCurrent(generation) else { return }
+                self.status = .error(error.localizedDescription)
+            }
+            self.finishIfCurrent(generation)
+        }
+        self.task = task
+        return task
+    }
+
+    func forget(_ onForget: @MainActor () -> Void) {
+        cancelInFlight()
+        onForget()
         status = .info("Local pairing forgotten. Revoke the device from the coordinator's Devices page to fully unpair.")
+    }
+
+    func cancelInFlight() {
+        generation += 1
+        task?.cancel()
+        task = nil
+        inFlight = false
+    }
+
+    private static func coordinatorURL(from raw: String) -> URL? {
+        URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private func nextGeneration() -> Int {
+        generation += 1
+        return generation
+    }
+
+    private func isCurrent(_ value: Int) -> Bool {
+        generation == value
+    }
+
+    private func finishIfCurrent(_ value: Int) {
+        guard isCurrent(value) else { return }
+        inFlight = false
+        task = nil
     }
 }
 
