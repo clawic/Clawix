@@ -399,6 +399,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.progress"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("onProgress"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("opts.signal"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("opts.cursor"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("opts.facets"))
         XCTAssertFalse(ClawixAppsSDKJS.lowercased().contains("sqlite"))
     }
 
@@ -413,29 +415,105 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             "search": "launch",
             "sort": "-updatedAt",
             "limit": 999,
-            "offset": -10
+            "offset": -10,
+            "facets": ["status", "priority"]
         ])
 
         XCTAssertEqual(query.collection, "tasks")
         XCTAssertEqual(query.search, "launch")
         XCTAssertEqual(query.limit, 100)
         XCTAssertEqual(query.offset, 0)
+        XCTAssertEqual(query.effectiveOffset, 0)
+        XCTAssertEqual(query.facets, ["status", "priority"])
         XCTAssertEqual(query.sort, DBFilterState.Sort(field: "updatedAt", descending: true))
         XCTAssertEqual(query.backendFilterJSON?["status"] as? String, "todo")
         XCTAssertEqual(query.filterChips.first(where: { $0.field == "archivedAt" })?.op, .isNull)
         XCTAssertEqual(query.filterChips.first(where: { $0.field == "priority" })?.op, .neq)
     }
 
+    func testDBQueryDSLAcceptsOpaqueCursorOverOffset() throws {
+        let cursor = AppBridgeDBQuery.cursor(forOffset: 75)
+
+        let query = try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "tasks",
+            "offset": 10,
+            "cursor": cursor
+        ])
+
+        XCTAssertEqual(query.offset, 10)
+        XCTAssertEqual(query.cursor, cursor)
+        XCTAssertEqual(query.effectiveOffset, 75)
+        XCTAssertEqual(AppBridgeDBQuery.offset(fromCursor: "not-a-cursor"), nil)
+    }
+
+    func testBridgeValuesRedactSensitiveFieldsAndBuildFacets() {
+        let records = [
+            DBRecord(
+                id: "task-1",
+                createdAt: "2026-05-19T00:00:00Z",
+                updatedAt: "2026-05-19T00:00:00Z",
+                data: [
+                    "title": .string("Launch"),
+                    "status": .string("todo"),
+                    "apiKey": .string("secret-value")
+                ]
+            ),
+            DBRecord(
+                id: "task-2",
+                createdAt: "2026-05-19T00:00:00Z",
+                updatedAt: "2026-05-19T00:00:00Z",
+                data: [
+                    "title": .string("Ship"),
+                    "status": .string("done"),
+                    "password": .string("hidden")
+                ]
+            ),
+            DBRecord(
+                id: "task-3",
+                createdAt: "2026-05-19T00:00:00Z",
+                updatedAt: "2026-05-19T00:00:00Z",
+                data: [
+                    "title": .string("Review"),
+                    "status": .string("todo")
+                ]
+            )
+        ]
+
+        let bridge = AppBridgeQueryDSL.bridgeValue(collection: "tasks", record: records[0])
+        let data = bridge["data"] as? [String: Any]
+
+        XCTAssertEqual(data?["title"] as? String, "Launch")
+        XCTAssertNil(data?["apiKey"])
+        XCTAssertEqual(bridge["redactedFields"] as? [String], ["apiKey"])
+
+        let facets = AppBridgeQueryDSL.facetBridgeValue(records: records, fields: ["status", "apiKey"])
+        let statusFacet = facets["status"] as? [[String: Any]]
+        XCTAssertEqual(statusFacet?.first?["value"] as? String, "todo")
+        XCTAssertEqual(statusFacet?.first?["count"] as? Int, 2)
+        XCTAssertNil(facets["apiKey"])
+    }
+
+    func testNextCursorOnlyAppearsWhenMoreResultsMayExist() {
+        let cursor = AppBridgeQueryDSL.nextCursor(offset: 20, returnedCount: 10, limit: 10, total: 100)
+        XCTAssertEqual(AppBridgeDBQuery.offset(fromCursor: cursor), 30)
+        XCTAssertNil(AppBridgeQueryDSL.nextCursor(offset: 90, returnedCount: 10, limit: 10, total: 100))
+        XCTAssertNil(AppBridgeQueryDSL.nextCursor(offset: 20, returnedCount: 3, limit: 10, total: nil))
+    }
+
     func testSearchQueryDSLNormalizesCollectionsAndLimits() throws {
         let query = try AppBridgeQueryDSL.searchQuery(from: [
             "query": "agent",
             "collections": ["tasks", "", "notes"],
-            "limit": 0
+            "limit": 0,
+            "cursor": AppBridgeDBQuery.cursor(forOffset: 8),
+            "facets": ["status"]
         ])
 
         XCTAssertEqual(query.query, "agent")
         XCTAssertEqual(query.collections, ["tasks", "notes"])
         XCTAssertEqual(query.limit, 1)
+        XCTAssertEqual(query.effectiveOffset, 8)
+        XCTAssertEqual(query.facets, ["status"])
     }
 
     @MainActor

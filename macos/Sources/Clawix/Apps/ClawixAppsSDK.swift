@@ -144,7 +144,10 @@ let ClawixAppsSDKJS = #"""
         return send('search.query', {
           query: String(opts.query || opts.text || ''),
           collections: Array.isArray(opts.collections) ? opts.collections : [],
-          limit: opts.limit
+          limit: opts.limit,
+          offset: opts.offset,
+          cursor: opts.cursor,
+          facets: Array.isArray(opts.facets) ? opts.facets : []
         }, { signal: opts.signal, onProgress: opts.onProgress });
       }
     },
@@ -157,7 +160,9 @@ let ClawixAppsSDKJS = #"""
           search: opts.search == null ? opts.query : opts.search,
           sort: opts.sort,
           limit: opts.limit,
-          offset: opts.offset
+          offset: opts.offset,
+          cursor: opts.cursor,
+          facets: Array.isArray(opts.facets) ? opts.facets : []
         }, { signal: opts.signal, onProgress: opts.onProgress });
       }
     },

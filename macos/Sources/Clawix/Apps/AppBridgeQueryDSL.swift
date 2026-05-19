@@ -7,6 +7,12 @@ struct AppBridgeDBQuery: Equatable {
     var sort: DBFilterState.Sort?
     var limit: Int
     var offset: Int
+    var cursor: String?
+    var facets: [String]
+
+    var effectiveOffset: Int {
+        Self.offset(fromCursor: cursor) ?? offset
+    }
 
     var hasClientSideFilters: Bool {
         !search.isEmpty || filterChips.contains { $0.op != .eq }
@@ -29,12 +35,34 @@ struct AppBridgeDBQuery: Equatable {
         DBFilterState(chips: filterChips, sort: sort, search: search)
             .clientSidePostFilter(records: records)
     }
+
+    static func cursor(forOffset offset: Int) -> String {
+        Data("offset:\(max(0, offset))".utf8).base64EncodedString()
+    }
+
+    static func offset(fromCursor cursor: String?) -> Int? {
+        guard let cursor,
+              let data = Data(base64Encoded: cursor),
+              let decoded = String(data: data, encoding: .utf8),
+              decoded.hasPrefix("offset:"),
+              let offset = Int(decoded.dropFirst("offset:".count)) else {
+            return nil
+        }
+        return max(0, offset)
+    }
 }
 
 struct AppBridgeSearchQuery: Equatable {
     var query: String
     var collections: [String]
     var limit: Int
+    var offset: Int
+    var cursor: String?
+    var facets: [String]
+
+    var effectiveOffset: Int {
+        AppBridgeDBQuery.offset(fromCursor: cursor) ?? offset
+    }
 }
 
 enum AppBridgeQueryDSL {
@@ -70,7 +98,9 @@ enum AppBridgeQueryDSL {
             search: search,
             sort: sort,
             limit: clampedInt(payload["limit"], defaultValue: 50, min: 1, max: 100),
-            offset: clampedInt(payload["offset"], defaultValue: 0, min: 0, max: 10_000)
+            offset: clampedInt(payload["offset"], defaultValue: 0, min: 0, max: 10_000),
+            cursor: string(payload["cursor"]).nilIfBlank,
+            facets: stringArray(payload["facets"]).prefix(10).map { $0 }
         )
     }
 
@@ -82,13 +112,21 @@ enum AppBridgeQueryDSL {
         return AppBridgeSearchQuery(
             query: query,
             collections: stringArray(payload["collections"]),
-            limit: clampedInt(payload["limit"], defaultValue: 25, min: 1, max: 100)
+            limit: clampedInt(payload["limit"], defaultValue: 25, min: 1, max: 100),
+            offset: clampedInt(payload["offset"], defaultValue: 0, min: 0, max: 10_000),
+            cursor: string(payload["cursor"]).nilIfBlank,
+            facets: stringArray(payload["facets"]).prefix(10).map { $0 }
         )
     }
 
     static func bridgeValue(collection: String, record: DBRecord) -> [String: Any] {
         var data: [String: Any] = [:]
+        var redactedFields: [String] = []
         for (key, value) in record.data {
+            if isSensitiveField(key) {
+                redactedFields.append(key)
+                continue
+            }
             data[key] = value.foundationValue
         }
         return [
@@ -97,8 +135,38 @@ enum AppBridgeQueryDSL {
             "title": record.titleString,
             "createdAt": record.createdAt,
             "updatedAt": record.updatedAt,
-            "data": data
+            "data": data,
+            "redactedFields": redactedFields.sorted()
         ]
+    }
+
+    static func nextCursor(offset: Int, returnedCount: Int, limit: Int, total: Int?) -> String? {
+        guard returnedCount >= limit else { return nil }
+        let nextOffset = offset + returnedCount
+        if let total, nextOffset >= total { return nil }
+        return AppBridgeDBQuery.cursor(forOffset: nextOffset)
+    }
+
+    static func facetBridgeValue(records: [DBRecord], fields: [String]) -> [String: Any] {
+        var facets: [String: Any] = [:]
+        for field in fields where !isSensitiveField(field) {
+            var counts: [String: Int] = [:]
+            for record in records {
+                guard let value = record.data[field],
+                      let key = facetKey(value) else {
+                    continue
+                }
+                counts[key, default: 0] += 1
+            }
+            facets[field] = counts
+                .sorted { lhs, rhs in
+                    if lhs.value == rhs.value { return lhs.key < rhs.key }
+                    return lhs.value > rhs.value
+                }
+                .prefix(20)
+                .map { ["value": $0.key, "count": $0.value] }
+        }
+        return facets
     }
 
     private static func filterChips(from value: Any?) throws -> [DBFilterState.Chip] {
@@ -169,6 +237,40 @@ enum AppBridgeQueryDSL {
         return ""
     }
 
+    private static func isSensitiveField(_ field: String) -> Bool {
+        let normalized = field
+            .lowercased()
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        return normalized.contains("secret")
+            || normalized.contains("password")
+            || normalized.contains("credential")
+            || normalized.contains("apikey")
+            || normalized.contains("accesstoken")
+            || normalized.contains("refreshtoken")
+            || normalized.contains("privatetoken")
+            || normalized.contains("privatekey")
+    }
+
+    private static func facetKey(_ value: DBJSON) -> String? {
+        switch value {
+        case .null:
+            return nil
+        case .bool(let bool):
+            return bool ? "true" : "false"
+        case .integer(let int):
+            return String(int)
+        case .number(let double):
+            return String(double)
+        case .string(let string):
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        case .array, .object:
+            return nil
+        }
+    }
+
     private static func bool(_ value: Any?) -> Bool? {
         if let bool = value as? Bool { return bool }
         if let number = value as? NSNumber { return number.boolValue }
@@ -200,5 +302,12 @@ enum AppBridgeQueryDSL {
             return .array(array.map(json))
         }
         return DBJSON.wrap(value)
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

@@ -387,7 +387,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 filter: query.backendFilterJSON,
                 sort: query.sortString,
                 limit: fetchLimit,
-                offset: query.offset
+                offset: query.effectiveOffset
             )
             try Task.checkCancellation()
             reportQueryProgress(
@@ -401,8 +401,15 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 "collection": query.collection,
                 "items": filtered.map { AppBridgeQueryDSL.bridgeValue(collection: query.collection, record: $0) },
                 "limit": query.limit,
-                "offset": query.offset,
+                "offset": query.effectiveOffset,
                 "total": response.total ?? filtered.count,
+                "nextCursor": AppBridgeQueryDSL.nextCursor(
+                    offset: query.effectiveOffset,
+                    returnedCount: filtered.count,
+                    limit: query.limit,
+                    total: response.total
+                ) ?? NSNull(),
+                "facets": AppBridgeQueryDSL.facetBridgeValue(records: filtered, fields: query.facets),
                 "source": "db.query"
             ])
             surfaceReporter.ready()
@@ -430,6 +437,8 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             let collections = query.collections.isEmpty ? manager.collections.map(\.name) : query.collections
             let needle = query.query.lowercased()
             var items: [[String: Any]] = []
+            var matchedRecords: [(collection: String, record: DBRecord)] = []
+            var skipped = 0
 
             for (index, collection) in collections.enumerated() {
                 try Task.checkCancellation()
@@ -455,7 +464,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 }
                 for record in matches {
                     guard items.count < query.limit else { break }
+                    if skipped < query.effectiveOffset {
+                        skipped += 1
+                        continue
+                    }
                     items.append(AppBridgeQueryDSL.bridgeValue(collection: collection, record: record))
+                    matchedRecords.append((collection, record))
                 }
                 if !items.isEmpty {
                     surfaceReporter.partial("Found \(items.count) results")
@@ -475,6 +489,17 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 "collections": collections,
                 "items": items,
                 "limit": query.limit,
+                "offset": query.effectiveOffset,
+                "nextCursor": AppBridgeQueryDSL.nextCursor(
+                    offset: query.effectiveOffset,
+                    returnedCount: items.count,
+                    limit: query.limit,
+                    total: nil
+                ) ?? NSNull(),
+                "facets": AppBridgeQueryDSL.facetBridgeValue(
+                    records: matchedRecords.map(\.record),
+                    fields: query.facets
+                ),
                 "source": "search.query"
             ])
             surfaceReporter.ready()
