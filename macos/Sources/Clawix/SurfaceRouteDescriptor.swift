@@ -6,6 +6,16 @@ enum SurfaceRouteCriticality: String, Equatable, Hashable {
     case extensionSurface
 }
 
+enum SurfaceRouteDependency: String, Equatable, Hashable, CaseIterable {
+    case languageModels
+    case searchIndex
+    case databaseBackfill
+    case customApps
+    case connectors
+    case downloads
+    case externalProviders
+}
+
 struct SurfaceRouteDescriptor: Equatable, Hashable {
     var id: String
     var criticality: SurfaceRouteCriticality
@@ -16,6 +26,68 @@ struct SurfaceRouteDescriptor: Equatable, Hashable {
 
     var isCoreSurvivalRoute: Bool { criticality == .core }
     var canUseCustomVariantDefault: Bool { supportsVariantDefault && routeTarget != nil }
+}
+
+enum SurfaceShellIsolationPolicy {
+    static func criticalShellDependencies(
+        for descriptor: SurfaceRouteDescriptor
+    ) -> Set<SurfaceRouteDependency> {
+        []
+    }
+
+    static func surfaceDependencies(
+        for descriptor: SurfaceRouteDescriptor
+    ) -> Set<SurfaceRouteDependency> {
+        guard !descriptor.isCoreSurvivalRoute else { return [] }
+
+        if descriptor.criticality == .protected {
+            return []
+        }
+
+        if descriptor.id.hasPrefix("app:") || descriptor.id == "apps" {
+            return [.customApps, .downloads]
+        }
+        if descriptor.id.hasPrefix("database") {
+            return [.databaseBackfill]
+        }
+        if descriptor.id == "index" || descriptor.id.hasPrefix("memory") {
+            return [.searchIndex]
+        }
+        if descriptor.id.hasPrefix("drive")
+            || descriptor.id == "calendar"
+            || descriptor.id == "contacts"
+            || descriptor.id.hasPrefix("connection") {
+            return [.connectors, .downloads]
+        }
+        if descriptor.id.hasPrefix("iot") {
+            return [.connectors, .externalProviders]
+        }
+        if descriptor.id.hasPrefix("agent") || descriptor.id.hasPrefix("personality") {
+            return [.languageModels]
+        }
+        if descriptor.id.hasPrefix("publishing") {
+            return [.connectors, .externalProviders]
+        }
+
+        return []
+    }
+
+    static func unavailableSurfaceDependencies(
+        for descriptor: SurfaceRouteDescriptor,
+        unavailableDependencies: Set<SurfaceRouteDependency>
+    ) -> Set<SurfaceRouteDependency> {
+        surfaceDependencies(for: descriptor).intersection(unavailableDependencies)
+    }
+
+    static func startCriticalShellState(
+        for descriptor: SurfaceRouteDescriptor,
+        unavailableDependencies: Set<SurfaceRouteDependency>
+    ) -> SurfaceRouteSupervisionState {
+        guard descriptor.isCoreSurvivalRoute else {
+            return SurfaceRouteSupervisor.start(descriptor: descriptor)
+        }
+        return .ready(surfaceID: descriptor.id)
+    }
 }
 
 extension SidebarRoute {
