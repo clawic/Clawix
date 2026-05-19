@@ -113,6 +113,108 @@ final class DriveStoreCancellationTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
+    func testCancelSurfaceWorkSuppressesInFlightCreateFolderRefresh() async {
+        let createStarted = expectation(description: "Drive folder create started")
+        let createReturned = expectation(description: "Drive folder create returned")
+        let client = FakeDriveClient()
+        var refreshCalls = 0
+        client.onListItems = { _, _, _ in
+            refreshCalls += 1
+            return Self.response(ids: ["stale-refresh"])
+        }
+        client.onCreateFolder = { name, _ in
+            createStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            createReturned.fulfill()
+            return makeDriveDetail(id: name)
+        }
+        let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
+
+        let task = Task { await store.createFolder(name: "late", parentId: nil) }
+        await fulfillment(of: [createStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [createReturned], timeout: 1)
+        await task.value
+        XCTAssertNil(store.lastError)
+        XCTAssertEqual(refreshCalls, 0)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    func testCancelSurfaceWorkSuppressesInFlightUploadError() async {
+        let uploadStarted = expectation(description: "Drive upload started")
+        let uploadReturned = expectation(description: "Drive upload returned")
+        let client = FakeDriveClient()
+        var refreshCalls = 0
+        client.onListItems = { _, _, _ in
+            refreshCalls += 1
+            return Self.response(ids: ["stale-refresh"])
+        }
+        client.onUpload = { _, _, _ in
+            uploadStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            uploadReturned.fulfill()
+            throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+        }
+        let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
+
+        let task = Task {
+            await store.upload(fileURL: URL(fileURLWithPath: "/tmp/late.txt"), parentId: nil)
+        }
+        await fulfillment(of: [uploadStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [uploadReturned], timeout: 1)
+        let result = await task.value
+        guard case .failure = result else {
+            XCTFail("Cancelled upload unexpectedly succeeded")
+            return
+        }
+        XCTAssertNil(store.lastError)
+        XCTAssertEqual(refreshCalls, 0)
+    }
+
+    func testCancelSurfaceWorkSuppressesReplaceDuplicateErrorRefresh() async {
+        let trashReturned = expectation(description: "Drive duplicate trash returned")
+        let uploadStarted = expectation(description: "Drive duplicate replacement started")
+        let uploadReturned = expectation(description: "Drive duplicate replacement returned")
+        let client = FakeDriveClient()
+        var refreshCalls = 0
+        client.onListItems = { _, _, _ in
+            refreshCalls += 1
+            return Self.response(ids: ["stale-refresh"])
+        }
+        client.onTrashItem = { id in
+            trashReturned.fulfill()
+            return makeDriveDetail(id: id)
+        }
+        client.onUpload = { _, _, _ in
+            uploadStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            uploadReturned.fulfill()
+            throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+        }
+        let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
+
+        let task = Task {
+            await store.replaceDuplicate(
+                existingId: "old",
+                fileURL: URL(fileURLWithPath: "/tmp/late.txt"),
+                parentId: nil
+            )
+        }
+        await fulfillment(of: [trashReturned, uploadStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [uploadReturned], timeout: 1)
+        await task.value
+        XCTAssertNil(store.lastError)
+        XCTAssertEqual(refreshCalls, 0)
+    }
+
     private static func response(ids: [String]) -> ClawJSDriveClient.ListItemsResponse {
         ClawJSDriveClient.ListItemsResponse(
             items: ids.map { item(id: $0) },
@@ -155,6 +257,26 @@ private final class FakeDriveClient: ClawJSDriveClienting, @unchecked Sendable {
             breadcrumbs: []
         )
     }
+    var onCreateFolder: (String, String?) async throws -> ClawJSDriveClient.DriveItemDetail = { name, _ in
+        makeDriveDetail(id: name)
+    }
+    var onUpdateItem: (String, String?, Bool?, String?) async throws -> ClawJSDriveClient.DriveItemDetail = { id, _, _, _ in
+        makeDriveDetail(id: id)
+    }
+    var onTrashItem: (String) async throws -> ClawJSDriveClient.DriveItemDetail = { id in
+        makeDriveDetail(id: id)
+    }
+    var onRestoreItem: (String) async throws -> ClawJSDriveClient.DriveItemDetail = { id in
+        makeDriveDetail(id: id)
+    }
+    var onDeleteItem: (String) async throws -> Bool = { _ in true }
+    var onUpload: (URL, String?, String?) async throws -> ClawJSDriveClient.DriveItemDetail = { filePath, _, _ in
+        makeDriveDetail(id: filePath.lastPathComponent)
+    }
+    var onUploadBytes: (Data, String, String, String?) async throws -> ClawJSDriveClient.DriveItemDetail = { _, fileName, _, _ in
+        makeDriveDetail(id: fileName)
+    }
+    var onMarkViewed: (String) async throws -> Void = { _ in }
 
     func bootstrap() async throws -> ClawJSDriveClient.BootstrapResponse {
         ClawJSDriveClient.BootstrapResponse(counts: .init(myDrive: 0, recent: 0, starred: 0, shared: 0, trash: 0))
@@ -168,14 +290,16 @@ private final class FakeDriveClient: ClawJSDriveClienting, @unchecked Sendable {
         makeDriveDetail(id: id)
     }
 
-    func markViewed(_ id: String) async throws {}
+    func markViewed(_ id: String) async throws {
+        try await onMarkViewed(id)
+    }
 
     func createFolder(name: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: name)
+        try await onCreateFolder(name, parentId)
     }
 
     func updateItem(_ id: String, name: String?, starred: Bool?, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: id)
+        try await onUpdateItem(id, name, starred, parentId)
     }
 
     func moveItem(_ id: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail {
@@ -183,21 +307,23 @@ private final class FakeDriveClient: ClawJSDriveClienting, @unchecked Sendable {
     }
 
     func trashItem(_ id: String) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: id)
+        try await onTrashItem(id)
     }
 
     func restoreItem(_ id: String) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: id)
+        try await onRestoreItem(id)
     }
 
-    func deleteItem(_ id: String) async throws -> Bool { true }
+    func deleteItem(_ id: String) async throws -> Bool {
+        try await onDeleteItem(id)
+    }
 
     func upload(filePath: URL, parentId: String?, duplicatePolicy: String?) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: filePath.lastPathComponent)
+        try await onUpload(filePath, parentId, duplicatePolicy)
     }
 
     func uploadBytes(_ data: Data, fileName: String, mimeType: String, parentId: String?) async throws -> ClawJSDriveClient.DriveItemDetail {
-        makeDriveDetail(id: fileName)
+        try await onUploadBytes(data, fileName, mimeType, parentId)
     }
 
     func downloadItem(_ id: String, to destination: URL) async throws {

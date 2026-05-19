@@ -43,6 +43,7 @@ final class DriveStore: ObservableObject {
     private var bootstrapTimeoutTask: Task<Void, Never>?
     private var refreshGeneration = 0
     private var bootGeneration = 0
+    private var mutationGeneration = 0
     private let adminTokenOperation: AdminTokenOperation
     private var supervisorObserver: AnyCancellable?
 
@@ -126,6 +127,7 @@ final class DriveStore: ObservableObject {
         refreshGeneration += 1
         refreshTask?.cancel()
         refreshTask = nil
+        mutationGeneration += 1
         realtime.stop()
     }
 
@@ -224,101 +226,147 @@ final class DriveStore: ObservableObject {
     }
 
     func createFolder(name: String, parentId: String?) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.createFolder(name: name, parentId: parentId ?? currentParentId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     @discardableResult
     func upload(fileURL: URL, parentId: String?, allowOverwrite: Bool = false) async -> Result<ClawJSDriveClient.DriveItemDetail, ClawJSDriveClient.Error> {
+        let generation = currentMutationGeneration()
         do {
             let detail = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId, duplicatePolicy: allowOverwrite ? nil : "report")
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return .failure(.transport(CancellationError())) }
+            await refreshIfCurrentMutation(generation)
+            guard isCurrentMutation(generation) else { return .failure(.transport(CancellationError())) }
             return .success(detail)
         } catch let error as ClawJSDriveClient.Error {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
             return .failure(error)
+        } catch is CancellationError {
+            return .failure(.transport(CancellationError()))
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
             return .failure(.transport(error))
         }
     }
 
     func uploadPasted(_ data: Data, suggestedName: String, mimeType: String, parentId: String?) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.uploadBytes(data, fileName: suggestedName, mimeType: mimeType, parentId: parentId ?? currentParentId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func trash(_ itemId: String) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.trashItem(itemId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func restore(_ itemId: String) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.restoreItem(itemId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func delete(_ itemId: String) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.deleteItem(itemId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func replaceDuplicate(existingId: String, fileURL: URL, parentId: String?) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.trashItem(existingId)
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
             _ = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId, duplicatePolicy: nil)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+            guard isCurrentMutation(generation) else { return }
             self.lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentMutation(generation) else { return }
             self.lastError = error.localizedDescription
-            await refresh()
+            await refreshIfCurrentMutation(generation)
         }
     }
 
     func star(_ itemId: String, starred: Bool) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.updateItem(itemId, name: nil, starred: starred, parentId: nil)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func rename(_ itemId: String, newName: String) async {
+        let generation = currentMutationGeneration()
         do {
             _ = try await client.updateItem(itemId, name: newName, starred: nil, parentId: nil)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
     func markViewed(_ itemId: String) async {
+        let generation = currentMutationGeneration()
         do {
             try await client.markViewed(itemId)
-            await refresh()
+            try Task.checkCancellation()
+            guard isCurrentMutation(generation) else { return }
+            await refreshIfCurrentMutation(generation)
+        } catch is CancellationError {
         } catch {
-            self.lastError = error.localizedDescription
+            publishMutationError(error, generation: generation)
         }
     }
 
@@ -384,6 +432,24 @@ final class DriveStore: ObservableObject {
     private func finishRefreshIfCurrent(_ generation: Int) {
         guard isCurrentRefresh(generation) else { return }
         refreshTask = nil
+    }
+
+    private func currentMutationGeneration() -> Int {
+        mutationGeneration
+    }
+
+    private func isCurrentMutation(_ generation: Int) -> Bool {
+        mutationGeneration == generation
+    }
+
+    private func refreshIfCurrentMutation(_ generation: Int) async {
+        guard isCurrentMutation(generation) else { return }
+        await refresh()
+    }
+
+    private func publishMutationError(_ error: Swift.Error, generation: Int) {
+        guard isCurrentMutation(generation) else { return }
+        lastError = error.localizedDescription
     }
 
     private func nextBootGeneration() -> Int {
