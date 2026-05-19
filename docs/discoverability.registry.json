@@ -2267,6 +2267,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-ui-private-review-bundle-check",
+      "kind": "ui-governance",
+      "owner": "clawix",
+      "canonicalSource": "scripts/ui_private_review_bundle_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_private_review_bundle_check",
+        "Ui Private Review Bundle Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_private_review_bundle_check",
+          "expectPath": "scripts/ui_private_review_bundle_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_private_review_bundle_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-ui-private-visual-validation-manifest-check",
       "kind": "ui-governance",
       "owner": "clawix",

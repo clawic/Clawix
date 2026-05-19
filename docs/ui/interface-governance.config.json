@@ -77,6 +77,7 @@
     "private-baseline-manifest-shape",
     "private-evidence-plan-check",
     "private-capture-runner-contract-check",
+    "private-review-bundle-contract-check",
     "private-visual-validation-manifest-shape",
     "performance-budget-platform-coverage",
     "unauthorized-visual-diff"

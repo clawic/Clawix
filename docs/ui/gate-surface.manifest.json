@@ -55,6 +55,7 @@
     "scripts/ui_private_baseline_manifest_check.mjs",
     "scripts/ui_private_evidence_plan_check.mjs",
     "scripts/ui_private_capture_runner_check.mjs",
+    "scripts/ui_private_review_bundle_check.mjs",
     "scripts/ui_private_visual_validation_manifest_check.mjs",
     "scripts/ui_release_gate_check.mjs"
   ],
@@ -103,6 +104,7 @@
     "private-baseline-manifest-shape": ["scripts/ui_private_baseline_manifest_check.mjs"],
     "private-evidence-plan-check": ["scripts/ui_private_evidence_plan_check.mjs"],
     "private-capture-runner-contract-check": ["scripts/ui_private_capture_runner_check.mjs"],
+    "private-review-bundle-contract-check": ["scripts/ui_private_review_bundle_check.mjs"],
     "private-visual-validation-manifest-shape": ["scripts/ui_private_visual_validation_manifest_check.mjs"],
     "performance-budget-platform-coverage": ["scripts/ui_performance_budget_check.mjs"],
     "unauthorized-visual-diff": ["scripts/ui_governance_guard.mjs", "scripts/ui_visual_guard_failure_check.mjs"]

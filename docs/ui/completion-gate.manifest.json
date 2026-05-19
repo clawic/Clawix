@@ -10,6 +10,7 @@
   "publicCheckScript": "scripts/ui_completion_gate_check.mjs",
   "privateVerifierScript": "scripts/ui_private_completion_verify.mjs",
   "privateApprovalVerifierScript": "scripts/ui_private_approval_verify.mjs",
+  "privateReviewBundleScript": "scripts/ui_private_review_bundle_check.mjs",
   "completionStatusCommand": "node scripts/ui_private_completion_verify.mjs --completion-status",
   "completionStatusRequiredBlockersWithoutPrivateRoots": [
     "open-decisions",
