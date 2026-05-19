@@ -322,6 +322,37 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(state, .timedOut(seconds: 3))
     }
 
+    func testSwiftSurfaceRunnerSupervisorConvertsCancellationToSurfaceState() throws {
+        let launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: nil, cancelled: true)
+        )
+        let supervisor = AppSwiftSurfaceRunnerSupervisor(executor: RecordingSwiftRunnerExecutor(result: launch.result))
+
+        let state = supervisor.launch(launch.launch)
+
+        XCTAssertEqual(state, .cancelled)
+    }
+
+    func testSwiftSurfaceProcessExecutorTerminatesProcessWhenTaskIsCancelled() async throws {
+        let executable = try makeCancellableSwiftRunnerFixture()
+        var launch = try makeSwiftRunnerLaunch(
+            result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: 0)
+        ).launch
+        launch.executablePath = executable.path
+        launch.timeoutSeconds = 10
+
+        let task = Task {
+            AppSwiftSurfaceProcessExecutor().run(launch)
+        }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        task.cancel()
+        let result = await task.value
+
+        XCTAssertTrue(result.cancelled)
+        XCTAssertFalse(result.timedOut)
+        XCTAssertNil(result.exitCode)
+    }
+
     func testSwiftSurfaceRunnerSupervisorRejectsInProcessPlans() throws {
         var launch = try makeSwiftRunnerLaunch(
             result: AppSwiftSurfaceRunnerResult(pid: 42, exitCode: 0)
@@ -817,6 +848,19 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             ),
             result
         )
+    }
+
+    private func makeCancellableSwiftRunnerFixture() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-swift-runner-tests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let executable = directory.appendingPathComponent("runner.sh")
+        try """
+        #!/bin/sh
+        sleep 5
+        """.write(to: executable, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+        return executable
     }
 }
 

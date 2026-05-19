@@ -280,6 +280,8 @@ private struct AppSwiftSurfaceHostView: View {
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .cancelled:
+                EmptyView()
             }
         }
         .background(Palette.background)
@@ -321,9 +323,18 @@ private struct AppSwiftSurfaceHostView: View {
                 plan: plan,
                 executablePath: executablePath
             )
-            let runnerState = await Task.detached(priority: .userInitiated) {
+            let runnerTask = Task(priority: .userInitiated) {
                 AppSwiftSurfaceRunnerSupervisor().launch(launch)
-            }.value
+            }
+            let runnerState = await withTaskCancellationHandler {
+                await runnerTask.value
+            } onCancel: {
+                runnerTask.cancel()
+            }
+            guard !Task.isCancelled else {
+                state = .cancelled
+                return
+            }
             state = Self.hostState(for: runnerState, plan: plan)
         } catch {
             state = .failed(error.localizedDescription)
@@ -338,6 +349,8 @@ private struct AppSwiftSurfaceHostView: View {
             surfaceReporter.ready()
         case .failed(let message):
             surfaceReporter.degraded(message)
+        case .cancelled:
+            surfaceReporter.cancelled()
         }
     }
 
@@ -354,6 +367,8 @@ private struct AppSwiftSurfaceHostView: View {
             return .failed(reason)
         case .timedOut(let seconds):
             return .failed("Swift surface runner timed out after \(Int(seconds)) seconds.")
+        case .cancelled:
+            return .cancelled
         case .idle, .launching, .running:
             return .failed("Swift surface runner did not complete.")
         }
@@ -364,6 +379,7 @@ private enum AppSwiftSurfaceHostState: Equatable {
     case loading
     case ready(AppSwiftSurfaceRunnerPlan)
     case failed(String)
+    case cancelled
 }
 
 private struct AppSurfaceWebView: NSViewRepresentable {

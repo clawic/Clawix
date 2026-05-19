@@ -94,12 +94,20 @@ struct AppSwiftSurfaceRunnerResult: Equatable, Hashable {
     var pid: Int32?
     var exitCode: Int32?
     var timedOut: Bool
+    var cancelled: Bool
     var stderr: String
 
-    init(pid: Int32? = nil, exitCode: Int32? = nil, timedOut: Bool = false, stderr: String = "") {
+    init(
+        pid: Int32? = nil,
+        exitCode: Int32? = nil,
+        timedOut: Bool = false,
+        cancelled: Bool = false,
+        stderr: String = ""
+    ) {
         self.pid = pid
         self.exitCode = exitCode
         self.timedOut = timedOut
+        self.cancelled = cancelled
         self.stderr = stderr
     }
 }
@@ -111,6 +119,7 @@ enum AppSwiftSurfaceRunnerState: Equatable, Hashable {
     case exited(code: Int32)
     case crashed(reason: String)
     case timedOut(seconds: TimeInterval)
+    case cancelled
 }
 
 protocol AppSwiftSurfaceRunnerExecuting {
@@ -141,6 +150,9 @@ final class AppSwiftSurfaceRunnerSupervisor {
         result: AppSwiftSurfaceRunnerResult,
         timeoutSeconds: TimeInterval
     ) -> AppSwiftSurfaceRunnerState {
+        if result.cancelled {
+            return .cancelled
+        }
         if result.timedOut {
             return .timedOut(seconds: timeoutSeconds)
         }
@@ -181,25 +193,37 @@ struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
 
         let finished = DispatchSemaphore(value: 0)
         process.terminationHandler = { _ in finished.signal() }
-        let timeout = DispatchTimeInterval.milliseconds(Int(launch.timeoutSeconds * 1_000))
-        let deadline = DispatchTime.now() + timeout
-        if finished.wait(timeout: deadline) == .timedOut {
-            process.terminate()
-            return AppSwiftSurfaceRunnerResult(
-                pid: process.processIdentifier,
-                exitCode: nil,
-                timedOut: true,
-                stderr: "Swift surface runner timed out."
-            )
+        let deadline = Date().addingTimeInterval(max(0, launch.timeoutSeconds))
+        while Date() < deadline {
+            if Task.isCancelled {
+                process.terminate()
+                return AppSwiftSurfaceRunnerResult(
+                    pid: process.processIdentifier,
+                    exitCode: nil,
+                    cancelled: true,
+                    stderr: "Swift surface runner cancelled."
+                )
+            }
+            if finished.wait(timeout: .now() + .milliseconds(50)) == .success {
+                let data = stderr.fileHandleForReading.readDataToEndOfFile()
+                let stderrText = String(data: data, encoding: .utf8) ?? ""
+                return AppSwiftSurfaceRunnerResult(
+                    pid: process.processIdentifier,
+                    exitCode: process.terminationStatus,
+                    timedOut: false,
+                    stderr: stderrText
+                )
+            }
         }
 
-        let data = stderr.fileHandleForReading.readDataToEndOfFile()
-        let stderrText = String(data: data, encoding: .utf8) ?? ""
+        if process.isRunning {
+            process.terminate()
+        }
         return AppSwiftSurfaceRunnerResult(
             pid: process.processIdentifier,
-            exitCode: process.terminationStatus,
-            timedOut: false,
-            stderr: stderrText
+            exitCode: nil,
+            timedOut: true,
+            stderr: "Swift surface runner timed out."
         )
     }
 }
