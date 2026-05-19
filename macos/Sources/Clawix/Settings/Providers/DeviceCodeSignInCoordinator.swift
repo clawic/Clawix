@@ -72,12 +72,12 @@ final class DeviceCodeSignInCoordinator: ObservableObject {
         generation += 1
         let currentGeneration = generation
         task?.cancel()
+        error = nil
+        deviceCode = nil
+        phase = .requesting
         task = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                error = nil
-                deviceCode = nil
-                phase = .requesting
                 let device = try await operations.requestDeviceCode()
                 try Task.checkCancellation()
                 guard currentGeneration == generation else { return }
@@ -114,5 +114,8 @@ final class DeviceCodeSignInCoordinator: ObservableObject {
         generation += 1
         task?.cancel()
         task = nil
+        error = nil
+        deviceCode = nil
+        phase = .requesting
     }
 }
