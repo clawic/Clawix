@@ -54,6 +54,7 @@ final class IoTManager: NSObject, ObservableObject {
     private var refreshTask: Task<Void, Error>?
     private var bootstrapGeneration = 0
     private var refreshGeneration = 0
+    private var actionTasks: [IoTActionKey: IoTActionTask] = [:]
     private var actionGenerations: [IoTActionKey: Int] = [:]
     private let adminTokenOperation: AdminTokenOperation
     private var sseTask: URLSessionDataTask?
@@ -83,6 +84,9 @@ final class IoTManager: NSObject, ObservableObject {
         bootstrapTask?.cancel()
         bootstrapTimeoutTask?.cancel()
         refreshTask?.cancel()
+        for task in actionTasks.values {
+            task.cancel()
+        }
     }
 
     // MARK: - Supervisor wiring
@@ -232,7 +236,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .runAction, id: actionIdentity(for: request))
         let generation = nextActionGeneration(for: key)
         let result = try await performAction(key: key, generation: generation) {
-            try await client.runAction(request, homeId: currentHomeId)
+            try await self.client.runAction(request, homeId: self.currentHomeId)
         }
         // After a successful action the SSE event will re-trigger our
         // snapshot refresh; we kick a manual refresh too so the UI
@@ -246,7 +250,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .activateScene, id: scene.id)
         let generation = nextActionGeneration(for: key)
         _ = try await performAction(key: key, generation: generation) {
-            try await client.activateScene(sceneId: scene.id, homeId: currentHomeId)
+            try await self.client.activateScene(sceneId: scene.id, homeId: self.currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
@@ -255,10 +259,10 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .setAutomationEnabled, id: "\(automation.id):\(enabled)")
         let generation = nextActionGeneration(for: key)
         _ = try await performAction(key: key, generation: generation) {
-            try await client.setAutomationEnabled(
+            try await self.client.setAutomationEnabled(
                 automationId: automation.id,
                 enabled: enabled,
-                homeId: currentHomeId,
+                homeId: self.currentHomeId,
             )
         }
         scheduleRefreshAfterChange()
@@ -268,7 +272,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .runAutomation, id: automation.id)
         let generation = nextActionGeneration(for: key)
         _ = try await performAction(key: key, generation: generation) {
-            try await client.runAutomation(automationId: automation.id, homeId: currentHomeId)
+            try await self.client.runAutomation(automationId: automation.id, homeId: self.currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
@@ -277,7 +281,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .approveApproval, id: approval.id)
         let generation = nextActionGeneration(for: key)
         let result = try await performAction(key: key, generation: generation) {
-            try await client.approveApproval(approvalId: approval.id, homeId: currentHomeId)
+            try await self.client.approveApproval(approvalId: approval.id, homeId: self.currentHomeId)
         }
         scheduleRefreshAfterChange()
         return result
@@ -287,7 +291,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .denyApproval, id: approval.id)
         let generation = nextActionGeneration(for: key)
         _ = try await performAction(key: key, generation: generation) {
-            try await client.denyApproval(approvalId: approval.id, homeId: currentHomeId)
+            try await self.client.denyApproval(approvalId: approval.id, homeId: self.currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
@@ -298,7 +302,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .addDevice, id: input.label ?? input.targetRef ?? "default")
         let generation = nextActionGeneration(for: key)
         let device = try await performAction(key: key, generation: generation) {
-            try await client.addDevice(input: input)
+            try await self.client.addDevice(input: input)
         }
         scheduleRefreshAfterChange()
         return device
@@ -308,7 +312,7 @@ final class IoTManager: NSObject, ObservableObject {
         let key = IoTActionKey(kind: .removeDevice, id: device.id)
         let generation = nextActionGeneration(for: key)
         try await performAction(key: key, generation: generation) {
-            try await client.removeDevice(deviceId: device.id, homeId: currentHomeId)
+            try await self.client.removeDevice(deviceId: device.id, homeId: self.currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
@@ -316,16 +320,26 @@ final class IoTManager: NSObject, ObservableObject {
     private func performAction<T>(
         key: IoTActionKey,
         generation: Int,
-        operation: () async throws -> T
+        operation: @escaping () async throws -> T
     ) async throws -> T {
+        actionTasks[key]?.cancel()
+        let task = Task<T, Error> {
+            try await operation()
+        }
+        actionTasks[key] = IoTActionTask(cancel: { task.cancel() })
         do {
-            let value = try await operation()
+            let value = try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: {
+                task.cancel()
+            }
             try Task.checkCancellation()
             guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = nil
             finishActionIfCurrent(key: key, generation: generation)
             return value
         } catch is CancellationError {
+            finishActionIfCurrent(key: key, generation: generation)
             throw CancellationError()
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
@@ -369,44 +383,26 @@ final class IoTManager: NSObject, ObservableObject {
         for key in Array(actionGenerations.keys) {
             actionGenerations[key, default: 0] += 1
         }
+        for task in actionTasks.values {
+            task.cancel()
+        }
+        actionTasks.removeAll()
         disconnectSSE()
     }
 
     func startDiscovery(timeoutMs: Int? = nil) async throws {
         let key = IoTActionKey(kind: .startDiscovery, id: "\(timeoutMs ?? -1)")
         let generation = nextActionGeneration(for: key)
-        do {
-            try await client.startDiscovery(timeoutMs: timeoutMs)
-            try Task.checkCancellation()
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            lastError = nil
-            finishActionIfCurrent(key: key, generation: generation)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            lastError = error.localizedDescription
-            finishActionIfCurrent(key: key, generation: generation)
-            throw error
+        try await performAction(key: key, generation: generation) {
+            try await self.client.startDiscovery(timeoutMs: timeoutMs)
         }
     }
 
     func stopDiscovery() async throws {
         let key = IoTActionKey(kind: .stopDiscovery, id: "default")
         let generation = nextActionGeneration(for: key)
-        do {
-            try await client.stopDiscovery()
-            try Task.checkCancellation()
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            lastError = nil
-            finishActionIfCurrent(key: key, generation: generation)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            lastError = error.localizedDescription
-            finishActionIfCurrent(key: key, generation: generation)
-            throw error
+        try await performAction(key: key, generation: generation) {
+            try await self.client.stopDiscovery()
         }
     }
 
@@ -500,19 +496,10 @@ final class IoTManager: NSObject, ObservableObject {
     ) async throws -> [String: Any] {
         let key = IoTActionKey(kind: kind, id: id)
         let generation = nextActionGeneration(for: key)
-        do {
-            let result = try await client.invokeTool(id: toolId, arguments: arguments)
-            try Task.checkCancellation()
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+        return try await performAction(key: key, generation: generation) {
+            let result = try await self.client.invokeTool(id: toolId, arguments: arguments)
             try result.throwIfFailed()
-            finishActionIfCurrent(key: key, generation: generation)
             return result.value?.asDictionary ?? [:]
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            finishActionIfCurrent(key: key, generation: generation)
-            throw error
         }
     }
 
@@ -591,7 +578,12 @@ final class IoTManager: NSObject, ObservableObject {
 
     private func finishActionIfCurrent(key: IoTActionKey, generation: Int) {
         guard isCurrentAction(key: key, generation: generation) else { return }
+        actionTasks[key] = nil
         actionGenerations[key] = generation
+    }
+
+    private struct IoTActionTask {
+        let cancel: () -> Void
     }
 
     private func actionIdentity(for request: IoTActionRequest) -> String {

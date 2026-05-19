@@ -94,14 +94,18 @@ final class IoTManagerCancellationTests: XCTestCase {
         XCTAssertTrue(manager.devices.isEmpty)
     }
 
-    func testCancelSurfaceWorkSuppressesLateIoTActionError() async {
+    func testCancelSurfaceWorkCancelsInFlightIoTActionError() async {
         let actionStarted = expectation(description: "IoT action started")
-        let actionReturned = expectation(description: "IoT action returned after teardown")
+        let actionCancelled = expectation(description: "IoT action cancelled")
         let client = FakeIoTClient()
         client.onRunAction = { _, _ in
             actionStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            actionReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                actionCancelled.fulfill()
+                throw CancellationError()
+            }
             throw IoTTestError.serviceNotReady
         }
         let manager = IoTManager(client: client, adminTokenOperation: { "token" }, attachSupervisor: false)
@@ -111,21 +115,25 @@ final class IoTManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [actionReturned], timeout: 1)
+        await fulfillment(of: [actionCancelled], timeout: 1)
         _ = await task.value
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateIoTActionRefresh() async {
+    func testCancelSurfaceWorkCancelsInFlightIoTActionRefresh() async {
         let actionStarted = expectation(description: "IoT action started")
-        let actionReturned = expectation(description: "IoT action returned after teardown")
+        let actionCancelled = expectation(description: "IoT action cancelled")
         let refreshStarted = expectation(description: "IoT refresh should not start")
         refreshStarted.isInverted = true
         let client = FakeIoTClient()
         client.onRunAction = { _, _ in
             actionStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            actionReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                actionCancelled.fulfill()
+                throw CancellationError()
+            }
             return makeActionResult()
         }
         client.onListDevices = { _ in
@@ -139,20 +147,24 @@ final class IoTManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [actionReturned, refreshStarted], timeout: 1)
+        await fulfillment(of: [actionCancelled, refreshStarted], timeout: 1)
         _ = await task.value
         XCTAssertTrue(manager.devices.isEmpty)
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateDiscoveryError() async {
+    func testCancelSurfaceWorkCancelsInFlightDiscoveryError() async {
         let discoveryStarted = expectation(description: "IoT discovery started")
-        let discoveryReturned = expectation(description: "IoT discovery returned after teardown")
+        let discoveryCancelled = expectation(description: "IoT discovery cancelled")
         let client = FakeIoTClient()
         client.onStartDiscovery = { _ in
             discoveryStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            discoveryReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                discoveryCancelled.fulfill()
+                throw CancellationError()
+            }
             throw IoTTestError.serviceNotReady
         }
         let manager = IoTManager(client: client, adminTokenOperation: { "token" }, attachSupervisor: false)
@@ -162,20 +174,24 @@ final class IoTManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [discoveryReturned], timeout: 1)
+        await fulfillment(of: [discoveryCancelled], timeout: 1)
         await task.value
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateProtocolToolResult() async {
+    func testCancelSurfaceWorkCancelsInFlightProtocolToolResult() async {
         let toolStarted = expectation(description: "IoT protocol tool started")
-        let toolReturned = expectation(description: "IoT protocol tool returned after teardown")
+        let toolCancelled = expectation(description: "IoT protocol tool cancelled")
         let client = FakeIoTClient()
         client.onInvokeTool = { id, _ in
             XCTAssertEqual(id, "iot.mqtt.connect")
             toolStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            toolReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                toolCancelled.fulfill()
+                throw CancellationError()
+            }
             return RemoteToolInvocationResult(
                 ok: true,
                 value: ToolJSONValue(["connected": true]),
@@ -191,7 +207,7 @@ final class IoTManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [toolReturned], timeout: 1)
+        await fulfillment(of: [toolCancelled], timeout: 1)
         let result = await task.value
         XCTAssertNil(result)
         XCTAssertNil(manager.lastError)
