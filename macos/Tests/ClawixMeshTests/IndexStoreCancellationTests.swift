@@ -3,6 +3,104 @@ import XCTest
 
 @MainActor
 final class IndexStoreCancellationTests: XCTestCase {
+    func testEntityDetailLoadCancelsStaleDetailRequest() async {
+        let staleStarted = expectation(description: "Stale entity detail started")
+        let staleCancelled = expectation(description: "Stale entity detail cancelled")
+        let freshReturned = expectation(description: "Fresh entity detail returned")
+        let client = FakeIndexClient()
+        client.onGetEntity = { id in
+            if id == "stale" {
+                staleStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.detail(id: "stale", title: "Stale")
+            }
+            freshReturned.fulfill()
+            return Self.detail(id: "fresh", title: "Fresh")
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+        let detailStore = IndexEntityDetailStore()
+
+        let first = Task { await detailStore.load(entityId: "stale", using: store) }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task { await detailStore.load(entityId: "fresh", using: store) }
+
+        await fulfillment(of: [staleCancelled, freshReturned], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertEqual(detailStore.detail?.entity.id, "fresh")
+        XCTAssertNil(detailStore.loadError)
+    }
+
+    func testCancelSurfaceWorkSuppressesInFlightDetailLoad() async {
+        let started = expectation(description: "Entity detail started")
+        let cancelled = expectation(description: "Entity detail cancelled")
+        let client = FakeIndexClient()
+        client.onGetEntity = { _ in
+            started.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                cancelled.fulfill()
+                throw CancellationError()
+            }
+            return Self.detail(id: "late", title: "Late")
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+        let detailStore = IndexEntityDetailStore()
+
+        let task = Task { await detailStore.load(entityId: "late", using: store) }
+        await fulfillment(of: [started], timeout: 1)
+
+        detailStore.cancelSurfaceWork()
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        await task.value
+
+        XCTAssertNil(detailStore.detail)
+        XCTAssertNil(detailStore.loadError)
+    }
+
+    func testEntityChangeCancelsStaleHistoryRequest() async {
+        let historyStarted = expectation(description: "Entity history started")
+        let historyCancelled = expectation(description: "Entity history cancelled")
+        let client = FakeIndexClient()
+        client.onGetEntity = { id in
+            Self.detail(id: id, title: id.capitalized)
+        }
+        client.onHistory = { entityId, field in
+            _ = (entityId, field)
+            historyStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                historyCancelled.fulfill()
+                throw CancellationError()
+            }
+            return [Self.historyPoint(field: field, value: "stale")]
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+        let detailStore = IndexEntityDetailStore()
+        await detailStore.load(entityId: "first", using: store)
+
+        let history = Task { await detailStore.loadHistory("status", using: store) }
+        await fulfillment(of: [historyStarted], timeout: 1)
+
+        await detailStore.load(entityId: "second", using: store)
+
+        await fulfillment(of: [historyCancelled], timeout: 1)
+        await history.value
+
+        XCTAssertEqual(detailStore.detail?.entity.id, "second")
+        XCTAssertTrue(detailStore.history(for: "status").isEmpty)
+    }
+
     func testCancelInFlightWorkSuppressesRefreshAndReturnsToIdle() async {
         let refreshStarted = expectation(description: "Index refresh started")
         let refreshCancelled = expectation(description: "Index refresh cancelled")
@@ -84,12 +182,35 @@ final class IndexStoreCancellationTests: XCTestCase {
             thumbnailUrl: nil
         )
     }
+
+    private static func detail(id: String, title: String) -> ClawJSIndexClient.EntityDetailResponse {
+        ClawJSIndexClient.EntityDetailResponse(
+            entity: entity(id: id, title: title),
+            observations: [],
+            relationsFrom: [],
+            relationsTo: [],
+            tags: []
+        )
+    }
+
+    private static func historyPoint(field: String, value: String) -> ClawJSIndexClient.HistoryPoint {
+        ClawJSIndexClient.HistoryPoint(
+            fieldPath: field,
+            value: .string(value),
+            validFrom: "2026-05-19T00:00:00Z",
+            runId: nil
+        )
+    }
 }
 
 private final class FakeIndexClient: ClawJSIndexClienting {
     var bearerToken: String? = "test-token"
     var onListTypes: () async throws -> [ClawJSIndexClient.EntityType] = { [] }
     var onListEntities: ([String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity] = { _ in [] }
+    var onGetEntity: (String) async throws -> ClawJSIndexClient.EntityDetailResponse = { _ in
+        throw ClawJSIndexClient.Error.serviceNotReady
+    }
+    var onHistory: (String, String) async throws -> [ClawJSIndexClient.HistoryPoint] = { _, _ in [] }
 
     func listTypes() async throws -> [ClawJSIndexClient.EntityType] {
         try await onListTypes()
@@ -104,10 +225,12 @@ private final class FakeIndexClient: ClawJSIndexClienting {
     }
 
     func getEntity(id: String) async throws -> ClawJSIndexClient.EntityDetailResponse {
-        throw ClawJSIndexClient.Error.serviceNotReady
+        try await onGetEntity(id)
     }
 
-    func history(entityId: String, field: String) async throws -> [ClawJSIndexClient.HistoryPoint] { [] }
+    func history(entityId: String, field: String) async throws -> [ClawJSIndexClient.HistoryPoint] {
+        try await onHistory(entityId, field)
+    }
 
     func listSearches() async throws -> [ClawJSIndexClient.Search] { [] }
 

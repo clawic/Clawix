@@ -8,10 +8,8 @@ struct EntityDetailPane: View {
     @ObservedObject var store: IndexStore
     let entityId: String?
 
-    @State private var detail: ClawJSIndexClient.EntityDetailResponse?
-    @State private var loadError: String?
+    @StateObject private var detailStore = IndexEntityDetailStore()
     @State private var activeTab: DetailTab = .overview
-    @State private var historyByField: [String: [ClawJSIndexClient.HistoryPoint]] = [:]
 
     enum DetailTab: Hashable {
         case overview
@@ -32,7 +30,11 @@ struct EntityDetailPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.opacity(0.001))
         .task(id: entityId) {
-            await load()
+            activeTab = .overview
+            await detailStore.load(entityId: entityId, using: store)
+        }
+        .onDisappear {
+            detailStore.cancelSurfaceWork()
         }
     }
 
@@ -53,13 +55,13 @@ struct EntityDetailPane: View {
 
     @ViewBuilder
     private func content(for entityId: String) -> some View {
-        if let error = loadError {
+        if let error = detailStore.loadError {
             IndexEmptyState(
                 title: "Could not load entity",
                 systemImage: "exclamationmark.circle",
                 description: error
             )
-        } else if let detail = detail {
+        } else if let detail = detailStore.detail {
             VStack(spacing: 0) {
                 DetailHeader(detail: detail)
                 CardDivider()
@@ -89,8 +91,8 @@ struct EntityDetailPane: View {
             TimeseriesSection(
                 entityId: detail.entity.id,
                 field: field,
-                points: historyByField[field] ?? [],
-                onLoad: { await loadHistory(field) }
+                points: detailStore.history(for: field),
+                onLoad: { await detailStore.loadHistory(field, using: store) }
             )
         case .observations:
             ObservationsSection(observations: detail.observations)
@@ -101,29 +103,6 @@ struct EntityDetailPane: View {
         }
     }
 
-    private func load() async {
-        guard let entityId else { return }
-        detail = nil
-        loadError = nil
-        do {
-            detail = try await store.detail(for: entityId)
-            historyByField = [:]
-            activeTab = .overview
-        } catch {
-            loadError = error.localizedDescription
-        }
-    }
-
-    private func loadHistory(_ field: String) async {
-        guard let entityId else { return }
-        if historyByField[field] != nil { return }
-        do {
-            let points = try await store.history(for: entityId, field: field)
-            historyByField[field] = points
-        } catch {
-            historyByField[field] = []
-        }
-    }
 }
 
 private struct DetailHeader: View {
