@@ -64,6 +64,78 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
     }
 
+    func testAgentToolNamesMapToHighRiskCapabilities() {
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "secrets.read"), "secrets.broker")
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "mac.window.plan"), "mac.action.plan")
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "iot.device.toggle"), "iot.device.action.invoke")
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "database_create_task"), "actions.invoke")
+
+        for tool in ["secrets.read", "mac.window.plan", "iot.device.toggle", "database_create_task"] {
+            let descriptor = AppHighRiskActionAudit.descriptor(forTool: tool)
+            XCTAssertEqual(descriptor?.customAppAccess, .approvalRequired)
+            XCTAssertEqual(descriptor?.interruptiveApproval, true)
+        }
+    }
+
+    func testHighRiskActionAuditWritesApprovalReceipts() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let auditURL = root.appendingPathComponent(AppHighRiskActionAudit.filename)
+        let app = AppRecord(
+            slug: "iot-panel",
+            name: "IoT Panel",
+            declaredCapabilities: ["iot.device.action.invoke"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "iot.device.toggle"))
+
+        let receipt = try AppHighRiskActionAudit.append(
+            app: app,
+            descriptor: descriptor,
+            action: "iot.device.toggle",
+            decision: .approvedOnce,
+            outcome: .approvalRecordedDispatchUnavailable,
+            reason: descriptor.summary,
+            auditURL: auditURL
+        )
+
+        let receipts = try AppHighRiskActionAudit.read(from: auditURL)
+        XCTAssertEqual(receipts.count, 1)
+        XCTAssertEqual(receipts.first?.id, receipt.id)
+        XCTAssertEqual(receipts.first?.capabilityId, "iot.device.action.invoke")
+        XCTAssertEqual(receipts.first?.riskTier, .high)
+        XCTAssertEqual(receipts.first?.interruptiveApproval, true)
+        XCTAssertEqual(receipts.first?.outcome, .approvalRecordedDispatchUnavailable)
+    }
+
+    func testHighRiskActionAuditWritesDenialReceipts() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let auditURL = root.appendingPathComponent(AppHighRiskActionAudit.filename)
+        let app = AppRecord(
+            slug: "secrets-panel",
+            name: "Secrets Panel",
+            declaredCapabilities: ["secrets.broker"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "secrets.read"))
+
+        _ = try AppHighRiskActionAudit.append(
+            app: app,
+            descriptor: descriptor,
+            action: "secrets.read",
+            decision: .denied,
+            outcome: .denied,
+            reason: descriptor.summary,
+            auditURL: auditURL
+        )
+
+        let receipts = try AppHighRiskActionAudit.read(from: auditURL)
+        XCTAssertEqual(receipts.count, 1)
+        XCTAssertEqual(receipts[0].capabilityId, "secrets.broker")
+        XCTAssertEqual(receipts[0].riskTier, .critical)
+        XCTAssertEqual(receipts[0].decision, .denied)
+        XCTAssertEqual(receipts[0].outcome, .denied)
+    }
+
     func testImportedOrUnknownCapabilitiesRequireReview() {
         let record = AppRecord(
             slug: "imported-panel",

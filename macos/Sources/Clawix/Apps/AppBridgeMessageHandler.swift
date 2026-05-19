@@ -217,11 +217,25 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             reject(requestId: requestId, message: "App not found")
             return
         }
-        if record.permissions.allowedTools.contains(tool) {
-            // Even pre-approved, v1 has no agent-tool dispatch path.
-            reject(requestId: requestId, message: "Agent tool dispatch is not available in this build")
+        guard case .allowed = AppCapabilityCatalog.activationGate(for: record) else {
+            reject(requestId: requestId, message: "App activation review is required before using this capability")
             return
         }
+        guard let descriptor = AppHighRiskActionAudit.descriptor(forTool: tool) else {
+            reject(requestId: requestId, message: "Unknown high-risk tool capability: \(tool)")
+            return
+        }
+        guard descriptor.customAppAccess == .approvalRequired else {
+            reject(requestId: requestId, message: "Tool capability does not require approval: \(descriptor.id)")
+            return
+        }
+        let declared = record.effectiveDeclaredCapabilities
+        guard declared.contains(descriptor.id) else {
+            reject(requestId: requestId, message: "App manifest does not declare capability: \(descriptor.id)")
+            return
+        }
+
+        let auditURL = highRiskActionAuditURL(for: record)
         // Sheet-based approval lives in `AppPermissionPrompt`; AppSurfaceView
         // wires it up. The handler just routes the request id back.
         let prompt = AppPermissionPrompt.shared
@@ -232,21 +246,55 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             guard let self else { return }
             switch decision {
             case .denied:
+                self.writeHighRiskReceipt(
+                    app: record,
+                    descriptor: descriptor,
+                    tool: tool,
+                    decision: .denied,
+                    outcome: .denied,
+                    auditURL: auditURL
+                )
                 self.reject(requestId: requestId, message: "User denied tool: \(tool)")
             case .once, .always:
-                if decision == .always {
-                    self.persistAllowedTool(tool: tool)
-                }
+                self.writeHighRiskReceipt(
+                    app: record,
+                    descriptor: descriptor,
+                    tool: tool,
+                    decision: decision == .always ? .approvedAlways : .approvedOnce,
+                    outcome: .approvalRecordedDispatchUnavailable,
+                    auditURL: auditURL
+                )
                 self.reject(requestId: requestId, message: "Agent tool dispatch is not available in this build")
             }
         }
     }
 
-    private func persistAllowedTool(tool: String) {
-        guard var record = appsStore.record(forSlug: slug) else { return }
-        guard !record.permissions.allowedTools.contains(tool) else { return }
-        record.permissions.allowedTools.append(tool)
-        try? appsStore.update(record)
+    private func highRiskActionAuditURL(for record: AppRecord) -> URL {
+        appsStore.directory(forSlug: record.slug)
+            .appendingPathComponent(AppHighRiskActionAudit.filename, isDirectory: false)
+    }
+
+    private func writeHighRiskReceipt(
+        app: AppRecord,
+        descriptor: AppCapabilityDescriptor,
+        tool: String,
+        decision: AppHighRiskActionReceipt.Decision,
+        outcome: AppHighRiskActionReceipt.Outcome,
+        auditURL: URL
+    ) {
+        do {
+            _ = try AppHighRiskActionAudit.append(
+                app: app,
+                descriptor: descriptor,
+                action: tool,
+                decision: decision,
+                outcome: outcome,
+                reason: descriptor.summary,
+                auditURL: auditURL
+            )
+        } catch {
+            NSLog("Clawix app high-risk action audit write failed: \(error.localizedDescription)")
+        }
     }
 
     private func applyTitle(_ title: String) {
