@@ -9,14 +9,7 @@ struct TestConnectionButton: View {
     let apiKey: String
     let baseURL: URL?
 
-    @State private var state: TestState = .idle
-
-    enum TestState: Equatable {
-        case idle
-        case running
-        case ok
-        case failed(String)
-    }
+    @StateObject private var probe = ProviderConnectionProbe()
 
     var body: some View {
         HStack(spacing: 8) {
@@ -39,15 +32,18 @@ struct TestConnectionButton: View {
                 )
             }
             .buttonStyle(.plain)
-            .disabled(state == .running)
+            .disabled(probe.state == .running)
 
             statusLabel
+        }
+        .onDisappear {
+            probe.cancel()
         }
     }
 
     @ViewBuilder
     private var statusLabel: some View {
-        switch state {
+        switch probe.state {
         case .idle:
             EmptyView()
         case .running:
@@ -73,7 +69,7 @@ struct TestConnectionButton: View {
     }
 
     private var stateIcon: String {
-        switch state {
+        switch probe.state {
         case .ok: return "check"
         case .failed: return "x"
         default: return "zap"
@@ -81,51 +77,6 @@ struct TestConnectionButton: View {
     }
 
     private func run() {
-        state = .running
-        Task { @MainActor in
-            do {
-                let credentials = AIAccountCredentials(apiKey: apiKey)
-                let model = ProviderCatalog.defaultModel(for: .chat, in: providerId)
-                    ?? ProviderCatalog.definition(for: providerId)?.models.first
-                guard let model else {
-                    state = .failed("No model available for this provider.")
-                    return
-                }
-                let probeAccount = ProviderAccount(
-                    id: UUID(),
-                    providerId: providerId,
-                    label: "probe",
-                    authMethod: .apiKey,
-                    isEnabled: true,
-                    createdAt: Date(),
-                    baseURLOverride: baseURL
-                )
-                let client: any AIClient
-                switch providerId {
-                case .openai:
-                    client = OpenAIClient(account: probeAccount, model: model, credentials: credentials)
-                case .anthropic:
-                    client = AnthropicClient(account: probeAccount, model: model, credentials: credentials)
-                case .googleGemini:
-                    client = GoogleGeminiClient(account: probeAccount, model: model, credentials: credentials)
-                case .ollama:
-                    client = OllamaClient(account: probeAccount, model: model, credentials: credentials)
-                case .githubCopilot:
-                    state = .failed("Use 'Sign in with GitHub' to test Copilot.")
-                    return
-                case .cursor:
-                    client = CursorClient(account: probeAccount, model: model, credentials: credentials)
-                case .groq, .deepseek, .togetherAI, .glmZhipu, .xai, .mistral,
-                     .openrouter, .cerebras, .fireworks, .openAICompatibleCustom:
-                    client = OpenAICompatibleClient(account: probeAccount, model: model, credentials: credentials)
-                }
-                try await client.testConnection()
-                state = .ok
-            } catch let error as AIClientError {
-                state = .failed(error.errorDescription ?? "Failed.")
-            } catch {
-                state = .failed(error.localizedDescription)
-            }
-        }
+        probe.run(providerId: providerId, apiKey: apiKey, baseURL: baseURL)
     }
 }
