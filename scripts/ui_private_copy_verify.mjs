@@ -6,6 +6,7 @@ import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import { isCriticalMacosSurfaceCoverage, privateSliceOption, sliceLabel } from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -45,8 +46,8 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private copy verification",
-  allowedFlags: ["--require-approved", "--include-pending", "--root"],
-  optionsWithValues: ["--root"],
+  allowedFlags: ["--require-approved", "--include-pending", "--root", "--slice"],
+  optionsWithValues: ["--root", "--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
@@ -139,6 +140,7 @@ function runFailureSelfTests() {
 
 const requireApproved = hasFlag("--require-approved");
 const includePending = hasFlag("--include-pending");
+const privateSlice = privateSliceOption(args, fail, "UI private copy verification");
 const copyInventory = readJson("docs/ui/copy.inventory.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
 const alias = copyInventory?.privateSnapshotAlias || "private-codex-ui-copy-snapshots";
@@ -177,10 +179,11 @@ let pending = 0;
 
 const surfaceCoverage = readJson(copyInventory?.surfaceCoverageSource || "docs/ui/surface-baseline-coverage.manifest.json");
 for (const [index, coverage] of (surfaceCoverage?.coverage || []).entries()) {
+  if (privateSlice && !isCriticalMacosSurfaceCoverage(coverage)) continue;
   const label = `surface coverage ${coverage.coverageId || index}`;
   if (coverage.baselineStatus !== "approved") {
     pending += 1;
-    if (!includePending) {
+    if (!includePending && !privateSlice) {
       if (requireApproved) fail(`${label} is pending approved copy snapshot`);
       continue;
     }
@@ -216,6 +219,7 @@ for (const [index, coverage] of (surfaceCoverage?.coverage || []).entries()) {
 
 const surfaces = Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : [];
 for (const [index, surface] of surfaces.entries()) {
+  if (privateSlice && !criticalMacosProtectedSurface(surface)) continue;
   const label = `protected surface ${surface.id || index}`;
   if (requireApproved && !surface.approvedBy) {
     fail(`${label} is missing approvedBy`);
@@ -259,4 +263,12 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`UI private copy verification passed (${verified} snapshots, ${pending} pending)`);
+console.log(`UI private copy verification passed (${verified} snapshots, ${pending} pending${sliceLabel(privateSlice)})`);
+
+function criticalMacosProtectedSurface(surface) {
+  return typeof surface?.copySnapshotReference === "string" && (
+    surface.copySnapshotReference.includes(":surfaces/macos/macos-root-chrome") ||
+    surface.copySnapshotReference.includes(":surfaces/macos/macos-sidebar") ||
+    surface.copySnapshotReference.includes(":surfaces/macos/macos-chat-and-composer")
+  );
+}

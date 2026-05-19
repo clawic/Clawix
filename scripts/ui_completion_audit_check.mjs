@@ -263,7 +263,7 @@ if (args.has("--simulate-missing-critical-macos-slice-progress") && Array.isArra
 }
 if (args.has("--simulate-missing-critical-macos-slice-audit-row")) {
   audit = audit.replace(
-    "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline, geometry, and copy roots after explicit approval. |\n",
+    "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with private baseline, geometry, and copy roots after explicit approval. |\n",
     "",
   );
 }
@@ -426,43 +426,43 @@ const criticalMacosSlice = {
   decisions: {
     initial_scope: {
       evidenceTypes: ["surface-baseline", "surface-geometry", "surface-copy"],
-      auditRow: "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline, geometry, and copy roots after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+      auditRow: "| `initial_scope` | critical macOS `surface-baseline`, `surface-geometry`, `surface-copy` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with private baseline, geometry, and copy roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     enforcement_mode: {
       evidenceTypes: ["rendered-drift"],
-      auditRow: "| `enforcement_mode` | critical macOS `rendered-drift` evidence captured privately | Run `scripts/ui_private_drift_verify.mjs --require-approved` with the private drift root after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_drift_verify.mjs --require-approved",
+      auditRow: "| `enforcement_mode` | critical macOS `rendered-drift` evidence captured privately | Run `scripts/ui_private_drift_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with the private drift root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_drift_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     visual_baselines_location: {
       evidenceTypes: ["critical-flow-baseline", "surface-baseline", "rendered-drift"],
-      auditRow: "| `visual_baselines_location` | critical macOS `critical-flow-baseline`, `surface-baseline`, and `rendered-drift` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and drift roots after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+      auditRow: "| `visual_baselines_location` | critical macOS `critical-flow-baseline`, `surface-baseline`, and `rendered-drift` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with private baseline and drift roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     alignment_validation: {
       evidenceTypes: ["surface-geometry", "pattern-geometry", "surface-baseline"],
-      auditRow: "| `alignment_validation` | critical macOS `surface-geometry`, `pattern-geometry`, and `surface-baseline` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private geometry and baseline roots after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+      auditRow: "| `alignment_validation` | critical macOS `surface-geometry`, `pattern-geometry`, and `surface-baseline` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with private geometry and baseline roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     copy_governance: {
       evidenceTypes: ["surface-copy"],
-      auditRow: "| `copy_governance` | critical macOS `surface-copy` evidence captured privately | Run `scripts/ui_private_copy_verify.mjs --require-approved` with the private copy root after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_copy_verify.mjs --require-approved",
+      auditRow: "| `copy_governance` | critical macOS `surface-copy` evidence captured privately | Run `scripts/ui_private_copy_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with the private copy root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_copy_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     v1_pattern_set: {
       evidenceTypes: ["surface-baseline", "pattern-geometry"],
-      auditRow: "| `v1_pattern_set` | critical macOS `surface-baseline` and `pattern-geometry` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved` with private baseline and geometry roots after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+      auditRow: "| `v1_pattern_set` | critical macOS `surface-baseline` and `pattern-geometry` evidence captured privately | Run `scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with private baseline and geometry roots after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     perf_budget_source: {
       evidenceTypes: ["performance-budget"],
-      auditRow: "| `perf_budget_source` | available critical macOS `performance-budget` evidence captured privately | Run `scripts/ui_private_performance_budget_verify.mjs --require-approved` with the private baseline root after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_performance_budget_verify.mjs --require-approved",
+      auditRow: "| `perf_budget_source` | available critical macOS `performance-budget` evidence captured privately | Run `scripts/ui_private_performance_budget_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with the private baseline root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_performance_budget_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
     size_contracts: {
       evidenceTypes: ["pattern-geometry"],
-      auditRow: "| `size_contracts` | critical macOS `pattern-geometry` evidence captured privately | Run `scripts/ui_private_geometry_verify.mjs --require-approved` with the private geometry root after explicit approval. |",
-      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_geometry_verify.mjs --require-approved",
+      auditRow: "| `size_contracts` | critical macOS `pattern-geometry` evidence captured privately | Run `scripts/ui_private_geometry_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19` with the private geometry root after explicit approval. |",
+      blockingCommand: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_geometry_verify.mjs --require-approved --slice critical-macos-ui-evidence-2026-05-19",
     },
   },
 };

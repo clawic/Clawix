@@ -6,6 +6,7 @@ import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import { isCriticalMacosFlow, privateSliceOption, sliceLabel } from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -45,8 +46,8 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private performance budget verification",
-  allowedFlags: ["--require-approved", "--include-pending", "--root"],
-  optionsWithValues: ["--root"],
+  allowedFlags: ["--require-approved", "--include-pending", "--root", "--slice"],
+  optionsWithValues: ["--root", "--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
@@ -143,6 +144,7 @@ function runFailureSelfTests() {
 
 const requireApproved = hasFlag("--require-approved");
 const includePending = hasFlag("--include-pending");
+const privateSlice = privateSliceOption(args, fail, "UI private performance budget verification");
 const budgets = readJson("docs/ui/performance-budgets.registry.json");
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
@@ -181,10 +183,11 @@ let verified = 0;
 let pending = 0;
 
 for (const [index, flow] of (budgets?.flows || []).entries()) {
+  if (privateSlice && !isCriticalMacosFlow(flow)) continue;
   const label = `${flow.platform || "unknown"}:${flow.id || index}`;
   if (flow.budgetStatus === "pending-approved-measurement" || flow.baselineStatus !== "approved") {
     pending += 1;
-    if (!includePending) {
+    if (!includePending && !privateSlice) {
       if (requireApproved) fail(`${label} is pending approved performance measurement`);
       continue;
     }
@@ -223,4 +226,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`UI private performance budget verification passed (${verified} verified, ${pending} pending)`);
+console.log(`UI private performance budget verification passed (${verified} verified, ${pending} pending${sliceLabel(privateSlice)})`);

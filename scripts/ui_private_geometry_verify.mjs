@@ -6,6 +6,7 @@ import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import { isCriticalMacosPatternSnapshot, isCriticalMacosSurfaceCoverage, privateSliceOption, sliceLabel } from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -45,8 +46,8 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private geometry verification",
-  allowedFlags: ["--require-approved", "--include-pending", "--root"],
-  optionsWithValues: ["--root"],
+  allowedFlags: ["--require-approved", "--include-pending", "--root", "--slice"],
+  optionsWithValues: ["--root", "--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
@@ -164,6 +165,7 @@ if (!hasFlag("--require-approved")) {
 }
 
 const includePending = hasFlag("--include-pending");
+const privateSlice = privateSliceOption(args, fail, "UI private geometry verification");
 if (!isSelfTest && !includePending) {
   runFailureSelfTests();
 }
@@ -195,7 +197,7 @@ const surfaceEvidenceFilename = manifest?.surfaceEvidenceFilename || "surface-ge
 const requiredEvidence = Array.isArray(manifest?.requiredEvidenceFields) ? manifest.requiredEvidenceFields : [];
 const requiredSurfaceEvidence = Array.isArray(manifest?.requiredSurfaceEvidenceFields) ? manifest.requiredSurfaceEvidenceFields : [];
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
-const skipEvidence = manifest?.status !== "approved" && !includePending;
+const skipEvidence = manifest?.status !== "approved" && !includePending && !privateSlice;
 let verifiedPatterns = 0;
 let verifiedSurfaces = 0;
 
@@ -206,6 +208,7 @@ if (skipEvidence) {
     const pattern = readJson(`docs/ui/pattern-registry/patterns/${patternId}.pattern.json`);
     for (const platform of pattern?.platforms || []) {
       if (!requiredPlatforms.has(platform)) continue;
+      if (privateSlice && !isCriticalMacosPatternSnapshot(patternId, platform)) continue;
       const evidencePath = path.join(privateRoot, platform, patternId, evidenceFilename);
       const label = `${platform}:${patternId}`;
       const evidence = readJsonFile(evidencePath, `${label} ${evidenceFilename}`);
@@ -229,6 +232,7 @@ if (skipEvidence) {
   }
 
   for (const [index, entry] of (surfaceCoverage?.coverage || []).entries()) {
+    if (privateSlice && !isCriticalMacosSurfaceCoverage(entry)) continue;
     const label = `surface:${entry?.platform || "unknown"}:${entry?.coverageId || index}`;
     const suffix = splitReference(entry?.geometryEvidenceReference, privateGeometryAlias, `${label}.geometryEvidenceReference`);
     if (!suffix) continue;
@@ -256,4 +260,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`UI private geometry verification passed (${verifiedPatterns} pattern snapshots; ${verifiedSurfaces} surface snapshots)`);
+console.log(`UI private geometry verification passed (${verifiedPatterns} pattern snapshots; ${verifiedSurfaces} surface snapshots${sliceLabel(privateSlice)})`);

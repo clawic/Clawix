@@ -5,6 +5,14 @@ import os from "node:os";
 import path from "node:path";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import {
+  isCriticalMacosDriftReport,
+  isCriticalMacosFlow,
+  isCriticalMacosPatternSnapshot,
+  isCriticalMacosSurfaceCoverage,
+  privateSliceOption,
+  sliceLabel,
+} from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -45,11 +53,29 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private evidence verification",
-  allowedFlags: ["--require-approved", "--include-pending"],
+  allowedFlags: ["--require-approved", "--include-pending", "--slice"],
+  optionsWithValues: ["--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
 const includePending = hasFlag("--include-pending");
+const privateSlice = privateSliceOption(args, fail, "UI private evidence verification");
+
+function isCriticalMacosEvidenceItem(item) {
+  if (["surface-baseline", "surface-geometry", "surface-copy"].includes(item?.type)) {
+    return isCriticalMacosSurfaceCoverage({ platform: item.platform, coverageId: item.id });
+  }
+  if (["critical-flow-baseline", "performance-budget"].includes(item?.type)) {
+    return isCriticalMacosFlow({ platform: item.platform, id: item.id });
+  }
+  if (item?.type === "pattern-geometry") {
+    return isCriticalMacosPatternSnapshot(item.id, item.platform);
+  }
+  if (item?.type === "rendered-drift") {
+    return isCriticalMacosDriftReport({ platform: item.platform, coverageId: item.id });
+  }
+  return false;
+}
 
 function runEvidencePlan() {
   const result = spawnSync(process.execPath, [path.join(rootDir, "scripts/ui_private_evidence_plan_check.mjs"), "--json"], {
@@ -526,7 +552,8 @@ const plan = runEvidencePlan();
 const allowedFindingCategories = loadAllowedFindingCategories();
 const aliasRoots = loadPrivateAliasRoots();
 const aliases = new Set();
-for (const item of plan.evidence || []) {
+const evidencePlanItems = (plan.evidence || []).filter((item) => !privateSlice || isCriticalMacosEvidenceItem(item));
+for (const item of evidencePlanItems) {
   const parsed = splitReference(item.privateReference);
   if (!parsed) {
     fail(`${item.type}:${item.platform}:${item.id} has invalid privateReference`);
@@ -589,14 +616,14 @@ const publicRegistries = {
 };
 
 let verified = 0;
-for (const item of plan.evidence || []) {
+for (const item of evidencePlanItems) {
   const parsed = splitReference(item.privateReference);
   if (!parsed) continue;
   const root = roots.get(parsed.alias);
   if (!root) continue;
   const evidencePath = path.join(root, parsed.suffix.split("/").join(path.sep), item.evidenceFilename);
   const label = `${item.type}:${item.platform}:${item.id}`;
-  if (!verifyPublicApprovalState(item, publicRegistries, label)) continue;
+  if (!privateSlice && !verifyPublicApprovalState(item, publicRegistries, label)) continue;
   const evidence = readJson(evidencePath, `${label} ${item.evidenceFilename}`);
   if (!evidence) continue;
 
@@ -643,4 +670,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`UI private evidence verification passed (${verified} evidence records)`);
+console.log(`UI private evidence verification passed (${verified} evidence records${sliceLabel(privateSlice)})`);

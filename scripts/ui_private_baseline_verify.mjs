@@ -6,6 +6,7 @@ import path from "node:path";
 import { privateRootEnvForAlias } from "./ui_private_root_contract.mjs";
 import { assertApprovedScopeMetadata, loadApprovedScopeContract } from "./ui_private_approved_scope_contract.mjs";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import { isCriticalMacosFlow, isCriticalMacosSurfaceCoverage, privateSliceOption, sliceLabel } from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const manifestPath = "docs/ui/private-baselines.manifest.json";
@@ -46,8 +47,8 @@ function hasFlag(name) {
 
 enforcePrivateVerifierArgs(args, {
   label: "UI private baseline verification",
-  allowedFlags: ["--require-approved", "--include-pending", "--root"],
-  optionsWithValues: ["--root"],
+  allowedFlags: ["--require-approved", "--include-pending", "--root", "--slice"],
+  optionsWithValues: ["--root", "--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
@@ -117,6 +118,7 @@ function runFailureSelfTests() {
 
 const requireApproved = hasFlag("--require-approved");
 const verifyPending = hasFlag("--include-pending");
+const privateSlice = privateSliceOption(args, fail, "UI private baseline verification");
 const manifest = readJson(manifestPath);
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
 const alias = manifest?.privateRootAlias || "private-codex-ui-baselines";
@@ -157,15 +159,16 @@ let pendingSurfaces = 0;
 
 if (Array.isArray(manifest?.flows)) {
   for (const flow of manifest.flows) {
+    if (privateSlice && !isCriticalMacosFlow(flow)) continue;
     const label = `${flow.platform}:${flow.id}`;
     if (flow.baselineStatus !== "approved") {
       pendingFlows += 1;
-      if (!verifyPending) {
+      if (!verifyPending && !privateSlice) {
         if (requireApproved) fail(`${label} is pending approved baseline capture`);
         continue;
       }
     }
-    if (requireApproved && flow.baselineStatus !== "approved") {
+    if (requireApproved && flow.baselineStatus !== "approved" && !privateSlice) {
       fail(`${label} is not approved`);
       continue;
     }
@@ -200,15 +203,16 @@ if (Array.isArray(manifest?.flows)) {
 
 if (Array.isArray(surfaceCoverage?.coverage)) {
   for (const [index, entry] of surfaceCoverage.coverage.entries()) {
+    if (privateSlice && !isCriticalMacosSurfaceCoverage(entry)) continue;
     const label = `surface:${entry.platform || "unknown"}:${entry.coverageId || index}`;
     if (entry.baselineStatus !== "approved") {
       pendingSurfaces += 1;
-      if (!verifyPending) {
+      if (!verifyPending && !privateSlice) {
         if (requireApproved) fail(`${label} is pending approved surface baseline capture`);
         continue;
       }
     }
-    if (requireApproved && entry.baselineStatus !== "approved") {
+    if (requireApproved && entry.baselineStatus !== "approved" && !privateSlice) {
       fail(`${label} is not approved`);
       continue;
     }
@@ -249,5 +253,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `UI private baseline verification passed (${verifiedFlows} flow baselines, ${verifiedSurfaces} surface baselines; ${pendingFlows} flow pending, ${pendingSurfaces} surface pending)`,
+  `UI private baseline verification passed (${verifiedFlows} flow baselines, ${verifiedSurfaces} surface baselines; ${pendingFlows} flow pending, ${pendingSurfaces} surface pending${sliceLabel(privateSlice)})`,
 );

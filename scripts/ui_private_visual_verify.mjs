@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { enforcePrivateVerifierArgs } from "./ui_private_verifier_args.mjs";
+import { privateSliceOption } from "./ui_private_slice_scope.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
@@ -14,6 +15,12 @@ function hasFlag(name) {
 
 const requireApproved = hasFlag("--require-approved");
 const includePending = hasFlag("--include-pending");
+const sliceIndex = args.indexOf("--slice");
+const sliceArgs = sliceIndex === -1 ? [] : ["--slice", args[sliceIndex + 1] || ""];
+privateSliceOption(args, (message) => {
+  console.error(message);
+  process.exit(1);
+}, "UI private visual verification");
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
@@ -32,9 +39,17 @@ function parseDelegate(command) {
   if (!delegateArgs.includes("--require-approved")) {
     throw new Error(`private visual delegate must require approval: ${command}`);
   }
+  if (sliceArgs.length > 0 && script === "scripts/ui_private_debt_audit_verify.mjs") {
+    return null;
+  }
+  const delegateSliceArgs = sliceArgs.length > 0 && script !== "scripts/ui_private_approval_verify.mjs" ? sliceArgs : [];
   return {
     script,
-    args: [...delegateArgs, ...(includePending && !delegateArgs.includes("--include-pending") ? ["--include-pending"] : [])],
+    args: [
+      ...delegateArgs,
+      ...(includePending && !delegateArgs.includes("--include-pending") ? ["--include-pending"] : []),
+      ...delegateSliceArgs,
+    ],
   };
 }
 
@@ -78,7 +93,8 @@ if (!requireApproved) {
 }
 enforcePrivateVerifierArgs(args, {
   label: "UI private visual verification",
-  allowedFlags: ["--require-approved", "--include-pending"],
+  allowedFlags: ["--require-approved", "--include-pending", "--slice"],
+  optionsWithValues: ["--slice"],
   testOnlyFlags: ["--include-pending"],
 });
 
@@ -94,6 +110,7 @@ if (missingRoots.length > 0) {
 
 for (const delegateCommand of delegateCommands) {
   const delegate = parseDelegate(delegateCommand);
+  if (!delegate) continue;
   const result = spawnSync(process.execPath, [path.join(rootDir, delegate.script), ...delegate.args], {
     cwd: rootDir,
     env: process.env,
