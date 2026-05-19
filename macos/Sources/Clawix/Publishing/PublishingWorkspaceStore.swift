@@ -9,6 +9,11 @@ import Combine
 /// mutations flow through this object.
 @MainActor
 final class PublishingWorkspaceStore: ObservableObject {
+    typealias ListPostsOperation = @MainActor (
+        _ workspaceId: String,
+        _ from: Date,
+        _ to: Date
+    ) async throws -> [ClawJSPublishingClient.Post]
 
     enum State: Equatable {
         case idle
@@ -25,18 +30,39 @@ final class PublishingWorkspaceStore: ObservableObject {
     @Published private(set) var lastError: String?
 
     let client: ClawJSPublishingClient
+    private let listPostsOperation: ListPostsOperation
 
     nonisolated static let workspaceKey = "clawix.publishing.workspaceId.v1"
 
     private var bootstrapTask: Task<Void, Never>?
+    private var calendarRefreshTask: Task<Void, Never>?
+    private var calendarRefreshGeneration = 0
     private var supervisorObserver: AnyCancellable?
 
-    init(client: ClawJSPublishingClient? = nil) {
-        self.client = client ?? ClawJSPublishingClient()
-        let stored = UserDefaults.standard.string(forKey: Self.workspaceKey)
+    init(
+        client: ClawJSPublishingClient? = nil,
+        listPostsOperation: ListPostsOperation? = nil,
+        attachSupervisor: Bool = true,
+        initialState: State = .idle,
+        workspaceId initialWorkspaceId: String? = nil
+    ) {
+        let resolvedClient = client ?? ClawJSPublishingClient()
+        self.client = resolvedClient
+        self.listPostsOperation = listPostsOperation ?? { workspaceId, from, to in
+            try await resolvedClient.listPosts(workspaceId: workspaceId, from: from, to: to)
+        }
+        let stored = initialWorkspaceId ?? UserDefaults.standard.string(forKey: Self.workspaceKey)
         self.workspaceId = (stored?.isEmpty == false) ? stored : nil
         self.client.workspaceId = self.workspaceId
-        attachSupervisorObserver()
+        self.state = initialState
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
+    }
+
+    deinit {
+        bootstrapTask?.cancel()
+        calendarRefreshTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -84,6 +110,9 @@ final class PublishingWorkspaceStore: ObservableObject {
     func reset(reason: String) {
         bootstrapTask?.cancel()
         bootstrapTask = nil
+        calendarRefreshGeneration += 1
+        calendarRefreshTask?.cancel()
+        calendarRefreshTask = nil
         families = []
         channels = []
         posts = []
@@ -134,12 +163,29 @@ final class PublishingWorkspaceStore: ObservableObject {
 
     func refreshCalendar(from: Date, to: Date) async {
         guard let workspaceId, state == .ready else { return }
+        let generation = nextCalendarRefreshGeneration()
+        calendarRefreshTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runCalendarRefresh(workspaceId: workspaceId, from: from, to: to, generation: generation)
+        }
+        calendarRefreshTask = task
+        await task.value
+    }
+
+    private func runCalendarRefresh(workspaceId: String, from: Date, to: Date, generation: Int) async {
         do {
-            posts = try await client.listPosts(workspaceId: workspaceId, from: from, to: to)
+            let posts = try await listPostsOperation(workspaceId, from, to)
+            try Task.checkCancellation()
+            guard isCurrentCalendarRefresh(generation) else { return }
+            self.posts = posts
             lastError = nil
+        } catch is CancellationError {
         } catch {
+            guard isCurrentCalendarRefresh(generation) else { return }
             lastError = error.localizedDescription
         }
+        finishCalendarRefreshIfCurrent(generation)
     }
 
     // MARK: - Mutations
@@ -208,5 +254,19 @@ final class PublishingWorkspaceStore: ObservableObject {
                 }
             }
         }
+    }
+
+    private func nextCalendarRefreshGeneration() -> Int {
+        calendarRefreshGeneration += 1
+        return calendarRefreshGeneration
+    }
+
+    private func isCurrentCalendarRefresh(_ generation: Int) -> Bool {
+        calendarRefreshGeneration == generation
+    }
+
+    private func finishCalendarRefreshIfCurrent(_ generation: Int) {
+        guard isCurrentCalendarRefresh(generation) else { return }
+        calendarRefreshTask = nil
     }
 }
