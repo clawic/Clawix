@@ -50,6 +50,9 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
     var variant: AppVariantMetadata?
     /// Replacement policy for sensitive built-in routes.
     var protectedRoutePolicy: AppProtectedRoutePolicy?
+    /// Review receipt for imported/marketplace apps after the user has seen
+    /// the origin/capability/risk ficha.
+    var activationReview: AppActivationReview?
 
     /// Default to a fresh UUID + sane defaults so the agent can call
     /// `AppRecord(slug:name:)` and start writing files immediately.
@@ -73,7 +76,8 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         surfaceKind: AppSurfaceKind = .web,
         routeTarget: String? = nil,
         variant: AppVariantMetadata? = nil,
-        protectedRoutePolicy: AppProtectedRoutePolicy = .blocked
+        protectedRoutePolicy: AppProtectedRoutePolicy = .blocked,
+        activationReview: AppActivationReview? = nil
     ) {
         self.id = id
         self.slug = slug
@@ -95,6 +99,7 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         self.routeTarget = routeTarget
         self.variant = variant
         self.protectedRoutePolicy = protectedRoutePolicy
+        self.activationReview = activationReview
     }
 
     var effectiveDeclaredCapabilities: [String] { declaredCapabilities ?? [] }
@@ -148,5 +153,17 @@ struct AppVariantMetadata: Codable, Equatable, Hashable {
         self.originalRoute = originalRoute
         self.defaultScope = defaultScope
         self.notes = notes
+    }
+}
+
+struct AppActivationReview: Codable, Equatable, Hashable {
+    var approvedAt: Date
+    var approvedBy: String
+    var riskMapSource: String
+
+    init(approvedAt: Date = Date(), approvedBy: String = NSFullUserName(), riskMapSource: String) {
+        self.approvedAt = approvedAt
+        self.approvedBy = approvedBy
+        self.riskMapSource = riskMapSource
     }
 }

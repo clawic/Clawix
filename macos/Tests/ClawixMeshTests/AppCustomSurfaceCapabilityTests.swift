@@ -78,6 +78,43 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(riskMap.requiresActivationReview)
     }
 
+    func testImportedAppsRequireReviewBeforeActivation() {
+        let record = AppRecord(
+            slug: "imported-known-panel",
+            name: "Imported Known Panel",
+            declaredCapabilities: ["search.query", "db.query"],
+            originClass: .imported
+        )
+
+        switch AppCapabilityCatalog.activationGate(for: record) {
+        case .reviewRequired(let riskMap):
+            XCTAssertTrue(riskMap.requiresActivationReview)
+        default:
+            XCTFail("Imported app should require review before activation")
+        }
+
+        let reviewed = AppRecord(
+            slug: "imported-known-panel",
+            name: "Imported Known Panel",
+            declaredCapabilities: ["search.query", "db.query"],
+            originClass: .imported,
+            activationReview: AppActivationReview(approvedBy: "Test", riskMapSource: AppCapabilityCatalog.source)
+        )
+
+        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: reviewed), .allowed)
+    }
+
+    func testUnknownCapabilitiesBlockActivation() {
+        let record = AppRecord(
+            slug: "unknown-panel",
+            name: "Unknown Panel",
+            declaredCapabilities: ["unknown.future"],
+            originClass: .imported
+        )
+
+        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedUnknownCapabilities(["unknown.future"]))
+    }
+
     func testProtectedRoutesCannotBeReplacedWithoutVariantFallback() {
         let blocked = AppRecord(
             slug: "secrets-panel",

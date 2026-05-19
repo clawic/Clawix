@@ -39,6 +39,12 @@ struct AppCapabilityRiskMap: Codable, Equatable, Hashable {
     var source: String
 }
 
+enum AppActivationGate: Equatable {
+    case allowed
+    case reviewRequired(AppCapabilityRiskMap)
+    case blockedUnknownCapabilities([String])
+}
+
 enum AppCapabilityCatalog {
     static let source = "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
 
@@ -167,6 +173,17 @@ enum AppCapabilityCatalog {
         case .none:
             return ["Protected route \(target) requires blocked or variantOnly policy."]
         }
+    }
+
+    static func activationGate(for record: AppRecord) -> AppActivationGate {
+        let riskMap = riskMap(for: record)
+        if !riskMap.unknown.isEmpty {
+            return .blockedUnknownCapabilities(riskMap.unknown)
+        }
+        if riskMap.requiresActivationReview && record.activationReview == nil {
+            return .reviewRequired(riskMap)
+        }
+        return .allowed
     }
 }
 

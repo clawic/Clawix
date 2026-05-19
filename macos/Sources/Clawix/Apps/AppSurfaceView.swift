@@ -32,18 +32,29 @@ struct AppSurfaceView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             if let record {
-                AppSurfaceWebView(
-                    appId: appId,
-                    slug: record.slug,
-                    appName: record.name,
-                    reloadToken: reloadToken,
-                    loadState: $loadState,
-                    appsStore: appsStore,
-                    appState: appState
-                )
-                .id("\(record.slug)-\(reloadToken)")
+                switch AppCapabilityCatalog.activationGate(for: record) {
+                case .allowed:
+                    AppSurfaceWebView(
+                        appId: appId,
+                        slug: record.slug,
+                        appName: record.name,
+                        reloadToken: reloadToken,
+                        loadState: $loadState,
+                        appsStore: appsStore,
+                        appState: appState
+                    )
+                    .id("\(record.slug)-\(reloadToken)")
 
-                surfaceStateOverlay
+                    surfaceStateOverlay
+                case .reviewRequired(let riskMap):
+                    AppActivationReviewGate(
+                        record: record,
+                        riskMap: riskMap,
+                        onActivate: { approve(record, riskMap: riskMap) }
+                    )
+                case .blockedUnknownCapabilities(let unknown):
+                    AppActivationBlockedGate(record: record, unknownCapabilities: unknown)
+                }
 
                 surfaceToolbar
                     .padding(.top, 12)
@@ -115,6 +126,14 @@ struct AppSurfaceView: View {
                 .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
         )
         .foregroundColor(Color(white: 0.92))
+    }
+
+    private func approve(_ record: AppRecord, riskMap: AppCapabilityRiskMap) {
+        var updated = record
+        updated.activationReview = AppActivationReview(riskMapSource: riskMap.source)
+        try? appsStore.update(updated)
+        loadState = .loading
+        reloadToken &+= 1
     }
 
     @ViewBuilder
@@ -303,6 +322,84 @@ private enum AppSurfaceLoadState: Equatable {
     case loading
     case ready
     case failed(String)
+}
+
+private struct AppActivationReviewGate: View {
+    let record: AppRecord
+    let riskMap: AppCapabilityRiskMap
+    let onActivate: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(record.name)
+                .font(BodyFont.system(size: 22, wght: 650))
+                .foregroundColor(Palette.textPrimary)
+            Text("Review this app before activation.")
+                .font(BodyFont.system(size: 14, wght: 450))
+                .foregroundColor(Color(white: 0.68))
+
+            VStack(alignment: .leading, spacing: 10) {
+                riskLine(title: "Origin", value: record.effectiveOriginClass.rawValue)
+                riskLine(title: "Ordinary access", value: riskMap.ordinaryAccess.joined(separator: ", ").nilIfEmpty ?? "None")
+                riskLine(title: "Approval required", value: riskMap.approvalRequired.joined(separator: ", ").nilIfEmpty ?? "None")
+                riskLine(title: "High risk", value: riskMap.highRisk.joined(separator: ", ").nilIfEmpty ?? "None")
+            }
+
+            HStack(spacing: 10) {
+                Button("Activate") { onActivate() }
+                    .buttonStyle(.borderedProminent)
+                Text("High-risk actions still require approval when used.")
+                    .font(BodyFont.system(size: 12.5, wght: 400))
+                    .foregroundColor(Color(white: 0.56))
+            }
+        }
+        .padding(28)
+        .frame(maxWidth: 560, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.background)
+    }
+
+    private func riskLine(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(BodyFont.system(size: 12, wght: 650))
+                .foregroundColor(Color(white: 0.82))
+            Text(value)
+                .font(BodyFont.system(size: 13, wght: 400))
+                .foregroundColor(Color(white: 0.62))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct AppActivationBlockedGate: View {
+    let record: AppRecord
+    let unknownCapabilities: [String]
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "lock.trianglebadge.exclamationmark")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+            Text("App cannot be activated")
+                .font(BodyFont.system(size: 18, wght: 650))
+                .foregroundColor(Palette.textPrimary)
+            Text("\(record.name) requests unsupported capabilities: \(unknownCapabilities.joined(separator: ", ")).")
+                .font(BodyFont.system(size: 13.5, wght: 400))
+                .foregroundColor(Color(white: 0.66))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 460)
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.background)
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
 }
 
 extension AppSurfaceView {
