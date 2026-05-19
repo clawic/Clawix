@@ -45,6 +45,8 @@ final class DriveStore: ObservableObject {
     private var bootGeneration = 0
     private var mutationGeneration = 0
     private var thumbnailGeneration = 0
+    private var mutationCancels: [UUID: () -> Void] = [:]
+    private var thumbnailCancels: [UUID: () -> Void] = [:]
     private let adminTokenOperation: AdminTokenOperation
     private var supervisorObserver: AnyCancellable?
 
@@ -69,6 +71,8 @@ final class DriveStore: ObservableObject {
         refreshTask?.cancel()
         bootstrapTask?.cancel()
         bootstrapTimeoutTask?.cancel()
+        for cancel in mutationCancels.values { cancel() }
+        for cancel in thumbnailCancels.values { cancel() }
     }
 
     // MARK: - Lifecycle
@@ -129,7 +133,11 @@ final class DriveStore: ObservableObject {
         refreshTask?.cancel()
         refreshTask = nil
         mutationGeneration += 1
+        for cancel in mutationCancels.values { cancel() }
+        mutationCancels.removeAll()
         thumbnailGeneration += 1
+        for cancel in thumbnailCancels.values { cancel() }
+        thumbnailCancels.removeAll()
         realtime.stop()
     }
 
@@ -230,7 +238,9 @@ final class DriveStore: ObservableObject {
     func createFolder(name: String, parentId: String?) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.createFolder(name: name, parentId: parentId ?? currentParentId)
+            _ = try await performMutation {
+                try await self.client.createFolder(name: name, parentId: parentId ?? self.currentParentId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -244,7 +254,13 @@ final class DriveStore: ObservableObject {
     func upload(fileURL: URL, parentId: String?, allowOverwrite: Bool = false) async -> Result<ClawJSDriveClient.DriveItemDetail, ClawJSDriveClient.Error> {
         let generation = currentMutationGeneration()
         do {
-            let detail = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId, duplicatePolicy: allowOverwrite ? nil : "report")
+            let detail = try await performMutation {
+                try await self.client.upload(
+                    filePath: fileURL,
+                    parentId: parentId ?? self.currentParentId,
+                    duplicatePolicy: allowOverwrite ? nil : "report"
+                )
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return .failure(.transport(CancellationError())) }
             await refreshIfCurrentMutation(generation)
@@ -264,7 +280,14 @@ final class DriveStore: ObservableObject {
     func uploadPasted(_ data: Data, suggestedName: String, mimeType: String, parentId: String?) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.uploadBytes(data, fileName: suggestedName, mimeType: mimeType, parentId: parentId ?? currentParentId)
+            _ = try await performMutation {
+                try await self.client.uploadBytes(
+                    data,
+                    fileName: suggestedName,
+                    mimeType: mimeType,
+                    parentId: parentId ?? self.currentParentId
+                )
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -277,7 +300,9 @@ final class DriveStore: ObservableObject {
     func trash(_ itemId: String) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.trashItem(itemId)
+            _ = try await performMutation {
+                try await self.client.trashItem(itemId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -290,7 +315,9 @@ final class DriveStore: ObservableObject {
     func restore(_ itemId: String) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.restoreItem(itemId)
+            _ = try await performMutation {
+                try await self.client.restoreItem(itemId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -303,7 +330,9 @@ final class DriveStore: ObservableObject {
     func delete(_ itemId: String) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.deleteItem(itemId)
+            _ = try await performMutation {
+                try await self.client.deleteItem(itemId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -316,10 +345,14 @@ final class DriveStore: ObservableObject {
     func replaceDuplicate(existingId: String, fileURL: URL, parentId: String?) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.trashItem(existingId)
+            _ = try await performMutation {
+                try await self.client.trashItem(existingId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
-            _ = try await client.upload(filePath: fileURL, parentId: parentId ?? currentParentId, duplicatePolicy: nil)
+            _ = try await performMutation {
+                try await self.client.upload(filePath: fileURL, parentId: parentId ?? self.currentParentId, duplicatePolicy: nil)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -336,7 +369,9 @@ final class DriveStore: ObservableObject {
     func star(_ itemId: String, starred: Bool) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.updateItem(itemId, name: nil, starred: starred, parentId: nil)
+            _ = try await performMutation {
+                try await self.client.updateItem(itemId, name: nil, starred: starred, parentId: nil)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -349,7 +384,9 @@ final class DriveStore: ObservableObject {
     func rename(_ itemId: String, newName: String) async {
         let generation = currentMutationGeneration()
         do {
-            _ = try await client.updateItem(itemId, name: newName, starred: nil, parentId: nil)
+            _ = try await performMutation {
+                try await self.client.updateItem(itemId, name: newName, starred: nil, parentId: nil)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -362,7 +399,9 @@ final class DriveStore: ObservableObject {
     func markViewed(_ itemId: String) async {
         let generation = currentMutationGeneration()
         do {
-            try await client.markViewed(itemId)
+            try await performMutation {
+                try await self.client.markViewed(itemId)
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(generation) else { return }
             await refreshIfCurrentMutation(generation)
@@ -378,7 +417,9 @@ final class DriveStore: ObservableObject {
         if let cached = thumbnailCache[itemId] { return cached }
         let generation = thumbnailGeneration
         do {
-            let data = try await client.loadThumbnailBytes(itemId, size: size)
+            let data = try await performThumbnailLoad {
+                try await self.client.loadThumbnailBytes(itemId, size: size)
+            }
             try Task.checkCancellation()
             guard isCurrentThumbnail(generation) else { return nil }
             thumbnailCache[itemId] = data
@@ -456,8 +497,44 @@ final class DriveStore: ObservableObject {
         lastError = error.localizedDescription
     }
 
+    private func performMutation<T>(
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        let id = UUID()
+        let task = Task {
+            try await operation()
+        }
+        mutationCancels[id] = { task.cancel() }
+        defer {
+            mutationCancels.removeValue(forKey: id)
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
     private func isCurrentThumbnail(_ generation: Int) -> Bool {
         thumbnailGeneration == generation
+    }
+
+    private func performThumbnailLoad<T>(
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        let id = UUID()
+        let task = Task {
+            try await operation()
+        }
+        thumbnailCancels[id] = { task.cancel() }
+        defer {
+            thumbnailCancels.removeValue(forKey: id)
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
     }
 
     private func nextBootGeneration() -> Int {

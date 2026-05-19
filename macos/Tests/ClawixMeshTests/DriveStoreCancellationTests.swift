@@ -113,9 +113,11 @@ final class DriveStoreCancellationTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightCreateFolderRefresh() async {
+    func testCancelSurfaceWorkCancelsInFlightCreateFolder() async {
         let createStarted = expectation(description: "Drive folder create started")
-        let createReturned = expectation(description: "Drive folder create returned")
+        let createCancelled = expectation(description: "Drive folder create cancelled")
+        let createReturned = expectation(description: "Drive folder create should not return")
+        createReturned.isInverted = true
         let client = FakeDriveClient()
         var refreshCalls = 0
         client.onListItems = { _, _, _ in
@@ -124,9 +126,14 @@ final class DriveStoreCancellationTests: XCTestCase {
         }
         client.onCreateFolder = { name, _ in
             createStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            createReturned.fulfill()
-            return makeDriveDetail(id: name)
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                createReturned.fulfill()
+                return makeDriveDetail(id: name)
+            } catch is CancellationError {
+                createCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
 
@@ -135,16 +142,18 @@ final class DriveStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [createReturned], timeout: 1)
+        await fulfillment(of: [createCancelled, createReturned], timeout: 1)
         await task.value
         XCTAssertNil(store.lastError)
         XCTAssertEqual(refreshCalls, 0)
         XCTAssertTrue(store.items.isEmpty)
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightUploadError() async {
+    func testCancelSurfaceWorkCancelsInFlightUpload() async {
         let uploadStarted = expectation(description: "Drive upload started")
-        let uploadReturned = expectation(description: "Drive upload returned")
+        let uploadCancelled = expectation(description: "Drive upload cancelled")
+        let uploadReturned = expectation(description: "Drive upload should not return")
+        uploadReturned.isInverted = true
         let client = FakeDriveClient()
         var refreshCalls = 0
         client.onListItems = { _, _, _ in
@@ -153,9 +162,14 @@ final class DriveStoreCancellationTests: XCTestCase {
         }
         client.onUpload = { _, _, _ in
             uploadStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            uploadReturned.fulfill()
-            throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                uploadReturned.fulfill()
+                throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+            } catch is CancellationError {
+                uploadCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
 
@@ -166,7 +180,7 @@ final class DriveStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [uploadReturned], timeout: 1)
+        await fulfillment(of: [uploadCancelled, uploadReturned], timeout: 1)
         let result = await task.value
         guard case .failure = result else {
             XCTFail("Cancelled upload unexpectedly succeeded")
@@ -176,10 +190,12 @@ final class DriveStoreCancellationTests: XCTestCase {
         XCTAssertEqual(refreshCalls, 0)
     }
 
-    func testCancelSurfaceWorkSuppressesReplaceDuplicateErrorRefresh() async {
+    func testCancelSurfaceWorkCancelsReplaceDuplicateUpload() async {
         let trashReturned = expectation(description: "Drive duplicate trash returned")
         let uploadStarted = expectation(description: "Drive duplicate replacement started")
-        let uploadReturned = expectation(description: "Drive duplicate replacement returned")
+        let uploadCancelled = expectation(description: "Drive duplicate replacement cancelled")
+        let uploadReturned = expectation(description: "Drive duplicate replacement should not return")
+        uploadReturned.isInverted = true
         let client = FakeDriveClient()
         var refreshCalls = 0
         client.onListItems = { _, _, _ in
@@ -192,9 +208,14 @@ final class DriveStoreCancellationTests: XCTestCase {
         }
         client.onUpload = { _, _, _ in
             uploadStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            uploadReturned.fulfill()
-            throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                uploadReturned.fulfill()
+                throw ClawJSDriveClient.Error.http(status: 500, body: "stale")
+            } catch is CancellationError {
+                uploadCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
 
@@ -209,21 +230,28 @@ final class DriveStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [uploadReturned], timeout: 1)
+        await fulfillment(of: [uploadCancelled, uploadReturned], timeout: 1)
         await task.value
         XCTAssertNil(store.lastError)
         XCTAssertEqual(refreshCalls, 0)
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightThumbnailCacheWrite() async {
+    func testCancelSurfaceWorkCancelsInFlightThumbnailLoad() async {
         let thumbnailStarted = expectation(description: "Drive thumbnail load started")
-        let thumbnailReturned = expectation(description: "Drive thumbnail load returned")
+        let thumbnailCancelled = expectation(description: "Drive thumbnail load cancelled")
+        let thumbnailReturned = expectation(description: "Drive thumbnail load should not return")
+        thumbnailReturned.isInverted = true
         let client = FakeDriveClient()
         client.onLoadThumbnailBytes = { id, _ in
             thumbnailStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            thumbnailReturned.fulfill()
-            return Data(id.utf8)
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                thumbnailReturned.fulfill()
+                return Data(id.utf8)
+            } catch is CancellationError {
+                thumbnailCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = DriveStore(client: client, realtime: FakeDriveRealtimeClient(), attachSupervisor: false)
 
@@ -234,7 +262,7 @@ final class DriveStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [thumbnailReturned], timeout: 1)
+        await fulfillment(of: [thumbnailCancelled, thumbnailReturned], timeout: 1)
         let result = await task.value
         XCTAssertNil(result)
         XCTAssertNil(store.thumbnailCache["late-thumbnail"])
