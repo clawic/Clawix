@@ -127,7 +127,11 @@ final class AppsStore: ObservableObject {
             lastOpenedAt: nil,
             createdAt: now,
             updatedAt: now,
-            createdByChatId: createdByChatId
+            createdByChatId: createdByChatId,
+            declaredCapabilities: [],
+            originClass: .localUserAuthored,
+            surfaceKind: .web,
+            protectedRoutePolicy: .blocked
         )
         try writeManifest(record)
         // Seed a placeholder index.html so the user can open the app

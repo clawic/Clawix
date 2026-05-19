@@ -36,6 +36,20 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
     /// Which chat created the app, if any. Used by `clawix.agent.sendMessage`
     /// to route messages back to the originating thread.
     var createdByChatId: UUID?
+    /// SDK-first capability ids requested by the app manifest. Empty means
+    /// ordinary storage/UI capabilities only.
+    var declaredCapabilities: [String]?
+    /// Where the app came from. Imported and marketplace apps need review
+    /// before activation; local user-authored apps still show their risk map.
+    var originClass: AppOriginClass?
+    /// Rendering/runtime lane for this surface.
+    var surfaceKind: AppSurfaceKind?
+    /// Optional sidebar or built-in route target when the app is a variant.
+    var routeTarget: String?
+    /// Variant/fork metadata. The original route must remain reachable.
+    var variant: AppVariantMetadata?
+    /// Replacement policy for sensitive built-in routes.
+    var protectedRoutePolicy: AppProtectedRoutePolicy?
 
     /// Default to a fresh UUID + sane defaults so the agent can call
     /// `AppRecord(slug:name:)` and start writing files immediately.
@@ -53,7 +67,13 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         lastOpenedAt: Date? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        createdByChatId: UUID? = nil
+        createdByChatId: UUID? = nil,
+        declaredCapabilities: [String] = [],
+        originClass: AppOriginClass = .localUserAuthored,
+        surfaceKind: AppSurfaceKind = .web,
+        routeTarget: String? = nil,
+        variant: AppVariantMetadata? = nil,
+        protectedRoutePolicy: AppProtectedRoutePolicy = .blocked
     ) {
         self.id = id
         self.slug = slug
@@ -69,7 +89,18 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.createdByChatId = createdByChatId
+        self.declaredCapabilities = declaredCapabilities
+        self.originClass = originClass
+        self.surfaceKind = surfaceKind
+        self.routeTarget = routeTarget
+        self.variant = variant
+        self.protectedRoutePolicy = protectedRoutePolicy
     }
+
+    var effectiveDeclaredCapabilities: [String] { declaredCapabilities ?? [] }
+    var effectiveOriginClass: AppOriginClass { originClass ?? .localUserAuthored }
+    var effectiveSurfaceKind: AppSurfaceKind { surfaceKind ?? .web }
+    var effectiveProtectedRoutePolicy: AppProtectedRoutePolicy { protectedRoutePolicy ?? .blocked }
 }
 
 /// Sandbox knobs gating what an app can do at runtime. Defaults closed:
@@ -88,4 +119,34 @@ struct AppPermissions: Codable, Equatable, Hashable {
     var allowedTools: [String]
 
     static let defaults = AppPermissions(internet: false, callAgent: true, allowedTools: [])
+}
+
+enum AppOriginClass: String, Codable, Equatable, Hashable {
+    case localUserAuthored
+    case imported
+    case marketplace
+    case system
+}
+
+enum AppSurfaceKind: String, Codable, Equatable, Hashable {
+    case web
+    case swiftDeclarative
+}
+
+enum AppProtectedRoutePolicy: String, Codable, Equatable, Hashable {
+    case none
+    case variantOnly
+    case blocked
+}
+
+struct AppVariantMetadata: Codable, Equatable, Hashable {
+    var originalRoute: String
+    var defaultScope: String?
+    var notes: String?
+
+    init(originalRoute: String, defaultScope: String? = nil, notes: String? = nil) {
+        self.originalRoute = originalRoute
+        self.defaultScope = defaultScope
+        self.notes = notes
+    }
 }

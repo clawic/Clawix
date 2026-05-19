@@ -82,6 +82,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 // apps fail loudly until the tools are wired.
                 let tool = (payload["tool"] as? String) ?? ""
                 try gateToolCall(tool: tool, requestId: requestId)
+            case "capabilities.list":
+                resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
+            case "capabilities.riskMap":
+                guard let record = appsStore.record(forSlug: slug) else {
+                    reject(requestId: requestId, message: "App not found")
+                    return
+                }
+                resolve(requestId: requestId, value: AppCapabilityCatalog.riskMap(for: record).bridgeValue)
             case "ui.setTitle":
                 let title = (payload["title"] as? String) ?? ""
                 applyTitle(title)

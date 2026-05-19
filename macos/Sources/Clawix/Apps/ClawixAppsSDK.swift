@@ -87,6 +87,10 @@ let ClawixAppsSDKJS = #"""
         return send('agent.callTool', { tool: tool, args: args });
       }
     },
+    capabilities: {
+      list: function () { return send('capabilities.list'); },
+      riskMap: function () { return send('capabilities.riskMap'); }
+    },
     ui: {
       setTitle: function (title) { return send('ui.setTitle', { title: String(title || '') }); },
       setBadge: function (text) {

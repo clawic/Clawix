@@ -23,6 +23,7 @@ struct AppSurfaceView: View {
     @EnvironmentObject var appState: AppState
     @ObservedObject private var appsStore: AppsStore = .shared
     @State private var reloadToken: Int = 0
+    @State private var loadState: AppSurfaceLoadState = .loading
 
     private var record: AppRecord? {
         appsStore.record(forId: appId)
@@ -36,10 +37,13 @@ struct AppSurfaceView: View {
                     slug: record.slug,
                     appName: record.name,
                     reloadToken: reloadToken,
+                    loadState: $loadState,
                     appsStore: appsStore,
                     appState: appState
                 )
                 .id("\(record.slug)-\(reloadToken)")
+
+                surfaceStateOverlay
 
                 surfaceToolbar
                     .padding(.top, 12)
@@ -51,6 +55,14 @@ struct AppSurfaceView: View {
         .background(Palette.background)
         .onAppear {
             if let record { appsStore.markOpened(record) }
+        }
+        .onChange(of: reloadToken) { _, _ in
+            loadState = .loading
+        }
+        .task(id: reloadToken) {
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard !Task.isCancelled, loadState == .loading else { return }
+            loadState = .failed("The app surface took too long to load.")
         }
     }
 
@@ -73,6 +85,7 @@ struct AppSurfaceView: View {
     private var surfaceToolbar: some View {
         HStack(spacing: 8) {
             Button {
+                loadState = .loading
                 reloadToken &+= 1
             } label: {
                 Image(systemName: "arrow.clockwise")
@@ -103,6 +116,54 @@ struct AppSurfaceView: View {
         )
         .foregroundColor(Color(white: 0.92))
     }
+
+    @ViewBuilder
+    private var surfaceStateOverlay: some View {
+        switch loadState {
+        case .loading:
+            VStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Loading app")
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color(white: 0.72))
+            }
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(white: 0.08).opacity(0.86))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+            )
+            .allowsHitTesting(false)
+        case .failed(let message):
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                Text("App failed to load")
+                    .font(BodyFont.system(size: 17, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                Text(message)
+                    .font(BodyFont.system(size: 13.5, wght: 400))
+                    .foregroundColor(Color(white: 0.66))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 360)
+                Button("Reload") {
+                    loadState = .loading
+                    reloadToken &+= 1
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Palette.background.opacity(0.92))
+        case .ready:
+            EmptyView()
+        }
+    }
 }
 
 private struct AppSurfaceWebView: NSViewRepresentable {
@@ -110,14 +171,16 @@ private struct AppSurfaceWebView: NSViewRepresentable {
     let slug: String
     let appName: String
     let reloadToken: Int
+    @Binding var loadState: AppSurfaceLoadState
     let appsStore: AppsStore
     let appState: AppState
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(loadState: $loadState)
     }
 
     func makeNSView(context: Context) -> WKWebView {
+        loadState = .loading
         let config = WKWebViewConfiguration()
         let preferences = WKPreferences()
         config.preferences = preferences
@@ -181,6 +244,11 @@ private struct AppSurfaceWebView: NSViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var schemeHandler: AppURLSchemeHandler?
         var bridgeHandler: AppBridgeMessageHandler?
+        var loadState: Binding<AppSurfaceLoadState>
+
+        init(loadState: Binding<AppSurfaceLoadState>) {
+            self.loadState = loadState
+        }
 
         // Intercept navigation: anything that isn't `clawix-app://` is
         // shipped to the macOS default browser. Inside-scheme navs
@@ -204,6 +272,18 @@ private struct AppSurfaceWebView: NSViewRepresentable {
             decisionHandler(.cancel)
         }
 
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            loadState.wrappedValue = .ready
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            loadState.wrappedValue = .failed(error.localizedDescription)
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            loadState.wrappedValue = .failed(error.localizedDescription)
+        }
+
         // target=_blank windows: open in the system browser instead of
         // attempting to instantiate a popup inside the surface.
         func webView(_ webView: WKWebView,
@@ -217,6 +297,12 @@ private struct AppSurfaceWebView: NSViewRepresentable {
             return nil
         }
     }
+}
+
+private enum AppSurfaceLoadState: Equatable {
+    case loading
+    case ready
+    case failed(String)
 }
 
 extension AppSurfaceView {
