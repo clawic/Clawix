@@ -45,8 +45,9 @@ final class DatabaseManager: ObservableObject {
     /// the user changes filter quickly.
     private var inFlight: [String: Task<Void, Never>] = [:]
     private var realtimeRefreshTasks: [String: Task<Void, Never>] = [:]
+    private var recordRefreshGeneration: [String: Int] = [:]
 
-    private(set) var client = DatabaseClient()
+    private(set) var client: any DatabaseClienting
     let realtime = DatabaseRealtimeClient()
 
     private let userDefaults: UserDefaults
@@ -56,9 +57,18 @@ final class DatabaseManager: ObservableObject {
     private var supervisorObserver: AnyCancellable?
     private var bootstrapGeneration: UUID?
 
-    init(userDefaults: UserDefaults = .standard) {
+    init(
+        userDefaults: UserDefaults = .standard,
+        client: (any DatabaseClienting)? = nil,
+        attachSupervisor: Bool = true,
+        initialState: State = .loading,
+        initialCollections: [DBCollection] = []
+    ) {
         self.userDefaults = userDefaults
+        self.client = client ?? DatabaseClient()
         self.isDisabled = ClawixEnv.isEnabled(ClawixEnv.databaseDisable)
+        self.state = initialState
+        self.collections = initialCollections
         loadFilterStates()
         realtime.onEvent = { [weak self] event in
             Task { @MainActor [weak self] in
@@ -69,7 +79,9 @@ final class DatabaseManager: ObservableObject {
             state = .failed("Database service is disabled for this launch.")
             return
         }
-        attachSupervisorObserver()
+        if attachSupervisor {
+            attachSupervisorObserver()
+        }
     }
 
     /// Observes `ClawJSServiceManager.shared.snapshots[.database]` and
@@ -179,14 +191,28 @@ final class DatabaseManager: ObservableObject {
     func setFilterState(_ state: DBFilterState, for collection: String) {
         filterByCollection[collection] = state
         persistFilterStates()
-        Task { await refreshRecords(collection: collection) }
+        requestRefreshRecords(collection: collection)
+    }
+
+    func requestRefreshRecords(collection name: String) {
+        inFlight[name]?.cancel()
+        inFlight[name] = Task { @MainActor [weak self] in
+            await self?.refreshRecords(collection: name)
+        }
+    }
+
+    func cancelRecordRefresh(collection name: String) {
+        inFlight[name]?.cancel()
+        inFlight[name] = nil
+        recordRefreshGeneration[name, default: 0] += 1
     }
 
     func refreshRecords(collection name: String) async {
         guard let _ = collection(named: name) else { return }
         guard case .ready = state else { return }
         let filter = filterState(for: name)
-        inFlight[name]?.cancel()
+        recordRefreshGeneration[name, default: 0] += 1
+        let generation = recordRefreshGeneration[name, default: 0]
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
@@ -195,12 +221,23 @@ final class DatabaseManager: ObservableObject {
                     collection: name,
                     filter: filter.backendFilterJSON(),
                     sort: filter.sortString(),
-                    limit: 500
+                    limit: 500,
+                    offset: 0
                 )
+                try Task.checkCancellation()
+                guard self.recordRefreshGeneration[name] == generation else { return }
                 let post = filter.clientSidePostFilter(records: response.items)
                 self.recordsByCollection[name] = post
+                self.inFlight[name] = nil
+            } catch is CancellationError {
+                if self.recordRefreshGeneration[name] == generation {
+                    self.inFlight[name] = nil
+                }
             } catch {
-                self.lastError = error.localizedDescription
+                if self.recordRefreshGeneration[name] == generation {
+                    self.lastError = error.localizedDescription
+                    self.inFlight[name] = nil
+                }
             }
         }
         inFlight[name] = task

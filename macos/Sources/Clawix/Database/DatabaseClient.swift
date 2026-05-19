@@ -1,5 +1,46 @@
 import Foundation
 
+protocol DatabaseClienting {
+    var bearerToken: String? { get set }
+    var origin: URL { get }
+
+    func ensureNamespace(id: String, displayName: String?) async throws -> DBNamespace
+    func listCollections(namespaceId: String) async throws -> [DBCollection]
+    func updateCollection(
+        namespaceId: String,
+        name: String,
+        displayName: String,
+        fields: [DBFieldDefinition],
+        indexes: [DBIndexDefinition]
+    ) async throws -> DBCollection
+    func listRecords(
+        namespaceId: String,
+        collection: String,
+        filter: [String: Any]?,
+        sort: String?,
+        limit: Int?,
+        offset: Int?
+    ) async throws -> DBListResponse<DBRecord>
+    func createRecord(namespaceId: String, collection: String, data: [String: DBJSON]) async throws -> DBRecord
+    func updateRecord(namespaceId: String, collection: String, id: String, data: [String: DBJSON]) async throws -> DBRecord
+    func deleteRecord(namespaceId: String, collection: String, id: String) async throws -> Bool
+    func downloadFile(fileId: String) async throws -> Data
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        filename: String,
+        contentType: String,
+        data: Data
+    ) async throws -> DBFileAsset
+}
+
+extension DatabaseClienting {
+    func ensureNamespace(id: String) async throws -> DBNamespace {
+        try await ensureNamespace(id: id, displayName: nil)
+    }
+}
+
 /// Full HTTP client for the bundled `@clawjs/database` daemon.
 /// Wraps the REST surface exposed by `packages/clawjs-database/src/app.ts`.
 ///
@@ -389,3 +430,5 @@ struct DatabaseClient {
         }
     }
 }
+
+extension DatabaseClient: DatabaseClienting {}
