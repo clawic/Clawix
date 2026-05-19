@@ -143,6 +143,7 @@ let ClawixAppsSDKJS = #"""
     },
     capabilities: {
       list: function () { return send('capabilities.list'); },
+      contracts: function () { return send('capabilities.contracts'); },
       riskMap: function () { return send('capabilities.riskMap'); }
     },
     search: {

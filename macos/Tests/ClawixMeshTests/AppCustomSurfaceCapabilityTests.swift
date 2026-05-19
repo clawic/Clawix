@@ -406,7 +406,31 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
     func testInjectedAppsSdkExposesCapabilityInspection() {
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.list"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.contracts"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.riskMap"))
+    }
+
+    func testHostBridgeExposesCustomAppSDKContractPayload() throws {
+        let record = AppRecord(
+            slug: "dashboard",
+            name: "Dashboard",
+            createdByChatId: nil,
+            declaredCapabilities: ["search.query", "db.query", "resources.read", "actions.invoke"]
+        )
+        let payload = AppCapabilityCatalog.contractsBridgeValue(for: record)
+        XCTAssertEqual(payload["schemaVersion"] as? Int, 1)
+        XCTAssertEqual(payload["hostBridgeRole"] as? String, "sdk_host_bridge_contract_resource")
+        XCTAssertEqual(payload["richUiRuntime"] as? String, "sdk_host_bridge_not_cli_process")
+        XCTAssertEqual(payload["missingSchemaRefs"] as? [String], [])
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.search.query.v1") == true)
+        XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.customApp.request.partial.v1") == true)
+        let riskMap = try XCTUnwrap(payload["riskMap"] as? [String: Any])
+        XCTAssertEqual(riskMap["authorityModel"] as? String, "localWideReadsHighRiskApproval")
+        XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("db.query") == true)
+        XCTAssertTrue((riskMap["approvalRequired"] as? [String])?.contains("actions.invoke") == true)
+        let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
+        let resources = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.read" })
+        XCTAssertEqual(resources["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
     }
 
     func testInjectedAppsSdkExposesSearchAndDBContracts() {

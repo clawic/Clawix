@@ -222,6 +222,51 @@ enum AppCapabilityCatalog {
         }
         return .allowed
     }
+
+    static var schemaRefs: [String] {
+        [
+            dbQuerySchemaRef,
+            dbRecordsSchemaRef,
+            requestCancelSchemaRef,
+            requestPartialSchemaRef,
+            requestProgressSchemaRef,
+            resourcesPayloadSchemaRef,
+            resourcesReadSchemaRef,
+            searchQuerySchemaRef,
+            searchResultsSchemaRef
+        ].sorted()
+    }
+
+    static var referencedSchemaRefs: [String] {
+        Array(Set(descriptors.flatMap { descriptor in
+            [
+                descriptor.inputSchemaRef,
+                descriptor.outputSchemaRef,
+                descriptor.eventSchemaRefs?.cancel,
+                descriptor.eventSchemaRefs?.progress,
+                descriptor.eventSchemaRefs?.partial
+            ].compactMap { $0 }
+        })).sorted()
+    }
+
+    static var missingSchemaRefs: [String] {
+        let known = Set(schemaRefs)
+        return referencedSchemaRefs.filter { !known.contains($0) }.sorted()
+    }
+
+    static func contractsBridgeValue(for record: AppRecord) -> [String: Any] {
+        [
+            "schemaVersion": 1,
+            "source": source,
+            "hostBridgeRole": "sdk_host_bridge_contract_resource",
+            "richUiRuntime": "sdk_host_bridge_not_cli_process",
+            "schemaRefs": schemaRefs,
+            "referencedSchemaRefs": referencedSchemaRefs,
+            "missingSchemaRefs": missingSchemaRefs,
+            "riskMap": riskMap(for: record).bridgeValue,
+            "capabilities": descriptors.map(\.bridgeValue)
+        ]
+    }
 }
 
 extension AppCapabilityDescriptor {

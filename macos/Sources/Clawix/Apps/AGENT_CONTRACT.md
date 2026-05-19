@@ -94,6 +94,9 @@ That's it. The app shows up in the sidebar in <5s.
     the tool is in `permissions.allowedTools`. Currently always rejects
     until ClawJS tool dispatch is wired; the prompt records the user's
     approval for that request.
+  - `clawix.capabilities.{list,riskMap,contracts}` — visible capability
+    and SDK contract metadata for the current app, including schema refs,
+    redaction policy refs, and high-risk approval classification.
   - `clawix.search.query(opts)` and `clawix.db.query(opts)` — SDK bridge
     reads for framework Search/DB contracts with limits, cursors, facets,
     progress, cancellation, and shared redaction policy metadata.

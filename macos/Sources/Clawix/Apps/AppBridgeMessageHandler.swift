@@ -98,6 +98,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 try gateToolCall(tool: tool, requestId: requestId)
             case "capabilities.list":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
+            case "capabilities.contracts":
+                guard let record = appsStore.record(forSlug: slug) else {
+                    reject(requestId: requestId, message: "App not found")
+                    return
+                }
+                resolve(requestId: requestId, value: AppCapabilityCatalog.contractsBridgeValue(for: record))
             case "capabilities.riskMap":
                 guard let record = appsStore.record(forSlug: slug) else {
                     reject(requestId: requestId, message: "App not found")
