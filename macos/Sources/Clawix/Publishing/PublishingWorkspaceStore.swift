@@ -31,6 +31,10 @@ final class PublishingWorkspaceStore: ObservableObject {
     ) async throws -> ClawJSPublishingClient.ChannelAccount
     typealias DisconnectChannelOperation = @MainActor (_ workspaceId: String, _ accountId: String) async throws -> Bool
     typealias ProbeChannelOperation = @MainActor (_ workspaceId: String, _ accountId: String) async throws -> Bool
+    typealias CreatePostOperation = @MainActor (
+        _ workspaceId: String,
+        _ spec: ClawJSPublishingClient.PostSpec
+    ) async throws -> ClawJSPublishingClient.Post
 
     enum State: Equatable {
         case idle
@@ -55,6 +59,7 @@ final class PublishingWorkspaceStore: ObservableObject {
     private let connectChannelOperation: ConnectChannelOperation
     private let disconnectChannelOperation: DisconnectChannelOperation
     private let probeChannelOperation: ProbeChannelOperation
+    private let createPostOperation: CreatePostOperation
 
     nonisolated static let workspaceKey = "clawix.publishing.workspaceId.v1"
 
@@ -70,6 +75,8 @@ final class PublishingWorkspaceStore: ObservableObject {
     private var connectGenerations: [String: Int] = [:]
     private var channelActionTasks: [String: Task<Void, Never>] = [:]
     private var channelActionGenerations: [String: Int] = [:]
+    private var createPostTask: Task<Result<ClawJSPublishingClient.Post, Swift.Error>, Never>?
+    private var createPostGeneration = 0
     private var supervisorObserver: AnyCancellable?
 
     init(
@@ -82,6 +89,7 @@ final class PublishingWorkspaceStore: ObservableObject {
         connectChannelOperation: ConnectChannelOperation? = nil,
         disconnectChannelOperation: DisconnectChannelOperation? = nil,
         probeChannelOperation: ProbeChannelOperation? = nil,
+        createPostOperation: CreatePostOperation? = nil,
         attachSupervisor: Bool = true,
         initialState: State = .idle,
         workspaceId initialWorkspaceId: String? = nil
@@ -114,6 +122,9 @@ final class PublishingWorkspaceStore: ObservableObject {
         self.probeChannelOperation = probeChannelOperation ?? { workspaceId, accountId in
             try await resolvedClient.probeChannel(workspaceId: workspaceId, accountId: accountId)
         }
+        self.createPostOperation = createPostOperation ?? { workspaceId, spec in
+            try await resolvedClient.createPost(workspaceId: workspaceId, spec: spec)
+        }
         let stored = initialWorkspaceId ?? UserDefaults.standard.string(forKey: Self.workspaceKey)
         self.workspaceId = (stored?.isEmpty == false) ? stored : nil
         self.client.workspaceId = self.workspaceId
@@ -130,6 +141,7 @@ final class PublishingWorkspaceStore: ObservableObject {
         calendarRefreshTask?.cancel()
         for task in connectTasks.values { task.cancel() }
         for task in channelActionTasks.values { task.cancel() }
+        createPostTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -218,6 +230,9 @@ final class PublishingWorkspaceStore: ObservableObject {
         for task in channelActionTasks.values { task.cancel() }
         channelActionTasks.removeAll()
         channelActionGenerations.removeAll()
+        createPostGeneration += 1
+        createPostTask?.cancel()
+        createPostTask = nil
         families = []
         channels = []
         posts = []
@@ -447,9 +462,40 @@ final class PublishingWorkspaceStore: ObservableObject {
     @discardableResult
     func createPost(spec: ClawJSPublishingClient.PostSpec) async throws -> ClawJSPublishingClient.Post {
         guard let workspaceId else { throw ClawJSPublishingClient.Error.serviceNotReady }
-        let post = try await client.createPost(workspaceId: workspaceId, spec: spec)
-        posts.append(post)
-        return post
+        let generation = nextCreatePostGeneration()
+        createPostTask?.cancel()
+        let task = Task<Result<ClawJSPublishingClient.Post, Swift.Error>, Never> { @MainActor [weak self] in
+            guard let self else { return .failure(CancellationError()) }
+            return await self.runCreatePost(workspaceId: workspaceId, spec: spec, generation: generation)
+        }
+        createPostTask = task
+        switch await task.value {
+        case .success(let post): return post
+        case .failure(let error): throw error
+        }
+    }
+
+    private func runCreatePost(
+        workspaceId: String,
+        spec: ClawJSPublishingClient.PostSpec,
+        generation: Int
+    ) async -> Result<ClawJSPublishingClient.Post, Swift.Error> {
+        do {
+            let post = try await createPostOperation(workspaceId, spec)
+            try Task.checkCancellation()
+            guard isCurrentCreatePost(generation) else { return .failure(CancellationError()) }
+            posts.append(post)
+            lastError = nil
+            finishCreatePostIfCurrent(generation)
+            return .success(post)
+        } catch is CancellationError {
+            return .failure(CancellationError())
+        } catch {
+            guard isCurrentCreatePost(generation) else { return .failure(CancellationError()) }
+            lastError = error.localizedDescription
+            finishCreatePostIfCurrent(generation)
+            return .failure(error)
+        }
     }
 
     // MARK: - Supervisor wiring
@@ -572,5 +618,19 @@ final class PublishingWorkspaceStore: ObservableObject {
     private func finishChannelActionIfCurrent(key: String, generation: Int) {
         guard isCurrentChannelAction(key: key, generation: generation) else { return }
         channelActionTasks.removeValue(forKey: key)
+    }
+
+    private func nextCreatePostGeneration() -> Int {
+        createPostGeneration += 1
+        return createPostGeneration
+    }
+
+    private func isCurrentCreatePost(_ generation: Int) -> Bool {
+        createPostGeneration == generation
+    }
+
+    private func finishCreatePostIfCurrent(_ generation: Int) {
+        guard isCurrentCreatePost(generation) else { return }
+        createPostTask = nil
     }
 }

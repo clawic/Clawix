@@ -360,6 +360,95 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.lastError)
     }
 
+    func testResetCancelsInFlightCreatePost() async {
+        let createStarted = expectation(description: "Create post started")
+        let createCancelled = expectation(description: "Create post cancelled")
+        let store = PublishingWorkspaceStore(
+            createPostOperation: { _, _ in
+                createStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    createCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.post(id: "stale")
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let task = Task {
+            try await store.createPost(spec: Self.postSpec())
+        }
+        await fulfillment(of: [createStarted], timeout: 1)
+
+        store.reset(reason: "Publishing stopped")
+
+        await fulfillment(of: [createCancelled], timeout: 1)
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled post creation unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected create post error: \(error)")
+        }
+
+        XCTAssertTrue(store.posts.isEmpty)
+        XCTAssertEqual(store.state, .unavailable("Publishing stopped"))
+    }
+
+    func testStartingSecondCreatePostCancelsStaleCreate() async throws {
+        let staleStarted = expectation(description: "Stale create post started")
+        let staleCancelled = expectation(description: "Stale create post cancelled")
+        let freshStarted = expectation(description: "Fresh create post started")
+        var calls = 0
+        let store = PublishingWorkspaceStore(
+            createPostOperation: { _, _ in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    do {
+                        try await Task.sleep(nanoseconds: 5_000_000_000)
+                    } catch is CancellationError {
+                        staleCancelled.fulfill()
+                        throw CancellationError()
+                    }
+                    return Self.post(id: "stale")
+                }
+                freshStarted.fulfill()
+                return Self.post(id: "fresh")
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let first = Task {
+            try await store.createPost(spec: Self.postSpec())
+        }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        let second = Task {
+            try await store.createPost(spec: Self.postSpec())
+        }
+
+        await fulfillment(of: [staleCancelled, freshStarted], timeout: 1)
+        do {
+            _ = try await first.value
+            XCTFail("Stale create post unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected stale create post error: \(error)")
+        }
+        let post = try await second.value
+
+        XCTAssertEqual(post.id, "fresh")
+        XCTAssertEqual(store.posts.map(\.id), ["fresh"])
+        XCTAssertNil(store.lastError)
+    }
+
     private static func date(_ day: Int) -> Date {
         var components = DateComponents()
         components.calendar = Calendar(identifier: .gregorian)
@@ -379,6 +468,21 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
             publishedAt: nil,
             createdAt: 0,
             updatedAt: 0
+        )
+    }
+
+    private static func postSpec() -> ClawJSPublishingClient.PostSpec {
+        .init(
+            accounts: ["main"],
+            editorialStatus: "draft",
+            schedule: .unscheduled,
+            variants: [
+                .init(
+                    isOriginal: true,
+                    channelAccountId: nil,
+                    blocks: [.init(body: "Hello")]
+                )
+            ]
         )
     }
 
