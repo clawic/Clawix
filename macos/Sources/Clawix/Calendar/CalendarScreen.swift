@@ -11,6 +11,9 @@ struct CalendarScreen: View {
         }
         .background(CalendarTokens.Surface.window)
         .task { await store.bootstrap() }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
         .sheet(isPresented: showSheetBinding) {
             if let draft = store.editingDraft {
                 EventEditSheet(store: store,

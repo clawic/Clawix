@@ -16,6 +16,9 @@ struct ContactsScreen: View {
             }
             .background(ContactsTokens.Surface.window)
             .task { await store.bootstrap() }
+            .onDisappear {
+                store.cancelSurfaceWork()
+            }
 
             if store.isCreating {
                 modalScrim {

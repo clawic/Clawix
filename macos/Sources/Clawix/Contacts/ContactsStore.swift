@@ -69,6 +69,7 @@ final class ContactsStore: ObservableObject {
     @Published var editingSmartGroupID: String? = nil
 
     let backend: ContactsBackend
+    private var bootstrapGeneration = 0
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var writeTask: Task<Void, Never>?
@@ -95,8 +96,10 @@ final class ContactsStore: ObservableObject {
 
     func bootstrap() async {
         guard access == .unknown else { return }
+        let generation = nextBootstrapGeneration()
         access = .requesting
         let result = await backend.requestAccess()
+        guard isCurrentBootstrap(generation), !Task.isCancelled else { return }
         switch result {
         case .granted:
             access = .granted
@@ -105,6 +108,16 @@ final class ContactsStore: ObservableObject {
             access = .denied(reason)
         case .unavailable:
             access = .unavailable
+        }
+    }
+
+    func cancelSurfaceWork() {
+        bootstrapGeneration += 1
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        if access == .requesting {
+            access = .unknown
         }
     }
 
@@ -456,6 +469,15 @@ final class ContactsStore: ObservableObject {
     private func nextReloadGeneration() -> Int {
         reloadGeneration += 1
         return reloadGeneration
+    }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
     }
 
     private func isCurrentReload(_ generation: Int) -> Bool {

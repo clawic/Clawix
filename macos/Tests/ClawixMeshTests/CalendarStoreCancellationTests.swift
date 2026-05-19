@@ -4,6 +4,65 @@ import XCTest
 
 @MainActor
 final class CalendarStoreCancellationTests: XCTestCase {
+    func testCancelSurfaceWorkSuppressesInFlightBootstrap() async {
+        let accessStarted = expectation(description: "Calendar access request started")
+        let loadUnexpected = expectation(description: "Calendar reload should not run after surface cancellation")
+        loadUnexpected.isInverted = true
+        let backend = Backend()
+        backend.requestAccessHandler = {
+            accessStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            return .granted
+        }
+        backend.loadSourcesHandler = {
+            loadUnexpected.fulfill()
+            return [Self.source(id: "unexpected")]
+        }
+        let store = CalendarStore(backend: backend, calendar: Self.calendar)
+
+        let task = Task { await store.bootstrap() }
+        await fulfillment(of: [accessStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await task.value
+        await fulfillment(of: [loadUnexpected], timeout: 0.05)
+
+        XCTAssertEqual(store.access, .unknown)
+        XCTAssertTrue(store.sources.isEmpty)
+        XCTAssertTrue(store.events.isEmpty)
+    }
+
+    func testCancelSurfaceWorkCancelsInFlightReload() async {
+        let reloadStarted = expectation(description: "Calendar reload started")
+        let reloadCancelled = expectation(description: "Calendar reload cancelled")
+        let backend = Backend()
+        backend.loadSourcesHandler = {
+            reloadStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                reloadCancelled.fulfill()
+                return [Self.source(id: "cancelled")]
+            } catch {
+                return [Self.source(id: "failed")]
+            }
+            return [Self.source(id: "stale")]
+        }
+        let store = CalendarStore(backend: backend, calendar: Self.calendar)
+
+        let task = Task { await store.reload() }
+        await fulfillment(of: [reloadStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [reloadCancelled], timeout: 1)
+        await task.value
+
+        XCTAssertTrue(store.sources.isEmpty)
+        XCTAssertTrue(store.events.isEmpty)
+    }
+
     func testStartingSecondReloadCancelsStaleReload() async {
         let staleStarted = expectation(description: "Stale reload started")
         let staleCancelled = expectation(description: "Stale reload cancelled")

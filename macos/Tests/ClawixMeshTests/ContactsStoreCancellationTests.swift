@@ -4,6 +4,65 @@ import XCTest
 
 @MainActor
 final class ContactsStoreCancellationTests: XCTestCase {
+    func testCancelSurfaceWorkSuppressesInFlightBootstrap() async {
+        let accessStarted = expectation(description: "Contacts access request started")
+        let loadUnexpected = expectation(description: "Contacts reload should not run after surface cancellation")
+        loadUnexpected.isInverted = true
+        let backend = Backend()
+        backend.requestAccessHandler = {
+            accessStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            return .granted
+        }
+        backend.loadContactsHandler = {
+            loadUnexpected.fulfill()
+            return [Self.contact(id: "unexpected")]
+        }
+        let store = ContactsStore(backend: backend)
+
+        let task = Task { await store.bootstrap() }
+        await fulfillment(of: [accessStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await task.value
+        await fulfillment(of: [loadUnexpected], timeout: 0.05)
+
+        XCTAssertEqual(store.access, .unknown)
+        XCTAssertTrue(store.contacts.isEmpty)
+        XCTAssertNil(store.selectedContactID)
+    }
+
+    func testCancelSurfaceWorkCancelsInFlightReload() async {
+        let reloadStarted = expectation(description: "Contacts reload started")
+        let reloadCancelled = expectation(description: "Contacts reload cancelled")
+        let backend = Backend()
+        backend.loadContactsHandler = {
+            reloadStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                reloadCancelled.fulfill()
+                return [Self.contact(id: "cancelled")]
+            } catch {
+                return [Self.contact(id: "failed")]
+            }
+            return [Self.contact(id: "stale")]
+        }
+        let store = ContactsStore(backend: backend)
+
+        let task = Task { await store.reload() }
+        await fulfillment(of: [reloadStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [reloadCancelled], timeout: 1)
+        await task.value
+
+        XCTAssertTrue(store.contacts.isEmpty)
+        XCTAssertNil(store.selectedContactID)
+    }
+
     func testStartingSecondReloadCancelsStaleReload() async {
         let staleStarted = expectation(description: "Stale contacts reload started")
         let staleCancelled = expectation(description: "Stale contacts reload cancelled")

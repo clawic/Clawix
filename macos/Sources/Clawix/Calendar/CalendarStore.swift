@@ -53,6 +53,7 @@ final class CalendarStore: ObservableObject {
     private let backend: CalendarBackend
     private let calendar: Foundation.Calendar
     private let displayLocale: Locale
+    private var bootstrapGeneration = 0
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var writeTask: Task<CalendarWriteResult, Never>?
@@ -86,8 +87,10 @@ final class CalendarStore: ObservableObject {
 
     func bootstrap() async {
         guard access == .unknown else { return }
+        let generation = nextBootstrapGeneration()
         access = .requesting
         let result = await backend.requestAccess()
+        guard isCurrentBootstrap(generation), !Task.isCancelled else { return }
         switch result {
         case .granted:
             access = .granted
@@ -96,6 +99,16 @@ final class CalendarStore: ObservableObject {
             access = .denied(reason)
         case .unavailable:
             access = .unavailable
+        }
+    }
+
+    func cancelSurfaceWork() {
+        bootstrapGeneration += 1
+        reloadGeneration += 1
+        reloadTask?.cancel()
+        reloadTask = nil
+        if access == .requesting {
+            access = .unknown
         }
     }
 
@@ -357,6 +370,15 @@ final class CalendarStore: ObservableObject {
 
     var foundationCalendar: Foundation.Calendar { calendar }
     var localeForDisplay: Locale { displayLocale }
+
+    private func nextBootstrapGeneration() -> Int {
+        bootstrapGeneration += 1
+        return bootstrapGeneration
+    }
+
+    private func isCurrentBootstrap(_ generation: Int) -> Bool {
+        bootstrapGeneration == generation
+    }
 
     private func nextReloadGeneration() -> Int {
         reloadGeneration += 1
