@@ -82,6 +82,19 @@ AppleScript directly. Temporary native action exceptions live in
 `docs/native-action-broker-allowlist.json` with owner, reason, migration target,
 and expiry.
 
+Search host-native entrypoints keep Root Search and conversation search
+separate. `SearchEntrypointShortcutBroker` treats `Command-G` as the
+conversations-only `search.chat.current` binding and rejects attempts to bind
+Root Search to that chord or to Clawix's conversations-only `search` route.
+Root Search remains `external_pending` until a signed host supplies a distinct
+route target and validates the global shortcut.
+
+`native.system` Search ingestion is host-owned. Clawix's
+`NativeSystemSearchSourceBridge` builds bounded native snapshots through
+`MacControlActionBroker` and emits Search documents with brokered `hostBroker`
+actions; framework/Node indexing consumes those documents but does not read
+macOS state or execute native actions directly.
+
 The transport contract is the v1 host command contract. XPC is the final macOS
 transport. Unix socket and HTTP transports are allowed for development, tests,
 fixtures, and fallback behavior.
