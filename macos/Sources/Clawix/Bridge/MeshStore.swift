@@ -40,6 +40,8 @@ final class MeshStore: ObservableObject {
 
     private let client: any MeshClienting
     private var pollers: [String: Task<Void, Never>] = [:]
+    private var hostsRefreshCancel: (() -> Void)?
+    private var hostsMutationCancels: [HostsMutationKey: () -> Void] = [:]
     private var hostsRefreshGeneration: UInt64 = 0
     private var hostsMutationGeneration: UInt64 = 0
     nonisolated static let workspacesDefaultsKey = "ClawixMesh.RemoteWorkspaces.v1"
@@ -63,6 +65,16 @@ final class MeshStore: ObservableObject {
         }
     }
 
+    private enum HostsMutationKey: Hashable {
+        case pair
+        case upsertSshHost
+        case revokePeer(String)
+        case unrevokePeer(String)
+        case removeHost(String)
+        case addWorkspace
+        case mutationPeerRefresh
+    }
+
     /// `client` is overridable so the E2E suite can plug a fake daemon
     /// running on a port other than 24081. Production code uses the
     /// no-arg form.
@@ -72,6 +84,8 @@ final class MeshStore: ObservableObject {
     }
 
     deinit {
+        hostsRefreshCancel?()
+        for cancel in hostsMutationCancels.values { cancel() }
         for task in pollers.values { task.cancel() }
     }
 
@@ -82,6 +96,10 @@ final class MeshStore: ObservableObject {
     func cancelHostsSurfaceWork() {
         hostsRefreshGeneration &+= 1
         hostsMutationGeneration &+= 1
+        hostsRefreshCancel?()
+        hostsRefreshCancel = nil
+        for cancel in hostsMutationCancels.values { cancel() }
+        hostsMutationCancels.removeAll()
         isRefreshing = false
         lastPairingResult = nil
     }
@@ -100,10 +118,21 @@ final class MeshStore: ObservableObject {
                 isRefreshing = false
             }
         }
-        async let id = try? client.identity()
-        async let pp = try? client.peers()
-        async let ws = try? client.workspaces()
-        let (identity, peers, workspaces) = await (id, pp, ws)
+        let identity: NodeIdentity?
+        let peers: [PeerRecord]?
+        let workspaces: [RemoteWorkspace]?
+        do {
+            (identity, peers, workspaces) = try await performHostsRefresh(generation: generation) {
+                async let id = try? self.client.identity()
+                async let pp = try? self.client.peers()
+                async let ws = try? self.client.workspaces()
+                return await (id, pp, ws)
+            }
+        } catch {
+            guard isCurrentHostsRefreshOperation(generation) else { return }
+            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return
+        }
         guard isCurrentHostsRefreshOperation(generation) else { return }
         if let identity { self.identity = identity }
         if let peers { self.peers = peers }
@@ -125,7 +154,9 @@ final class MeshStore: ObservableObject {
 
     private func refreshPeersForRefresh(generation: UInt64) async {
         do {
-            let peers = try await client.peers()
+            let peers = try await performHostsRefresh(generation: generation) {
+                try await self.client.peers()
+            }
             guard isCurrentHostsRefreshOperation(generation) else { return }
             self.peers = peers
             self.lastError = nil
@@ -137,7 +168,12 @@ final class MeshStore: ObservableObject {
 
     private func refreshPeersForMutation(generation: UInt64) async {
         do {
-            let peers = try await client.peers()
+            let peers = try await performHostsMutation(
+                key: .mutationPeerRefresh,
+                generation: generation
+            ) {
+                try await self.client.peers()
+            }
             guard isCurrentHostsMutationOperation(generation) else { return }
             self.peers = peers
             self.lastError = nil
@@ -153,7 +189,9 @@ final class MeshStore: ObservableObject {
         let generation = beginHostsMutationOperation()
         lastPairingResult = nil
         do {
-            let peer = try await client.link(host: host, httpPort: httpPort, token: token, profile: profile)
+            let peer = try await performHostsMutation(key: .pair, generation: generation) {
+                try await self.client.link(host: host, httpPort: httpPort, token: token, profile: profile)
+            }
             guard isCurrentHostsMutationOperation(generation) else { return }
             // Optimistic update: drop in (or replace) the freshly
             // linked peer so the list refreshes immediately even
@@ -230,7 +268,9 @@ final class MeshStore: ObservableObject {
             : SshSecretInput(id: secretId, secret: secretPayload)
         let generation = beginHostsMutationOperation()
         do {
-            let peer = try await client.upsertHost(input, sshSecret: secret)
+            let peer = try await performHostsMutation(key: .upsertSshHost, generation: generation) {
+                try await self.client.upsertHost(input, sshSecret: secret)
+            }
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
             if let idx = peers.firstIndex(where: { $0.nodeId == peer.nodeId }) {
                 peers[idx] = peer
@@ -257,7 +297,9 @@ final class MeshStore: ObservableObject {
     func revokePeer(nodeId: String) async -> Result<Void, MeshClientError> {
         let generation = beginHostsMutationOperation()
         do {
-            try await client.revokePeer(nodeId: nodeId)
+            try await performHostsMutation(key: .revokePeer(nodeId), generation: generation) {
+                try await self.client.revokePeer(nodeId: nodeId)
+            }
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
             await refreshPeersForMutation(generation: generation)
             lastError = nil
@@ -278,7 +320,9 @@ final class MeshStore: ObservableObject {
     func unrevokePeer(nodeId: String) async -> Result<Void, MeshClientError> {
         let generation = beginHostsMutationOperation()
         do {
-            try await client.unrevokePeer(nodeId: nodeId)
+            try await performHostsMutation(key: .unrevokePeer(nodeId), generation: generation) {
+                try await self.client.unrevokePeer(nodeId: nodeId)
+            }
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
             await refreshPeersForMutation(generation: generation)
             lastError = nil
@@ -300,7 +344,9 @@ final class MeshStore: ObservableObject {
     func removeHost(nodeId: String) async -> Result<Void, MeshClientError> {
         let generation = beginHostsMutationOperation()
         do {
-            try await client.removeHost(nodeId: nodeId)
+            try await performHostsMutation(key: .removeHost(nodeId), generation: generation) {
+                try await self.client.removeHost(nodeId: nodeId)
+            }
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
             peers.removeAll { $0.nodeId == nodeId }
             await refreshPeersForMutation(generation: generation)
@@ -332,9 +378,10 @@ final class MeshStore: ObservableObject {
     func addWorkspace(path: String, label: String? = nil) async {
         let generation = beginHostsMutationOperation()
         do {
-            _ = try await client.addWorkspace(path: path, label: label)
-            guard isCurrentHostsMutationOperation(generation) else { return }
-            let workspaces = try await client.workspaces()
+            let workspaces = try await performHostsMutation(key: .addWorkspace, generation: generation) {
+                _ = try await self.client.addWorkspace(path: path, label: label)
+                return try await self.client.workspaces()
+            }
             guard isCurrentHostsMutationOperation(generation) else { return }
             self.workspaces = workspaces
             self.lastError = nil
@@ -346,12 +393,16 @@ final class MeshStore: ObservableObject {
 
     @discardableResult
     private func beginHostsRefreshOperation() -> UInt64 {
+        hostsRefreshCancel?()
+        hostsRefreshCancel = nil
         hostsRefreshGeneration &+= 1
         return hostsRefreshGeneration
     }
 
     @discardableResult
     private func beginHostsMutationOperation() -> UInt64 {
+        for cancel in hostsMutationCancels.values { cancel() }
+        hostsMutationCancels.removeAll()
         hostsMutationGeneration &+= 1
         return hostsMutationGeneration
     }
@@ -362,6 +413,47 @@ final class MeshStore: ObservableObject {
 
     private func isCurrentHostsMutationOperation(_ generation: UInt64) -> Bool {
         !Task.isCancelled && generation == hostsMutationGeneration
+    }
+
+    private func performHostsRefresh<T>(
+        generation: UInt64,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        let task = Task {
+            try await operation()
+        }
+        hostsRefreshCancel = { task.cancel() }
+        defer {
+            if isCurrentHostsRefreshOperation(generation) {
+                hostsRefreshCancel = nil
+            }
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    private func performHostsMutation<T>(
+        key: HostsMutationKey,
+        generation: UInt64,
+        operation: @escaping () async throws -> T
+    ) async throws -> T {
+        let task = Task {
+            try await operation()
+        }
+        hostsMutationCancels[key] = { task.cancel() }
+        defer {
+            if isCurrentHostsMutationOperation(generation) {
+                hostsMutationCancels.removeValue(forKey: key)
+            }
+        }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
     }
 
     // MARK: - Per-peer remote workspace memory

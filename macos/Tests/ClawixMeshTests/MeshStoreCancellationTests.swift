@@ -7,7 +7,9 @@ import ClawixCore
 final class MeshStoreCancellationTests: XCTestCase {
     func testStartingSecondHostsRefreshSuppressesStaleRefresh() async {
         let staleStarted = expectation(description: "Stale hosts refresh started")
-        let staleReturned = expectation(description: "Stale hosts refresh returned")
+        let staleCancelled = expectation(description: "Stale hosts refresh cancelled")
+        let staleReturned = expectation(description: "Stale hosts refresh should not return")
+        staleReturned.isInverted = true
         let freshReturned = expectation(description: "Fresh hosts refresh returned")
         let client = FakeMeshClient()
         var calls = 0
@@ -15,9 +17,14 @@ final class MeshStoreCancellationTests: XCTestCase {
             calls += 1
             if calls == 1 {
                 staleStarted.fulfill()
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                staleReturned.fulfill()
-                return MeshTestFixtures.nodeIdentity(displayName: "Stale Mac")
+                do {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                    staleReturned.fulfill()
+                    return MeshTestFixtures.nodeIdentity(displayName: "Stale Mac")
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
             }
             freshReturned.fulfill()
             return MeshTestFixtures.nodeIdentity(displayName: "Fresh Mac")
@@ -29,22 +36,29 @@ final class MeshStoreCancellationTests: XCTestCase {
 
         let second = Task { await store.refreshAll() }
 
-        await fulfillment(of: [freshReturned, staleReturned], timeout: 1)
+        await fulfillment(of: [freshReturned, staleCancelled, staleReturned], timeout: 1)
         await first.value
         await second.value
         XCTAssertEqual(store.identity?.displayName, "Fresh Mac")
         XCTAssertFalse(store.isRefreshing)
     }
 
-    func testCancelHostsSurfaceWorkSuppressesInFlightRefresh() async {
+    func testCancelHostsSurfaceWorkCancelsInFlightRefresh() async {
         let refreshStarted = expectation(description: "Hosts refresh started")
-        let refreshReturned = expectation(description: "Hosts refresh returned after teardown")
+        let refreshCancelled = expectation(description: "Hosts refresh cancelled after teardown")
+        let refreshReturned = expectation(description: "Hosts refresh should not return after teardown")
+        refreshReturned.isInverted = true
         let client = FakeMeshClient()
         client.onIdentity = {
             refreshStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            refreshReturned.fulfill()
-            return MeshTestFixtures.nodeIdentity(displayName: "Late Mac")
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                refreshReturned.fulfill()
+                return MeshTestFixtures.nodeIdentity(displayName: "Late Mac")
+            } catch is CancellationError {
+                refreshCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = MeshStore(client: client)
 
@@ -53,7 +67,7 @@ final class MeshStoreCancellationTests: XCTestCase {
 
         store.cancelHostsSurfaceWork()
 
-        await fulfillment(of: [refreshReturned], timeout: 1)
+        await fulfillment(of: [refreshCancelled, refreshReturned], timeout: 1)
         await task.value
         XCTAssertNil(store.identity)
         XCTAssertTrue(store.peers.isEmpty)
@@ -61,17 +75,24 @@ final class MeshStoreCancellationTests: XCTestCase {
         XCTAssertFalse(store.isRefreshing)
     }
 
-    func testCancelHostsSurfaceWorkSuppressesInFlightPairingResult() async {
+    func testCancelHostsSurfaceWorkCancelsInFlightPairing() async {
         let linkStarted = expectation(description: "Pairing link started")
-        let linkReturned = expectation(description: "Pairing link returned after teardown")
+        let linkCancelled = expectation(description: "Pairing link cancelled after teardown")
+        let linkReturned = expectation(description: "Pairing link should not return after teardown")
+        linkReturned.isInverted = true
         let peerRefreshStarted = expectation(description: "Stale pairing refresh should not start")
         peerRefreshStarted.isInverted = true
         let client = FakeMeshClient()
         client.onLink = { _, _, _, _ in
             linkStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            linkReturned.fulfill()
-            return MeshTestFixtures.peer(nodeId: "late-peer", displayName: "Late Peer")
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                linkReturned.fulfill()
+                return MeshTestFixtures.peer(nodeId: "late-peer", displayName: "Late Peer")
+            } catch is CancellationError {
+                linkCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         client.onPeers = {
             peerRefreshStarted.fulfill()
@@ -86,7 +107,7 @@ final class MeshStoreCancellationTests: XCTestCase {
 
         store.cancelHostsSurfaceWork()
 
-        await fulfillment(of: [linkReturned, peerRefreshStarted], timeout: 1)
+        await fulfillment(of: [linkCancelled, linkReturned, peerRefreshStarted], timeout: 1)
         await task.value
         XCTAssertTrue(store.peers.isEmpty)
         XCTAssertNil(store.lastPairingResult)
@@ -123,9 +144,55 @@ final class MeshStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.lastPairingResult, .success(displayName: "Paired Peer"))
     }
 
-    func testCancelHostsSurfaceWorkSuppressesInFlightWorkspaceRefresh() async {
+    func testCancelHostsSurfaceWorkCancelsInFlightHostRemoval() async {
+        let removalStarted = expectation(description: "Host removal started")
+        let removalCancelled = expectation(description: "Host removal cancelled after teardown")
+        let removalReturned = expectation(description: "Host removal should not return after teardown")
+        removalReturned.isInverted = true
+        let peerRefreshStarted = expectation(description: "Stale host removal refresh should not start")
+        peerRefreshStarted.isInverted = true
+        let client = FakeMeshClient()
+        client.onRemoveHost = { nodeId in
+            XCTAssertEqual(nodeId, "late-host")
+            removalStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                removalReturned.fulfill()
+            } catch is CancellationError {
+                removalCancelled.fulfill()
+                throw CancellationError()
+            }
+        }
+        client.onPeers = {
+            peerRefreshStarted.fulfill()
+            return [MeshTestFixtures.peer(nodeId: "unexpected")]
+        }
+        let store = MeshStore(client: client)
+
+        let task = Task {
+            await store.removeHost(nodeId: "late-host")
+        }
+        await fulfillment(of: [removalStarted], timeout: 1)
+
+        store.cancelHostsSurfaceWork()
+
+        await fulfillment(of: [removalCancelled, removalReturned, peerRefreshStarted], timeout: 1)
+        let result = await task.value
+        switch result {
+        case .success:
+            XCTFail("Cancelled host removal should not succeed")
+        case .failure(let error):
+            XCTAssertEqual(error, .cancelled)
+        }
+        XCTAssertTrue(store.peers.isEmpty)
+        XCTAssertNil(store.lastError)
+    }
+
+    func testCancelHostsSurfaceWorkCancelsInFlightWorkspaceAdd() async {
         let addStarted = expectation(description: "Workspace add started")
-        let addReturned = expectation(description: "Workspace add returned after teardown")
+        let addCancelled = expectation(description: "Workspace add cancelled after teardown")
+        let addReturned = expectation(description: "Workspace add should not return after teardown")
+        addReturned.isInverted = true
         let workspaceRefreshStarted = expectation(description: "Stale workspace reload should not start")
         workspaceRefreshStarted.isInverted = true
         let client = FakeMeshClient()
@@ -133,9 +200,14 @@ final class MeshStoreCancellationTests: XCTestCase {
             XCTAssertEqual(path, "/tmp/late")
             XCTAssertNil(label)
             addStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            addReturned.fulfill()
-            return MeshTestFixtures.workspace(path: path, label: "late")
+            do {
+                try await Task.sleep(nanoseconds: 50_000_000)
+                addReturned.fulfill()
+                return MeshTestFixtures.workspace(path: path, label: "late")
+            } catch is CancellationError {
+                addCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         client.onWorkspaces = {
             workspaceRefreshStarted.fulfill()
@@ -148,7 +220,7 @@ final class MeshStoreCancellationTests: XCTestCase {
 
         store.cancelHostsSurfaceWork()
 
-        await fulfillment(of: [addReturned, workspaceRefreshStarted], timeout: 1)
+        await fulfillment(of: [addCancelled, addReturned, workspaceRefreshStarted], timeout: 1)
         await task.value
         XCTAssertTrue(store.workspaces.isEmpty)
         XCTAssertNil(store.lastError)
