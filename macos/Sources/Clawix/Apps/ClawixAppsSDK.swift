@@ -45,7 +45,8 @@ let ClawixAppsSDKJS = #"""
           cleanup();
           reject(err);
         },
-        onProgress: typeof options.onProgress === 'function' ? options.onProgress : null
+        onProgress: typeof options.onProgress === 'function' ? options.onProgress : null,
+        onPartial: typeof options.onPartial === 'function' ? options.onPartial : null
       };
       if (options.signal) {
         if (options.signal.aborted) {
@@ -92,6 +93,12 @@ let ClawixAppsSDKJS = #"""
       var entry = pending[data.requestId];
       if (entry && entry.onProgress) {
         try { entry.onProgress(data.progress || null); } catch (e) { /* swallow progress errors */ }
+      }
+    }
+    if (eventName === 'request.partial' && data && data.requestId) {
+      var partialEntry = pending[data.requestId];
+      if (partialEntry && partialEntry.onPartial) {
+        try { partialEntry.onPartial(data.partial || null); } catch (e) { /* swallow partial errors */ }
       }
     }
     var bucket = listeners[eventName];
@@ -148,7 +155,7 @@ let ClawixAppsSDKJS = #"""
           offset: opts.offset,
           cursor: opts.cursor,
           facets: Array.isArray(opts.facets) ? opts.facets : []
-        }, { signal: opts.signal, onProgress: opts.onProgress });
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
       }
     },
     db: {
@@ -163,7 +170,7 @@ let ClawixAppsSDKJS = #"""
           offset: opts.offset,
           cursor: opts.cursor,
           facets: Array.isArray(opts.facets) ? opts.facets : []
-        }, { signal: opts.signal, onProgress: opts.onProgress });
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
       }
     },
     resources: {
@@ -172,7 +179,7 @@ let ClawixAppsSDKJS = #"""
         return send('resources.list', {
           status: opts.status == null ? null : String(opts.status),
           kind: opts.kind == null ? null : String(opts.kind)
-        }, { signal: opts.signal, onProgress: opts.onProgress });
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
       },
       read: function (idOrOpts, opts) {
         var input = typeof idOrOpts === 'object' && idOrOpts !== null ? idOrOpts : (opts || {});
@@ -180,7 +187,7 @@ let ClawixAppsSDKJS = #"""
         return send('resources.read', {
           id: id,
           maxBytes: input.maxBytes
-        }, { signal: input.signal, onProgress: input.onProgress });
+        }, { signal: input.signal, onProgress: input.onProgress, onPartial: input.onPartial });
       }
     },
     ui: {

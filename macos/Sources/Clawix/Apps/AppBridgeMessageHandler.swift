@@ -169,6 +169,13 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         webView.evaluateJavaScript(js, completionHandler: nil)
     }
 
+    private func partial(requestId: String, value: [String: Any]) {
+        guard let webView else { return }
+        let payload = encodeForJS(value)
+        let js = "window.__clawixDispatch && window.__clawixDispatch('request.partial', { requestId: \(jsonEncoded(requestId)), partial: \(payload) });"
+        webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
     /// Encode a Swift value as a JS literal. Strings + bools + numbers
     /// pass through JSONEncoder; dicts/arrays do too. NSNull becomes
     /// the literal `null`. Anything we can't encode falls back to null.
@@ -407,10 +414,17 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 progressValue: 0.75
             )
             let filtered = Array(query.postFilter(response.items).prefix(query.limit))
+            let bridgedItems = filtered.map { AppBridgeQueryDSL.bridgeValue(collection: query.collection, record: $0) }
             surfaceReporter.partial("Loaded \(filtered.count) \(query.collection) records")
+            partial(requestId: requestId, value: [
+                "collection": query.collection,
+                "items": bridgedItems,
+                "partialCount": bridgedItems.count,
+                "source": "db.query"
+            ])
             resolve(requestId: requestId, value: [
                 "collection": query.collection,
-                "items": filtered.map { AppBridgeQueryDSL.bridgeValue(collection: query.collection, record: $0) },
+                "items": bridgedItems,
                 "limit": query.limit,
                 "offset": query.effectiveOffset,
                 "total": response.total ?? filtered.count,
@@ -469,6 +483,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                     limit: 100,
                     offset: 0
                 )
+                var batch: [[String: Any]] = []
                 let matches = response.items.filter { record in
                     record.titleString.lowercased().contains(needle)
                         || record.data.values.contains { $0.stringValue?.lowercased().contains(needle) == true }
@@ -479,19 +494,26 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                         skipped += 1
                         continue
                     }
-                    items.append(AppBridgeQueryDSL.bridgeValue(collection: collection, record: record))
+                    let bridged = AppBridgeQueryDSL.bridgeValue(collection: collection, record: record)
+                    items.append(bridged)
+                    batch.append(bridged)
                     matchedRecords.append((collection, record))
                 }
-                if !items.isEmpty {
+                if !batch.isEmpty {
                     surfaceReporter.partial("Found \(items.count) results")
-                    progress(
-                        requestId: requestId,
-                        value: [
-                            "message": "Partial search results",
-                            "progress": Double(index + 1) / Double(max(collections.count, 1)),
-                            "partialCount": items.count
-                        ]
-                    )
+                    let progressValue = Double(index + 1) / Double(max(collections.count, 1))
+                    progress(requestId: requestId, value: [
+                        "message": "Partial search results",
+                        "progress": progressValue,
+                        "partialCount": items.count
+                    ])
+                    partial(requestId: requestId, value: [
+                        "collection": collection,
+                        "items": batch,
+                        "partialCount": items.count,
+                        "progress": progressValue,
+                        "source": "search.query"
+                    ])
                 }
             }
 
@@ -538,8 +560,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 try registry.list(status: status, kind: kind)
             }.value
             try Task.checkCancellation()
+            let bridgedResources = resources.map(\.bridgeValue)
+            partial(requestId: requestId, value: [
+                "items": bridgedResources,
+                "partialCount": bridgedResources.count,
+                "source": "resources.list"
+            ])
             resolve(requestId: requestId, value: [
-                "items": resources.map(\.bridgeValue),
+                "items": bridgedResources,
                 "source": "resources.list"
             ])
             surfaceReporter.ready()
@@ -571,6 +599,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 try registry.read(id, maxBytes: maxBytes)
             }.value
             try Task.checkCancellation()
+            partial(requestId: requestId, value: result.bridgeValue)
             resolve(requestId: requestId, value: result.bridgeValue)
             surfaceReporter.ready()
         } catch is CancellationError {
