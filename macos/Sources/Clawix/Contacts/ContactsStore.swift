@@ -69,6 +69,7 @@ final class ContactsStore: ObservableObject {
     @Published var editingSmartGroupID: String? = nil
 
     let backend: ContactsBackend
+    private var bootstrapTask: Task<Void, Never>?
     private var bootstrapGeneration = 0
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
@@ -80,6 +81,7 @@ final class ContactsStore: ObservableObject {
     }
 
     deinit {
+        bootstrapTask?.cancel()
         reloadTask?.cancel()
         writeTask?.cancel()
     }
@@ -97,6 +99,17 @@ final class ContactsStore: ObservableObject {
     func bootstrap() async {
         guard access == .unknown else { return }
         let generation = nextBootstrapGeneration()
+        bootstrapTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBootstrap(generation: generation)
+        }
+        bootstrapTask = task
+        await task.value
+    }
+
+    private func runBootstrap(generation: Int) async {
+        guard isCurrentBootstrap(generation) else { return }
         access = .requesting
         let result = await backend.requestAccess()
         guard isCurrentBootstrap(generation), !Task.isCancelled else { return }
@@ -109,10 +122,13 @@ final class ContactsStore: ObservableObject {
         case .unavailable:
             access = .unavailable
         }
+        finishBootstrapIfCurrent(generation)
     }
 
     func cancelSurfaceWork() {
         bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
         reloadGeneration += 1
         reloadTask?.cancel()
         reloadTask = nil
@@ -481,6 +497,11 @@ final class ContactsStore: ObservableObject {
 
     private func isCurrentBootstrap(_ generation: Int) -> Bool {
         bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
     }
 
     private func isCurrentReload(_ generation: Int) -> Bool {

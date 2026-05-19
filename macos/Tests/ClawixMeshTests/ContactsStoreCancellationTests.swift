@@ -4,15 +4,26 @@ import XCTest
 
 @MainActor
 final class ContactsStoreCancellationTests: XCTestCase {
-    func testCancelSurfaceWorkSuppressesInFlightBootstrap() async {
+    func testCancelSurfaceWorkCancelsInFlightBootstrap() async {
         let accessStarted = expectation(description: "Contacts access request started")
+        let accessCancelled = expectation(description: "Contacts access request cancelled")
+        let accessReturned = expectation(description: "Contacts access request should not return after cancellation")
+        accessReturned.isInverted = true
         let loadUnexpected = expectation(description: "Contacts reload should not run after surface cancellation")
         loadUnexpected.isInverted = true
         let backend = Backend()
         backend.requestAccessHandler = {
             accessStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            return .granted
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                accessReturned.fulfill()
+                return .granted
+            } catch is CancellationError {
+                accessCancelled.fulfill()
+                return .unavailable
+            } catch {
+                return .unavailable
+            }
         }
         backend.loadContactsHandler = {
             loadUnexpected.fulfill()
@@ -26,7 +37,7 @@ final class ContactsStoreCancellationTests: XCTestCase {
         store.cancelSurfaceWork()
 
         await task.value
-        await fulfillment(of: [loadUnexpected], timeout: 0.05)
+        await fulfillment(of: [accessCancelled, accessReturned, loadUnexpected], timeout: 1)
 
         XCTAssertEqual(store.access, .unknown)
         XCTAssertTrue(store.contacts.isEmpty)
@@ -213,7 +224,7 @@ final class ContactsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.contacts.map(\.id), ["remaining"])
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightCommit() async {
+    func testCancelSurfaceWorkCancelsInFlightCommit() async {
         let saveStarted = expectation(description: "Contact save started")
         let saveCancelled = expectation(description: "Contact save cancelled")
         let reloadUnexpected = expectation(description: "Contacts reload should not run after write cancellation")
