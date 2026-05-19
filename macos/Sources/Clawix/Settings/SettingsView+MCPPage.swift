@@ -26,6 +26,11 @@ struct MCPPage: View {
                     .font(BodyFont.system(size: 13, wght: 600))
                     .foregroundColor(Palette.textPrimary)
                 Spacer()
+                if store.isLoading || store.isSaving {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.72)
+                }
                 Button {
                     sheet = .init(
                         server: MCPServerConfig(),
@@ -53,7 +58,15 @@ struct MCPPage: View {
             }
             .padding(.bottom, 14)
 
-            if store.servers.isEmpty {
+            if store.servers.isEmpty && store.isLoading {
+                MCPEmptyState(onAdd: {
+                    sheet = .init(
+                        server: MCPServerConfig(),
+                        isExisting: false
+                    )
+                })
+                .redacted(reason: .placeholder)
+            } else if store.servers.isEmpty {
                 MCPEmptyState(onAdd: {
                     sheet = .init(
                         server: MCPServerConfig(),
@@ -91,6 +104,14 @@ struct MCPPage: View {
                 isExisting: item.isExisting,
                 onClose: { sheet = nil }
             )
+        }
+        .task {
+            if store.servers.isEmpty {
+                await store.refresh()
+            }
+        }
+        .onDisappear {
+            store.cancelSurfaceWork()
         }
     }
 }

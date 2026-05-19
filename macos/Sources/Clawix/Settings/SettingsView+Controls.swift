@@ -25,7 +25,7 @@ enum SettingsUtilities {
             return
         }
         do {
-            let result = try ClawJSMCPClient().configPath(
+            let result = try await ClawJSMCPClient().configPath(
                 scope: scope == "Project settings" ? "project" : "user",
                 projectPath: projectPath
             )

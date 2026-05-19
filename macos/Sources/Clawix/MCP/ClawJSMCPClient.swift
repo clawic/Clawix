@@ -2,34 +2,34 @@ import Foundation
 
 @MainActor
 protocol MCPServersPersistence {
-    func loadServers() throws -> [MCPServerConfig]
-    func saveServers(_ servers: [MCPServerConfig]) throws
+    func loadServers() async throws -> [MCPServerConfig]
+    func saveServers(_ servers: [MCPServerConfig]) async throws
 }
 
 struct ClawJSMCPClient: MCPServersPersistence {
     struct CommandRunner {
-        var run: ([String]) throws -> Data
+        var run: ([String]) async throws -> Data
     }
 
     private let runner: CommandRunner
 
     init(runner: CommandRunner? = nil) {
         self.runner = runner ?? CommandRunner { args in
-            try Self.runClawJS(args: args)
+            try await Self.runClawJS(args: args)
         }
     }
 
-    func loadServers() throws -> [MCPServerConfig] {
-        let data = try runner.run(["mcp", "list", "--json"])
+    func loadServers() async throws -> [MCPServerConfig] {
+        let data = try await runner.run(["mcp", "list", "--json"])
         let response = try JSONDecoder().decode(MCPListResponse.self, from: data)
         return response.items.map(\.config)
     }
 
-    func saveServers(_ servers: [MCPServerConfig]) throws {
-        let existing = try loadServers()
+    func saveServers(_ servers: [MCPServerConfig]) async throws {
+        let existing = try await loadServers()
         let desiredIds = Set(servers.map(\.tomlIdentifier))
         for server in existing where !desiredIds.contains(server.tomlIdentifier) {
-            _ = try runner.run(["mcp", "delete", server.tomlIdentifier, "--json"])
+            _ = try await runner.run(["mcp", "delete", server.tomlIdentifier, "--json"])
         }
         for server in servers.map({ $0.sanitised() }) {
             var args = ["mcp", "upsert", server.tomlIdentifier, "--json"]
@@ -61,40 +61,78 @@ struct ClawJSMCPClient: MCPServersPersistence {
                 }
             }
             args += ["--enabled", server.enabled ? "true" : "false"]
-            _ = try runner.run(args)
+            _ = try await runner.run(args)
         }
     }
 
-    func configPath(scope: String, projectPath: String?) throws -> MCPConfigPath {
+    func configPath(scope: String, projectPath: String?) async throws -> MCPConfigPath {
         var args = ["mcp", "config-path", "--scope", scope, "--json"]
         if let projectPath, !projectPath.isEmpty {
             args += ["--project", projectPath]
         }
-        let data = try runner.run(args)
+        let data = try await runner.run(args)
         return try JSONDecoder().decode(MCPConfigPath.self, from: data)
     }
 
-    @MainActor
-    private static func runClawJS(args: [String]) throws -> Data {
+    private static func runClawJS(args: [String]) async throws -> Data {
+        let context = await MainActor.run {
+            MCPProcessContext(
+                executableURL: ClawJSRuntime.nodeBinaryURL,
+                cliScriptURL: ClawJSRuntime.cliScriptURL,
+                workspaceURL: ClawJSServiceManager.workspaceURL,
+                environment: ClawJSServiceManager.cliEnvironment()
+            )
+        }
+        let cancellation = MCPProcessCancellation()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .utility).async {
+                    do {
+                        continuation.resume(returning: try runClawJSSynchronously(
+                            args: args,
+                            context: context,
+                            cancellation: cancellation
+                        ))
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        } onCancel: {
+            cancellation.cancel()
+        }
+    }
+
+    nonisolated private static func runClawJSSynchronously(
+        args: [String],
+        context: MCPProcessContext,
+        cancellation: MCPProcessCancellation
+    ) throws -> Data {
         guard ClawJSRuntime.isAvailable else {
             throw NSError(domain: "ClawJSMCPClient", code: 1, userInfo: [
                 NSLocalizedDescriptionKey: "ClawJS bundle is not available in this build."
             ])
         }
         let process = Process()
-        process.executableURL = ClawJSRuntime.nodeBinaryURL
-        process.arguments = [ClawJSRuntime.cliScriptURL.path] + args
-        process.currentDirectoryURL = ClawJSServiceManager.workspaceURL
-        process.environment = ClawJSServiceManager.cliEnvironment()
+        process.executableURL = context.executableURL
+        process.arguments = [context.cliScriptURL.path] + args
+        process.currentDirectoryURL = context.workspaceURL
+        process.environment = context.environment
 
         let stdout = Pipe()
         let stderr = Pipe()
         process.standardOutput = stdout
         process.standardError = stderr
+        guard cancellation.attach(process) else {
+            throw CancellationError()
+        }
         try process.run()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let err = stderr.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
+        if cancellation.isCancelled {
+            throw CancellationError()
+        }
         guard process.terminationStatus == 0 else {
             let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw mcp failed"
             throw NSError(domain: "ClawJSMCPClient", code: Int(process.terminationStatus), userInfo: [
@@ -113,6 +151,41 @@ struct ClawJSMCPClient: MCPServersPersistence {
         let object = Dictionary(uniqueKeysWithValues: values.map { ($0.key, $0.value) })
         let data = try JSONEncoder().encode(object)
         return String(decoding: data, as: UTF8.self)
+    }
+}
+
+private struct MCPProcessContext: Sendable {
+    let executableURL: URL
+    let cliScriptURL: URL
+    let workspaceURL: URL
+    let environment: [String: String]
+}
+
+private final class MCPProcessCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    func attach(_ process: Process) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !cancelled else { return false }
+        self.process = process
+        return true
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        let process = process
+        lock.unlock()
+        process?.terminate()
     }
 }
 

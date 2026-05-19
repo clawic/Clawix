@@ -3,19 +3,73 @@ import XCTest
 
 @MainActor
 final class MCPClawJSAdapterTests: XCTestCase {
-    func testStoreLoadsAndPersistsThroughInjectedClawJSPersistence() throws {
+    func testStoreLoadsAndPersistsThroughInjectedClawJSPersistence() async {
         let persistence = FakeMCPPersistence(servers: [
             MCPServerConfig(name: "browser", command: "npx")
         ])
-        let store = MCPServersStore(persistence: persistence)
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+        await store.refresh()
 
         XCTAssertEqual(store.servers.map(\.name), ["browser"])
 
         store.upsert(MCPServerConfig(name: "notes", command: "node"))
+        await persistence.waitForSave()
         XCTAssertEqual(persistence.savedServers.map(\.tomlIdentifier), ["browser", "notes"])
     }
 
-    func testClawJSMCPClientMapsListAndSaveToJsonCommands() throws {
+    func testStoreCancelSuppressesLateMCPReload() async {
+        let loadStarted = expectation(description: "MCP load started")
+        let loadReturned = expectation(description: "MCP load returned after teardown")
+        let persistence = FakeMCPPersistence(servers: [
+            MCPServerConfig(name: "stale", command: "node")
+        ])
+        persistence.onLoad = {
+            loadStarted.fulfill()
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            loadReturned.fulfill()
+        }
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+
+        let task = Task { await store.refresh() }
+        await fulfillment(of: [loadStarted], timeout: 1)
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [loadReturned], timeout: 1)
+        await task.value
+        XCTAssertTrue(store.servers.isEmpty)
+        XCTAssertFalse(store.isLoading)
+        XCTAssertNil(store.lastError)
+    }
+
+    func testSecondMCPReloadSuppressesFirstStaleResult() async {
+        let staleStarted = expectation(description: "Stale MCP load started")
+        let staleReturned = expectation(description: "Stale MCP load returned")
+        let freshReturned = expectation(description: "Fresh MCP load returned")
+        let persistence = SequencedMCPPersistence { call in
+            if call == 1 {
+                staleStarted.fulfill()
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                staleReturned.fulfill()
+                return [MCPServerConfig(name: "stale", command: "node")]
+            }
+            freshReturned.fulfill()
+            return [MCPServerConfig(name: "fresh", command: "node")]
+        }
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+
+        let first = Task { await store.refresh() }
+        await fulfillment(of: [staleStarted], timeout: 1)
+        let second = Task { await store.refresh() }
+
+        await fulfillment(of: [freshReturned, staleReturned], timeout: 1)
+        await first.value
+        await second.value
+        XCTAssertEqual(store.servers.map(\.name), ["fresh"])
+        XCTAssertFalse(store.isLoading)
+        XCTAssertNil(store.lastError)
+    }
+
+    func testClawJSMCPClientMapsListAndSaveToJsonCommands() async throws {
         var calls: [[String]] = []
         let client = ClawJSMCPClient(runner: .init { args in
             calls.append(args)
@@ -39,11 +93,11 @@ final class MCPClawJSAdapterTests: XCTestCase {
             return Data("{}".utf8)
         })
 
-        let loaded = try client.loadServers()
+        let loaded = try await client.loadServers()
         XCTAssertEqual(loaded.first?.tomlIdentifier, "browser")
         XCTAssertEqual(loaded.first?.arguments.map(\.value), ["@modelcontextprotocol/server-browser"])
 
-        try client.saveServers([
+        try await client.saveServers([
             MCPServerConfig(
                 name: "api",
                 transport: .http,
@@ -65,7 +119,7 @@ final class MCPClawJSAdapterTests: XCTestCase {
                 && call.contains("false")
         })
 
-        let configPath = try client.configPath(scope: "user", projectPath: nil)
+        let configPath = try await client.configPath(scope: "user", projectPath: nil)
         XCTAssertEqual(configPath.configPath, "/tmp/config.toml")
         XCTAssertEqual(configPath.exists, true)
         XCTAssertTrue(calls.contains(["mcp", "config-path", "--scope", "user", "--json"]))
@@ -89,17 +143,47 @@ final class MCPClawJSAdapterTests: XCTestCase {
 private final class FakeMCPPersistence: MCPServersPersistence {
     private var current: [MCPServerConfig]
     private(set) var savedServers: [MCPServerConfig] = []
+    var onLoad: (() async -> Void)?
+    private var saveContinuation: CheckedContinuation<Void, Never>?
 
     init(servers: [MCPServerConfig]) {
         current = servers
     }
 
-    func loadServers() throws -> [MCPServerConfig] {
-        current
+    func loadServers() async throws -> [MCPServerConfig] {
+        await onLoad?()
+        return current
     }
 
-    func saveServers(_ servers: [MCPServerConfig]) throws {
+    func saveServers(_ servers: [MCPServerConfig]) async throws {
         savedServers = servers
         current = servers
+        saveContinuation?.resume()
+        saveContinuation = nil
+    }
+
+    func waitForSave() async {
+        if !savedServers.isEmpty { return }
+        await withCheckedContinuation { continuation in
+            saveContinuation = continuation
+        }
+    }
+}
+
+private final class SequencedMCPPersistence: MCPServersPersistence {
+    private var calls = 0
+    private let loader: (Int) async throws -> [MCPServerConfig]
+
+    init(loader: @escaping (Int) async throws -> [MCPServerConfig]) {
+        self.loader = loader
+    }
+
+    func loadServers() async throws -> [MCPServerConfig] {
+        calls += 1
+        return try await loader(calls)
+    }
+
+    func saveServers(_ servers: [MCPServerConfig]) async throws {
+        _ = servers
     }
 }
