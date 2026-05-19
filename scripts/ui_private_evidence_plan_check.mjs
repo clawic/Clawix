@@ -331,6 +331,7 @@ function emptyCaptureStatusCounts() {
     missingFile: 0,
     invalidJson: 0,
     placeholder: 0,
+    invalidCandidate: 0,
     candidate: 0,
   };
 }
@@ -339,7 +340,44 @@ function addCaptureStatus(left, right) {
   for (const key of Object.keys(left)) left[key] += right[key] || 0;
 }
 
-function captureStatusForFile(rootPath, relativeEvidencePath) {
+function isIsoTimestamp(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}(?:T.+)?$/.test(value) && !Number.isNaN(Date.parse(value));
+}
+
+function candidateFieldErrors(evidence, requiredFields) {
+  const fieldErrors = [];
+  for (const field of requiredFields || []) {
+    const value = evidence?.[field];
+    if (value === undefined || value === null || value === "") {
+      fieldErrors.push(field);
+      continue;
+    }
+    if (/Hash$/.test(field) && (typeof value !== "string" || !/^[a-f0-9]{64}$/i.test(value))) {
+      fieldErrors.push(field);
+    }
+    if (["approvedByUserAt", "measuredAt", "auditedAt", "producedAt"].includes(field) && !isIsoTimestamp(value)) {
+      fieldErrors.push(field);
+    }
+    if (field === "approvedScope") {
+      const requiredScopeFields = Array.isArray(privateValidation?.requiredApprovedScopeFields)
+        ? privateValidation.requiredApprovedScopeFields
+        : ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"];
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        fieldErrors.push(field);
+      } else {
+        for (const scopeField of requiredScopeFields) {
+          if (value[scopeField] === undefined || value[scopeField] === null || value[scopeField] === "") {
+            fieldErrors.push(`${field}.${scopeField}`);
+          }
+        }
+        if (value.approvedAt && !isIsoTimestamp(value.approvedAt)) fieldErrors.push(`${field}.approvedAt`);
+      }
+    }
+  }
+  return fieldErrors;
+}
+
+function captureStatusForFile(rootPath, relativeEvidencePath, requiredFields = []) {
   const counts = emptyCaptureStatusCounts();
   const evidencePath = path.join(rootPath, relativeEvidencePath.split("/").join(path.sep));
   if (!fs.existsSync(evidencePath)) {
@@ -356,6 +394,11 @@ function captureStatusForFile(rootPath, relativeEvidencePath) {
   if (evidence?._templateStatus === "placeholder-not-valid-evidence") {
     counts.placeholder += 1;
     return { state: "placeholder", counts };
+  }
+  const fieldErrors = candidateFieldErrors(evidence, requiredFields);
+  if (fieldErrors.length > 0) {
+    counts.invalidCandidate += 1;
+    return { state: "invalid-candidate", counts, fieldErrors };
   }
   counts.candidate += 1;
   return { state: "candidate", counts };
@@ -401,7 +444,7 @@ function privateRootState(root) {
     status: "configured",
     rootPath,
     counts,
-    stateForRecord: (record) => captureStatusForFile(rootPath, record.relativeEvidencePath).state,
+    stateForRecord: (record) => captureStatusForFile(rootPath, record.relativeEvidencePath, record.requiredFields).state,
   };
 }
 
@@ -422,7 +465,7 @@ function captureStatusFromEvidencePlan() {
     };
     for (const record of root.records) {
       if (rootState.status === "configured") {
-        const fileStatus = captureStatusForFile(rootState.rootPath, record.relativeEvidencePath);
+        const fileStatus = captureStatusForFile(rootState.rootPath, record.relativeEvidencePath, record.requiredFields);
         addCaptureStatus(rootState.counts, fileStatus.counts);
         recordStates.set(`${record.type}:${record.platform}:${record.id}:${record.privateReference}`, fileStatus.state);
       } else {
@@ -442,6 +485,7 @@ function captureStatusFromEvidencePlan() {
         else if (state === "missing-file") counts.missingFile += 1;
         else if (state === "invalid-json") counts.invalidJson += 1;
         else if (state === "placeholder") counts.placeholder += 1;
+        else if (state === "invalid-candidate") counts.invalidCandidate += 1;
         else if (state === "candidate") counts.candidate += 1;
       }
     }
@@ -492,7 +536,7 @@ function capturePackagesFromEvidencePlan() {
         records: [],
       };
       const state = rootState.status === "configured"
-        ? captureStatusForFile(rootState.rootPath, record.relativeEvidencePath).state
+        ? captureStatusForFile(rootState.rootPath, record.relativeEvidencePath, record.requiredFields).state
         : rootState.stateForRecord(record);
       const privateFile = rootState.rootPath
         ? path.join(rootState.rootPath, record.relativeEvidencePath.split("/").join(path.sep))
@@ -506,6 +550,7 @@ function capturePackagesFromEvidencePlan() {
       else if (state === "missing-file") pkg.counts.missingFile += 1;
       else if (state === "invalid-json") pkg.counts.invalidJson += 1;
       else if (state === "placeholder") pkg.counts.placeholder += 1;
+      else if (state === "invalid-candidate") pkg.counts.invalidCandidate += 1;
       else if (state === "candidate") pkg.counts.candidate += 1;
       pkg.records.push({
         id: record.id,

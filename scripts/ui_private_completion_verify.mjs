@@ -266,6 +266,7 @@ if (completionStatusMode) {
     ["private-evidence-missing-file", evidenceTotals.missingFile || 0],
     ["private-evidence-invalid-json", evidenceTotals.invalidJson || 0],
     ["private-evidence-placeholder", evidenceTotals.placeholder || 0],
+    ["private-evidence-invalid-candidate", evidenceTotals.invalidCandidate || 0],
     ["private-evidence-candidate-not-approved", evidenceTotals.candidate || 0],
     ["private-approval-missing-root", approvalCounts.missingRoot || 0],
     ["private-approval-invalid-root", approvalCounts.invalidRoot || 0],
