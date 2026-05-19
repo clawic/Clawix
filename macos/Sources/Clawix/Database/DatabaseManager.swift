@@ -47,6 +47,7 @@ final class DatabaseManager: ObservableObject {
     private var inFlight: [String: Task<Void, Never>] = [:]
     private var realtimeRefreshTasks: [String: Task<Void, Never>] = [:]
     private var recordRefreshGeneration: [String: Int] = [:]
+    private var mutationTasks: [DatabaseMutationKey: DatabaseMutationTask] = [:]
     private var mutationGenerations: [DatabaseMutationKey: Int] = [:]
 
     private(set) var client: any DatabaseClienting
@@ -98,6 +99,7 @@ final class DatabaseManager: ObservableObject {
         bootstrapTimeoutTask?.cancel()
         for task in inFlight.values { task.cancel() }
         for task in realtimeRefreshTasks.values { task.cancel() }
+        for task in mutationTasks.values { task.cancel() }
         Task { @MainActor [realtime] in
             realtime.disconnect()
         }
@@ -266,6 +268,8 @@ final class DatabaseManager: ObservableObject {
         for key in Array(mutationGenerations.keys) {
             mutationGenerations[key, default: 0] += 1
         }
+        for task in mutationTasks.values { task.cancel() }
+        mutationTasks.removeAll()
         if disconnectRealtime {
             realtime.disconnect()
         } else {
@@ -318,8 +322,8 @@ final class DatabaseManager: ObservableObject {
         let key = DatabaseMutationKey(kind: .create, collection: name, id: UUID().uuidString)
         let generation = nextMutationGeneration(for: key)
         let record = try await performMutation(key: key, generation: generation) {
-            try await client.createRecord(
-                namespaceId: currentNamespace,
+            try await self.client.createRecord(
+                namespaceId: self.currentNamespace,
                 collection: name,
                 data: data
             )
@@ -336,8 +340,8 @@ final class DatabaseManager: ObservableObject {
         let key = DatabaseMutationKey(kind: .update, collection: name, id: id)
         let generation = nextMutationGeneration(for: key)
         let updated = try await performMutation(key: key, generation: generation) {
-            try await client.updateRecord(
-                namespaceId: currentNamespace,
+            try await self.client.updateRecord(
+                namespaceId: self.currentNamespace,
                 collection: name,
                 id: id,
                 data: data
@@ -351,7 +355,7 @@ final class DatabaseManager: ObservableObject {
         let key = DatabaseMutationKey(kind: .delete, collection: name, id: id)
         let generation = nextMutationGeneration(for: key)
         _ = try await performMutation(key: key, generation: generation) {
-            try await client.deleteRecord(namespaceId: currentNamespace, collection: name, id: id)
+            try await self.client.deleteRecord(namespaceId: self.currentNamespace, collection: name, id: id)
         }
         if var current = recordsByCollection[name] {
             current.removeAll { $0.id == id }
@@ -379,16 +383,26 @@ final class DatabaseManager: ObservableObject {
     private func performMutation<T>(
         key: DatabaseMutationKey,
         generation: Int,
-        operation: () async throws -> T
+        operation: @escaping () async throws -> T
     ) async throws -> T {
+        mutationTasks[key]?.cancel()
+        let task = Task<T, Error> {
+            try await operation()
+        }
+        mutationTasks[key] = DatabaseMutationTask(cancel: { task.cancel() })
         do {
-            let value = try await operation()
+            let value = try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: {
+                task.cancel()
+            }
             try Task.checkCancellation()
             guard isCurrentMutation(key: key, generation: generation) else { throw CancellationError() }
             lastError = nil
             finishMutationIfCurrent(key: key, generation: generation)
             return value
         } catch is CancellationError {
+            finishMutationIfCurrent(key: key, generation: generation)
             throw CancellationError()
         } catch {
             guard isCurrentMutation(key: key, generation: generation) else { throw CancellationError() }
@@ -526,7 +540,12 @@ final class DatabaseManager: ObservableObject {
 
     private func finishMutationIfCurrent(key: DatabaseMutationKey, generation: Int) {
         guard isCurrentMutation(key: key, generation: generation) else { return }
+        mutationTasks[key] = nil
         mutationGenerations[key] = generation
+    }
+
+    private struct DatabaseMutationTask {
+        let cancel: () -> Void
     }
 
     private struct DatabaseMutationKey: Hashable {

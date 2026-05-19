@@ -158,14 +158,18 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertTrue(manager.records(for: "tasks").isEmpty)
     }
 
-    func testCancelSurfaceWorkSuppressesLateCreateRecordResult() async throws {
+    func testCancelSurfaceWorkCancelsInFlightCreateRecord() async throws {
         let createStarted = expectation(description: "Database create started")
-        let createReturned = expectation(description: "Database create returned after surface cancellation")
+        let createCancelled = expectation(description: "Database create cancelled")
         let client = FakeDatabaseClient()
         client.onCreateRecord = { _, collection, _ in
             createStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            createReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                createCancelled.fulfill()
+                throw CancellationError()
+            }
             return makeDatabaseRecord(id: "stale", title: collection)
         }
         let manager = DatabaseManager(
@@ -183,7 +187,7 @@ final class DatabaseManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [createReturned], timeout: 1)
+        await fulfillment(of: [createCancelled], timeout: 1)
         do {
             _ = try await task.value
             XCTFail("Cancelled create unexpectedly succeeded")
@@ -196,14 +200,18 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateUpdateRecordError() async throws {
+    func testCancelSurfaceWorkCancelsInFlightUpdateRecord() async throws {
         let updateStarted = expectation(description: "Database update started")
-        let updateReturned = expectation(description: "Database update returned after surface cancellation")
+        let updateCancelled = expectation(description: "Database update cancelled")
         let client = FakeDatabaseClient()
         client.onUpdateRecord = { _, _, id, _ in
             updateStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            updateReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                updateCancelled.fulfill()
+                throw CancellationError()
+            }
             throw TestError(message: "stale update failed for \(id)")
         }
         let manager = DatabaseManager(
@@ -221,7 +229,7 @@ final class DatabaseManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [updateReturned], timeout: 1)
+        await fulfillment(of: [updateCancelled], timeout: 1)
         do {
             _ = try await task.value
             XCTFail("Cancelled update unexpectedly succeeded")
@@ -233,17 +241,21 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateDeleteRecordCacheMutation() async throws {
+    func testCancelSurfaceWorkCancelsInFlightDeleteRecord() async throws {
         let deleteStarted = expectation(description: "Database delete started")
-        let deleteReturned = expectation(description: "Database delete returned after surface cancellation")
+        let deleteCancelled = expectation(description: "Database delete cancelled")
         let client = FakeDatabaseClient()
         client.onCreateRecord = { _, _, _ in
             makeDatabaseRecord(id: "existing", title: "Existing")
         }
         client.onDeleteRecord = { _, _, id in
             deleteStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
-            deleteReturned.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                deleteCancelled.fulfill()
+                throw CancellationError()
+            }
             return id == "existing"
         }
         let manager = DatabaseManager(
@@ -262,7 +274,7 @@ final class DatabaseManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [deleteReturned], timeout: 1)
+        await fulfillment(of: [deleteCancelled], timeout: 1)
         do {
             try await task.value
             XCTFail("Cancelled delete unexpectedly succeeded")
