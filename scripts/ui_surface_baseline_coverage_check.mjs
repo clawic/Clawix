@@ -130,7 +130,7 @@ function runFailureSelfTests() {
     [["--simulate-missing-platform-scope"], "coverage must include at least one android surface"],
     [["--simulate-unsafe-geometry-reference"], "geometryEvidenceReference must use a safe relative private reference"],
     [["--simulate-mismatched-surface-reference"], "privateBaselineReference must target"],
-    [["--simulate-initial-scope-premature-complete"], "status must remain open until private surface baseline, geometry, and copy artifacts are approved"],
+    [["--simulate-initial-scope-premature-complete"], "status must remain open or blocked-external-pending until private surface baseline, geometry, and copy artifacts are approved"],
   ];
 
   for (const [testArgs, expectedOutput] of tests) {
@@ -420,8 +420,8 @@ if (!initialScopeDecision) {
       fail(`${decisionVerificationPath}.decisions.initial_scope.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (manifest?.status !== "approved-private-capture" && initialScopeDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.initial_scope.status must remain open until private surface baseline, geometry, and copy artifacts are approved`);
+  if (manifest?.status !== "approved-private-capture" && !["open", "blocked-external-pending"].includes(initialScopeDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.initial_scope.status must remain open or blocked-external-pending until private surface baseline, geometry, and copy artifacts are approved`);
   }
   if (manifest?.status !== "approved-private-capture" && (!Array.isArray(initialScopeDecision.remaining) || initialScopeDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.initial_scope.remaining must describe pending private surface evidence`);

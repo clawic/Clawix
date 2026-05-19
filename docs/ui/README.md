@@ -83,8 +83,9 @@ the public repo.
   review date, and expiry.
 - `protected-surfaces.registry.json`: user-approved frozen visual surfaces.
 - `approval-authority.manifest.json`: aggregate contract for explicit user
-  approval authority across canon, protected surfaces, scopes, and exceptions;
-  private approval evidence stays outside the public repo.
+  approval authority across canon, protected surfaces, scopes, exceptions,
+  approved rendered drift, and audited UI debt; private approval evidence stays
+  outside the public repo.
 - `canon-units.manifest.json`: declares UI pattern as the primary canon unit
   and requires promotion for narrower units.
 - `canon-promotions.registry.json`: public-safe records for user-approved canon
@@ -127,10 +128,11 @@ the public repo.
    `scripts/ui_canon_promotion_check.mjs`; only the user can approve a
    promotion.
 8. Keep decision verification evidence current with
-   `scripts/ui_decision_verification_check.mjs`; open decisions must declare
-   private evidence aliases covered by the derived evidence plan plus the
-   private verifiers that block closure. In this manifest, open decisions are
-   explicitly `EXTERNAL PENDING` and block `update_goal`.
+   `scripts/ui_decision_verification_check.mjs`; unresolved decisions must
+   declare private evidence aliases covered by the derived evidence plan plus
+   the private verifiers that block closure. In this manifest, `open` and
+   `blocked-external-pending` decisions are explicitly `EXTERNAL PENDING` and
+   block `update_goal`.
 9. Keep UI debt reports current with `scripts/ui_debt_report_check.mjs`; debt
    items are report-only outside a visual-authorized cleanup scope and
    opportunistic fixes stay forbidden.
@@ -244,7 +246,7 @@ the public repo.
     be omitted from final completion. To inspect closure readiness without
     attempting final approval, run
     `node scripts/ui_private_completion_verify.mjs --completion-status`. The
-    JSON output aggregates open decisions, private evidence counts, private
+    JSON output aggregates unresolved decisions, private evidence counts, private
     approval counts, private goal/source-session review status, and the final
     command while keeping `updateGoalAllowed` false until `--require-approved`
     passes. Its `blockingSummary` blocker IDs are declared in
@@ -280,7 +282,7 @@ the public repo.
     private root environment variables set to count missing roots, missing
     files, placeholders, invalid JSON, and candidate evidence by root and
     completion blocker. `node scripts/ui_private_completion_verify.mjs --completion-status`
-    also includes a review-bundle summary for the nine open decisions.
+    also includes a review-bundle summary for unresolved decisions.
     Candidate files are still not approval; final closure requires the private
     verifiers with `--require-approved`.
     To isolate candidate files that are present but malformed, run
@@ -291,19 +293,19 @@ the public repo.
     `node scripts/ui_private_evidence_plan_check.mjs --capture-packages` with
     the same private root environment. The output groups every private record
     by evidence type, blocking decision, current state, required fields, and
-    verifier command so the nine open decisions can be reduced package by
+    verifier command so unresolved decisions can be reduced package by
     package without hand-maintaining a private checklist.
     To review closure from the decision side, run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-decisions`.
-    That output lists each open decision, its evidence packages, current
+    That output lists each unresolved decision, its evidence packages, current
     counts, required action, and blocking verifier commands from the same
     derived plan.
     To generate a public-safe private review bundle for human approval
     planning, run `node scripts/ui_private_review_bundle_check.mjs --json`.
-    It groups each open decision by package, file state, relative private
+    It groups each unresolved decision by package, file state, relative private
     evidence path, required fields, and verifier commands without publishing
     private root paths or raw artifacts.
-46. Close the nine open completion decisions only by satisfying their blocking
+46. Close the remaining unresolved completion decisions only by satisfying their blocking
     evidence groups in `completion-audit.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,
     and pattern geometry. Missing private roots stay `EXTERNAL PENDING`; do not

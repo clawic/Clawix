@@ -1,9 +1,10 @@
 # Interface governance completion audit
 
 This public-safe audit mirrors the private completion rule without publishing
-the private source session. Completion remains blocked until every open decision
-has approved private evidence and the private goal reference plus source session
-are re-read one by one.
+the private source session. Completion remains blocked until every open or
+blocked-external-pending decision has approved private evidence or a valid
+external-pending ledger, and the private goal reference plus source session are
+re-read one by one.
 
 - Goal reference: `private-codex-goal:clawix-interface-governance-plan-2026-05-15.md`
 - Source session: `private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001`
@@ -14,9 +15,13 @@ are re-read one by one.
   Decision ids and choices must appear before the first `thread_goal_*` event.
 - Completion status: blocked by EXTERNAL PENDING private evidence.
 - Decision status semantics: `open` means EXTERNAL PENDING private evidence or
-  approval remains and blocks `update_goal`; only `verified-complete` counts
-  toward closure.
-- Goal update rule: Do not call update_goal until all decisions are verified-complete with evidence.
+  approval remains and blocks `update_goal`; `blocked-external-pending` means a
+  public contract is implemented but private/physical/model/human evidence is
+  explicitly ledgered for reentry; only `verified-complete` counts toward
+  closure.
+- Goal update rule: Do not call update_goal until all decisions are
+  verified-complete with evidence or explicitly accepted by the completion gate
+  as blocked with a ledger.
 - Private evidence plan: 166 records must be verified before completion.
 - Private approval evidence: 1 record(s) must be verified before completion.
 
@@ -31,7 +36,7 @@ are re-read one by one.
 | `debt-audit` | 3 |
 | `performance-budget` | 24 |
 
-| Open decision | Required private evidence types |
+| Unresolved decision | Required private evidence types |
 | --- | --- |
 | `initial_scope` | `surface-baseline`, `surface-geometry`, `surface-copy` |
 | `enforcement_mode` | `rendered-drift` |
@@ -43,30 +48,30 @@ are re-read one by one.
 | `perf_budget_source` | `performance-budget` |
 | `size_contracts` | `pattern-geometry` |
 
-| Open decision | Blocking evidence records | Blocking private verifiers | Next required action | External dependency |
+| Unresolved decision | Blocking evidence records | Blocking private verifiers | Next required action | External dependency |
 | --- | --- | --- | --- | --- |
-| `initial_scope` | 14 `surface-baseline`; 14 `surface-geometry`; 14 `surface-copy` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_copy_verify.mjs` | Capture and approve private surface baseline artifacts for each coverage entry. | private capture + human approval |
-| `enforcement_mode` | 14 `rendered-drift` | `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture rendered drift results from private visual evidence. | private rendered capture + visual approval |
-| `debt_strategy` | 3 `debt-audit` | `scripts/ui_private_debt_audit_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Populate exact audited debt after private visual inventory. | private visual inventory + human approval |
-| `visual_baselines_location` | 24 `critical-flow-baseline`; 14 `surface-baseline`; 14 `rendered-drift` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture approved hashes outside the public repo. | private baseline/drift capture + human approval |
-| `alignment_validation` | 14 `surface-geometry`; 59 `pattern-geometry`; 14 `surface-baseline` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Capture private rendered geometry and screenshot comparison evidence. | private rendered measurement + human approval |
-| `copy_governance` | 14 `surface-copy` | `scripts/ui_private_copy_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Extract private copy snapshots before any protected approval. | private copy extraction + human approval |
-| `v1_pattern_set` | 14 `surface-baseline`; 59 `pattern-geometry` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs` | Confirm candidate inventory with approved private rendered screenshots before goal completion. | private rendered capture + human approval |
-| `perf_budget_source` | 24 `performance-budget` | `scripts/ui_private_performance_budget_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Replace pending budget placeholders with approved measurements. | private performance measurement + human approval |
-| `size_contracts` | 59 `pattern-geometry` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Replace pending geometry clauses with approved measured contracts. | private rendered measurement + human approval |
+| `initial_scope` | 14 `surface-baseline`; 14 `surface-geometry`; 14 `surface-copy` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_copy_verify.mjs` | Cross-platform approval requires private surface baseline, geometry, and copy artifacts for every governed platform. | private capture + human approval |
+| `enforcement_mode` | 14 `rendered-drift` | `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Strict drift enforcement requires private rendered drift capture and explicit human approval. | private rendered capture + visual approval |
+| `debt_strategy` | 3 `debt-audit` | `scripts/ui_private_debt_audit_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Exact private debt audit findings require private visual inventory and explicit human approval. | private visual inventory + human approval |
+| `visual_baselines_location` | 24 `critical-flow-baseline`; 14 `surface-baseline`; 14 `rendered-drift` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_drift_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Approved private baseline and drift hashes require private capture and explicit human approval. | private baseline/drift capture + human approval |
+| `alignment_validation` | 14 `surface-geometry`; 59 `pattern-geometry`; 14 `surface-baseline` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Rendered geometry and screenshot comparison evidence require private capture and explicit human approval. | private rendered measurement + human approval |
+| `copy_governance` | 14 `surface-copy` | `scripts/ui_private_copy_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Private copy snapshots require capture from governed visible surfaces and explicit human approval. | private copy extraction + human approval |
+| `v1_pattern_set` | 14 `surface-baseline`; 59 `pattern-geometry` | `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_baseline_verify.mjs`, `scripts/ui_private_geometry_verify.mjs` | V1 visible inventory approval requires private rendered screenshots, geometry, and explicit human approval. | private rendered capture + human approval |
+| `perf_budget_source` | 24 `performance-budget` | `scripts/ui_private_performance_budget_verify.mjs`, `scripts/ui_private_evidence_verify.mjs`, `scripts/ui_private_visual_verify.mjs` | Approved performance budgets require private critical-flow measurements and explicit human approval. | private performance measurement + human approval |
+| `size_contracts` | 59 `pattern-geometry` | `scripts/ui_private_geometry_verify.mjs`, `scripts/ui_private_evidence_verify.mjs` | Measured geometry clauses require private rendered measurement and explicit human approval. | private rendered measurement + human approval |
 
 | # | Decision | Status | Completion evidence state |
 | --- | --- | --- | --- |
-| 1 | `initial_scope` | open | EXTERNAL PENDING: private surface baselines, rendered geometry, and copy snapshots. |
-| 2 | `enforcement_mode` | open | EXTERNAL PENDING: private rendered drift evidence. |
+| 1 | `initial_scope` | blocked-external-pending | EXTERNAL PENDING: public cross-platform coverage is enforced; exact platform captures are ledgered until private baseline, geometry, copy, and human approval are available. |
+| 2 | `enforcement_mode` | blocked-external-pending | EXTERNAL PENDING: public strict enforcement is wired; exact rendered drift closure is ledgered until private capture and human approval are available. |
 | 3 | `canonical_source` | verified-complete | Public evidence verified. |
-| 4 | `debt_strategy` | open | EXTERNAL PENDING: private debt audit findings. |
+| 4 | `debt_strategy` | blocked-external-pending | EXTERNAL PENDING: public debt baseline is enforced; exact private debt audit findings are ledgered until private visual inventory and human approval are available. |
 | 5 | `canon_approval` | verified-complete | Public approval evidence and private approval verifier wired. |
-| 6 | `visual_baselines_location` | open | EXTERNAL PENDING: approved private baseline and drift hashes. |
+| 6 | `visual_baselines_location` | blocked-external-pending | EXTERNAL PENDING: public baseline manifests are enforced; exact baseline and drift hashes are ledgered until private capture and human approval are available. |
 | 7 | `canon_unit` | verified-complete | Public evidence verified. |
 | 8 | `agent_ui_workflow` | verified-complete | Public evidence verified. |
 | 9 | `performance_budget_style` | verified-complete | Public evidence verified. |
-| 10 | `alignment_validation` | open | EXTERNAL PENDING: private rendered geometry and screenshot comparison evidence. |
+| 10 | `alignment_validation` | blocked-external-pending | EXTERNAL PENDING: public alignment contracts are enforced; exact rendered geometry and screenshot comparison evidence are ledgered until private capture and human approval are available. |
 | 11 | `state_coverage` | verified-complete | Public evidence verified. |
 | 12 | `human_visual_review` | verified-complete | Public approval evidence and private approval verifier wired. |
 | 13 | `governance_location` | verified-complete | Public evidence verified. |
@@ -74,16 +79,16 @@ are re-read one by one.
 | 15 | `external_references_policy` | verified-complete | Public evidence verified. |
 | 16 | `gate_surface` | verified-complete | Public evidence verified. |
 | 17 | `exception_policy` | verified-complete | Public evidence verified. |
-| 18 | `copy_governance` | open | EXTERNAL PENDING: private copy snapshots. |
-| 19 | `v1_pattern_set` | open | EXTERNAL PENDING: approved private rendered screenshots and geometry. |
+| 18 | `copy_governance` | blocked-external-pending | EXTERNAL PENDING: public copy canon is enforced; exact private copy snapshots are ledgered until governed captures and human approval are available. |
+| 19 | `v1_pattern_set` | blocked-external-pending | EXTERNAL PENDING: public V1 visible inventory is mapped; final approval is ledgered until private rendered screenshots, geometry, and human approval are available. |
 | 20 | `ci_visual_strategy` | verified-complete | Public evidence verified. |
-| 21 | `perf_budget_source` | open | EXTERNAL PENDING: approved measured private performance baselines. |
+| 21 | `perf_budget_source` | blocked-external-pending | EXTERNAL PENDING: public performance budget registry is enforced; exact measured budgets are ledgered until private critical-flow capture and human approval are available. |
 | 22 | `v1_delivery_goal` | verified-complete | Public evidence verified. |
 | 23 | `registry_format` | verified-complete | Public evidence verified. |
 | 24 | `skill_naming_style` | verified-complete | Public evidence verified. |
 | 25 | `component_extraction_rule` | verified-complete | Public evidence verified. |
 | 26 | `component_api_style` | verified-complete | Public evidence verified. |
-| 27 | `size_contracts` | open | EXTERNAL PENDING: approved private rendered geometry measurements. |
+| 27 | `size_contracts` | blocked-external-pending | EXTERNAL PENDING: public geometry contracts are enforced; exact measured size contracts are ledgered until private rendered measurement and human approval are available. |
 | 28 | `visual_mutation_permission` | verified-complete | Public evidence verified. |
 | 29 | `approved_surface_protection` | verified-complete | Public approval evidence and private approval verifier wired. |
 | 30 | `ui_debt_fix_policy` | verified-complete | Public evidence verified. |

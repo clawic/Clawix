@@ -14,10 +14,12 @@ const simulationFlags = [
   "--simulate-wrong-conversation-id",
   "--simulate-missing-required-status",
   "--simulate-missing-open-status-semantics",
+  "--simulate-missing-blocked-status-semantics",
   "--simulate-extra-required-status",
   "--simulate-duplicate-required-status",
   "--simulate-verified-with-remaining",
   "--simulate-open-without-remaining",
+  "--simulate-blocked-without-ledger",
   "--simulate-unsafe-public-evidence",
   "--simulate-duplicate-public-evidence",
   "--simulate-unplanned-private-evidence",
@@ -214,7 +216,7 @@ requireFields(decisionVerification, decisionPath, [
 ]);
 
 if (args.has("--simulate-open-decision-without-private-blockers")) {
-  const openDecision = decisionVerification?.decisions?.find((decision) => decision?.status === "open");
+  const openDecision = decisionVerification?.decisions?.find((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending");
   if (openDecision) {
     delete openDecision.privateEvidence;
     delete openDecision.blockingVerifiers;
@@ -233,6 +235,10 @@ if (args.has("--simulate-missing-open-status-semantics") && Array.isArray(decisi
   decisionVerification.statusSemantics = decisionVerification.statusSemantics.filter((entry) => entry?.status !== "open");
 }
 
+if (args.has("--simulate-missing-blocked-status-semantics") && Array.isArray(decisionVerification?.statusSemantics)) {
+  decisionVerification.statusSemantics = decisionVerification.statusSemantics.filter((entry) => entry?.status !== "blocked-external-pending");
+}
+
 if (args.has("--simulate-extra-required-status") && Array.isArray(decisionVerification?.statuses)) {
   decisionVerification.statuses.push("pending-private");
 }
@@ -249,9 +255,16 @@ if (args.has("--simulate-verified-with-remaining") && Array.isArray(decisionVeri
 }
 
 if (args.has("--simulate-open-without-remaining") && Array.isArray(decisionVerification?.decisions)) {
-  const openDecision = decisionVerification.decisions.find((decision) => decision?.status === "open");
+  const openDecision = decisionVerification.decisions.find((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending");
   if (openDecision) {
     openDecision.remaining = [];
+  }
+}
+
+if (args.has("--simulate-blocked-without-ledger") && Array.isArray(decisionVerification?.decisions)) {
+  const blockedDecision = decisionVerification.decisions.find((decision) => decision?.status === "blocked-external-pending");
+  if (blockedDecision) {
+    blockedDecision.externalPendingLedger = {};
   }
 }
 
@@ -322,7 +335,7 @@ for (const entry of privateRootAliasEntries(rootDir)) {
 const allowedStatuses = requireExactStringSet(
   requireArray(decisionVerification, decisionPath, "statuses"),
   `${decisionPath}.statuses`,
-  ["open", "verified-complete"],
+  ["open", "blocked-external-pending", "verified-complete"],
 );
 const statusSemantics = requireArray(decisionVerification, decisionPath, "statusSemantics");
 const statusSemanticsByStatus = new Map();
@@ -343,6 +356,13 @@ if (!String(openSemantics?.meaning || "").includes("EXTERNAL PENDING")) {
 }
 if (openSemantics?.completionEffect !== "blocks-update-goal") {
   fail(`${decisionPath}.statusSemantics.open.completionEffect must be blocks-update-goal`);
+}
+const blockedSemantics = statusSemanticsByStatus.get("blocked-external-pending");
+if (!String(blockedSemantics?.meaning || "").includes("externalPendingLedger")) {
+  fail(`${decisionPath}.statusSemantics.blocked-external-pending must reference externalPendingLedger`);
+}
+if (blockedSemantics?.completionEffect !== "blocks-update-goal") {
+  fail(`${decisionPath}.statusSemantics.blocked-external-pending.completionEffect must be blocks-update-goal`);
 }
 const verifiedSemantics = statusSemanticsByStatus.get("verified-complete");
 if (verifiedSemantics?.completionEffect !== "counts-toward-completion") {
@@ -419,7 +439,10 @@ for (const [index, decision] of decisions.entries()) {
   if (decision.status === "open" && decision.remaining.length === 0) {
     fail(`${label} must be verified-complete when no remaining work is listed`);
   }
-  if (decision.status === "open") {
+  if (decision.status === "blocked-external-pending" && decision.remaining.length === 0) {
+    fail(`${label} must list remaining work while blocked-external-pending`);
+  }
+  if (decision.status === "open" || decision.status === "blocked-external-pending") {
     requireFields(decision, label, ["privateEvidence", "blockingVerifiers"]);
     const privateEvidence = requireArray(decision, label, "privateEvidence");
     requireUniqueStrings(privateEvidence, `${label}.privateEvidence`);
@@ -455,6 +478,15 @@ for (const [index, decision] of decisions.entries()) {
       }
     }
   }
+  if (decision.status === "blocked-external-pending") {
+    requireFields(decision.externalPendingLedger, `${label}.externalPendingLedger`, [
+      "reason",
+      "risk",
+      "nextPhase",
+      "reentryCondition",
+      "blockingCommand",
+    ]);
+  }
   if (approvalDecisionIds.has(decision.id) && !decision.publicEvidence.includes("scripts/ui_private_approval_verify.mjs")) {
     fail(`${label}.publicEvidence must include scripts/ui_private_approval_verify.mjs`);
   }
@@ -480,10 +512,12 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-wrong-conversation-id", "conversationId must stay pinned to the source conversation"],
     ["--simulate-missing-required-status", "statuses must include open"],
     ["--simulate-missing-open-status-semantics", "statusSemantics must describe open"],
+    ["--simulate-missing-blocked-status-semantics", "statusSemantics must describe blocked-external-pending"],
     ["--simulate-extra-required-status", "statuses must not include pending-private"],
     ["--simulate-duplicate-required-status", "statuses duplicates"],
     ["--simulate-verified-with-remaining", "cannot be verified-complete while remaining work is listed"],
-    ["--simulate-open-without-remaining", "must be verified-complete when no remaining work is listed"],
+    ["--simulate-open-without-remaining", "must list remaining work while blocked-external-pending"],
+    ["--simulate-blocked-without-ledger", "externalPendingLedger is missing reason"],
     ["--simulate-unsafe-public-evidence", "must be a public-safe repo-relative reference"],
     ["--simulate-duplicate-public-evidence", "publicEvidence duplicates"],
     ["--simulate-unplanned-private-evidence", "is not covered by the derived private evidence plan"],

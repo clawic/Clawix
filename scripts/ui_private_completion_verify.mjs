@@ -81,7 +81,7 @@ function runFailureSelfTests() {
     [
       ["--require-approved", "--skip-public-prerequisites", "--simulate-missing-decision-blocker"],
       simulationEnv,
-      "requires private visual decisionBlockers to include open decision initial_scope",
+      "requires private visual decisionBlockers to include unresolved decision initial_scope",
     ],
     [
       ["--require-approved", "--skip-public-prerequisites", "--simulate-stale-decision-blocker"],
@@ -91,7 +91,7 @@ function runFailureSelfTests() {
     [
       ["--require-approved", "--skip-public-prerequisites", "--simulate-open-decision-without-private-evidence"],
       simulationEnv,
-      "requires open decision initial_scope to list private evidence aliases",
+      "requires blocked decision initial_scope to list private evidence aliases",
     ],
     [
       ["--require-approved", "--skip-public-prerequisites", "--simulate-verified-complete-with-remaining"],
@@ -128,8 +128,8 @@ function runFailureSelfTests() {
   }
   try {
     const status = JSON.parse(statusResult.stdout);
-    if (status.updateGoalAllowed !== false || status.decisions?.open !== 9) {
-      console.error("UI private completion verification self-test --completion-status must report blocked update_goal with 9 open decisions.");
+    if (status.updateGoalAllowed !== false || status.decisions?.open !== 0 || status.decisions?.blockedExternalPending !== 9 || status.decisions?.unresolved !== 9) {
+      console.error("UI private completion verification self-test --completion-status must report blocked update_goal with 0 open decisions and 9 blocked decisions.");
       process.exit(1);
     }
     if (!status.privateSourceReview || typeof status.privateSourceReview.exitCode !== "number") {
@@ -185,7 +185,7 @@ if (hasFlag("--simulate-stale-decision-blocker") && Array.isArray(privateVisualV
   privateVisualValidation.decisionBlockers = [...privateVisualValidation.decisionBlockers, "simulated_stale_decision"];
 }
 const decisions = decisionVerification.decisions || [];
-const firstOpenDecision = decisions.find((decision) => decision?.status === "open");
+const firstOpenDecision = decisions.find((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending");
 const firstVerifiedDecision = decisions.find((decision) => decision?.status === "verified-complete");
 if (hasFlag("--simulate-verified-complete-with-remaining") && firstVerifiedDecision) {
   firstVerifiedDecision.remaining = ["Simulated remaining work."];
@@ -203,7 +203,7 @@ if (hasFlag("--simulate-open-decision-without-remaining") && firstOpenDecision) 
   firstOpenDecision.remaining = [];
 }
 for (const decision of decisions) {
-  if (!["open", "verified-complete"].includes(decision?.status)) {
+  if (!["open", "blocked-external-pending", "verified-complete"].includes(decision?.status)) {
     console.error(`UI private completion verification found unsupported decision status for ${decision?.id || "unknown"}.`);
     process.exit(1);
   }
@@ -224,6 +224,26 @@ for (const decision of decisions) {
       process.exit(1);
     }
   }
+  if (decision.status === "blocked-external-pending") {
+    if (remaining.length === 0) {
+      console.error(`UI private completion verification requires blocked decision ${decision.id} to list remaining work.`);
+      process.exit(1);
+    }
+    if (privateEvidence.length === 0) {
+      console.error(`UI private completion verification requires blocked decision ${decision.id} to list private evidence aliases.`);
+      process.exit(1);
+    }
+    if (blockingVerifiers.length === 0) {
+      console.error(`UI private completion verification requires blocked decision ${decision.id} to list blocking private verifiers.`);
+      process.exit(1);
+    }
+    for (const field of ["reason", "risk", "nextPhase", "reentryCondition", "blockingCommand"]) {
+      if (!decision.externalPendingLedger?.[field]) {
+        console.error(`UI private completion verification requires blocked decision ${decision.id} externalPendingLedger.${field}.`);
+        process.exit(1);
+      }
+    }
+  }
   if (decision.status === "verified-complete") {
     if (remaining.length > 0) {
       console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no remaining work.`);
@@ -240,6 +260,8 @@ for (const decision of decisions) {
   }
 }
 const actualOpenDecisions = decisions.filter((decision) => decision.status === "open");
+const actualBlockedDecisions = decisions.filter((decision) => decision.status === "blocked-external-pending");
+const actualUnresolvedDecisions = decisions.filter((decision) => decision.status === "open" || decision.status === "blocked-external-pending");
 
 if (completionStatusMode) {
   const privateEvidenceStatus = runStatusScript("scripts/ui_private_evidence_plan_check.mjs", ["--capture-decisions"]);
@@ -254,6 +276,7 @@ if (completionStatusMode) {
   });
   const verifiedCompleteDecisions = decisions.filter((decision) => decision.status === "verified-complete");
   const openDecisionIds = actualOpenDecisions.map((decision) => decision.id);
+  const blockedDecisionIds = actualBlockedDecisions.map((decision) => decision.id);
   const evidenceTotals = privateEvidenceStatus.json?.totals || {};
   const approvalCandidateBlockerCount = privateApprovalVerification?.exitCode === 0 ? 0 : approvalCounts.candidate || 0;
   const blockers = [];
@@ -263,6 +286,14 @@ if (completionStatusMode) {
       status: "external-pending",
       count: openDecisionIds.length,
       details: openDecisionIds,
+    });
+  }
+  if (blockedDecisionIds.length > 0) {
+    blockers.push({
+      id: "blocked-external-pending-decisions",
+      status: "external-pending",
+      count: blockedDecisionIds.length,
+      details: blockedDecisionIds,
     });
   }
   for (const [id, count] of [
@@ -329,6 +360,9 @@ if (completionStatusMode) {
       verifiedComplete: verifiedCompleteDecisions.length,
       open: actualOpenDecisions.length,
       openDecisionIds,
+      blockedExternalPending: actualBlockedDecisions.length,
+      blockedExternalPendingDecisionIds: blockedDecisionIds,
+      unresolved: actualUnresolvedDecisions.length,
     },
     privateEvidence: {
       script: privateEvidenceStatus.script,
@@ -392,23 +426,23 @@ if (blockerSet.size !== decisionBlockers.length) {
   console.error("UI private completion verification found duplicate private decision blockers.");
   process.exit(1);
 }
-for (const decision of actualOpenDecisions) {
+for (const decision of actualUnresolvedDecisions) {
   if (!blockerSet.has(decision.id)) {
-    console.error(`UI private completion verification requires private visual decisionBlockers to include open decision ${decision.id}.`);
+    console.error(`UI private completion verification requires private visual decisionBlockers to include unresolved decision ${decision.id}.`);
     process.exit(1);
   }
 }
 for (const decisionId of decisionBlockers) {
-  if (!actualOpenDecisions.some((decision) => decision.id === decisionId)) {
+  if (!actualUnresolvedDecisions.some((decision) => decision.id === decisionId)) {
     console.error(`UI private completion verification found stale private visual decisionBlocker ${decisionId}.`);
     process.exit(1);
   }
 }
 const openDecisions = hasFlag("--simulate-no-open-decisions")
   ? []
-  : actualOpenDecisions;
+  : actualUnresolvedDecisions;
 if (openDecisions.length > 0) {
-  console.error(`EXTERNAL PENDING: ${openDecisions.length} open decisions block update_goal: ${openDecisions.map((decision) => decision.id).join(", ")}.`);
+  console.error(`EXTERNAL PENDING: ${openDecisions.length} unresolved decisions block update_goal: ${openDecisions.map((decision) => decision.id).join(", ")}.`);
   process.exit(2);
 }
 

@@ -266,8 +266,8 @@ if (!sizeContractsDecision) {
       fail(`${decisionVerificationPath}.decisions.size_contracts.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (hasPendingGeometry && sizeContractsDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.size_contracts.status must remain open while geometry clauses are pending private measurement`);
+  if (hasPendingGeometry && !["open", "blocked-external-pending"].includes(sizeContractsDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.size_contracts.status must remain open or blocked-external-pending while geometry clauses are pending private measurement`);
   }
   if (hasPendingGeometry && (!Array.isArray(sizeContractsDecision.remaining) || sizeContractsDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.size_contracts.remaining must describe pending private geometry measurement`);
@@ -290,7 +290,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-size-contracts-decision-missing-private-blocker", "decisions.size_contracts.blockingVerifiers must include scripts/ui_private_geometry_verify.mjs"],
     ["--simulate-size-contracts-decision-missing-private-platform", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:web/*"],
     ["--simulate-size-contracts-decision-missing-sidebar-row-private", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:macos/sidebar-row"],
-    ["--simulate-size-contracts-decision-premature-complete", "decisions.size_contracts.status must remain open while geometry clauses are pending private measurement"],
+    ["--simulate-size-contracts-decision-premature-complete", "decisions.size_contracts.status must remain open or blocked-external-pending while geometry clauses are pending private measurement"],
     ["--simulate-extra-platform-geometry", "geometry.windows must be listed in"],
     ["--simulate-negative-measurement", "geometry.height must be a finite non-negative number"],
     ["--simulate-mixed-direct-and-platform-geometry", "must not mix direct measurements with nested platform clauses"],

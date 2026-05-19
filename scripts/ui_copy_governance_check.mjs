@@ -368,8 +368,8 @@ if (!copyGovernanceDecision) {
       fail(`${decisionVerificationPath}.decisions.copy_governance.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (copyInventory?.status !== "approved-private-snapshots" && copyGovernanceDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.copy_governance.status must remain open until private copy snapshots are captured and approved`);
+  if (copyInventory?.status !== "approved-private-snapshots" && !["open", "blocked-external-pending"].includes(copyGovernanceDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.status must remain open or blocked-external-pending until private copy snapshots are captured and approved`);
   }
   if (copyInventory?.status !== "approved-private-snapshots" && (!Array.isArray(copyGovernanceDecision.remaining) || copyGovernanceDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.copy_governance.remaining must describe pending private copy snapshots`);
@@ -398,7 +398,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-wrong-surface-copy-alias", "privateCopyAlias must match docs/ui/copy.inventory.json.privateSnapshotAlias"],
     ["--simulate-copy-decision-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_copy_verify.mjs"],
     ["--simulate-copy-decision-missing-private-evidence", "privateEvidence must include private-codex-ui-copy-snapshots:surfaces/*"],
-    ["--simulate-copy-decision-premature-complete", "status must remain open until private copy snapshots are captured and approved"],
+    ["--simulate-copy-decision-premature-complete", "status must remain open or blocked-external-pending until private copy snapshots are captured and approved"],
     ["--simulate-approved-copy-snapshots-stale-decision", "status must be verified-complete after private copy snapshots are approved"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {

@@ -478,7 +478,7 @@ for (const snippet of [
   "--completion-status",
   "privateSourceReview",
   "updateGoalAllowed",
-  "open decisions",
+  "unresolved decisions",
   "decisionBlockers",
   "--simulate-no-open-decisions",
   "--simulate-verified-complete-with-remaining",
@@ -528,11 +528,14 @@ if (completionStatusResult.status !== 0) {
     if (status.updateGoalAllowed !== false) {
       fail(`${manifest.privateVerifierScript} --completion-status must keep updateGoalAllowed false`);
     }
-    if (status.decisions?.open !== 9) {
-      fail(`${manifest.privateVerifierScript} --completion-status must report 9 open decisions`);
+    if (status.decisions?.open !== 0 || status.decisions?.blockedExternalPending !== 9 || status.decisions?.unresolved !== 9) {
+      fail(`${manifest.privateVerifierScript} --completion-status must report 0 open decisions, 9 blocked decisions, and 9 unresolved decisions`);
     }
-    if (!Array.isArray(status.decisions?.openDecisionIds) || !status.decisions.openDecisionIds.includes("initial_scope")) {
-      fail(`${manifest.privateVerifierScript} --completion-status must list open decision ids`);
+    if (!Array.isArray(status.decisions?.openDecisionIds) || status.decisions.openDecisionIds.length !== 0) {
+      fail(`${manifest.privateVerifierScript} --completion-status must list no open decision ids`);
+    }
+    if (!Array.isArray(status.decisions?.blockedExternalPendingDecisionIds) || !status.decisions.blockedExternalPendingDecisionIds.includes("initial_scope")) {
+      fail(`${manifest.privateVerifierScript} --completion-status must list blocked decision ids`);
     }
     if (!status.privateEvidence || status.privateEvidence.totalRecords !== 166) {
       fail(`${manifest.privateVerifierScript} --completion-status must include private evidence totals`);
@@ -594,8 +597,8 @@ if (openDecisions.length > 0) {
   if (result.status !== manifest.externalPendingExitCode) {
     fail(`${manifest.privateVerifierScript} must exit ${manifest.externalPendingExitCode} while decisions remain open`);
   }
-  if (!output.includes("open decisions block update_goal")) {
-    fail(`${manifest.privateVerifierScript} must report open decisions before asking for private roots`);
+  if (!output.includes("unresolved decisions block update_goal")) {
+    fail(`${manifest.privateVerifierScript} must report unresolved decisions before asking for private roots`);
   }
   for (const decision of openDecisions) {
     if (!output.includes(decision.id)) {
@@ -614,10 +617,10 @@ if (openDecisions.length > 0) {
   );
   const missingBlockerOutput = `${missingBlockerResult.stdout || ""}${missingBlockerResult.stderr || ""}`;
   if (missingBlockerResult.status === 0 || missingBlockerResult.status === manifest.externalPendingExitCode) {
-    fail(`${manifest.privateVerifierScript} must fail before EXTERNAL PENDING when private decisionBlockers omit an open decision`);
+    fail(`${manifest.privateVerifierScript} must fail before EXTERNAL PENDING when private decisionBlockers omit an unresolved decision`);
   }
   if (!missingBlockerOutput.includes("decisionBlockers") || !missingBlockerOutput.includes("initial_scope")) {
-    fail(`${manifest.privateVerifierScript} must explain missing private decisionBlockers for open decisions`);
+    fail(`${manifest.privateVerifierScript} must explain missing private decisionBlockers for unresolved decisions`);
   }
 
   const staleBlockerResult = spawnSync(
@@ -638,9 +641,9 @@ if (openDecisions.length > 0) {
   }
 
   for (const [flag, expectedOutput] of [
-    ["--simulate-open-decision-without-private-evidence", "open decision initial_scope to list private evidence aliases"],
-    ["--simulate-open-decision-without-blocking-verifier", "open decision initial_scope to list blocking private verifiers"],
-    ["--simulate-open-decision-without-remaining", "open decision initial_scope to list remaining work"],
+    ["--simulate-open-decision-without-private-evidence", "blocked decision initial_scope to list private evidence aliases"],
+    ["--simulate-open-decision-without-blocking-verifier", "blocked decision initial_scope to list blocking private verifiers"],
+    ["--simulate-open-decision-without-remaining", "blocked decision initial_scope to list remaining work"],
     ["--simulate-verified-complete-with-remaining", "verified-complete decision canonical_source to have no remaining work"],
     ["--simulate-verified-complete-with-private-evidence", "verified-complete decision canonical_source to have no private evidence blockers"],
   ]) {
@@ -679,8 +682,8 @@ if (simulatedClosedResult.status !== manifest.externalPendingExitCode) {
 if (!simulatedClosedOutput.includes("CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE")) {
   fail(`${manifest.privateVerifierScript} must delegate to private completion source verification after decisions close`);
 }
-if (simulatedClosedOutput.includes("open decisions block update_goal")) {
-  fail(`${manifest.privateVerifierScript} must not report open decisions during closed-decision simulation`);
+if (simulatedClosedOutput.includes("unresolved decisions block update_goal")) {
+  fail(`${manifest.privateVerifierScript} must not report unresolved decisions during closed-decision simulation`);
 }
 withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
   const statusResult = spawnSync(
@@ -700,8 +703,8 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       if (status.privateSourceReview?.exitCode !== 0 || status.privateSourceReview?.status !== "passed") {
         fail(`${manifest.privateVerifierScript} --completion-status must report passed private source review with temporary private source files`);
       }
-      if (status.updateGoalAllowed !== false || status.decisions?.open !== 9) {
-        fail(`${manifest.privateVerifierScript} --completion-status must keep update_goal blocked even when private source review passes while decisions remain open`);
+      if (status.updateGoalAllowed !== false || status.decisions?.open !== 0 || status.decisions?.blockedExternalPending !== 9 || status.decisions?.unresolved !== 9) {
+        fail(`${manifest.privateVerifierScript} --completion-status must keep update_goal blocked even when private source review passes while decisions remain unresolved`);
       }
       const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
       if (blockerIds.has("private-source-review")) {

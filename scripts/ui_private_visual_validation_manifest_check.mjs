@@ -639,22 +639,22 @@ for (const script of [
 
 const decisionVerificationPath = "docs/ui/decision-verification.json";
 const decisionVerification = readJson(decisionVerificationPath);
-const openDecisionIds = requireArray(decisionVerification, decisionVerificationPath, "decisions")
-  .filter((decision) => decision?.status === "open")
+const unresolvedDecisionIds = requireArray(decisionVerification, decisionVerificationPath, "decisions")
+  .filter((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending")
   .map((decision) => decision.id);
 const decisionBlockers = requireArray(manifest, manifestPath, "decisionBlockers");
 const blockerSet = new Set(decisionBlockers);
 if (blockerSet.size !== decisionBlockers.length) {
   fail(`${manifestPath}.decisionBlockers must not contain duplicate decision ids`);
 }
-for (const decisionId of openDecisionIds) {
+for (const decisionId of unresolvedDecisionIds) {
   if (!blockerSet.has(decisionId)) {
-    fail(`${manifestPath}.decisionBlockers must include open decision ${decisionId}`);
+    fail(`${manifestPath}.decisionBlockers must include unresolved decision ${decisionId}`);
   }
 }
 for (const decisionId of decisionBlockers) {
-  if (!openDecisionIds.includes(decisionId)) {
-    fail(`${manifestPath}.decisionBlockers contains non-open decision ${decisionId}`);
+  if (!unresolvedDecisionIds.includes(decisionId)) {
+    fail(`${manifestPath}.decisionBlockers contains resolved decision ${decisionId}`);
   }
 }
 const evidenceTypeCounts = evidencePlan?.counts || {};
@@ -716,7 +716,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-delegate-without-approval", "delegates must include node scripts/ui_private_copy_verify.mjs --require-approved"],
     ["--simulate-extra-root-alias", "rootAliases must exactly match required private aliases"],
     ["--simulate-extra-optional-root-alias", "optionalRootAliases must exactly match optional private aliases"],
-    ["--simulate-missing-decision-blocker", "decisionBlockers must include open decision copy_governance"],
+    ["--simulate-missing-decision-blocker", "decisionBlockers must include unresolved decision copy_governance"],
     ["--simulate-unknown-evidence-type", "evidenceTypes includes unknown-private-evidence"],
     ["--simulate-missing-candidate-capture-manifest", "is missing candidateCaptureRunnerManifestPath"],
     ["--simulate-wrong-candidate-capture-command", "candidateCapturePlanCommand must run node scripts/ui_private_capture_plan.mjs --runner-id <runner-id> --json"],

@@ -454,8 +454,8 @@ if (!perfBudgetSourceDecision) {
       fail(`${decisionVerificationPath}.decisions.perf_budget_source.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (budgets?.status !== "approved-baseline-enforced" && perfBudgetSourceDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.perf_budget_source.status must remain open until private performance baselines are approved`);
+  if (budgets?.status !== "approved-baseline-enforced" && !["open", "blocked-external-pending"].includes(perfBudgetSourceDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.perf_budget_source.status must remain open or blocked-external-pending until private performance baselines are approved`);
   }
   if (budgets?.status !== "approved-baseline-enforced" && (!Array.isArray(perfBudgetSourceDecision.remaining) || perfBudgetSourceDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.perf_budget_source.remaining must describe pending approved performance baselines`);
@@ -504,7 +504,7 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-duplicate-private-baseline", "docs/ui/private-baselines.manifest.json.flows[24] duplicates macos:sidebar-hover-click-expand"],
     ["--simulate-wrong-private-reference", "privateBaselineReference must resolve to"],
     ["--simulate-pending-registry-with-all-enforced", "status must be approved-baseline-enforced when all flow budgets are enforced"],
-    ["--simulate-perf-decision-premature-complete", "status must remain open until private performance baselines are approved"],
+    ["--simulate-perf-decision-premature-complete", "status must remain open or blocked-external-pending until private performance baselines are approved"],
     ["--simulate-approved-performance-budgets-stale-decision", "status must be verified-complete after private performance baselines are approved"],
   ];
   const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);

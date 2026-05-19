@@ -457,8 +457,8 @@ if (!v1PatternSetDecision) {
       fail(`${decisionVerificationPath}.decisions.v1_pattern_set.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (surfaceBaselineCoverage?.status !== "approved-private-capture" && v1PatternSetDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.status must remain open until visible inventory has approved private rendered screenshots`);
+  if (surfaceBaselineCoverage?.status !== "approved-private-capture" && !["open", "blocked-external-pending"].includes(v1PatternSetDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.v1_pattern_set.status must remain open or blocked-external-pending until visible inventory has approved private rendered screenshots`);
   }
   if (surfaceBaselineCoverage?.status !== "approved-private-capture" && (!Array.isArray(v1PatternSetDecision.remaining) || v1PatternSetDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.v1_pattern_set.remaining must describe pending approved private rendered screenshots`);
@@ -488,7 +488,7 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-unknown-pattern", "patterns references unknown pattern missing-pattern"],
     ["--simulate-unsafe-coverage-scope", "scopes[0] must be a safe relative path"],
     ["--simulate-v1-pattern-set-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_geometry_verify.mjs"],
-    ["--simulate-v1-pattern-set-premature-complete", "status must remain open until visible inventory has approved private rendered screenshots"],
+    ["--simulate-v1-pattern-set-premature-complete", "status must remain open or blocked-external-pending until visible inventory has approved private rendered screenshots"],
   ];
   const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
   for (const [flag, expectedOutput] of selfTests) {

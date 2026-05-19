@@ -13,29 +13,29 @@
   "privateReviewBundleScript": "scripts/ui_private_review_bundle_check.mjs",
   "completionStatusCommand": "node scripts/ui_private_completion_verify.mjs --completion-status",
   "completionStatusRequiredBlockersWithoutPrivateRoots": [
-    "open-decisions",
+    "blocked-external-pending-decisions",
     "private-evidence-missing-root",
     "private-approval-missing-root",
     "private-source-review"
   ],
   "completionStatusRequiredBlockersWithSourceReview": [
-    "open-decisions",
+    "blocked-external-pending-decisions",
     "private-evidence-missing-root",
     "private-approval-missing-root"
   ],
   "completionStatusRequiredBlockersWithPrivatePlaceholders": [
-    "open-decisions",
+    "blocked-external-pending-decisions",
     "private-evidence-placeholder",
     "private-approval-placeholder"
   ],
   "completionStatusRequiredBlockersWithInvalidCandidates": [
-    "open-decisions",
+    "blocked-external-pending-decisions",
     "private-evidence-placeholder",
     "private-evidence-invalid-candidate",
     "private-approval-placeholder"
   ],
   "completionStatusRequiredBlockersWithInvalidApprovalCandidates": [
-    "open-decisions",
+    "blocked-external-pending-decisions",
     "private-evidence-placeholder",
     "private-approval-invalid-candidate"
   ],

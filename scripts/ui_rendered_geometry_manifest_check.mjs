@@ -296,8 +296,8 @@ if (!alignmentValidationDecision) {
       fail(`${decisionVerificationPath}.decisions.alignment_validation.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (manifest?.status !== "approved-private-geometry" && alignmentValidationDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.alignment_validation.status must remain open until private rendered geometry and baseline evidence are approved`);
+  if (manifest?.status !== "approved-private-geometry" && !["open", "blocked-external-pending"].includes(alignmentValidationDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.alignment_validation.status must remain open or blocked-external-pending until private rendered geometry and baseline evidence are approved`);
   }
   if (manifest?.status !== "approved-private-geometry" && (!Array.isArray(alignmentValidationDecision.remaining) || alignmentValidationDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.alignment_validation.remaining must describe pending private rendered geometry and screenshot comparison evidence`);
@@ -323,7 +323,7 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-verifier-without-approval", "verificationCommand must require approved private geometry evidence"],
     ["--simulate-local-path-reference", "must not contain a local path"],
     ["--simulate-alignment-decision-missing-private-geometry-verifier", "publicEvidence must include scripts/ui_private_geometry_verify.mjs"],
-    ["--simulate-alignment-decision-premature-complete", "status must remain open until private rendered geometry and baseline evidence are approved"],
+    ["--simulate-alignment-decision-premature-complete", "status must remain open or blocked-external-pending until private rendered geometry and baseline evidence are approved"],
     ["--simulate-approved-geometry-stale-decision", "status must be verified-complete after private rendered geometry and baseline evidence are approved"],
   ];
   const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);

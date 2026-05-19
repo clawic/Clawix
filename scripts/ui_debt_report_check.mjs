@@ -145,7 +145,7 @@ function runFailureSelfTests() {
     [["--simulate-duplicate-debt-entry"], "id duplicates"],
     [["--simulate-fix-policy-allows-cleanup"], "fixPolicy.nonAuthorizedAction must be report-only"],
     [["--simulate-pending-item-wrong-action"], "allowedCurrentAction must remain Report only."],
-    [["--simulate-debt-decision-premature-complete"], "status must remain open until private debt audit is approved"],
+    [["--simulate-debt-decision-premature-complete"], "status must remain open or blocked-external-pending until private debt audit is approved"],
   ];
 
   for (const [testArgs, expectedOutput] of tests) {
@@ -464,8 +464,8 @@ if (!debtStrategyDecision) {
       fail(`${decisionVerificationPath}.decisions.debt_strategy.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (audit?.status !== "audited-approved" && debtStrategyDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.debt_strategy.status must remain open until private debt audit is approved`);
+  if (audit?.status !== "audited-approved" && !["open", "blocked-external-pending"].includes(debtStrategyDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.status must remain open or blocked-external-pending until private debt audit is approved`);
   }
   if (audit?.status !== "audited-approved" && (!Array.isArray(debtStrategyDecision.remaining) || debtStrategyDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.debt_strategy.remaining must describe pending private debt audit`);

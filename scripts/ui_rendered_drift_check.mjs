@@ -397,8 +397,8 @@ if (!enforcementModeDecision) {
       fail(`${decisionVerificationPath}.decisions.enforcement_mode.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (manifest?.status !== "active" && enforcementModeDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.enforcement_mode.status must remain open until private rendered drift evidence is captured`);
+  if (manifest?.status !== "active" && !["open", "blocked-external-pending"].includes(enforcementModeDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.status must remain open or blocked-external-pending until private rendered drift evidence is captured`);
   }
   if (manifest?.status !== "active" && (!Array.isArray(enforcementModeDecision.remaining) || enforcementModeDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.enforcement_mode.remaining must describe pending rendered drift evidence`);
@@ -428,7 +428,7 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-mismatched-private-reference", "privateDriftReportReference must target surfaces/"],
     ["--simulate-active-manifest-with-blocking-report", "status cannot be active while"],
     ["--simulate-enforcement-missing-private-drift-verifier", "blockingVerifiers must include scripts/ui_private_drift_verify.mjs"],
-    ["--simulate-enforcement-premature-complete", "status must remain open until private rendered drift evidence is captured"],
+    ["--simulate-enforcement-premature-complete", "status must remain open or blocked-external-pending until private rendered drift evidence is captured"],
   ];
   const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
   for (const [flag, expectedOutput] of selfTests) {

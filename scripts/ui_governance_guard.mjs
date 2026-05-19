@@ -310,9 +310,18 @@ for (const [index, expectedId] of expectedDecisionIds.entries()) {
   if (!decision) continue;
   if (decision.index !== index + 1) fail(`${label}.index must be ${index + 1}`);
   if (decision.id !== expectedId) fail(`${label}.id must be ${expectedId}`);
-  if (!["open", "verified-complete"].includes(decision.status)) fail(`${label}.status is invalid`);
+  if (!["open", "blocked-external-pending", "verified-complete"].includes(decision.status)) fail(`${label}.status is invalid`);
   if (decision.status === "verified-complete" && decision.remaining?.length > 0) {
     fail(`${label} cannot be verified-complete while remaining work is listed`);
+  }
+  if (decision.status === "blocked-external-pending") {
+    requireFields(decision.externalPendingLedger, `${label}.externalPendingLedger`, [
+      "reason",
+      "risk",
+      "nextPhase",
+      "reentryCondition",
+      "blockingCommand",
+    ]);
   }
 }
 

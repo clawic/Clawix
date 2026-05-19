@@ -87,14 +87,14 @@ if (packagesReport?.totalRecords !== decisionsReport?.totalRecords) {
   fail("capture package and decision reports must agree on totalRecords");
 }
 
-const openDecisionIds = new Set((decisionVerification?.decisions || [])
-  .filter((decision) => decision?.status === "open")
+const unresolvedDecisionIds = new Set((decisionVerification?.decisions || [])
+  .filter((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending")
   .map((decision) => decision.id));
 const recordsByType = new Map((packagesReport?.packages || []).map((pkg) => [pkg.evidenceType, pkg.records || []]));
 
 const bundles = (decisionsReport?.decisions || []).map((decision) => {
-  if (!openDecisionIds.has(decision.decisionId)) {
-    fail(`review bundle contains non-open decision ${decision.decisionId}`);
+  if (!unresolvedDecisionIds.has(decision.decisionId)) {
+    fail(`review bundle contains non-unresolved decision ${decision.decisionId}`);
   }
   const records = [];
   for (const pkg of decision.packages || []) {
@@ -135,9 +135,9 @@ const bundles = (decisionsReport?.decisions || []).map((decision) => {
   };
 });
 
-for (const decisionId of openDecisionIds) {
+for (const decisionId of unresolvedDecisionIds) {
   if (!bundles.some((bundle) => bundle.decisionId === decisionId)) {
-    fail(`review bundles must include open decision ${decisionId}`);
+    fail(`review bundles must include unresolved decision ${decisionId}`);
   }
 }
 

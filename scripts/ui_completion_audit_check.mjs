@@ -174,8 +174,8 @@ if (args.has("--simulate-missing-decision-row")) {
 }
 if (args.has("--simulate-open-decision-public-state")) {
   audit = audit.replace(
-    "| 1 | `initial_scope` | open | EXTERNAL PENDING: private surface baselines, rendered geometry, and copy snapshots. |",
-    "| 1 | `initial_scope` | open | Public evidence verified. |",
+    "| 1 | `initial_scope` | blocked-external-pending | EXTERNAL PENDING: public cross-platform coverage is enforced; exact platform captures are ledgered until private baseline, geometry, copy, and human approval are available. |",
+    "| 1 | `initial_scope` | blocked-external-pending | Public evidence verified. |",
   );
 }
 if (args.has("--simulate-approval-state-public-only")) {
@@ -274,8 +274,8 @@ if (!String(decisionVerification?.completionRule || "").includes("Do not complet
   fail(`${decisionPath}.completionRule must preserve the private goal completion guard`);
 }
 const allowedStatuses = requireArray(decisionVerification, decisionPath, "statuses");
-if (!arrayEquals(allowedStatuses, ["open", "verified-complete"])) {
-  fail(`${decisionPath}.statuses must be exactly open and verified-complete`);
+if (!arrayEquals(allowedStatuses, ["open", "blocked-external-pending", "verified-complete"])) {
+  fail(`${decisionPath}.statuses must be exactly open, blocked-external-pending, and verified-complete`);
 }
 
 for (const required of [
@@ -311,10 +311,12 @@ for (const [decisionIndex, decision] of decisions.entries()) {
   }
 }
 const openDecisions = decisions.filter((decision) => decision?.status === "open");
-if (openDecisions.length > 0 && !audit.includes("Completion status: blocked by EXTERNAL PENDING private evidence.")) {
-  fail(`${auditPath} must state completion is blocked while decisions remain open`);
+const blockedExternalPendingDecisions = decisions.filter((decision) => decision?.status === "blocked-external-pending");
+const unresolvedDecisions = decisions.filter((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending");
+if (unresolvedDecisions.length > 0 && !audit.includes("Completion status: blocked by EXTERNAL PENDING private evidence.")) {
+  fail(`${auditPath} must state completion is blocked while decisions remain unresolved`);
 }
-if (openDecisions.length === 0 && audit.includes("Completion status: blocked")) {
+if (unresolvedDecisions.length === 0 && audit.includes("Completion status: blocked")) {
   fail(`${auditPath} must not stay blocked when all decisions are verified-complete`);
 }
 
@@ -346,7 +348,7 @@ const decisionBlockerEvidenceTypes = requireArray(
 );
 const privateEvidenceTypes = new Set(Object.keys(privateEvidencePlan.counts || {}));
 const privateBlockerIds = requireArray(privateVisualValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockers");
-const openDecisionIds = new Set(openDecisions.map((decision) => decision.id));
+const unresolvedDecisionIds = new Set(unresolvedDecisions.map((decision) => decision.id));
 const privateBlockerIdSet = new Set(privateBlockerIds);
 const blockerExternalDependencies = {
   initial_scope: "private capture + human approval",
@@ -359,11 +361,11 @@ const blockerExternalDependencies = {
   perf_budget_source: "private performance measurement + human approval",
   size_contracts: "private rendered measurement + human approval",
 };
-if (!setEquals(openDecisionIds, privateBlockerIdSet)) {
-  fail("open decisions must exactly match docs/ui/private-visual-validation.manifest.json.decisionBlockers");
+if (!setEquals(unresolvedDecisionIds, privateBlockerIdSet)) {
+  fail("unresolved decisions must exactly match docs/ui/private-visual-validation.manifest.json.decisionBlockers");
 }
-if (!arrayEquals(openDecisions.map((decision) => decision.id), privateBlockerIds)) {
-  fail("private visual decisionBlockers must stay in open decision order");
+if (!arrayEquals(unresolvedDecisions.map((decision) => decision.id), privateBlockerIds)) {
+  fail("private visual decisionBlockers must stay in unresolved decision order");
 }
 if (!arrayEquals(decisionBlockerEvidenceTypes.map((entry) => entry?.decisionId), privateBlockerIds)) {
   fail("decisionBlockerEvidenceTypes must match decisionBlockers in order");
@@ -376,8 +378,8 @@ for (const entry of decisionBlockerEvidenceTypes) {
     }
   }
   const row = `| \`${entry.decisionId}\` | ${evidenceTypes.map((type) => `\`${type}\``).join(", ")} |`;
-  if (!audit.includes(row)) fail(`${auditPath} must include open decision evidence row ${row}`);
-  const decision = openDecisions.find((candidate) => candidate.id === entry.decisionId);
+  if (!audit.includes(row)) fail(`${auditPath} must include unresolved decision evidence row ${row}`);
+  const decision = unresolvedDecisions.find((candidate) => candidate.id === entry.decisionId);
   const evidenceRecordSummary = evidenceTypes
     .map((type) => `${privateEvidencePlan.counts?.[type]} \`${type}\``)
     .join("; ");
@@ -388,7 +390,7 @@ for (const entry of decisionBlockerEvidenceTypes) {
   const dependency = blockerExternalDependencies[entry.decisionId];
   if (!dependency) fail(`${entry.decisionId} must have an explicit public-safe external dependency`);
   const actionRow = `| \`${entry.decisionId}\` | ${evidenceRecordSummary} | ${verifierSummary} | ${remaining} | ${dependency} |`;
-  if (!audit.includes(actionRow)) fail(`${auditPath} must include open blocker action row ${actionRow}`);
+  if (!audit.includes(actionRow)) fail(`${auditPath} must include unresolved blocker action row ${actionRow}`);
 }
 
 const rowPattern = /^\| (\d+) \| `([^`]+)` \| ([^|]+) \| ([^|]+) \|$/gm;
@@ -435,18 +437,25 @@ for (const decision of decisions) {
   if (row.index !== decision.index) fail(`${label} must use index ${decision.index}`);
   if (row.status !== decision.status) fail(`${label} status must match ${decisionPath}`);
   if (!allowedStatuses.includes(row.status)) fail(`${label} row status is not an allowed status`);
-  if (decision.status === "open" && !row.evidenceState.includes("EXTERNAL PENDING")) {
+  if ((decision.status === "open" || decision.status === "blocked-external-pending") && !row.evidenceState.includes("EXTERNAL PENDING")) {
     fail(`${label} must identify private evidence as EXTERNAL PENDING`);
   }
-  if (decision.status === "open") {
+  if (decision.status === "open" || decision.status === "blocked-external-pending") {
     if (requireArray(decision, `${decisionPath}.${decision.id}`, "privateEvidence").length === 0) {
-      fail(`${label} must include private evidence aliases while open`);
+      fail(`${label} must include private evidence aliases while unresolved`);
     }
     if (requireArray(decision, `${decisionPath}.${decision.id}`, "blockingVerifiers").length === 0) {
-      fail(`${label} must include blocking private verifiers while open`);
+      fail(`${label} must include blocking private verifiers while unresolved`);
     }
     if (requireArray(decision, `${decisionPath}.${decision.id}`, "remaining").length === 0) {
-      fail(`${label} must include remaining work while open`);
+      fail(`${label} must include remaining work while unresolved`);
+    }
+  }
+  if (decision.status === "blocked-external-pending") {
+    for (const field of ["reason", "risk", "nextPhase", "reentryCondition", "blockingCommand"]) {
+      if (!decision.externalPendingLedger?.[field]) {
+        fail(`${label} must include externalPendingLedger.${field}`);
+      }
     }
   }
   if (decision.status === "verified-complete" && approvalDecisionIds.has(decision.id)) {
@@ -478,23 +487,23 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-unsafe-private-path", "must not publish local private paths"],
     ["--simulate-missing-goal-reference", "must include private-codex-goal:clawix-interface-governance-plan-2026-05-15.md"],
-    ["--simulate-missing-blocked-status", "must state completion is blocked while decisions remain open"],
+    ["--simulate-missing-blocked-status", "must state completion is blocked while decisions remain unresolved"],
     ["--simulate-wrong-private-evidence-total", "must state the derived private evidence total"],
     ["--simulate-missing-evidence-count-row", "must include private evidence count row"],
-    ["--simulate-missing-open-decision-evidence-row", "must include open decision evidence row"],
-    ["--simulate-missing-open-blocker-action-row", "must include open blocker action row"],
+    ["--simulate-missing-open-decision-evidence-row", "must include unresolved decision evidence row"],
+    ["--simulate-missing-open-blocker-action-row", "must include unresolved blocker action row"],
     ["--simulate-missing-decision-row", "must include one completion row per decision"],
     ["--simulate-open-decision-public-state", "initial_scope must identify private evidence as EXTERNAL PENDING"],
     ["--simulate-approval-state-public-only", "canon_approval must state private approval verifier is wired"],
     ["--simulate-verified-state-external-pending", "canonical_source must state public evidence is verified"],
     ["--simulate-decision-status-mismatch", "canonical_source status must match"],
     ["--simulate-private-evidence-count-mismatch", "must include private evidence count row"],
-    ["--simulate-missing-private-blocker", "open decisions must exactly match"],
-    ["--simulate-extra-private-blocker", "open decisions must exactly match"],
+    ["--simulate-missing-private-blocker", "unresolved decisions must exactly match"],
+    ["--simulate-extra-private-blocker", "unresolved decisions must exactly match"],
     ["--simulate-wrong-external-pending-exit-code", "EXTERNAL PENDING exit code 2"],
     ["--simulate-duplicate-audit-decision-row", "must include one completion row per decision"],
     ["--simulate-wrong-row-index", "completion row indexes must match"],
-    ["--simulate-open-decision-without-blocking-verifier", "must include blocking private verifiers while open"],
+    ["--simulate-open-decision-without-blocking-verifier", "must include blocking private verifiers while unresolved"],
     ["--simulate-verified-decision-with-remaining", "verified-complete decisions must not have remaining work"],
     ["--simulate-decision-missing-public-evidence", "publicEvidence must not be empty"],
     ["--simulate-unknown-status", "status is not an allowed status"],

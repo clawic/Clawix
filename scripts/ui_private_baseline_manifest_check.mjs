@@ -170,7 +170,7 @@ function runFailureSelfTests() {
     [["--simulate-verifier-without-approval"], "verificationCommand must require approved private baseline evidence"],
     [["--simulate-missing-critical-flow"], "flows must include web:right-sidebar-browser-use"],
     [["--simulate-unsafe-baseline-reference"], "privateBaselineReference must use a safe relative private reference"],
-    [["--simulate-baselines-decision-premature-complete"], "status must remain open until private baselines are captured and approved"],
+    [["--simulate-baselines-decision-premature-complete"], "status must remain open or blocked-external-pending until private baselines are captured and approved"],
   ];
 
   for (const [testArgs, expectedOutput] of tests) {
@@ -464,8 +464,8 @@ if (!visualBaselinesDecision) {
       fail(`${decisionVerificationPath}.decisions.visual_baselines_location.blockingVerifiers must include ${verifier}`);
     }
   }
-  if (manifest?.status !== "approved-private-baselines" && visualBaselinesDecision.status !== "open") {
-    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.status must remain open until private baselines are captured and approved`);
+  if (manifest?.status !== "approved-private-baselines" && !["open", "blocked-external-pending"].includes(visualBaselinesDecision.status)) {
+    fail(`${decisionVerificationPath}.decisions.visual_baselines_location.status must remain open or blocked-external-pending until private baselines are captured and approved`);
   }
   if (manifest?.status !== "approved-private-baselines" && (!Array.isArray(visualBaselinesDecision.remaining) || visualBaselinesDecision.remaining.length === 0)) {
     fail(`${decisionVerificationPath}.decisions.visual_baselines_location.remaining must describe pending private baseline evidence`);
