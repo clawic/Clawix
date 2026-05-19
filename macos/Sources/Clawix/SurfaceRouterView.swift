@@ -11,12 +11,15 @@ struct SurfaceRouterView: View {
 
     var body: some View {
         let entry = routeRegistryEntry
+        let resolution = activeVariantResolution
+        let readinessMode: SurfaceRouteReadinessMode = resolution == nil ? entry.readinessMode : .childReported
         ZStack(alignment: .topTrailing) {
             SurfaceRouteHost(
                 descriptor: entry.descriptor,
+                readinessMode: readinessMode,
                 state: $supervisionState
             ) {
-                if let resolution = activeVariantResolution {
+                if let resolution {
                     AppSurfaceView(appId: resolution.appId)
                 } else {
                     entry.surface()
@@ -85,6 +88,7 @@ struct SurfaceRouterView: View {
 
 private struct SurfaceRouteHost<Content: View>: View {
     let descriptor: SurfaceRouteDescriptor
+    let readinessMode: SurfaceRouteReadinessMode
     @Binding var state: SurfaceRouteSupervisionState
     @ViewBuilder var content: () -> Content
 
@@ -192,15 +196,20 @@ private struct SurfaceRouteHost<Content: View>: View {
 
     private func supervise() async {
         state = SurfaceRouteSupervisor.start(descriptor: descriptor)
-        guard case .loading(_, let timeoutSeconds, _, _) = state else { return }
+        guard case .loading(_, _, _, _) = state else { return }
         await Task.yield()
         guard !Task.isCancelled else {
             state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)
             return
         }
-        state = SurfaceRouteSupervisor.markReady(state: state, descriptor: descriptor)
+        state = SurfaceRouteSupervisor.afterFirstRender(
+            state: state,
+            descriptor: descriptor,
+            readinessMode: readinessMode
+        )
+        guard case .loading(_, let currentTimeoutSeconds, _, _) = state else { return }
 
-        let nanoseconds = UInt64(max(0, timeoutSeconds) * 1_000_000_000)
+        let nanoseconds = UInt64(max(0, currentTimeoutSeconds) * 1_000_000_000)
         try? await Task.sleep(nanoseconds: nanoseconds)
         guard !Task.isCancelled else {
             state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)

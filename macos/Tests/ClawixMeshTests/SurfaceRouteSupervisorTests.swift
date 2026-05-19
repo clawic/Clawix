@@ -28,6 +28,32 @@ final class SurfaceRouteSupervisorTests: XCTestCase {
         XCTAssertFalse(state.isTerminal)
     }
 
+    func testImmediateReadinessMarksSurfaceReadyAfterFirstRender() {
+        let descriptor = SidebarRoute.databaseCollection("tasks").surfaceDescriptor
+        let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)
+
+        let ready = SurfaceRouteSupervisor.afterFirstRender(
+            state: loading,
+            descriptor: descriptor,
+            readinessMode: .immediateAfterFirstRender
+        )
+
+        XCTAssertEqual(ready, .ready(surfaceID: "database:tasks"))
+    }
+
+    func testChildReportedReadinessStaysLoadingAfterFirstRender() {
+        let descriptor = SidebarRoute.app(UUID(uuidString: "00000000-0000-0000-0000-000000000002")!).surfaceDescriptor
+        let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)
+
+        let stillLoading = SurfaceRouteSupervisor.afterFirstRender(
+            state: loading,
+            descriptor: descriptor,
+            readinessMode: .childReported
+        )
+
+        XCTAssertEqual(stillLoading, loading)
+    }
+
     func testSurfaceReportsCanUpdateProgressPartialAndReady() {
         let descriptor = SidebarRoute.databaseCollection("tasks").surfaceDescriptor
         let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)

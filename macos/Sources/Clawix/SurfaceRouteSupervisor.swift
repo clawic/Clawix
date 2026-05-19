@@ -43,6 +43,11 @@ enum SurfaceRouteReport: Equatable {
     case cancelled
 }
 
+enum SurfaceRouteReadinessMode: String, Equatable, Hashable {
+    case immediateAfterFirstRender
+    case childReported
+}
+
 enum SurfaceRouteSupervisor {
     static func start(descriptor: SurfaceRouteDescriptor) -> SurfaceRouteSupervisionState {
         guard descriptor.requiresIndependentDegradation,
@@ -87,6 +92,20 @@ enum SurfaceRouteSupervisor {
             return .unavailable(surfaceID: descriptor.id, reason: reason)
         case .cancelled:
             return .cancelled(surfaceID: descriptor.id)
+        }
+    }
+
+    static func afterFirstRender(
+        state: SurfaceRouteSupervisionState,
+        descriptor: SurfaceRouteDescriptor,
+        readinessMode: SurfaceRouteReadinessMode
+    ) -> SurfaceRouteSupervisionState {
+        guard state.surfaceID == descriptor.id else { return state }
+        switch readinessMode {
+        case .immediateAfterFirstRender:
+            return markReady(state: state, descriptor: descriptor)
+        case .childReported:
+            return state
         }
     }
 

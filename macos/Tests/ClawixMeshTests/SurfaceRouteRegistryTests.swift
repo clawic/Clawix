@@ -47,6 +47,31 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         XCTAssertEqual(entry.descriptor.criticality, .protected)
     }
 
+    @MainActor
+    func testCustomAppRoutesUseChildReportedReadiness() {
+        let entry = SurfaceRouteRegistry.entry(for: .app(UUID()))
+
+        XCTAssertEqual(entry.readinessMode, .childReported)
+        XCTAssertEqual(entry.module, .apps)
+    }
+
+    @MainActor
+    func testBuiltInRoutesUseImmediateReadiness() {
+        let routes: [SidebarRoute] = [
+            .databaseCollection("tasks"),
+            .driveAdmin,
+            .iotHome,
+            .agentsHome,
+            .publishingHome
+        ]
+
+        for route in routes {
+            let entry = SurfaceRouteRegistry.entry(for: route)
+
+            XCTAssertEqual(entry.readinessMode, .immediateAfterFirstRender, entry.descriptor.id)
+        }
+    }
+
     private static let allRepresentativeRoutes: [SidebarRoute] = [
         .home,
         .search,

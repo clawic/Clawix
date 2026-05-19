@@ -19,16 +19,19 @@ enum SurfaceRouteModule: String, Equatable, Hashable, CaseIterable {
 struct SurfaceRouteRegistryEntry {
     var descriptor: SurfaceRouteDescriptor
     var module: SurfaceRouteModule
+    var readinessMode: SurfaceRouteReadinessMode
 
     private let makeSurface: @MainActor () -> AnyView
 
     init(
         descriptor: SurfaceRouteDescriptor,
         module: SurfaceRouteModule,
+        readinessMode: SurfaceRouteReadinessMode,
         makeSurface: @escaping @MainActor () -> AnyView
     ) {
         self.descriptor = descriptor
         self.module = module
+        self.readinessMode = readinessMode
         self.makeSurface = makeSurface
     }
 
@@ -61,7 +64,9 @@ enum SurfaceRouteRegistry {
         case .appsHome:
             return entry(route, module: .apps) { AppsHomeView() }
         case .app(let id):
-            return entry(route, module: .apps) { AppSurfaceView(appId: id) }
+            return entry(route, module: .apps, readinessMode: .childReported) {
+                AppSurfaceView(appId: id)
+            }
         case .chat(let id):
             return entry(route, module: .core) { ChatView(chatId: id) }
         case .settings:
@@ -153,11 +158,13 @@ enum SurfaceRouteRegistry {
     private static func entry<Content: View>(
         _ route: SidebarRoute,
         module: SurfaceRouteModule,
+        readinessMode: SurfaceRouteReadinessMode = .immediateAfterFirstRender,
         @ViewBuilder surface: @escaping @MainActor () -> Content
     ) -> SurfaceRouteRegistryEntry {
         SurfaceRouteRegistryEntry(
             descriptor: route.surfaceDescriptor,
             module: module,
+            readinessMode: readinessMode,
             makeSurface: { AnyView(surface()) }
         )
     }
