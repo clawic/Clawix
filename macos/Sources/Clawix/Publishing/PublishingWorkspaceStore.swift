@@ -226,10 +226,14 @@ final class PublishingWorkspaceStore: ObservableObject {
         calendarRefreshTask = nil
         for task in connectTasks.values { task.cancel() }
         connectTasks.removeAll()
-        connectGenerations.removeAll()
+        for key in Array(connectGenerations.keys) {
+            connectGenerations[key, default: 0] += 1
+        }
         for task in channelActionTasks.values { task.cancel() }
         channelActionTasks.removeAll()
-        channelActionGenerations.removeAll()
+        for key in Array(channelActionGenerations.keys) {
+            channelActionGenerations[key, default: 0] += 1
+        }
         createPostGeneration += 1
         createPostTask?.cancel()
         createPostTask = nil

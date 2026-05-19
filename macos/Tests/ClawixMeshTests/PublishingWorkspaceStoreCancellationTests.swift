@@ -321,6 +321,57 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.lastError)
     }
 
+    func testResetThenSameFamilyConnectDoesNotRecycleStaleGeneration() async throws {
+        let staleStarted = expectation(description: "Stale connect started")
+        let staleReturned = expectation(description: "Stale connect returned after reset")
+        let freshStarted = expectation(description: "Fresh connect started")
+        let releaseStale = AsyncGate()
+        var calls = 0
+        let store = PublishingWorkspaceStore(
+            connectChannelOperation: { _, familyId, _ in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    await releaseStale.wait()
+                    staleReturned.fulfill()
+                    throw TestError(message: "stale connect failed")
+                }
+                freshStarted.fulfill()
+                return Self.account(id: "fresh", familyId: familyId)
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let first = Task {
+            try await store.connect(familyId: "devnull", payload: [:])
+        }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Publishing stopped")
+        let second = Task {
+            try await store.connect(familyId: "devnull", payload: [:])
+        }
+        await fulfillment(of: [freshStarted], timeout: 1)
+
+        await releaseStale.open()
+
+        await fulfillment(of: [staleReturned], timeout: 1)
+        do {
+            _ = try await first.value
+            XCTFail("Stale connect unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected stale connect error after reset: \(error)")
+        }
+        let account = try await second.value
+
+        XCTAssertEqual(account.id, "fresh")
+        XCTAssertEqual(store.channels.map(\.id), ["fresh"])
+        XCTAssertNil(store.lastError)
+    }
+
     func testStartingSecondDisconnectSuppressesStaleFailure() async {
         let staleStarted = expectation(description: "Stale disconnect started")
         let staleCancelled = expectation(description: "Stale disconnect cancelled")
@@ -354,6 +405,46 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
         let second = Task { await store.disconnect(account: account) }
 
         await fulfillment(of: [staleCancelled, freshStarted], timeout: 1)
+        await first.value
+        await second.value
+
+        XCTAssertNil(store.lastError)
+    }
+
+    func testResetThenSameAccountDisconnectDoesNotRecycleStaleGeneration() async {
+        let staleStarted = expectation(description: "Stale disconnect started")
+        let staleReturned = expectation(description: "Stale disconnect returned after reset")
+        let freshStarted = expectation(description: "Fresh disconnect started")
+        let releaseStale = AsyncGate()
+        var calls = 0
+        let account = Self.account(id: "main", familyId: "devnull")
+        let store = PublishingWorkspaceStore(
+            disconnectChannelOperation: { _, _ in
+                calls += 1
+                if calls == 1 {
+                    staleStarted.fulfill()
+                    await releaseStale.wait()
+                    staleReturned.fulfill()
+                    throw TestError(message: "stale disconnect failed")
+                }
+                freshStarted.fulfill()
+                return true
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let first = Task { await store.disconnect(account: account) }
+        await fulfillment(of: [staleStarted], timeout: 1)
+
+        store.reset(reason: "Publishing stopped")
+        let second = Task { await store.disconnect(account: account) }
+        await fulfillment(of: [freshStarted], timeout: 1)
+
+        await releaseStale.open()
+
+        await fulfillment(of: [staleReturned], timeout: 1)
         await first.value
         await second.value
 
@@ -523,5 +614,24 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
     private struct TestError: Error, LocalizedError {
         let message: String
         var errorDescription: String? { message }
+    }
+
+    private actor AsyncGate {
+        private var continuation: CheckedContinuation<Void, Never>?
+        private var isOpen = false
+
+        func wait() async {
+            if isOpen { return }
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+            }
+        }
+
+        func open() {
+            guard !isOpen else { return }
+            isOpen = true
+            continuation?.resume()
+            continuation = nil
+        }
     }
 }
