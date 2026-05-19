@@ -54,6 +54,7 @@ final class IoTManager: NSObject, ObservableObject {
     private var refreshTask: Task<Void, Error>?
     private var bootstrapGeneration = 0
     private var refreshGeneration = 0
+    private var actionGenerations: [IoTActionKey: Int] = [:]
     private let adminTokenOperation: AdminTokenOperation
     private var sseTask: URLSessionDataTask?
     private var sseSession: URLSession!
@@ -228,7 +229,9 @@ final class IoTManager: NSObject, ObservableObject {
 
     @discardableResult
     func runAction(_ request: IoTActionRequest) async throws -> IoTActionResult {
-        let result = try await performAction {
+        let key = IoTActionKey(kind: .runAction, id: actionIdentity(for: request))
+        let generation = nextActionGeneration(for: key)
+        let result = try await performAction(key: key, generation: generation) {
             try await client.runAction(request, homeId: currentHomeId)
         }
         // After a successful action the SSE event will re-trigger our
@@ -240,14 +243,18 @@ final class IoTManager: NSObject, ObservableObject {
     }
 
     func activateScene(_ scene: SceneRecord) async throws {
-        _ = try await performAction {
+        let key = IoTActionKey(kind: .activateScene, id: scene.id)
+        let generation = nextActionGeneration(for: key)
+        _ = try await performAction(key: key, generation: generation) {
             try await client.activateScene(sceneId: scene.id, homeId: currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
 
     func setAutomationEnabled(_ automation: AutomationRecord, enabled: Bool) async throws {
-        _ = try await performAction {
+        let key = IoTActionKey(kind: .setAutomationEnabled, id: "\(automation.id):\(enabled)")
+        let generation = nextActionGeneration(for: key)
+        _ = try await performAction(key: key, generation: generation) {
             try await client.setAutomationEnabled(
                 automationId: automation.id,
                 enabled: enabled,
@@ -258,14 +265,18 @@ final class IoTManager: NSObject, ObservableObject {
     }
 
     func runAutomation(_ automation: AutomationRecord) async throws {
-        _ = try await performAction {
+        let key = IoTActionKey(kind: .runAutomation, id: automation.id)
+        let generation = nextActionGeneration(for: key)
+        _ = try await performAction(key: key, generation: generation) {
             try await client.runAutomation(automationId: automation.id, homeId: currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
 
     func approveApproval(_ approval: ApprovalRecord) async throws -> IoTActionResult {
-        let result = try await performAction {
+        let key = IoTActionKey(kind: .approveApproval, id: approval.id)
+        let generation = nextActionGeneration(for: key)
+        let result = try await performAction(key: key, generation: generation) {
             try await client.approveApproval(approvalId: approval.id, homeId: currentHomeId)
         }
         scheduleRefreshAfterChange()
@@ -273,7 +284,9 @@ final class IoTManager: NSObject, ObservableObject {
     }
 
     func denyApproval(_ approval: ApprovalRecord) async throws {
-        _ = try await performAction {
+        let key = IoTActionKey(kind: .denyApproval, id: approval.id)
+        let generation = nextActionGeneration(for: key)
+        _ = try await performAction(key: key, generation: generation) {
             try await client.denyApproval(approvalId: approval.id, homeId: currentHomeId)
         }
         scheduleRefreshAfterChange()
@@ -282,7 +295,9 @@ final class IoTManager: NSObject, ObservableObject {
     func addDevice(input: IoTClient.AddDeviceInput) async throws -> IoTDeviceRecord {
         var input = input
         if input.homeId == nil { input.homeId = currentHomeId }
-        let device = try await performAction {
+        let key = IoTActionKey(kind: .addDevice, id: input.label ?? input.targetRef ?? "default")
+        let generation = nextActionGeneration(for: key)
+        let device = try await performAction(key: key, generation: generation) {
             try await client.addDevice(input: input)
         }
         scheduleRefreshAfterChange()
@@ -290,19 +305,32 @@ final class IoTManager: NSObject, ObservableObject {
     }
 
     func removeDevice(_ device: IoTDeviceRecord) async throws {
-        try await performAction {
+        let key = IoTActionKey(kind: .removeDevice, id: device.id)
+        let generation = nextActionGeneration(for: key)
+        try await performAction(key: key, generation: generation) {
             try await client.removeDevice(deviceId: device.id, homeId: currentHomeId)
         }
         scheduleRefreshAfterChange()
     }
 
-    private func performAction<T>(_ operation: () async throws -> T) async throws -> T {
+    private func performAction<T>(
+        key: IoTActionKey,
+        generation: Int,
+        operation: () async throws -> T
+    ) async throws -> T {
         do {
             let value = try await operation()
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = nil
+            finishActionIfCurrent(key: key, generation: generation)
             return value
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = error.localizedDescription
+            finishActionIfCurrent(key: key, generation: generation)
             throw error
         }
     }
@@ -338,25 +366,46 @@ final class IoTManager: NSObject, ObservableObject {
         refreshGeneration += 1
         refreshTask?.cancel()
         refreshTask = nil
+        for key in Array(actionGenerations.keys) {
+            actionGenerations[key, default: 0] += 1
+        }
         disconnectSSE()
     }
 
     func startDiscovery(timeoutMs: Int? = nil) async throws {
+        let key = IoTActionKey(kind: .startDiscovery, id: "\(timeoutMs ?? -1)")
+        let generation = nextActionGeneration(for: key)
         do {
             try await client.startDiscovery(timeoutMs: timeoutMs)
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = nil
+            finishActionIfCurrent(key: key, generation: generation)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = error.localizedDescription
+            finishActionIfCurrent(key: key, generation: generation)
             throw error
         }
     }
 
     func stopDiscovery() async throws {
+        let key = IoTActionKey(kind: .stopDiscovery, id: "default")
+        let generation = nextActionGeneration(for: key)
         do {
             try await client.stopDiscovery()
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = nil
+            finishActionIfCurrent(key: key, generation: generation)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
             lastError = error.localizedDescription
+            finishActionIfCurrent(key: key, generation: generation)
             throw error
         }
     }
@@ -366,31 +415,24 @@ final class IoTManager: NSObject, ObservableObject {
     func commissionMatter(pairingCode: String, label: String?) async throws -> [String: Any] {
         var args: [String: Any] = ["pairingCode": pairingCode]
         if let label, !label.isEmpty { args["label"] = label }
-        let result = try await client.invokeTool(id: "iot.matter.commission", arguments: args)
-        try result.throwIfFailed()
-        return (result.value?.asDictionary) ?? [:]
+        return try await invokeProtocolTool(kind: .commissionMatter, id: label ?? pairingCode, toolId: "iot.matter.commission", arguments: args)
     }
 
     func startHomeKitBridge(label: String?) async throws -> [String: Any] {
         var args: [String: Any] = [:]
         if let label, !label.isEmpty { args["label"] = label }
-        let result = try await client.invokeTool(id: "iot.homekit.startBridge", arguments: args)
-        try result.throwIfFailed()
-        return (result.value?.asDictionary) ?? [:]
+        return try await invokeProtocolTool(kind: .startHomeKitBridge, id: label ?? "default", toolId: "iot.homekit.startBridge", arguments: args)
     }
 
     func connectMqtt(url: String, username: String?, password: String?) async throws -> [String: Any] {
         var args: [String: Any] = ["url": url]
         if let username, !username.isEmpty { args["username"] = username }
         if let password, !password.isEmpty { args["password"] = password }
-        let result = try await client.invokeTool(id: "iot.mqtt.connect", arguments: args)
-        try result.throwIfFailed()
-        return (result.value?.asDictionary) ?? [:]
+        return try await invokeProtocolTool(kind: .connectMqtt, id: url, toolId: "iot.mqtt.connect", arguments: args)
     }
 
     func disconnectMqtt() async throws {
-        let result = try await client.invokeTool(id: "iot.mqtt.disconnect", arguments: [:])
-        try result.throwIfFailed()
+        _ = try await invokeProtocolTool(kind: .disconnectMqtt, id: "default", toolId: "iot.mqtt.disconnect", arguments: [:])
     }
 
     // MARK: - Cloud helpers
@@ -398,20 +440,15 @@ final class IoTManager: NSObject, ObservableObject {
     func connectTuya(appKey: String, appSecret: String, baseUrl: String?) async throws -> [String: Any] {
         var args: [String: Any] = ["appKey": appKey, "appSecret": appSecret]
         if let baseUrl, !baseUrl.isEmpty { args["baseUrl"] = baseUrl }
-        let result = try await client.invokeTool(id: "iot.tuya.connect", arguments: args)
-        try result.throwIfFailed()
-        return result.value?.asDictionary ?? [:]
+        return try await invokeProtocolTool(kind: .connectTuya, id: appKey, toolId: "iot.tuya.connect", arguments: args)
     }
 
     func syncTuya() async throws -> [String: Any] {
-        let result = try await client.invokeTool(id: "iot.tuya.sync", arguments: [:])
-        try result.throwIfFailed()
-        return result.value?.asDictionary ?? [:]
+        return try await invokeProtocolTool(kind: .syncTuya, id: "default", toolId: "iot.tuya.sync", arguments: [:])
     }
 
     func disconnectTuya() async throws {
-        let result = try await client.invokeTool(id: "iot.tuya.disconnect", arguments: [:])
-        try result.throwIfFailed()
+        _ = try await invokeProtocolTool(kind: .disconnectTuya, id: "default", toolId: "iot.tuya.disconnect", arguments: [:])
     }
 
     func connectGoogleHome(
@@ -428,14 +465,11 @@ final class IoTManager: NSObject, ObservableObject {
             "agentUserId": agentUserId,
         ]
         if let homeGraphToken, !homeGraphToken.isEmpty { args["homeGraphToken"] = homeGraphToken }
-        let result = try await client.invokeTool(id: "iot.googleHome.connect", arguments: args)
-        try result.throwIfFailed()
-        return result.value?.asDictionary ?? [:]
+        return try await invokeProtocolTool(kind: .connectGoogleHome, id: agentUserId, toolId: "iot.googleHome.connect", arguments: args)
     }
 
     func disconnectGoogleHome() async throws {
-        let result = try await client.invokeTool(id: "iot.googleHome.disconnect", arguments: [:])
-        try result.throwIfFailed()
+        _ = try await invokeProtocolTool(kind: .disconnectGoogleHome, id: "default", toolId: "iot.googleHome.disconnect", arguments: [:])
     }
 
     func connectAlexa(
@@ -450,14 +484,36 @@ final class IoTManager: NSObject, ObservableObject {
         ]
         if let eventGatewayToken, !eventGatewayToken.isEmpty { args["eventGatewayToken"] = eventGatewayToken }
         if let eventGatewayUrl, !eventGatewayUrl.isEmpty { args["eventGatewayUrl"] = eventGatewayUrl }
-        let result = try await client.invokeTool(id: "iot.alexa.connect", arguments: args)
-        try result.throwIfFailed()
-        return result.value?.asDictionary ?? [:]
+        return try await invokeProtocolTool(kind: .connectAlexa, id: publicFulfillmentUrl, toolId: "iot.alexa.connect", arguments: args)
     }
 
     func disconnectAlexa() async throws {
-        let result = try await client.invokeTool(id: "iot.alexa.disconnect", arguments: [:])
-        try result.throwIfFailed()
+        _ = try await invokeProtocolTool(kind: .disconnectAlexa, id: "default", toolId: "iot.alexa.disconnect", arguments: [:])
+    }
+
+    @discardableResult
+    private func invokeProtocolTool(
+        kind: IoTActionKey.Kind,
+        id: String,
+        toolId: String,
+        arguments: [String: Any]
+    ) async throws -> [String: Any] {
+        let key = IoTActionKey(kind: kind, id: id)
+        let generation = nextActionGeneration(for: key)
+        do {
+            let result = try await client.invokeTool(id: toolId, arguments: arguments)
+            try Task.checkCancellation()
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            try result.throwIfFailed()
+            finishActionIfCurrent(key: key, generation: generation)
+            return result.value?.asDictionary ?? [:]
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            finishActionIfCurrent(key: key, generation: generation)
+            throw error
+        }
     }
 
     // MARK: - Lookups
@@ -521,6 +577,62 @@ final class IoTManager: NSObject, ObservableObject {
     private func finishRefreshIfCurrent(_ generation: Int) {
         guard isCurrentRefresh(generation) else { return }
         refreshTask = nil
+    }
+
+    private func nextActionGeneration(for key: IoTActionKey) -> Int {
+        let generation = (actionGenerations[key] ?? 0) + 1
+        actionGenerations[key] = generation
+        return generation
+    }
+
+    private func isCurrentAction(key: IoTActionKey, generation: Int) -> Bool {
+        actionGenerations[key] == generation
+    }
+
+    private func finishActionIfCurrent(key: IoTActionKey, generation: Int) {
+        guard isCurrentAction(key: key, generation: generation) else { return }
+        actionGenerations[key] = generation
+    }
+
+    private func actionIdentity(for request: IoTActionRequest) -> String {
+        [
+            request.homeId ?? currentHomeId ?? "",
+            request.selector ?? "",
+            request.area ?? "",
+            request.family ?? "",
+            request.capability ?? "",
+            request.action,
+            request.targets?.joined(separator: ",") ?? "",
+        ].joined(separator: "|")
+    }
+
+    private struct IoTActionKey: Hashable {
+        let kind: Kind
+        let id: String
+
+        enum Kind: Hashable {
+            case runAction
+            case activateScene
+            case setAutomationEnabled
+            case runAutomation
+            case approveApproval
+            case denyApproval
+            case addDevice
+            case removeDevice
+            case startDiscovery
+            case stopDiscovery
+            case commissionMatter
+            case startHomeKitBridge
+            case connectMqtt
+            case disconnectMqtt
+            case connectTuya
+            case syncTuya
+            case disconnectTuya
+            case connectGoogleHome
+            case disconnectGoogleHome
+            case connectAlexa
+            case disconnectAlexa
+        }
     }
 
     fileprivate func handleSSEEvent(type: String, payload: [String: Any]?) {
