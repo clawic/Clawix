@@ -16,6 +16,9 @@ final class LifeVerticalsStore: ObservableObject {
     private let host: String
     private let portByVertical: [String: Int]
     private let tokenProvider: () -> String?
+    private var catalogGenerations: [String: Int] = [:]
+    private var observationsGenerations: [String: Int] = [:]
+    private var mutationGenerations: [String: Int] = [:]
 
     init(
         urlSession: URLSession = .shared,
@@ -67,12 +70,18 @@ final class LifeVerticalsStore: ObservableObject {
 
     func reloadCatalog(for verticalId: String) async {
         guard let url = endpoint(for: verticalId, path: "catalog") else { return }
+        let generation = nextCatalogGeneration(for: verticalId)
         do {
             let envelope: CatalogEnvelope = try await get(url)
+            try Task.checkCancellation()
+            guard isCurrentCatalog(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.catalog = envelope.items
+            entry.lastError = nil
             verticals[verticalId] = entry
+        } catch is CancellationError {
         } catch {
+            guard isCurrentCatalog(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.lastError = error.localizedDescription
             verticals[verticalId] = entry
@@ -93,12 +102,18 @@ final class LifeVerticalsStore: ObservableObject {
         components.queryItems = queryItems
         guard let suffix = components.url?.query else { return }
         guard let url = endpoint(for: verticalId, path: "observations?\(suffix)") else { return }
+        let generation = nextObservationsGeneration(for: verticalId)
         do {
             let envelope: ObservationsEnvelope = try await get(url)
+            try Task.checkCancellation()
+            guard isCurrentObservations(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.observations = envelope.items
+            entry.lastError = nil
             verticals[verticalId] = entry
+        } catch is CancellationError {
         } catch {
+            guard isCurrentObservations(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.lastError = error.localizedDescription
             verticals[verticalId] = entry
@@ -110,10 +125,15 @@ final class LifeVerticalsStore: ObservableObject {
         input: LifeUpsertObservationInput
     ) async {
         guard let url = endpoint(for: verticalId, path: "observations") else { return }
+        let generation = nextMutationGeneration(for: verticalId)
         do {
             let _: LifeObservation = try await post(url, body: input)
+            try Task.checkCancellation()
+            guard isCurrentMutation(verticalId: verticalId, generation: generation) else { return }
             await reloadObservations(for: verticalId, variableId: input.variableId)
+        } catch is CancellationError {
         } catch {
+            guard isCurrentMutation(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.lastError = error.localizedDescription
             verticals[verticalId] = entry
@@ -125,13 +145,34 @@ final class LifeVerticalsStore: ObservableObject {
             for: verticalId,
             path: "observations/\(observationId)"
         ) else { return }
+        let generation = nextMutationGeneration(for: verticalId)
         do {
             let _: DeletedEnvelope = try await delete(url)
+            try Task.checkCancellation()
+            guard isCurrentMutation(verticalId: verticalId, generation: generation) else { return }
             await reloadObservations(for: verticalId, variableId: nil)
+        } catch is CancellationError {
         } catch {
+            guard isCurrentMutation(verticalId: verticalId, generation: generation) else { return }
             var entry = state(for: verticalId)
             entry.lastError = error.localizedDescription
             verticals[verticalId] = entry
+        }
+    }
+
+    func cancelSurfaceWork(for verticalId: String? = nil) {
+        if let verticalId {
+            bumpCatalogGeneration(for: verticalId)
+            bumpObservationsGeneration(for: verticalId)
+            bumpMutationGeneration(for: verticalId)
+            return
+        }
+        for verticalId in Set(catalogGenerations.keys)
+            .union(Set(observationsGenerations.keys))
+            .union(Set(mutationGenerations.keys)) {
+            bumpCatalogGeneration(for: verticalId)
+            bumpObservationsGeneration(for: verticalId)
+            bumpMutationGeneration(for: verticalId)
         }
     }
 
@@ -140,6 +181,48 @@ final class LifeVerticalsStore: ObservableObject {
     private func endpoint(for verticalId: String, path: String) -> URL? {
         guard let port = portByVertical[verticalId] else { return nil }
         return URL(string: "http://\(host):\(port)/v1/\(verticalId)/\(path)")
+    }
+
+    private func nextCatalogGeneration(for verticalId: String) -> Int {
+        let generation = (catalogGenerations[verticalId] ?? 0) + 1
+        catalogGenerations[verticalId] = generation
+        return generation
+    }
+
+    private func bumpCatalogGeneration(for verticalId: String) {
+        catalogGenerations[verticalId] = (catalogGenerations[verticalId] ?? 0) + 1
+    }
+
+    private func isCurrentCatalog(verticalId: String, generation: Int) -> Bool {
+        catalogGenerations[verticalId] == generation
+    }
+
+    private func nextObservationsGeneration(for verticalId: String) -> Int {
+        let generation = (observationsGenerations[verticalId] ?? 0) + 1
+        observationsGenerations[verticalId] = generation
+        return generation
+    }
+
+    private func bumpObservationsGeneration(for verticalId: String) {
+        observationsGenerations[verticalId] = (observationsGenerations[verticalId] ?? 0) + 1
+    }
+
+    private func isCurrentObservations(verticalId: String, generation: Int) -> Bool {
+        observationsGenerations[verticalId] == generation
+    }
+
+    private func nextMutationGeneration(for verticalId: String) -> Int {
+        let generation = (mutationGenerations[verticalId] ?? 0) + 1
+        mutationGenerations[verticalId] = generation
+        return generation
+    }
+
+    private func bumpMutationGeneration(for verticalId: String) {
+        mutationGenerations[verticalId] = (mutationGenerations[verticalId] ?? 0) + 1
+    }
+
+    private func isCurrentMutation(verticalId: String, generation: Int) -> Bool {
+        mutationGenerations[verticalId] == generation
     }
 
     private func get<T: Decodable>(_ url: URL) async throws -> T {

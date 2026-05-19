@@ -54,6 +54,9 @@ struct GenericVerticalScreen: View {
         .onChange(of: verticalId) { _, _ in
             Task { await refresh() }
         }
+        .onDisappear {
+            store.cancelSurfaceWork(for: verticalId)
+        }
     }
 
     private func refresh() async {
