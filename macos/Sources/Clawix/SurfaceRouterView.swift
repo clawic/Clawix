@@ -9,6 +9,7 @@ struct SurfaceRouterView: View {
     @State private var preferredOriginalTargets: Set<String> = []
 
     var body: some View {
+        let descriptor = route.surfaceDescriptor
         ZStack(alignment: .topTrailing) {
             Group {
                 if let resolution = activeVariantResolution {
@@ -17,6 +18,7 @@ struct SurfaceRouterView: View {
                     routedSurface
                 }
             }
+            .id(descriptor.id)
 
             if let control = variantControl {
                 AppVariantOriginalRouteControl(
@@ -50,7 +52,7 @@ struct SurfaceRouterView: View {
     }
 
     private var normalizedVariantTarget: String? {
-        route.appVariantRouteTarget.map(AppVariantDefaultsStore.normalizedRouteTarget)
+        route.surfaceDescriptor.routeTarget
     }
 
     private var variantControl: AppVariantOriginalRouteControlModel? {
