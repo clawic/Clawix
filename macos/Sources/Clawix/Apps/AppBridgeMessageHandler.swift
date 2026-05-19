@@ -90,6 +90,19 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         handle(body: message.body)
     }
 
+    var activeRequestCount: Int {
+        activeRequests.count
+    }
+
+    func cancelAllTrackedRequests(reason: String = "Surface closed") {
+        guard !activeRequests.isEmpty else { return }
+        for task in activeRequests.values {
+            task.cancel()
+        }
+        activeRequests.removeAll()
+        surfaceReporter.partial(reason)
+    }
+
     private func handle(body: Any) {
         guard let dict = body as? [String: Any],
               let requestId = dict["requestId"] as? String,
@@ -388,7 +401,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
 
     // MARK: - Search + DB SDK bridge
 
-    private func startTrackedRequest(
+    func startTrackedRequest(
         requestId: String,
         label: String,
         operation: @escaping @MainActor () async -> Void

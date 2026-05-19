@@ -449,6 +449,18 @@ private struct AppSurfaceWebView: NSViewRepresentable {
         // no-op so SwiftUI doesn't try to reuse the old web context.
     }
 
+    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
+        coordinator.bridgeHandler?.cancelAllTrackedRequests()
+        webView.configuration.userContentController.removeScriptMessageHandler(
+            forName: AppBridgeMessageHandler.messageName
+        )
+        webView.stopLoading()
+        webView.navigationDelegate = nil
+        webView.uiDelegate = nil
+        coordinator.schemeHandler = nil
+        coordinator.bridgeHandler = nil
+    }
+
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var schemeHandler: AppURLSchemeHandler?
         var bridgeHandler: AppBridgeMessageHandler?

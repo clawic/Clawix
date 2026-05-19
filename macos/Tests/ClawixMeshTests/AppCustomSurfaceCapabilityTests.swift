@@ -468,6 +468,38 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("native.") })
     }
 
+    @MainActor
+    func testBridgeCancelsTrackedRequestsWhenSurfaceCloses() async {
+        let cancelled = expectation(description: "Tracked request cancelled")
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:test") { report in
+            reports.append(report)
+        }
+        let handler = AppBridgeMessageHandler(
+            slug: "dashboard",
+            appState: nil,
+            surfaceReporter: reporter
+        )
+
+        handler.startTrackedRequest(requestId: "r-1", label: "Database query") {
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                cancelled.fulfill()
+            } catch {
+                XCTFail("Unexpected cancellation error: \(error)")
+            }
+        }
+
+        XCTAssertEqual(handler.activeRequestCount, 1)
+        handler.cancelAllTrackedRequests(reason: "Surface closed")
+
+        await fulfillment(of: [cancelled], timeout: 1)
+        XCTAssertEqual(handler.activeRequestCount, 0)
+        XCTAssertTrue(reports.contains(.loading(message: "Database query", progress: 0)))
+        XCTAssertTrue(reports.contains(.partial(message: "Surface closed")))
+    }
+
     func testResourceRegistryReadsOnlyRegisteredPathResources() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
