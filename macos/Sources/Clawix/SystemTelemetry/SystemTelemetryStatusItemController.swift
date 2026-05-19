@@ -269,7 +269,7 @@ final class SystemTelemetryStatusItemController {
         var added = 0
         for widget in widgets where added < limit {
             guard let history = model.historyGraph(for: widget) else { continue }
-            let item = NSMenuItem()
+            let item = NSMenuItem(title: "\(widget.title) history graph", action: nil, keyEquivalent: "")
             item.view = SystemTelemetryHistoryGraphView(history: history, title: widget.title)
             item.isEnabled = false
             menu.addItem(item)

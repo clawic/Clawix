@@ -40,6 +40,30 @@ function run(command, commandArgs, options = {}) {
   }
 }
 
+function resolveClawCliForSeeding() {
+  if (process.env.CLAWIX_SYSTEM_TELEMETRY_SEED_COMMAND) {
+    return process.env.CLAWIX_SYSTEM_TELEMETRY_SEED_COMMAND.trim().split(/\s+/);
+  }
+  const siblingCli = path.resolve(rootDir, "..", "..", "clawjs", "packages", "clawjs", "bin", "claw.mjs");
+  if (fs.existsSync(siblingCli)) return [process.execPath, siblingCli];
+  return ["claw"];
+}
+
+function seedLocalMonitorHistory() {
+  if (!args.has("--seed-local-history")) return;
+  const command = resolveClawCliForSeeding();
+  const [executable, ...prefixArgs] = command;
+  for (let index = 0; index < 2; index += 1) {
+    run(executable, [...prefixArgs, "system", "snapshot", "--record", "true", "--json"], {
+      cwd: rootDir,
+      timeout: 60_000,
+    });
+    if (index === 0) {
+      run("sleep", ["1"], { timeout: 5_000 });
+    }
+  }
+}
+
 function assertNoForbiddenPublicNames() {
   const forbidden = [
     [105, 115, 116, 97, 116],
@@ -131,6 +155,7 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "case (\"history\", \"get\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "historyReader.historyPayload");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addHistoryGraphItems(");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "NSMenuItem(title: \"\\(widget.title) history graph\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let refresh = NSMenuItem(title: \"Refresh\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "final class SystemTelemetryHistoryGraphView: NSView");
@@ -206,6 +231,9 @@ function assertOptionalSwiftTests() {
 
 function assertOptionalAccessibilitySmoke() {
   if (!args.has("--accessibility-smoke")) return;
+  if (args.has("--seed-local-history")) {
+    run("sleep", ["4"], { timeout: 10_000 });
+  }
   const titlesScript = `
 tell application "System Events"
   tell process "Clawix"
@@ -242,9 +270,13 @@ end tell
   ]) {
     assert(menuOutput.includes(snippet), `accessibility smoke: menu missing ${JSON.stringify(snippet)}`);
   }
+  if (args.has("--seed-local-history")) {
+    assert(menuOutput.includes("history graph"), "accessibility smoke: seeded history graph menu item missing");
+  }
 }
 
 function main() {
+  seedLocalMonitorHistory();
   assertNoForbiddenPublicNames();
   assertExternalPendingLedger();
   assertBridgeContracts();
