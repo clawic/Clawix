@@ -74,7 +74,7 @@ function assertExternalPendingLedger() {
     "| CLX-SYS-TEL-EXT-003 | Physical sensor and fan readings surfaced in the UI |",
     "| CLX-SYS-TEL-EXT-004 | Live external context provider displayed in menu-bar widgets |",
     "| CLX-SYS-TEL-EXT-005 | Dangerous controls reachable from UI only through governed plans |",
-    "| CLX-SYS-TEL-EXT-006 | Rendered graph view over retained telemetry |",
+    "| CLX-SYS-TEL-EXT-006 | Native rendered graph view over retained telemetry |",
     "must not be downgraded to `EXTERNAL PENDING`",
   ]) {
     assert(text.includes(snippet), `docs/system-telemetry-external-pending-validation.md: missing ${JSON.stringify(snippet)}`);
