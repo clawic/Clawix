@@ -55,6 +55,13 @@ require() {
 require BUNDLE_ID_IOS
 require DEVELOPMENT_TEAM_IOS
 require SIGN_IDENTITY_IOS_DISTRIBUTION
+PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
+if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+    # shellcheck disable=SC1090
+    source "$PRIVATE_SIGNING_GUARD"
+    clawix_require_team_var DEVELOPMENT_TEAM_IOS "iOS release development team"
+    clawix_require_identity_team SIGN_IDENTITY_IOS_DISTRIBUTION "iOS distribution signing identity"
+fi
 
 # 0b) Resolve marketing version + monotonic build number from git.
 # shellcheck disable=SC1091
