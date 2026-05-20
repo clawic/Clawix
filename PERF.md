@@ -5,7 +5,8 @@ This is the public performance router for Clawix.
 Performance governance treats whole-computer resource pressure as product
 correctness: CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals,
 idle behavior, caches, logs, indexes, and background work are bounded product
-budgets.
+budgets. The durable policy is mirrored in
+[`docs/governance/performance-governance.md`](docs/governance/performance-governance.md).
 
 Performance work starts with measured reproduction and instrumentation, not
 static code reading. For macOS investigations, use

@@ -169,6 +169,7 @@ require_snippet "docs/agent-rules/index.md" "0028-workspace-project-folder-manif
 require_snippet "docs/agent-rules/index.md" "Sensitive native permissions"
 require_snippet "docs/agent-rules/index.md" "Regulated domains are assistive only"
 require_snippet "CONSTITUTION.md" "Capabilities are complete only when dual-surfaced"
+require_snippet "CONSTITUTION.md" "The computer's resources are product correctness"
 require_snippet "CONSTITUTION.md" "Regulated domains are assistive, never final decision authorities"
 require_snippet "README.md" "SAFETY.md"
 require_snippet "README.md" "REGULATED_DOMAINS.md"
@@ -195,8 +196,11 @@ require_snippet "docs/decision-map.md" "claw inspect remote"
 require_snippet "docs/native-action-broker-allowlist.json" "MacControlActionBroker"
 require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"
 require_snippet "docs/adr/TEMPLATE.md" "## Decision Tensions"
+require_snippet "docs/adr/TEMPLATE.md" "## Performance Impact"
 require_snippet "docs/governance/decision-tension-rubric.md" "Canon and semantic coherence"
+require_snippet "docs/governance/performance-governance.md" "whole-computer resource behavior"
 require_snippet "docs/agent-rules/index.md" "Decision Tension Rubric"
+require_snippet "docs/agent-rules/index.md" "Performance governance"
 require_snippet "docs/decision-map.md" "Decision Tension Rubric"
 require_snippet "docs/adr/0007-dual-human-programmatic-surfaces.md" "MCP is the model-native surface"
 require_snippet "docs/adr/0010-interface-governance.md" "Only explicitly authorized visual lanes"
@@ -378,12 +382,14 @@ require_snippet "playbooks/README.md" "docs/decision-map.md"
 
 for snippet in \
   "decision -> document" \
+  "Performance Governance" \
   "ClawJS/Claw owns framework contracts" \
   "New workspace-local framework writes use \`.claw/\`" \
   "Sensitive native permissions" \
   "Source file boundaries" \
   "scripts/launch-android.sh" \
-  "scripts/launch-web.sh"
+  "scripts/launch-web.sh" \
+  "scripts/performance_governance_check.mjs"
 do
   require_snippet "docs/decision-map.md" "$snippet"
 done

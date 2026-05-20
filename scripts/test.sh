@@ -200,6 +200,8 @@ fast() {
   run node "$ROOT_DIR/scripts/agent-instructions-check.mjs"
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
+  run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
+  run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
