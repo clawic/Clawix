@@ -1,6 +1,6 @@
 import Foundation
 
-struct ClawJSAppStateSidebarSnapshot: Encodable, Sendable {
+struct ClawJSAppStateSidebarSnapshot: Codable, Sendable {
     let threadId: String
     let chatUuid: String
     let title: String
@@ -71,55 +71,56 @@ struct ClawJSAppStateSnapshot: Decodable, Sendable {
 @MainActor
 enum ClawJSAppStateClient {
     static func upsertProject(id: String, resourceId: String? = nil, name: String, path: String, sortOrder: Int64? = nil) {
-        var args = ["app-state", "project", "upsert", id, "--name", name, "--path", path, "--json"]
-        if let resourceId, !resourceId.isEmpty {
-            args += ["--resource-id", resourceId]
-        }
-        if let sortOrder {
-            args += ["--sort-order", String(sortOrder)]
-        }
-        runBestEffort(args)
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(
+            kind: "project.upsert",
+            id: id,
+            resourceId: resourceId,
+            name: name,
+            path: path,
+            sortOrder: sortOrder
+        ))
     }
 
     static func registerProjectResource(id: String, path: String, label: String) {
         guard !id.isEmpty, !path.isEmpty else { return }
-        runBestEffort(["resources", "register", path, "--id", id, "--kind", "project", "--label", label, "--json"])
+        runResourceBestEffort(["resources", "register", path, "--id", id, "--kind", "project", "--label", label, "--json"])
     }
 
     static func deleteProject(id: String) {
-        runBestEffort(["app-state", "project", "delete", id, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "project.delete", id: id))
     }
 
     static func setProjectOrder(_ projectIds: [String]) {
-        guard let data = try? JSONEncoder().encode(projectIds),
-              let json = String(data: data, encoding: .utf8) else { return }
-        runBestEffort(["app-state", "project", "order", "--ids", json, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "project.order", ids: projectIds))
     }
 
     static func upsertPin(threadId: String, sortOrder: Int64) {
-        runBestEffort(["app-state", "pin", "upsert", threadId, "--sort-order", String(sortOrder), "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "pin.upsert", sortOrder: sortOrder, threadId: threadId))
     }
 
     static func deletePin(threadId: String) {
-        runBestEffort(["app-state", "pin", "delete", threadId, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "pin.delete", threadId: threadId))
     }
 
     static func setPinOrder(_ threadIds: [String]) {
-        guard let data = try? JSONEncoder().encode(threadIds),
-              let json = String(data: data, encoding: .utf8) else { return }
-        runBestEffort(["app-state", "pin", "order", "--ids", json, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "pin.order", threadIds: threadIds))
     }
 
     static func upsertTitle(threadId: String, title: String, source: String) {
-        runBestEffort(["app-state", "title", "upsert", threadId, "--title", title, "--source", source, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(
+            kind: "title.upsert",
+            threadId: threadId,
+            title: title,
+            source: source
+        ))
     }
 
     static func archive(threadId: String) {
-        runBestEffort(["app-state", "archive", "set", threadId, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "archive.set", threadId: threadId))
     }
 
     static func unarchive(threadId: String) {
-        runBestEffort(["app-state", "archive", "delete", threadId, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "archive.delete", threadId: threadId))
     }
 
     static func upsertSidebarSnapshot(
@@ -133,31 +134,22 @@ enum ClawJSAppStateClient {
         archived: Bool,
         pinned: Bool
     ) {
-        var args = [
-            "app-state", "sidebar", "upsert", threadId,
-            "--chat-uuid", chatUuid,
-            "--title", title,
-            "--updated-at", isoString(seconds: updatedAt),
-            "--archived", archived ? "1" : "0",
-            "--pinned", pinned ? "1" : "0",
-            "--json",
-        ]
-        if let cwd, !cwd.isEmpty {
-            args += ["--cwd", cwd]
-        }
-        if let projectId, !projectId.isEmpty {
-            args += ["--project-id", projectId]
-        }
-        if let projectPath, !projectPath.isEmpty {
-            args += ["--project-path", projectPath]
-        }
-        runBestEffort(args)
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(
+            kind: "sidebar.upsert",
+            threadId: threadId,
+            title: title,
+            chatUuid: chatUuid,
+            cwd: cwd,
+            projectId: projectId,
+            projectPath: projectPath,
+            updatedAt: isoString(seconds: updatedAt),
+            archived: archived,
+            pinned: pinned
+        ))
     }
 
     static func replaceSidebarSnapshots(_ snapshots: [ClawJSAppStateSidebarSnapshot]) {
-        guard let data = try? JSONEncoder().encode(snapshots),
-              let json = String(data: data, encoding: .utf8) else { return }
-        runBestEffort(["app-state", "sidebar", "replace", "--items", json, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "sidebar.replace", items: snapshots))
     }
 
     static func upsertTerminalTab(
@@ -167,59 +159,26 @@ enum ClawJSAppStateClient {
         sortOrder: Int,
         metadata: [String: String] = [:]
     ) {
-        let metadataJson = (try? String(data: JSONEncoder().encode(metadata), encoding: .utf8)) ?? "{}"
-        runBestEffort([
-            "app-state", "terminal", "upsert", id,
-            "--title", title,
-            "--cwd", cwd,
-            "--sort-order", String(sortOrder),
-            "--metadata", metadataJson,
-            "--json",
-        ])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(
+            kind: "terminal.upsert",
+            id: id,
+            sortOrder: Int64(sortOrder),
+            title: title,
+            cwd: cwd,
+            metadata: metadata
+        ))
     }
 
     static func deleteTerminalTab(id: String) {
-        runBestEffort(["app-state", "terminal", "delete", id, "--json"])
+        ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "terminal.delete", id: id))
     }
 
     static func snapshot() async throws -> ClawJSAppStateSnapshot {
-        guard ClawJSRuntime.isAvailable else {
-            throw CocoaError(.executableNotLoadable)
-        }
-        let nodeURL = ClawJSRuntime.nodeBinaryURL
-        let cliScriptPath = ClawJSRuntime.cliScriptURL.path
-        let workspaceURL = ClawJSServiceManager.workspaceURL
-        let environment = ClawJSServiceManager.cliEnvironment()
-        let data = try await Task.detached(priority: .utility) {
-            let process = Process()
-            let stdout = Pipe()
-            let stderr = Pipe()
-            process.executableURL = nodeURL
-            process.arguments = [cliScriptPath, "app-state", "snapshot", "--json"]
-            process.currentDirectoryURL = workspaceURL
-            process.environment = environment
-            process.standardOutput = stdout
-            process.standardError = stderr
-            try process.run()
-            process.waitUntilExit()
-            let output = stdout.fileHandleForReading.readDataToEndOfFile()
-            if process.terminationStatus != 0 {
-                let errorText = String(
-                    data: stderr.fileHandleForReading.readDataToEndOfFile(),
-                    encoding: .utf8
-                ) ?? "claw app-state snapshot failed"
-                throw NSError(
-                    domain: "ClawJSAppStateClient",
-                    code: Int(process.terminationStatus),
-                    userInfo: [NSLocalizedDescriptionKey: errorText]
-                )
-            }
-            return output
-        }.value
-        return try JSONDecoder().decode(ClawJSAppStateSnapshot.self, from: data)
+        guard ClawJSRuntime.isAvailable else { throw CocoaError(.executableNotLoadable) }
+        return try await ClawJSAppStateSyncCoordinator.shared.projection()
     }
 
-    private static func runBestEffort(_ args: [String]) {
+    private static func runResourceBestEffort(_ args: [String]) {
         guard ClawJSRuntime.isAvailable else { return }
         let nodeURL = ClawJSRuntime.nodeBinaryURL
         let cliScriptPath = ClawJSRuntime.cliScriptURL.path

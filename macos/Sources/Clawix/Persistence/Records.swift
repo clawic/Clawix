@@ -161,3 +161,55 @@ struct SidebarSnapshotProjectRow: Codable, FetchableRecord, PersistableRecord {
         case capturedAt = "captured_at"
     }
 }
+
+struct AppStateOutboxRow: Codable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "app_state_outbox"
+
+    var id: String
+    var operationJson: String
+    var status: String
+    var attemptCount: Int
+    var lastError: String?
+    var receiptJson: String?
+    var createdAt: Int64
+    var updatedAt: Int64
+    var nextAttemptAt: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case operationJson = "operation_json"
+        case status
+        case attemptCount = "attempt_count"
+        case lastError = "last_error"
+        case receiptJson = "receipt_json"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case nextAttemptAt = "next_attempt_at"
+    }
+}
+
+struct AppStateSyncReceiptRow: Codable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "app_state_sync_receipts"
+
+    var receiptId: String
+    var requestId: String
+    var hostId: String
+    var status: String
+    var operationCount: Int
+    var appliedAt: String
+    var errorJson: String?
+    var rawJson: String
+    var recordedAt: Int64
+
+    enum CodingKeys: String, CodingKey {
+        case receiptId = "receipt_id"
+        case requestId = "request_id"
+        case hostId = "host_id"
+        case status
+        case operationCount = "operation_count"
+        case appliedAt = "applied_at"
+        case errorJson = "error_json"
+        case rawJson = "raw_json"
+        case recordedAt = "recorded_at"
+    }
+}

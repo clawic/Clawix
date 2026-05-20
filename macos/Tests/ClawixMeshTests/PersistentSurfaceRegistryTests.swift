@@ -9,6 +9,8 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local.table.projects" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local.table.dictation_transcript.column.audio_file_path" && $0.nullable == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local.table.terminal_tabs.index.terminal_tabs_chat_position_idx" })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local.table.app_state_outbox.column.operation_json" })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local.table.app_state_sync_receipts.column.receipt_id" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.prefs.sidebar.viewMode" && $0.key == "SidebarViewMode" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.prefs.legal.acceptedTermsVersion" && $0.key == "Legal.AcceptedTermsVersion" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.prefs.legal.acceptedDisclaimerVersion" && $0.key == "Legal.AcceptedDisclaimerVersion" })

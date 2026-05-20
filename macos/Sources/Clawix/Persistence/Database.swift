@@ -70,6 +70,8 @@ final class Database {
             try db.execute(sql: "DELETE FROM sidebar_snapshot")
             try db.execute(sql: "DELETE FROM sidebar_snapshot_project")
             try db.execute(sql: "DELETE FROM project_sort_order")
+            try db.execute(sql: "DELETE FROM app_state_outbox")
+            try db.execute(sql: "DELETE FROM app_state_sync_receipts")
             try db.execute(sql: "DELETE FROM meta WHERE key IN ('has_local_pins','archives_seeded')")
         }
     }
@@ -327,6 +329,43 @@ final class Database {
             try db.execute(sql: """
                 CREATE INDEX sidebar_snapshot_project_project_id_idx
                     ON sidebar_snapshot_project(project_id, updated_at DESC)
+            """)
+        }
+
+        migrator.registerMigration("v11_app_state_outbox") { db in
+            try db.execute(sql: """
+                CREATE TABLE app_state_outbox (
+                    id              TEXT PRIMARY KEY NOT NULL,
+                    operation_json  TEXT NOT NULL,
+                    status          TEXT NOT NULL DEFAULT 'pending',
+                    attempt_count   INTEGER NOT NULL DEFAULT 0,
+                    last_error      TEXT,
+                    receipt_json    TEXT,
+                    created_at      INTEGER NOT NULL,
+                    updated_at      INTEGER NOT NULL,
+                    next_attempt_at INTEGER NOT NULL
+                )
+            """)
+            try db.execute(sql: """
+                CREATE INDEX app_state_outbox_status_idx
+                    ON app_state_outbox(status, next_attempt_at, created_at)
+            """)
+            try db.execute(sql: """
+                CREATE TABLE app_state_sync_receipts (
+                    receipt_id      TEXT PRIMARY KEY NOT NULL,
+                    request_id      TEXT NOT NULL,
+                    host_id         TEXT NOT NULL,
+                    status          TEXT NOT NULL,
+                    operation_count INTEGER NOT NULL,
+                    applied_at      TEXT NOT NULL,
+                    error_json      TEXT,
+                    raw_json        TEXT NOT NULL,
+                    recorded_at     INTEGER NOT NULL
+                )
+            """)
+            try db.execute(sql: """
+                CREATE INDEX app_state_sync_receipts_request_idx
+                    ON app_state_sync_receipts(request_id)
             """)
         }
 

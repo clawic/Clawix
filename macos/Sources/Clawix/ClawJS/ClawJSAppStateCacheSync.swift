@@ -4,6 +4,9 @@ import GRDB
 @MainActor
 enum ClawJSAppStateCacheSync {
     static func refreshFromCanonicalStore() async {
+        await ClawJSAppStateSyncCoordinator.shared.flushPending()
+        let syncStatus = ClawJSAppStateSyncCoordinator.shared.status()
+        guard syncStatus.pending == 0, syncStatus.failed == 0 else { return }
         guard let snapshot = try? await ClawJSAppStateClient.snapshot() else { return }
         let db = Database.shared.dbQueue
         try? await db.write { database in
