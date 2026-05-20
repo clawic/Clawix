@@ -2,6 +2,8 @@ import CryptoKit
 import Foundation
 
 enum AppPackageImportValidator {
+    static let signatureFilename = "package-signature.json"
+
     private static let reservedHostOwnedFilenames: Set<String> = [
         AppTrustAudit.filename,
         AppHighRiskActionAudit.filename
@@ -48,6 +50,7 @@ enum AppPackageImportValidator {
     static func contentDigestSHA256(sourceURL: URL, manifestName: String) throws -> String {
         try validateTree(sourceURL: sourceURL, manifestName: manifestName)
         let files = try regularFileURLs(in: sourceURL)
+            .filter { $0.lastPathComponent != signatureFilename }
         var hasher = SHA256()
         for url in files {
             let relativePath = relativePath(for: url, under: sourceURL)
@@ -60,6 +63,43 @@ enum AppPackageImportValidator {
             hasher.update(data: Data([0]))
         }
         return SHA256Digest.hexString(from: hasher.finalize())
+    }
+
+    static func signatureStatus(
+        sourceURL: URL,
+        packageDigestSHA256: String,
+        trustedPublicKeys: [String: Curve25519.Signing.PublicKey]
+    ) throws -> AppPackageSignatureStatus {
+        let signatureURL = sourceURL.appendingPathComponent(signatureFilename, isDirectory: false)
+        guard FileManager.default.fileExists(atPath: signatureURL.path) else {
+            return .notVerified
+        }
+        if try isSymbolicLink(signatureURL) {
+            throw AppsStoreImportError.symlinkNotAllowed(signatureURL.path)
+        }
+        do {
+            let manifest = try JSONDecoder().decode(
+                AppPackageSignatureManifest.self,
+                from: Data(contentsOf: signatureURL)
+            )
+            guard manifest.schemaVersion == 1,
+                  manifest.algorithm == "ed25519",
+                  manifest.digestSHA256 == packageDigestSHA256,
+                  let publicKey = trustedPublicKeys[manifest.keyId],
+                  let signature = Data(base64Encoded: manifest.signatureBase64) else {
+                return .failed
+            }
+            return publicKey.isValidSignature(
+                signature,
+                for: signaturePayload(packageDigestSHA256: packageDigestSHA256)
+            ) ? .verified : .failed
+        } catch {
+            return .failed
+        }
+    }
+
+    static func signaturePayload(packageDigestSHA256: String) -> Data {
+        Data("clawix-app-package-v1\n\(packageDigestSHA256)".utf8)
     }
 
     private static func validateTree(sourceURL: URL, manifestName: String) throws {
@@ -124,6 +164,28 @@ enum AppPackageImportValidator {
     private static func isSymbolicLink(_ url: URL) throws -> Bool {
         let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
         return values.isSymbolicLink == true
+    }
+}
+
+struct AppPackageSignatureManifest: Codable, Equatable, Hashable {
+    var schemaVersion: Int
+    var algorithm: String
+    var keyId: String
+    var digestSHA256: String
+    var signatureBase64: String
+
+    init(
+        schemaVersion: Int = 1,
+        algorithm: String = "ed25519",
+        keyId: String,
+        digestSHA256: String,
+        signatureBase64: String
+    ) {
+        self.schemaVersion = schemaVersion
+        self.algorithm = algorithm
+        self.keyId = keyId
+        self.digestSHA256 = digestSHA256
+        self.signatureBase64 = signatureBase64
     }
 }
 

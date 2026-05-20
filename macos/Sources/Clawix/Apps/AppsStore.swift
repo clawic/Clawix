@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import CryptoKit
 import Foundation
 
 /// Single source of truth for the user's installed Apps. Persists each
@@ -246,7 +247,8 @@ final class AppsStore: ObservableObject {
     @discardableResult
     func importApp(
         from sourceURL: URL,
-        originClass: AppOriginClass = .imported
+        originClass: AppOriginClass = .imported,
+        trustedSignaturePublicKeys: [String: Curve25519.Signing.PublicKey] = [:]
     ) throws -> AppRecord {
         try AppPackageImportValidator.validateSourceDirectory(sourceURL, manifestName: manifestName)
         let manifestURL = sourceURL.appendingPathComponent(manifestName)
@@ -263,6 +265,11 @@ final class AppsStore: ObservableObject {
             sourceURL: sourceURL,
             manifestName: manifestName
         )
+        let signatureStatus = try AppPackageImportValidator.signatureStatus(
+            sourceURL: sourceURL,
+            packageDigestSHA256: packageDigest,
+            trustedPublicKeys: trustedSignaturePublicKeys
+        )
         let sourceSlug = record.slug
         let sourceOriginClass = record.originClass
         let resolvedSlug = try uniqueSlug(preferred: record.slug, name: record.name, includingFilesystem: true)
@@ -277,6 +284,7 @@ final class AppsStore: ObservableObject {
             sourcePath: sourceURL.standardizedFileURL.path,
             sourceSlug: sourceSlug,
             sourceOriginClass: sourceOriginClass,
+            signatureStatus: signatureStatus,
             packageDigestSHA256: packageDigest
         )
         if originClass == .imported || originClass == .marketplace {

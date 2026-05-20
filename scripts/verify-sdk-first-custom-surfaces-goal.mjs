@@ -185,6 +185,10 @@ function assertRuntimeArtifacts() {
       "validatePackageContents",
       "AppSwiftSurfaceContract.manifestFilename",
       "contentDigestSHA256",
+      "package-signature.json",
+      "Curve25519.Signing.PublicKey",
+      "signaturePayload",
+      "AppPackageSignatureManifest",
     ],
     "macos/Sources/Clawix/Apps/AppVariantDefaultsStore.swift": [
       "case workspace",
@@ -215,6 +219,10 @@ function assertTests() {
       "testSwiftSurfaceDBQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceSearchQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
+    ],
+    "macos/Tests/ClawixMeshTests/AppsStoreCancellationTests.swift": [
+      "testImportAppVerifiesSignedPackageDigestWhenTrustedKeyMatches",
+      "testImportAppMarksPackageSignatureFailedWhenDigestChanges",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [
       "testCriticalShellStartFastPathStaysBoundedWithAllHeavyDependenciesUnavailable",

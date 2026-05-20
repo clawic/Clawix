@@ -64,6 +64,9 @@ the sibling ClawJS SDK-first custom surface contract.
   final closure.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
+- Imported packages compute a canonical package SHA-256, can verify an
+  optional Ed25519 `package-signature.json` against trusted host keys, and
+  still require the origin/capability/risk ficha before activation.
 - Swift custom surfaces have a constrained process/bridge design before
   executing user Swift in the main app, including a versioned runner IPC
   `render` message that the host validates against the launch plan before

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import XCTest
 @testable import Clawix
@@ -178,6 +179,89 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(audit.first?.packageDigestSHA256, imported.packageProvenance?.packageDigestSHA256)
     }
 
+    func testImportAppVerifiesSignedPackageDigestWhenTrustedKeyMatches() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        try writeManifest(AppRecord(slug: "signed-panel", name: "Signed Panel"), to: sourceRoot)
+        try "<main>Signed</main>".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent("index.html"),
+            options: .atomic
+        )
+        let signingKey = Curve25519.Signing.PrivateKey()
+        let digest = try AppPackageImportValidator.contentDigestSHA256(
+            sourceURL: sourceRoot,
+            manifestName: "manifest.json"
+        )
+        try writeSignature(
+            digest: digest,
+            signingKey: signingKey,
+            keyId: "local-test-key",
+            to: sourceRoot
+        )
+
+        let imported = try store.importApp(
+            from: sourceRoot,
+            originClass: .marketplace,
+            trustedSignaturePublicKeys: ["local-test-key": signingKey.publicKey]
+        )
+
+        XCTAssertEqual(imported.effectiveOriginClass, .marketplace)
+        XCTAssertNil(imported.activationReview)
+        XCTAssertEqual(imported.packageProvenance?.signatureStatus, .verified)
+        XCTAssertEqual(imported.packageProvenance?.packageDigestSHA256, digest)
+        if case .reviewRequired = AppCapabilityCatalog.activationGate(for: imported) {
+            // Signed packages still require the origin/capability/risk ficha.
+        } else {
+            XCTFail("Signed marketplace package should still require activation review")
+        }
+        let audit = try AppTrustAudit.read(from: store.trustAuditURL(for: imported))
+        XCTAssertEqual(audit.first?.signatureStatus, .verified)
+        XCTAssertEqual(audit.first?.packageDigestSHA256, digest)
+    }
+
+    func testImportAppMarksPackageSignatureFailedWhenDigestChanges() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        try writeManifest(AppRecord(slug: "tampered-panel", name: "Tampered Panel"), to: sourceRoot)
+        let indexURL = sourceRoot.appendingPathComponent("index.html")
+        try "<main>Original</main>".data(using: .utf8)?.write(to: indexURL, options: .atomic)
+        let signingKey = Curve25519.Signing.PrivateKey()
+        let originalDigest = try AppPackageImportValidator.contentDigestSHA256(
+            sourceURL: sourceRoot,
+            manifestName: "manifest.json"
+        )
+        try writeSignature(
+            digest: originalDigest,
+            signingKey: signingKey,
+            keyId: "local-test-key",
+            to: sourceRoot
+        )
+        try "<main>Tampered</main>".data(using: .utf8)?.write(to: indexURL, options: .atomic)
+
+        let imported = try store.importApp(
+            from: sourceRoot,
+            originClass: .imported,
+            trustedSignaturePublicKeys: ["local-test-key": signingKey.publicKey]
+        )
+
+        XCTAssertEqual(imported.packageProvenance?.signatureStatus, .failed)
+        XCTAssertNotEqual(imported.packageProvenance?.packageDigestSHA256, originalDigest)
+        let audit = try AppTrustAudit.read(from: store.trustAuditURL(for: imported))
+        XCTAssertEqual(audit.first?.signatureStatus, .failed)
+    }
+
     func testImportAppRejectsPackageWithoutRenderEntry() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -332,5 +416,27 @@ final class AppsStoreCancellationTests: XCTestCase {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(record)
         try data.write(to: directory.appendingPathComponent("manifest.json"), options: .atomic)
+    }
+
+    private func writeSignature(
+        digest: String,
+        signingKey: Curve25519.Signing.PrivateKey,
+        keyId: String,
+        to directory: URL
+    ) throws {
+        let signature = try signingKey.signature(
+            for: AppPackageImportValidator.signaturePayload(packageDigestSHA256: digest)
+        )
+        let manifest = AppPackageSignatureManifest(
+            keyId: keyId,
+            digestSHA256: digest,
+            signatureBase64: signature.base64EncodedString()
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(manifest).write(
+            to: directory.appendingPathComponent(AppPackageImportValidator.signatureFilename),
+            options: .atomic
+        )
     }
 }
