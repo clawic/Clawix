@@ -68,7 +68,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
     func testOrdinaryReadCapabilitiesExposeSharedRedactionPolicy() {
         let ordinary = AppCapabilityCatalog.descriptors.filter { $0.customAppAccess == .localWide }
-        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
+        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.list", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
         for descriptor in ordinary {
             XCTAssertEqual(descriptor.redactionPolicyRef, AppBridgeRedactionPolicy.policyId, descriptor.id)
             XCTAssertEqual(descriptor.bridgeValue["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
@@ -80,6 +80,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "search.query")?.inputSchemaRef, "claw.search.query.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "db.query")?.outputSchemaRef, "claw.db.records.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "resources.list")?.inputSchemaRef, "claw.resources.list.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "resources.list")?.outputSchemaRef, "claw.resources.listResult.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "resources.read")?.inputSchemaRef, "claw.resources.read.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.snapshot")?.outputSchemaRef, "claw.system.telemetry.snapshot.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.history")?.inputSchemaRef, "claw.system.telemetry.history.request.v1")
@@ -765,6 +767,54 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
     }
 
     @MainActor
+    func testSwiftSurfaceResourceListExecutesThroughRegisteredResources() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["resources.list"],
+            surfaceKind: .swiftDeclarative
+        )
+        let appsStore = AppsStore(rootURL: root.appendingPathComponent("apps", isDirectory: true))
+        let resource = makeResource(
+            id: "res_swift1",
+            kind: "instruction",
+            locator: AppResourceLocator(kind: "path", value: "/tmp/swift-resource.md")
+        )
+        try writeResources([resource], to: registryRoot)
+        let registry = AppResourceRegistryStore(directory: registryRoot)
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:swift-dashboard") { report in
+            reports.append(report)
+        }
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkRead,
+                capabilityId: "resources.list",
+                operation: "resources.list",
+                arguments: ["kind": .string("instruction")]
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            resourceRegistry: registry,
+            surfaceReporter: reporter,
+            highRiskActionDispatcher: AppUnavailableHighRiskActionDispatcher(),
+            approvalHandler: { _, _, _ in
+                XCTFail("Resource lists should not request interruptive approval")
+            }
+        ).handle(action)
+
+        XCTAssertEqual(result, .executedRead("resources.list", 1))
+        XCTAssertTrue(reports.contains(.loading(message: "Listing Swift surface resources", progress: 0.2)))
+        XCTAssertTrue(reports.contains(.partial(message: "Swift surface listed 1 resources")))
+    }
+
+    @MainActor
     func testSwiftSurfaceResourceReadExecutesThroughRegisteredResources() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
@@ -1375,7 +1425,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             slug: "dashboard",
             name: "Dashboard",
             createdByChatId: nil,
-            declaredCapabilities: ["search.query", "db.query", "resources.read", "actions.invoke"]
+            declaredCapabilities: ["search.query", "db.query", "resources.list", "resources.read", "actions.invoke"]
         )
         let payload = AppCapabilityCatalog.contractsBridgeValue(for: record)
         XCTAssertEqual(payload["schemaVersion"] as? Int, 1)
@@ -1394,14 +1444,22 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(nonExecutableSurfaces.contains("mcp.custom_app_sdk"))
         XCTAssertTrue(nonExecutableSurfaces.contains("relay.remote.custom_app_sdk"))
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.search.query.v1") == true)
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.resources.list.v1") == true)
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.resources.listResult.v1") == true)
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.mac.actionRequest.v1") == true)
         XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.customApp.request.partial.v1") == true)
         XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.actions.invoke.v1") == true)
         let riskMap = try XCTUnwrap(payload["riskMap"] as? [String: Any])
         XCTAssertEqual(riskMap["authorityModel"] as? String, "localWideReadsHighRiskApproval")
         XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("db.query") == true)
+        XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("resources.list") == true)
         XCTAssertTrue((riskMap["approvalRequired"] as? [String])?.contains("actions.invoke") == true)
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
+        let resourceList = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.list" })
+        XCTAssertEqual(resourceList["inputSchemaRef"] as? String, "claw.resources.list.v1")
+        XCTAssertEqual(resourceList["outputSchemaRef"] as? String, "claw.resources.listResult.v1")
+        let resourceListDispatch = try XCTUnwrap(resourceList["dispatch"] as? [String: Any])
+        XCTAssertEqual(resourceListDispatch["mode"] as? String, "localWideRead")
         let resources = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.read" })
         XCTAssertEqual(resources["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
         let snapshot = try XCTUnwrap(capabilities.first { $0["id"] as? String == "system.telemetry.snapshot" })
@@ -1439,6 +1497,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
     func testBridgeOperationPolicyDoesNotExposeEscapeHatches() {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("search.query"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("db.query"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.list"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))

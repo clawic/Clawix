@@ -64,6 +64,9 @@ the sibling ClawJS SDK-first custom surface contract.
   low-risk local-wide reads across ClawJS capability metadata and the Clawix
   host bridge, including `window.clawix.system.telemetry` SDK methods and
   contract tests for snapshot/history payloads.
+- `resources.list` and `resources.read` are separate local-wide capabilities:
+  listing registered resources no longer depends on the read payload contract,
+  and both use shared schema refs plus Web/Swift host bridge tests.
 - `mac.action.plan` is exposed to Web custom apps through
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until
