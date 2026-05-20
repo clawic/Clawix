@@ -1630,6 +1630,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-verify-sdk-first-custom-surfaces-goal",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "verify-sdk-first-custom-surfaces-goal",
+        "Verify Sdk First Custom Surfaces Goal"
+      ],
+      "searchQueries": [
+        {
+          "query": "verify-sdk-first-custom-surfaces-goal",
+          "expectPath": "scripts/verify-sdk-first-custom-surfaces-goal.mjs"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-verify-system-telemetry-goal",
       "kind": "guardrail",
       "owner": "clawix",
@@ -2780,6 +2805,30 @@
       "guard": "scripts/ui_visual_scope_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-completion-audit",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/sdk-first-custom-surfaces-completion-audit.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces completion audit",
+        "custom app SDK completion audit gate",
+        "SDK-first custom surfaces closure blockers"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces completion audit",
+          "expectPath": "docs/sdk-first-custom-surfaces-completion-audit.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
     },
     {
       "id": "clawix-system-telemetry-decision-matrix",
