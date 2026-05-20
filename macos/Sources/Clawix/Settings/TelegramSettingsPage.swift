@@ -58,7 +58,7 @@ struct TelegramSettingsPage: View {
             updateRefreshLoop(for: newState)
         }
         .onDisappear {
-            store.stopRefreshing()
+            store.cancelSurfaceWork()
         }
         .sheet(isPresented: $addBotPresented) {
             AddBotSheet(store: store, isPresented: $addBotPresented) { newBotId in

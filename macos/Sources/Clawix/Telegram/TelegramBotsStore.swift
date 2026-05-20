@@ -130,8 +130,12 @@ final class TelegramBotsStore: ObservableObject {
         cancelRegistration()
     }
 
-    func resetForUnavailableService() {
+    func cancelSurfaceWork() {
         stopRefreshing()
+    }
+
+    func resetForUnavailableService() {
+        cancelSurfaceWork()
         bots = []
         isLoading = false
         lastError = nil

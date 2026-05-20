@@ -3,24 +3,31 @@ import XCTest
 
 @MainActor
 final class TelegramBotsStoreCancellationTests: XCTestCase {
-    func testStopRefreshingSuppressesStaleBotList() async {
+    func testCancelSurfaceWorkCancelsStaleBotList() async {
         let started = expectation(description: "Telegram bot list refresh started")
-        let returned = expectation(description: "Telegram bot list refresh returned")
+        let cancelled = expectation(description: "Telegram bot list refresh cancelled")
+        let returned = expectation(description: "Telegram bot list refresh should not return")
+        returned.isInverted = true
         let store = TelegramBotsStore(
             listBotsOperation: {
                 started.fulfill()
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                returned.fulfill()
-                return [Self.bot(id: "stale")]
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    returned.fulfill()
+                    return [Self.bot(id: "stale")]
+                } catch is CancellationError {
+                    cancelled.fulfill()
+                    throw CancellationError()
+                }
             }
         )
 
         store.startRefreshing()
         await fulfillment(of: [started], timeout: 1)
 
-        store.stopRefreshing()
+        store.cancelSurfaceWork()
 
-        await fulfillment(of: [returned], timeout: 1)
+        await fulfillment(of: [cancelled, returned], timeout: 1)
         await Task.yield()
         XCTAssertTrue(store.bots.isEmpty)
         XCTAssertFalse(store.isLoading)
