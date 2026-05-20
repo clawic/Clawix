@@ -80,6 +80,11 @@ the sibling ClawJS SDK-first custom surface contract.
 - `jobs.start` and `jobs.cancel` are present only as blocked explicit mutation
   gaps in the capability map; they are not exposed through `window.clawix` or
   the host bridge until mutation contracts, policy, audit, and adapters exist.
+- Sibling ClawJS runtime now has local authenticated backend routes for
+  `runtime/jobs/start`, `runtime/jobs/:id/cancel`, `runtime/jobs/events`, and
+  per-job event snapshots, covered by Runtime E2E. Clawix still blocks
+  `window.clawix.jobs.stream/start/cancel` until host bridge policy, audit, and
+  adapters are added.
 - `mac.action.plan` is exposed to Web custom apps through
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until
