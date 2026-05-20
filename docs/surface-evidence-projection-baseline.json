@@ -9,8 +9,8 @@
       "reason": "Swift manifest export currently lacks source locator metadata for generated nodes, edges, and routes.",
       "missingSource": {
         "nodes": {
-          "count": 439,
-          "idsSha256": "1311fee5d353afc984f65f8acabd28b66dafd1c0699c16dc366c8e91f3c58015"
+          "count": 461,
+          "idsSha256": "3c8339e4e0861545d12fa1547a81c0c0152f8794dada62da4728ca89231be682"
         },
         "edges": {
           "count": 2,
