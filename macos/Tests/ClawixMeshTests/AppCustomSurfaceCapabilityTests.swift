@@ -97,6 +97,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.get")?.outputSchemaRef, "claw.jobs.detail.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.events")?.inputSchemaRef, "claw.jobs.events.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.events")?.outputSchemaRef, "claw.jobs.eventsResult.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.customAppAccess, .blocked)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.inputSchemaRef)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.outputSchemaRef)
     }
 
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
@@ -1439,6 +1442,22 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedUnknownCapabilities(["unknown.future"]))
     }
 
+    func testBlockedCapabilitiesBlockActivationEvenAfterReview() {
+        let record = AppRecord(
+            slug: "blocked-stream-panel",
+            name: "Blocked Stream Panel",
+            declaredCapabilities: ["jobs.stream"],
+            originClass: .localUserAuthored,
+            activationReview: AppActivationReview(approvedBy: "Test", riskMapSource: AppCapabilityCatalog.source)
+        )
+
+        let riskMap = AppCapabilityCatalog.riskMap(for: record)
+
+        XCTAssertEqual(riskMap.blocked, ["jobs.stream"])
+        XCTAssertEqual(riskMap.ordinaryAccess, [])
+        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedCapabilities(["jobs.stream"]))
+    }
+
     func testProtectedRoutesCannotBeReplacedWithoutVariantFallback() {
         let blocked = AppRecord(
             slug: "secrets-panel",
@@ -1541,6 +1560,12 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("resources.list") == true)
         XCTAssertTrue((riskMap["approvalRequired"] as? [String])?.contains("actions.invoke") == true)
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
+        let blockedStream = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.stream" })
+        XCTAssertEqual(blockedStream["customAppAccess"] as? String, "blocked")
+        let blockedStreamDispatch = try XCTUnwrap(blockedStream["dispatch"] as? [String: Any])
+        XCTAssertEqual(blockedStreamDispatch["status"] as? String, "unavailable")
+        XCTAssertEqual(blockedStreamDispatch["mode"] as? String, "blocked")
+        XCTAssertEqual(blockedStreamDispatch["approvalRequired"] as? Bool, false)
         let resourceList = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.list" })
         XCTAssertEqual(resourceList["inputSchemaRef"] as? String, "claw.resources.list.v1")
         XCTAssertEqual(resourceList["outputSchemaRef"] as? String, "claw.resources.listResult.v1")
@@ -1588,6 +1613,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.list"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.get"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.events"))
+        XCTAssertFalse(ClawixAppsSDKJS.contains("jobs.stream"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.snapshot"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.history"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
@@ -1609,6 +1635,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.list"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.get"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.events"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("jobs.stream"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("actions.invoke"))

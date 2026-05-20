@@ -120,6 +120,8 @@ database escapes. `jobs.list`, `jobs.get`, and `jobs.events` are currently Web
 host bridge reads for recent jobs/run records, redacted job detail, and derived
 job timelines only; they do not start, cancel, or mutate jobs. Signed
 end-to-end isolation/crash evidence remains a separate closure gate.
+`jobs.stream` is an explicit blocked capability gap and must not be wired to the
+SDK or bridge until a real backend stream, policy, audit, and host adapter exist.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
@@ -266,6 +268,8 @@ replacing core shell surfaces.
     jobs/run records, one redacted job detail, and derived job timelines. They
     expose redacted job metadata, entity summaries, and event summaries, and do
     not start or cancel work.
+  - `clawix.jobs.stream` is intentionally absent. `jobs.stream` is visible only
+    as a blocked capability gap in `clawix.capabilities.contracts()`.
   - `clawix.ui.{setTitle,setBadge,openExternal}` — best-effort UI hooks
   - `clawix.events.on('focus' | 'blur', cb)` — focus events fire from
     the SDK when the WKWebView gains/loses keyboard focus

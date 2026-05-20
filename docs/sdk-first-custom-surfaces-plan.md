@@ -74,6 +74,9 @@ the sibling ClawJS SDK-first custom surface contract.
   through `window.clawix.jobs.{list,get,events}()` as local-wide jobs/run
   listing, detail, and derived event timeline bridges with shared redaction
   policy and no start/cancel mutation.
+- `jobs.stream` is present only as a blocked explicit gap in the capability
+  map; it is not exposed through `window.clawix` or the host bridge until a
+  true backend stream, policy, audit, and adapter exist.
 - `mac.action.plan` is exposed to Web custom apps through
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until
