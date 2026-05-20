@@ -191,7 +191,7 @@ final class ClawJSAppStateSyncCoordinator {
         }
     }
 
-    private func apply(operations: [ClawJSAppStateOperation]) async throws -> ApplyData {
+    private func apply(operations: [ClawJSAppStateOperation]) async throws -> ApplyResponse {
         let operationsData = try encoder.encode(operations)
         let operationsJson = String(data: operationsData, encoding: .utf8) ?? "[]"
         let data = try await runCLI([
@@ -201,7 +201,7 @@ final class ClawJSAppStateSyncCoordinator {
             "--host-id", "clawix",
             "--json",
         ])
-        return try decoder.decode(CLIEnvelope<ApplyData>.self, from: data).data
+        return try decoder.decode(CLIEnvelope<ApplyResponse>.self, from: data).data
     }
 
     func projection() async throws -> ClawJSAppStateSnapshot {
@@ -265,7 +265,7 @@ final class ClawJSAppStateSyncCoordinator {
         let data: T
     }
 
-    private struct ApplyData: Decodable {
+    private struct ApplyResponse: Decodable {
         let receipt: Receipt
     }
 
