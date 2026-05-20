@@ -1,3 +1,4 @@
+import ClawHostKit
 import Foundation
 
 struct AppHighRiskActionDispatchRequest {
@@ -64,10 +65,24 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
 
     func dispatch(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
         switch request.descriptor.id {
+        case "mac.action.plan":
+            dispatchMacActionPlan(request)
         case "iot.device.action.invoke":
             await dispatchIoTAction(request)
         default:
             .unavailable("No safe framework dispatcher is registered for capability: \(request.descriptor.id)")
+        }
+    }
+
+    private func dispatchMacActionPlan(_ request: AppHighRiskActionDispatchRequest) -> AppHighRiskActionDispatchResult {
+        do {
+            let action = try AppCustomMacActionPlanRequest(app: request.app, arguments: request.arguments, fallbackTool: request.tool)
+            let data = try JSONEncoder().encode(action.request)
+            let planData = try NativeMacActionWire.planJSON(for: data)
+            let plan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planData)
+            return .dispatched(Self.bridgeValue(plan))
+        } catch {
+            return .failed(error.localizedDescription)
         }
     }
 
@@ -147,5 +162,130 @@ struct AppCustomIoTActionRequest {
         let normalized = tool.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized.hasPrefix("iot.") else { return nil }
         return normalized.split(separator: ".").last.map(String.init)
+    }
+}
+
+struct AppCustomMacActionPlanRequest {
+    enum Error: LocalizedError {
+        case missingCapability
+        case unsupportedCapability(String)
+        case executeNotAvailable
+
+        var errorDescription: String? {
+            switch self {
+            case .missingCapability:
+                return "Mac action plan requires a Mac Control capability id."
+            case .unsupportedCapability(let capabilityId):
+                return "Unsupported Mac Control capability for custom app plan: \(capabilityId)."
+            case .executeNotAvailable:
+                return "Custom app Mac Control execution is not available; request a plan instead."
+            }
+        }
+    }
+
+    let request: NativeMacActionWireRequest
+
+    init(app: AppRecord, arguments: [String: Any], fallbackTool: String) throws {
+        if Self.bool(arguments["execute"]) == true || Self.string(arguments["operation"]) == "execute" {
+            throw Error.executeNotAvailable
+        }
+
+        guard let capabilityId = Self.capabilityId(arguments: arguments, fallbackTool: fallbackTool) else {
+            throw Error.missingCapability
+        }
+        guard MacControlSettingsCapability.capability(id: capabilityId) != nil else {
+            throw Error.unsupportedCapability(capabilityId)
+        }
+
+        request = NativeMacActionWireRequest(
+            requestId: "macreq_custom_\(UUID().uuidString.lowercased())",
+            capabilityId: capabilityId,
+            actor: NativeMacActionWireActor(
+                kind: "custom_app",
+                id: app.slug,
+                role: "workspace_app"
+            ),
+            host: NativeMacActionWireHost(
+                hostId: ProcessInfo.processInfo.hostName,
+                bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+                signingIdentity: nil,
+                teamId: nil,
+                appVariant: Self.appVariant,
+                appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+            ),
+            arguments: Self.wireStringArguments(from: arguments).mapValues { .string($0) },
+            dryRun: true,
+            reason: "Custom app \(app.name): Mac Control plan",
+            approved: false
+        )
+    }
+
+    private static func capabilityId(arguments: [String: Any], fallbackTool: String) -> String? {
+        if let explicit = string(arguments["capabilityId"]) ?? string(arguments["capability"]) {
+            return explicit
+        }
+        let tool = fallbackTool.trimmingCharacters(in: .whitespacesAndNewlines)
+        if MacControlSettingsCapability.capability(id: tool) != nil {
+            return tool
+        }
+        return nil
+    }
+
+    private static func wireStringArguments(from arguments: [String: Any]) -> [String: String] {
+        let nested = (arguments["arguments"] as? [String: Any]) ?? [:]
+        let source = nested.isEmpty ? arguments : nested
+        var result: [String: String] = [:]
+        for (key, value) in source {
+            guard !reservedKeys.contains(key), let string = string(value) else { continue }
+            result[key] = string
+        }
+        return result
+    }
+
+    private static let reservedKeys: Set<String> = [
+        "approved",
+        "capability",
+        "capabilityId",
+        "dryRun",
+        "execute",
+        "operation",
+        "reason"
+    ]
+
+    private static func string(_ value: Any?) -> String? {
+        guard let value else { return nil }
+        if let string = value as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        if let int = value as? Int {
+            return String(int)
+        }
+        if let double = value as? Double {
+            return double.rounded() == double ? String(Int(double)) : String(double)
+        }
+        if let bool = value as? Bool {
+            return bool ? "true" : "false"
+        }
+        return nil
+    }
+
+    private static func bool(_ value: Any?) -> Bool? {
+        if let bool = value as? Bool {
+            return bool
+        }
+        if let string = string(value)?.lowercased() {
+            if ["true", "yes", "1"].contains(string) { return true }
+            if ["false", "no", "0"].contains(string) { return false }
+        }
+        return nil
+    }
+
+    private static var appVariant: String {
+        #if DEBUG
+        return "debug"
+        #else
+        return "release"
+        #endif
     }
 }

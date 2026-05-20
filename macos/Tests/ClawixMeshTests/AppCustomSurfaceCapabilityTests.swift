@@ -175,6 +175,88 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(request.targets, ["light-1"])
     }
 
+    func testCustomMacActionPlanRequestNormalizesArgumentsAndForcesDryRun() throws {
+        let app = AppRecord(
+            slug: "window-panel",
+            name: "Window Panel",
+            declaredCapabilities: ["mac.action.plan"]
+        )
+
+        let request = try AppCustomMacActionPlanRequest(
+            app: app,
+            arguments: [
+                "capabilityId": "mac.window.move",
+                "arguments": [
+                    "app": "Safari",
+                    "x": 20,
+                    "y": "40",
+                    "ignored": ["nested": true]
+                ],
+                "execute": false
+            ],
+            fallbackTool: "mac.window.plan"
+        ).request
+
+        XCTAssertEqual(request.capabilityId, "mac.window.move")
+        XCTAssertEqual(request.actor.kind, "custom_app")
+        XCTAssertEqual(request.actor.id, "window-panel")
+        XCTAssertEqual(request.arguments["app"]?.stringValue, "Safari")
+        XCTAssertEqual(request.arguments["x"]?.stringValue, "20")
+        XCTAssertEqual(request.arguments["y"]?.stringValue, "40")
+        XCTAssertNil(request.arguments["ignored"])
+        XCTAssertTrue(request.dryRun)
+        XCTAssertEqual(request.approved, false)
+    }
+
+    func testCustomMacActionPlanRequestRejectsExecution() {
+        let app = AppRecord(
+            slug: "window-panel",
+            name: "Window Panel",
+            declaredCapabilities: ["mac.action.plan"]
+        )
+
+        XCTAssertThrowsError(try AppCustomMacActionPlanRequest(
+            app: app,
+            arguments: ["capabilityId": "mac.window.close", "execute": true],
+            fallbackTool: "mac.window.plan"
+        ))
+    }
+
+    @MainActor
+    func testFrameworkHighRiskActionDispatcherPlansMacActionWithoutExecuting() async throws {
+        let app = AppRecord(
+            slug: "window-panel",
+            name: "Window Panel",
+            declaredCapabilities: ["mac.action.plan"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "mac.window.plan"))
+
+        let result = await AppFrameworkHighRiskActionDispatcher().dispatch(
+            AppHighRiskActionDispatchRequest(
+                app: app,
+                descriptor: descriptor,
+                tool: "mac.window.plan",
+                arguments: [
+                    "capabilityId": "mac.window.move",
+                    "app": "Safari",
+                    "x": 20,
+                    "y": 40
+                ]
+            )
+        )
+
+        XCTAssertEqual(result.receiptOutcome, .dispatched)
+        guard case let .dispatched(value) = result,
+              let object = value as? [String: Any] else {
+            return XCTFail("Expected dispatched Mac Control plan")
+        }
+        XCTAssertEqual(object["capabilityId"] as? String, "mac.window.move")
+        XCTAssertEqual(object["risk"] as? String, "low")
+        XCTAssertEqual(object["willMutate"] as? Bool, true)
+        XCTAssertEqual(object["executable"] as? Bool, true)
+        XCTAssertEqual(object["blockedReasons"] as? [String], [])
+    }
+
     @MainActor
     func testFrameworkHighRiskActionDispatcherRunsIoTAction() async throws {
         let fake = AppCustomSurfaceFakeIoTClient()

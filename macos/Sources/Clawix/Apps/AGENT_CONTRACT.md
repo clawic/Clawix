@@ -149,14 +149,20 @@ default dispatcher in this build still does not execute real tools and returns
 must use this boundary rather than bypassing prompt, capability, and audit
 checks.
 
-The framework dispatcher currently supports `iot.device.action.invoke` by
-building an `IoTActionRequest` from `clawix.agent.callTool({ tool, args })` and
-calling the app-owned `IoTManager`. Supported IoT args are `homeId`, `selector`,
-`area`, `family`, `capability`, `action`, `value`, and `targets`; when `action`
-is omitted, the dispatcher uses the final segment of an `iot.*` tool name as a
-fallback. Other high-risk capabilities still return
-`approvalRecordedDispatchUnavailable` until their safe framework or signed-host
-runners are wired.
+The framework dispatcher currently supports `mac.action.plan` and
+`iot.device.action.invoke`. Mac action requests are plan-only: they build a
+dry-run `NativeMacActionWireRequest`, reject `execute`, and return the
+signed-host Mac Control plan without running native steps. Pass the concrete
+Mac Control capability as `args.capabilityId` or call a concrete `mac.*` tool
+name; scalar `args.arguments` are forwarded as plan arguments. Real Mac Control
+execution remains unavailable until a safe signed-host runner is wired and
+validated. IoT requests build an `IoTActionRequest` from
+`clawix.agent.callTool({ tool, args })` and call the app-owned `IoTManager`.
+Supported IoT args are `homeId`, `selector`, `area`, `family`, `capability`,
+`action`, `value`, and `targets`; when `action` is omitted, the dispatcher uses
+the final segment of an `iot.*` tool name as a fallback. Other high-risk
+capabilities still return `approvalRecordedDispatchUnavailable` until their
+safe framework or signed-host runners are wired.
 
 Route variants use the same manifest:
 
