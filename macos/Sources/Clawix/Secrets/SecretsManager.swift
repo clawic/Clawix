@@ -94,6 +94,7 @@ final class SecretsManager: ObservableObject {
 
     var autoLockMinutes: Int = 5
     private var autoLockTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
     private var loadTimeoutTask: Task<Void, Never>?
     private var lifecycle: SecretsLifecycle?
     private var loadGeneration: UUID?
@@ -119,12 +120,39 @@ final class SecretsManager: ObservableObject {
         }
     }
 
+    deinit {
+        loadTask?.cancel()
+        loadTimeoutTask?.cancel()
+        autoLockTask?.cancel()
+    }
+
     // MARK: - Lifecycle
 
     func load() async {
+        let task = startLoad()
+        await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    @discardableResult
+    private func startLoad() -> Task<Void, Never> {
         let generation = UUID()
+        loadTask?.cancel()
         loadGeneration = generation
         loadTimeoutTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runLoad(generation: generation)
+        }
+        loadTask = task
+        return task
+    }
+
+    private func runLoad(generation: UUID) async {
+        guard isCurrentLoad(generation) else { return }
         state = .loading
         loadTimeoutTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 8_000_000_000)
@@ -170,6 +198,8 @@ final class SecretsManager: ObservableObject {
 
     func cancelSurfaceWork() {
         loadGeneration = nil
+        loadTask?.cancel()
+        loadTask = nil
         loadTimeoutTask?.cancel()
         loadTimeoutTask = nil
     }
@@ -188,6 +218,7 @@ final class SecretsManager: ObservableObject {
     private func finishLoadIfCurrent(_ generation: UUID) {
         guard loadGeneration == generation else { return }
         loadGeneration = nil
+        loadTask = nil
         loadTimeoutTask?.cancel()
         loadTimeoutTask = nil
     }
@@ -477,7 +508,7 @@ final class SecretsManager: ObservableObject {
         let nanos = UInt64(minutes) * 60 * 1_000_000_000
         autoLockTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: nanos)
-            await self?.lockFromTimer()
+            self?.lockFromTimer()
         }
     }
 

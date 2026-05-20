@@ -4,16 +4,23 @@ import XCTest
 
 @MainActor
 final class SecretsManagerCancellationTests: XCTestCase {
-    func testStartingSecondLoadSuppressesStaleSecretsState() async {
+    func testStartingSecondLoadCancelsStaleSecretsState() async {
         let staleStarted = expectation(description: "Stale Secrets load started")
+        let staleCancelled = expectation(description: "Stale Secrets load cancelled")
         let staleReturned = expectation(description: "Stale Secrets load returned")
+        staleReturned.isInverted = true
         let freshReturned = expectation(description: "Fresh Secrets load returned")
         var calls = 0
         let manager = makeManager {
             calls += 1
             if calls == 1 {
                 staleStarted.fulfill()
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
                 staleReturned.fulfill()
                 return Self.state(initialized: false, unlocked: false)
             }
@@ -26,22 +33,30 @@ final class SecretsManagerCancellationTests: XCTestCase {
 
         let second = Task { await manager.load() }
 
-        await fulfillment(of: [freshReturned, staleReturned], timeout: 1)
+        await fulfillment(of: [freshReturned, staleCancelled], timeout: 1)
+        await fulfillment(of: [staleReturned], timeout: 0.1)
         await first.value
         await second.value
         XCTAssertEqual(manager.state, .locked)
         XCTAssertNil(manager.lastError)
     }
 
-    func testCancelSurfaceWorkSuppressesLateSecretsLoadErrorAndAllowsRetry() async {
+    func testCancelSurfaceWorkCancelsSecretsLoadAndAllowsRetry() async {
         let loadStarted = expectation(description: "Secrets load started")
         let loadReturned = expectation(description: "Secrets load returned after teardown")
+        loadReturned.isInverted = true
+        let loadCancelled = expectation(description: "Secrets load cancelled after teardown")
         var calls = 0
         let manager = makeManager {
             calls += 1
             if calls == 1 {
                 loadStarted.fulfill()
-                try? await Task.sleep(nanoseconds: 50_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    loadCancelled.fulfill()
+                    throw CancellationError()
+                }
                 loadReturned.fulfill()
                 throw URLError(.cannotConnectToHost)
             }
@@ -53,7 +68,8 @@ final class SecretsManagerCancellationTests: XCTestCase {
 
         manager.cancelSurfaceWork()
 
-        await fulfillment(of: [loadReturned], timeout: 1)
+        await fulfillment(of: [loadCancelled], timeout: 1)
+        await fulfillment(of: [loadReturned], timeout: 0.1)
         await task.value
         XCTAssertNil(manager.lastError)
         if case .openFailed(let message) = manager.state {
