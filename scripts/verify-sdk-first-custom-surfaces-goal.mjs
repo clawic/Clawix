@@ -58,7 +58,8 @@ function assertCompletionAudit() {
     "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
     "`list`, `get`, `riskMap`, and `source`",
     "complete resolved surface bindings across SDK, CLI, service API, MCP, Relay, and host bridge projections",
-    "no `pending` status, no future-facade SDK refs, no unknown dispatch modes",
+    "no `pending` status, no future-facade SDK refs, no unknown dispatch modes, no conditional placeholder refs",
+    "local-only/custom-app Relay coverage as `relay.remote.custom_app_sdk` metadata-only projection",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
     "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
@@ -619,9 +620,12 @@ function assertSiblingClawJSArtifacts() {
       "@clawjs/claw:capabilities metadata + claw.db.query.v1 schema",
       "@clawjs/claw:capabilities metadata + claw.actions.invoke.v1 schema",
       "@clawjs/claw:capabilities metadata + claw.mac.actionRequest.v1 schema",
+      "const customAppSDKRelayMetadataProjection = \"relay.remote.custom_app_sdk metadata-only contract projection\";",
     ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
       "available SDK surface bindings do not advertise future facades",
+      "available surface refs are concrete rather than conditional placeholders",
+      "conditionalRefPattern",
       "registered custom-app dispatch modes are explicit",
       "assert.notEqual(capability.dispatch.mode, \"unknown\"",
       "custom-app SDK inspection payload exposes dispatch availability and gaps",
@@ -638,6 +642,8 @@ function assertSiblingClawJSArtifacts() {
       "jobs.events",
       "jobs.start",
       "jobs.cancel",
+      "custom-app Relay coverage is metadata-only for local host execution",
+      "relay.remote.custom_app_sdk metadata-only contract projection",
     ],
     "packages/clawjs/src/inspect-cli.test.ts": [
       "runCli exposes custom app SDK read contracts through inspect",
@@ -707,6 +713,10 @@ function assertSiblingClawJSArtifacts() {
     "future db facade",
     "future actions facade",
     "future mac facade",
+    "remote-safe when classified",
+    "remote-safe only when classified",
+    "local-only unless explicitly classified",
+    "MCP tools when policy grants allow",
   ]) {
     assert(!siblingCatalog.includes(snippet), `clawjs:packages/clawjs-core/src/capability-catalog.ts must not contain ${JSON.stringify(snippet)}`);
   }
