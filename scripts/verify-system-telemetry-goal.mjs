@@ -361,10 +361,12 @@ function assertDecisionMatrix() {
     "| D11 | Do not close the goal until everything is implemented",
     "docs/system-telemetry-external-validation.manifest.json",
     "external validation manifest",
+    "docs/system-telemetry-source-qa-review.json",
+    "source Q/A review",
     "`CLX-SYS-TEL-EXT-003`, `CLX-SYS-TEL-EXT-004`, or",
     "`CLX-SYS-TEL-EXT-005` remain `EXTERNAL PENDING` in the ledger or structured",
     "external-validation manifest",
-    "The private source session has not been re-read",
+    "reflected in `docs/system-telemetry-source-qa-review.json`",
     "The forbidden-name scan has not been repeated",
   ]) {
     assert(text.includes(snippet), `docs/system-telemetry-decision-matrix.md: missing ${JSON.stringify(snippet)}`);
