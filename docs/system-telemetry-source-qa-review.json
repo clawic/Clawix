@@ -196,6 +196,7 @@
     "requiresFinalSourceSessionReread": true,
     "requiresOneByOneDecisionReview": true,
     "requiresPublicVerifiers": true,
+    "requiresCompletionAudit": true,
     "requiresForbiddenNameScan": true,
     "externalPendingBlocksCompletion": true
   }

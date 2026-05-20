@@ -207,7 +207,9 @@ function assertExternalPendingLedger() {
     "`EXTERNAL PENDING` are not passes and must not be used to close the goal.",
     "`docs/system-telemetry-external-validation.manifest.json` and",
     "`docs/system-telemetry-source-qa-review.json`",
-    "The source Q/A review binds the private decision audit to public-safe rows",
+    "status in `docs/system-telemetry-completion-audit.md`",
+    "public-safe rows, and the completion audit binds each goal requirement",
+    "the completion audit binds each goal requirement",
     "| CLX-SYS-TEL-EXT-001 | Strict native menu-bar visual validation |",
     "| CLX-SYS-TEL-EXT-002 | Live host telemetry recording through the app |",
     "| CLX-SYS-TEL-EXT-003 | Physical sensor and fan readings surfaced in the UI |",
@@ -268,6 +270,7 @@ function assertExternalValidationManifest() {
   assert(manifest.completionPolicy?.externalPendingBlocksCompletion === true, "external validation manifest: external pending must block completion");
   assert(manifest.completionPolicy?.requiresFinalSourceAudit === true, "external validation manifest: final source audit must be required");
   assert(manifest.completionPolicy?.requiresSourceQaReview === true, "external validation manifest: source Q/A review must be required");
+  assert(manifest.completionPolicy?.requiresCompletionAudit === true, "external validation manifest: completion audit must be required");
   assert(manifest.completionPolicy?.requiresForbiddenNameScan === true, "external validation manifest: forbidden-name scan must be required");
   assert(manifest.completionPolicy?.requiresExactRunApprovalForExternalLanes === true, "external validation manifest: exact-run approval must be required");
   assert(manifest.sourceQaReview?.required === true, "external validation manifest: source Q/A review link must be required");
@@ -275,6 +278,12 @@ function assertExternalValidationManifest() {
   assert(manifest.sourceQaReview?.path === "docs/system-telemetry-source-qa-review.json", "external validation manifest: wrong source Q/A path");
   assert(manifest.sourceQaReview?.privateAuditAlias === "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20", "external validation manifest: wrong private audit alias");
   assert(manifest.sourceQaReview?.closureRole?.includes("public-safe validation rows"), "external validation manifest: source Q/A closure role must be explicit");
+  assert(manifest.completionAudit?.required === true, "external validation manifest: completion audit link must be required");
+  assert(manifest.completionAudit?.artifactId === "clawix-system-telemetry-completion-audit", "external validation manifest: wrong completion audit artifact");
+  assert(manifest.completionAudit?.path === "docs/system-telemetry-completion-audit.md", "external validation manifest: wrong completion audit path");
+  assert(manifest.completionAudit?.requiredRowPrefix === "CLX-STA", "external validation manifest: wrong completion audit row prefix");
+  assert(manifest.completionAudit?.requiredRowCount === 16, "external validation manifest: wrong completion audit row count");
+  assert(manifest.completionAudit?.closureRole?.includes("requirement by requirement"), "external validation manifest: completion audit closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
   const rows = new Map(manifest.rows.map((row) => [row.id, row]));
@@ -343,6 +352,7 @@ function assertSourceQaReview() {
   assert(rows.get("CLX-STQA-006")?.disposition === "active_closure_gate", "source Q/A review: goal creation row must stay an active closure gate");
   assert(review.completionPolicy?.requiresFinalSourceSessionReread === true, "source Q/A review: final source reread must be required");
   assert(review.completionPolicy?.requiresOneByOneDecisionReview === true, "source Q/A review: one-by-one decision review must be required");
+  assert(review.completionPolicy?.requiresCompletionAudit === true, "source Q/A review: completion audit must be required");
   assert(review.completionPolicy?.requiresForbiddenNameScan === true, "source Q/A review: forbidden-name scan must be required");
   assert(review.completionPolicy?.externalPendingBlocksCompletion === true, "source Q/A review: external pending must block completion");
 }
