@@ -144,6 +144,71 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         )
     }
 
+    func testCustomIoTActionRequestNormalizesArguments() throws {
+        let request = try AppCustomIoTActionRequest(
+            arguments: [
+                "homeId": "home-1",
+                "selector": "kitchen",
+                "capability": "power",
+                "action": "turn_on",
+                "value": true,
+                "targets": ["light-1", "  ", "light-2"]
+            ],
+            fallbackTool: "iot.device.toggle"
+        ).request
+
+        XCTAssertEqual(request.homeId, "home-1")
+        XCTAssertEqual(request.selector, "kitchen")
+        XCTAssertEqual(request.capability, "power")
+        XCTAssertEqual(request.action, "turn_on")
+        XCTAssertEqual(request.value?.asBool, true)
+        XCTAssertEqual(request.targets, ["light-1", "light-2"])
+    }
+
+    func testCustomIoTActionRequestFallsBackToToolSuffix() throws {
+        let request = try AppCustomIoTActionRequest(
+            arguments: ["targets": ["light-1"]],
+            fallbackTool: "iot.device.toggle"
+        ).request
+
+        XCTAssertEqual(request.action, "toggle")
+        XCTAssertEqual(request.targets, ["light-1"])
+    }
+
+    @MainActor
+    func testFrameworkHighRiskActionDispatcherRunsIoTAction() async throws {
+        let fake = AppCustomSurfaceFakeIoTClient()
+        fake.onRunAction = { request, homeId in
+            XCTAssertNil(homeId)
+            XCTAssertEqual(request.action, "turn_on")
+            XCTAssertEqual(request.targets, ["light-1"])
+            return AppCustomSurfaceFakeIoTClient.makeActionResult(status: "ok")
+        }
+        let manager = IoTManager(client: fake, adminTokenOperation: { "token" }, attachSupervisor: false)
+        let app = AppRecord(
+            slug: "iot-panel",
+            name: "IoT Panel",
+            declaredCapabilities: ["iot.device.action.invoke"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "iot.device.toggle"))
+
+        let result = await AppFrameworkHighRiskActionDispatcher(iotManager: manager).dispatch(
+            AppHighRiskActionDispatchRequest(
+                app: app,
+                descriptor: descriptor,
+                tool: "iot.device.toggle",
+                arguments: ["action": "turn_on", "targets": ["light-1"]]
+            )
+        )
+
+        XCTAssertEqual(result.receiptOutcome, .dispatched)
+        guard case let .dispatched(value) = result,
+              let object = value as? [String: Any] else {
+            return XCTFail("Expected dispatched IoT result")
+        }
+        XCTAssertEqual(object["status"] as? String, "ok")
+    }
+
     @MainActor
     func testDefaultHighRiskActionDispatcherKeepsDispatchUnavailable() async throws {
         let app = AppRecord(
@@ -1294,6 +1359,96 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         """.write(to: executable, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
         return executable
+    }
+}
+
+private final class AppCustomSurfaceFakeIoTClient: IoTClienting, @unchecked Sendable {
+    let origin = URL(string: "http://127.0.0.1:1")!
+    var bearerToken: String?
+    var onRunAction: (IoTActionRequest, String?) async throws -> IoTActionResult = { _, _ in
+        makeActionResult()
+    }
+
+    func health() async -> Bool { true }
+
+    func listTools() async throws -> RemoteToolCatalog {
+        RemoteToolCatalog(generatedAt: "2026-05-20T00:00:00Z", tools: [])
+    }
+
+    func invokeTool(id: String, arguments: [String: Any]) async throws -> RemoteToolInvocationResult {
+        RemoteToolInvocationResult(ok: true, value: ToolJSONValue([String: Any]()), error: nil, invocationId: id, durationMs: 1)
+    }
+
+    func listHomes() async throws -> [HomeRecord] { [] }
+    func listDevices(homeId: String?) async throws -> [IoTDeviceRecord] { [] }
+    func listAreas(homeId: String?) async throws -> [AreaRecord] { [] }
+    func listScenes(homeId: String?) async throws -> [SceneRecord] { [] }
+    func listAutomations(homeId: String?) async throws -> [AutomationRecord] { [] }
+    func listApprovals(homeId: String?) async throws -> [ApprovalRecord] { [] }
+
+    func runAction(_ request: IoTActionRequest, homeId: String?) async throws -> IoTActionResult {
+        try await onRunAction(request, homeId)
+    }
+
+    func activateScene(sceneId: String, homeId: String?) async throws -> IoTActionResult {
+        Self.makeActionResult()
+    }
+
+    func setAutomationEnabled(automationId: String, enabled: Bool, homeId: String?) async throws -> AutomationRecord {
+        AutomationRecord(id: automationId, homeId: homeId ?? "home", label: automationId, enabled: enabled, trigger: ToolJSONValue([String: Any]()), conditions: [], actions: [])
+    }
+
+    func runAutomation(automationId: String, homeId: String?) async throws -> IoTActionResult {
+        Self.makeActionResult()
+    }
+
+    func approveApproval(approvalId: String, homeId: String?) async throws -> IoTActionResult {
+        Self.makeActionResult()
+    }
+
+    func denyApproval(approvalId: String, homeId: String?) async throws -> ApprovalRecord {
+        ApprovalRecord(
+            id: approvalId,
+            homeId: homeId ?? "home",
+            status: "denied",
+            reason: "Denied",
+            action: IoTActionRequest(homeId: nil, selector: nil, area: nil, family: nil, capability: nil, action: "noop", value: nil, targets: nil),
+            createdAt: "2026-05-20T00:00:00Z",
+            updatedAt: "2026-05-20T00:00:00Z"
+        )
+    }
+
+    func addDevice(input: IoTClient.AddDeviceInput) async throws -> IoTDeviceRecord {
+        IoTDeviceRecord(
+            id: input.label ?? "device",
+            homeId: input.homeId ?? "home",
+            areaId: nil,
+            label: input.label ?? "Device",
+            aliases: [],
+            kind: .switchKind,
+            risk: .caution,
+            connectorId: "connector",
+            targetRef: input.targetRef ?? "target",
+            metadata: nil,
+            capabilities: []
+        )
+    }
+
+    func removeDevice(deviceId: String, homeId: String?) async throws {}
+    func startDiscovery(timeoutMs: Int?) async throws {}
+    func stopDiscovery() async throws {}
+
+    static func makeActionResult(status: String = "ok") -> IoTActionResult {
+        IoTActionResult(
+            status: status,
+            homeId: "home",
+            decision: "executed",
+            reasons: [],
+            updatedAt: "2026-05-20T00:00:00Z",
+            targets: [],
+            capabilityUpdates: [],
+            approvalId: nil
+        )
     }
 }
 

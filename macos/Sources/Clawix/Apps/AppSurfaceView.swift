@@ -22,6 +22,7 @@ struct AppSurfaceView: View {
 
     @EnvironmentObject var appState: AppState
     @EnvironmentObject private var databaseManager: DatabaseManager
+    @EnvironmentObject private var iotManager: IoTManager
     @Environment(\.surfaceRouteReporter) private var surfaceReporter
     @ObservedObject private var appsStore: AppsStore = .shared
     @State private var reloadToken: Int = 0
@@ -47,6 +48,7 @@ struct AppSurfaceView: View {
                             appsStore: appsStore,
                             appState: appState,
                             databaseManager: databaseManager,
+                            iotManager: iotManager,
                             surfaceReporter: surfaceReporter
                         )
                         .id("\(record.slug)-\(reloadToken)")
@@ -395,6 +397,7 @@ private struct AppSurfaceWebView: NSViewRepresentable {
     let appsStore: AppsStore
     let appState: AppState
     let databaseManager: DatabaseManager
+    let iotManager: IoTManager
     let surfaceReporter: SurfaceRouteReporter
 
     func makeCoordinator() -> Coordinator {
@@ -441,7 +444,8 @@ private struct AppSurfaceWebView: NSViewRepresentable {
             appsStore: appsStore,
             appState: appState,
             databaseManager: databaseManager,
-            surfaceReporter: surfaceReporter
+            surfaceReporter: surfaceReporter,
+            highRiskActionDispatcher: AppFrameworkHighRiskActionDispatcher(iotManager: iotManager)
         )
         contentController.add(bridgeHandler, name: AppBridgeMessageHandler.messageName)
         context.coordinator.bridgeHandler = bridgeHandler

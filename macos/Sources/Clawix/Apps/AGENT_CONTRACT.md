@@ -149,6 +149,15 @@ default dispatcher in this build still does not execute real tools and returns
 must use this boundary rather than bypassing prompt, capability, and audit
 checks.
 
+The framework dispatcher currently supports `iot.device.action.invoke` by
+building an `IoTActionRequest` from `clawix.agent.callTool({ tool, args })` and
+calling the app-owned `IoTManager`. Supported IoT args are `homeId`, `selector`,
+`area`, `family`, `capability`, `action`, `value`, and `targets`; when `action`
+is omitted, the dispatcher uses the final segment of an `iot.*` tool name as a
+fallback. Other high-risk capabilities still return
+`approvalRecordedDispatchUnavailable` until their safe framework or signed-host
+runners are wired.
+
 Route variants use the same manifest:
 
 ```jsonc
@@ -179,8 +188,9 @@ replacing core shell surfaces.
   - `clawix.agent.callTool({tool, args})` — gated by user prompt unless
     the tool is in `permissions.allowedTools`. Approved calls enter the
     high-risk action dispatcher boundary and append a host-owned receipt.
-    The default dispatcher still rejects as unavailable until a safe
-    ClawJS/framework runner is wired.
+    IoT device actions dispatch through the Clawix IoT manager after approval;
+    other capabilities still reject as unavailable until safe runners are
+    wired.
   - `clawix.capabilities.{list,riskMap,contracts}` — visible capability
     and SDK contract metadata for the current app, including schema refs,
     redaction policy refs, and high-risk approval classification.
