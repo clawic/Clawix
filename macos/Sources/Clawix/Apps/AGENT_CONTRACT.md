@@ -52,6 +52,7 @@ restart.
   "routeTarget": null,                           // optional built-in route target
   "variant": null,                               // optional fork/variant metadata
   "protectedRoutePolicy": "blocked",             // blocked/variantOnly/none
+  "packageProvenance": null,                     // host-owned import provenance
   "activationReview": null                       // host-owned review receipt
 }
 ```
@@ -95,6 +96,28 @@ Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
 `activationReview` from the source package. The first render then shows the
 origin/capability/risk review ficha before the app can run.
+
+The host also writes `packageProvenance` on import:
+
+```jsonc
+{
+  "packageProvenance": {
+    "importedAt": "2026-05-20T01:14:00Z",
+    "importedBy": "Local User",
+    "sourcePath": "/Users/me/Downloads/focus-panel",
+    "sourceSlug": "focus-panel",
+    "sourceOriginClass": "localUserAuthored",
+    "packageKind": "folder",
+    "signatureStatus": "notVerified",
+    "reviewReason": "Imported packages require local review before activation."
+  }
+}
+```
+
+Agents should not forge `packageProvenance`, `activationReview`, or signature
+state. Those fields are host-owned trust records. Until package signing exists,
+imports are explicit `notVerified` packages and the review ficha must show that
+state to the user.
 
 Route variants use the same manifest:
 
