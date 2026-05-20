@@ -169,6 +169,19 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         XCTAssertEqual(jobStart["runner"] as? String, "ClawJSRuntimeClient")
     }
 
+    func testRegisteredCapabilitiesDoNotFallBackToUnknownDispatch() throws {
+        let pendingRunnerIds: Set<String> = ["actions.invoke", "secrets.broker"]
+
+        for descriptor in AppCapabilityCatalog.descriptors {
+            let dispatch = try XCTUnwrap(descriptor.bridgeValue["dispatch"] as? [String: Any], descriptor.id)
+            XCTAssertNotEqual(dispatch["mode"] as? String, "unknown", descriptor.id)
+            if dispatch["runner"] as? String == "pending" {
+                XCTAssertTrue(pendingRunnerIds.contains(descriptor.id), descriptor.id)
+                XCTAssertEqual(dispatch["status"] as? String, "unavailable", descriptor.id)
+            }
+        }
+    }
+
     func testAgentToolNamesMapToHighRiskCapabilities() {
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "secrets.read"), "secrets.broker")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "mac.window.plan"), "mac.action.plan")

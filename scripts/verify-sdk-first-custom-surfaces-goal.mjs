@@ -58,7 +58,7 @@ function assertCompletionAudit() {
     "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
     "`list`, `get`, `riskMap`, and `source`",
     "complete resolved surface bindings across SDK, CLI, service API, MCP, Relay, and host bridge projections",
-    "no `pending` status, no future-facade SDK refs, concrete refs for available surfaces",
+    "no `pending` status, no future-facade SDK refs, no unknown dispatch modes",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
     "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
@@ -501,6 +501,8 @@ function assertTests() {
   for (const snippet of [
     "testHostBridgeExposesCustomAppSDKContractPayload",
     "testHostBridgeSurfaceBindingsAreCompleteAndResolvedWhenPublished",
+    "testRegisteredCapabilitiesDoNotFallBackToUnknownDispatch",
+    "XCTAssertNotEqual(dispatch[\"mode\"] as? String, \"unknown\"",
     "XCTAssertEqual(checkedSurfaceGroups, capabilities.count)",
     "XCTAssertNotNil(surface[\"ref\"]",
     "XCTAssertNil(jobsListSurfaces.first { $0[\"surface\"] == \"cli\" }?[\"ref\"])",
@@ -620,6 +622,8 @@ function assertSiblingClawJSArtifacts() {
     ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
       "available SDK surface bindings do not advertise future facades",
+      "registered custom-app dispatch modes are explicit",
+      "assert.notEqual(capability.dispatch.mode, \"unknown\"",
       "custom-app SDK inspection payload exposes dispatch availability and gaps",
       "custom-app SDK inspection payload exposes complete resolved surfaces",
       "assert.equal(Boolean(surface.ref), true",
