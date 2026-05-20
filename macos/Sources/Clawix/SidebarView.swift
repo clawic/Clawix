@@ -981,6 +981,9 @@ struct SidebarView: View {
                                       route: .skills,
                                       shortcut: "⌘⇧K")
                     }
+                    SidebarButton(title: "Network",
+                                  icon: "network",
+                                  route: .networkControl)
                     if let rescueSummary = RescueRepairStatusSummary(decision: appState.rescueDecision) {
                         RescueRepairSidebarButton(summary: rescueSummary) {
                             appState.openRescueSurface()
