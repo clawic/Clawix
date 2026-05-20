@@ -142,7 +142,7 @@ function countPrivateApprovalRecords() {
   return count;
 }
 
-const auditPath = "docs/ui/completion-audit.md";
+const auditPath = "docs/governance/ui/completion.md";
 const decisionPath = "docs/ui/decision-verification.json";
 let audit = read(auditPath);
 const decisionVerification = readJson(decisionPath);

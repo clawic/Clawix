@@ -32,6 +32,8 @@ Every accepted ADR that adds or changes an important capability must answer:
 
 Every accepted ADR that adds or changes durable meta-code must answer:
 
+- **Canonical name**: which stable semantic `adr:<id>` identifies this decision
+  across repositories when ADR numbers differ?
 - **AGENTS/CLAUDE**: which always-on entrypoint routes agents here within two
   hops?
 - **Skill**: which task skill, if any, must be loaded before changing this

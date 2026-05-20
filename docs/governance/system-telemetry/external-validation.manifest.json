@@ -1,5 +1,5 @@
 {
-  "$schema": "docs/system-telemetry-external-validation.manifest.schema.json",
+  "$schema": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
   "schemaVersion": 1,
   "id": "clawix-system-telemetry-external-validation-manifest",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
@@ -18,14 +18,14 @@
   "sourceQaReview": {
     "required": true,
     "artifactId": "clawix-system-telemetry-source-qa-review",
-    "path": "docs/system-telemetry-source-qa-review.json",
+    "path": "docs/governance/system-telemetry/source-review.json",
     "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
     "closureRole": "binds private source decisions to public-safe validation rows before goal completion"
   },
   "completionAudit": {
     "required": true,
     "artifactId": "clawix-system-telemetry-completion-audit",
-    "path": "docs/system-telemetry-completion-audit.md",
+    "path": "docs/governance/system-telemetry/completion.md",
     "requiredRowPrefix": "CLX-STA",
     "requiredRowCount": 16,
     "statusSummary": {
@@ -43,7 +43,7 @@
   "externalValidationRunbook": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-validation-runbook",
-    "path": "docs/system-telemetry-external-validation-runbook.md",
+    "path": "docs/governance/system-telemetry/external-validation-runbook.md",
     "laneCount": 3,
     "externalPendingRowIds": [
       "CLX-SYS-TEL-EXT-003",
@@ -55,7 +55,7 @@
   "externalApprovalPacketSchema": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-approval-schema",
-    "path": "docs/system-telemetry-external-approval.schema.json",
+    "path": "docs/governance/system-telemetry/external-approval.schema.json",
     "laneCount": 3,
     "externalPendingRowIds": [
       "CLX-SYS-TEL-EXT-003",
@@ -67,7 +67,7 @@
   "externalApprovalFixtures": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-approval-fixtures",
-    "path": "docs/system-telemetry-external-approval.fixtures.json",
+    "path": "docs/governance/system-telemetry/external-approval.fixtures.json",
     "status": "synthetic_templates_not_approval",
     "validTemplateCount": 3,
     "invalidTemplateCount": 4,
@@ -84,7 +84,7 @@
   "externalEvidencePacketSchema": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-evidence-schema",
-    "path": "docs/system-telemetry-external-evidence.schema.json",
+    "path": "docs/governance/system-telemetry/external-evidence.schema.json",
     "laneCount": 3,
     "externalPendingRowIds": [
       "CLX-SYS-TEL-EXT-003",
@@ -96,10 +96,10 @@
   "externalEvidenceFixtures": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-evidence-fixtures",
-    "path": "docs/system-telemetry-external-evidence.fixtures.json",
+    "path": "docs/governance/system-telemetry/external-evidence.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 3,
-    "invalidTemplateCount": 6,
+    "invalidTemplateCount": 7,
     "closureRole": "proves the evidence schema accepts complete synthetic lane packets and rejects incomplete, temporally invalid, or failed approved-run packets without representing real external evidence"
   },
   "externalEvidencePacketValidator": {
@@ -113,11 +113,11 @@
   "externalClosureFixtures": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-closure-fixtures",
-    "path": "docs/system-telemetry-external-closure.fixtures.json",
+    "path": "docs/governance/system-telemetry/external-closure.fixtures.json",
     "status": "synthetic_templates_not_closure",
     "validTemplateCount": 3,
-    "invalidMutationCount": 14,
-    "closureRole": "proves exact-run approval and accepted evidence must belong to the same app lane, approval id, approving actor, credential/native grants, approval window, evidence timeline, and exact closure rows before any row can replace EXTERNAL PENDING"
+    "invalidMutationCount": 15,
+    "closureRole": "proves exact-run approval and accepted evidence must belong to the same app lane, approval id, exact run scope, approving actor, credential/native grants, approval window, evidence timeline, and exact closure rows before any row can replace EXTERNAL PENDING"
   },
   "externalClosureBundleValidator": {
     "required": true,
@@ -130,10 +130,10 @@
   "externalValidationManifestFixtures": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-validation-manifest-fixtures",
-    "path": "docs/system-telemetry-external-validation.manifest.fixtures.json",
+    "path": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 1,
-    "invalidMutationCount": 7,
+    "invalidMutationCount": 8,
     "closureRole": "proves the manifest schema accepts the current active manifest and rejects accidental completion, lane-clear, or closure-guard downgrade mutations"
   },
   "rows": [
@@ -215,6 +215,7 @@
         "pre_execution_plan_with_will_execute_true_after_approval",
         "signed_host_execution_receipt",
         "redacted_audit_event",
+        "app_or_menu_same_machine_evidence",
         "physical_validation",
         "rollback_or_continuity_evidence"
       ],

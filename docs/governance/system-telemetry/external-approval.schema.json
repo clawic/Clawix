@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://clawix.dev/schemas/system-telemetry-external-approval.schema.json",
+  "$id": "https://clawix.dev/schemas/governance/system-telemetry/external-approval.schema.json",
   "title": "Clawix System Telemetry External Approval Packet",
   "description": "Public-safe exact-run approval packet required before any Clawix system telemetry external lane execution.",
-  "x-fixturePath": "docs/system-telemetry-external-approval.fixtures.json",
+  "x-fixturePath": "docs/governance/system-telemetry/external-approval.fixtures.json",
   "x-validatorPath": "scripts/validate-system-telemetry-external-approval.mjs",
   "type": "object",
   "additionalProperties": false,
@@ -29,11 +29,12 @@
     "approval": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["approvalId", "decision", "exactRunApproved", "approvedBy", "approvedAt", "expiresAt", "approvedActions", "reason"],
+      "required": ["approvalId", "decision", "exactRunApproved", "exactRunScope", "approvedBy", "approvedAt", "expiresAt", "approvedActions", "reason"],
       "properties": {
         "approvalId": { "type": "string", "minLength": 1 },
         "decision": { "const": "approved" },
         "exactRunApproved": { "const": true },
+        "exactRunScope": { "type": "string", "minLength": 1 },
         "approvedBy": { "type": "string", "minLength": 1 },
         "approvedAt": { "type": "string", "minLength": 1 },
         "expiresAt": { "type": "string", "minLength": 1 },

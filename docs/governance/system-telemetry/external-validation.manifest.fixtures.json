@@ -4,12 +4,12 @@
   "status": "synthetic_templates_not_evidence",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
   "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
-  "schemaPath": "docs/system-telemetry-external-validation.manifest.schema.json",
-  "manifestPath": "docs/system-telemetry-external-validation.manifest.json",
+  "schemaPath": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
+  "manifestPath": "docs/governance/system-telemetry/external-validation.manifest.json",
   "validSyntheticManifests": [
     {
       "id": "current_manifest",
-      "source": "docs/system-telemetry-external-validation.manifest.json"
+      "source": "docs/governance/system-telemetry/external-validation.manifest.json"
     }
   ],
   "invalidSyntheticMutations": [
@@ -45,8 +45,13 @@
     },
     {
       "id": "stale_closure_fixture_mutation_count",
-      "mutation": "set_external_closure_fixture_invalid_count_13",
-      "reason": "Future manifests must not downgrade the app closure bundle guard below the current approval-timestamp binding coverage."
+      "mutation": "set_external_closure_fixture_invalid_count_14",
+      "reason": "Future manifests must not downgrade the app closure bundle guard below the current exact-run-scope binding coverage."
+    },
+    {
+      "id": "control_lane_missing_app_menu_evidence",
+      "mutation": "remove_control_lane_app_menu_evidence",
+      "reason": "Dangerous-control closure must keep same-machine app/menu evidence, not only physical and rollback evidence."
     }
   ]
 }

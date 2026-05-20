@@ -21,7 +21,7 @@ state.
 | --- | --- | --- | --- | --- |
 | LCA-001 | Jurisdiction baseline | UE+US | Terms/EULA use Spain/EU law while product safety docs block high-liability regulated decisions. | Final channel review must not narrow the risk baseline. |
 | LCA-002 | Release timing | Before public | README and release policy route legal docs before public app/binary distribution. | No public release action is approved here. |
-| LCA-003 | Risk posture | Block decisions | `LegalSafety.swift`, docs, and tests require review or refusal for sensitive app actions. | Signed UI/binary smoke is tracked as `EXTERNAL PENDING` in `docs/legal-external-pending-validation.md`. |
+| LCA-003 | Risk posture | Block decisions | `LegalSafety.swift`, docs, and tests require review or refusal for sensitive app actions. | Signed UI/binary smoke is tracked as `EXTERNAL PENDING` in `docs/governance/legal/external-pending.md`. |
 | LCA-004 | Scope | All pre-public | Decision map covers app, binary, docs, remote/sync, providers, support, and exports. | Full close still requires sibling ClawJS gates. |
 | LCA-005 | Product claims | Conservative | `legal_safety_check.mjs` scans public docs, web, app/example, Linux, Windows, and package README surfaces for banned claims. | Re-run after any copy, demo, app, website, or package edit. |
 | LCA-006 | Audience limits | Strong limits | Terms, Disclaimer, Safety, EULA, and legal settings define assistive local use and no professional replacement. | Store metadata must match before submission. |
@@ -29,7 +29,7 @@ state.
 | LCA-008 | Allowed regulated use | Personal local use | Safety and Regulated Domains allow local records, summaries, searches, drafts, questions, and review prep. | External flows must stay opt-in. |
 | LCA-009 | Crisis policy | Refusal + resources | Disclaimer/Safety state Clawix is not an emergency service; macOS and iOS source guards refuse crisis/autolesion prompts locally with 988/112/local resources before model, bridge, remote, or P2P dispatch. | Signed binary smoke is `EXTERNAL PENDING`; keyword guard is not a clinical classifier. |
 | LCA-010 | Release legal gate | Maintainer approval enough | Public release docs and private workflow require explicit approval; direct macOS, iOS, Linux, and Windows release builders run `scripts/legal_safety_check.mjs` before packaging/signing. | Exact action approval remains required. |
-| LCA-011 | Terms acceptance | Initial clickwrap | macOS `LegalConsentSheet` is non-dismissible and `LegalSafetyTests` verify current acceptance persistence; iOS now has `IOSLegalConsentSheet` plus versioned `IOSLegalSafetyStore` acceptance state and source assertions. | Signed macOS/iOS build smoke is `EXTERNAL PENDING` in `docs/legal-external-pending-validation.md`. |
+| LCA-011 | Terms acceptance | Initial clickwrap | macOS `LegalConsentSheet` is non-dismissible and `LegalSafetyTests` verify current acceptance persistence; iOS now has `IOSLegalConsentSheet` plus versioned `IOSLegalSafetyStore` acceptance state and source assertions. | Signed macOS/iOS build smoke is `EXTERNAL PENDING` in `docs/governance/legal/external-pending.md`. |
 | LCA-012 | Binary policy | App EULA | `EULA.md` covers official Clawix binaries and native permissions. | Binary packaging must link current EULA. |
 | LCA-013 | Governing law/forum | Spain/EU | Terms and EULA include Spain and applicable EU law. | Mandatory local law may still apply. |
 | LCA-014 | Support data | Manual opt-in | Privacy, SECURITY, settings, persistent keys, and tests cover support diagnostics opt-in; app policy still requires manual confirmation before sharing support diagnostics; rescue diagnostics export tests prove support context JSON is redacted and marked `explicit_approval_only` for external submission. | Signed support UI smoke is `EXTERNAL PENDING` until the current app can be inspected. |
@@ -51,7 +51,7 @@ state.
 | LCA-030 | Output labels | Mandatory labels | Legal safety tests require draft, not professional advice, human review, sources/gaps, and disclaimer version labels; textual exports now persist both machine labels and human-readable human-review/sources-gaps language in macOS and iOS legal output wrappers. | Binary/image metadata portability remains platform-limited. |
 | LCA-031 | Release channels | GitHub+npm+apps+web | Clawix `RELEASING.md` now separates GitHub, app/binary, web, and store channel checklists, requires `scripts/legal_safety_check.mjs`, and states that tags, uploads, notarization, TestFlight/App Store, store submission, and website deployment each need exact approval. Sibling ClawJS covers npm/CLI. | Each exact channel needs separate approval. |
 | LCA-032 | Versioning | Re-acceptance by version | Tests prove any accepted legal document version mismatch forces reacceptance; macOS/iOS now persist accepted versions for Terms, Privacy, EULA, Disclaimer, Safety, and Regulated Domains, and `legal_safety_check.mjs` verifies both the shared `Last updated: 2026-05-18` document version and the persisted acceptance state. | Material version changes must update legal docs, app constants, and accepted-version defaults together. |
-| LCA-033 | Sensitive exports/share | Confirmation + labels | Transcript, editor, image, plan, settings, secrets, database, macOS main chat copy, macOS Quick Ask copy, and iOS chat/code copy export/share paths require review; text/HTML/SVG/CSV/JSON/Markdown/clipboard outputs preserve legal labels where supported, and editor/plan export wrappers now persist both machine labels and human-readable human-review/sources-gaps language. | Signed app and platform share-sheet smoke are `EXTERNAL PENDING` in `docs/legal-external-pending-validation.md`. |
+| LCA-033 | Sensitive exports/share | Confirmation + labels | Transcript, editor, image, plan, settings, secrets, database, macOS main chat copy, macOS Quick Ask copy, and iOS chat/code copy export/share paths require review; text/HTML/SVG/CSV/JSON/Markdown/clipboard outputs preserve legal labels where supported, and editor/plan export wrappers now persist both machine labels and human-readable human-review/sources-gaps language. | Signed app and platform share-sheet smoke are `EXTERNAL PENDING` in `docs/governance/legal/external-pending.md`. |
 
 ## Required Evidence Spine
 
@@ -64,7 +64,7 @@ state.
   examples, and package release gates remain required before final close.
 - Signed app, share-sheet, store, provider, physical-device, notarization,
   TestFlight/App Store, website deployment, tag, upload, and other exact-channel
-  validations are separated in `docs/legal-external-pending-validation.md` as
+  validations are separated in `docs/governance/legal/external-pending.md` as
   `EXTERNAL PENDING`, not pass.
 - No public release, push, upload, notarization, TestFlight/App Store action,
   website release, tag, or store submission is approved by this audit.

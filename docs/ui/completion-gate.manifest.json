@@ -3,7 +3,7 @@
   "status": "active",
   "policy": "The interface governance goal can only be completed after the final private completion runner verifies decision closure, the private goal/source session, and all approved private visual evidence. Public CI validates this contract without private roots.",
   "decisionVerificationPath": "docs/ui/decision-verification.json",
-  "completionAuditPath": "docs/ui/completion-audit.md",
+  "completionAuditPath": "docs/governance/ui/completion.md",
   "completionSourceManifestPath": "docs/ui/completion-source.manifest.json",
   "privateVisualValidationManifestPath": "docs/ui/private-visual-validation.manifest.json",
   "approvalAuthorityManifestPath": "docs/ui/approval-authority.manifest.json",

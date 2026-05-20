@@ -8,11 +8,11 @@ const require = createRequire(import.meta.url);
 const Ajv2020Module = require("ajv/dist/2020");
 const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
 
-const approvalSchemaPath = path.join(rootDir, "docs/system-telemetry-external-approval.schema.json");
-const approvalFixturesPath = path.join(rootDir, "docs/system-telemetry-external-approval.fixtures.json");
-const evidenceSchemaPath = path.join(rootDir, "docs/system-telemetry-external-evidence.schema.json");
-const evidenceFixturesPath = path.join(rootDir, "docs/system-telemetry-external-evidence.fixtures.json");
-const closureFixturesPath = path.join(rootDir, "docs/system-telemetry-external-closure.fixtures.json");
+const approvalSchemaPath = path.join(rootDir, "docs/governance/system-telemetry/external-approval.schema.json");
+const approvalFixturesPath = path.join(rootDir, "docs/governance/system-telemetry/external-approval.fixtures.json");
+const evidenceSchemaPath = path.join(rootDir, "docs/governance/system-telemetry/external-evidence.schema.json");
+const evidenceFixturesPath = path.join(rootDir, "docs/governance/system-telemetry/external-evidence.fixtures.json");
+const closureFixturesPath = path.join(rootDir, "docs/governance/system-telemetry/external-closure.fixtures.json");
 
 function usage() {
   return [
@@ -216,6 +216,10 @@ function validateClosureBundle(bundle, label) {
     `${label}: approval id must match evidence run authorization`,
   );
   assert(
+    bundle.approvalPacket.approval?.exactRunScope === bundle.evidencePacket.runAuthorization?.exactRunScope,
+    `${label}: approval exact run scope must match evidence run authorization`,
+  );
+  assert(
     bundle.approvalPacket.approval?.approvedAt === bundle.evidencePacket.runAuthorization?.approvedAt,
     `${label}: approval timestamp must match evidence run authorization`,
   );
@@ -241,6 +245,9 @@ function mutateBundle(bundle, mutation) {
       break;
     case "evidencePacket.runAuthorization.approvalId=mismatch":
       mutated.evidencePacket.runAuthorization.approvalId = "approval_mismatched_template";
+      break;
+    case "evidencePacket.runAuthorization.exactRunScope=mismatch":
+      mutated.evidencePacket.runAuthorization.exactRunScope = "mismatched exact run template";
       break;
     case "evidencePacket.runAuthorization.approvedAt=mismatch":
       mutated.evidencePacket.runAuthorization.approvedAt = "2026-05-20T00:00:01Z";
@@ -278,8 +285,8 @@ function mutateBundle(bundle, mutation) {
 function validateFixtures() {
   const fixtures = readJson(closureFixturesPath);
   assert(fixtures.status === "synthetic_templates_not_closure", "fixtures must remain synthetic closure templates only");
-  assert(fixtures.approvalFixturesPath === "docs/system-telemetry-external-approval.fixtures.json", "fixtures reference wrong approval fixtures path");
-  assert(fixtures.evidenceFixturesPath === "docs/system-telemetry-external-evidence.fixtures.json", "fixtures reference wrong evidence fixtures path");
+  assert(fixtures.approvalFixturesPath === "docs/governance/system-telemetry/external-approval.fixtures.json", "fixtures reference wrong approval fixtures path");
+  assert(fixtures.evidenceFixturesPath === "docs/governance/system-telemetry/external-evidence.fixtures.json", "fixtures reference wrong evidence fixtures path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "fixtures reference wrong validator path");
   assertPublicSafe(fixtures, "closure fixtures");
   const accepted = [];

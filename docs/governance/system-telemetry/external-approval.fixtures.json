@@ -4,7 +4,7 @@
   "status": "synthetic_templates_not_approval",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
   "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
-  "schemaPath": "docs/system-telemetry-external-approval.schema.json",
+  "schemaPath": "docs/governance/system-telemetry/external-approval.schema.json",
   "validatorPath": "scripts/validate-system-telemetry-external-approval.mjs",
   "validSyntheticPackets": [
     {
@@ -17,6 +17,7 @@
         "approvalId": "approval_sensor_template",
         "decision": "approved",
         "exactRunApproved": true,
+        "exactRunScope": "physical sensor app template only",
         "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",
@@ -63,6 +64,7 @@
         "approvalId": "approval_live_provider_template",
         "decision": "approved",
         "exactRunApproved": true,
+        "exactRunScope": "live context menu template only",
         "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",
@@ -109,6 +111,7 @@
         "approvalId": "approval_control_template",
         "decision": "approved",
         "exactRunApproved": true,
+        "exactRunScope": "dangerous control app template only",
         "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",

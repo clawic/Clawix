@@ -27,10 +27,10 @@ function requireSnippet(relativePath, snippet) {
   if (!content.includes(snippet)) fail(`${relativePath} is missing ${JSON.stringify(snippet)}`);
 }
 
-const decisionsPath = "docs/v1-surface-closure-decisions.json";
-const acceptancePath = "docs/v1-surface-closure-acceptance.json";
-const validationPath = "docs/v1-surface-closure-validation.json";
-const auditPath = "docs/v1-surface-closure-completion-audit.md";
+const decisionsPath = "docs/governance/v1-surface-closure/decisions.json";
+const acceptancePath = "docs/governance/v1-surface-closure/acceptance.json";
+const validationPath = "docs/governance/v1-surface-closure/validation.json";
+const auditPath = "docs/governance/v1-surface-closure/completion.md";
 const decisions = readJson(decisionsPath);
 const acceptance = readJson(acceptancePath);
 const validation = readJson(validationPath);

@@ -17,7 +17,7 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
 2. Run `node scripts/legal_safety_check.mjs`.
 3. Confirm `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`, `SAFETY.md`,
    `REGULATED_DOMAINS.md`, `EULA.md`, `SECURITY.md`, and
-   `docs/legal-closure-decision-audit.md` are current.
+   `docs/governance/legal/source-audit.md` are current.
 4. Confirm public copy remains conservative: no professional-advice,
    final-decision, emergency-service, compliance-ready, autonomous-filing, or
    regulated-decision claims.
@@ -28,7 +28,7 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
    [ADR 0020](docs/adr/0020-open-standard-official-trust-mirror.md),
    [FORKS.md](FORKS.md), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md).
 7. Record any unavailable physical, provider, store, signed-host, or share-sheet
-   validation in `docs/legal-external-pending-validation.md` as
+   validation in `docs/governance/legal/external-pending.md` as
    `EXTERNAL PENDING`; do not treat it as passed.
 
 ## GitHub Release Channel Checklist

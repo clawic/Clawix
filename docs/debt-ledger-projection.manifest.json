@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "clawix-public-debt-ledger-projection",
+  "owner": "clawix",
+  "contract": "ClawJS debt-ledger",
+  "mode": "public-redacted-report-only",
+  "description": "Public Clawix projection sources consumed by the federated ClawJS debt ledger. Private .codex goals, sessions, inbox items, dirty work, and automation memory are intentionally excluded.",
+  "sources": [
+    {
+      "sourceType": "code_hygiene",
+      "path": "docs/code-hygiene-baseline.json",
+      "validation": "scripts/code-hygiene-check.mjs"
+    },
+    {
+      "sourceType": "source_size",
+      "path": "docs/source-size-baseline.json",
+      "validation": "scripts/source-size-check.mjs"
+    },
+    {
+      "sourceType": "surface_evidence",
+      "path": "docs/surface-evidence-projection-baseline.json",
+      "validation": "scripts/surface-evidence-projection-check.mjs"
+    },
+    {
+      "sourceType": "ui_debt",
+      "path": "docs/ui/debt.baseline.json",
+      "validation": "scripts/ui_governance_guard.mjs"
+    },
+    {
+      "sourceType": "completion_audit",
+      "path": "docs/governance/ui/completion.md",
+      "validation": "scripts/ui_completion_audit_check.mjs"
+    },
+    {
+      "sourceType": "completion_audit",
+      "path": "docs/governance/system-telemetry/completion.md",
+      "validation": "scripts/verify-system-telemetry-goal.mjs"
+    },
+    {
+      "sourceType": "external_validation",
+      "path": "docs/governance/system-telemetry/external-validation.manifest.json",
+      "validation": "scripts/verify-system-telemetry-goal.mjs"
+    }
+  ],
+  "privateOverlay": {
+    "status": "excluded-from-public-repo",
+    "runner": "../scripts-dev/private-debt-ledger-audit.mjs",
+    "redaction": "private-summary-only"
+  }
+}

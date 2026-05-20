@@ -7,8 +7,8 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(import.meta.url);
 const Ajv2020Module = require("ajv/dist/2020");
 const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
-const schemaPath = path.join(rootDir, "docs/system-telemetry-external-approval.schema.json");
-const fixturesPath = path.join(rootDir, "docs/system-telemetry-external-approval.fixtures.json");
+const schemaPath = path.join(rootDir, "docs/governance/system-telemetry/external-approval.schema.json");
+const fixturesPath = path.join(rootDir, "docs/governance/system-telemetry/external-approval.fixtures.json");
 
 function usage() {
   return [

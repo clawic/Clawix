@@ -28,7 +28,7 @@ const knipReportMarkdown = readText("docs/code-hygiene-knip-report.md");
 const peripheryReportMarkdown = readText("docs/code-hygiene-periphery-report.md");
 const ledger = readText("docs/code-hygiene-ledger.md");
 const decisionChecklist = readText("docs/code-hygiene-decision-checklist.md");
-const completionAudit = readText("docs/code-hygiene-completion-audit.md");
+const completionAudit = readText("docs/governance/code-hygiene/completion.md");
 const knipConfigPath = fs.existsSync(path.join(rootDir, "web", "knip.json")) ? "web/knip.json" : "knip.json";
 const auditResult = spawnSync("node", ["scripts/code-hygiene-audit.mjs", "--json"], {
   cwd: rootDir,
@@ -175,7 +175,7 @@ for (const relativePath of [
   "docs/code-hygiene-decisions.json",
   "docs/code-hygiene-baseline.json",
   "docs/code-hygiene-decision-checklist.md",
-  "docs/code-hygiene-completion-audit.md",
+  "docs/governance/code-hygiene/completion.md",
   "docs/code-hygiene-tools.json",
   "docs/code-hygiene-ledger.md",
   "docs/code-hygiene-report.json",

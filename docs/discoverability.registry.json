@@ -18,17 +18,23 @@
       "discoveryTerms": [
         "ADR 0001: Claw framework and host boundary",
         "0001-claw-framework-host-boundary",
-        "ADR 0001"
+        "ADR 0001",
+        "adr:claw-framework-host-boundary"
       ],
       "searchQueries": [
         {
           "query": "ADR 0001: Claw framework and host boundary",
           "expectPath": "docs/adr/0001-claw-framework-host-boundary.md"
+        },
+        {
+          "query": "adr:claw-framework-host-boundary",
+          "expectPath": "docs/adr/0001-claw-framework-host-boundary.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:claw-framework-host-boundary"
     },
     {
       "id": "adr-docs-adr-0002-naming-and-stability-surfaces",
@@ -45,17 +51,23 @@
       "discoveryTerms": [
         "ADR 0002: Naming and stability surfaces",
         "0002-naming-and-stability-surfaces",
-        "ADR 0002"
+        "ADR 0002",
+        "adr:naming-stability"
       ],
       "searchQueries": [
         {
           "query": "ADR 0002: Naming and stability surfaces",
           "expectPath": "docs/adr/0002-naming-and-stability-surfaces.md"
+        },
+        {
+          "query": "adr:naming-stability",
+          "expectPath": "docs/adr/0002-naming-and-stability-surfaces.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:naming-stability"
     },
     {
       "id": "adr-docs-adr-0003-testing-architecture",
@@ -72,17 +84,23 @@
       "discoveryTerms": [
         "ADR 0003: Testing architecture",
         "0003-testing-architecture",
-        "ADR 0003"
+        "ADR 0003",
+        "adr:testing-architecture"
       ],
       "searchQueries": [
         {
           "query": "ADR 0003: Testing architecture",
           "expectPath": "docs/adr/0003-testing-architecture.md"
+        },
+        {
+          "query": "adr:testing-architecture",
+          "expectPath": "docs/adr/0003-testing-architecture.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:testing-architecture"
     },
     {
       "id": "adr-docs-adr-0004-source-file-boundaries",
@@ -99,17 +117,23 @@
       "discoveryTerms": [
         "ADR 0004: Source file boundaries",
         "0004-source-file-boundaries",
-        "ADR 0004"
+        "ADR 0004",
+        "adr:source-file-boundaries"
       ],
       "searchQueries": [
         {
           "query": "ADR 0004: Source file boundaries",
           "expectPath": "docs/adr/0004-source-file-boundaries.md"
+        },
+        {
+          "query": "adr:source-file-boundaries",
+          "expectPath": "docs/adr/0004-source-file-boundaries.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:source-file-boundaries"
     },
     {
       "id": "adr-docs-adr-0005-integration-qa-lab",
@@ -126,17 +150,23 @@
       "discoveryTerms": [
         "ADR 0005: Integration QA Lab",
         "0005-integration-qa-lab",
-        "ADR 0005"
+        "ADR 0005",
+        "adr:integration-qa-lab"
       ],
       "searchQueries": [
         {
           "query": "ADR 0005: Integration QA Lab",
           "expectPath": "docs/adr/0005-integration-qa-lab.md"
+        },
+        {
+          "query": "adr:integration-qa-lab",
+          "expectPath": "docs/adr/0005-integration-qa-lab.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:integration-qa-lab"
     },
     {
       "id": "adr-docs-adr-0006-cli-agent-interface",
@@ -153,17 +183,23 @@
       "discoveryTerms": [
         "ADR 0006: CLI agent interface",
         "0006-cli-agent-interface",
-        "ADR 0006"
+        "ADR 0006",
+        "adr:cli-agent-interface"
       ],
       "searchQueries": [
         {
           "query": "ADR 0006: CLI agent interface",
           "expectPath": "docs/adr/0006-cli-agent-interface.md"
+        },
+        {
+          "query": "adr:cli-agent-interface",
+          "expectPath": "docs/adr/0006-cli-agent-interface.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:cli-agent-interface"
     },
     {
       "id": "adr-docs-adr-0007-dual-human-programmatic-surfaces",
@@ -180,17 +216,23 @@
       "discoveryTerms": [
         "ADR 0007: Dual human and programmatic surfaces",
         "0007-dual-human-programmatic-surfaces",
-        "ADR 0007"
+        "ADR 0007",
+        "adr:dual-human-programmatic-surfaces"
       ],
       "searchQueries": [
         {
           "query": "ADR 0007: Dual human and programmatic surfaces",
           "expectPath": "docs/adr/0007-dual-human-programmatic-surfaces.md"
+        },
+        {
+          "query": "adr:dual-human-programmatic-surfaces",
+          "expectPath": "docs/adr/0007-dual-human-programmatic-surfaces.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:dual-human-programmatic-surfaces"
     },
     {
       "id": "adr-docs-adr-0008-cli-jit-guidance-actor-assertions-resource-registry",
@@ -207,17 +249,23 @@
       "discoveryTerms": [
         "ADR 0008: CLI just-in-time guidance, actor assertions, and resource registry",
         "0008-cli-jit-guidance-actor-assertions-resource-registry",
-        "ADR 0008"
+        "ADR 0008",
+        "adr:cli-jit-guidance-resource-registry"
       ],
       "searchQueries": [
         {
           "query": "ADR 0008: CLI just-in-time guidance, actor assertions, and resource registry",
           "expectPath": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md"
+        },
+        {
+          "query": "adr:cli-jit-guidance-resource-registry",
+          "expectPath": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:cli-jit-guidance-resource-registry"
     },
     {
       "id": "adr-docs-adr-0009-agentic-naming-and-code-structure",
@@ -234,17 +282,23 @@
       "discoveryTerms": [
         "ADR 0009: Agentic naming and code structure",
         "0009-agentic-naming-and-code-structure",
-        "ADR 0009"
+        "ADR 0009",
+        "adr:agentic-naming-code-structure"
       ],
       "searchQueries": [
         {
           "query": "ADR 0009: Agentic naming and code structure",
           "expectPath": "docs/adr/0009-agentic-naming-and-code-structure.md"
+        },
+        {
+          "query": "adr:agentic-naming-code-structure",
+          "expectPath": "docs/adr/0009-agentic-naming-and-code-structure.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:agentic-naming-code-structure"
     },
     {
       "id": "adr-docs-adr-0016-code-hygiene-program",
@@ -261,17 +315,23 @@
       "discoveryTerms": [
         "ADR 0016: Code hygiene program",
         "0016-code-hygiene-program",
-        "ADR 0016"
+        "ADR 0016",
+        "adr:code-hygiene-program"
       ],
       "searchQueries": [
         {
           "query": "ADR 0016: Code hygiene program",
           "expectPath": "docs/adr/0016-code-hygiene-program.md"
+        },
+        {
+          "query": "adr:code-hygiene-program",
+          "expectPath": "docs/adr/0016-code-hygiene-program.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:code-hygiene-program"
     },
     {
       "id": "clawix-discoverability-projection",
@@ -294,7 +354,8 @@
         "ADR 0017",
         "discoverability",
         "meta-code routing",
-        "Clawix projection"
+        "Clawix projection",
+        "adr:discoverability-meta-code-routing"
       ],
       "searchQueries": [
         {
@@ -304,11 +365,16 @@
         {
           "query": "meta-code routing",
           "expectPath": "docs/adr/0017-discoverability-and-meta-code-routing.md"
+        },
+        {
+          "query": "adr:discoverability-meta-code-routing",
+          "expectPath": "docs/adr/0017-discoverability-and-meta-code-routing.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17"
+      "reviewDate": "2026-08-17",
+      "canonicalName": "adr:discoverability-meta-code-routing"
     },
     {
       "id": "adr-docs-adr-0018-evolution-rescue-backbone-mirror",
@@ -325,17 +391,23 @@
       "discoveryTerms": [
         "ADR 0018: Evolution and rescue backbone mirror",
         "0018-evolution-rescue-backbone-mirror",
-        "ADR 0018"
+        "ADR 0018",
+        "adr:evolution-rescue-backbone"
       ],
       "searchQueries": [
         {
           "query": "ADR 0018: Evolution and rescue backbone mirror",
           "expectPath": "docs/adr/0018-evolution-rescue-backbone-mirror.md"
+        },
+        {
+          "query": "adr:evolution-rescue-backbone",
+          "expectPath": "docs/adr/0018-evolution-rescue-backbone-mirror.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:evolution-rescue-backbone"
     },
     {
       "id": "adr-docs-adr-0019-sdk-first-custom-surfaces-and-nonblocking-shell",
@@ -355,7 +427,8 @@
         "ADR 0019",
         "custom app SDK executionBoundary",
         "clawix capabilities contracts metadata-only",
-        "window.clawix host bridge"
+        "window.clawix host bridge",
+        "adr:sdk-first-custom-surfaces"
       ],
       "searchQueries": [
         {
@@ -365,11 +438,16 @@
         {
           "query": "custom app SDK executionBoundary window.clawix host bridge",
           "expectPath": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+        },
+        {
+          "query": "adr:sdk-first-custom-surfaces",
+          "expectPath": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:sdk-first-custom-surfaces"
     },
     {
       "id": "adr-docs-adr-0020-open-standard-official-trust-mirror",
@@ -388,17 +466,23 @@
         "0020-open-standard-official-trust-mirror",
         "ADR 0020",
         "official trust compatibility",
-        "Clawix official builds"
+        "Clawix official builds",
+        "adr:open-standard-official-trust"
       ],
       "searchQueries": [
         {
           "query": "official trust compatibility",
           "expectPath": "docs/adr/0020-open-standard-official-trust-mirror.md"
+        },
+        {
+          "query": "adr:open-standard-official-trust",
+          "expectPath": "docs/adr/0020-open-standard-official-trust-mirror.md"
         }
       ],
       "guard": "scripts/open_source_canonicity_check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:open-standard-official-trust"
     },
     {
       "id": "clawix-surface-route-graph",
@@ -419,17 +503,23 @@
         "ADR 0011",
         "surface route graph",
         "Clawix bridge",
-        "runtime-critical"
+        "runtime-critical",
+        "adr:surface-route-graph"
       ],
       "searchQueries": [
         {
           "query": "surface route graph",
           "expectPath": "docs/adr/0011-surface-route-graph.md"
+        },
+        {
+          "query": "adr:surface-route-graph",
+          "expectPath": "docs/adr/0011-surface-route-graph.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17"
+      "reviewDate": "2026-08-17",
+      "canonicalName": "adr:surface-route-graph"
     },
     {
       "id": "skill-skills-adr-to-guardrail",
@@ -1304,6 +1394,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-debt-ledger-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/debt-ledger-projection-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "debt-ledger-projection-check",
+        "Debt Ledger Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "debt-ledger-projection-check",
+          "expectPath": "scripts/debt-ledger-projection-check.mjs"
+        }
+      ],
+      "guard": "scripts/debt-ledger-projection-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-discoverability-check",
       "kind": "guardrail",
       "owner": "clawix",
@@ -1772,17 +1887,23 @@
       "discoveryTerms": [
         "ADR 0010: Interface governance and visual mutation boundary",
         "0010-interface-governance",
-        "ADR 0010"
+        "ADR 0010",
+        "adr:interface-governance"
       ],
       "searchQueries": [
         {
           "query": "ADR 0010: Interface governance and visual mutation boundary",
           "expectPath": "docs/adr/0010-interface-governance.md"
+        },
+        {
+          "query": "adr:interface-governance",
+          "expectPath": "docs/adr/0010-interface-governance.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:interface-governance"
     },
     {
       "id": "clawix-ui-governance-discoverability",
@@ -2915,14 +3036,81 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-constitution-operational-map",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/constitution-map.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/agent-rules/index.md",
+        "skills/decision-map-maintenance/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "constitution-map",
+        "Constitution Operational Map",
+        "constitutional principle router",
+        "principle to canon guardrail surfaces"
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution-map",
+          "expectPath": "docs/constitution-map.md"
+        },
+        {
+          "query": "constitutional principle router",
+          "expectPath": "docs/constitution-map.md"
+        }
+      ],
+      "guard": "scripts/doc_alignment_check.sh",
+      "status": "enforced",
+      "reviewDate": "2026-08-20"
+    },
+    {
+      "id": "clawix-debt-ledger-projection",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/debt-ledger-projection.manifest.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "scripts/debt-ledger-projection-check.mjs"
+      ],
+      "discoveryTerms": [
+        "debt ledger",
+        "pending ledger",
+        "external pending ledger",
+        "lateral_debt",
+        "Clawix public debt projection"
+      ],
+      "searchQueries": [
+        {
+          "query": "debt pending ledger external pending lateral_debt",
+          "expectPath": "docs/debt-ledger-projection.manifest.json"
+        },
+        {
+          "query": "Clawix public debt projection",
+          "expectPath": "docs/debt-ledger-projection.manifest.json"
+        }
+      ],
+      "guard": "scripts/debt-ledger-projection-check.mjs",
+      "status": "baseline",
+      "reviewDate": "2026-08-20"
+    },
+    {
       "id": "clawix-sdk-first-custom-surfaces-completion-audit",
       "kind": "docs-page",
       "owner": "clawix",
-      "canonicalSource": "docs/sdk-first-custom-surfaces-completion-audit.md",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/completion.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-validation.manifest.schema.json"
+        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
       ],
       "discoveryTerms": [
         "sdk-first custom surfaces completion audit",
@@ -2932,7 +3120,7 @@
       "searchQueries": [
         {
           "query": "sdk-first custom surfaces completion audit",
-          "expectPath": "docs/sdk-first-custom-surfaces-completion-audit.md"
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/completion.md"
         }
       ],
       "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
@@ -2943,11 +3131,11 @@
       "id": "clawix-system-telemetry-completion-audit",
       "kind": "docs-page",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-completion-audit.md",
+      "canonicalSource": "docs/governance/system-telemetry/completion.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-decision-matrix.md"
+        "docs/governance/system-telemetry/decision-matrix.md"
       ],
       "discoveryTerms": [
         "system telemetry completion audit",
@@ -2957,7 +3145,7 @@
       "searchQueries": [
         {
           "query": "system telemetry completion audit",
-          "expectPath": "docs/system-telemetry-completion-audit.md"
+          "expectPath": "docs/governance/system-telemetry/completion.md"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -2968,7 +3156,7 @@
       "id": "clawix-system-telemetry-decision-matrix",
       "kind": "docs-page",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-decision-matrix.md",
+      "canonicalSource": "docs/governance/system-telemetry/decision-matrix.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md"
@@ -2981,7 +3169,7 @@
       "searchQueries": [
         {
           "query": "system telemetry decision matrix",
-          "expectPath": "docs/system-telemetry-decision-matrix.md"
+          "expectPath": "docs/governance/system-telemetry/decision-matrix.md"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -2992,7 +3180,7 @@
       "id": "clawix-system-telemetry-external-pending-ledger",
       "kind": "docs-page",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-pending-validation.md",
+      "canonicalSource": "docs/governance/system-telemetry/external-pending.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md"
@@ -3005,7 +3193,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external pending validation",
-          "expectPath": "docs/system-telemetry-external-pending-validation.md"
+          "expectPath": "docs/governance/system-telemetry/external-pending.md"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3016,12 +3204,12 @@
       "id": "clawix-system-telemetry-external-validation-runbook",
       "kind": "docs-page",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-validation-runbook.md",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation-runbook.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external validation runbook",
@@ -3031,7 +3219,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external validation runbook",
-          "expectPath": "docs/system-telemetry-external-validation-runbook.md"
+          "expectPath": "docs/governance/system-telemetry/external-validation-runbook.md"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3042,14 +3230,14 @@
       "id": "clawix-system-telemetry-external-approval-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-approval.fixtures.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-approval.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-approval.schema.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-approval.schema.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external approval fixtures",
@@ -3059,7 +3247,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external approval fixtures",
-          "expectPath": "docs/system-telemetry-external-approval.fixtures.json"
+          "expectPath": "docs/governance/system-telemetry/external-approval.fixtures.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3070,14 +3258,14 @@
       "id": "clawix-system-telemetry-external-approval-schema",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-approval.schema.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-approval.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-approval.fixtures.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-approval.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external approval schema",
@@ -3087,7 +3275,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external approval schema",
-          "expectPath": "docs/system-telemetry-external-approval.schema.json"
+          "expectPath": "docs/governance/system-telemetry/external-approval.schema.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3098,13 +3286,13 @@
       "id": "clawix-system-telemetry-external-closure-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-closure.fixtures.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-closure.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external closure fixtures",
@@ -3114,7 +3302,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external closure fixtures",
-          "expectPath": "docs/system-telemetry-external-closure.fixtures.json"
+          "expectPath": "docs/governance/system-telemetry/external-closure.fixtures.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3125,13 +3313,13 @@
       "id": "clawix-system-telemetry-external-evidence-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-evidence.fixtures.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-evidence.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-evidence.schema.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-evidence.schema.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external evidence fixtures",
@@ -3141,7 +3329,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external evidence fixtures",
-          "expectPath": "docs/system-telemetry-external-evidence.fixtures.json"
+          "expectPath": "docs/governance/system-telemetry/external-evidence.fixtures.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3152,14 +3340,14 @@
       "id": "clawix-system-telemetry-external-evidence-schema",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-evidence.schema.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-evidence.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-evidence.fixtures.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-evidence.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external evidence schema",
@@ -3169,7 +3357,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external evidence schema",
-          "expectPath": "docs/system-telemetry-external-evidence.schema.json"
+          "expectPath": "docs/governance/system-telemetry/external-evidence.schema.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3180,14 +3368,14 @@
       "id": "clawix-system-telemetry-external-validation-manifest-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-validation.manifest.fixtures.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-validation.manifest.json",
-        "docs/system-telemetry-external-validation.manifest.schema.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json",
+        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
       ],
       "discoveryTerms": [
         "system telemetry external validation manifest fixtures",
@@ -3197,7 +3385,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external validation manifest fixtures",
-          "expectPath": "docs/system-telemetry-external-validation.manifest.fixtures.json"
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3208,7 +3396,7 @@
       "id": "clawix-system-telemetry-external-validation-manifest",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-validation.manifest.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md"
@@ -3221,7 +3409,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external validation manifest",
-          "expectPath": "docs/system-telemetry-external-validation.manifest.json"
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3232,13 +3420,13 @@
       "id": "clawix-system-telemetry-external-validation-manifest-schema",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-external-validation.manifest.schema.json",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external validation manifest schema",
@@ -3248,7 +3436,7 @@
       "searchQueries": [
         {
           "query": "system telemetry external validation manifest schema",
-          "expectPath": "docs/system-telemetry-external-validation.manifest.schema.json"
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.schema.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3259,11 +3447,11 @@
       "id": "clawix-system-telemetry-source-qa-review",
       "kind": "validation-manifest",
       "owner": "clawix",
-      "canonicalSource": "docs/system-telemetry-source-qa-review.json",
+      "canonicalSource": "docs/governance/system-telemetry/source-review.json",
       "requiredEntrypoints": [
         "docs/decision-map.md",
         "docs/discoverability.md",
-        "docs/system-telemetry-decision-matrix.md"
+        "docs/governance/system-telemetry/decision-matrix.md"
       ],
       "discoveryTerms": [
         "system telemetry source Q/A review",
@@ -3273,7 +3461,7 @@
       "searchQueries": [
         {
           "query": "system telemetry source Q/A review",
-          "expectPath": "docs/system-telemetry-source-qa-review.json"
+          "expectPath": "docs/governance/system-telemetry/source-review.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
@@ -3288,11 +3476,11 @@
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-approval.schema.json",
-        "docs/system-telemetry-external-approval.fixtures.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-approval.schema.json",
+        "docs/governance/system-telemetry/external-approval.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external approval validator",
@@ -3317,10 +3505,10 @@
       "requiredEntrypoints": [
         "docs/discoverability.md",
         "docs/decision-map.md",
-        "docs/system-telemetry-external-pending-validation.md",
-        "docs/system-telemetry-external-validation-runbook.md",
-        "docs/system-telemetry-external-closure.fixtures.json",
-        "docs/system-telemetry-external-validation.manifest.json"
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-closure.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
       ],
       "discoveryTerms": [
         "system telemetry external closure validator",

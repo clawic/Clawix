@@ -5,7 +5,7 @@ Clawix consumes the canonical ClawJS evolution policy:
 - sibling ADR: `../../../clawjs/docs/adr/0030-post-v1-evolution-rescue-backbone.md`
 - sibling ledger: `../../../clawjs/docs/evolution/`
 - sibling source decision audit:
-  `../../../clawjs/docs/evolution/backbone-source-decision-audit.md`
+  `../../../clawjs/docs/governance/evolution/source-audit.md`
 - CLI: `claw evolution`
 - skill: `skills/compatibility-evolution-work/SKILL.md`
 

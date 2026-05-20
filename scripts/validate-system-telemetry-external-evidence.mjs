@@ -7,8 +7,8 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(import.meta.url);
 const Ajv2020Module = require("ajv/dist/2020");
 const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
-const schemaPath = path.join(rootDir, "docs/system-telemetry-external-evidence.schema.json");
-const fixturesPath = path.join(rootDir, "docs/system-telemetry-external-evidence.fixtures.json");
+const schemaPath = path.join(rootDir, "docs/governance/system-telemetry/external-evidence.schema.json");
+const fixturesPath = path.join(rootDir, "docs/governance/system-telemetry/external-evidence.fixtures.json");
 
 function usage() {
   return [
@@ -87,6 +87,9 @@ function mutateTemplate(packet, mutation) {
       break;
     case "preflight.completedAt before runAuthorization.approvedAt":
       mutated.preflight.completedAt = "2026-05-19T23:59:59Z";
+      break;
+    case "runAuthorization.grants is empty":
+      mutated.runAuthorization.grants = [];
       break;
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";

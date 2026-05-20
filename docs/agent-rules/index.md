@@ -7,6 +7,7 @@ always-loaded instructions prompt.
 ## Canon Routers
 
 - Highest authority: `CONSTITUTION.md`.
+- Constitution router: `docs/constitution-map.md`.
 - Decision router: `docs/decision-map.md`.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.

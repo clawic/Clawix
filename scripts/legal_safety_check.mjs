@@ -267,8 +267,8 @@ for (const file of [
   "REGULATED_DOMAINS.md",
   "EULA.md",
   "SECURITY.md",
-  "docs/legal-closure-decision-audit.md",
-  "docs/legal-external-pending-validation.md",
+  "docs/governance/legal/source-audit.md",
+  "docs/governance/legal/external-pending.md",
 ]) {
   read(file);
 }
@@ -288,7 +288,7 @@ requireSnippet("RELEASING.md", "node scripts/legal_safety_check.mjs");
 requireSnippet("RELEASING.md", "explicit approval for that exact");
 requireSnippet("RELEASING.md", "Classify every new sensitive app surface, route, connector, provider");
 requireSnippet("RELEASING.md", "ClawJS regulated-domain safety policy");
-requireSnippet("RELEASING.md", "docs/legal-external-pending-validation.md");
+requireSnippet("RELEASING.md", "docs/governance/legal/external-pending.md");
 requireSnippet("CONSTITUTION.md", "Regulated domains are assistive, never final decision authorities");
 requireSnippet("docs/agent-rules/index.md", "Regulated domains are assistive only");
 requireSnippet("docs/decision-map.md", "Regulated domains are assistive, not final decision authorities");
@@ -429,30 +429,30 @@ requireSnippet("SECURITY.md", "Support diagnostics are manual opt-in");
 requireSnippet("SECURITY.md", "EXTERNAL PENDING");
 requireSnippet("tests/fixtures/README.md", "Synthetic fixtures shared across lanes live here.");
 requireSnippet("tests/fixtures/README.md", "Do not store real customer data");
-requireSnippet("docs/legal-closure-decision-audit.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
-requireSnippet("docs/legal-closure-decision-audit.md", "Closure state: `active_goal_not_complete`");
-requireSnippet("docs/legal-closure-decision-audit.md", "LCA-001");
-requireSnippet("docs/legal-closure-decision-audit.md", "LCA-033");
-requireSnippet("docs/legal-closure-decision-audit.md", "Required Evidence Spine");
-requireSnippet("docs/legal-closure-decision-audit.md", "docs/legal-external-pending-validation.md");
-requireSnippet("docs/legal-external-pending-validation.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
-requireSnippet("docs/legal-external-pending-validation.md", "Status: `active_goal_not_complete`");
-requireSnippet("docs/legal-external-pending-validation.md", "LEGAL-EXT-001");
-requireSnippet("docs/legal-external-pending-validation.md", "LEGAL-EXT-007");
-requireSnippet("docs/legal-external-pending-validation.md", "EXTERNAL PENDING");
-requireSnippet("docs/legal-external-pending-validation.md", "not passes");
-requireSnippet("docs/legal-external-pending-validation.md", "must not be downgraded to `EXTERNAL PENDING`");
-requireSnippet("docs/legal-external-pending-validation.md", "No row authorizes a push, tag, publish, upload, notarization, TestFlight");
-const legalClosureAudit = read("docs/legal-closure-decision-audit.md");
+requireSnippet("docs/governance/legal/source-audit.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
+requireSnippet("docs/governance/legal/source-audit.md", "Closure state: `active_goal_not_complete`");
+requireSnippet("docs/governance/legal/source-audit.md", "LCA-001");
+requireSnippet("docs/governance/legal/source-audit.md", "LCA-033");
+requireSnippet("docs/governance/legal/source-audit.md", "Required Evidence Spine");
+requireSnippet("docs/governance/legal/source-audit.md", "docs/governance/legal/external-pending.md");
+requireSnippet("docs/governance/legal/external-pending.md", "Source conversation: `019e3a44-1175-7930-b45c-252f342b5ec2`");
+requireSnippet("docs/governance/legal/external-pending.md", "Status: `active_goal_not_complete`");
+requireSnippet("docs/governance/legal/external-pending.md", "LEGAL-EXT-001");
+requireSnippet("docs/governance/legal/external-pending.md", "LEGAL-EXT-007");
+requireSnippet("docs/governance/legal/external-pending.md", "EXTERNAL PENDING");
+requireSnippet("docs/governance/legal/external-pending.md", "not passes");
+requireSnippet("docs/governance/legal/external-pending.md", "must not be downgraded to `EXTERNAL PENDING`");
+requireSnippet("docs/governance/legal/external-pending.md", "No row authorizes a push, tag, publish, upload, notarization, TestFlight");
+const legalClosureAudit = read("docs/governance/legal/source-audit.md");
 const legalClosureIds = extractTableIds(legalClosureAudit, "LCA");
 if (legalClosureIds.size !== 33) {
-  fail(`docs/legal-closure-decision-audit.md must contain 33 LCA rows, found ${legalClosureIds.size}`);
+  fail(`docs/governance/legal/source-audit.md must contain 33 LCA rows, found ${legalClosureIds.size}`);
 }
 for (let index = 1; index <= 33; index += 1) {
   const id = `LCA-${String(index).padStart(3, "0")}`;
-  if (!legalClosureIds.has(id)) fail(`docs/legal-closure-decision-audit.md is missing ${id}`);
+  if (!legalClosureIds.has(id)) fail(`docs/governance/legal/source-audit.md is missing ${id}`);
 }
-assertExternalPendingLedger("docs/legal-external-pending-validation.md", 7);
+assertExternalPendingLedger("docs/governance/legal/external-pending.md", 7);
 assertNoBannedMarketingClaims();
 assertLegalDocsAreBilingual();
 assertLegalVersionsAreAligned();

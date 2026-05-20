@@ -53,7 +53,7 @@ the public repo.
 - `mechanical-equivalence.manifest.json`: before/after evidence and blocking
   status contract for mechanical UI refactors. Registered records are included
   in the derived private evidence plan through an optional private root.
-- `completion-audit.md`: public-safe completion ledger that mirrors the
+- `../governance/ui/completion.md`: public-safe completion ledger that mirrors the
   private goal/session re-read rule without publishing private source content.
 - `completion-source.manifest.json`: public-safe contract for privately
   verifying the goal reference and source session before final completion.
@@ -306,7 +306,7 @@ the public repo.
     evidence path, required fields, and verifier commands without publishing
     private root paths or raw artifacts.
 46. Close the remaining unresolved completion decisions only by satisfying their blocking
-    evidence groups in `completion-audit.md`: surface baselines, rendered
+    evidence groups in `../governance/ui/completion.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,
     and pattern geometry. Missing private roots stay `EXTERNAL PENDING`; do not
     convert them to public evidence, placeholders, or simulated approval.

@@ -12,30 +12,30 @@ validation that requires current signed-app inspection, live providers,
 physical hardware, or native approvals. Rows marked `EXTERNAL PENDING` are not passes and must not be used to close the goal.
 
 Machine-readable closure gates live in
-`docs/system-telemetry-external-validation.manifest.json` and
-`docs/system-telemetry-source-qa-review.json`, with requirement-by-requirement
-status in `docs/system-telemetry-completion-audit.md` and external run steps in
-`docs/system-telemetry-external-validation-runbook.md`. Accepted external
+`docs/governance/system-telemetry/external-validation.manifest.json` and
+`docs/governance/system-telemetry/source-review.json`, with requirement-by-requirement
+status in `docs/governance/system-telemetry/completion.md` and external run steps in
+`docs/governance/system-telemetry/external-validation-runbook.md`. Accepted external
 approval must conform to
-`docs/system-telemetry-external-approval.schema.json` before execution, and
+`docs/governance/system-telemetry/external-approval.schema.json` before execution, and
 accepted external evidence must conform to
-`docs/system-telemetry-external-evidence.schema.json`.
+`docs/governance/system-telemetry/external-evidence.schema.json`.
 The external manifest must conform to
-`docs/system-telemetry-external-validation.manifest.schema.json`.
+`docs/governance/system-telemetry/external-validation.manifest.schema.json`.
 Synthetic manifest fixtures at
-`docs/system-telemetry-external-validation.manifest.fixtures.json` prove that
+`docs/governance/system-telemetry/external-validation.manifest.fixtures.json` prove that
 accidental completion or lane-clear mutations fail validation.
 Evidence packets must pass
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before any row is updated.
 Synthetic approval templates at
-`docs/system-telemetry-external-approval.fixtures.json` prove exact-run
+`docs/governance/system-telemetry/external-approval.fixtures.json` prove exact-run
 approval validation only and are not real approval.
 Approval packets must pass
 `node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`
 before any external execution starts.
 Synthetic closure bundles at
-`docs/system-telemetry-external-closure.fixtures.json` prove same-lane approval and evidence
+`docs/governance/system-telemetry/external-closure.fixtures.json` prove same-lane approval and evidence
 binding only and are not real closure evidence.
 They are the same-lane approval and evidence bundle gate for closure attempts.
 The bundle also binds evidence `runAuthorization.approvalId` to the exact
@@ -81,16 +81,16 @@ update target, fail-rule, and evidence-packet checks before any closure attempt.
 These lanes are the only accepted way to replace the remaining
 `EXTERNAL PENDING` rows. They require explicit approval for the exact run. The
 operational checklist for each lane is the
-[System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md),
+[System Telemetry External Validation Runbook](./external-validation-runbook.md),
 and the accepted evidence packet schema is
-[`docs/system-telemetry-external-evidence.schema.json`](./system-telemetry-external-evidence.schema.json).
+[`docs/governance/system-telemetry/external-evidence.schema.json`](./external-evidence.schema.json).
 The required approval packet schema is
-[`docs/system-telemetry-external-approval.schema.json`](./system-telemetry-external-approval.schema.json).
+[`docs/governance/system-telemetry/external-approval.schema.json`](./external-approval.schema.json).
 Synthetic packet fixtures live at
-[`docs/system-telemetry-external-evidence.fixtures.json`](./system-telemetry-external-evidence.fixtures.json)
+[`docs/governance/system-telemetry/external-evidence.fixtures.json`](./external-evidence.fixtures.json)
 and are explicitly not accepted evidence.
 Synthetic approval fixtures live at
-[`docs/system-telemetry-external-approval.fixtures.json`](./system-telemetry-external-approval.fixtures.json)
+[`docs/governance/system-telemetry/external-approval.fixtures.json`](./external-approval.fixtures.json)
 and are explicitly not approval.
 Approval packets are checked with
 `node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`.

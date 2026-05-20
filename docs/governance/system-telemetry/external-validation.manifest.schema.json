@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://clawix.dev/schemas/system-telemetry-external-validation.manifest.schema.json",
+  "$id": "https://clawix.dev/schemas/governance/system-telemetry/external-validation.manifest.schema.json",
   "title": "Clawix System Telemetry External Validation Manifest",
   "description": "Public-safe manifest contract for Clawix system telemetry external validation blockers.",
   "type": "object",
@@ -27,7 +27,7 @@
     "rows"
   ],
   "properties": {
-    "$schema": { "const": "docs/system-telemetry-external-validation.manifest.schema.json" },
+    "$schema": { "const": "docs/governance/system-telemetry/external-validation.manifest.schema.json" },
     "schemaVersion": { "const": 1 },
     "id": { "const": "clawix-system-telemetry-external-validation-manifest" },
     "conversationId": { "const": "019e359b-c0ab-7dc1-ba94-11a49d11dc76" },
@@ -61,7 +61,7 @@
       "required": ["required", "path", "statusSummary"],
       "properties": {
         "required": { "const": true },
-        "path": { "const": "docs/system-telemetry-completion-audit.md" },
+        "path": { "const": "docs/governance/system-telemetry/completion.md" },
         "statusSummary": {
           "type": "object",
           "required": ["validatedLocalRows", "activeClosureGateRows", "externalPendingRows", "externalPendingRowIds"],
@@ -90,7 +90,7 @@
             "status": { "const": "synthetic_templates_not_approval" },
             "validTemplateCount": { "const": 3 },
             "invalidTemplateCount": { "const": 4 },
-            "path": { "const": "docs/system-telemetry-external-approval.fixtures.json" }
+            "path": { "const": "docs/governance/system-telemetry/external-approval.fixtures.json" }
           }
         }
       ]
@@ -119,7 +119,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 6 }
+            "invalidTemplateCount": { "const": 7 }
           }
         }
       ]
@@ -147,8 +147,8 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_closure" },
             "validTemplateCount": { "const": 3 },
-            "invalidMutationCount": { "const": 14 },
-            "path": { "const": "docs/system-telemetry-external-closure.fixtures.json" }
+            "invalidMutationCount": { "const": 15 },
+            "path": { "const": "docs/governance/system-telemetry/external-closure.fixtures.json" }
           }
         }
       ]
@@ -176,8 +176,8 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 1 },
-            "invalidMutationCount": { "const": 7 },
-            "path": { "const": "docs/system-telemetry-external-validation.manifest.fixtures.json" }
+            "invalidMutationCount": { "const": 8 },
+            "path": { "const": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json" }
           }
         }
       ]
@@ -273,7 +273,17 @@
     "ext005": {
       "allOf": [
         { "$ref": "#/$defs/externalRow" },
-        { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-005" }, "acceptedEvidence": { "contains": { "const": "rollback_or_continuity_evidence" } } } }
+        {
+          "properties": {
+            "id": { "const": "CLX-SYS-TEL-EXT-005" },
+            "acceptedEvidence": {
+              "allOf": [
+                { "contains": { "const": "app_or_menu_same_machine_evidence" } },
+                { "contains": { "const": "rollback_or_continuity_evidence" } }
+              ]
+            }
+          }
+        }
       ]
     },
     "local006": { "allOf": [{ "$ref": "#/$defs/validatedLocalRow" }, { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-006" } } }] }

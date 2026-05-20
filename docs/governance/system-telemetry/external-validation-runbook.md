@@ -13,32 +13,32 @@ data access, paid APIs, release actions, or network runs. Each lane requires
 explicit approval for the exact run before execution.
 
 Before any execution, the approval must be represented by an exact-run packet
-conforming to `docs/system-telemetry-external-approval.schema.json`. Synthetic
-approval templates live in `docs/system-telemetry-external-approval.fixtures.json`;
+conforming to `docs/governance/system-telemetry/external-approval.schema.json`. Synthetic
+approval templates live in `docs/governance/system-telemetry/external-approval.fixtures.json`;
 they only prove schema behavior and are not real approval.
 Validate the approval packet with
 `node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`
 before any provider, sensor, or control execution starts.
 Any accepted run must produce a redacted evidence packet conforming to
-`docs/system-telemetry-external-evidence.schema.json`. A transcript, screenshot,
+`docs/governance/system-telemetry/external-evidence.schema.json`. A transcript, screenshot,
 or receipt that is not represented by that packet is supporting material, not a
 lane-closing record.
 The structured manifest must continue to validate against
-`docs/system-telemetry-external-validation.manifest.schema.json` after any
+`docs/governance/system-telemetry/external-validation.manifest.schema.json` after any
 lane status update.
 Synthetic manifest fixtures live in
-`docs/system-telemetry-external-validation.manifest.fixtures.json`; they are
+`docs/governance/system-telemetry/external-validation.manifest.fixtures.json`; they are
 schema validation templates only and must not be cited as real external
 evidence.
 Validate the packet with
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before updating any ledger, manifest, completion audit, or source Q/A review.
 Synthetic examples live in
-`docs/system-telemetry-external-evidence.fixtures.json`; they are templates for
+`docs/governance/system-telemetry/external-evidence.fixtures.json`; they are templates for
 schema validation only and must not be cited as real external evidence.
 Before replacing any row, combine the exact-run approval packet and accepted
 evidence packet into a same-lane closure bundle. Synthetic closure examples
-live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
+live in `docs/governance/system-telemetry/external-closure.fixtures.json`; they only prove
 bundle validation behavior and are not real closure evidence. The bundle must
 bind the evidence `runAuthorization.approvalId`, approving actor, credential
 leases, and native grants to the exact approval packet.

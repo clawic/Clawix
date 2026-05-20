@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://clawix.dev/schemas/system-telemetry-external-evidence.schema.json",
+  "$id": "https://clawix.dev/schemas/governance/system-telemetry/external-evidence.schema.json",
   "title": "Clawix System Telemetry External Evidence Packet",
   "description": "Public-safe evidence packet required before replacing a Clawix system telemetry EXTERNAL PENDING lane.",
-  "x-fixturePath": "docs/system-telemetry-external-evidence.fixtures.json",
+  "x-fixturePath": "docs/governance/system-telemetry/external-evidence.fixtures.json",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -177,6 +177,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
+              "grants": { "contains": { "const": "system.sensor.read" } },
               "nativeGrantRefs": { "minItems": 1 }
             }
           },
@@ -206,6 +207,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
+              "grants": { "contains": { "const": "context.weather.read" } },
               "credentialLeaseRefs": { "minItems": 1 },
               "networkAccessApproved": { "const": true }
             }
@@ -235,6 +237,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
+              "grants": { "contains": { "const": "system.control.execute" } },
               "nativeGrantRefs": { "minItems": 1 }
             }
           },

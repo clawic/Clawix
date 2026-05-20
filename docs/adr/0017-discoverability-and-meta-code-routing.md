@@ -28,6 +28,8 @@ New durable Clawix ADRs, docs routers, skills, UI governance artifacts,
 guardrails, harnesses, and surface-route work must be reachable from
 `AGENTS.md`/`CLAUDE.md`, the relevant skill, and applicable CLI/inspect
 surfaces within two hops.
+ADR numbers are repo-local; `adr:*` canonical names are cross-repository
+semantic identifiers for shared decisions.
 
 UI governance stays special: visual/copy/layout authority remains governed by
 `docs/adr/0010-interface-governance.md` and `docs/ui/`. The discoverability

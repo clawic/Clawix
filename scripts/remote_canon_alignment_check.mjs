@@ -118,7 +118,7 @@ for (const snippet of [
   requireSiblingSnippet("docs/adr/0022-remote-gateway-sync-redesign.md", snippet);
   requireSiblingSnippet("docs/relay.md", snippet);
   requireSiblingSnippet("docs/cli.md", snippet);
-  requireSiblingSnippet("docs/remote-gateway-sync-completion-audit.md", snippet);
+  requireSiblingSnippet("docs/governance/remote-gateway-sync/completion.md", snippet);
 }
 
 if (failures.length > 0) {

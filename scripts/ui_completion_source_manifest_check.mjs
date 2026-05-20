@@ -112,7 +112,7 @@ function runFailureSelfTests() {
     [["--simulate-duplicate-expected-decision-id"], "expectedDecisionIds must contain expectedDecisionCount entries"],
     [["--simulate-wrong-expected-decision-choice"], "expectedDecisions[0].choice must be"],
     [["--simulate-wrong-decision-conversation-id"], "expectedConversationId must match docs/ui/decision-verification.json.conversationId"],
-    [["--simulate-audit-missing-source-alias"], "completion-audit.md must include private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001"],
+    [["--simulate-audit-missing-source-alias"], "docs/governance/ui/completion.md must include private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001"],
     [["--simulate-private-verifier-missing-snippet"], "ui_private_completion_source_verify.mjs must include sourceBeforeFirstGoalEvent"],
   ];
 
@@ -289,7 +289,7 @@ for (const [index, decision] of decisions.entries()) {
   }
 }
 
-let completionAudit = read("docs/ui/completion-audit.md");
+let completionAudit = read("docs/governance/ui/completion.md");
 if (args.has("--simulate-audit-missing-source-alias")) {
   completionAudit = completionAudit.replace(String(manifest?.sourceSessionAlias || ""), "private-codex-session:missing");
 }
@@ -299,7 +299,7 @@ for (const snippet of [
   "private session, not published",
   "Do not call update_goal",
 ]) {
-  if (!completionAudit.includes(snippet)) fail(`docs/ui/completion-audit.md must include ${snippet}`);
+  if (!completionAudit.includes(snippet)) fail(`docs/governance/ui/completion.md must include ${snippet}`);
 }
 
 let privateVerifier = read("scripts/ui_private_completion_source_verify.mjs");

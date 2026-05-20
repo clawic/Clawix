@@ -9,6 +9,9 @@ Use this file as a router. Detailed operating rules live in
 - Highest authority: `CONSTITUTION.md`, shared with ClawJS. Read it fully for
   major architecture, product, data, agent, UX, security, or integration
   decisions.
+- Constitution router: `docs/constitution-map.md` maps constitutional
+  principles to operational canon, guardrails, and affected surfaces; it is not
+  a second source of truth.
 - Main router: `docs/decision-map.md`. It maps decision -> document ->
   validation and tells agents which canon/check applies.
 - Operating rules: `docs/agent-rules/index.md`. Keep always-loaded

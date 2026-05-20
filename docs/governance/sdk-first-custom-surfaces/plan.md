@@ -1,7 +1,7 @@
 # SDK-first custom surfaces and nonblocking shell plan
 
 This is the Clawix host-side implementation plan for
-[ADR 0019](./adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md) and
+[ADR 0019](../../adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md) and
 the sibling ClawJS SDK-first custom surface contract.
 
 ## Scope

@@ -4,8 +4,8 @@
   "status": "synthetic_templates_not_closure",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
   "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
-  "approvalFixturesPath": "docs/system-telemetry-external-approval.fixtures.json",
-  "evidenceFixturesPath": "docs/system-telemetry-external-evidence.fixtures.json",
+  "approvalFixturesPath": "docs/governance/system-telemetry/external-approval.fixtures.json",
+  "evidenceFixturesPath": "docs/governance/system-telemetry/external-evidence.fixtures.json",
   "validatorPath": "scripts/validate-system-telemetry-external-closure.mjs",
   "validSyntheticBundles": [
     {
@@ -51,6 +51,12 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.runAuthorization.approvalId=mismatch",
       "reason": "Evidence must reference the exact approval packet in the closure bundle."
+    },
+    {
+      "id": "mismatched_exact_run_scope",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.exactRunScope=mismatch",
+      "reason": "Evidence must use the exact run scope authorized by the app approval packet."
     },
     {
       "id": "mismatched_approval_timestamp",

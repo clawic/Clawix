@@ -34,12 +34,13 @@ for file in \
   "SECURITY.md" \
   "docs/host-ownership.md" \
   "docs/data-storage-boundary.md" \
+  "docs/constitution-map.md" \
   "docs/agent-rules/index.md" \
   "docs/decision-map.md" \
-  "docs/v1-surface-closure-decisions.json" \
-  "docs/v1-surface-closure-acceptance.json" \
-  "docs/v1-surface-closure-validation.json" \
-  "docs/v1-surface-closure-completion-audit.md" \
+  "docs/governance/v1-surface-closure/decisions.json" \
+  "docs/governance/v1-surface-closure/acceptance.json" \
+  "docs/governance/v1-surface-closure/validation.json" \
+  "docs/governance/v1-surface-closure/completion.md" \
   "docs/interface-matrix.md" \
   "docs/interface-surface-clawix.registry.json" \
   "docs/naming-style-guide.md" \
@@ -151,7 +152,9 @@ require_snippet "CLAUDE.md" "AGENTS.md"
 require_snippet "CLAUDE.md" "docs/agent-rules/index.md"
 require_snippet "CLAUDE.md" "docs/decision-map.md"
 require_snippet "AGENTS.md" "docs/decision-map.md"
+require_snippet "AGENTS.md" "docs/constitution-map.md"
 require_snippet "AGENTS.md" "docs/agent-rules/index.md"
+require_snippet "docs/agent-rules/index.md" "docs/constitution-map.md"
 require_snippet "docs/agent-rules/index.md" "docs/host-ownership.md"
 require_snippet "docs/agent-rules/index.md" "docs/data-storage-boundary.md"
 require_snippet "docs/agent-rules/index.md" "principals, entities, scopes, stewards, grants"
@@ -170,6 +173,9 @@ require_snippet "CONSTITUTION.md" "Regulated domains are assistive, never final 
 require_snippet "README.md" "SAFETY.md"
 require_snippet "README.md" "REGULATED_DOMAINS.md"
 require_snippet "docs/decision-map.md" "scripts/legal_safety_check.mjs"
+require_snippet "docs/decision-map.md" "docs/constitution-map.md"
+require_snippet "docs/constitution-map.md" "not a second source of truth"
+require_snippet "docs/constitution-map.md" "Affected surfaces"
 require_snippet "docs/decision-map.md" "governance identity and scope model"
 require_snippet "docs/decision-map.md" "workspace, project, folder, and manifest boundary"
 require_snippet "docs/data-storage-boundary.md" "Governance bindings owned by ClawJS"

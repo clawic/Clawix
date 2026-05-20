@@ -4,7 +4,7 @@
   "status": "synthetic_templates_not_evidence",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
   "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
-  "schemaPath": "docs/system-telemetry-external-evidence.schema.json",
+  "schemaPath": "docs/governance/system-telemetry/external-evidence.schema.json",
   "validSyntheticPackets": [
     {
       "schemaVersion": 1,
@@ -380,6 +380,11 @@
       "id": "preflight_completed_before_authorization",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "preflight.completedAt before runAuthorization.approvedAt"
+    },
+    {
+      "id": "missing_required_run_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "runAuthorization.grants is empty"
     },
     {
       "id": "reviewed_before_execution_completed",

@@ -158,7 +158,7 @@
       "title": "Explicit external pending validation policy",
       "status": "verified",
       "decisionIds": ["external_pending_policy", "external_integrations_policy", "domain_verticals_policy"],
-      "evidence": ["docs/v1-surface-closure-completion-audit.md", "docs/interface-matrix.md", "docs/decision-map.md"],
+      "evidence": ["docs/governance/v1-surface-closure/completion.md", "docs/interface-matrix.md", "docs/decision-map.md"],
       "validationCommands": ["node scripts/v1_surface_closure_audit_check.mjs"]
     }
   ]
