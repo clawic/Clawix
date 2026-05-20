@@ -45,8 +45,8 @@
     },
     {
       "id": "stale_closure_fixture_mutation_count",
-      "mutation": "set_external_closure_fixture_invalid_count_8",
-      "reason": "Future manifests must not downgrade the app closure bundle guard below the current authorization-binding coverage."
+      "mutation": "set_external_closure_fixture_invalid_count_13",
+      "reason": "Future manifests must not downgrade the app closure bundle guard below the current approval-timestamp binding coverage."
     }
   ]
 }

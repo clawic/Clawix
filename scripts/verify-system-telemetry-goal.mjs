@@ -485,8 +485,8 @@ function assertExternalValidationManifestFixtures() {
       case "delete_external_closure_bundle_validator":
         delete mutated.externalClosureBundleValidator;
         break;
-      case "set_external_closure_fixture_invalid_count_8":
-        mutated.externalClosureFixtures.invalidMutationCount = 8;
+      case "set_external_closure_fixture_invalid_count_13":
+        mutated.externalClosureFixtures.invalidMutationCount = 13;
         break;
       default:
         fail(`external validation manifest fixtures: unknown mutation ${fixture.mutation}`);
