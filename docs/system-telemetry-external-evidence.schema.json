@@ -165,5 +165,94 @@
         "decision": { "enum": ["accepted"] }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "laneId": { "const": "CLX-SYS-TEL-EXT-003" } },
+        "required": ["laneId"]
+      },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "nativeGrantRefs": { "minItems": 1 }
+            }
+          },
+          "evidence": {
+            "properties": {
+              "monitorSampleIds": { "minItems": 1 },
+              "sameMachineEvidenceRefs": { "minItems": 1 },
+              "appMenuEvidenceRefs": { "minItems": 1 }
+            }
+          },
+          "closureImpact": {
+            "properties": {
+              "rowsToReplace": { "contains": { "const": "CLX-SYS-TEL-EXT-003" } },
+              "completionAuditRows": { "contains": { "const": "CLX-STA-014" } },
+              "manifestRows": { "contains": { "const": "CLX-SYS-TEL-EXT-003" } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "laneId": { "const": "CLX-SYS-TEL-EXT-004" } },
+        "required": ["laneId"]
+      },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "credentialLeaseRefs": { "minItems": 1 },
+              "networkAccessApproved": { "const": true }
+            }
+          },
+          "evidence": {
+            "properties": {
+              "monitorSampleIds": { "minItems": 1 },
+              "appMenuEvidenceRefs": { "minItems": 1 }
+            }
+          },
+          "closureImpact": {
+            "properties": {
+              "rowsToReplace": { "contains": { "const": "CLX-SYS-TEL-EXT-004" } },
+              "completionAuditRows": { "contains": { "const": "CLX-STA-015" } },
+              "manifestRows": { "contains": { "const": "CLX-SYS-TEL-EXT-004" } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "laneId": { "const": "CLX-SYS-TEL-EXT-005" } },
+        "required": ["laneId"]
+      },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "nativeGrantRefs": { "minItems": 1 }
+            }
+          },
+          "evidence": {
+            "properties": {
+              "appMenuEvidenceRefs": { "minItems": 1 },
+              "physicalValidationRefs": { "minItems": 1 },
+              "rollbackOrContinuityRefs": { "minItems": 1 }
+            }
+          },
+          "closureImpact": {
+            "properties": {
+              "rowsToReplace": { "contains": { "const": "CLX-SYS-TEL-EXT-005" } },
+              "completionAuditRows": { "contains": { "const": "CLX-STA-016" } },
+              "manifestRows": { "contains": { "const": "CLX-SYS-TEL-EXT-005" } }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
