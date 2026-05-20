@@ -38,6 +38,9 @@ only its own lane id, must use the lane's executor, must list only the public
 closure rows for that lane, and must include the lane-specific evidence
 required by this table.
 
+The validator compiles and runs this JSON Schema with Ajv 2020 before applying
+the additional temporal ordering checks that JSON Schema does not express.
+
 ## Lanes
 
 | Lane | Safe preflight | Required approval | Required evidence | Update target | Fail rule |

@@ -199,7 +199,15 @@ function assertPublicRouting() {
       "sidebar_hover_click_expand",
       "rescue_reachability",
       "The public schema also encodes lane-specific gates",
+      "The validator compiles and runs this JSON Schema with Ajv 2020",
       "private source-session verifier",
+    ],
+    "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs": [
+      "Ajv2020",
+      "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+      "schema validation failed",
+      "compileSchema()",
+      "validatePacket(packet, compiledSchema",
     ],
     "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json": [
       "\"title\": \"Clawix SDK-first custom surfaces external evidence packet\"",

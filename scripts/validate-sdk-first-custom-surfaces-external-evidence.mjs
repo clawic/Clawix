@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 
+const require = createRequire(import.meta.url);
+const Ajv2020Module = require("ajv/dist/2020");
+const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = process.argv.slice(2);
+const schemaPath = "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json";
 const requiredFlows = [
   "installed_app_launch",
   "sidebar_hover_click_expand",
@@ -73,6 +78,12 @@ const reviewerKeys = ["reviewedAt", "reviewedBy", "decision"];
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
+}
+
+function compileSchema() {
+  const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
+  const validate = ajv.compile(readJson(schemaPath));
+  return { ajv, validate };
 }
 
 function fail(message) {
@@ -146,8 +157,9 @@ function mergePatch(base, patch) {
   return next;
 }
 
-export function validatePacket(packet) {
+export function validatePacket(packet, compiledSchema = compileSchema()) {
   if (!packet || typeof packet !== "object" || Array.isArray(packet)) fail("packet must be an object");
+  if (!compiledSchema.validate(packet)) fail(`schema validation failed: ${compiledSchema.ajv.errorsText(compiledSchema.validate.errors)}`);
   requireOnlyKeys(packet, packetKeys, "packet");
   const runAuthorization = requireOnlyKeys(packet.runAuthorization, runAuthorizationKeys, "runAuthorization");
   const preflight = requireOnlyKeys(packet.preflight, preflightKeys, "preflight");
@@ -222,13 +234,14 @@ export function validatePacket(packet) {
 
 function runSelfTest() {
   const fixtures = readJson("docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json");
-  for (const packet of fixtures.validSyntheticPackets ?? []) validatePacket(packet);
+  const compiledSchema = compileSchema();
+  for (const packet of fixtures.validSyntheticPackets ?? []) validatePacket(packet, compiledSchema);
   for (const fixture of fixtures.invalidSyntheticPackets ?? []) {
     const base = fixtures.validSyntheticPackets.find((packet) => packet.laneId === fixture.patch?.laneId);
     if (!base) fail(`invalid fixture ${fixture.name} references an unknown lane`);
     let rejected = false;
     try {
-      validatePacket(mergePatch(base, fixture.patch));
+      validatePacket(mergePatch(base, fixture.patch), compiledSchema);
     } catch {
       rejected = true;
     }
