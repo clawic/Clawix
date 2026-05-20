@@ -81,6 +81,63 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.map(\.content), ["Recovered history"])
     }
 
+    func testEmptyClawJSSessionHistoryFallsBackToCodexRollout() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        SessionsHistoryURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, Data(#"{"items":[]}"#.utf8))
+        }
+
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-chat-hydration-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        let rollout = tmp.appendingPathComponent("rollout-thread-1.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-20T10:00:00.000Z","type":"session_meta","payload":{"id":"thread-1","cwd":"/tmp"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Original prompt"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:02.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Fallback history","phase":"final_answer"}}"#
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .chat(chatId)
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-1",
+                historyHydrated: false
+            )
+        ]
+        state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+        state.codexRolloutLocator = { threadId in
+            threadId == "thread-1" ? rollout : nil
+        }
+
+        state.hydrateHistoryIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chats.first?.historyHydrated == true
+        }
+
+        XCTAssertEqual(state.chats.first?.messages.map(\.content), ["Original prompt", "Fallback history"])
+        XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
+    }
+
     private func waitUntil(
         timeout: TimeInterval = 1,
         file: StaticString = #filePath,

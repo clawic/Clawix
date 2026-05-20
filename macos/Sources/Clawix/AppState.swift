@@ -434,6 +434,9 @@ final class AppState: ObservableObject {
     var cachedWireMessagesByChat: [String: [WireMessage]] = [:]
     var optimisticUserMessageIdsByChat: [UUID: Set<UUID>] = [:]
     var clawJSSessionsClientFactory: () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() }
+    var codexRolloutLocator: @Sendable (String) -> URL? = { CodexRolloutLocator.find(threadId: $0) }
+    var codexRolloutPathByThreadId: [String: URL] = [:]
+    var missingCodexRolloutPathThreadIds: Set<String> = []
     var sessionHistoryHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var sessionHistoryHydrationAttempts = 8
     var sessionHistoryHydrationInitialDelayNanos: UInt64 = 250_000_000
@@ -1462,7 +1465,7 @@ final class AppState: ObservableObject {
             messages: old?.messages ?? [],
             createdAt: thread.updatedDate,
             clawixThreadId: thread.id,
-            rolloutPath: thread.path.map { URL(fileURLWithPath: $0) },
+            rolloutPath: thread.path.map { URL(fileURLWithPath: $0) } ?? old?.rolloutPath,
             historyHydrated: old?.historyHydrated ?? false,
             hasActiveTurn: old?.hasActiveTurn ?? false,
             projectId: rootPath.flatMap { projectByPath[$0]?.id },

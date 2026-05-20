@@ -182,6 +182,9 @@ extension AppState {
             defer { self.sessionHistoryHydrationTasks[chatId] = nil }
             do {
                 let records = try await self.loadClawJSSessionMessages(sessionId: threadId)
+                if records.isEmpty, await self.hydrateFromCodexRolloutFallback(threadId: threadId, chatId: chatId) {
+                    return
+                }
                 let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
                 self.applyRolloutMessages(
                     messages,
@@ -189,10 +192,44 @@ extension AppState {
                     chatId: chatId
                 )
             } catch {
+                if await self.hydrateFromCodexRolloutFallback(threadId: threadId, chatId: chatId) {
+                    return
+                }
                 guard self.chat(byId: chatId)?.historyHydrated == false else { return }
                 self.appendRuntimeStatusError("Could not load ClawJS session history: \(error.localizedDescription)")
             }
         }
+    }
+
+    private func hydrateFromCodexRolloutFallback(threadId: String, chatId: UUID) async -> Bool {
+        guard let path = await resolveCodexRolloutPath(threadId: threadId) else { return false }
+        let result = await Task.detached(priority: .userInitiated) {
+            RolloutReader.readTailWithStatus(path: path)
+        }.value
+        mutateChat(id: chatId) { c in
+            c.rolloutPath = path
+        }
+        applyRolloutResult(result, chatId: chatId)
+        return true
+    }
+
+    private func resolveCodexRolloutPath(threadId: String) async -> URL? {
+        if let cached = codexRolloutPathByThreadId[threadId] {
+            return cached
+        }
+        if missingCodexRolloutPathThreadIds.contains(threadId) {
+            return nil
+        }
+        let locator = codexRolloutLocator
+        let found = await Task.detached(priority: .utility) {
+            locator(threadId)
+        }.value
+        if let found {
+            codexRolloutPathByThreadId[threadId] = found
+        } else {
+            missingCodexRolloutPathThreadIds.insert(threadId)
+        }
+        return found
     }
 
     private func loadClawJSSessionMessages(sessionId: String) async throws -> [ClawJSSessionsClient.MessageRecord] {
