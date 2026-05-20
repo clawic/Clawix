@@ -89,7 +89,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_approval" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 4 },
+            "invalidTemplateCount": { "const": 5 },
             "path": { "const": "docs/governance/system-telemetry/external-approval.fixtures.json" }
           }
         }
@@ -119,7 +119,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 7 }
+            "invalidTemplateCount": { "const": 8 }
           }
         }
       ]

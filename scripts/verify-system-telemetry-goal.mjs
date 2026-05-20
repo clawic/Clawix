@@ -62,6 +62,21 @@ function containsForbiddenExternalProductName(text, term) {
   return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
 }
 
+function publicSafetyErrors(value) {
+  const serialized = JSON.stringify(value);
+  const checks = [
+    ["/Users/", "contains private filesystem path"],
+    ["file://", "contains file URL"],
+    ["secret://", "contains raw secret reference"],
+    ["-----BEGIN", "contains key material marker"],
+    ["sk-", "contains raw API key marker"],
+    ["AKIA", "contains raw access key marker"],
+  ];
+  return checks
+    .filter(([pattern]) => serialized.includes(pattern))
+    .map(([, message]) => message);
+}
+
 function run(command, commandArgs, options = {}) {
   try {
     return execFileSync(command, commandArgs, {
@@ -74,6 +89,16 @@ function run(command, commandArgs, options = {}) {
   } catch (error) {
     fail(`${command} ${commandArgs.join(" ")} failed: ${error.stderr || error.message}`);
     return "";
+  }
+}
+
+function runClawJson(commandArgs, options = {}) {
+  const output = run("claw", commandArgs, options);
+  try {
+    return JSON.parse(output);
+  } catch (error) {
+    fail(`claw ${commandArgs.join(" ")} did not return JSON: ${error.message}`);
+    return {};
   }
 }
 
@@ -222,6 +247,8 @@ function assertExternalPendingLedger() {
     "accidental completion or lane-clear mutations fail validation",
     "`node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`",
     "before any row is updated",
+    "`node scripts/verify-system-telemetry-goal.mjs --safe-external-preflight-smoke`",
+    "that smoke test is local evidence only and does not close any external row",
     "`docs/governance/system-telemetry/external-approval.fixtures.json`",
     "not real approval",
     "`node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`",
@@ -248,8 +275,14 @@ function assertExternalPendingLedger() {
     "provider `auditPlan` redaction metadata",
     "portable `auditPlan` redaction metadata",
     "redacted JSONL audit evidence for blocked signed-sensor provider plans",
+    "On 2026-05-20, the safe preflight `claw system providers plan system.sensors.signed --json` returned `willConnect=false`, `externalPending=true`",
+    "visible sensor metric keys, `receipt.status=not_issued`, and a blocked redacted audit plan",
     "not a provider execution receipt",
     "redacted JSONL audit evidence for unsupported/high-risk blocked controls",
+    "On 2026-05-20, the safe preflight `claw system providers plan context.weather.live --json` returned `willConnect=false`, `externalPending=true`",
+    "`networkAccess=blocked_until_granted`, `receipt.status=not_issued`, and a blocked redacted audit plan",
+    "On 2026-05-20, `claw system controls list --json` exposed governed controls without mutation",
+    "the safe preflight `claw system controls plan system.power.sleep --json` returned `willExecute=false`, `externalPending=true`",
     "not an execution receipt",
     "## External Validation Lanes",
     "[System Telemetry External Validation Runbook](./external-validation-runbook.md)",
@@ -341,7 +374,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalApprovalFixtures?.path === "docs/governance/system-telemetry/external-approval.fixtures.json", "external validation manifest: wrong external approval fixtures path");
   assert(manifest.externalApprovalFixtures?.status === "synthetic_templates_not_approval", "external validation manifest: external approval fixtures must be marked synthetic");
   assert(manifest.externalApprovalFixtures?.validTemplateCount === 3, "external validation manifest: wrong external approval valid fixture count");
-  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 4, "external validation manifest: wrong external approval invalid fixture count");
+  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 5, "external validation manifest: wrong external approval invalid fixture count");
   assert(manifest.externalApprovalFixtures?.closureRole?.includes("without representing real approval"), "external validation manifest: external approval fixtures closure role must be explicit");
   assert(manifest.externalApprovalPacketValidator?.required === true, "external validation manifest: external approval validator link must be required");
   assert(manifest.externalApprovalPacketValidator?.artifactId === "clawix-system-telemetry-external-approval-validator", "external validation manifest: wrong external approval validator artifact");
@@ -362,7 +395,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalEvidenceFixtures?.path === "docs/governance/system-telemetry/external-evidence.fixtures.json", "external validation manifest: wrong external evidence fixtures path");
   assert(manifest.externalEvidenceFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: external evidence fixtures must be marked synthetic");
   assert(manifest.externalEvidenceFixtures?.validTemplateCount === 3, "external validation manifest: wrong valid fixture count");
-  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 7, "external validation manifest: wrong invalid fixture count");
+  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 8, "external validation manifest: wrong invalid fixture count");
   assert(manifest.externalEvidenceFixtures?.closureRole?.includes("without representing real external evidence"), "external validation manifest: external evidence fixtures closure role must be explicit");
   assert(manifest.externalEvidencePacketValidator?.required === true, "external validation manifest: external evidence validator link must be required");
   assert(manifest.externalEvidencePacketValidator?.artifactId === "clawix-system-telemetry-external-evidence-validator", "external validation manifest: wrong external evidence validator artifact");
@@ -518,6 +551,9 @@ function mutateApprovalTemplate(packet, mutation) {
     case "approval.expiresAt=beforeApprovedAt":
       mutated.approval.expiresAt = "2026-05-19T23:59:59Z";
       break;
+    case "authorization.credentialLeaseRefs=rawSecretRef":
+      mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
+      break;
     default:
       fail(`external approval fixtures: unknown mutation ${mutation}`);
   }
@@ -526,6 +562,7 @@ function mutateApprovalTemplate(packet, mutation) {
 
 function approvalTemplateErrors(packet, validate, ajv) {
   const errors = [];
+  errors.push(...publicSafetyErrors(packet));
   if (!validate(packet)) errors.push(ajv.errorsText(validate.errors));
   const approvedAt = Date.parse(packet.approval?.approvedAt);
   const expiresAt = Date.parse(packet.approval?.expiresAt);
@@ -606,7 +643,7 @@ function assertExternalApprovalFixtures() {
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-approval.schema.json", "external approval fixtures: wrong schema path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-approval.mjs", "external approval fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external approval fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 4, "external approval fixtures: must contain 4 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 5, "external approval fixtures: must contain 5 invalid synthetic packets");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   const validByLaneId = new Map();
@@ -636,7 +673,7 @@ function assertExternalApprovalValidator() {
   assert(result.ok === true, "external approval validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_approval", "external approval validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external approval validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 4, "external approval validator: must reject 4 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 5, "external approval validator: must reject 5 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external approval validator: missing accepted fixture for ${rowId}`);
   }
@@ -687,6 +724,14 @@ function assertExternalValidationRunbook() {
     "Pre-execution plan with `willExecute=true` only after approval",
     "app/menu evidence, and rollback/continuity evidence",
     "failed approved execution is a defect",
+    "## Exact Approval Inputs",
+    "These are the minimum public-safe fields that must be resolved before building",
+    "They are not approval by themselves.",
+    "native `system.sensor.read` grant reference",
+    "credential lease reference, location grant reference, network approval",
+    "exact control id, target, value, native grant reference",
+    "Must stay absent from public artifacts",
+    "If any required field is still unknown, keep the lane as `EXTERNAL PENDING`",
     "Do not mark the goal complete until every lane above is either replaced with",
     "source reread, completion audit, approval schema check, evidence schema check,",
     "same-lane closure bundle check",
@@ -777,6 +822,7 @@ function assertExternalEvidenceSchema() {
 
 function evidenceTemplateErrors(packet, validate, ajv) {
   const errors = [];
+  errors.push(...publicSafetyErrors(packet));
   if (!validate(packet)) errors.push(ajv.errorsText(validate.errors));
   const approvedAt = Date.parse(packet.runAuthorization?.approvedAt);
   const preflightCompletedAt = Date.parse(packet.preflight?.completedAt);
@@ -819,6 +865,9 @@ function mutateEvidenceTemplate(packet, mutation) {
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
       break;
+    case "evidence.appMenuEvidenceRefs=privatePath":
+      mutated.evidence.appMenuEvidenceRefs = ["file://private/menu-evidence-template.png"];
+      break;
     default:
       return undefined;
   }
@@ -834,7 +883,7 @@ function assertExternalEvidenceFixtures() {
   assert(fixtures.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external evidence fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-evidence.schema.json", "external evidence fixtures: wrong schema path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external evidence fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 7, "external evidence fixtures: must contain 7 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 8, "external evidence fixtures: must contain 8 invalid synthetic packets");
   const schema = readJson("docs/governance/system-telemetry/external-evidence.schema.json");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
@@ -867,7 +916,7 @@ function assertExternalEvidenceValidator() {
   assert(result.ok === true, "external evidence validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_evidence", "external evidence validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external evidence validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 7, "external evidence validator: must reject 7 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 8, "external evidence validator: must reject 8 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external evidence validator: missing accepted fixture for ${rowId}`);
   }
@@ -918,7 +967,7 @@ function assertSourceQaReview() {
   assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
   assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
   assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
-  assert(review.reviewedUserRoleMessages === 152, "source Q/A review: reviewed user-role message count drifted");
+  assert(review.reviewedUserRoleMessages === 157, "source Q/A review: reviewed user-role message count drifted");
   assert(review.decisionBearingRowsReviewed === 12, "source Q/A review: decision-bearing row count drifted");
   for (const decisionId of ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"]) {
     assert(review.decisionIdsReviewed?.includes(decisionId), `source Q/A review: missing ${decisionId}`);
@@ -985,10 +1034,14 @@ function assertCompletionAudit() {
     "| CLX-STA-014 | Surface physical sensor/fan values in the app/menu",
     "| CLX-STA-015 | Display live external context provider values in menu-bar widgets.",
     "| CLX-STA-016 | Execute dangerous controls from UI only through governed signed-host plans.",
+    "2026-05-20 safe preflight with `willConnect=false`/`externalPending=true`",
+    "2026-05-20 safe preflight returned `willExecute=false`/`externalPending=true`",
     "`CLX-SYS-TEL-EXT-003` requires compatible hardware/provider",
     "`CLX-SYS-TEL-EXT-004` requires approved provider access",
     "`CLX-SYS-TEL-EXT-005` requires exact approval",
     "The goal cannot be marked complete while any `external-pending` row remains",
+    "`--safe-external-preflight-smoke` verifier mode proves the remaining lanes are",
+    "but it is not external closure evidence",
   ]) {
     assert(text.includes(snippet), `docs/governance/system-telemetry/completion.md: missing ${JSON.stringify(snippet)}`);
   }
@@ -1454,6 +1507,56 @@ function assertOptionalLiveRecorderSmoke() {
   assert(after.maxCapturedAt > before.maxCapturedAt, `live recorder smoke: expected captured_at to advance after menu Refresh (${before.maxCapturedAt} -> ${after.maxCapturedAt})`);
 }
 
+function assertOptionalSafeExternalPreflightSmoke() {
+  if (!args.has("--safe-external-preflight-smoke")) return;
+
+  const sensorPlan = runClawJson(["system", "providers", "plan", "system.sensors.signed", "--json"]);
+  assert(sensorPlan.ok === true, "safe external preflight: signed sensor provider plan must succeed");
+  assert(sensorPlan.data?.provider?.id === "system.sensors.signed", "safe external preflight: signed sensor provider id mismatch");
+  assert(sensorPlan.data?.willConnect === false, "safe external preflight: signed sensor plan must not connect");
+  assert(sensorPlan.data?.externalPending === true, "safe external preflight: signed sensor plan must remain external pending");
+  assert(sensorPlan.data?.broker?.failClosed === true, "safe external preflight: signed sensor broker must fail closed");
+  assert(sensorPlan.data?.policy?.requiredGrants?.includes("system.sensor.read"), "safe external preflight: signed sensor plan must require system.sensor.read");
+  assert(sensorPlan.data?.provider?.metrics?.includes("system.sensor.temperature"), "safe external preflight: signed sensor plan must expose temperature metric");
+  assert(sensorPlan.data?.provider?.metrics?.includes("system.sensor.fan_speed"), "safe external preflight: signed sensor plan must expose fan speed metric");
+  assert(sensorPlan.data?.receipt?.status === "not_issued", "safe external preflight: signed sensor plan must not issue execution receipt");
+  assert(sensorPlan.data?.auditPlan?.outcome === "blocked", "safe external preflight: signed sensor audit plan must be blocked");
+
+  const weatherPlan = runClawJson(["system", "providers", "plan", "context.weather.live", "--json"]);
+  assert(weatherPlan.ok === true, "safe external preflight: live weather provider plan must succeed");
+  assert(weatherPlan.data?.provider?.id === "context.weather.live", "safe external preflight: live weather provider id mismatch");
+  assert(weatherPlan.data?.willConnect === false, "safe external preflight: live weather plan must not connect");
+  assert(weatherPlan.data?.externalPending === true, "safe external preflight: live weather plan must remain external pending");
+  assert(weatherPlan.data?.broker?.failClosed === true, "safe external preflight: live weather broker must fail closed");
+  assert(weatherPlan.data?.policy?.credentialRefRequired === true, "safe external preflight: live weather plan must require credential ref");
+  assert(weatherPlan.data?.policy?.networkAccess === "blocked_until_granted", "safe external preflight: live weather network access must be blocked until granted");
+  assert(weatherPlan.data?.policy?.requiredGrants?.includes("weather.location.read"), "safe external preflight: live weather plan must require location grant");
+  assert(weatherPlan.data?.provider?.metrics?.includes("context.weather.temperature"), "safe external preflight: live weather plan must expose weather temperature metric");
+  assert(weatherPlan.data?.receipt?.status === "not_issued", "safe external preflight: live weather plan must not issue execution receipt");
+  assert(weatherPlan.data?.auditPlan?.outcome === "blocked", "safe external preflight: live weather audit plan must be blocked");
+
+  const controlsList = runClawJson(["system", "controls", "list", "--json"]);
+  assert(controlsList.ok === true, "safe external preflight: controls list must succeed");
+  assert(controlsList.data?.mutatesHardware === false, "safe external preflight: controls list must not mutate hardware");
+  assert(controlsList.data?.execution === "plan_first_signed_host_only", "safe external preflight: controls list must stay plan-first");
+  const controlIds = new Set((controlsList.data?.controls ?? []).map((control) => control.id));
+  for (const controlId of ["system.fan.set_speed", "system.power.sleep", "system.process.terminate", "system.network.toggle_interface"]) {
+    assert(controlIds.has(controlId), `safe external preflight: controls list missing ${controlId}`);
+  }
+
+  const controlPlan = runClawJson(["system", "controls", "plan", "system.power.sleep", "--json"]);
+  assert(controlPlan.ok === true, "safe external preflight: power sleep control plan must succeed");
+  assert(controlPlan.data?.action?.id === "system.power.sleep", "safe external preflight: power sleep control id mismatch");
+  assert(controlPlan.data?.willExecute === false, "safe external preflight: power sleep plan must not execute");
+  assert(controlPlan.data?.externalPending === true, "safe external preflight: power sleep plan must remain external pending");
+  assert(controlPlan.data?.broker?.failClosed === true, "safe external preflight: power sleep broker must fail closed");
+  assert(controlPlan.data?.policy?.requiresConfirmation === true, "safe external preflight: power sleep plan must require confirmation");
+  assert(controlPlan.data?.policy?.requiredGrants?.includes("system.power.control"), "safe external preflight: power sleep plan must require power control grant");
+  assert(controlPlan.data?.steps?.some((step) => step.id === "execute_native_action" && step.status === "blocked"), "safe external preflight: power sleep native execution step must be blocked");
+  assert(controlPlan.data?.receipt?.status === "not_issued", "safe external preflight: power sleep plan must not issue execution receipt");
+  assert(controlPlan.data?.auditPlan?.outcome === "blocked", "safe external preflight: power sleep audit plan must be blocked");
+}
+
 function main() {
   seedLocalMonitorHistory();
   assertNoForbiddenPublicNames();
@@ -1480,6 +1583,7 @@ function main() {
   assertOptionalSwiftTests();
   assertOptionalAccessibilitySmoke();
   assertOptionalLiveRecorderSmoke();
+  assertOptionalSafeExternalPreflightSmoke();
 
   if (errors.length) {
     console.error(`Clawix system telemetry goal verifier failed with ${errors.length} issue(s):`);

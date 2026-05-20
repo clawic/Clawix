@@ -59,6 +59,21 @@ before updating any ledger, manifest, completion audit, or source Q/A review.
 | CLX-SYS-TEL-EXT-004 | `claw system providers plan context.weather.live --json` must return fail-closed plan metadata with no network call before the app displays a live provider value. | Approved credential/account lease, location grant, network access, and exact live provider call approval. | Provider execution receipt, redacted audit event, Monitor sample IDs for `context.weather.temperature`, and menu widget evidence without precise location leakage. | Replace `CLX-SYS-TEL-EXT-004` in the ledger, manifest, completion audit, and source Q/A review only after evidence is present. | Missing credential, grant, receipt, audit, sample, or downstream menu evidence stays `EXTERNAL PENDING`; a failed approved run is a defect, not a pending row. |
 | CLX-SYS-TEL-EXT-005 | `claw system controls plan <control-id> --json` must stay plan-first and fail-closed until approval, and the app must expose only governed plan/confirmation state before execution. | Exact action, target, value, risk tier, grants, native confirmation, signed-host broker, and rollback/continuity plan. | Pre-execution plan with `willExecute=true` only after approval, signed-host execution receipt, redacted audit event, physical validation, app/menu evidence, and rollback/continuity evidence. | Replace `CLX-SYS-TEL-EXT-005` in the ledger, manifest, completion audit, and source Q/A review only after evidence is present. | Missing exact approval, native confirmation, receipt, audit, physical validation, app/menu evidence, or rollback/continuity evidence stays `EXTERNAL PENDING`; failed approved execution is a defect. |
 
+## Exact Approval Inputs
+
+These are the minimum public-safe fields that must be resolved before building
+an approval packet. They are not approval by themselves.
+
+| Lane | Required exact-run fields | Must stay absent from public artifacts |
+| --- | --- | --- |
+| Sensor lane (`CLX-SYS-TEL-EXT-003`) | `approvalId`, approval window, approving actor, signed app reference, compatible hardware/provider reference, native `system.sensor.read` grant reference, exact physical read scope, same-machine menu validation plan. | Private machine identifiers, raw hardware serials, private filesystem paths, and any unredacted sensor-provider internals. |
+| Live provider lane (`CLX-SYS-TEL-EXT-004`) | `approvalId`, approval window, approving actor, signed app reference, credential lease reference, location grant reference, network approval, exact provider-call scope, same-machine menu validation plan. | Raw credential material, precise stored location, provider account secrets, private filesystem paths, and full provider responses beyond redacted receipts/sample ids. |
+| Control lane (`CLX-SYS-TEL-EXT-005`) | `approvalId`, approval window, approving actor, signed app reference, exact control id, target, value, native grant reference, native confirmation reference, rollback or continuity plan, physical validation plan, same-machine menu validation plan. | Sensitive target details unless redacted, raw process/network identifiers when not required for the receipt, private filesystem paths, secrets, and unredacted rollback material. |
+
+If any required field is still unknown, keep the lane as `EXTERNAL PENDING` and
+rerun only the safe preflight command. If an approved run fails after these
+fields are present, treat it as a real defect, not as a pending prerequisite.
+
 ## Closure Rule
 
 Do not mark the goal complete until every lane above is either replaced with

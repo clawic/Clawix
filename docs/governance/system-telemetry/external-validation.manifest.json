@@ -70,7 +70,7 @@
     "path": "docs/governance/system-telemetry/external-approval.fixtures.json",
     "status": "synthetic_templates_not_approval",
     "validTemplateCount": 3,
-    "invalidTemplateCount": 4,
+    "invalidTemplateCount": 5,
     "closureRole": "proves the app approval schema accepts complete exact-run approvals and rejects expired, incomplete signed-app, or app-menu approval packets without representing real approval"
   },
   "externalApprovalPacketValidator": {
@@ -99,7 +99,7 @@
     "path": "docs/governance/system-telemetry/external-evidence.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 3,
-    "invalidTemplateCount": 7,
+    "invalidTemplateCount": 8,
     "closureRole": "proves the evidence schema accepts complete synthetic lane packets and rejects incomplete, temporally invalid, or failed approved-run packets without representing real external evidence"
   },
   "externalEvidencePacketValidator": {

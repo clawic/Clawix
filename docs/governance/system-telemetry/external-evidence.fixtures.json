@@ -390,6 +390,11 @@
       "id": "reviewed_before_execution_completed",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "reviewer.reviewedAt before execution.completedAt"
+    },
+    {
+      "id": "private_path_in_app_menu_evidence",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidence.appMenuEvidenceRefs=privatePath"
     }
   ]
 }

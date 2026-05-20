@@ -39,6 +39,11 @@ function assert(condition, message) {
 function assertPublicSafe(value, label) {
   const serialized = JSON.stringify(value);
   assert(!serialized.includes("/Users/"), `${label}: contains a private filesystem path`);
+  assert(!serialized.includes("file://"), `${label}: contains a file URL`);
+  assert(!serialized.includes("secret://"), `${label}: contains a raw secret reference`);
+  assert(!serialized.includes("-----BEGIN"), `${label}: contains key material marker`);
+  assert(!serialized.includes("sk-"), `${label}: contains raw API key marker`);
+  assert(!serialized.includes("AKIA"), `${label}: contains raw access key marker`);
 }
 
 function compileSchema(schemaPath) {

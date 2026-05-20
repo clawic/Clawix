@@ -169,6 +169,11 @@
       "id": "approval_expiry_before_approval",
       "mutation": "approval.expiresAt=beforeApprovedAt",
       "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
+      "id": "raw_secret_reference",
+      "mutation": "authorization.credentialLeaseRefs=rawSecretRef",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
     }
   ]
 }

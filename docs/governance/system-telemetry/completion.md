@@ -36,12 +36,14 @@ can be cleared.
 | CLX-STA-011 | Separate external prerequisites from bugs. | validated-local | External pending ledger, external validation manifest, source Q/A review, and decision matrix D11. | External rows block goal completion until cleared or explicitly accepted later by the user. |
 | CLX-STA-012 | Re-read source decisions one by one before any completion claim. | active-closure-gate | `docs/governance/system-telemetry/source-review.json`, private audit alias, external manifest `sourceQaReview`, and verifier checks. | Final source reread must be repeated before `update_goal complete`. |
 | CLX-STA-013 | Keep public materials free of disallowed third-party product names. | validated-local | Boundary-aware forbidden-name scans in the Clawix verifier and final private scan record. | Repeat scan before completion. |
-| CLX-STA-014 | Surface physical sensor/fan values in the app/menu from compatible hardware and native grant. | external-pending | Bridge decoding, unavailable metric handling, signed sensor plans, and provider audit metadata exist. | `CLX-SYS-TEL-EXT-003` requires compatible hardware/provider, grant, receipt/audit, Monitor sample IDs, and same-machine app/menu evidence. |
-| CLX-STA-015 | Display live external context provider values in menu-bar widgets. | external-pending | Fixture/offline context samples, provider rows, redacted credential projection, and local menu decoding exist. | `CLX-SYS-TEL-EXT-004` requires approved provider access, location/network grant, provider receipt, audit event, Monitor sample IDs, and menu evidence. |
-| CLX-STA-016 | Execute dangerous controls from UI only through governed signed-host plans. | external-pending | Bridge decodes control catalog/plans and tests plan-only requests. | `CLX-SYS-TEL-EXT-005` requires exact approval, native confirmation, signed-host execution receipt, physical validation, and rollback/continuity evidence. |
+| CLX-STA-014 | Surface physical sensor/fan values in the app/menu from compatible hardware and native grant. | external-pending | Bridge decoding, unavailable metric handling, signed sensor plans, provider audit metadata, and 2026-05-20 safe preflight with `willConnect=false`/`externalPending=true` exist. | `CLX-SYS-TEL-EXT-003` requires compatible hardware/provider, grant, receipt/audit, Monitor sample IDs, and same-machine app/menu evidence. |
+| CLX-STA-015 | Display live external context provider values in menu-bar widgets. | external-pending | Fixture/offline context samples, provider rows, redacted credential projection, local menu decoding, and 2026-05-20 safe preflight with `willConnect=false`/`externalPending=true` exist. | `CLX-SYS-TEL-EXT-004` requires approved provider access, location/network grant, provider receipt, audit event, Monitor sample IDs, and menu evidence. |
+| CLX-STA-016 | Execute dangerous controls from UI only through governed signed-host plans. | external-pending | Bridge decodes control catalog/plans, tests plan-only requests, and 2026-05-20 safe preflight returned `willExecute=false`/`externalPending=true` for a critical control. | `CLX-SYS-TEL-EXT-005` requires exact approval, native confirmation, signed-host execution receipt, physical validation, and rollback/continuity evidence. |
 
 ## Closure Rule
 
 The goal cannot be marked complete while any `external-pending` row remains
 without accepted evidence, or while the final source reread and forbidden-name
-scan have not been repeated in the current completion attempt.
+scan have not been repeated in the current completion attempt. The local
+`--safe-external-preflight-smoke` verifier mode proves the remaining lanes are
+still plan-first and fail-closed, but it is not external closure evidence.

@@ -28,6 +28,21 @@ function fail(message, details = undefined) {
   process.exit(1);
 }
 
+function publicSafetyErrors(value) {
+  const serialized = JSON.stringify(value);
+  const checks = [
+    ["/Users/", "packet contains a private filesystem path"],
+    ["file://", "packet contains a file URL"],
+    ["secret://", "packet contains a raw secret reference"],
+    ["-----BEGIN", "packet contains key material marker"],
+    ["sk-", "packet contains raw API key marker"],
+    ["AKIA", "packet contains raw access key marker"],
+  ];
+  return checks
+    .filter(([pattern]) => serialized.includes(pattern))
+    .map(([, message]) => message);
+}
+
 function compileSchema() {
   const schema = readJson(schemaPath);
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
@@ -43,10 +58,7 @@ function assertPublicSafePacket(packet, label) {
 
 function approvalPacketErrors(packet, compiled) {
   const errors = [];
-  const serialized = JSON.stringify(packet);
-  if (serialized.includes("/Users/")) {
-    errors.push("packet contains a private filesystem path");
-  }
+  errors.push(...publicSafetyErrors(packet));
   if (!compiled.validate(packet)) {
     errors.push(`schema: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
   }
@@ -78,6 +90,9 @@ function mutateTemplate(packet, mutation) {
       break;
     case "approval.expiresAt=beforeApprovedAt":
       mutated.approval.expiresAt = "2026-05-19T23:59:59Z";
+      break;
+    case "authorization.credentialLeaseRefs=rawSecretRef":
+      mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
       break;
     default:
       fail(`unknown approval fixture mutation ${mutation}`);
