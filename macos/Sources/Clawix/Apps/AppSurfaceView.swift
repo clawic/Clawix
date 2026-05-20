@@ -703,6 +703,12 @@ struct AppActivationReviewPresentation: Equatable {
                     value: provenance.signatureStatus.displayLabel
                 )
             )
+            if let keyId = provenance.signatureKeyId?.nilIfEmpty {
+                lines.append(AppActivationReviewLine(title: "Signature key", value: keyId))
+            }
+            if let trustSource = provenance.signatureTrustSource?.nilIfEmpty {
+                lines.append(AppActivationReviewLine(title: "Trust source", value: trustSource))
+            }
             if let digest = provenance.packageDigestSHA256?.nilIfEmpty {
                 lines.append(AppActivationReviewLine(title: "Package SHA-256", value: digest))
             }

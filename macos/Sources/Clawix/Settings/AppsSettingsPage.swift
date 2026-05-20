@@ -569,6 +569,12 @@ struct AppsSettingsTrustAuditRowPresentation: Identifiable, Equatable {
         if let signature = event.signatureStatus {
             parts.append("Signature: \(signature.displayLabel)")
         }
+        if let keyId = event.signatureKeyId, !keyId.isEmpty {
+            parts.append("Signature key: \(keyId)")
+        }
+        if let trustSource = event.signatureTrustSource, !trustSource.isEmpty {
+            parts.append("Trust source: \(trustSource)")
+        }
         if let digest = event.packageDigestSHA256, !digest.isEmpty {
             parts.append("Package SHA-256: \(digest)")
         }
@@ -833,6 +839,12 @@ struct AppsSettingsTrustPresentation: Equatable {
                 "Signature: \(provenance.signatureStatus.displayLabel)",
                 "Package: \(provenance.packageKind)"
             ]
+            if let keyId = provenance.signatureKeyId, !keyId.isEmpty {
+                parts.append("Signature key: \(keyId)")
+            }
+            if let trustSource = provenance.signatureTrustSource, !trustSource.isEmpty {
+                parts.append("Trust source: \(trustSource)")
+            }
             if let digest = provenance.packageDigestSHA256, !digest.isEmpty {
                 parts.append("Package SHA-256: \(digest)")
             }

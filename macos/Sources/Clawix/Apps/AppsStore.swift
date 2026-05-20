@@ -35,6 +35,7 @@ final class AppsStore: ObservableObject {
     private let fileManager: FileManager
     private let manifestName = "manifest.json"
     private let loadOperation: LoadOperation
+    private let packageTrustPolicy: AppPackageTrustPolicy
     private var pollingTimer: Timer?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
@@ -47,10 +48,15 @@ final class AppsStore: ObservableObject {
         fileManager: FileManager = .default,
         autoLoad: Bool = true,
         startPolling: Bool = true,
+        packageTrustPolicy: AppPackageTrustPolicy? = nil,
         loadOperation: LoadOperation? = nil
     ) {
         self.fileManager = fileManager
         self.rootURL = rootURL ?? AppsStore.defaultRootURL(fileManager: fileManager)
+        self.packageTrustPolicy = packageTrustPolicy ?? AppPackageTrustPolicy.load(
+            from: AppPackageTrustPolicy.defaultURL(forAppsRoot: self.rootURL),
+            fileManager: fileManager
+        )
         self.loadOperation = loadOperation ?? { rootURL, manifestName in
             try await AppsStore.loadSnapshot(rootURL: rootURL, manifestName: manifestName)
         }
@@ -248,7 +254,7 @@ final class AppsStore: ObservableObject {
     func importApp(
         from sourceURL: URL,
         originClass: AppOriginClass = .imported,
-        trustedSignaturePublicKeys: [String: Curve25519.Signing.PublicKey] = [:]
+        trustedSignaturePublicKeys: [String: Curve25519.Signing.PublicKey]? = nil
     ) throws -> AppRecord {
         try AppPackageImportValidator.validateSourceDirectory(sourceURL, manifestName: manifestName)
         let manifestURL = sourceURL.appendingPathComponent(manifestName)
@@ -265,10 +271,17 @@ final class AppsStore: ObservableObject {
             sourceURL: sourceURL,
             manifestName: manifestName
         )
-        let signatureStatus = try AppPackageImportValidator.signatureStatus(
+        let trustPolicy = trustedSignaturePublicKeys.map { keys in
+            AppPackageTrustPolicy(
+                trustedSignatureKeys: keys.map {
+                    AppPackageTrustPolicy.TrustedSignatureKey(keyId: $0.key, publicKey: $0.value)
+                }
+            )
+        } ?? packageTrustPolicy
+        let signatureEvaluation = try AppPackageImportValidator.signatureEvaluation(
             sourceURL: sourceURL,
             packageDigestSHA256: packageDigest,
-            trustedPublicKeys: trustedSignaturePublicKeys
+            trustPolicy: trustPolicy
         )
         let sourceSlug = record.slug
         let sourceOriginClass = record.originClass
@@ -284,7 +297,9 @@ final class AppsStore: ObservableObject {
             sourcePath: sourceURL.standardizedFileURL.path,
             sourceSlug: sourceSlug,
             sourceOriginClass: sourceOriginClass,
-            signatureStatus: signatureStatus,
+            signatureStatus: signatureEvaluation.status,
+            signatureKeyId: signatureEvaluation.keyId,
+            signatureTrustSource: signatureEvaluation.trustSource,
             packageDigestSHA256: packageDigest
         )
         if originClass == .imported || originClass == .marketplace {

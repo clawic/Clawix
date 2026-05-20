@@ -54,6 +54,8 @@ function assertCompletionAudit() {
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
     "| CLX-SDK-004 | High-risk actions interrupt only",
     "| CLX-SDK-005 | Imported/marketplace apps require origin/capability/risk ficha",
+    "host-local `app-package-trust-roots.json` policy",
+    "signature key/trust-source provenance",
     "| CLX-SDK-006 | Protected routes and variants keep secrets",
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md",
     "verified a local `database/tasks` variant default rendered as `User`",
@@ -77,6 +79,7 @@ function assertCompletionAudit() {
   assert(!text.includes("/Users/"), "docs/sdk-first-custom-surfaces-completion-audit.md: must not publish private filesystem paths");
   for (const [rowId, status] of [
     ["CLX-SDK-004", "EXTERNAL PENDING"],
+    ["CLX-SDK-005", "VALIDATED LOCAL"],
     ["CLX-SDK-006", "VALIDATED LOCAL"],
     ["CLX-SDK-007", "VALIDATED LOCAL"],
     ["CLX-SDK-008", "EXTERNAL PENDING"],
@@ -246,9 +249,29 @@ function assertRuntimeArtifacts() {
       "AppSwiftSurfaceContract.manifestFilename",
       "contentDigestSHA256",
       "package-signature.json",
+      "signatureEvaluation",
       "Curve25519.Signing.PublicKey",
       "signaturePayload",
       "AppPackageSignatureManifest",
+    ],
+    "macos/Sources/Clawix/Apps/AppPackageTrustPolicy.swift": [
+      "app-package-trust-roots.json",
+      "TrustedSignatureKey",
+      "trustSource",
+      "ed25519",
+    ],
+    "macos/Sources/Clawix/Apps/AppRecord.swift": [
+      "signatureKeyId",
+      "signatureTrustSource",
+    ],
+    "macos/Sources/Clawix/Apps/AppTrustAudit.swift": [
+      "signatureKeyId",
+      "signatureTrustSource",
+    ],
+    "macos/Sources/Clawix/Apps/AGENT_CONTRACT.md": [
+      "app-package-trust-roots.json",
+      "signatureKeyId",
+      "signatureTrustSource",
     ],
     "macos/Sources/Clawix/Apps/AppVariantDefaultsStore.swift": [
       "case workspace",
@@ -287,9 +310,13 @@ function assertTests() {
       "testSwiftSurfaceSearchQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
       "testSystemTelemetryBridgeValuesMatchSdkContracts",
+      "Signature key",
+      "Trust source",
     ],
     "macos/Tests/ClawixMeshTests/AppsStoreCancellationTests.swift": [
-      "testImportAppVerifiesSignedPackageDigestWhenTrustedKeyMatches",
+      "testImportAppVerifiesSignedPackageDigestWithHostTrustPolicy",
+      "AppPackageTrustPolicy.defaultURL",
+      "signatureTrustSource",
       "testImportAppMarksPackageSignatureFailedWhenDigestChanges",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [

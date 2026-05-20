@@ -135,7 +135,9 @@ The host also writes `packageProvenance` on import:
     "sourceSlug": "focus-panel",
     "sourceOriginClass": "localUserAuthored",
     "packageKind": "folder",
-    "signatureStatus": "notVerified",
+    "signatureStatus": "verified",
+    "signatureKeyId": "marketplace-root-1",
+    "signatureTrustSource": "host-local",
     "packageDigestSHA256": "d2a6...f91c",
     "reviewReason": "Imported packages require local review before activation."
   }
@@ -145,12 +147,13 @@ The host also writes `packageProvenance` on import:
 Agents should not forge `packageProvenance`, `activationReview`, or signature
 state. Those fields are host-owned trust records. Packages may include a
 host-verified `package-signature.json` with an Ed25519 signature over the
-canonical package digest. The signature can set `signatureStatus` to `verified`
-or `failed`, but it never bypasses the review ficha. Unsigned packages remain
-explicit `notVerified` packages. `packageDigestSHA256` is a host-computed
-content fingerprint of the validated folder package; by itself it is not a
-signature and does not imply trust, but it lets the user and future tooling
-compare the reviewed package contents.
+canonical package digest. The host verifies signatures only against explicit
+trust roots in `app-package-trust-roots.json`; verified packages record
+`signatureKeyId` and `signatureTrustSource`, but verification never bypasses
+the review ficha. Unsigned packages remain explicit `notVerified` packages.
+`packageDigestSHA256` is a host-computed content fingerprint of the validated
+folder package; by itself it is not a signature and does not imply trust, but it
+lets the user and future tooling compare the reviewed package contents.
 
 The host also appends trust events to `trust-audit.jsonl` inside the managed app
 folder. Current events are `packageImported` and `activationApproved`. Activation

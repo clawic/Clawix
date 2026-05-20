@@ -187,6 +187,8 @@ struct AppPackageProvenance: Codable, Equatable, Hashable {
     var sourceOriginClass: AppOriginClass?
     var packageKind: String
     var signatureStatus: AppPackageSignatureStatus
+    var signatureKeyId: String?
+    var signatureTrustSource: String?
     var packageDigestSHA256: String?
     var reviewReason: String
 
@@ -198,6 +200,8 @@ struct AppPackageProvenance: Codable, Equatable, Hashable {
         sourceOriginClass: AppOriginClass? = nil,
         packageKind: String = "folder",
         signatureStatus: AppPackageSignatureStatus = .notVerified,
+        signatureKeyId: String? = nil,
+        signatureTrustSource: String? = nil,
         packageDigestSHA256: String? = nil,
         reviewReason: String = "Imported packages require local review before activation."
     ) {
@@ -208,6 +212,8 @@ struct AppPackageProvenance: Codable, Equatable, Hashable {
         self.sourceOriginClass = sourceOriginClass
         self.packageKind = packageKind
         self.signatureStatus = signatureStatus
+        self.signatureKeyId = signatureKeyId
+        self.signatureTrustSource = signatureTrustSource
         self.packageDigestSHA256 = packageDigestSHA256
         self.reviewReason = reviewReason
     }

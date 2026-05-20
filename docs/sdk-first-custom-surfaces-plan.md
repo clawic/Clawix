@@ -82,8 +82,9 @@ the sibling ClawJS SDK-first custom surface contract.
   is read and rendered as a user default in Apps settings, then opens through
   the isolated `clawix-app://` Web surface.
 - Imported packages compute a canonical package SHA-256, can verify an
-  optional Ed25519 `package-signature.json` against trusted host keys, and
-  still require the origin/capability/risk ficha before activation.
+  optional Ed25519 `package-signature.json` against host-local
+  `app-package-trust-roots.json` keys, record the verified key/trust source,
+  and still require the origin/capability/risk ficha before activation.
 - Swift custom surfaces have a constrained process/bridge design before
   executing user Swift in the main app, including a versioned runner IPC
   `render` message that the host validates against the launch plan before

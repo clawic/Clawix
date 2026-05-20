@@ -70,9 +70,25 @@ enum AppPackageImportValidator {
         packageDigestSHA256: String,
         trustedPublicKeys: [String: Curve25519.Signing.PublicKey]
     ) throws -> AppPackageSignatureStatus {
+        try signatureEvaluation(
+            sourceURL: sourceURL,
+            packageDigestSHA256: packageDigestSHA256,
+            trustPolicy: AppPackageTrustPolicy(
+                trustedSignatureKeys: trustedPublicKeys.map {
+                    AppPackageTrustPolicy.TrustedSignatureKey(keyId: $0.key, publicKey: $0.value)
+                }
+            )
+        ).status
+    }
+
+    static func signatureEvaluation(
+        sourceURL: URL,
+        packageDigestSHA256: String,
+        trustPolicy: AppPackageTrustPolicy
+    ) throws -> AppPackageSignatureEvaluation {
         let signatureURL = sourceURL.appendingPathComponent(signatureFilename, isDirectory: false)
         guard FileManager.default.fileExists(atPath: signatureURL.path) else {
-            return .notVerified
+            return AppPackageSignatureEvaluation(status: .notVerified)
         }
         if try isSymbolicLink(signatureURL) {
             throw AppsStoreImportError.symlinkNotAllowed(signatureURL.path)
@@ -85,16 +101,25 @@ enum AppPackageImportValidator {
             guard manifest.schemaVersion == 1,
                   manifest.algorithm == "ed25519",
                   manifest.digestSHA256 == packageDigestSHA256,
-                  let publicKey = trustedPublicKeys[manifest.keyId],
+                  let trustedKey = trustPolicy.trustedSignatureKey(id: manifest.keyId),
                   let signature = Data(base64Encoded: manifest.signatureBase64) else {
-                return .failed
+                return AppPackageSignatureEvaluation(
+                    status: .failed,
+                    keyId: manifest.keyId,
+                    trustSource: trustPolicy.trustedSignatureKey(id: manifest.keyId)?.trustSource
+                )
             }
-            return publicKey.isValidSignature(
+            let status: AppPackageSignatureStatus = trustedKey.publicKey.isValidSignature(
                 signature,
                 for: signaturePayload(packageDigestSHA256: packageDigestSHA256)
             ) ? .verified : .failed
+            return AppPackageSignatureEvaluation(
+                status: status,
+                keyId: manifest.keyId,
+                trustSource: trustedKey.trustSource
+            )
         } catch {
-            return .failed
+            return AppPackageSignatureEvaluation(status: .failed)
         }
     }
 
@@ -165,6 +190,12 @@ enum AppPackageImportValidator {
         let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey])
         return values.isSymbolicLink == true
     }
+}
+
+struct AppPackageSignatureEvaluation: Equatable, Hashable {
+    var status: AppPackageSignatureStatus
+    var keyId: String?
+    var trustSource: String?
 }
 
 struct AppPackageSignatureManifest: Codable, Equatable, Hashable {

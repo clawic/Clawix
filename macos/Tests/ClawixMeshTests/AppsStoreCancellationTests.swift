@@ -179,13 +179,21 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(audit.first?.packageDigestSHA256, imported.packageProvenance?.packageDigestSHA256)
     }
 
-    func testImportAppVerifiesSignedPackageDigestWhenTrustedKeyMatches() throws {
+    func testImportAppVerifiesSignedPackageDigestWithHostTrustPolicy() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer {
             try? FileManager.default.removeItem(at: root)
             try? FileManager.default.removeItem(at: sourceRoot)
         }
+        let signingKey = Curve25519.Signing.PrivateKey()
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try writeTrustPolicy(
+            keyId: "local-test-key",
+            publicKey: signingKey.publicKey,
+            trustSource: "host-marketplace-test",
+            to: AppPackageTrustPolicy.defaultURL(forAppsRoot: root)
+        )
         let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
         try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
         try writeManifest(AppRecord(slug: "signed-panel", name: "Signed Panel"), to: sourceRoot)
@@ -193,7 +201,6 @@ final class AppsStoreCancellationTests: XCTestCase {
             to: sourceRoot.appendingPathComponent("index.html"),
             options: .atomic
         )
-        let signingKey = Curve25519.Signing.PrivateKey()
         let digest = try AppPackageImportValidator.contentDigestSHA256(
             sourceURL: sourceRoot,
             manifestName: "manifest.json"
@@ -207,13 +214,14 @@ final class AppsStoreCancellationTests: XCTestCase {
 
         let imported = try store.importApp(
             from: sourceRoot,
-            originClass: .marketplace,
-            trustedSignaturePublicKeys: ["local-test-key": signingKey.publicKey]
+            originClass: .marketplace
         )
 
         XCTAssertEqual(imported.effectiveOriginClass, .marketplace)
         XCTAssertNil(imported.activationReview)
         XCTAssertEqual(imported.packageProvenance?.signatureStatus, .verified)
+        XCTAssertEqual(imported.packageProvenance?.signatureKeyId, "local-test-key")
+        XCTAssertEqual(imported.packageProvenance?.signatureTrustSource, "host-marketplace-test")
         XCTAssertEqual(imported.packageProvenance?.packageDigestSHA256, digest)
         if case .reviewRequired = AppCapabilityCatalog.activationGate(for: imported) {
             // Signed packages still require the origin/capability/risk ficha.
@@ -222,6 +230,8 @@ final class AppsStoreCancellationTests: XCTestCase {
         }
         let audit = try AppTrustAudit.read(from: store.trustAuditURL(for: imported))
         XCTAssertEqual(audit.first?.signatureStatus, .verified)
+        XCTAssertEqual(audit.first?.signatureKeyId, "local-test-key")
+        XCTAssertEqual(audit.first?.signatureTrustSource, "host-marketplace-test")
         XCTAssertEqual(audit.first?.packageDigestSHA256, digest)
     }
 
@@ -438,5 +448,28 @@ final class AppsStoreCancellationTests: XCTestCase {
             to: directory.appendingPathComponent(AppPackageImportValidator.signatureFilename),
             options: .atomic
         )
+    }
+
+    private func writeTrustPolicy(
+        keyId: String,
+        publicKey: Curve25519.Signing.PublicKey,
+        trustSource: String,
+        to url: URL
+    ) throws {
+        let json = """
+        {
+          "schemaVersion": 1,
+          "trustedKeys": [
+            {
+              "keyId": "\(keyId)",
+              "algorithm": "ed25519",
+              "publicKeyBase64": "\(publicKey.rawRepresentation.base64EncodedString())",
+              "trustSource": "\(trustSource)",
+              "issuer": "test"
+            }
+          ]
+        }
+        """
+        try json.data(using: .utf8)?.write(to: url, options: .atomic)
     }
 }
