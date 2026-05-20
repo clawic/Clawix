@@ -651,7 +651,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private func handleResourcesList(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
-            try requireLocalWideCapability("resources.read")
+            try requireLocalWideCapability("resources.list")
             let status = sanitizedOptionalString(payload["status"])
             let kind = sanitizedOptionalString(payload["kind"])
             let registry = resourceRegistry

@@ -80,7 +80,7 @@ struct AppSwiftSurfaceActionBridge {
         if action.capabilityId == "search.query" {
             return await executeSearchQuery(action)
         }
-        if action.capabilityId == "resources.read" {
+        if action.capabilityId == "resources.list" || action.capabilityId == "resources.read" {
             return await executeResourceRead(action)
         }
         let message = "Swift surface read action accepted: \(action.operation)"

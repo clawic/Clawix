@@ -61,6 +61,8 @@ enum AppCapabilityCatalog {
     static let searchResultsSchemaRef = "claw.search.results.v1"
     static let dbQuerySchemaRef = "claw.db.query.v1"
     static let dbRecordsSchemaRef = "claw.db.records.v1"
+    static let resourcesListSchemaRef = "claw.resources.list.v1"
+    static let resourcesListResultSchemaRef = "claw.resources.listResult.v1"
     static let resourcesReadSchemaRef = "claw.resources.read.v1"
     static let resourcesPayloadSchemaRef = "claw.resources.payload.v1"
     static let systemTelemetrySnapshotRequestSchemaRef = "claw.system.telemetry.snapshot.request.v1"
@@ -108,6 +110,22 @@ enum AppCapabilityCatalog {
             summary: "Structured local collection queries through the framework contract, not direct SQLite.",
             inputSchemaRef: dbQuerySchemaRef,
             outputSchemaRef: dbRecordsSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
+            id: "resources.list",
+            title: "Resource list",
+            summary: "List registered resources through resource contracts.",
+            inputSchemaRef: resourcesListSchemaRef,
+            outputSchemaRef: resourcesListResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
@@ -288,6 +306,8 @@ enum AppCapabilityCatalog {
             requestCancelSchemaRef,
             requestPartialSchemaRef,
             requestProgressSchemaRef,
+            resourcesListResultSchemaRef,
+            resourcesListSchemaRef,
             resourcesPayloadSchemaRef,
             resourcesReadSchemaRef,
             secretsBrokerSchemaRef,
@@ -352,7 +372,7 @@ enum AppCapabilityCatalog {
 
     static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
         switch descriptor.id {
-        case "search.query", "db.query", "resources.read", "system.telemetry.snapshot", "system.telemetry.history":
+        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history":
             return [
                 "status": "available",
                 "mode": "localWideRead",
