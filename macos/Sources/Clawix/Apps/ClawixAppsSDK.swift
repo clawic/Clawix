@@ -242,6 +242,15 @@ let ClawixAppsSDKJS = #"""
         return send('jobs.get', {
           id: id
         }, { signal: input.signal, onProgress: input.onProgress, onPartial: input.onPartial });
+      },
+      events: function (opts) {
+        opts = opts || {};
+        return send('jobs.events', {
+          id: opts.id == null ? null : String(opts.id),
+          kind: opts.kind == null ? null : String(opts.kind),
+          status: opts.status == null ? null : String(opts.status),
+          limit: opts.limit
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
       }
     },
     resources: {

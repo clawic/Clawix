@@ -116,9 +116,9 @@ hosted Web apps. `resources.list`, `resources.read`, `search.query`, and
 `db.query` controls execute through host-owned registries/`DatabaseManager`
 using the shared DSL guards and redaction boundary, so Swift surfaces can read
 only registered resources and cannot supply arbitrary filesystem paths or raw
-database escapes. `jobs.list` and `jobs.get` are currently Web host bridge
-reads for recent jobs/run records and redacted job detail only; they do not
-start, cancel, or mutate jobs. Signed
+database escapes. `jobs.list`, `jobs.get`, and `jobs.events` are currently Web
+host bridge reads for recent jobs/run records, redacted job detail, and derived
+job timelines only; they do not start, cancel, or mutate jobs. Signed
 end-to-end isolation/crash evidence remains a separate closure gate.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
@@ -261,10 +261,11 @@ replacing core shell surfaces.
     resources from `~/.claw/resources/resources.json` (or the configured
     `CLAW_RESOURCES_DIR`/`CLAW_HOME` location), do not accept arbitrary
     unregistered paths, cap file reads, and reject non-file resources.
-  - `clawix.jobs.list(opts)` and `clawix.jobs.get(idOrOpts)` — SDK bridge
-    reads for recent framework jobs/run records and one redacted job detail.
-    They expose redacted job metadata and entity summaries, and do not start
-    or cancel work.
+  - `clawix.jobs.list(opts)`, `clawix.jobs.get(idOrOpts)`, and
+    `clawix.jobs.events(opts)` — SDK bridge reads for recent framework
+    jobs/run records, one redacted job detail, and derived job timelines. They
+    expose redacted job metadata, entity summaries, and event summaries, and do
+    not start or cancel work.
   - `clawix.ui.{setTitle,setBadge,openExternal}` — best-effort UI hooks
   - `clawix.events.on('focus' | 'blur', cb)` — focus events fire from
     the SDK when the WKWebView gains/loses keyboard focus
