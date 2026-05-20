@@ -58,6 +58,7 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
     private let expectedNoRunnerDispatchCapabilityIds = ["actions.invoke"]
     private let expectedNoPlaintextBrokerDispatchCapabilityIds = ["secrets.broker"]
     private let expectedExternalPendingDispatchCapabilityIds = ["iot.device.action.invoke"]
+    private let expectedAppSurfaceKindRawValues = ["swiftDeclarative", "web"]
 
     func testLegacyAppManifestDecodesWithSdkFirstDefaults() throws {
         let json = """
@@ -82,6 +83,27 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         XCTAssertEqual(record.effectiveOriginClass, .localUserAuthored)
         XCTAssertEqual(record.effectiveSurfaceKind, .web)
         XCTAssertEqual(record.effectiveProtectedRoutePolicy, .blocked)
+    }
+
+    func testAppSurfaceKindsStayExactAndManifestBacked() throws {
+        let reviewedSurfaceKinds: [AppSurfaceKind] = [
+            .web,
+            .swiftDeclarative
+        ]
+
+        XCTAssertEqual(reviewedSurfaceKinds.map(Self.surfaceKindRawValue).sorted(), expectedAppSurfaceKindRawValues)
+
+        for surfaceKind in reviewedSurfaceKinds {
+            let record = AppRecord(
+                slug: "surface-\(Self.surfaceKindRawValue(surfaceKind))",
+                name: "Surface \(Self.surfaceKindRawValue(surfaceKind))",
+                surfaceKind: surfaceKind
+            )
+            let data = try JSONEncoder().encode(record)
+            let decoded = try JSONDecoder().decode(AppRecord.self, from: data)
+
+            XCTAssertEqual(decoded.effectiveSurfaceKind, surfaceKind)
+        }
     }
 
     func testCapabilityRiskMapSeparatesOrdinaryReadsFromApprovalRequiredActions() {
@@ -304,6 +326,15 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
             let descriptor = AppHighRiskActionAudit.descriptor(forTool: tool)
             XCTAssertEqual(descriptor?.customAppAccess, .approvalRequired)
             XCTAssertEqual(descriptor?.interruptiveApproval, true)
+        }
+    }
+
+    private static func surfaceKindRawValue(_ surfaceKind: AppSurfaceKind) -> String {
+        switch surfaceKind {
+        case .web:
+            return "web"
+        case .swiftDeclarative:
+            return "swiftDeclarative"
         }
     }
 }

@@ -83,6 +83,7 @@ function assertCompletionAudit() {
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
+    "exact reviewed Web/Swift surface kind set",
     "| CLX-SDK-004 | High-risk actions interrupt only",
     "| CLX-SDK-005 | Imported/marketplace apps require origin/capability/risk ficha",
     "host-local `app-package-trust-roots.json` policy",
@@ -520,6 +521,9 @@ function assertTests() {
   ].map((relativePath) => read(relativePath)).join("\n");
   for (const snippet of [
     "testHostBridgeExposesCustomAppSDKContractPayload",
+    "testAppSurfaceKindsStayExactAndManifestBacked",
+    "expectedAppSurfaceKindRawValues",
+    "\"swiftDeclarative\"",
     "testHostBridgeSurfaceBindingsAreCompleteAndResolvedWhenPublished",
     "testRegisteredCapabilitiesDoNotFallBackToUnknownDispatch",
     "expectedCustomAppCapabilityIds",
