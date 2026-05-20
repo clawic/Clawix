@@ -967,7 +967,7 @@ function assertSourceQaReview() {
   assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
   assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
   assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
-  assert(review.reviewedUserRoleMessages === 157, "source Q/A review: reviewed user-role message count drifted");
+  assert(review.reviewedUserRoleMessages === 158, "source Q/A review: reviewed user-role message count drifted");
   assert(review.decisionBearingRowsReviewed === 12, "source Q/A review: decision-bearing row count drifted");
   for (const decisionId of ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"]) {
     assert(review.decisionIdsReviewed?.includes(decisionId), `source Q/A review: missing ${decisionId}`);
