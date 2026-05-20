@@ -115,6 +115,21 @@ final class SnapshotRepository: @unchecked Sendable {
         }) ?? []
     }
 
+    func projectPathHints() -> [String] {
+        (try? db.read { db in
+            try String.fetchAll(db, sql: """
+                SELECT DISTINCT project_path
+                FROM (
+                    SELECT project_path FROM sidebar_snapshot_project
+                    UNION ALL
+                    SELECT project_path FROM sidebar_snapshot
+                )
+                WHERE project_path IS NOT NULL AND project_path <> ''
+                ORDER BY lower(project_path)
+            """)
+        }) ?? []
+    }
+
     /// Replace the entire per-project index in one transaction. Called
     /// after every applyThreads/mergeThreads with the in-memory chats
     /// already filtered to those that belong to a known project.

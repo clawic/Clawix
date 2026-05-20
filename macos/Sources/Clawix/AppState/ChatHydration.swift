@@ -272,6 +272,9 @@ extension AppState {
     }
 
     func applyDaemonChats(_ wireChats: [WireSession]) {
+        if wireChats.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
+            return
+        }
         cachedWireSessions = wireChats
         // Refresh `projects` from the latest backendState before
         // resolving each wire chat's project: the daemon may have

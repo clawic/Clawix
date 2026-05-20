@@ -829,6 +829,10 @@ final class AppState: ObservableObject {
                 )
             }
             let sessions = try await client.listSessions(archived: false, sidebarVisible: true)
+            if sessions.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
+                clawJSSessionsCanonicalActive = false
+                return false
+            }
             clawJSSessionsCanonicalActive = true
             projects = nextProjects
             let threads = sessions.map { session in
@@ -868,6 +872,10 @@ final class AppState: ObservableObject {
             clawJSSessionsCanonicalActive = false
             return false
         }
+    }
+
+    func shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() -> Bool {
+        !chats.isEmpty || snapshotRepo.count() > 0 || pinsRepo.count() > 0 || projectsRepo.count() > 0
     }
 
     /// Refreshes the chat list for a single project in the background.
@@ -1053,6 +1061,16 @@ final class AppState: ObservableObject {
             guard !project.path.isEmpty, !seen.contains(project.path) else { continue }
             seen.insert(project.path)
             result.append(project)
+        }
+        for path in snapshotRepo.projectPathHints() {
+            guard !seen.contains(path) else { continue }
+            guard !hidden.contains(path) || localPaths.contains(path) else { continue }
+            seen.insert(path)
+            result.append(Project(
+                id: StableProjectID.uuid(for: path),
+                name: URL(fileURLWithPath: path).lastPathComponent.isEmpty ? path : URL(fileURLWithPath: path).lastPathComponent,
+                path: path
+            ))
         }
         return result
     }
