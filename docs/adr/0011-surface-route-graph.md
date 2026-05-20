@@ -64,6 +64,12 @@ Clawix route manifest entries must keep explicit steps, owner, transport,
 contract, validation, tests, and gaps when applicable. Host-real validation is
 still required for signed-host or native-permission behavior; hermetic route
 fixtures are partial for those paths.
+`scripts/surface-evidence-projection-check.mjs` protects the Clawix projection:
+route docs/tests/ADR evidence must resolve to files, route steps must point to
+registered edges and nodes, and the current generated missing-source gap is
+frozen in `docs/surface-evidence-projection-baseline.json` as expiring lateral
+debt. New or changed missing declaration locators fail until the Swift manifest
+exporter carries source metadata.
 
 ## Consequences
 

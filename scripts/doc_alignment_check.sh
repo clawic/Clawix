@@ -34,6 +34,7 @@ for file in \
   "SECURITY.md" \
   "docs/host-ownership.md" \
   "docs/data-storage-boundary.md" \
+  "docs/agent-rules/index.md" \
   "docs/decision-map.md" \
   "docs/v1-surface-closure-decisions.json" \
   "docs/v1-surface-closure-acceptance.json" \
@@ -147,21 +148,23 @@ do
 done
 
 require_snippet "CLAUDE.md" "AGENTS.md"
-require_snippet "CLAUDE.md" "docs/host-ownership.md"
-require_snippet "CLAUDE.md" "docs/data-storage-boundary.md"
+require_snippet "CLAUDE.md" "docs/agent-rules/index.md"
 require_snippet "CLAUDE.md" "docs/decision-map.md"
-require_snippet "CLAUDE.md" "docs/naming-style-guide.md"
-require_snippet "CLAUDE.md" "docs/agentic-naming-guide.md"
-require_snippet "CLAUDE.md" "docs/vocabulary.md"
-require_snippet "CLAUDE.md" "docs/adr/0001-claw-framework-host-boundary.md"
-require_snippet "CLAUDE.md" "0027-governance-identity-scope-model"
-require_snippet "CLAUDE.md" "0028-workspace-project-folder-manifest"
 require_snippet "AGENTS.md" "docs/decision-map.md"
-require_snippet "AGENTS.md" "principals, entities, scopes, stewards, grants"
-require_snippet "AGENTS.md" "project primary folders carry"
+require_snippet "AGENTS.md" "docs/agent-rules/index.md"
+require_snippet "docs/agent-rules/index.md" "docs/host-ownership.md"
+require_snippet "docs/agent-rules/index.md" "docs/data-storage-boundary.md"
+require_snippet "docs/agent-rules/index.md" "principals, entities, scopes, stewards, grants"
+require_snippet "docs/agent-rules/index.md" "project primary folders carry"
 require_snippet "AGENTS.md" "docs/adr/0004-source-file-boundaries.md"
-require_snippet "AGENTS.md" "Sensitive native permissions"
-require_snippet "AGENTS.md" "Regulated domains are assistive only"
+require_snippet "docs/agent-rules/index.md" "docs/naming-style-guide.md"
+require_snippet "docs/agent-rules/index.md" "docs/agentic-naming-guide.md"
+require_snippet "docs/agent-rules/index.md" "docs/vocabulary.md"
+require_snippet "docs/agent-rules/index.md" "docs/adr/0001-claw-framework-host-boundary.md"
+require_snippet "docs/agent-rules/index.md" "0027-governance-identity-scope-model"
+require_snippet "docs/agent-rules/index.md" "0028-workspace-project-folder-manifest"
+require_snippet "docs/agent-rules/index.md" "Sensitive native permissions"
+require_snippet "docs/agent-rules/index.md" "Regulated domains are assistive only"
 require_snippet "CONSTITUTION.md" "Capabilities are complete only when dual-surfaced"
 require_snippet "CONSTITUTION.md" "Regulated domains are assistive, never final decision authorities"
 require_snippet "README.md" "SAFETY.md"

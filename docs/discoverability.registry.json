@@ -1229,6 +1229,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-agent-instructions-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/agent-instructions-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "agent-instructions-check",
+        "Agent Instructions Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "agent-instructions-check",
+          "expectPath": "scripts/agent-instructions-check.mjs"
+        }
+      ],
+      "guard": "scripts/agent-instructions-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-check-clawjs-skills-sync",
       "kind": "guardrail",
       "owner": "clawix",
@@ -1454,33 +1479,6 @@
       "reviewDate": "2026-08-18"
     },
     {
-      "id": "guard-scripts-persistent-surface-guard",
-      "kind": "guardrail",
-      "owner": "clawix",
-      "canonicalSource": "scripts/persistent-surface-guard.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "persistent-surface-guard",
-        "Persistent Surface Guard",
-        "literal surface guard",
-        "persistent surface literals"
-      ],
-      "searchQueries": [
-        {
-          "query": "persistent-surface-guard",
-          "expectPath": "scripts/persistent-surface-guard.mjs"
-        }
-      ],
-      "guard": "scripts/persistent-surface-guard.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
       "id": "guard-scripts-open-source-canonicity-check",
       "kind": "guardrail",
       "owner": "clawix",
@@ -1529,6 +1527,33 @@
         }
       ],
       "guard": "scripts/package_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-persistent-surface-guard",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/persistent-surface-guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "persistent-surface-guard",
+        "Persistent Surface Guard",
+        "literal surface guard",
+        "persistent surface literals"
+      ],
+      "searchQueries": [
+        {
+          "query": "persistent-surface-guard",
+          "expectPath": "scripts/persistent-surface-guard.mjs"
+        }
+      ],
+      "guard": "scripts/persistent-surface-guard.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -1604,6 +1629,31 @@
         }
       ],
       "guard": "scripts/storage_boundary_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-surface-evidence-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/surface-evidence-projection-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "surface-evidence-projection-check",
+        "Surface Evidence Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-evidence-projection-check",
+          "expectPath": "scripts/surface-evidence-projection-check.mjs"
+        }
+      ],
+      "guard": "scripts/surface-evidence-projection-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -2833,6 +2883,36 @@
       "guard": "scripts/ui_visual_scope_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-agent-rules-index",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/agent-rules/index.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "agent rules",
+        "always-loaded instructions",
+        "Clawix agent instruction router"
+      ],
+      "searchQueries": [
+        {
+          "query": "agent rules",
+          "expectPath": "docs/agent-rules/index.md"
+        },
+        {
+          "query": "always-loaded instructions",
+          "expectPath": "docs/agent-rules/index.md"
+        }
+      ],
+      "guard": "scripts/agent-instructions-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-completion-audit",

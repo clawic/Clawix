@@ -197,6 +197,7 @@ fast() {
   run bash "$ROOT_DIR/macos/scripts/public_hygiene_check.sh"
   run node "$ROOT_DIR/scripts/tracked-ignored-check.mjs"
   run node "$ROOT_DIR/scripts/check-clawjs-skills-sync.mjs"
+  run node "$ROOT_DIR/scripts/agent-instructions-check.mjs"
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs"
@@ -205,6 +206,8 @@ fast() {
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" macos ios android windows web/src linux/app/src
+  run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs"
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"

@@ -161,7 +161,7 @@ for (const [file, snippets] of [
     "open-standard and official-trust policy",
     "scripts/open_source_canonicity_check.mjs",
   ]],
-  ["AGENTS.md", [
+  ["docs/agent-rules/index.md", [
     "docs/adr/0020-open-standard-official-trust-mirror.md",
     "MIT-licensed forks, commercial use, source builds, and compatible implementations are legitimate",
   ]],

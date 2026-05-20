@@ -42,7 +42,7 @@ for (const snippet of [
 }
 
 requireSnippet("CONSTITUTION.md", "launch, chat, and agent-readable repair context");
-requireSnippet("AGENTS.md", "compatibility-evolution-work");
+requireSnippet("docs/agent-rules/index.md", "compatibility-evolution-work");
 requireSnippet("docs/decision-map.md", "Evolution and rescue backbone mirror");
 requireSnippet("scripts/check-clawjs-skills-sync.mjs", "\"compatibility-evolution-work\"");
 for (const snippet of [

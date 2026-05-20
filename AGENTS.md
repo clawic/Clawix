@@ -17,27 +17,21 @@ Use this file as a router. Detailed operating rules live in
   sibling ClawJS ADR 0017, `docs/discoverability.md`, and
   `docs/discoverability.registry.json`.
 - `CLAUDE.md` is a shim. If it diverges from this file, this file wins.
-- Visual canon: `STYLE.md`. Read it before changing user-facing screens,
-  chrome, visual components, design tokens, icons, spacing, motion, or
-  microcopy.
+- Visual canon: `STYLE.md`; read it before changing screens, chrome, design tokens, icons, motion, or microcopy.
 
 ## Repository Shape
 
 Clawix is the native human interface and embedded signed host for ClawJS/Claw.
-Framework contracts, schemas, fixtures, canonical storage, domain APIs, SDK,
-and the public `claw` CLI belong to ClawJS/Claw.
+Framework contracts, schemas, fixtures, storage, APIs, SDK, and `claw` belong to ClawJS/Claw.
 
-Use the decision map for routing before changing framework/host ownership,
-storage, data placement, naming, source boundaries, testing, interface
-surfaces, route graphs, remote mesh, safety, releases, open-standard trust, or
-platform launch behavior.
+Use the decision map for routing before changing ownership, storage, naming,
+testing, interfaces, route graphs, remote mesh, safety, releases,
+open-standard trust, or platform launch behavior.
 
 ## Agent Discovery
 
-For non-trivial questions or plans about framework behavior, contracts,
-storage, CLI, schemas, permissions, grants, approvals, audit, data placement,
-naming, public packages, routes, ports, protocols, or Clawix/ClawJS
-integration, start with a `claw` discovery pass when available:
+For non-trivial framework, contract, storage, CLI, schema, permission, grant,
+approval, audit, naming, route, protocol, or Clawix/ClawJS work, start with `claw` discovery:
 
 ```bash
 claw search <topic> --json
@@ -47,8 +41,7 @@ claw collections <collection> schema --json
 claw db <collection> list|query --json
 ```
 
-Treat source files as evidence after the CLI/registry map. If `claw` is not
-available, say so and use direct docs/source reads.
+Treat source files as evidence after the CLI/registry map; if `claw` is unavailable, say so and use direct docs/source reads.
 
 ## Critical Routes
 
@@ -57,19 +50,13 @@ Read the relevant canon before changing its surface:
 - Framework/host boundary: `docs/host-ownership.md`,
   `docs/adr/0001-claw-framework-host-boundary.md`
 - Storage/data placement: `docs/data-storage-boundary.md`
-- Governance identity/workspaces/projects: sibling ClawJS
-  `docs/adr/0027-governance-identity-scope-model.md`,
-  `docs/adr/0028-workspace-project-folder-manifest.md`
-- Naming/stability/source shape: `docs/naming-style-guide.md`,
-  `docs/agentic-naming-guide.md`, `docs/vocabulary.md`,
-  `docs/adr/0002-naming-and-stability-surfaces.md`,
-  `docs/adr/0009-agentic-naming-and-code-structure.md`,
-  `docs/adr/0004-source-file-boundaries.md`
-- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS
-  `docs/adr/0012-surface-route-graph.md`
-- Open standard and official trust:
-  `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`,
-  `TRADEMARKS.md`
+- Governance identity/workspaces/projects: sibling ClawJS `docs/adr/0027-governance-identity-scope-model.md`
+  and `docs/adr/0028-workspace-project-folder-manifest.md`
+- Naming/source shape: `docs/naming-style-guide.md`, `docs/agentic-naming-guide.md`,
+  `docs/vocabulary.md`, `docs/adr/0002-naming-and-stability-surfaces.md`,
+  `docs/adr/0009-agentic-naming-and-code-structure.md`, `docs/adr/0004-source-file-boundaries.md`
+- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS `docs/adr/0012-surface-route-graph.md`
+- Open standard/trust: `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`, `TRADEMARKS.md`
 
 ## Red Lines
 
@@ -93,8 +80,7 @@ Read the relevant canon before changing its surface:
 - Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
   services, and native execution belong to the active signed host, not Node.
 - Regulated domains are assistive only; Clawix must not make final medical,
-  mental health, legal, financial, insurance, employment, education,
-  government, emergency, physical-safety, or other regulated decisions.
+  legal, financial, employment, education, government, emergency, or safety decisions.
 - Do not send real prompts, touch production data, call paid APIs, mutate real
   services, reveal secrets, push, publish, upload, or tag without explicit
   approval in the current thread.
@@ -103,8 +89,7 @@ Read the relevant canon before changing its surface:
   explicit reversible opt-in.
 - Runtime-critical bridge, companion, chat, host, and remote work starts from
   `claw inspect show|neighbors|routes|route` plus the Clawix manifest.
-- Evolution, migration, rollback, rescue, receipt, or repair work starts from
-  sibling ClawJS ADR 0030, `claw evolution`, and `compatibility-evolution-work`.
+- Evolution, migration, rollback, rescue, receipt, or repair work starts from sibling ClawJS ADR 0030, `claw evolution`, and `compatibility-evolution-work`.
 
 ## Skills And Validation
 
@@ -125,10 +110,10 @@ node scripts/check-clawjs-skills-sync.mjs
 
 ## Public Hygiene And Commits
 
-Public repositories must not contain maintainer-private paths, signing
-identities, bundle IDs, Team IDs, SKUs, release credentials, local launchers,
-private automation, private Q&A indexes, logs, caches, or screenshots. Run
-`bash macos/scripts/public_hygiene_check.sh` before publication or broad review.
+Public repositories must not contain maintainer-private paths, signing identities,
+bundle IDs, Team IDs, SKUs, release credentials, local launchers, private automation,
+private Q&A indexes, logs, caches, or screenshots. Run `bash macos/scripts/public_hygiene_check.sh`
+before publication or broad review.
 
 Use Conventional Commits, keep commits scoped by intention, do not sweep
 unrelated edits, and never push, publish, upload, or tag without explicit

@@ -1,8 +1,8 @@
 # Agent Rules
 
 Detailed operating rules for Clawix agents. `AGENTS.md` is the compact
-entrypoint; this file keeps routing and safety details out of the always-loaded
-prompt.
+entrypoint; this file keeps routing and safety details out of the
+always-loaded instructions prompt.
 
 ## Canon Routers
 
@@ -89,10 +89,18 @@ Use relevant skills instead of pasting long procedures into context:
   edges, and restrictions. Do not add generic `ownerId`, `ownerKind`, or
   `tenantId` authority fields.
 - Workspaces are isolated contexts. Projects are collaborable scopes with
-  stable ids and mutable folder locators.
+  stable ids and mutable folder locators; project primary folders carry
+  `claw.project.json`, managed `AGENTS.md`, and `CLAUDE.md` shims.
 - User-facing structured framework records belong in `core.sqlite`; sidecars
   require explicit reasons such as churn, blobs, search indexes, sessions,
   logs, caches, or encrypted vault state.
+- Plaintext secrets never live in `core.sqlite`, logs, fixtures, screenshots,
+  generated artifacts, or public docs.
+- Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
+  services, and native execution belong to the active signed host, not Node.
+- Regulated domains are assistive only. Clawix may organize, summarize, label,
+  search, and draft sensitive information, but it must not make final regulated
+  decisions.
 - Capabilities are complete only when human and programmatic surfaces are
   registered or gaps are explicitly classified.
 - Background bridge daemon mode must not be replaced by a second GUI-owned

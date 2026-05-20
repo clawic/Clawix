@@ -290,7 +290,7 @@ requireSnippet("RELEASING.md", "Classify every new sensitive app surface, route,
 requireSnippet("RELEASING.md", "ClawJS regulated-domain safety policy");
 requireSnippet("RELEASING.md", "docs/legal-external-pending-validation.md");
 requireSnippet("CONSTITUTION.md", "Regulated domains are assistive, never final decision authorities");
-requireSnippet("AGENTS.md", "Regulated domains are assistive only");
+requireSnippet("docs/agent-rules/index.md", "Regulated domains are assistive only");
 requireSnippet("docs/decision-map.md", "Regulated domains are assistive, not final decision authorities");
 requireSnippet("docs/decision-map.md", "Clawix Legal Closure Decision Audit");
 requireSnippet("macos/Sources/Clawix/LegalSafety.swift", "termsVersion = \"2026-05-18\"");

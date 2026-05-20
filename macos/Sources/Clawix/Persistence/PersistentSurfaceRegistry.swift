@@ -825,6 +825,22 @@ enum ClawixPersistentSurfaceRegistry {
                 direction: "inbound"
             )
         }
+        let routeEndpointNodes = [
+            ("clawix.ui.chat", "Chat UI route endpoint", "Clawix desktop chat UI node"),
+            ("clawix.bridge.local", "Local bridge route endpoint", "Clawix local bridge node"),
+            ("clawix.companion.client", "Companion client route endpoint", "Clawix companion client node"),
+        ].map { id, name, value in
+            ClawixPersistentSurface.contract(
+                id: id,
+                kind: .externalDependency,
+                name: name,
+                parentId: "claw.contracts.routes",
+                project: "core",
+                surfaceClass: "route-node",
+                value: value,
+                direction: "bidirectional"
+            )
+        }
         let remoteJobEvents = ["accepted", "threadStarted", "turnStarted", "delta", "completed", "failed", "cancelled"].map { event in
             ClawixPersistentSurface.contract(
                 id: "clawix.event.remoteJob.\(event)",
@@ -869,6 +885,7 @@ enum ClawixPersistentSurfaceRegistry {
             + nativePermissions
             + formatSurfaces
             + routeNodes
+            + routeEndpointNodes
             + remoteJobEvents
             + [webStorage]
             + deepLinks

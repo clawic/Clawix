@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "expires": "2026-06-30",
+  "entries": [
+    {
+      "id": "clawix.generated-persistent-surface-source-locators",
+      "classification": "lateral_debt",
+      "expires": "2026-06-30",
+      "reason": "Swift manifest export currently lacks source locator metadata for generated nodes, edges, and routes.",
+      "missingSource": {
+        "nodes": {
+          "count": 439,
+          "idsSha256": "1311fee5d353afc984f65f8acabd28b66dafd1c0699c16dc366c8e91f3c58015"
+        },
+        "edges": {
+          "count": 2,
+          "idsSha256": "25978ec841cea3b22ade6dd88d9b3cf34a6ce35b09d5ec8469565ff7f88621c7"
+        },
+        "routes": {
+          "count": 2,
+          "idsSha256": "15f477f10c09d58d78a95d5b4a18c58a7604366bb3338d7c49fa159d44e57a49"
+        }
+      },
+      "externalNodeRefs": {
+        "count": 0,
+        "idsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ]
+}
