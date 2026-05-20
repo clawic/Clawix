@@ -62,8 +62,10 @@ file; do not hand-maintain this table.
 | `guard-scripts-debt-ledger-projection-check` | guardrail |  | `scripts/debt-ledger-projection-check.mjs` | debt-ledger-projection-check, Debt Ledger Projection Check | `scripts/debt-ledger-projection-check.mjs` |
 | `guard-scripts-discoverability-check` | guardrail |  | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |
 | `guard-scripts-evolution-rescue-mirror-check` | guardrail |  | `scripts/evolution_rescue_mirror_check.mjs` | evolution_rescue_mirror_check, Evolution Rescue Mirror Check | `scripts/evolution_rescue_mirror_check.mjs` |
+| `guard-scripts-index-type-projection-check` | guardrail |  | `scripts/index_type_projection_check.mjs` | index_type_projection_check, Index Type Projection Check | `scripts/index_type_projection_check.mjs` |
 | `guard-scripts-interface-surface-guard` | guardrail |  | `scripts/interface_surface_guard.mjs` | interface_surface_guard, Interface Surface Guard | `scripts/interface_surface_guard.mjs` |
 | `guard-scripts-legal-safety-check` | guardrail |  | `scripts/legal_safety_check.mjs` | legal_safety_check, Legal Safety Check | `scripts/legal_safety_check.mjs` |
+| `guard-scripts-life-registry-projection-check` | guardrail |  | `scripts/life_registry_projection_check.mjs` | life_registry_projection_check, Life Registry Projection Check | `scripts/life_registry_projection_check.mjs` |
 | `guard-scripts-naming-shape-check` | guardrail |  | `scripts/naming-shape-check.mjs` | naming-shape-check, Naming Shape Check | `scripts/naming-shape-check.mjs` |
 | `guard-scripts-native-action-broker-check` | guardrail |  | `scripts/native_action_broker_check.mjs` | native_action_broker_check, Native Action Broker Check | `scripts/native_action_broker_check.mjs` |
 | `guard-scripts-native-permission-broker-check` | guardrail |  | `scripts/native_permission_broker_check.mjs` | native_permission_broker_check, Native Permission Broker Check | `scripts/native_permission_broker_check.mjs` |
@@ -71,6 +73,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-package-surface-guard` | guardrail |  | `scripts/package_surface_guard.mjs` | package_surface_guard, Package Surface Guard | `scripts/package_surface_guard.mjs` |
 | `guard-scripts-performance-governance-check` | guardrail |  | `scripts/performance_governance_check.mjs` | performance_governance_check, Performance Governance Check | `scripts/performance_governance_check.mjs` |
 | `guard-scripts-persistent-surface-guard` | guardrail |  | `scripts/persistent-surface-guard.mjs` | persistent-surface-guard, Persistent Surface Guard, literal surface guard, persistent surface literals | `scripts/persistent-surface-guard.mjs` |
+| `guard-scripts-productivity-projection-check` | guardrail |  | `scripts/productivity_projection_check.mjs` | productivity_projection_check, Productivity Projection Check | `scripts/productivity_projection_check.mjs` |
 | `guard-scripts-remote-canon-alignment-check` | guardrail |  | `scripts/remote_canon_alignment_check.mjs` | remote_canon_alignment_check, Remote Canon Alignment Check | `scripts/remote_canon_alignment_check.mjs` |
 | `guard-scripts-source-size-check` | guardrail |  | `scripts/source-size-check.mjs` | source-size-check, Source Size Check | `scripts/source-size-check.mjs` |
 | `guard-scripts-storage-boundary-guard` | guardrail |  | `scripts/storage_boundary_guard.mjs` | storage_boundary_guard, Storage Boundary Guard | `scripts/storage_boundary_guard.mjs` |

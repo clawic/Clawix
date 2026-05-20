@@ -2518,13 +2518,13 @@
       "version" : "1"
     },
     {
-      "canonicality" : "hostOnly",
+      "canonicality" : "cache",
       "direction" : "bidirectional",
       "id" : "clawix.format.life-registry",
       "kind" : "fileFormat",
       "language" : "swift",
       "lifecycle" : "durable",
-      "name" : "Life registry JSON",
+      "name" : "Life registry projection JSON",
       "owner" : "clawix",
       "parentId" : "claw.contracts.formats",
       "privacy" : "public",
@@ -2534,7 +2534,8 @@
       "storageClass" : "external",
       "surfaceClass" : "format",
       "value" : "life-registry.json",
-      "version" : "1"
+      "version" : "1",
+      "notes" : "Clawix cache/projection of the canonical ClawJS Signals registry; regenerate from ClawJS instead of editing manually."
     },
     {
       "canonicality" : "hostOnly",

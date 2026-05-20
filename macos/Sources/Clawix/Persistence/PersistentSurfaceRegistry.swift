@@ -233,6 +233,7 @@ enum ClawixPersistentSurface {
         enumType: String? = nil,
         version: String? = nil,
         direction: String = "bidirectional",
+        canonicality: String = "hostOnly",
         notes: String? = nil
     ) -> PersistentSurfaceNode {
         node(
@@ -241,7 +242,7 @@ enum ClawixPersistentSurface {
             name: name,
             key: key,
             storageClass: "external",
-            canonicality: "hostOnly",
+            canonicality: canonicality,
             privacy: "public",
             lifecycle: "durable",
             parentId: parentId,
@@ -763,21 +764,47 @@ enum ClawixPersistentSurfaceRegistry {
             )
         }
         let formatSurfaces = [
-            ("clawix.format.design-document", "clawix-design-document", "Design document JSON"),
-            ("clawix.format.life-registry", "life-registry.json", "Life registry JSON"),
-            ("clawix.format.snapshot-cache", "snapshot.json", "Android bridge snapshot cache"),
-            ("clawix.format.host-bootstrap", "clawix-host-bootstrap", "Host bootstrap registry JSON"),
-        ].map { id, value, name in
+            (
+                id: "clawix.format.design-document",
+                value: "clawix-design-document",
+                name: "Design document JSON",
+                canonicality: "hostOnly",
+                notes: nil
+            ),
+            (
+                id: "clawix.format.life-registry",
+                value: "life-registry.json",
+                name: "Life registry projection JSON",
+                canonicality: "cache",
+                notes: "Clawix cache/projection of the canonical ClawJS Signals registry; regenerate from ClawJS instead of editing manually."
+            ),
+            (
+                id: "clawix.format.snapshot-cache",
+                value: "snapshot.json",
+                name: "Android bridge snapshot cache",
+                canonicality: "hostOnly",
+                notes: nil
+            ),
+            (
+                id: "clawix.format.host-bootstrap",
+                value: "clawix-host-bootstrap",
+                name: "Host bootstrap registry JSON",
+                canonicality: "hostOnly",
+                notes: nil
+            ),
+        ].map { surface in
             ClawixPersistentSurface.contract(
-                id: id,
+                id: surface.id,
                 kind: .fileFormat,
-                name: name,
+                name: surface.name,
                 parentId: "claw.contracts.formats",
                 project: "core",
                 surfaceClass: "format",
-                value: value,
+                value: surface.value,
                 version: "1",
-                direction: "bidirectional"
+                direction: "bidirectional",
+                canonicality: surface.canonicality,
+                notes: surface.notes
             )
         }
         let apiRoutes: [(String, String, String, String)] = [

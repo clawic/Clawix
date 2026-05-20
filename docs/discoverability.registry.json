@@ -1539,6 +1539,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-index-type-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/index_type_projection_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "index_type_projection_check",
+        "Index Type Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "index_type_projection_check",
+          "expectPath": "scripts/index_type_projection_check.mjs"
+        }
+      ],
+      "guard": "scripts/index_type_projection_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-interface-surface-guard",
       "kind": "guardrail",
       "owner": "clawix",
@@ -1585,6 +1610,31 @@
         }
       ],
       "guard": "scripts/legal_safety_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-life-registry-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/life_registry_projection_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "life_registry_projection_check",
+        "Life Registry Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "life_registry_projection_check",
+          "expectPath": "scripts/life_registry_projection_check.mjs"
+        }
+      ],
+      "guard": "scripts/life_registry_projection_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -1764,6 +1814,31 @@
         }
       ],
       "guard": "scripts/persistent-surface-guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-productivity-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/productivity_projection_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "productivity_projection_check",
+        "Productivity Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "productivity_projection_check",
+          "expectPath": "scripts/productivity_projection_check.mjs"
+        }
+      ],
+      "guard": "scripts/productivity_projection_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },

@@ -39,6 +39,7 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.id == "clawix.dictationAudioDebug" && $0.path == "~/.clawix/tmp/dictation-audio-debug" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local" && $0.notes?.contains("UI/cache/snapshot") == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.embeddedRuntimeDistribution" && $0.name == "Embedded runtime distribution" && $0.storageClass == "hostOperational" && $0.notes?.contains("compatibility layout only") == true })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.format.life-registry" && $0.canonicality == "cache" && $0.notes?.contains("canonical ClawJS Signals registry") == true })
         XCTAssertFalse(nodes.contains { $0.id == "clawix.clawjs" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.secrets" && $0.storageClass == "hostOperational" && $0.notes?.contains("opaque secret ids only") == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.localModels" && $0.storageClass == "hostOperational" && $0.notes?.contains("model binaries") == true })
