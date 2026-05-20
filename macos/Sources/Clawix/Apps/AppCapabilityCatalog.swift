@@ -463,14 +463,32 @@ enum AppCapabilityCatalog {
     }
 
     static var blockedSurfaceBindingsBridgeValue: [[String: String]] {
-        [
-            ["surface": "sdk", "status": "blocked"],
-            ["surface": "cli", "status": "blocked"],
-            ["surface": "serviceApi", "status": "blocked"],
-            ["surface": "mcp", "status": "blocked"],
-            ["surface": "relay", "status": "blocked"],
-            ["surface": "hostBridge", "status": "blocked"]
-        ]
+        surfaceBindingsBridgeValue(statuses: Dictionary(uniqueKeysWithValues: canonicalSurfaceNames.map { ($0, "blocked") }))
+    }
+
+    static let canonicalSurfaceNames = ["sdk", "cli", "serviceApi", "mcp", "relay", "hostBridge"]
+
+    static func surfaceBindingsBridgeValue(for descriptor: AppCapabilityDescriptor) -> [[String: String]] {
+        var statuses = Dictionary(uniqueKeysWithValues: canonicalSurfaceNames.map { ($0, "available") })
+
+        switch descriptor.id {
+        case "jobs.list", "jobs.get", "jobs.events":
+            statuses["cli"] = "blocked"
+        case "jobs.stream", "jobs.start", "jobs.cancel":
+            statuses = Dictionary(uniqueKeysWithValues: canonicalSurfaceNames.map { ($0, "blocked") })
+        case "secrets.broker":
+            statuses["mcp"] = "blocked"
+        default:
+            break
+        }
+
+        return surfaceBindingsBridgeValue(statuses: statuses)
+    }
+
+    private static func surfaceBindingsBridgeValue(statuses: [String: String]) -> [[String: String]] {
+        canonicalSurfaceNames.map { surface in
+            ["surface": surface, "status": statuses[surface] ?? "blocked"]
+        }
     }
 
     static func contractsBridgeValue(for record: AppRecord) -> [String: Any] {
@@ -578,9 +596,7 @@ extension AppCapabilityDescriptor {
         if let eventSchemaRefs {
             value["eventSchemaRefs"] = eventSchemaRefs.bridgeValue
         }
-        if customAppAccess == .blocked {
-            value["surfaces"] = AppCapabilityCatalog.blockedSurfaceBindingsBridgeValue
-        }
+        value["surfaces"] = AppCapabilityCatalog.surfaceBindingsBridgeValue(for: self)
         return value
     }
 }

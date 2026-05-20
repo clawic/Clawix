@@ -153,20 +153,25 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
         )
         let payload = AppCapabilityCatalog.contractsBridgeValue(for: record)
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
-        let canonicalSurfaces = ["sdk", "cli", "serviceApi", "mcp", "relay", "hostBridge"]
         var checkedSurfaceGroups = 0
 
         for capability in capabilities {
-            guard let surfaces = capability["surfaces"] as? [[String: String]] else { continue }
+            let surfaces = try XCTUnwrap(capability["surfaces"] as? [[String: String]])
 
             checkedSurfaceGroups += 1
-            XCTAssertEqual(surfaces.map { $0["surface"] }, canonicalSurfaces, capability["id"] as? String ?? "unknown")
+            XCTAssertEqual(surfaces.map { $0["surface"] }, AppCapabilityCatalog.canonicalSurfaceNames, capability["id"] as? String ?? "unknown")
             for surface in surfaces {
                 XCTAssertNotEqual(surface["status"], "pending", "\(capability["id"] as? String ?? "unknown"):\(surface["surface"] ?? "unknown")")
             }
         }
 
-        XCTAssertGreaterThanOrEqual(checkedSurfaceGroups, 3)
+        XCTAssertEqual(checkedSurfaceGroups, capabilities.count)
+        let jobsList = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.list" })
+        let jobsListSurfaces = try XCTUnwrap(jobsList["surfaces"] as? [[String: String]])
+        XCTAssertEqual(jobsListSurfaces.first { $0["surface"] == "cli" }?["status"], "blocked")
+        let secrets = try XCTUnwrap(capabilities.first { $0["id"] as? String == "secrets.broker" })
+        let secretsSurfaces = try XCTUnwrap(secrets["surfaces"] as? [[String: String]])
+        XCTAssertEqual(secretsSurfaces.first { $0["surface"] == "mcp" }?["status"], "blocked")
     }
 
     func testInjectedAppsSdkExposesSearchAndDBContracts() {
