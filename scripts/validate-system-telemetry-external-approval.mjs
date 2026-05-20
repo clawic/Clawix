@@ -100,6 +100,9 @@ function mutateTemplate(packet, mutation) {
     case "authorization.credentialLeaseRefs=extra":
       mutated.authorization.credentialLeaseRefs = [mutated.authorization.credentialLeaseRefs[0], "extra_lease_template"];
       break;
+    case "authorization.nativeGrantRefs=extra":
+      mutated.authorization.nativeGrantRefs = [mutated.authorization.nativeGrantRefs[0], "extra_native_grant_template"];
+      break;
     case "authorization.credentialLeaseRefs=rawSecretRef":
       mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
       break;

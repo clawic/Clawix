@@ -106,6 +106,21 @@ function mutateTemplate(packet, mutation) {
     case "runAuthorization.grants has extra":
       mutated.runAuthorization.grants = [mutated.runAuthorization.grants[0], "extra_unapproved_grant_template"];
       break;
+    case "runAuthorization.credentialLeaseRefs has extra":
+      mutated.runAuthorization.credentialLeaseRefs = [mutated.runAuthorization.credentialLeaseRefs[0], "extra_lease_template"];
+      break;
+    case "runAuthorization.nativeGrantRefs has extra":
+      mutated.runAuthorization.nativeGrantRefs = [mutated.runAuthorization.nativeGrantRefs[0], "extra_native_grant_template"];
+      break;
+    case "runAuthorization.locationGrantRefs is empty":
+      mutated.runAuthorization.locationGrantRefs = [];
+      break;
+    case "runAuthorization.hardwareProviderRefs is empty":
+      mutated.runAuthorization.hardwareProviderRefs = [];
+      break;
+    case "runAuthorization.signedAppRefs is empty":
+      mutated.runAuthorization.signedAppRefs = [];
+      break;
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
       break;

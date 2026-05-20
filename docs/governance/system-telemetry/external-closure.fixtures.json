@@ -107,6 +107,24 @@
       "reason": "Evidence must use exactly the native grants authorized by the app approval packet."
     },
     {
+      "id": "mismatched_location_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidencePacket.runAuthorization.locationGrantRefs=wrong",
+      "reason": "Evidence must use exactly the location grants authorized by the app approval packet."
+    },
+    {
+      "id": "mismatched_hardware_provider",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.hardwareProviderRefs=wrong",
+      "reason": "Evidence must use exactly the hardware provider refs authorized by the app approval packet."
+    },
+    {
+      "id": "mismatched_signed_app",
+      "baseLaneId": "CLX-SYS-TEL-EXT-005",
+      "mutation": "evidencePacket.runAuthorization.signedAppRefs=wrong",
+      "reason": "Evidence must use exactly the signed app refs authorized by the app approval packet."
+    },
+    {
       "id": "extra_execution_grant",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "evidencePacket.runAuthorization.grants=extra",

@@ -94,7 +94,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_approval" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 9 },
+            "invalidTemplateCount": { "const": 10 },
             "path": { "const": "docs/governance/system-telemetry/external-approval.fixtures.json" }
           }
         }
@@ -124,7 +124,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 10 }
+            "invalidTemplateCount": { "const": 15 }
           }
         }
       ]
@@ -152,7 +152,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_closure" },
             "validTemplateCount": { "const": 3 },
-            "invalidMutationCount": { "const": 17 },
+            "invalidMutationCount": { "const": 20 },
             "path": { "const": "docs/governance/system-telemetry/external-closure.fixtures.json" }
           }
         }

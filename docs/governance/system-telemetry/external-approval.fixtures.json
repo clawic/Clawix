@@ -186,6 +186,11 @@
       "packetRef": "CLX-SYS-TEL-EXT-004"
     },
     {
+      "id": "extra_native_grant_ref",
+      "mutation": "authorization.nativeGrantRefs=extra",
+      "packetRef": "CLX-SYS-TEL-EXT-003"
+    },
+    {
       "id": "raw_secret_reference",
       "mutation": "authorization.credentialLeaseRefs=rawSecretRef",
       "packetRef": "CLX-SYS-TEL-EXT-004"

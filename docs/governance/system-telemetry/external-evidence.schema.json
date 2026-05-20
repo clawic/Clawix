@@ -51,6 +51,9 @@
         "grants",
         "credentialLeaseRefs",
         "nativeGrantRefs",
+        "locationGrantRefs",
+        "hardwareProviderRefs",
+        "signedAppRefs",
         "networkAccessApproved"
       ],
       "properties": {
@@ -59,8 +62,11 @@
         "approvedBy": { "type": "string", "minLength": 1 },
         "exactRunScope": { "type": "string", "minLength": 1 },
         "grants": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "type": "string" } },
-        "credentialLeaseRefs": { "type": "array", "items": { "type": "string" } },
-        "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
+        "credentialLeaseRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "nativeGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "locationGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "hardwareProviderRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "signedAppRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
         "networkAccessApproved": { "type": "boolean" }
       }
     },
@@ -178,7 +184,9 @@
           "runAuthorization": {
             "properties": {
               "grants": { "contains": { "const": "system.sensor.read" }, "maxItems": 1 },
-              "nativeGrantRefs": { "minItems": 1 }
+              "nativeGrantRefs": { "minItems": 1, "maxItems": 1 },
+              "hardwareProviderRefs": { "minItems": 1, "maxItems": 1 },
+              "signedAppRefs": { "minItems": 1, "maxItems": 1 }
             }
           },
           "evidence": {
@@ -209,7 +217,9 @@
           "runAuthorization": {
             "properties": {
               "grants": { "contains": { "const": "context.weather.read" }, "maxItems": 1 },
-              "credentialLeaseRefs": { "minItems": 1 },
+              "credentialLeaseRefs": { "minItems": 1, "maxItems": 1 },
+              "locationGrantRefs": { "minItems": 1, "maxItems": 1 },
+              "signedAppRefs": { "minItems": 1, "maxItems": 1 },
               "networkAccessApproved": { "const": true }
             }
           },
@@ -240,7 +250,8 @@
           "runAuthorization": {
             "properties": {
               "grants": { "contains": { "const": "system.control.execute" }, "maxItems": 1 },
-              "nativeGrantRefs": { "minItems": 1 }
+              "nativeGrantRefs": { "minItems": 1, "maxItems": 1 },
+              "signedAppRefs": { "minItems": 1, "maxItems": 1 }
             }
           },
           "evidence": {

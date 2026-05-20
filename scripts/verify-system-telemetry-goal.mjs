@@ -385,7 +385,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalApprovalFixtures?.path === "docs/governance/system-telemetry/external-approval.fixtures.json", "external validation manifest: wrong external approval fixtures path");
   assert(manifest.externalApprovalFixtures?.status === "synthetic_templates_not_approval", "external validation manifest: external approval fixtures must be marked synthetic");
   assert(manifest.externalApprovalFixtures?.validTemplateCount === 3, "external validation manifest: wrong external approval valid fixture count");
-  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 9, "external validation manifest: wrong external approval invalid fixture count");
+  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 10, "external validation manifest: wrong external approval invalid fixture count");
   assert(manifest.externalApprovalFixtures?.closureRole?.includes("without representing real approval"), "external validation manifest: external approval fixtures closure role must be explicit");
   assert(manifest.externalApprovalPacketValidator?.required === true, "external validation manifest: external approval validator link must be required");
   assert(manifest.externalApprovalPacketValidator?.artifactId === "clawix-system-telemetry-external-approval-validator", "external validation manifest: wrong external approval validator artifact");
@@ -406,7 +406,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalEvidenceFixtures?.path === "docs/governance/system-telemetry/external-evidence.fixtures.json", "external validation manifest: wrong external evidence fixtures path");
   assert(manifest.externalEvidenceFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: external evidence fixtures must be marked synthetic");
   assert(manifest.externalEvidenceFixtures?.validTemplateCount === 3, "external validation manifest: wrong valid fixture count");
-  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 10, "external validation manifest: wrong invalid fixture count");
+  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 15, "external validation manifest: wrong invalid fixture count");
   assert(manifest.externalEvidenceFixtures?.closureRole?.includes("without representing real external evidence"), "external validation manifest: external evidence fixtures closure role must be explicit");
   assert(manifest.externalEvidencePacketValidator?.required === true, "external validation manifest: external evidence validator link must be required");
   assert(manifest.externalEvidencePacketValidator?.artifactId === "clawix-system-telemetry-external-evidence-validator", "external validation manifest: wrong external evidence validator artifact");
@@ -419,8 +419,8 @@ function assertExternalValidationManifest() {
   assert(manifest.externalClosureFixtures?.path === "docs/governance/system-telemetry/external-closure.fixtures.json", "external validation manifest: wrong external closure fixtures path");
   assert(manifest.externalClosureFixtures?.status === "synthetic_templates_not_closure", "external validation manifest: external closure fixtures must be synthetic");
   assert(manifest.externalClosureFixtures?.validTemplateCount === 3, "external validation manifest: wrong external closure valid fixture count");
-  assert(manifest.externalClosureFixtures?.invalidMutationCount === 17, "external validation manifest: wrong external closure invalid mutation count");
-  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval id, exact run scope, approving actor, approved action grants, credential/native grants, approval window, evidence timeline"), "external validation manifest: external closure fixtures closure role must be explicit");
+  assert(manifest.externalClosureFixtures?.invalidMutationCount === 20, "external validation manifest: wrong external closure invalid mutation count");
+  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval id, exact run scope, approving actor, approved action grants, credential/native/location/hardware/signed-app refs, approval window, evidence timeline"), "external validation manifest: external closure fixtures closure role must be explicit");
   assert(manifest.externalClosureBundleValidator?.required === true, "external validation manifest: external closure validator link must be required");
   assert(manifest.externalClosureBundleValidator?.artifactId === "clawix-system-telemetry-external-closure-validator", "external validation manifest: wrong external closure validator artifact");
   assert(manifest.externalClosureBundleValidator?.path === "scripts/validate-system-telemetry-external-closure.mjs", "external validation manifest: wrong external closure validator path");
@@ -574,6 +574,9 @@ function mutateApprovalTemplate(packet, mutation) {
     case "authorization.credentialLeaseRefs=extra":
       mutated.authorization.credentialLeaseRefs = [mutated.authorization.credentialLeaseRefs[0], "extra_lease_template"];
       break;
+    case "authorization.nativeGrantRefs=extra":
+      mutated.authorization.nativeGrantRefs = [mutated.authorization.nativeGrantRefs[0], "extra_native_grant_template"];
+      break;
     case "authorization.credentialLeaseRefs=rawSecretRef":
       mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
       break;
@@ -681,7 +684,7 @@ function assertExternalApprovalFixtures() {
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-approval.schema.json", "external approval fixtures: wrong schema path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-approval.mjs", "external approval fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external approval fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 9, "external approval fixtures: must contain 9 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 10, "external approval fixtures: must contain 10 invalid synthetic packets");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   const validByLaneId = new Map();
@@ -711,7 +714,7 @@ function assertExternalApprovalValidator() {
   assert(result.ok === true, "external approval validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_approval", "external approval validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external approval validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 9, "external approval validator: must reject 9 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 10, "external approval validator: must reject 10 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external approval validator: missing accepted fixture for ${rowId}`);
   }
@@ -827,9 +830,17 @@ function assertExternalEvidenceSchema() {
     assert(schema.properties?.closureImpact?.properties?.[field]?.maxItems === 1, `external evidence schema: ${field} must be exact`);
   }
   assert(schema.properties?.runAuthorization?.properties?.grants?.maxItems === 1, "external evidence schema: run authorization grants must be exact");
+  assert(schema.properties?.runAuthorization?.properties?.credentialLeaseRefs?.maxItems === 1, "external evidence schema: credential lease refs must be exact");
+  assert(schema.properties?.runAuthorization?.properties?.nativeGrantRefs?.maxItems === 1, "external evidence schema: native grant refs must be exact");
+  assert(schema.properties?.runAuthorization?.properties?.locationGrantRefs?.maxItems === 1, "external evidence schema: location grant refs must be exact");
+  assert(schema.properties?.runAuthorization?.properties?.hardwareProviderRefs?.maxItems === 1, "external evidence schema: hardware provider refs must be exact");
+  assert(schema.properties?.runAuthorization?.properties?.signedAppRefs?.maxItems === 1, "external evidence schema: signed app refs must be exact");
   assert(schema.properties?.reviewer?.properties?.decision?.enum?.includes("accepted"), "external evidence schema: reviewer acceptance must be explicit");
   for (const snippet of [
     "receiptRefs",
+    "locationGrantRefs",
+    "hardwareProviderRefs",
+    "signedAppRefs",
     "monitorSampleIds",
     "sameMachineEvidenceRefs",
     "appMenuEvidenceRefs",
@@ -844,6 +855,11 @@ function assertExternalEvidenceSchema() {
   assert(sensorRule?.properties?.runAuthorization?.properties?.grants?.contains?.const === "system.sensor.read", "external evidence schema: sensor lane must require sensor grant");
   assert(sensorRule?.properties?.runAuthorization?.properties?.grants?.maxItems === 1, "external evidence schema: sensor lane grants must be exact");
   assert(sensorRule?.properties?.runAuthorization?.properties?.nativeGrantRefs?.minItems === 1, "external evidence schema: sensor lane must require native grant refs");
+  assert(sensorRule?.properties?.runAuthorization?.properties?.nativeGrantRefs?.maxItems === 1, "external evidence schema: sensor lane native grant refs must be exact");
+  assert(sensorRule?.properties?.runAuthorization?.properties?.hardwareProviderRefs?.minItems === 1, "external evidence schema: sensor lane must require hardware provider refs");
+  assert(sensorRule?.properties?.runAuthorization?.properties?.hardwareProviderRefs?.maxItems === 1, "external evidence schema: sensor lane hardware provider refs must be exact");
+  assert(sensorRule?.properties?.runAuthorization?.properties?.signedAppRefs?.minItems === 1, "external evidence schema: sensor lane must require signed app refs");
+  assert(sensorRule?.properties?.runAuthorization?.properties?.signedAppRefs?.maxItems === 1, "external evidence schema: sensor lane signed app refs must be exact");
   assert(sensorRule?.properties?.evidence?.properties?.monitorSampleIds?.minItems === 1, "external evidence schema: sensor lane must require monitor samples");
   assert(sensorRule?.properties?.evidence?.properties?.sameMachineEvidenceRefs?.minItems === 1, "external evidence schema: sensor lane must require same-machine evidence");
   assert(sensorRule?.properties?.evidence?.properties?.appMenuEvidenceRefs?.minItems === 1, "external evidence schema: sensor lane must require app/menu evidence");
@@ -853,6 +869,11 @@ function assertExternalEvidenceSchema() {
   assert(liveRule?.properties?.runAuthorization?.properties?.grants?.contains?.const === "context.weather.read", "external evidence schema: live lane must require context grant");
   assert(liveRule?.properties?.runAuthorization?.properties?.grants?.maxItems === 1, "external evidence schema: live lane grants must be exact");
   assert(liveRule?.properties?.runAuthorization?.properties?.credentialLeaseRefs?.minItems === 1, "external evidence schema: live lane must require credential lease refs");
+  assert(liveRule?.properties?.runAuthorization?.properties?.credentialLeaseRefs?.maxItems === 1, "external evidence schema: live lane credential lease refs must be exact");
+  assert(liveRule?.properties?.runAuthorization?.properties?.locationGrantRefs?.minItems === 1, "external evidence schema: live lane must require location grant refs");
+  assert(liveRule?.properties?.runAuthorization?.properties?.locationGrantRefs?.maxItems === 1, "external evidence schema: live lane location grant refs must be exact");
+  assert(liveRule?.properties?.runAuthorization?.properties?.signedAppRefs?.minItems === 1, "external evidence schema: live lane must require signed app refs");
+  assert(liveRule?.properties?.runAuthorization?.properties?.signedAppRefs?.maxItems === 1, "external evidence schema: live lane signed app refs must be exact");
   assert(liveRule?.properties?.runAuthorization?.properties?.networkAccessApproved?.const === true, "external evidence schema: live lane must require network approval");
   assert(liveRule?.properties?.evidence?.properties?.monitorSampleIds?.minItems === 1, "external evidence schema: live lane must require monitor samples");
   assert(liveRule?.properties?.evidence?.properties?.appMenuEvidenceRefs?.minItems === 1, "external evidence schema: live lane must require app/menu evidence");
@@ -862,6 +883,9 @@ function assertExternalEvidenceSchema() {
   assert(controlRule?.properties?.runAuthorization?.properties?.grants?.contains?.const === "system.control.execute", "external evidence schema: control lane must require control grant");
   assert(controlRule?.properties?.runAuthorization?.properties?.grants?.maxItems === 1, "external evidence schema: control lane grants must be exact");
   assert(controlRule?.properties?.runAuthorization?.properties?.nativeGrantRefs?.minItems === 1, "external evidence schema: control lane must require native grant refs");
+  assert(controlRule?.properties?.runAuthorization?.properties?.nativeGrantRefs?.maxItems === 1, "external evidence schema: control lane native grant refs must be exact");
+  assert(controlRule?.properties?.runAuthorization?.properties?.signedAppRefs?.minItems === 1, "external evidence schema: control lane must require signed app refs");
+  assert(controlRule?.properties?.runAuthorization?.properties?.signedAppRefs?.maxItems === 1, "external evidence schema: control lane signed app refs must be exact");
   assert(controlRule?.properties?.evidence?.properties?.appMenuEvidenceRefs?.minItems === 1, "external evidence schema: control lane must require app/menu evidence");
   assert(controlRule?.properties?.evidence?.properties?.physicalValidationRefs?.minItems === 1, "external evidence schema: control lane must require physical validation");
   assert(controlRule?.properties?.evidence?.properties?.rollbackOrContinuityRefs?.minItems === 1, "external evidence schema: control lane must require rollback or continuity evidence");
@@ -915,6 +939,21 @@ function mutateEvidenceTemplate(packet, mutation) {
     case "runAuthorization.grants has extra":
       mutated.runAuthorization.grants = [mutated.runAuthorization.grants[0], "extra_unapproved_grant_template"];
       break;
+    case "runAuthorization.credentialLeaseRefs has extra":
+      mutated.runAuthorization.credentialLeaseRefs = [mutated.runAuthorization.credentialLeaseRefs[0], "extra_lease_template"];
+      break;
+    case "runAuthorization.nativeGrantRefs has extra":
+      mutated.runAuthorization.nativeGrantRefs = [mutated.runAuthorization.nativeGrantRefs[0], "extra_native_grant_template"];
+      break;
+    case "runAuthorization.locationGrantRefs is empty":
+      mutated.runAuthorization.locationGrantRefs = [];
+      break;
+    case "runAuthorization.hardwareProviderRefs is empty":
+      mutated.runAuthorization.hardwareProviderRefs = [];
+      break;
+    case "runAuthorization.signedAppRefs is empty":
+      mutated.runAuthorization.signedAppRefs = [];
+      break;
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
       break;
@@ -939,7 +978,7 @@ function assertExternalEvidenceFixtures() {
   assert(fixtures.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external evidence fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-evidence.schema.json", "external evidence fixtures: wrong schema path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external evidence fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 10, "external evidence fixtures: must contain 10 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 15, "external evidence fixtures: must contain 15 invalid synthetic packets");
   const schema = readJson("docs/governance/system-telemetry/external-evidence.schema.json");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
@@ -972,7 +1011,7 @@ function assertExternalEvidenceValidator() {
   assert(result.ok === true, "external evidence validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_evidence", "external evidence validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external evidence validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 10, "external evidence validator: must reject 10 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 15, "external evidence validator: must reject 15 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external evidence validator: missing accepted fixture for ${rowId}`);
   }
@@ -989,7 +1028,7 @@ function assertExternalClosureFixtures() {
   assert(fixtures.evidenceFixturesPath === "docs/governance/system-telemetry/external-evidence.fixtures.json", "external closure fixtures: wrong evidence fixtures path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "external closure fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticBundles) && fixtures.validSyntheticBundles.length === 3, "external closure fixtures: must contain 3 valid synthetic bundles");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 17, "external closure fixtures: must contain 17 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 20, "external closure fixtures: must contain 20 invalid mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(fixtures.validSyntheticBundles.some((bundle) => bundle.laneId === rowId), `external closure fixtures: missing valid bundle for ${rowId}`);
   }
@@ -1007,7 +1046,7 @@ function assertExternalClosureValidator() {
   assert(result.ok === true, "external closure validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_closure", "external closure validator: fixtures must remain synthetic");
   assert(result.validSyntheticBundles === 3, "external closure validator: must accept 3 valid synthetic bundles");
-  assert(result.invalidSyntheticMutations === 17, "external closure validator: must reject 17 invalid synthetic mutations");
+  assert(result.invalidSyntheticMutations === 20, "external closure validator: must reject 20 invalid synthetic mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external closure validator: missing accepted fixture for ${rowId}`);
   }

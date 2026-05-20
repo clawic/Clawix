@@ -17,9 +17,20 @@
         "approvedAt": "2026-05-20T00:00:00Z",
         "approvedBy": "user",
         "exactRunScope": "physical sensor app template only",
-        "grants": ["system.sensor.read"],
+        "grants": [
+          "system.sensor.read"
+        ],
         "credentialLeaseRefs": [],
-        "nativeGrantRefs": ["grant_sensor_template"],
+        "nativeGrantRefs": [
+          "grant_sensor_template"
+        ],
+        "locationGrantRefs": [],
+        "hardwareProviderRefs": [
+          "compatible_hardware_template"
+        ],
+        "signedAppRefs": [
+          "signed_app_template"
+        ],
         "networkAccessApproved": false
       },
       "preflight": {
@@ -33,15 +44,25 @@
         "startedAt": "2026-05-20T00:00:00Z",
         "completedAt": "2026-05-20T00:00:01Z",
         "executor": "signed_app_host",
-        "receiptRefs": ["receipt_sensor_template"],
+        "receiptRefs": [
+          "receipt_sensor_template"
+        ],
         "externalPendingCleared": true,
         "failedApprovedRun": false
       },
       "evidence": {
-        "auditEventRefs": ["audit_sensor_template"],
-        "monitorSampleIds": ["sample_system_sensor_temperature_template"],
-        "sameMachineEvidenceRefs": ["machine_sensor_template"],
-        "appMenuEvidenceRefs": ["menu_sensor_template"],
+        "auditEventRefs": [
+          "audit_sensor_template"
+        ],
+        "monitorSampleIds": [
+          "sample_system_sensor_temperature_template"
+        ],
+        "sameMachineEvidenceRefs": [
+          "machine_sensor_template"
+        ],
+        "appMenuEvidenceRefs": [
+          "menu_sensor_template"
+        ],
         "physicalValidationRefs": [],
         "rollbackOrContinuityRefs": []
       },
@@ -51,10 +72,18 @@
         "privatePathsIncluded": false
       },
       "closureImpact": {
-        "rowsToReplace": ["CLX-SYS-TEL-EXT-003"],
-        "completionAuditRows": ["CLX-STA-014"],
-        "sourceQaRows": ["CLX-STQA-003"],
-        "manifestRows": ["CLX-SYS-TEL-EXT-003"],
+        "rowsToReplace": [
+          "CLX-SYS-TEL-EXT-003"
+        ],
+        "completionAuditRows": [
+          "CLX-STA-014"
+        ],
+        "sourceQaRows": [
+          "CLX-STQA-003"
+        ],
+        "manifestRows": [
+          "CLX-SYS-TEL-EXT-003"
+        ],
         "requiresFinalSourceReread": true,
         "requiresForbiddenNameScan": true
       },
@@ -75,9 +104,20 @@
         "approvedAt": "2026-05-20T00:00:00Z",
         "approvedBy": "user",
         "exactRunScope": "live context menu template only",
-        "grants": ["context.weather.read"],
-        "credentialLeaseRefs": ["lease_weather_template"],
+        "grants": [
+          "context.weather.read"
+        ],
+        "credentialLeaseRefs": [
+          "lease_weather_template"
+        ],
         "nativeGrantRefs": [],
+        "locationGrantRefs": [
+          "location_grant_template"
+        ],
+        "hardwareProviderRefs": [],
+        "signedAppRefs": [
+          "signed_app_template"
+        ],
         "networkAccessApproved": true
       },
       "preflight": {
@@ -91,15 +131,23 @@
         "startedAt": "2026-05-20T00:00:00Z",
         "completedAt": "2026-05-20T00:00:01Z",
         "executor": "provider_broker",
-        "receiptRefs": ["receipt_weather_template"],
+        "receiptRefs": [
+          "receipt_weather_template"
+        ],
         "externalPendingCleared": true,
         "failedApprovedRun": false
       },
       "evidence": {
-        "auditEventRefs": ["audit_weather_template"],
-        "monitorSampleIds": ["sample_context_weather_temperature_template"],
+        "auditEventRefs": [
+          "audit_weather_template"
+        ],
+        "monitorSampleIds": [
+          "sample_context_weather_temperature_template"
+        ],
         "sameMachineEvidenceRefs": [],
-        "appMenuEvidenceRefs": ["menu_weather_template"],
+        "appMenuEvidenceRefs": [
+          "menu_weather_template"
+        ],
         "physicalValidationRefs": [],
         "rollbackOrContinuityRefs": []
       },
@@ -109,10 +157,18 @@
         "privatePathsIncluded": false
       },
       "closureImpact": {
-        "rowsToReplace": ["CLX-SYS-TEL-EXT-004"],
-        "completionAuditRows": ["CLX-STA-015"],
-        "sourceQaRows": ["CLX-STQA-003"],
-        "manifestRows": ["CLX-SYS-TEL-EXT-004"],
+        "rowsToReplace": [
+          "CLX-SYS-TEL-EXT-004"
+        ],
+        "completionAuditRows": [
+          "CLX-STA-015"
+        ],
+        "sourceQaRows": [
+          "CLX-STQA-003"
+        ],
+        "manifestRows": [
+          "CLX-SYS-TEL-EXT-004"
+        ],
         "requiresFinalSourceReread": true,
         "requiresForbiddenNameScan": true
       },
@@ -133,9 +189,18 @@
         "approvedAt": "2026-05-20T00:00:00Z",
         "approvedBy": "user",
         "exactRunScope": "dangerous control app template only",
-        "grants": ["system.control.execute"],
+        "grants": [
+          "system.control.execute"
+        ],
         "credentialLeaseRefs": [],
-        "nativeGrantRefs": ["grant_control_template"],
+        "nativeGrantRefs": [
+          "grant_control_template"
+        ],
+        "locationGrantRefs": [],
+        "hardwareProviderRefs": [],
+        "signedAppRefs": [
+          "signed_app_template"
+        ],
         "networkAccessApproved": false
       },
       "preflight": {
@@ -149,17 +214,27 @@
         "startedAt": "2026-05-20T00:00:00Z",
         "completedAt": "2026-05-20T00:00:01Z",
         "executor": "signed_host_broker",
-        "receiptRefs": ["receipt_control_template"],
+        "receiptRefs": [
+          "receipt_control_template"
+        ],
         "externalPendingCleared": true,
         "failedApprovedRun": false
       },
       "evidence": {
-        "auditEventRefs": ["audit_control_template"],
+        "auditEventRefs": [
+          "audit_control_template"
+        ],
         "monitorSampleIds": [],
         "sameMachineEvidenceRefs": [],
-        "appMenuEvidenceRefs": ["menu_control_template"],
-        "physicalValidationRefs": ["physical_control_template"],
-        "rollbackOrContinuityRefs": ["rollback_control_template"]
+        "appMenuEvidenceRefs": [
+          "menu_control_template"
+        ],
+        "physicalValidationRefs": [
+          "physical_control_template"
+        ],
+        "rollbackOrContinuityRefs": [
+          "rollback_control_template"
+        ]
       },
       "redaction": {
         "containsSecrets": false,
@@ -167,10 +242,18 @@
         "privatePathsIncluded": false
       },
       "closureImpact": {
-        "rowsToReplace": ["CLX-SYS-TEL-EXT-005"],
-        "completionAuditRows": ["CLX-STA-016"],
-        "sourceQaRows": ["CLX-STQA-003"],
-        "manifestRows": ["CLX-SYS-TEL-EXT-005"],
+        "rowsToReplace": [
+          "CLX-SYS-TEL-EXT-005"
+        ],
+        "completionAuditRows": [
+          "CLX-STA-016"
+        ],
+        "sourceQaRows": [
+          "CLX-STQA-003"
+        ],
+        "manifestRows": [
+          "CLX-SYS-TEL-EXT-005"
+        ],
         "requiresFinalSourceReread": true,
         "requiresForbiddenNameScan": true
       },
@@ -197,9 +280,20 @@
           "approvedAt": "2026-05-20T00:00:00Z",
           "approvedBy": "user",
           "exactRunScope": "invalid physical sensor app template",
-          "grants": ["system.sensor.read"],
+          "grants": [
+            "system.sensor.read"
+          ],
           "credentialLeaseRefs": [],
-          "nativeGrantRefs": ["grant_sensor_template"],
+          "nativeGrantRefs": [
+            "grant_sensor_template"
+          ],
+          "locationGrantRefs": [],
+          "hardwareProviderRefs": [
+            "compatible_hardware_template"
+          ],
+          "signedAppRefs": [
+            "signed_app_template"
+          ],
           "networkAccessApproved": false
         },
         "preflight": {
@@ -213,14 +307,22 @@
           "startedAt": "2026-05-20T00:00:00Z",
           "completedAt": "2026-05-20T00:00:01Z",
           "executor": "signed_app_host",
-          "receiptRefs": ["receipt_sensor_template"],
+          "receiptRefs": [
+            "receipt_sensor_template"
+          ],
           "externalPendingCleared": true,
           "failedApprovedRun": false
         },
         "evidence": {
-          "auditEventRefs": ["audit_sensor_template"],
-          "monitorSampleIds": ["sample_system_sensor_temperature_template"],
-          "sameMachineEvidenceRefs": ["machine_sensor_template"],
+          "auditEventRefs": [
+            "audit_sensor_template"
+          ],
+          "monitorSampleIds": [
+            "sample_system_sensor_temperature_template"
+          ],
+          "sameMachineEvidenceRefs": [
+            "machine_sensor_template"
+          ],
           "appMenuEvidenceRefs": [],
           "physicalValidationRefs": [],
           "rollbackOrContinuityRefs": []
@@ -231,10 +333,18 @@
           "privatePathsIncluded": false
         },
         "closureImpact": {
-          "rowsToReplace": ["CLX-SYS-TEL-EXT-003"],
-          "completionAuditRows": ["CLX-STA-014"],
-          "sourceQaRows": ["CLX-STQA-003"],
-          "manifestRows": ["CLX-SYS-TEL-EXT-003"],
+          "rowsToReplace": [
+            "CLX-SYS-TEL-EXT-003"
+          ],
+          "completionAuditRows": [
+            "CLX-STA-014"
+          ],
+          "sourceQaRows": [
+            "CLX-STQA-003"
+          ],
+          "manifestRows": [
+            "CLX-SYS-TEL-EXT-003"
+          ],
           "requiresFinalSourceReread": true,
           "requiresForbiddenNameScan": true
         },
@@ -260,9 +370,18 @@
           "approvedAt": "2026-05-20T00:00:00Z",
           "approvedBy": "user",
           "exactRunScope": "invalid live context menu template",
-          "grants": ["context.weather.read"],
+          "grants": [
+            "context.weather.read"
+          ],
           "credentialLeaseRefs": [],
           "nativeGrantRefs": [],
+          "locationGrantRefs": [
+            "location_grant_template"
+          ],
+          "hardwareProviderRefs": [],
+          "signedAppRefs": [
+            "signed_app_template"
+          ],
           "networkAccessApproved": true
         },
         "preflight": {
@@ -276,15 +395,23 @@
           "startedAt": "2026-05-20T00:00:00Z",
           "completedAt": "2026-05-20T00:00:01Z",
           "executor": "provider_broker",
-          "receiptRefs": ["receipt_weather_template"],
+          "receiptRefs": [
+            "receipt_weather_template"
+          ],
           "externalPendingCleared": true,
           "failedApprovedRun": false
         },
         "evidence": {
-          "auditEventRefs": ["audit_weather_template"],
-          "monitorSampleIds": ["sample_context_weather_temperature_template"],
+          "auditEventRefs": [
+            "audit_weather_template"
+          ],
+          "monitorSampleIds": [
+            "sample_context_weather_temperature_template"
+          ],
           "sameMachineEvidenceRefs": [],
-          "appMenuEvidenceRefs": ["menu_weather_template"],
+          "appMenuEvidenceRefs": [
+            "menu_weather_template"
+          ],
           "physicalValidationRefs": [],
           "rollbackOrContinuityRefs": []
         },
@@ -294,10 +421,18 @@
           "privatePathsIncluded": false
         },
         "closureImpact": {
-          "rowsToReplace": ["CLX-SYS-TEL-EXT-004"],
-          "completionAuditRows": ["CLX-STA-015"],
-          "sourceQaRows": ["CLX-STQA-003"],
-          "manifestRows": ["CLX-SYS-TEL-EXT-004"],
+          "rowsToReplace": [
+            "CLX-SYS-TEL-EXT-004"
+          ],
+          "completionAuditRows": [
+            "CLX-STA-015"
+          ],
+          "sourceQaRows": [
+            "CLX-STQA-003"
+          ],
+          "manifestRows": [
+            "CLX-SYS-TEL-EXT-004"
+          ],
           "requiresFinalSourceReread": true,
           "requiresForbiddenNameScan": true
         },
@@ -307,6 +442,31 @@
           "decision": "accepted"
         }
       }
+    },
+    {
+      "id": "extra_credential_lease_ref",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "runAuthorization.credentialLeaseRefs has extra"
+    },
+    {
+      "id": "extra_native_grant_ref",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "runAuthorization.nativeGrantRefs has extra"
+    },
+    {
+      "id": "missing_sensor_hardware_provider",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "runAuthorization.hardwareProviderRefs is empty"
+    },
+    {
+      "id": "missing_live_location_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "runAuthorization.locationGrantRefs is empty"
+    },
+    {
+      "id": "missing_control_signed_app_ref",
+      "baseLaneId": "CLX-SYS-TEL-EXT-005",
+      "mutation": "runAuthorization.signedAppRefs is empty"
     },
     {
       "id": "failed_control_execution",
@@ -323,9 +483,18 @@
           "approvedAt": "2026-05-20T00:00:00Z",
           "approvedBy": "user",
           "exactRunScope": "invalid dangerous control app template",
-          "grants": ["system.control.execute"],
+          "grants": [
+            "system.control.execute"
+          ],
           "credentialLeaseRefs": [],
-          "nativeGrantRefs": ["grant_control_template"],
+          "nativeGrantRefs": [
+            "grant_control_template"
+          ],
+          "locationGrantRefs": [],
+          "hardwareProviderRefs": [],
+          "signedAppRefs": [
+            "signed_app_template"
+          ],
           "networkAccessApproved": false
         },
         "preflight": {
@@ -339,17 +508,27 @@
           "startedAt": "2026-05-20T00:00:00Z",
           "completedAt": "2026-05-20T00:00:01Z",
           "executor": "signed_host_broker",
-          "receiptRefs": ["receipt_control_template"],
+          "receiptRefs": [
+            "receipt_control_template"
+          ],
           "externalPendingCleared": true,
           "failedApprovedRun": true
         },
         "evidence": {
-          "auditEventRefs": ["audit_control_template"],
+          "auditEventRefs": [
+            "audit_control_template"
+          ],
           "monitorSampleIds": [],
           "sameMachineEvidenceRefs": [],
-          "appMenuEvidenceRefs": ["menu_control_template"],
-          "physicalValidationRefs": ["physical_control_template"],
-          "rollbackOrContinuityRefs": ["rollback_control_template"]
+          "appMenuEvidenceRefs": [
+            "menu_control_template"
+          ],
+          "physicalValidationRefs": [
+            "physical_control_template"
+          ],
+          "rollbackOrContinuityRefs": [
+            "rollback_control_template"
+          ]
         },
         "redaction": {
           "containsSecrets": false,
@@ -357,10 +536,18 @@
           "privatePathsIncluded": false
         },
         "closureImpact": {
-          "rowsToReplace": ["CLX-SYS-TEL-EXT-005"],
-          "completionAuditRows": ["CLX-STA-016"],
-          "sourceQaRows": ["CLX-STQA-003"],
-          "manifestRows": ["CLX-SYS-TEL-EXT-005"],
+          "rowsToReplace": [
+            "CLX-SYS-TEL-EXT-005"
+          ],
+          "completionAuditRows": [
+            "CLX-STA-016"
+          ],
+          "sourceQaRows": [
+            "CLX-STQA-003"
+          ],
+          "manifestRows": [
+            "CLX-SYS-TEL-EXT-005"
+          ],
           "requiresFinalSourceReread": true,
           "requiresForbiddenNameScan": true
         },
