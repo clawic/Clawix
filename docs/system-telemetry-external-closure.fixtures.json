@@ -45,6 +45,12 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "approvalPacket.preflight.command=mismatch",
       "reason": "Approval and evidence must refer to the same safe preflight command."
+    },
+    {
+      "id": "mismatched_approval_id",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.approvalId=mismatch",
+      "reason": "Evidence must reference the exact approval packet in the closure bundle."
     }
   ]
 }

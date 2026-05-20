@@ -29,8 +29,9 @@
     "approval": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["decision", "exactRunApproved", "approvedBy", "approvedAt", "expiresAt", "approvedActions", "reason"],
+      "required": ["approvalId", "decision", "exactRunApproved", "approvedBy", "approvedAt", "expiresAt", "approvedActions", "reason"],
       "properties": {
+        "approvalId": { "type": "string", "minLength": 1 },
         "decision": { "const": "approved" },
         "exactRunApproved": { "const": true },
         "approvedBy": { "type": "string", "minLength": 1 },

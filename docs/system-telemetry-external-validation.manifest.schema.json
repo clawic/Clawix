@@ -147,7 +147,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_closure" },
             "validTemplateCount": { "const": 3 },
-            "invalidMutationCount": { "const": 4 },
+            "invalidMutationCount": { "const": 5 },
             "path": { "const": "docs/system-telemetry-external-closure.fixtures.json" }
           }
         }

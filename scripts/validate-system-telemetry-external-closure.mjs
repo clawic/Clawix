@@ -105,6 +105,10 @@ function validateClosureBundle(bundle, label) {
     bundle.approvalPacket.authorization?.networkAccessApproved === bundle.evidencePacket.runAuthorization?.networkAccessApproved,
     `${label}: approval and evidence network authorization must match`,
   );
+  assert(
+    bundle.approvalPacket.approval?.approvalId === bundle.evidencePacket.runAuthorization?.approvalId,
+    `${label}: approval id must match evidence run authorization`,
+  );
   return { laneId: bundle.laneId, repoScope: bundle.repoScope };
 }
 
@@ -122,6 +126,9 @@ function mutateBundle(bundle, mutation) {
       break;
     case "approvalPacket.preflight.command=mismatch":
       mutated.approvalPacket.preflight.command = "claw system providers plan mismatched.template --json";
+      break;
+    case "evidencePacket.runAuthorization.approvalId=mismatch":
+      mutated.evidencePacket.runAuthorization.approvalId = "approval_mismatched_template";
       break;
     default:
       throw new Error(`unknown closure fixture mutation ${mutation}`);

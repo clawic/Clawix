@@ -375,8 +375,8 @@ function assertExternalValidationManifest() {
   assert(manifest.externalClosureFixtures?.path === "docs/system-telemetry-external-closure.fixtures.json", "external validation manifest: wrong external closure fixtures path");
   assert(manifest.externalClosureFixtures?.status === "synthetic_templates_not_closure", "external validation manifest: external closure fixtures must be synthetic");
   assert(manifest.externalClosureFixtures?.validTemplateCount === 3, "external validation manifest: wrong external closure valid fixture count");
-  assert(manifest.externalClosureFixtures?.invalidMutationCount === 4, "external validation manifest: wrong external closure invalid mutation count");
-  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval and accepted evidence must belong to the same app lane"), "external validation manifest: external closure fixtures closure role must be explicit");
+  assert(manifest.externalClosureFixtures?.invalidMutationCount === 5, "external validation manifest: wrong external closure invalid mutation count");
+  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval and accepted evidence must belong to the same app lane and approval id"), "external validation manifest: external closure fixtures closure role must be explicit");
   assert(manifest.externalClosureBundleValidator?.required === true, "external validation manifest: external closure validator link must be required");
   assert(manifest.externalClosureBundleValidator?.artifactId === "clawix-system-telemetry-external-closure-validator", "external validation manifest: wrong external closure validator artifact");
   assert(manifest.externalClosureBundleValidator?.path === "scripts/validate-system-telemetry-external-closure.mjs", "external validation manifest: wrong external closure validator path");
@@ -530,6 +530,7 @@ function assertExternalApprovalSchema() {
     assert(schema.required?.includes(required), `external approval schema: missing required field ${required}`);
   }
   assert(schema.properties?.approval?.properties?.decision?.const === "approved", "external approval schema: decision must be approved");
+  assert(schema.properties?.approval?.properties?.approvalId?.minLength === 1, "external approval schema: approval id must be required");
   assert(schema.properties?.approval?.properties?.exactRunApproved?.const === true, "external approval schema: exact-run approval must be true");
   assert(schema.properties?.preflight?.properties?.command?.pattern === "^claw system ", "external approval schema: preflight command must be claw system");
   assert(schema.properties?.preflight?.properties?.mustFailClosedBeforeApproval?.const === true, "external approval schema: preflight must fail closed before approval");
@@ -586,6 +587,7 @@ function assertExternalApprovalFixtures() {
   for (const packet of fixtures.validSyntheticPackets) {
     assert(validate(packet), `external approval fixtures: valid packet ${packet.laneId} must validate: ${ajv.errorsText(validate.errors)}`);
     validByLaneId.set(packet.laneId, packet);
+    assert(typeof packet.approval?.approvalId === "string" && packet.approval.approvalId.length > 0, `external approval fixtures: ${packet.laneId} must include approval id`);
     assert(packet.privacy?.containsSecrets === false, `external approval fixtures: ${packet.laneId} must not contain secrets`);
     assert(packet.privacy?.preciseLocationApprovedForStorage === false, `external approval fixtures: ${packet.laneId} must not store precise location`);
     assert(packet.privacy?.privatePathsIncluded === false, `external approval fixtures: ${packet.laneId} must not include private paths`);
@@ -799,7 +801,7 @@ function assertExternalClosureFixtures() {
   assert(fixtures.evidenceFixturesPath === "docs/system-telemetry-external-evidence.fixtures.json", "external closure fixtures: wrong evidence fixtures path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "external closure fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticBundles) && fixtures.validSyntheticBundles.length === 3, "external closure fixtures: must contain 3 valid synthetic bundles");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 4, "external closure fixtures: must contain 4 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 5, "external closure fixtures: must contain 5 invalid mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(fixtures.validSyntheticBundles.some((bundle) => bundle.laneId === rowId), `external closure fixtures: missing valid bundle for ${rowId}`);
   }
@@ -817,7 +819,7 @@ function assertExternalClosureValidator() {
   assert(result.ok === true, "external closure validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_closure", "external closure validator: fixtures must remain synthetic");
   assert(result.validSyntheticBundles === 3, "external closure validator: must accept 3 valid synthetic bundles");
-  assert(result.invalidSyntheticMutations === 4, "external closure validator: must reject 4 invalid synthetic mutations");
+  assert(result.invalidSyntheticMutations === 5, "external closure validator: must reject 5 invalid synthetic mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external closure validator: missing accepted fixture for ${rowId}`);
   }
