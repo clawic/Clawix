@@ -77,6 +77,17 @@ function publicSafetyErrors(value) {
     .map(([, message]) => message);
 }
 
+function assertPublicCredentialLeaseRefSchema(schema, label) {
+  const definition = schema.$defs?.publicCredentialLeaseRef;
+  const patterns = definition?.not?.anyOf?.map((rule) => rule.pattern) ?? [];
+  assert(definition?.type === "string", `${label}: publicCredentialLeaseRef must be a string`);
+  assert(definition?.minLength === 1, `${label}: publicCredentialLeaseRef must be non-empty`);
+  for (const pattern of ["secret://", "file://", "[/\\\\][Uu]sers[/\\\\]", "-----BEGIN", "\\bsk-[A-Za-z0-9_-]+", "\\bAKIA[A-Z0-9]+"]) {
+    assert(patterns.includes(pattern), `${label}: publicCredentialLeaseRef must reject ${pattern}`);
+  }
+  return "#/$defs/publicCredentialLeaseRef";
+}
+
 function run(command, commandArgs, options = {}) {
   try {
     return execFileSync(command, commandArgs, {
@@ -628,6 +639,8 @@ function assertExternalApprovalSchema() {
   for (const field of ["credentialLeaseRefs", "nativeGrantRefs", "locationGrantRefs", "hardwareProviderRefs", "signedAppRefs"]) {
     assert(schema.properties?.authorization?.properties?.[field]?.maxItems === 1, `external approval schema: ${field} must be exact`);
   }
+  const publicCredentialLeaseRef = assertPublicCredentialLeaseRefSchema(schema, "external approval schema");
+  assert(schema.properties?.authorization?.properties?.credentialLeaseRefs?.items?.$ref === publicCredentialLeaseRef, "external approval schema: credential lease refs must use public-safe refs");
   assert(schema.properties?.approval?.properties?.approvedAt?.format === "date-time", "external approval schema: approvedAt must be date-time");
   assert(schema.properties?.approval?.properties?.expiresAt?.format === "date-time", "external approval schema: expiresAt must be date-time");
   assert(schema.properties?.preflight?.properties?.command?.pattern === "^claw system ", "external approval schema: preflight command must be claw system");
@@ -831,6 +844,8 @@ function assertExternalEvidenceSchema() {
   }
   assert(schema.properties?.runAuthorization?.properties?.grants?.maxItems === 1, "external evidence schema: run authorization grants must be exact");
   assert(schema.properties?.runAuthorization?.properties?.credentialLeaseRefs?.maxItems === 1, "external evidence schema: credential lease refs must be exact");
+  const publicCredentialLeaseRef = assertPublicCredentialLeaseRefSchema(schema, "external evidence schema");
+  assert(schema.properties?.runAuthorization?.properties?.credentialLeaseRefs?.items?.$ref === publicCredentialLeaseRef, "external evidence schema: credential lease refs must use public-safe refs");
   assert(schema.properties?.runAuthorization?.properties?.nativeGrantRefs?.maxItems === 1, "external evidence schema: native grant refs must be exact");
   assert(schema.properties?.runAuthorization?.properties?.locationGrantRefs?.maxItems === 1, "external evidence schema: location grant refs must be exact");
   assert(schema.properties?.runAuthorization?.properties?.hardwareProviderRefs?.maxItems === 1, "external evidence schema: hardware provider refs must be exact");

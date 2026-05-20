@@ -5,6 +5,22 @@
   "description": "Public-safe exact-run approval packet required before any Clawix system telemetry external lane execution.",
   "x-fixturePath": "docs/governance/system-telemetry/external-approval.fixtures.json",
   "x-validatorPath": "scripts/validate-system-telemetry-external-approval.mjs",
+  "$defs": {
+    "publicCredentialLeaseRef": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "anyOf": [
+          { "pattern": "secret://" },
+          { "pattern": "file://" },
+          { "pattern": "[/\\\\][Uu]sers[/\\\\]" },
+          { "pattern": "-----BEGIN" },
+          { "pattern": "\\bsk-[A-Za-z0-9_-]+" },
+          { "pattern": "\\bAKIA[A-Z0-9]+" }
+        ]
+      }
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -56,7 +72,7 @@
       "additionalProperties": false,
       "required": ["credentialLeaseRefs", "nativeGrantRefs", "networkAccessApproved", "locationGrantRefs", "hardwareProviderRefs", "signedAppRefs"],
       "properties": {
-        "credentialLeaseRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "credentialLeaseRefs": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/publicCredentialLeaseRef" } },
         "nativeGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
         "networkAccessApproved": { "type": "boolean" },
         "locationGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },

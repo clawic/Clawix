@@ -4,6 +4,22 @@
   "title": "Clawix System Telemetry External Evidence Packet",
   "description": "Public-safe evidence packet required before replacing a Clawix system telemetry EXTERNAL PENDING lane.",
   "x-fixturePath": "docs/governance/system-telemetry/external-evidence.fixtures.json",
+  "$defs": {
+    "publicCredentialLeaseRef": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "anyOf": [
+          { "pattern": "secret://" },
+          { "pattern": "file://" },
+          { "pattern": "[/\\\\][Uu]sers[/\\\\]" },
+          { "pattern": "-----BEGIN" },
+          { "pattern": "\\bsk-[A-Za-z0-9_-]+" },
+          { "pattern": "\\bAKIA[A-Z0-9]+" }
+        ]
+      }
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -62,7 +78,7 @@
         "approvedBy": { "type": "string", "minLength": 1 },
         "exactRunScope": { "type": "string", "minLength": 1 },
         "grants": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "type": "string" } },
-        "credentialLeaseRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
+        "credentialLeaseRefs": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/publicCredentialLeaseRef" } },
         "nativeGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
         "locationGrantRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
         "hardwareProviderRefs": { "type": "array", "maxItems": 1, "items": { "type": "string" } },
