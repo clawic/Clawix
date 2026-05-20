@@ -692,6 +692,81 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testSwiftSurfaceReadActionReportsWithoutApproval() async throws {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:swift-dashboard") { report in
+            reports.append(report)
+        }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let appsStore = AppsStore(rootURL: root)
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkRead,
+                capabilityId: "search.query",
+                operation: "search.query"
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            surfaceReporter: reporter,
+            highRiskActionDispatcher: AppUnavailableHighRiskActionDispatcher(),
+            approvalHandler: { _, _, _ in
+                XCTFail("Read actions should not request interruptive approval")
+            }
+        ).handle(action)
+
+        XCTAssertEqual(result, .reportedRead("search.query"))
+        XCTAssertTrue(reports.contains(.partial(message: "Swift surface read action accepted: search.query")))
+    }
+
+    @MainActor
+    func testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let appsStore = AppsStore(rootURL: root)
+        let app = AppRecord(
+            slug: "swift-iot-dashboard",
+            name: "Swift IoT Dashboard",
+            declaredCapabilities: ["iot.device.action.invoke"],
+            surfaceKind: .swiftDeclarative
+        )
+        let dispatcher = RecordingSwiftSurfaceActionDispatcher(result: .dispatched(["ok": true]))
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkAction,
+                capabilityId: "iot.device.action.invoke",
+                operation: "iot.device.toggle"
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            highRiskActionDispatcher: dispatcher,
+            approvalHandler: { _, _, completion in completion(.once) }
+        ).handle(action)
+
+        XCTAssertEqual(result, .dispatched(.dispatched))
+        XCTAssertEqual(dispatcher.requests.map(\.tool), ["iot.device.toggle"])
+        XCTAssertEqual(dispatcher.requests.first?.descriptor.id, "iot.device.action.invoke")
+        let receipts = try AppHighRiskActionAudit.read(from: appsStore.highRiskActionAuditURL(for: app))
+        XCTAssertEqual(receipts.count, 1)
+        XCTAssertEqual(receipts[0].capabilityId, "iot.device.action.invoke")
+        XCTAssertEqual(receipts[0].action, "iot.device.toggle")
+        XCTAssertEqual(receipts[0].decision, .approvedOnce)
+        XCTAssertEqual(receipts[0].outcome, .dispatched)
+    }
+
     func testSwiftSurfaceDSLRejectsUnknownCapabilities() {
         let app = AppRecord(
             slug: "swift-dashboard",
@@ -1819,5 +1894,20 @@ private struct RecordingSwiftRunnerExecutor: AppSwiftSurfaceRunnerExecuting {
 
     func run(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerResult {
         result
+    }
+}
+
+@MainActor
+private final class RecordingSwiftSurfaceActionDispatcher: AppHighRiskActionDispatcher {
+    let result: AppHighRiskActionDispatchResult
+    private(set) var requests: [AppHighRiskActionDispatchRequest] = []
+
+    init(result: AppHighRiskActionDispatchResult) {
+        self.result = result
+    }
+
+    func dispatch(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
+        requests.append(request)
+        return result
     }
 }

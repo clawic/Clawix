@@ -105,9 +105,12 @@ Swift declarative surfaces are rendered by the host from a constrained DSL, not
 from arbitrary in-process SwiftUI. The out-of-process
 `ClawixSwiftSurfaceRunner` target reads `surface.json` and emits a versioned
 stdout `render` message. The host validates that message against the launch
-plan and declared capabilities before it renders native nodes. Signed app
-bundling/configuration and executable action-event dispatch remain separate
-closure gates.
+plan and declared capabilities before it renders native nodes. Rendered controls
+enter `AppSwiftSurfaceActionBridge`: read actions report a route-local
+non-interruptive event, while high-risk `sdkAction` controls use the same
+approval, dispatcher, and `high-risk-action-audit.jsonl` receipt boundary as
+hosted Web apps. Signed app bundling/configuration and richer Swift SDK read
+execution remain separate closure gates.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale

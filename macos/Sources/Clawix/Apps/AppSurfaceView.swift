@@ -58,7 +58,8 @@ struct AppSurfaceView: View {
                         AppSwiftSurfaceHostView(
                             record: record,
                             reloadToken: reloadToken,
-                            appsStore: appsStore
+                            appsStore: appsStore,
+                            iotManager: iotManager
                         )
                         .id("\(record.slug)-swift-\(reloadToken)")
                     }
@@ -240,6 +241,7 @@ private struct AppSwiftSurfaceHostView: View {
     let record: AppRecord
     let reloadToken: Int
     let appsStore: AppsStore
+    let iotManager: IoTManager
 
     @Environment(\.surfaceRouteReporter) private var surfaceReporter
     @State private var state: AppSwiftSurfaceHostState = .loading
@@ -258,11 +260,7 @@ private struct AppSwiftSurfaceHostView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .ready(let presentation):
                 AppSwiftSurfaceRenderedManifestView(presentation: presentation) { action in
-                    surfaceReporter.partial(
-                        action.requiresApproval
-                            ? "Swift surface action requires host approval: \(action.capabilityId)."
-                            : "Swift surface read action is waiting for the host action bridge: \(action.capabilityId)."
-                    )
+                    handle(action)
                 }
             case .failed(let message):
                 VStack(spacing: 12) {
@@ -293,6 +291,18 @@ private struct AppSwiftSurfaceHostView: View {
         }
         .task(id: reloadToken) {
             await load()
+        }
+    }
+
+    private func handle(_ action: AppSwiftSurfaceRenderedAction) {
+        Task { @MainActor in
+            let bridge = AppSwiftSurfaceActionBridge(
+                app: record,
+                appsStore: appsStore,
+                surfaceReporter: surfaceReporter,
+                highRiskActionDispatcher: AppFrameworkHighRiskActionDispatcher(iotManager: iotManager)
+            )
+            _ = await bridge.handle(action)
         }
     }
 

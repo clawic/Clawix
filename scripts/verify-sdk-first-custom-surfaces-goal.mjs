@@ -128,6 +128,13 @@ function assertRuntimeArtifacts() {
       "AppCapabilityCatalog.contractsBridgeValue",
       "highRiskActionDispatcher.dispatch",
     ],
+    "macos/Sources/Clawix/Apps/AppSwiftSurfaceActionBridge.swift": [
+      "AppSwiftSurfaceActionBridge",
+      "handleHighRiskAction",
+      "AppHighRiskActionAudit.append",
+      "highRiskActionDispatcher.dispatch",
+      "Swift surface read action accepted",
+    ],
     "macos/Sources/Clawix/Apps/ClawixAppsSDK.swift": [
       "capabilities",
       "contracts: function () { return send('capabilities.contracts'); }",
@@ -179,6 +186,8 @@ function assertTests() {
       "testSwiftSurfaceRenderPresentationBuildsDeclarativeTree",
       "testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC",
       "testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan",
+      "testSwiftSurfaceReadActionReportsWithoutApproval",
+      "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [
       "testCriticalShellStartFastPathStaysBoundedWithAllHeavyDependenciesUnavailable",
