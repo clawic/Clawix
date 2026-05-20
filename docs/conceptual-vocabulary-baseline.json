@@ -27,6 +27,7 @@
         "docs/code-hygiene-ledger.md": 1,
         "docs/code-hygiene-report.json": 1,
         "docs/constitution-map.md": 6,
+        "docs/constitution.assertions.json": 28,
         "docs/data-storage-boundary.md": 3,
         "docs/debt-ledger-projection.manifest.json": 1,
         "docs/decision-map.md": 25,
@@ -42,6 +43,7 @@
         "docs/naming-style-guide.md": 3,
         "docs/native-action-broker-allowlist.json": 1,
         "docs/persistent-surface-clawix.manifest.json": 468,
+        "docs/surface-narrative-clawix-baseline.json": 1,
         "docs/ui/README.md": 3,
         "docs/ui/debt.baseline.json": 3,
         "docs/ui/exceptions.registry.json": 1,
@@ -79,6 +81,7 @@
         "scripts/interface_surface_guard.mjs": 2,
         "scripts/life_registry_projection_check.mjs": 1,
         "scripts/surface-evidence-projection-check.mjs": 11,
+        "scripts/surface_narrative_guard.mjs": 2,
         "scripts/ui_governance_guard.mjs": 1
       }
     },
@@ -100,7 +103,7 @@
       }
     }
   },
-  "generatedAt": "2026-05-20T21:37:48.662Z",
+  "generatedAt": "2026-05-20T21:42:03.048Z",
   "policy": "Reviewed conceptual vocabulary debt may shrink without review. Any increase in a tracked path or any new tracked path fails scripts/conceptual-vocabulary-guard.mjs unless the occurrence is removed or this baseline is deliberately updated with rationale.",
   "protectedTerms": [
     "owner",
@@ -131,8 +134,8 @@
       "occurrences": 2
     },
     "owner": {
-      "files": 65,
-      "occurrences": 835
+      "files": 68,
+      "occurrences": 866
     },
     "sync": {
       "files": 1,

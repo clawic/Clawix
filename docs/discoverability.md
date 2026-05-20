@@ -85,7 +85,6 @@ file; do not hand-maintain this table.
 | `guard-scripts-source-size-check` | guardrail |  | `scripts/source-size-check.mjs` | source-size-check, Source Size Check | `scripts/source-size-check.mjs` |
 | `guard-scripts-storage-boundary-guard` | guardrail |  | `scripts/storage_boundary_guard.mjs` | storage_boundary_guard, Storage Boundary Guard | `scripts/storage_boundary_guard.mjs` |
 | `guard-scripts-surface-evidence-projection-check` | guardrail |  | `scripts/surface-evidence-projection-check.mjs` | surface-evidence-projection-check, Surface Evidence Projection Check | `scripts/surface-evidence-projection-check.mjs` |
-| `guard-scripts-surface-narrative-guard` | guardrail |  | `scripts/surface_narrative_guard.mjs` | surface_narrative_guard, Surface Narrative Guard, nueva superficie sin relato | `scripts/surface_narrative_guard.mjs` |
 | `guard-scripts-tracked-ignored-check` | guardrail |  | `scripts/tracked-ignored-check.mjs` | tracked-ignored-check, Tracked Ignored Check | `scripts/tracked-ignored-check.mjs` |
 | `guard-scripts-v1-surface-closure-audit-check` | guardrail |  | `scripts/v1_surface_closure_audit_check.mjs` | v1_surface_closure_audit_check, V1 Surface Closure Audit Check | `scripts/v1_surface_closure_audit_check.mjs` |
 | `guard-scripts-verify-sdk-first-custom-surfaces-goal` | guardrail |  | `scripts/verify-sdk-first-custom-surfaces-goal.mjs` | verify-sdk-first-custom-surfaces-goal, Verify Sdk First Custom Surfaces Goal | `scripts/verify-sdk-first-custom-surfaces-goal.mjs` |
