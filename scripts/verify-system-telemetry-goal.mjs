@@ -388,7 +388,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalValidationManifestFixtures?.path === "docs/system-telemetry-external-validation.manifest.fixtures.json", "external validation manifest: wrong manifest fixtures path");
   assert(manifest.externalValidationManifestFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: manifest fixtures must be synthetic");
   assert(manifest.externalValidationManifestFixtures?.validTemplateCount === 1, "external validation manifest: wrong manifest valid fixture count");
-  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 6, "external validation manifest: wrong manifest invalid mutation count");
+  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 7, "external validation manifest: wrong manifest invalid mutation count");
   assert(manifest.externalValidationManifestFixtures?.closureRole?.includes("rejects accidental completion"), "external validation manifest: manifest fixtures closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
@@ -457,7 +457,7 @@ function assertExternalValidationManifestFixtures() {
   assert(fixtures.schemaPath === "docs/system-telemetry-external-validation.manifest.schema.json", "external validation manifest fixtures: wrong schema path");
   assert(fixtures.manifestPath === "docs/system-telemetry-external-validation.manifest.json", "external validation manifest fixtures: wrong manifest path");
   assert(Array.isArray(fixtures.validSyntheticManifests) && fixtures.validSyntheticManifests.length === 1, "external validation manifest fixtures: must contain 1 valid manifest reference");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 6, "external validation manifest fixtures: must contain 6 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 7, "external validation manifest fixtures: must contain 7 invalid mutations");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   assert(validate(manifest), `external validation manifest fixtures: current manifest must validate: ${ajv.errorsText(validate.errors)}`);
@@ -484,6 +484,9 @@ function assertExternalValidationManifestFixtures() {
         break;
       case "delete_external_closure_bundle_validator":
         delete mutated.externalClosureBundleValidator;
+        break;
+      case "set_external_closure_fixture_invalid_count_8":
+        mutated.externalClosureFixtures.invalidMutationCount = 8;
         break;
       default:
         fail(`external validation manifest fixtures: unknown mutation ${fixture.mutation}`);

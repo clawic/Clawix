@@ -133,8 +133,8 @@
     "path": "docs/system-telemetry-external-validation.manifest.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 1,
-    "invalidMutationCount": 6,
-    "closureRole": "proves the manifest schema accepts the current active manifest and rejects accidental completion or lane-clear mutations"
+    "invalidMutationCount": 7,
+    "closureRole": "proves the manifest schema accepts the current active manifest and rejects accidental completion, lane-clear, or closure-guard downgrade mutations"
   },
   "rows": [
     {

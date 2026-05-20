@@ -42,6 +42,11 @@
       "id": "missing_closure_bundle_validator",
       "mutation": "delete_external_closure_bundle_validator",
       "reason": "Future lane closure must validate that exact-run approval and accepted evidence belong to the same app lane."
+    },
+    {
+      "id": "stale_closure_fixture_mutation_count",
+      "mutation": "set_external_closure_fixture_invalid_count_8",
+      "reason": "Future manifests must not downgrade the app closure bundle guard below the current authorization-binding coverage."
     }
   ]
 }

@@ -176,7 +176,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 1 },
-            "invalidMutationCount": { "const": 6 },
+            "invalidMutationCount": { "const": 7 },
             "path": { "const": "docs/system-telemetry-external-validation.manifest.fixtures.json" }
           }
         }
