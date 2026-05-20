@@ -68,9 +68,10 @@ the sibling ClawJS SDK-first custom surface contract.
   final closure.
 - Installed-app Time Profiler smoke in
   `docs/sdk-first-custom-surfaces-installed-performance-smoke.md` verified the
-  signed app capture path for Web and Swift custom-surface routing, sidebar
-  scroll, and chat composer editing; launch, rescue, delayed-heavy-surface, and
-  full stack-attributed Instruments analysis remain closure blockers.
+  signed app launch and attach capture paths for Web and Swift custom-surface
+  routing, sidebar scroll, and chat composer editing; rescue,
+  delayed-heavy-surface, and full stack-attributed Instruments analysis remain
+  closure blockers.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
 - Installed-app smoke verified that a local `database/tasks` variant default
