@@ -23,8 +23,9 @@ the sibling ClawJS SDK-first custom surface contract.
 2. Risk map: resolve manifest capabilities against the framework capability
    catalog and expose ordinary access, approval-required actions, blocked
    actions, and high-risk operations.
-3. Bridge: expose capability inspection to hosted Web apps and route ordinary
-   reads through SDK-like bridge methods.
+3. Bridge: expose capability inspection to hosted Web apps, declare the
+   metadata-only `executionBoundary`, and route ordinary reads through
+   SDK-like host bridge methods rather than CLI/API/MCP/Relay projections.
 4. Shell isolation: wrap sidebar/custom surfaces in loading, cancel, timeout,
    and error boundaries that do not affect the app shell.
 5. Protected routes: reject replacement of protected built-in surfaces and keep
@@ -44,6 +45,8 @@ the sibling ClawJS SDK-first custom surface contract.
 - App manifests declare capabilities and surface kind.
 - App detail/ficha can show capability risk.
 - Hosted Web apps can inspect available capabilities.
+- `clawix.capabilities.contracts()` exposes `executionBoundary` so custom UIs
+  can tell metadata-only contract catalogs from executable host bridge calls.
 - Ordinary local reads are allowed through brokered SDK-like APIs.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.

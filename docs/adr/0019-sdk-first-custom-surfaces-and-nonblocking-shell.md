@@ -49,7 +49,7 @@ contract and keeps UI modules isolated.
   raw native or filesystem access.
 - `clawix.capabilities.contracts()` is a metadata-only contract catalog. It
   exposes schema refs, dispatch availability, risk, redaction, and the
-  execution boundary, but it does not execute SDK capability calls. Rich UI
+  `executionBoundary`, but it does not execute SDK capability calls. Rich UI
   reads and actions run through `window.clawix`, where the host bridge applies
   validation, cancellation, redaction, audit, and high-risk approval.
 

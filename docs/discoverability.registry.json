@@ -352,11 +352,18 @@
       "discoveryTerms": [
         "ADR 0019: SDK-first custom surfaces and nonblocking shell mirror",
         "0019-sdk-first-custom-surfaces-and-nonblocking-shell",
-        "ADR 0019"
+        "ADR 0019",
+        "custom app SDK executionBoundary",
+        "clawix capabilities contracts metadata-only",
+        "window.clawix host bridge"
       ],
       "searchQueries": [
         {
           "query": "ADR 0019: SDK-first custom surfaces and nonblocking shell mirror",
+          "expectPath": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+        },
+        {
+          "query": "custom app SDK executionBoundary window.clawix host bridge",
           "expectPath": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md"
         }
       ],
