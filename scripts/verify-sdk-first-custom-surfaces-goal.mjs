@@ -58,7 +58,8 @@ function assertCompletionAudit() {
     "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
     "`list`, `get`, `riskMap`, and `source`",
     "complete resolved surface bindings across SDK, CLI, service API, MCP, Relay, and host bridge projections",
-    "no `pending` status, no future-facade SDK refs, no unknown dispatch modes, no conditional placeholder refs",
+    "no `pending` status, no future-facade SDK refs, no unknown dispatch modes, no source-level unknown dispatch fallback, no conditional placeholder refs",
+    "no source-level unknown dispatch fallback",
     "local-only/custom-app Relay coverage as `relay.remote.custom_app_sdk` metadata-only projection",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
@@ -309,6 +310,7 @@ function assertRuntimeArtifacts() {
       "\"metadata_only_contract_catalog\"",
       "\"hostBridgeImplementation\": \"window.clawix\"",
       "\"approvalRequiredNoPlaintextBroker\"",
+      "\"mode\": \"unclassifiedBlocked\"",
       "\"EXTERNAL PENDING\"",
       "systemTelemetrySnapshotSchemaRef",
       "system.telemetry.snapshot",
@@ -475,6 +477,12 @@ function assertRuntimeArtifacts() {
   })) {
     for (const snippet of snippets) requireSnippet(relativePath, snippet);
   }
+
+  forbidSnippet("macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift", '"mode": "unknown"');
+  forbidSnippet(
+    "macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift",
+    '"reason": "No custom-app dispatcher is registered for this capability."',
+  );
 }
 
 function assertExternalValidationArtifacts() {
@@ -621,6 +629,7 @@ function assertSiblingClawJSArtifacts() {
       "@clawjs/claw:capabilities metadata + claw.actions.invoke.v1 schema",
       "@clawjs/claw:capabilities metadata + claw.mac.actionRequest.v1 schema",
       "const customAppSDKRelayMetadataProjection = \"relay.remote.custom_app_sdk metadata-only contract projection\";",
+      "\"unclassifiedBlocked\"",
     ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
       "available SDK surface bindings do not advertise future facades",
@@ -720,6 +729,14 @@ function assertSiblingClawJSArtifacts() {
   ]) {
     assert(!siblingCatalog.includes(snippet), `clawjs:packages/clawjs-core/src/capability-catalog.ts must not contain ${JSON.stringify(snippet)}`);
   }
+  assert(
+    !siblingCatalog.includes('mode: capability.customAppAccess === "blocked" ? "blocked" : "unknown"'),
+    "clawjs:packages/clawjs-core/src/capability-catalog.ts must not contain stale unknown dispatch fallback",
+  );
+  assert(
+    !siblingCatalog.includes('reason: "No custom-app dispatcher is registered for this capability."'),
+    "clawjs:packages/clawjs-core/src/capability-catalog.ts must not contain stale unclassified dispatch reason",
+  );
 }
 
 assertCompletionAudit();
