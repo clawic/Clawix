@@ -8,6 +8,7 @@ plans, and companion validation manifests here.
 ## Programs
 
 - [Code Hygiene](code-hygiene/completion.md)
+- [Decision Tension Rubric](decision-tension-rubric.md)
 - [Legal](legal/source-audit.md)
 - [SDK-First Custom Surfaces](sdk-first-custom-surfaces/plan.md)
 - [System Telemetry](system-telemetry/index.md)

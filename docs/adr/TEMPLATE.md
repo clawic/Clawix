@@ -12,6 +12,21 @@ Describe the decision pressure, existing behavior, and constraints.
 
 State the decision in implementation-neutral terms.
 
+## Decision Tensions
+
+Accepted ADRs that change durable architecture, governance, data, security,
+agents, interfaces, routes, storage, public surfaces, or validation policy must
+answer the Decision Tension Rubric. Tiny editorial ADR updates do not need a
+formal rubric entry.
+
+- **Prioritized axes**: which rubric axes this decision intentionally advances.
+- **Constrained axes**: which good qualities are intentionally limited to avoid
+  over-engineering, rigidity, unsafe automation, or scope creep.
+- **Tradeoffs accepted**: what this decision makes harder and why that is
+  acceptable.
+- **Debt or pending evidence**: what remains partial, blocked,
+  external-pending, or scheduled for later validation.
+
 ## Surface Parity
 
 Every accepted ADR that adds or changes an important capability must answer:

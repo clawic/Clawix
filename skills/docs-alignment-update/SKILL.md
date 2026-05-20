@@ -12,13 +12,15 @@ Keep documentation aligned with behavior and routing.
 
 1. Identify the canonical source for the changed behavior before editing docs.
 2. Update public docs, README, playbooks, `AGENTS.md`, `CLAUDE.md` shims, generated docs, and decision maps only where they route to or explain that source.
-3. Keep `AGENTS.md` compact; link to skills or docs for procedures.
-4. Add alignment-check snippets only for durable rules worth enforcing.
-5. Register new durable docs routers, instruction shims, guardrails, harnesses,
+3. For durable ADR or governance docs, keep the Decision Tension Rubric routed
+   through the ADR template, decision map, and agent rules.
+4. Keep `AGENTS.md` compact; link to skills or docs for procedures.
+5. Add alignment-check snippets only for durable rules worth enforcing.
+6. Register new durable docs routers, instruction shims, guardrails, harnesses,
    and skills in `docs/discoverability.registry.json` under
    `docs/adr/0017-discoverability-and-meta-code-routing.md`.
-6. Remove stale duplicated instructions when a canonical doc or skill supersedes them.
-7. Run docs alignment/link checks or record why they cannot run.
+7. Remove stale duplicated instructions when a canonical doc or skill supersedes them.
+8. Run docs alignment/link checks or record why they cannot run.
 
 ## Constraints
 

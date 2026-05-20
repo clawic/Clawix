@@ -485,6 +485,41 @@
       "canonicalName": "adr:open-standard-official-trust"
     },
     {
+      "id": "adr-docs-adr-0021-decision-tension-rubric-mirror",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0021-decision-tension-rubric-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0021: Decision tension rubric mirror",
+        "0021-decision-tension-rubric-mirror",
+        "ADR 0021",
+        "decision tension rubric",
+        "Decision Tension Rubric",
+        "adr:decision-tension-rubric"
+      ],
+      "searchQueries": [
+        {
+          "query": "decision tension rubric",
+          "expectPath": "docs/adr/0021-decision-tension-rubric-mirror.md"
+        },
+        {
+          "query": "adr:decision-tension-rubric",
+          "expectPath": "docs/adr/0021-decision-tension-rubric-mirror.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "canonicalName": "adr:decision-tension-rubric"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "owner": "clawix",
@@ -3100,6 +3135,40 @@
       ],
       "guard": "scripts/debt-ledger-projection-check.mjs",
       "status": "baseline",
+      "reviewDate": "2026-08-20"
+    },
+    {
+      "id": "clawix-decision-tension-rubric-mirror",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/governance/decision-tension-rubric.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/README.md",
+        "docs/adr/TEMPLATE.md"
+      ],
+      "discoveryTerms": [
+        "decision tension rubric",
+        "Decision Tension Rubric Mirror",
+        "ADR Decision Tensions",
+        "healthy tensions",
+        "durable ADR tradeoffs"
+      ],
+      "searchQueries": [
+        {
+          "query": "decision tension rubric",
+          "expectPath": "docs/governance/decision-tension-rubric.md"
+        },
+        {
+          "query": "durable ADR tradeoffs",
+          "expectPath": "docs/governance/decision-tension-rubric.md"
+        }
+      ],
+      "guard": "scripts/doc_alignment_check.sh",
+      "status": "enforced",
       "reviewDate": "2026-08-20"
     },
     {

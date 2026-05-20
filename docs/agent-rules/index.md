@@ -9,6 +9,8 @@ always-loaded instructions prompt.
 - Highest authority: `CONSTITUTION.md`.
 - Constitution router: `docs/constitution-map.md`.
 - Decision router: `docs/decision-map.md`.
+- Decision Tension Rubric: `docs/governance/decision-tension-rubric.md` for
+  accepted durable ADRs and governance changes.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.
 - Visual canon: `STYLE.md` before user-facing UI, chrome, tokens, layout,
@@ -48,6 +50,8 @@ always-loaded instructions prompt.
   `docs/adr/0033-open-standard-official-trust.md`,
   `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`,
   `TRADEMARKS.md`, `NOTICE`.
+- Durable ADR/governance decisions: `docs/governance/decision-tension-rubric.md`
+  and `docs/adr/TEMPLATE.md`.
 
 ## Skill Routing
 

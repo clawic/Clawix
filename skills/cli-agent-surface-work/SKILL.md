@@ -11,6 +11,9 @@ Work on the public `claw` CLI as an agent-facing contract.
 ## Procedure
 
 1. Use `claw search`, `claw commands resolve`, and `claw inspect commands|command-intents|why|schemas|storage|codebase --json` when available.
+   For governance-heavy CLI/doc work, start with `claw governance doctor --json`
+   to collect the current reads, skills, closing checks, external-pending lanes,
+   and stale-doc risks.
 2. Read the CLI ADR, decision map, naming guide, and the tests for the affected command.
 3. Keep stable JSON output in the accepted envelope shape unless the command is explicitly in migration debt.
 4. Add registry entries, generated/help docs, aliases, negative legacy tests, and smoke coverage with the behavior.
