@@ -305,6 +305,9 @@ PY
         copy_overlay_package "$OVERLAY_CLI" "$CLAWJS_DEST/node_modules/@clawjs/cli"
         copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/cli/node_modules/@clawjs/core"
     fi
+    if [[ "${CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY:-0}" == "1" ]]; then
+        echo "==> Skipping optional ClawJS dev overlays (CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY=1)"
+    else
     OVERLAY_SEARCH="$CLAWJS_DEV_OVERLAY/packages/clawjs-search"
     if [[ -d "$OVERLAY_SEARCH" ]]; then
         copy_overlay_package "$OVERLAY_SEARCH" "$CLAWJS_DEST/node_modules/@clawjs/search"
@@ -463,6 +466,7 @@ PY
             rm -rf "$CLAWJS_DEST/node_modules/telegram/node_modules"
             cp -R "$OVERLAY_TELEGRAM/node_modules" "$CLAWJS_DEST/node_modules/telegram/node_modules"
         fi
+    fi
     fi
 fi
 
