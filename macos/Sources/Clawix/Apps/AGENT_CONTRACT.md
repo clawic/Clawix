@@ -180,8 +180,11 @@ signed-host Mac Control plan without running native steps. Pass the concrete
 Mac Control capability as `args.capabilityId` or call a concrete `mac.*` tool
 name; scalar `args.arguments` are forwarded as plan arguments. Real Mac Control
 execution remains unavailable until a safe signed-host runner is wired and
-validated. IoT requests build an `IoTActionRequest` from
-`clawix.agent.callTool({ tool, args })` and call the app-owned `IoTManager`.
+validated. Web custom apps can call IoT through
+`window.clawix.iot.invokeAction(...)`, which enters the same declared
+capability, native approval, dispatcher, and high-risk audit boundary as
+generic `clawix.agent.callTool({ tool, args })` requests. IoT requests build
+an `IoTActionRequest` and call the app-owned `IoTManager`.
 Supported IoT args are `homeId`, `selector`, `area`, `family`, `capability`,
 `action`, `value`, and `targets`; when `action` is omitted, the dispatcher uses
 the final segment of an `iot.*` tool name as a fallback. Other high-risk

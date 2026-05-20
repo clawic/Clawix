@@ -74,6 +74,11 @@ the sibling ClawJS SDK-first custom surface contract.
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until
   approved external evidence exists.
+- `iot.device.action.invoke` is exposed to Web custom apps through
+  `window.clawix.iot.invokeAction()` as an approval-gated host bridge call that
+  reuses declared capability checks, dispatcher policy, and high-risk audit
+  receipts; live provider or physical-device validation remains external
+  pending until explicitly approved.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.

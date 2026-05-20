@@ -187,6 +187,21 @@ let ClawixAppsSDKJS = #"""
         });
       }
     },
+    iot: {
+      invokeAction: function (opts) {
+        opts = opts || {};
+        return send('iot.device.action.invoke', {
+          homeId: opts.homeId == null ? null : String(opts.homeId),
+          selector: opts.selector == null ? null : String(opts.selector),
+          area: opts.area == null ? null : String(opts.area),
+          family: opts.family == null ? null : String(opts.family),
+          capability: opts.capability == null ? null : String(opts.capability),
+          action: String(opts.action || ''),
+          value: opts.value,
+          targets: Array.isArray(opts.targets) ? opts.targets : []
+        });
+      }
+    },
     resources: {
       list: function (opts) {
         opts = opts || {};

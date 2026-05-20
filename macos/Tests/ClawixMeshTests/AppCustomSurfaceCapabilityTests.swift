@@ -1422,6 +1422,13 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("execute: false"))
     }
 
+    func testInjectedAppsSdkExposesIoTActionFacade() {
+        XCTAssertTrue(ClawixAppsSDKJS.contains("iot.device.action.invoke"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("invokeAction"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("homeId"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("targets"))
+    }
+
     func testHostBridgeExposesCustomAppSDKContractPayload() throws {
         let record = AppRecord(
             slug: "dashboard",
@@ -1504,6 +1511,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("mac.action.plan"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("iot.device.action.invoke"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.get"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.contracts"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.source"))

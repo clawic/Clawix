@@ -12,6 +12,7 @@ enum AppBridgeOperationPolicy {
         "capabilities.riskMap",
         "capabilities.source",
         "db.query",
+        "iot.device.action.invoke",
         "mac.action.plan",
         "request.cancel",
         "resources.list",
@@ -168,6 +169,8 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "mac.action.plan":
                 let tool = macActionPlanTool(from: payload)
                 try gateToolCall(tool: tool, arguments: payload, requestId: requestId)
+            case "iot.device.action.invoke":
+                try gateToolCall(tool: "iot.device.action.invoke", arguments: payload, requestId: requestId)
             case "capabilities.list":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
             case "capabilities.get":
