@@ -19,10 +19,8 @@
     "closureImpact",
     "reviewer"
   ],
-  "properties": {
-    "schemaVersion": { "const": 1 },
-    "conversationId": { "const": "019e403c-3837-7f02-9b78-532c43cdd997" },
-    "goal": { "const": "sdk-first-custom-surfaces" },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
     "laneId": {
       "enum": [
         "CLX-SDK-EXT-001",
@@ -31,6 +29,30 @@
         "CLX-SDK-EXT-004"
       ]
     },
+    "publicCompletionRow": {
+      "enum": [
+        "CLX-SDK-004",
+        "CLX-SDK-005",
+        "CLX-SDK-008",
+        "CLJ-SDK-005",
+        "CLJ-SDK-008"
+      ]
+    },
+    "evidenceRefList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "requiredEvidenceRefList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "conversationId": { "const": "019e403c-3837-7f02-9b78-532c43cdd997" },
+    "goal": { "const": "sdk-first-custom-surfaces" },
+    "laneId": { "$ref": "#/$defs/laneId" },
     "status": { "const": "accepted_external_evidence" },
     "runAuthorization": {
       "type": "object",
@@ -42,7 +64,7 @@
         "approvedAt": { "type": "string", "format": "date-time" },
         "expiresAt": { "type": "string", "format": "date-time" },
         "exactRunScope": { "type": "string", "minLength": 1 },
-        "approvedLaneIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
+        "approvedLaneIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/laneId" } }
       }
     },
     "preflight": {
@@ -52,8 +74,8 @@
       "properties": {
         "completedAt": { "type": "string", "format": "date-time" },
         "failClosedBeforeApproval": { "const": true },
-        "checks": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "resultRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        "checks": { "$ref": "#/$defs/requiredEvidenceRefList" },
+        "resultRefs": { "$ref": "#/$defs/requiredEvidenceRefList" }
       }
     },
     "execution": {
@@ -66,7 +88,7 @@
         "executor": {
           "enum": ["signed_host_native", "live_iot_provider", "performance_baseline_review", "marketplace_trust_review"]
         },
-        "receiptRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "receiptRefs": { "$ref": "#/$defs/requiredEvidenceRefList" },
         "failedApprovedRun": { "const": false }
       }
     },
@@ -75,14 +97,14 @@
       "additionalProperties": false,
       "required": ["auditRefs", "sameMachineEvidenceRefs", "nativeGrantRefs", "providerOrDeviceRefs", "performanceBaselineRefs", "marketplaceTrustRefs", "approvedCriticalFlows", "rollbackOrContinuityRefs"],
       "properties": {
-        "auditRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "sameMachineEvidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
-        "providerOrDeviceRefs": { "type": "array", "items": { "type": "string" } },
-        "performanceBaselineRefs": { "type": "array", "items": { "type": "string" } },
-        "marketplaceTrustRefs": { "type": "array", "items": { "type": "string" } },
-        "approvedCriticalFlows": { "type": "array", "items": { "type": "string" } },
-        "rollbackOrContinuityRefs": { "type": "array", "items": { "type": "string" } }
+        "auditRefs": { "$ref": "#/$defs/requiredEvidenceRefList" },
+        "sameMachineEvidenceRefs": { "$ref": "#/$defs/requiredEvidenceRefList" },
+        "nativeGrantRefs": { "$ref": "#/$defs/evidenceRefList" },
+        "providerOrDeviceRefs": { "$ref": "#/$defs/evidenceRefList" },
+        "performanceBaselineRefs": { "$ref": "#/$defs/evidenceRefList" },
+        "marketplaceTrustRefs": { "$ref": "#/$defs/evidenceRefList" },
+        "approvedCriticalFlows": { "$ref": "#/$defs/evidenceRefList" },
+        "rollbackOrContinuityRefs": { "$ref": "#/$defs/evidenceRefList" }
       }
     },
     "redaction": {
@@ -103,9 +125,9 @@
       "additionalProperties": false,
       "required": ["publicRows", "docsToUpdate", "verifiersToRerun", "requiresFinalSourceReread", "requiresUserReviewDecision"],
       "properties": {
-        "publicRows": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
-        "docsToUpdate": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "verifiersToRerun": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "publicRows": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/publicCompletionRow" } },
+        "docsToUpdate": { "$ref": "#/$defs/requiredEvidenceRefList" },
+        "verifiersToRerun": { "$ref": "#/$defs/requiredEvidenceRefList" },
         "requiresFinalSourceReread": { "const": true },
         "requiresUserReviewDecision": { "const": true }
       }
