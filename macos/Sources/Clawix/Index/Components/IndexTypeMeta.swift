@@ -23,7 +23,7 @@ enum IndexTypeCatalog {
     static let canonicalOrder: [String] = [
         "product", "listing", "article", "post", "video", "episode",
         "paper", "profile", "place", "channel", "doc", "repo",
-        "event", "job", "review",
+        "event", "job", "intent", "review",
     ]
 
     static let known: [String: IndexTypeMeta] = [
@@ -41,6 +41,7 @@ enum IndexTypeCatalog {
         "repo":    .init(typeName: "repo",     displayName: "Repos",     lucideName: "github",        accent: Color(red: 0.60, green: 0.64, blue: 0.70), kind: .text),
         "event":   .init(typeName: "event",    displayName: "Events",    lucideName: "calendar",      accent: Color(red: 0.94, green: 0.56, blue: 0.42), kind: .media),
         "job":     .init(typeName: "job",      displayName: "Jobs",      lucideName: "briefcase",     accent: Color(red: 0.53, green: 0.73, blue: 0.52), kind: .text),
+        "intent":  .init(typeName: "intent",   displayName: "Intents",   lucideName: "handshake",     accent: Color(red: 0.42, green: 0.72, blue: 0.43), kind: .data),
         "review":  .init(typeName: "review",   displayName: "Reviews",   lucideName: "star",          accent: Color(red: 1.00, green: 0.81, blue: 0.43), kind: .text),
     ]
 
