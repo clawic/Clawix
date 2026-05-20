@@ -17,7 +17,7 @@
         "approvalId": "approval_sensor_template",
         "decision": "approved",
         "exactRunApproved": true,
-        "approvedBy": "reviewer-template",
+        "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",
         "approvedActions": ["physical_sensor_read"],
@@ -29,7 +29,7 @@
       },
       "authorization": {
         "credentialLeaseRefs": [],
-        "nativeGrantRefs": ["system_sensor_read_grant_template"],
+        "nativeGrantRefs": ["grant_sensor_template"],
         "networkAccessApproved": false,
         "locationGrantRefs": [],
         "hardwareProviderRefs": ["compatible_hardware_template"],
@@ -63,7 +63,7 @@
         "approvalId": "approval_live_provider_template",
         "decision": "approved",
         "exactRunApproved": true,
-        "approvedBy": "reviewer-template",
+        "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",
         "approvedActions": ["provider_connection"],
@@ -74,7 +74,7 @@
         "mustFailClosedBeforeApproval": true
       },
       "authorization": {
-        "credentialLeaseRefs": ["credential_lease_template"],
+        "credentialLeaseRefs": ["lease_weather_template"],
         "nativeGrantRefs": [],
         "networkAccessApproved": true,
         "locationGrantRefs": ["location_grant_template"],
@@ -109,7 +109,7 @@
         "approvalId": "approval_control_template",
         "decision": "approved",
         "exactRunApproved": true,
-        "approvedBy": "reviewer-template",
+        "approvedBy": "user",
         "approvedAt": "2026-05-20T00:00:00Z",
         "expiresAt": "2026-05-21T00:00:00Z",
         "approvedActions": ["dangerous_control_execute"],
@@ -121,7 +121,7 @@
       },
       "authorization": {
         "credentialLeaseRefs": [],
-        "nativeGrantRefs": ["system_hardware_control_grant_template"],
+        "nativeGrantRefs": ["grant_control_template"],
         "networkAccessApproved": false,
         "locationGrantRefs": [],
         "hardwareProviderRefs": [],

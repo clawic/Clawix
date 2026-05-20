@@ -69,6 +69,24 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "approvalPacket.closureImpact.externalPendingRows=extra",
       "reason": "Approval must authorize exactly the pending row replaced by the app bundle."
+    },
+    {
+      "id": "mismatched_approved_by",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.approvedBy=mismatch",
+      "reason": "Evidence must name the same approving actor as the exact approval packet."
+    },
+    {
+      "id": "mismatched_credential_lease",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidencePacket.runAuthorization.credentialLeaseRefs=wrong",
+      "reason": "Evidence must use exactly the credential leases authorized by the app approval packet."
+    },
+    {
+      "id": "mismatched_native_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.nativeGrantRefs=wrong",
+      "reason": "Evidence must use exactly the native grants authorized by the app approval packet."
     }
   ]
 }

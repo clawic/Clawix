@@ -40,7 +40,8 @@ Before replacing any row, combine the exact-run approval packet and accepted
 evidence packet into a same-lane closure bundle. Synthetic closure examples
 live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
 bundle validation behavior and are not real closure evidence. The bundle must
-bind the evidence `runAuthorization.approvalId` to the exact approval packet.
+bind the evidence `runAuthorization.approvalId`, approving actor, credential
+leases, and native grants to the exact approval packet.
 All evidence timestamps must remain inside that approval packet's
 `approvedAt`/`expiresAt` window, and its approved pending rows, replacement
 rows, manifest rows, completion-audit rows, and source Q/A rows must match the

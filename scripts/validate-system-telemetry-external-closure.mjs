@@ -141,6 +141,23 @@ function assertExactClosureImpact(bundle, label) {
   );
 }
 
+function assertAuthorizationBindings(bundle, label) {
+  assert(
+    bundle.approvalPacket.approval?.approvedBy === bundle.evidencePacket.runAuthorization?.approvedBy,
+    `${label}: approval reviewer must match evidence run authorization`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.runAuthorization?.credentialLeaseRefs,
+    bundle.approvalPacket.authorization?.credentialLeaseRefs ?? [],
+    `${label}.evidencePacket.runAuthorization.credentialLeaseRefs`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.runAuthorization?.nativeGrantRefs,
+    bundle.approvalPacket.authorization?.nativeGrantRefs ?? [],
+    `${label}.evidencePacket.runAuthorization.nativeGrantRefs`,
+  );
+}
+
 function buildFixtureBundle(laneId) {
   const approvalFixtures = readJson(approvalFixturesPath);
   const evidenceFixtures = readJson(evidenceFixturesPath);
@@ -183,6 +200,7 @@ function validateClosureBundle(bundle, label) {
     bundle.approvalPacket.authorization?.networkAccessApproved === bundle.evidencePacket.runAuthorization?.networkAccessApproved,
     `${label}: approval and evidence network authorization must match`,
   );
+  assertAuthorizationBindings(bundle, label);
   assert(
     bundle.approvalPacket.approval?.approvalId === bundle.evidencePacket.runAuthorization?.approvalId,
     `${label}: approval id must match evidence run authorization`,
@@ -221,6 +239,15 @@ function mutateBundle(bundle, mutation) {
       break;
     case "approvalPacket.closureImpact.externalPendingRows=extra":
       mutated.approvalPacket.closureImpact.externalPendingRows = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
+      break;
+    case "evidencePacket.runAuthorization.approvedBy=mismatch":
+      mutated.evidencePacket.runAuthorization.approvedBy = "other-reviewer-template";
+      break;
+    case "evidencePacket.runAuthorization.credentialLeaseRefs=wrong":
+      mutated.evidencePacket.runAuthorization.credentialLeaseRefs = ["wrong_credential_lease_template"];
+      break;
+    case "evidencePacket.runAuthorization.nativeGrantRefs=wrong":
+      mutated.evidencePacket.runAuthorization.nativeGrantRefs = ["wrong_native_grant_template"];
       break;
     default:
       throw new Error(`unknown closure fixture mutation ${mutation}`);
