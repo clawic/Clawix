@@ -53,6 +53,12 @@
       "reason": "Evidence must reference the exact approval packet in the closure bundle."
     },
     {
+      "id": "mismatched_approval_timestamp",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.runAuthorization.approvedAt=mismatch",
+      "reason": "Evidence must use the exact approval timestamp from the app closure approval packet."
+    },
+    {
       "id": "execution_after_approval_expiry",
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.execution.completedAt=afterApprovalExpiry",

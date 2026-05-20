@@ -242,6 +242,9 @@ function mutateBundle(bundle, mutation) {
     case "evidencePacket.runAuthorization.approvalId=mismatch":
       mutated.evidencePacket.runAuthorization.approvalId = "approval_mismatched_template";
       break;
+    case "evidencePacket.runAuthorization.approvedAt=mismatch":
+      mutated.evidencePacket.runAuthorization.approvedAt = "2026-05-20T00:00:01Z";
+      break;
     case "evidencePacket.execution.completedAt=afterApprovalExpiry":
       mutated.evidencePacket.execution.completedAt = "2026-05-22T00:00:00Z";
       break;
