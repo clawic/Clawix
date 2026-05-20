@@ -1626,6 +1626,30 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(macDispatch["mode"] as? String, "approvalRequiredPlanOnly")
     }
 
+    func testHostBridgeSurfaceBindingsAreCompleteAndResolvedWhenPublished() throws {
+        let record = AppRecord(
+            slug: "dashboard",
+            name: "Dashboard",
+            declaredCapabilities: ["jobs.stream", "jobs.start", "jobs.cancel"]
+        )
+        let payload = AppCapabilityCatalog.contractsBridgeValue(for: record)
+        let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
+        let canonicalSurfaces = ["sdk", "cli", "serviceApi", "mcp", "relay", "hostBridge"]
+        var checkedSurfaceGroups = 0
+
+        for capability in capabilities {
+            guard let surfaces = capability["surfaces"] as? [[String: String]] else { continue }
+
+            checkedSurfaceGroups += 1
+            XCTAssertEqual(surfaces.map { $0["surface"] }, canonicalSurfaces, capability["id"] as? String ?? "unknown")
+            for surface in surfaces {
+                XCTAssertNotEqual(surface["status"], "pending", "\(capability["id"] as? String ?? "unknown"):\(surface["surface"] ?? "unknown")")
+            }
+        }
+
+        XCTAssertGreaterThanOrEqual(checkedSurfaceGroups, 3)
+    }
+
     func testInjectedAppsSdkExposesSearchAndDBContracts() {
         XCTAssertTrue(ClawixAppsSDKJS.contains("search.query"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
