@@ -25,6 +25,12 @@ screenshots, console dumps, or machine-specific metadata.
 - Launch duration: 30 seconds.
 - Launch artifact:
   `macos/artifacts/traces/20260520T123248Z-installed-launch-time-profiler.trace`.
+- Rescue plus delayed-heavy route template: `Time Profiler`.
+- Rescue plus delayed-heavy route duration: 50 seconds.
+- Rescue plus delayed-heavy route artifact:
+  `macos/artifacts/traces/20260520T161127Z-clean-rescue-delayed-heavy-time-profiler.trace`.
+- Local delayed-heavy-surface fixture:
+  `codex-delayed-heavy-surface` under the framework apps directory.
 - Companion render logs copied into both local trace bundles:
   `clawix-renders.log`.
 
@@ -39,6 +45,10 @@ The capture covered a short host-real route through the installed app:
 - A local Swift declarative app route opened through the sidebar.
 - Sidebar scrolling was exercised with the custom surface host visible.
 - A new chat composer was opened and edited without sending a prompt.
+- A focused rescue route was opened through `clawix://rescue` and showed the
+  rescue diagnostics surface as ready.
+- The local `codex-delayed-heavy-surface` Web app was opened from the sidebar;
+  its startup intentionally kept Web content busy for about 18 seconds.
 
 ## Observations
 
@@ -54,12 +64,24 @@ Confirmed:
   route-change windows.
 - The launch render log captured initial app state publication and
   `SidebarView.makeSnapshot` around 2.40 ms in the startup window.
+- The rescue plus delayed-heavy capture reached the configured Time Profiler
+  limit and wrote a trace for the installed `Clawix` process.
+- The rescue surface remained reachable and showed ready repair state before
+  opening the delayed-heavy fixture.
+- The delayed-heavy fixture produced the expected route-local unavailable
+  overlay, `Surface did not become ready within 5 seconds`, while the Web
+  content later reported its 18 second startup completion.
+- The paired render log for that capture recorded the rescue/app route changes
+  and `SidebarView.makeSnapshot` stayed below 6.30 ms in those windows.
 
 Probable:
 
 - A custom surface timeout appeared after a route/scroll transition. This needs
   a focused custom-surface readiness capture before it can be classified as a
   shell isolation bug, fixture issue, or expected timeout behavior.
+- The delayed-heavy fixture exercised the intended route-local timeout path,
+  but this run is not sufficient to classify whole-app liveness because the
+  post-capture process check did not find the attached app process.
 
 Discarded:
 
@@ -68,14 +90,21 @@ Discarded:
 
 Partial / not closed:
 
-- It did not exercise rescue or a deliberately delayed heavy surface.
+- The first installed-app capture did not exercise rescue or a deliberately
+  delayed heavy surface.
+- The rescue plus delayed-heavy capture did not leave enough evidence for a
+  closure-grade liveness claim because the attached app process was not present
+  in the post-capture status check.
 - It was not a full Instruments analysis pass with stack attribution.
 - It is not an approved performance baseline for UI budgets.
+- The raw trace and exported Instruments table of contents include local
+  process environment details, so only this redacted summary belongs in the
+  public repo.
 
 ## Closure Gate
 
-`CLX-SDK-008` remains `EXTERNAL PENDING` until real signed-app captures cover
-rescue and delayed heavy surfaces with approved stack-attributed analysis. This
-smoke only proves that the installed-app launch and attached capture paths work
-and adds partial evidence for sidebar, chat composer, and custom-surface
-routing.
+`CLX-SDK-008` remains `EXTERNAL PENDING` until closure-grade signed-app
+captures cover rescue and delayed heavy surfaces with post-capture app liveness
+and approved stack-attributed analysis. This smoke only proves that the
+installed-app launch and attached capture paths work and adds partial evidence
+for sidebar, chat composer, rescue, and custom-surface routing.
