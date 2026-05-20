@@ -1,4 +1,5 @@
 {
+  "$schema": "docs/system-telemetry-external-validation.manifest.schema.json",
   "schemaVersion": 1,
   "id": "clawix-system-telemetry-external-validation-manifest",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",

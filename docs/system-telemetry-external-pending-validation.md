@@ -17,6 +17,8 @@ Machine-readable closure gates live in
 status in `docs/system-telemetry-completion-audit.md` and external run steps in
 `docs/system-telemetry-external-validation-runbook.md`. Accepted external
 evidence must conform to `docs/system-telemetry-external-evidence.schema.json`.
+The external manifest must conform to
+`docs/system-telemetry-external-validation.manifest.schema.json`.
 Evidence packets must pass
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before any row is updated.

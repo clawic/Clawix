@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clawix.dev/schemas/system-telemetry-external-validation.manifest.schema.json",
+  "title": "Clawix System Telemetry External Validation Manifest",
+  "description": "Public-safe manifest contract for Clawix system telemetry external validation blockers.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "id",
+    "conversationId",
+    "planId",
+    "status",
+    "completionPolicy",
+    "sourceQaReview",
+    "completionAudit",
+    "externalValidationRunbook",
+    "externalEvidencePacketSchema",
+    "externalEvidenceFixtures",
+    "externalEvidencePacketValidator",
+    "rows"
+  ],
+  "properties": {
+    "$schema": { "const": "docs/system-telemetry-external-validation.manifest.schema.json" },
+    "schemaVersion": { "const": 1 },
+    "id": { "const": "clawix-system-telemetry-external-validation-manifest" },
+    "conversationId": { "const": "019e359b-c0ab-7dc1-ba94-11a49d11dc76" },
+    "planId": { "const": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan" },
+    "status": { "const": "active_goal_not_complete" },
+    "completionPolicy": {
+      "type": "object",
+      "required": [
+        "externalPendingBlocksCompletion",
+        "requiresFinalSourceAudit",
+        "requiresSourceQaReview",
+        "requiresCompletionAudit",
+        "requiresExternalValidationRunbook",
+        "requiresExternalEvidenceSchema",
+        "requiresForbiddenNameScan",
+        "requiresExactRunApprovalForExternalLanes"
+      ],
+      "properties": {
+        "externalPendingBlocksCompletion": { "const": true },
+        "requiresFinalSourceAudit": { "const": true },
+        "requiresSourceQaReview": { "const": true },
+        "requiresCompletionAudit": { "const": true },
+        "requiresExternalValidationRunbook": { "const": true },
+        "requiresExternalEvidenceSchema": { "const": true },
+        "requiresForbiddenNameScan": { "const": true },
+        "requiresExactRunApprovalForExternalLanes": { "const": true }
+      }
+    },
+    "completionAudit": {
+      "type": "object",
+      "required": ["required", "path", "statusSummary"],
+      "properties": {
+        "required": { "const": true },
+        "path": { "const": "docs/system-telemetry-completion-audit.md" },
+        "statusSummary": {
+          "type": "object",
+          "required": ["validatedLocalRows", "activeClosureGateRows", "externalPendingRows", "externalPendingRowIds"],
+          "properties": {
+            "validatedLocalRows": { "const": 12 },
+            "activeClosureGateRows": { "const": 1 },
+            "externalPendingRows": { "const": 3 },
+            "externalPendingRowIds": {
+              "type": "array",
+              "minItems": 3,
+              "contains": { "const": "CLX-STA-014" }
+            }
+          }
+        }
+      }
+    },
+    "externalValidationRunbook": { "$ref": "#/$defs/laneArtifact" },
+    "externalEvidencePacketSchema": { "$ref": "#/$defs/laneArtifact" },
+    "externalEvidenceFixtures": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["status", "validTemplateCount", "invalidTemplateCount"],
+          "properties": {
+            "status": { "const": "synthetic_templates_not_evidence" },
+            "validTemplateCount": { "const": 3 },
+            "invalidTemplateCount": { "const": 3 }
+          }
+        }
+      ]
+    },
+    "externalEvidencePacketValidator": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["path", "fixtureCommand", "packetCommand"],
+          "properties": {
+            "path": { "const": "scripts/validate-system-telemetry-external-evidence.mjs" },
+            "fixtureCommand": { "const": "node scripts/validate-system-telemetry-external-evidence.mjs --fixtures" },
+            "packetCommand": { "const": "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>" }
+          }
+        }
+      ]
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/row" },
+      "allOf": [
+        { "contains": { "$ref": "#/$defs/local001" } },
+        { "contains": { "$ref": "#/$defs/local002" } },
+        { "contains": { "$ref": "#/$defs/ext003" } },
+        { "contains": { "$ref": "#/$defs/ext004" } },
+        { "contains": { "$ref": "#/$defs/ext005" } },
+        { "contains": { "$ref": "#/$defs/local006" } }
+      ]
+    }
+  },
+  "$defs": {
+    "requiredArtifact": {
+      "type": "object",
+      "required": ["required", "artifactId", "path", "closureRole"],
+      "properties": {
+        "required": { "const": true },
+        "artifactId": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "closureRole": { "type": "string", "minLength": 1 }
+      }
+    },
+    "laneArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["laneCount", "externalPendingRowIds"],
+          "properties": {
+            "laneCount": { "const": 3 },
+            "externalPendingRowIds": {
+              "type": "array",
+              "minItems": 3,
+              "contains": { "const": "CLX-SYS-TEL-EXT-003" }
+            }
+          }
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "required": ["id", "requirement", "status", "blockingPrerequisites", "acceptedEvidence"],
+      "properties": {
+        "id": { "type": "string" },
+        "requirement": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["EXTERNAL PENDING", "VALIDATED LOCAL"] },
+        "blockingPrerequisites": { "type": "array", "items": { "type": "string" } },
+        "acceptedEvidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "reentryCommand": { "type": "string" }
+      }
+    },
+    "externalRow": {
+      "type": "object",
+      "required": ["status", "blockingPrerequisites", "acceptedEvidence", "reentryCommand"],
+      "properties": {
+        "status": { "const": "EXTERNAL PENDING" },
+        "blockingPrerequisites": { "type": "array", "minItems": 4 },
+        "acceptedEvidence": { "type": "array", "minItems": 4 },
+        "reentryCommand": { "pattern": "^claw system " }
+      }
+    },
+    "validatedLocalRow": {
+      "type": "object",
+      "required": ["status", "blockingPrerequisites", "acceptedEvidence"],
+      "properties": {
+        "status": { "const": "VALIDATED LOCAL" },
+        "blockingPrerequisites": { "maxItems": 0 },
+        "acceptedEvidence": { "type": "array", "minItems": 1 }
+      }
+    },
+    "local001": { "allOf": [{ "$ref": "#/$defs/validatedLocalRow" }, { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-001" } } }] },
+    "local002": { "allOf": [{ "$ref": "#/$defs/validatedLocalRow" }, { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-002" } } }] },
+    "ext003": {
+      "allOf": [
+        { "$ref": "#/$defs/externalRow" },
+        { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-003" }, "acceptedEvidence": { "contains": { "const": "app_or_menu_same_machine_evidence" } } } }
+      ]
+    },
+    "ext004": {
+      "allOf": [
+        { "$ref": "#/$defs/externalRow" },
+        { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-004" }, "acceptedEvidence": { "contains": { "const": "provider_execution_receipt" } } } }
+      ]
+    },
+    "ext005": {
+      "allOf": [
+        { "$ref": "#/$defs/externalRow" },
+        { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-005" }, "acceptedEvidence": { "contains": { "const": "rollback_or_continuity_evidence" } } } }
+      ]
+    },
+    "local006": { "allOf": [{ "$ref": "#/$defs/validatedLocalRow" }, { "properties": { "id": { "const": "CLX-SYS-TEL-EXT-006" } } }] }
+  }
+}

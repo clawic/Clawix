@@ -2814,7 +2814,8 @@
       "canonicalSource": "docs/sdk-first-custom-surfaces-completion-audit.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
-        "docs/decision-map.md"
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-validation.manifest.schema.json"
       ],
       "discoveryTerms": [
         "sdk-first custom surfaces completion audit",
@@ -3003,6 +3004,33 @@
         {
           "query": "system telemetry external validation manifest",
           "expectPath": "docs/system-telemetry-external-validation.manifest.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-manifest-schema",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-validation.manifest.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest schema",
+        "system telemetry manifest schema",
+        "system telemetry external lane manifest contract"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest schema",
+          "expectPath": "docs/system-telemetry-external-validation.manifest.schema.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
