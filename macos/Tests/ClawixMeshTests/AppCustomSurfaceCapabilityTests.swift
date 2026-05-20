@@ -1134,6 +1134,46 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppBridgeDBQuery.offset(fromCursor: "not-a-cursor"), nil)
     }
 
+    func testDBQueryDSLRejectsCollectionEscapesAndDDLKeys() throws {
+        let valid = try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "lab_results",
+            "filter": ["patientId": "fixture_patient_ada"],
+            "limit": 25
+        ])
+        XCTAssertEqual(valid.collection, "lab_results")
+
+        XCTAssertThrowsError(try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "../core.sqlite",
+            "filter": [:]
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .invalidCollection("../core.sqlite"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "sqlite_master",
+            "filter": [:]
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .invalidCollection("sqlite_master"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "tasks",
+            "sql": "SELECT * FROM tasks"
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .unsupportedQueryKey("sql"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "tasks",
+            "schema": ["fields": [["name": "value", "type": "number"]]]
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .unsupportedQueryKey("schema"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.dbQuery(from: [
+            "collection": "tasks",
+            "migration": "ALTER TABLE tasks ADD COLUMN raw_secret TEXT"
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .unsupportedQueryKey("migration"))
+        }
+    }
+
     func testBridgeValuesRedactSensitiveFieldsAndBuildFacets() {
         let records = [
             DBRecord(
@@ -1211,6 +1251,28 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(query.limit, 1)
         XCTAssertEqual(query.effectiveOffset, 8)
         XCTAssertEqual(query.facets, ["status"])
+    }
+
+    func testSearchQueryDSLRejectsCollectionEscapes() throws {
+        XCTAssertThrowsError(try AppBridgeQueryDSL.searchQuery(from: [
+            "query": "agent",
+            "collections": ["tasks", "sqlite_master"]
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .invalidCollection("sqlite_master"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.searchQuery(from: [
+            "query": "agent",
+            "collections": ["../core.sqlite"]
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .invalidCollection("../core.sqlite"))
+        }
+        XCTAssertThrowsError(try AppBridgeQueryDSL.searchQuery(from: [
+            "query": "agent",
+            "collections": ["tasks"],
+            "sql": "SELECT * FROM tasks"
+        ])) { error in
+            XCTAssertEqual(error as? AppBridgeQueryDSL.QueryError, .unsupportedQueryKey("sql"))
+        }
     }
 
     @MainActor

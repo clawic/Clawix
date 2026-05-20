@@ -69,6 +69,8 @@ enum AppBridgeQueryDSL {
     enum QueryError: LocalizedError, Equatable {
         case missingCollection
         case missingQuery
+        case invalidCollection(String)
+        case unsupportedQueryKey(String)
         case unsupportedFilter(String)
 
         var errorDescription: String? {
@@ -77,6 +79,10 @@ enum AppBridgeQueryDSL {
                 return "db.query requires a collection."
             case .missingQuery:
                 return "search.query requires a query."
+            case .invalidCollection(let collection):
+                return "Unsupported collection identifier: \(collection)"
+            case .unsupportedQueryKey(let key):
+                return "Unsupported query key: \(key)"
             case .unsupportedFilter(let field):
                 return "Unsupported filter for field: \(field)"
             }
@@ -84,8 +90,11 @@ enum AppBridgeQueryDSL {
     }
 
     static func dbQuery(from payload: [String: Any]) throws -> AppBridgeDBQuery {
-        let collection = string(payload["collection"]).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !collection.isEmpty else { throw QueryError.missingCollection }
+        try rejectUnsupportedKeys(
+            payload,
+            allowed: ["collection", "filter", "search", "query", "sort", "limit", "offset", "cursor", "facets"]
+        )
+        let collection = try collectionID(payload["collection"], missingError: .missingCollection)
 
         let filter = try filterChips(from: payload["filter"])
         let search = string(payload["search"] ?? payload["query"])
@@ -105,13 +114,17 @@ enum AppBridgeQueryDSL {
     }
 
     static func searchQuery(from payload: [String: Any]) throws -> AppBridgeSearchQuery {
+        try rejectUnsupportedKeys(
+            payload,
+            allowed: ["query", "text", "collections", "limit", "offset", "cursor", "facets"]
+        )
         let query = string(payload["query"] ?? payload["text"])
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { throw QueryError.missingQuery }
 
         return AppBridgeSearchQuery(
             query: query,
-            collections: stringArray(payload["collections"]),
+            collections: try collectionIDArray(payload["collections"]),
             limit: clampedInt(payload["limit"], defaultValue: 25, min: 1, max: 100),
             offset: clampedInt(payload["offset"], defaultValue: 0, min: 0, max: 10_000),
             cursor: string(payload["cursor"]).nilIfBlank,
@@ -209,6 +222,54 @@ enum AppBridgeQueryDSL {
         guard !field.isEmpty else { return nil }
         let descending = bool(dict["descending"]) ?? (string(dict["direction"]).lowercased() == "desc")
         return .init(field: field, descending: descending)
+    }
+
+    private static func rejectUnsupportedKeys(_ payload: [String: Any], allowed: Set<String>) throws {
+        for key in payload.keys where !allowed.contains(key) {
+            throw QueryError.unsupportedQueryKey(key)
+        }
+    }
+
+    private static func collectionID(_ value: Any?, missingError: QueryError) throws -> String {
+        let collection = string(value).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !collection.isEmpty else { throw missingError }
+        guard isValidCollectionID(collection) else { throw QueryError.invalidCollection(collection) }
+        return collection
+    }
+
+    private static func collectionIDArray(_ value: Any?) throws -> [String] {
+        guard let array = value as? [Any] else { return [] }
+        var result: [String] = []
+        for raw in array {
+            let collection = string(raw).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !collection.isEmpty else { continue }
+            guard isValidCollectionID(collection) else { throw QueryError.invalidCollection(collection) }
+            result.append(collection)
+        }
+        return result
+    }
+
+    private static func isValidCollectionID(_ value: String) -> Bool {
+        guard value.count <= 128,
+              let first = value.unicodeScalars.first,
+              isASCIILetter(first) else {
+            return false
+        }
+        if value.lowercased().hasPrefix("sqlite_") {
+            return false
+        }
+        return value.unicodeScalars.allSatisfy { scalar in
+            isASCIILetter(scalar)
+                || (48...57).contains(scalar.value)
+                || scalar.value == 95
+                || scalar.value == 46
+                || scalar.value == 58
+                || scalar.value == 45
+        }
+    }
+
+    private static func isASCIILetter(_ scalar: Unicode.Scalar) -> Bool {
+        (65...90).contains(scalar.value) || (97...122).contains(scalar.value)
     }
 
     private static func stringArray(_ value: Any?) -> [String] {
