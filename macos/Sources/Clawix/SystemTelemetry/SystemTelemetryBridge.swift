@@ -854,8 +854,12 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var isRefreshing = false
 
+    private static let historyRefreshInterval: TimeInterval = 60
+
     private let bridge: SystemTelemetryBridge
     private let configuration: () -> SystemTelemetryMenuBarConfiguration
+    private var lastHistoryRefreshAt: Date?
+    private var lastHistoryMetricKeys: Set<String> = []
 
     init(
         bridge: SystemTelemetryBridge,
@@ -865,7 +869,8 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         self.configuration = configuration
     }
 
-    func refresh() async {
+    func refresh(forceHistory: Bool = false, now: Date = Date()) async {
+        guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -878,7 +883,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
             let enabledWidgets = widgetCatalog.filter {
                 currentConfiguration.isEnabled($0)
             }
-            async let nextHistories = loadHistories(for: enabledWidgets)
+            let nextHistories = await loadHistoriesIfNeeded(for: enabledWidgets, force: forceHistory, now: now)
             allWidgets = widgetCatalog
             widgets = enabledWidgets.filter {
                 $0.placement == "menu_bar" || $0.placement == "both"
@@ -888,16 +893,31 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
             }
             providers = await nextProviders
             snapshot = try await nextSnapshot
-            histories = await nextHistories
+            histories = nextHistories
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    private func loadHistories(for widgets: [SystemTelemetryWidget]) async -> [String: SystemTelemetryHistory] {
+    private func loadHistoriesIfNeeded(
+        for widgets: [SystemTelemetryWidget],
+        force: Bool,
+        now: Date
+    ) async -> [String: SystemTelemetryHistory] {
         let metricKeys = Set(widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys))
-        guard !metricKeys.isEmpty else { return [:] }
+        guard !metricKeys.isEmpty else {
+            lastHistoryRefreshAt = nil
+            lastHistoryMetricKeys = []
+            return [:]
+        }
+
+        if !force,
+           metricKeys == lastHistoryMetricKeys,
+           let lastHistoryRefreshAt,
+           now.timeIntervalSince(lastHistoryRefreshAt) < Self.historyRefreshInterval {
+            return histories.filter { metricKeys.contains($0.key) }
+        }
 
         var next: [String: SystemTelemetryHistory] = [:]
         for metricKey in metricKeys.sorted() {
@@ -910,6 +930,8 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
                 continue
             }
         }
+        lastHistoryRefreshAt = now
+        lastHistoryMetricKeys = metricKeys
         return next
     }
 

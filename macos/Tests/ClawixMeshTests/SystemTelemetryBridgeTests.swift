@@ -4,6 +4,23 @@ import XCTest
 @testable import Clawix
 
 final class SystemTelemetryBridgeTests: XCTestCase {
+    private actor TelemetryRequestCounter {
+        private var widgets = 0
+        private var histories = 0
+
+        func incrementWidgets() {
+            widgets += 1
+        }
+
+        func incrementHistories() {
+            histories += 1
+        }
+
+        func counts() -> (widgets: Int, histories: Int) {
+            (widgets, histories)
+        }
+    }
+
     func testDecodesSnapshotPolicySamplesAndUnavailableMetrics() throws {
         let response = CommandResponse(
             ok: true,
@@ -946,6 +963,145 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         let graph = SystemTelemetryHistoryGraphView(history: try XCTUnwrap(graphHistory), title: "CPU")
         XCTAssertEqual(graph.pointCount, 4)
         XCTAssertEqual(graph.accessibilityLabel(), "CPU history graph")
+    }
+
+    @MainActor
+    func testMenuBarModelDoesNotOverlapRefreshes() async {
+        let counter = TelemetryRequestCounter()
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                await counter.incrementWidgets()
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array([
+                            .object([
+                                "id": .string("cpu-load"),
+                                "title": .string("CPU"),
+                                "placement": .string("menubar"),
+                                "metricKey": .string("system.cpu.load1"),
+                                "presentation": .string("text"),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([
+                            .object([
+                                "key": .string("system.cpu.load1"),
+                                "value": .number(1.25),
+                                "unit": .string("load"),
+                                "capturedAt": .string("2026-05-18T12:00:00Z"),
+                            ]),
+                        ]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        let first = Task { await model.refresh() }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        let second = Task { await model.refresh() }
+        await first.value
+        await second.value
+
+        let counts = await counter.counts()
+        XCTAssertEqual(counts.widgets, 1)
+    }
+
+    @MainActor
+    func testMenuBarModelThrottlesHistoryRefreshes() async {
+        let counter = TelemetryRequestCounter()
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array([
+                            .object([
+                                "id": .string("cpu-load"),
+                                "title": .string("CPU"),
+                                "placement": .string("both"),
+                                "metricKey": .string("system.cpu.load1"),
+                                "presentation": .string("sparkline"),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            case ("history", "get"):
+                await counter.incrementHistories()
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "metric": .object(["key": .string("system.cpu.load1")]),
+                        "rangeMs": .integer(3600000),
+                        "retention": .object(["status": .string("recorded")]),
+                        "chart": .object([
+                            "kind": .string("line"),
+                            "metricKey": .string("system.cpu.load1"),
+                            "unit": .string("count"),
+                            "source": .string("metric_samples"),
+                            "empty": .bool(false),
+                            "points": .array([
+                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
+                                .object(["t": .integer(2), "value": .number(2), "sourceId": .string("system.telemetry.local")]),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([
+                            .object([
+                                "key": .string("system.cpu.load1"),
+                                "value": .number(1.25),
+                                "unit": .string("load"),
+                                "capturedAt": .string("2026-05-18T12:00:00Z"),
+                            ]),
+                        ]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        await model.refresh(now: Date(timeIntervalSince1970: 100))
+        await model.refresh(now: Date(timeIntervalSince1970: 120))
+        var counts = await counter.counts()
+        XCTAssertEqual(counts.histories, 1)
+
+        await model.refresh(forceHistory: true, now: Date(timeIntervalSince1970: 121))
+        counts = await counter.counts()
+        XCTAssertEqual(counts.histories, 2)
+
+        await model.refresh(now: Date(timeIntervalSince1970: 182))
+        counts = await counter.counts()
+        XCTAssertEqual(counts.histories, 3)
     }
 
     @MainActor
