@@ -30,6 +30,7 @@ struct AppTrustAuditEvent: Codable, Equatable, Hashable, Identifiable {
         app: AppRecord,
         eventType: EventType,
         actor: String = NSFullUserName(),
+        createdAt: Date = Date(),
         riskMap: AppCapabilityRiskMap? = nil,
         reason: String
     ) {
@@ -40,7 +41,7 @@ struct AppTrustAuditEvent: Codable, Equatable, Hashable, Identifiable {
         self.appName = app.name
         self.eventType = eventType
         self.originClass = app.effectiveOriginClass
-        self.createdAt = Date()
+        self.createdAt = createdAt
         self.actor = actor
         self.sourcePath = provenance?.sourcePath
         self.sourceSlug = provenance?.sourceSlug

@@ -18,6 +18,7 @@ struct AppsSettingsPage: View {
     private var defaultCallAgent: Bool = true
 
     @State private var pendingDelete: AppRecord?
+    @State private var trustAuditSheet: AppsSettingsTrustAuditSheetModel?
 
     private var totalSizeBytes: Int {
         appsStore.apps.reduce(0) { partial, record in
@@ -62,6 +63,7 @@ struct AppsSettingsPage: View {
                                 onSetWorkspaceDefault: { setVariantDefault(record, scope: .workspace) },
                                 onClearUserDefault: { clearVariantDefault(record, scope: .user) },
                                 onClearWorkspaceDefault: { clearVariantDefault(record, scope: .workspace) },
+                                onShowTrustAudit: { showTrustAudit(record) },
                                 onDelete: { pendingDelete = record },
                                 sizeOnDisk: appSizeOnDisk(record)
                             )
@@ -111,6 +113,9 @@ struct AppsSettingsPage: View {
                 secondaryButton: .cancel()
             )
         }
+        .sheet(item: $trustAuditSheet) { model in
+            AppsTrustAuditSheet(model: model)
+        }
     }
 
     private var header: some View {
@@ -141,7 +146,7 @@ struct AppsSettingsPage: View {
             Text("Variant")
                 .frame(width: 86, alignment: .center)
             Text("")
-                .frame(width: 104)
+                .frame(width: 120)
         }
         .font(BodyFont.system(size: 11.5, wght: 600))
         .foregroundColor(Color(white: 0.5))
@@ -225,6 +230,15 @@ struct AppsSettingsPage: View {
         ToastCenter.shared.show(scope == .workspace ? "Workspace variant default cleared" : "User variant default cleared")
     }
 
+    private func showTrustAudit(_ record: AppRecord) {
+        do {
+            let events = try AppTrustAudit.read(from: appsStore.trustAuditURL(for: record))
+            trustAuditSheet = AppsSettingsTrustAuditSheetModel(record: record, events: events)
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
+    }
+
     private func appSizeOnDisk(_ record: AppRecord) -> Int {
         let dir = appsStore.directory(forSlug: record.slug)
         guard let enumerator = FileManager.default.enumerator(
@@ -259,6 +273,7 @@ private struct AppsSettingsRow: View {
     let onSetWorkspaceDefault: () -> Void
     let onClearUserDefault: () -> Void
     let onClearWorkspaceDefault: () -> Void
+    let onShowTrustAudit: () -> Void
     let onDelete: () -> Void
     let sizeOnDisk: Int
 
@@ -327,6 +342,12 @@ private struct AppsSettingsRow: View {
                 .buttonStyle(.plain)
                 .help(record.pinned ? "Unpin" : "Pin")
 
+                Button(action: onShowTrustAudit) {
+                    Image(systemName: "shield.lefthalf.filled")
+                }
+                .buttonStyle(.plain)
+                .help("Trust audit")
+
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                 }
@@ -336,7 +357,7 @@ private struct AppsSettingsRow: View {
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundColor(Color(white: 0.7))
-            .frame(width: 104, alignment: .trailing)
+            .frame(width: 120, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -408,6 +429,135 @@ private struct AppsSettingsRow: View {
         formatter.allowedUnits = [.useKB, .useMB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+struct AppsSettingsTrustAuditSheetModel: Identifiable, Equatable {
+    let id: UUID
+    let appName: String
+    let appSlug: String
+    let rows: [AppsSettingsTrustAuditRowPresentation]
+
+    init(record: AppRecord, events: [AppTrustAuditEvent]) {
+        self.id = record.id
+        self.appName = record.name
+        self.appSlug = record.slug
+        self.rows = events
+            .sorted { $0.createdAt > $1.createdAt }
+            .map(AppsSettingsTrustAuditRowPresentation.init(event:))
+    }
+}
+
+struct AppsSettingsTrustAuditRowPresentation: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let detail: String
+    let symbolName: String
+
+    init(event: AppTrustAuditEvent) {
+        id = event.id
+        switch event.eventType {
+        case .packageImported:
+            title = "Package imported"
+            symbolName = "tray.and.arrow.down"
+        case .activationApproved:
+            title = "Activation approved"
+            symbolName = "checkmark.seal"
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        subtitle = formatter.localizedString(for: event.createdAt, relativeTo: Date())
+
+        var parts = [
+            "Origin: \(event.originClass.rawValue)",
+            "Actor: \(event.actor)"
+        ]
+        if let signature = event.signatureStatus {
+            parts.append("Signature: \(signature.displayLabel)")
+        }
+        if let sourceSlug = event.sourceSlug, !sourceSlug.isEmpty {
+            parts.append("Source slug: \(sourceSlug)")
+        }
+        if let sourcePath = event.sourcePath, !sourcePath.isEmpty {
+            parts.append("Source path: \(sourcePath)")
+        }
+        if let riskMapSource = event.riskMapSource {
+            parts.append("Risk map: \(riskMapSource)")
+        }
+        if !event.ordinaryAccess.isEmpty {
+            parts.append("Ordinary: \(event.ordinaryAccess.joined(separator: ", "))")
+        }
+        if !event.approvalRequired.isEmpty {
+            parts.append("Approval: \(event.approvalRequired.joined(separator: ", "))")
+        }
+        if !event.highRisk.isEmpty {
+            parts.append("High risk: \(event.highRisk.joined(separator: ", "))")
+        }
+        parts.append(event.reason)
+        detail = parts.joined(separator: "\n")
+    }
+}
+
+private struct AppsTrustAuditSheet: View {
+    let model: AppsSettingsTrustAuditSheetModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Trust audit")
+                    .font(BodyFont.system(size: 18, wght: 700))
+                    .foregroundColor(Palette.textPrimary)
+                Text("\(model.appName) · \(model.appSlug)")
+                    .font(BodyFont.system(size: 12.5, wght: 500))
+                    .foregroundColor(Color(white: 0.58))
+            }
+
+            if model.rows.isEmpty {
+                Text("No trust events recorded for this app.")
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color(white: 0.58))
+                    .frame(maxWidth: .infinity, minHeight: 120)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 10) {
+                        ForEach(model.rows) { row in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: row.symbolName)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(Color(white: 0.75))
+                                    .frame(width: 20, height: 20)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(row.title)
+                                            .font(BodyFont.system(size: 13.5, wght: 650))
+                                            .foregroundColor(Color(white: 0.90))
+                                        Spacer()
+                                        Text(row.subtitle)
+                                            .font(BodyFont.system(size: 11.5, wght: 500))
+                                            .foregroundColor(Color(white: 0.48))
+                                    }
+                                    Text(row.detail)
+                                        .font(BodyFont.system(size: 12, wght: 400))
+                                        .foregroundColor(Color(white: 0.62))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.white.opacity(0.035))
+                            )
+                        }
+                    }
+                }
+                .frame(minHeight: 160, maxHeight: 360)
+            }
+        }
+        .padding(22)
+        .frame(width: 560)
+        .background(Palette.background)
     }
 }
 

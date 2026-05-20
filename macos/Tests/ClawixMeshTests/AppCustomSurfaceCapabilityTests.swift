@@ -460,6 +460,56 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(presentation.helpText.contains("Source path: /tmp/focus-panel"))
     }
 
+    func testAppsSettingsTrustAuditPresentationSortsAndSummarizesEvents() {
+        let record = AppRecord(
+            slug: "imported-known-panel",
+            name: "Imported Known Panel",
+            declaredCapabilities: ["search.query", "iot.device.action.invoke"],
+            originClass: .imported,
+            packageProvenance: AppPackageProvenance(
+                importedAt: Date(timeIntervalSince1970: 0),
+                importedBy: "Tester",
+                sourcePath: "/tmp/focus-panel",
+                sourceSlug: "focus-panel",
+                sourceOriginClass: .localUserAuthored,
+                packageKind: "folder",
+                signatureStatus: .notVerified
+            )
+        )
+        let riskMap = AppCapabilityCatalog.riskMap(for: record)
+        let imported = AppTrustAuditEvent(
+            id: "import",
+            app: record,
+            eventType: .packageImported,
+            actor: "Tester",
+            createdAt: Date(timeIntervalSince1970: 1),
+            reason: "Imported package requires review."
+        )
+        let approved = AppTrustAuditEvent(
+            id: "approve",
+            app: record,
+            eventType: .activationApproved,
+            actor: "Tester",
+            createdAt: Date(timeIntervalSince1970: 2),
+            riskMap: riskMap,
+            reason: "Activation approved."
+        )
+
+        let model = AppsSettingsTrustAuditSheetModel(record: record, events: [imported, approved])
+
+        XCTAssertEqual(model.appName, "Imported Known Panel")
+        XCTAssertEqual(model.appSlug, "imported-known-panel")
+        XCTAssertEqual(model.rows.map(\.id), ["approve", "import"])
+        XCTAssertEqual(model.rows.first?.title, "Activation approved")
+        XCTAssertTrue(model.rows.first?.detail.contains("Risk map: \(AppCapabilityCatalog.source)") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("Ordinary: search.query") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("Approval: iot.device.action.invoke") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("High risk: iot.device.action.invoke") == true)
+        XCTAssertEqual(model.rows.last?.title, "Package imported")
+        XCTAssertTrue(model.rows.last?.detail.contains("Signature: Not verified") == true)
+        XCTAssertTrue(model.rows.last?.detail.contains("Source path: /tmp/focus-panel") == true)
+    }
+
     func testUnknownCapabilitiesBlockActivation() {
         let record = AppRecord(
             slug: "unknown-panel",
