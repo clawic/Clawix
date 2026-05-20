@@ -291,6 +291,60 @@ enum AppCapabilityCatalog {
             "capabilities": descriptors.map(\.bridgeValue)
         ]
     }
+
+    static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
+        switch descriptor.id {
+        case "search.query", "db.query", "resources.read":
+            return [
+                "status": "available",
+                "mode": "localWideRead",
+                "approvalRequired": false,
+                "runner": "clawix.hostBridge",
+                "reason": "Local-wide read through the host bridge; no CLI process required."
+            ]
+        case "mac.action.plan":
+            return [
+                "status": "available",
+                "mode": "approvalRequiredPlanOnly",
+                "approvalRequired": true,
+                "runner": "NativeMacActionWire.planJSON",
+                "reason": "Returns a dry-run Mac Control plan after approval; native execution remains unavailable."
+            ]
+        case "iot.device.action.invoke":
+            return [
+                "status": "available",
+                "mode": "approvalRequiredDispatch",
+                "approvalRequired": true,
+                "runner": "IoTManager.runAction",
+                "externalValidation": "EXTERNAL PENDING",
+                "reason": "Dispatches through IoTManager after approval; live physical/provider validation requires explicit authorization."
+            ]
+        case "actions.invoke":
+            return [
+                "status": "unavailable",
+                "mode": "approvalRequiredNoRunner",
+                "approvalRequired": true,
+                "runner": "pending",
+                "reason": "Generic framework action dispatch still needs a safe runner."
+            ]
+        case "secrets.broker":
+            return [
+                "status": "unavailable",
+                "mode": "approvalRequiredNoPlaintextBroker",
+                "approvalRequired": true,
+                "runner": "pending",
+                "reason": "Secrets broker dispatch still needs a safe lease/ref runner and must not expose plaintext."
+            ]
+        default:
+            return [
+                "status": "unavailable",
+                "mode": "unknown",
+                "approvalRequired": descriptor.interruptiveApproval,
+                "runner": "pending",
+                "reason": "No custom-app dispatcher is registered for this capability."
+            ]
+        }
+    }
 }
 
 extension AppCapabilityDescriptor {
@@ -305,7 +359,8 @@ extension AppCapabilityDescriptor {
             "touchesSecrets": touchesSecrets,
             "touchesNativeHost": touchesNativeHost,
             "touchesPhysicalWorld": touchesPhysicalWorld,
-            "destructive": destructive
+            "destructive": destructive,
+            "dispatch": AppCapabilityCatalog.dispatchBridgeValue(for: self)
         ]
         if let redactionPolicyRef {
             value["redactionPolicyRef"] = redactionPolicyRef

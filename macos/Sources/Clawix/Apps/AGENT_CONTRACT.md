@@ -164,6 +164,19 @@ the final segment of an `iot.*` tool name as a fallback. Other high-risk
 capabilities still return `approvalRecordedDispatchUnavailable` until their
 safe framework or signed-host runners are wired.
 
+`clawix.capabilities.contracts()` also exposes a per-capability `dispatch`
+object so custom UIs can distinguish contract shape from runtime availability.
+Current modes are:
+
+- `localWideRead` for Search, DB, and resource reads.
+- `approvalRequiredPlanOnly` for `mac.action.plan`; it returns a dry-run Mac
+  Control plan and never executes native steps.
+- `approvalRequiredDispatch` for `iot.device.action.invoke`; real physical or
+  provider-backed validation remains `EXTERNAL PENDING` unless explicitly
+  authorized.
+- `approvalRequiredNoRunner` and `approvalRequiredNoPlaintextBroker` for
+  high-risk capabilities that still have no safe runner.
+
 Route variants use the same manifest:
 
 ```jsonc

@@ -99,6 +99,32 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.missingSchemaRefs, [])
     }
 
+    func testCapabilityContractsExposeDispatchAvailabilityAndGaps() throws {
+        let search = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "search.query")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(search["status"] as? String, "available")
+        XCTAssertEqual(search["mode"] as? String, "localWideRead")
+        XCTAssertEqual(search["approvalRequired"] as? Bool, false)
+
+        let mac = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "mac.action.plan")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(mac["status"] as? String, "available")
+        XCTAssertEqual(mac["mode"] as? String, "approvalRequiredPlanOnly")
+        XCTAssertEqual(mac["approvalRequired"] as? Bool, true)
+        XCTAssertEqual(mac["runner"] as? String, "NativeMacActionWire.planJSON")
+
+        let iot = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "iot.device.action.invoke")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(iot["status"] as? String, "available")
+        XCTAssertEqual(iot["mode"] as? String, "approvalRequiredDispatch")
+        XCTAssertEqual(iot["externalValidation"] as? String, "EXTERNAL PENDING")
+
+        let actions = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "actions.invoke")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(actions["status"] as? String, "unavailable")
+        XCTAssertEqual(actions["mode"] as? String, "approvalRequiredNoRunner")
+
+        let secrets = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "secrets.broker")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(secrets["status"] as? String, "unavailable")
+        XCTAssertEqual(secrets["mode"] as? String, "approvalRequiredNoPlaintextBroker")
+    }
+
     func testAgentToolNamesMapToHighRiskCapabilities() {
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "secrets.read"), "secrets.broker")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "mac.window.plan"), "mac.action.plan")
@@ -911,6 +937,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let mac = try XCTUnwrap(capabilities.first { $0["id"] as? String == "mac.action.plan" })
         XCTAssertEqual(mac["inputSchemaRef"] as? String, "claw.mac.actionRequest.v1")
         XCTAssertEqual(mac["outputSchemaRef"] as? String, "claw.mac.actionPlan.v1")
+        let macDispatch = try XCTUnwrap(mac["dispatch"] as? [String: Any])
+        XCTAssertEqual(macDispatch["mode"] as? String, "approvalRequiredPlanOnly")
     }
 
     func testInjectedAppsSdkExposesSearchAndDBContracts() {
