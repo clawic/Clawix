@@ -306,6 +306,46 @@ PY
         copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/cli/node_modules/@clawjs/core"
     fi
     if [[ "${CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY:-0}" == "1" ]]; then
+        copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/signals-core" "$CLAWJS_DEST/node_modules/@clawjs/signals-core"
+        copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/signals" "$CLAWJS_DEST/node_modules/@clawjs/signals"
+        copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/clawjs-search" "$CLAWJS_DEST/node_modules/@clawjs/search"
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/search/node_modules/@clawjs/core"
+        FASTIFY_STAGE="$CACHE_ROOT/fastify-runtime"
+        if [[ ! -d "$FASTIFY_STAGE/node_modules/fastify" ]]; then
+            rm -rf "$FASTIFY_STAGE"
+            mkdir -p "$FASTIFY_STAGE"
+            cat > "$FASTIFY_STAGE/package.json" <<'EOF'
+{
+  "name": "clawix-fastify-runtime",
+  "private": true,
+  "dependencies": {
+    "fastify": "^5.6.1"
+  }
+}
+EOF
+            (
+                cd "$FASTIFY_STAGE"
+                run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
+            )
+        fi
+        cp -R "$FASTIFY_STAGE/node_modules/." "$CLAWJS_DEST/node_modules/"
+        OVERLAY_DB="$CLAWJS_DEV_OVERLAY/packages/clawjs-database"
+        if [[ -d "$OVERLAY_DB" ]]; then
+            build_overlay_package "$OVERLAY_DB"
+            echo "==> Dev overlay: copying $OVERLAY_DB → $CLAWJS_DEST/node_modules/@clawjs/database"
+            rm -rf "$CLAWJS_DEST/node_modules/@clawjs/database"
+            mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
+            cp -R "$OVERLAY_DB" "$CLAWJS_DEST/node_modules/@clawjs/database"
+            (
+                cd "$CLAWJS_DEST/node_modules/@clawjs/database"
+                npm_config_arch=arm64 \
+                npm_config_target_arch=arm64 \
+                npm_config_target_platform=darwin \
+                run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
+            )
+            rm -rf "$CLAWJS_DEST/node_modules/@clawjs/database/node_modules/better-sqlite3"
+            copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/database/node_modules/@clawjs/core"
+        fi
         echo "==> Skipping optional ClawJS dev overlays (CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY=1)"
     else
     OVERLAY_SEARCH="$CLAWJS_DEV_OVERLAY/packages/clawjs-search"
