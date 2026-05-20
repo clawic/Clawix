@@ -33,6 +33,9 @@ the sibling ClawJS SDK-first custom surface contract.
    bridge before allowing arbitrary native Swift views in-process.
 7. Validation: add focused unit/UI tests and mark native/physical/provider
    dependencies as `EXTERNAL PENDING` until host-real validation is performed.
+8. Performance validation: keep a repeatable shell-isolation measurement for
+   the critical route fast path, and treat real UI/Instruments captures as the
+   closure evidence for user-visible latency budgets.
 
 ## Acceptance Checklist
 
@@ -45,6 +48,9 @@ the sibling ClawJS SDK-first custom surface contract.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.
+- Critical shell fast-path measurement stays bounded when all heavy
+  dependencies are unavailable; realistic UI captures remain required before
+  final closure.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
 - Swift custom surfaces have a constrained process/bridge design before
