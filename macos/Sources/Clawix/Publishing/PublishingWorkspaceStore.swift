@@ -212,6 +212,14 @@ final class PublishingWorkspaceStore: ObservableObject {
     /// service is down so views render an empty state instead of stale
     /// data from a previous boot.
     func reset(reason: String) {
+        cancelSurfaceWork()
+        families = []
+        channels = []
+        posts = []
+        state = .unavailable(reason)
+    }
+
+    func cancelSurfaceWork() {
         bootstrapGeneration += 1
         bootstrapTask?.cancel()
         bootstrapTask = nil
@@ -221,9 +229,7 @@ final class PublishingWorkspaceStore: ObservableObject {
         channelsRefreshGeneration += 1
         channelsRefreshTask?.cancel()
         channelsRefreshTask = nil
-        calendarRefreshGeneration += 1
-        calendarRefreshTask?.cancel()
-        calendarRefreshTask = nil
+        cancelCalendarSurfaceWork()
         for task in connectTasks.values { task.cancel() }
         connectTasks.removeAll()
         for key in Array(connectGenerations.keys) {
@@ -237,10 +243,15 @@ final class PublishingWorkspaceStore: ObservableObject {
         createPostGeneration += 1
         createPostTask?.cancel()
         createPostTask = nil
-        families = []
-        channels = []
-        posts = []
-        state = .unavailable(reason)
+        if state == .bootstrapping {
+            state = .idle
+        }
+    }
+
+    func cancelCalendarSurfaceWork() {
+        calendarRefreshGeneration += 1
+        calendarRefreshTask?.cancel()
+        calendarRefreshTask = nil
     }
 
     private func ensureDefaultWorkspace() async throws {

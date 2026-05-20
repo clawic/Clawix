@@ -35,6 +35,9 @@ struct PublishingHomeView: View {
         .onAppear {
             if store.state == .idle { store.bootstrap() }
         }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
     }
 
     private var header: some View {

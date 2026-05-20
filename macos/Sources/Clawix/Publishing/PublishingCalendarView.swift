@@ -275,6 +275,7 @@ struct PublishingCalendarView: View {
     private func stopPolling() {
         pollerTask?.cancel()
         pollerTask = nil
+        store.cancelCalendarSurfaceWork()
     }
 
     @ViewBuilder

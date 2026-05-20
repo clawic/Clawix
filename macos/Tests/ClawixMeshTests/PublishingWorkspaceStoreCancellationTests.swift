@@ -38,6 +38,42 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
         XCTAssertTrue(store.channels.isEmpty)
     }
 
+    func testCancelSurfaceWorkCancelsInFlightBootstrapWithoutMarkingServiceUnavailable() async {
+        let bootstrapStarted = expectation(description: "Bootstrap started")
+        let bootstrapCancelled = expectation(description: "Bootstrap cancelled")
+        let store = PublishingWorkspaceStore(
+            bootstrapAvailabilityOperation: { nil },
+            bootstrapOperation: {
+                bootstrapStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    bootstrapCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return .init(
+                    workspaceId: "stale-workspace",
+                    families: [Self.family(id: "stale")],
+                    channels: [Self.account(id: "stale", familyId: "stale")]
+                )
+            },
+            attachSupervisor: false
+        )
+
+        store.bootstrap()
+        await fulfillment(of: [bootstrapStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [bootstrapCancelled], timeout: 1)
+        await Task.yield()
+
+        XCTAssertEqual(store.state, .idle)
+        XCTAssertNil(store.workspaceId)
+        XCTAssertTrue(store.families.isEmpty)
+        XCTAssertTrue(store.channels.isEmpty)
+    }
+
     func testStaleBootstrapCannotOverwriteFreshBootstrap() async {
         let staleStarted = expectation(description: "Stale bootstrap started")
         let staleReturned = expectation(description: "Stale bootstrap returned")
@@ -271,6 +307,39 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
         XCTAssertEqual(store.state, .unavailable("Publishing stopped"))
     }
 
+    func testCancelCalendarSurfaceWorkCancelsInFlightCalendarRefreshOnly() async {
+        let refreshStarted = expectation(description: "Calendar refresh started")
+        let refreshCancelled = expectation(description: "Calendar refresh cancelled")
+        let store = PublishingWorkspaceStore(
+            listPostsOperation: { _, _, _ in
+                refreshStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    refreshCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return [Self.post(id: "stale")]
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let task = Task {
+            await store.refreshCalendar(from: Self.date(1), to: Self.date(2))
+        }
+        await fulfillment(of: [refreshStarted], timeout: 1)
+
+        store.cancelCalendarSurfaceWork()
+
+        await fulfillment(of: [refreshCancelled], timeout: 1)
+        await task.value
+
+        XCTAssertTrue(store.posts.isEmpty)
+        XCTAssertEqual(store.state, .ready)
+    }
+
     func testStartingSecondConnectCancelsStaleConnect() async throws {
         let staleStarted = expectation(description: "Stale connect started")
         let staleCancelled = expectation(description: "Stale connect cancelled")
@@ -488,6 +557,45 @@ final class PublishingWorkspaceStoreCancellationTests: XCTestCase {
 
         XCTAssertTrue(store.posts.isEmpty)
         XCTAssertEqual(store.state, .unavailable("Publishing stopped"))
+    }
+
+    func testCancelSurfaceWorkCancelsInFlightCreatePostWithoutMarkingServiceUnavailable() async {
+        let createStarted = expectation(description: "Create post started")
+        let createCancelled = expectation(description: "Create post cancelled")
+        let store = PublishingWorkspaceStore(
+            createPostOperation: { _, _ in
+                createStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    createCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.post(id: "stale")
+            },
+            attachSupervisor: false,
+            initialState: .ready,
+            workspaceId: "workspace"
+        )
+
+        let task = Task {
+            try await store.createPost(spec: Self.postSpec())
+        }
+        await fulfillment(of: [createStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [createCancelled], timeout: 1)
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled post creation unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected create post error: \(error)")
+        }
+
+        XCTAssertTrue(store.posts.isEmpty)
+        XCTAssertEqual(store.state, .ready)
     }
 
     func testStartingSecondCreatePostCancelsStaleCreate() async throws {
