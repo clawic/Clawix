@@ -13,6 +13,12 @@ requirement by requirement. It is not a completion claim. Rows marked
 grant, execution receipt, audit event, or same-machine app evidence before they
 can be cleared.
 
+## Status Summary
+
+- `validated-local`: 12 rows.
+- `active-closure-gate`: 1 row.
+- `external-pending`: 3 rows, `CLX-STA-014`, `CLX-STA-015`, and `CLX-STA-016`.
+
 ## Requirement Status
 
 | ID | Requirement | Status | Evidence | Remaining gate |

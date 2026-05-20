@@ -364,6 +364,9 @@ function assertCompletionAudit() {
     "Plan item: `019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan`",
     "Status: `active_goal_not_complete`",
     "This public-safe Clawix audit mirrors the framework system telemetry goal",
+    "- `validated-local`: 12 rows.",
+    "- `active-closure-gate`: 1 row.",
+    "- `external-pending`: 3 rows, `CLX-STA-014`, `CLX-STA-015`, and `CLX-STA-016`.",
     "| CLX-STA-001 | Consume the framework `claw system` plane",
     "| CLX-STA-002 | Render multiple independent menu-bar indicators plus one combined item.",
     "| CLX-STA-003 | Support text, icon, gauge, sparkline, thresholds, provider rows, dropdown, toggles, and refresh behavior.",
@@ -389,6 +392,15 @@ function assertCompletionAudit() {
   }
   const requirementRows = text.match(/^\| CLX-STA-\d{3} \|/gm) ?? [];
   assert(requirementRows.length === 16, "docs/system-telemetry-completion-audit.md: must contain exactly CLX-STA-001..CLX-STA-016 rows");
+  const validatedRows = text.match(/^\| CLX-STA-\d{3} \|[^|]+\| validated-local \|/gm) ?? [];
+  const activeRows = text.match(/^\| CLX-STA-\d{3} \|[^|]+\| active-closure-gate \|/gm) ?? [];
+  const externalRows = text.match(/^\| CLX-STA-\d{3} \|[^|]+\| external-pending \|/gm) ?? [];
+  assert(validatedRows.length === 12, "docs/system-telemetry-completion-audit.md: must contain exactly 12 validated-local rows");
+  assert(activeRows.length === 1, "docs/system-telemetry-completion-audit.md: must contain exactly 1 active-closure-gate row");
+  assert(externalRows.length === 3, "docs/system-telemetry-completion-audit.md: must contain exactly 3 external-pending rows");
+  for (const rowId of ["CLX-STA-014", "CLX-STA-015", "CLX-STA-016"]) {
+    assert(new RegExp(`^\\\\| ${rowId} \\\\|[^\\n]+\\\\| external-pending \\\\|`, "m").test(text), `docs/system-telemetry-completion-audit.md: ${rowId} must remain external-pending`);
+  }
   assert(!text.includes("/Users/"), "docs/system-telemetry-completion-audit.md: must not publish private filesystem paths");
 }
 
