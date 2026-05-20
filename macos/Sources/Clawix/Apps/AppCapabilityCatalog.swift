@@ -17,6 +17,11 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var destructive: Bool
 }
 
+struct AppCapabilitySurfaceBinding: Codable, Equatable, Hashable {
+    var surface: String
+    var status: String
+}
+
 struct AppCapabilityEventSchemaRefs: Codable, Equatable, Hashable {
     var cancel: String?
     var progress: String?
@@ -457,6 +462,17 @@ enum AppCapabilityCatalog {
         ]
     }
 
+    static var blockedSurfaceBindingsBridgeValue: [[String: String]] {
+        [
+            ["surface": "sdk", "status": "blocked"],
+            ["surface": "cli", "status": "blocked"],
+            ["surface": "serviceApi", "status": "blocked"],
+            ["surface": "mcp", "status": "blocked"],
+            ["surface": "relay", "status": "blocked"],
+            ["surface": "hostBridge", "status": "blocked"]
+        ]
+    }
+
     static func contractsBridgeValue(for record: AppRecord) -> [String: Any] {
         [
             "schemaVersion": 1,
@@ -561,6 +577,9 @@ extension AppCapabilityDescriptor {
         }
         if let eventSchemaRefs {
             value["eventSchemaRefs"] = eventSchemaRefs.bridgeValue
+        }
+        if customAppAccess == .blocked {
+            value["surfaces"] = AppCapabilityCatalog.blockedSurfaceBindingsBridgeValue
         }
         return value
     }
