@@ -683,10 +683,10 @@ enum AppCapabilityCatalog {
         default:
             return [
                 "status": "unavailable",
-                "mode": "unknown",
+                "mode": "unclassifiedBlocked",
                 "approvalRequired": descriptor.interruptiveApproval,
                 "runner": "pending",
-                "reason": "No custom-app dispatcher is registered for this capability."
+                "reason": "This custom-app capability has not been classified for custom-app dispatch and is blocked until it has an explicit contract, policy, runner, and tests."
             ]
         }
     }
