@@ -75,6 +75,39 @@ final class MemoryStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.stats)
     }
 
+    func testCancelSurfaceWorkCancelsInFlightRefreshWithoutMarkingServiceUnavailable() async {
+        let refreshStarted = expectation(description: "Refresh started")
+        let refreshCancelled = expectation(description: "Refresh cancelled")
+        let store = MemoryStore(
+            listNotesOperation: {
+                refreshStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    refreshCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return [Self.note(id: "stale")]
+            },
+            listCapturesOperation: { [] },
+            statsOperation: { Self.stats(total: 1) },
+            attachSupervisor: false
+        )
+
+        let task = Task { await store.refresh() }
+        await fulfillment(of: [refreshStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [refreshCancelled], timeout: 1)
+        await task.value
+
+        XCTAssertEqual(store.state, .idle)
+        XCTAssertTrue(store.notes.isEmpty)
+        XCTAssertTrue(store.captures.isEmpty)
+        XCTAssertNil(store.stats)
+    }
+
     func testStaleRefreshCannotOverwriteFreshRefresh() async {
         let staleStarted = expectation(description: "Stale refresh started")
         let staleReturned = expectation(description: "Stale refresh returned")
@@ -147,6 +180,36 @@ final class MemoryStoreCancellationTests: XCTestCase {
         XCTAssertFalse(store.isSearching)
     }
 
+    func testCancelSurfaceWorkCancelsInFlightSearch() async {
+        let searchStarted = expectation(description: "Search started")
+        let searchCancelled = expectation(description: "Search cancelled")
+        let searchReturned = expectation(description: "Search should not return after teardown")
+        searchReturned.isInverted = true
+        let store = MemoryStore(
+            searchOperation: { query in
+                searchStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                    searchReturned.fulfill()
+                    return Self.search(query: query)
+                } catch is CancellationError {
+                    searchCancelled.fulfill()
+                    throw CancellationError()
+                }
+            },
+            attachSupervisor: false
+        )
+
+        store.search("stale")
+        await fulfillment(of: [searchStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [searchCancelled, searchReturned], timeout: 1)
+        XCTAssertNil(store.lastSearch)
+        XCTAssertFalse(store.isSearching)
+    }
+
     func testResetCancelsInFlightCreate() async {
         let createStarted = expectation(description: "Create started")
         let createCancelled = expectation(description: "Create cancelled")
@@ -188,6 +251,50 @@ final class MemoryStoreCancellationTests: XCTestCase {
         }
 
         XCTAssertEqual(store.state, .error("Memory stopped"))
+        XCTAssertTrue(store.notes.isEmpty)
+    }
+
+    func testCancelSurfaceWorkCancelsInFlightCreateWithoutMarkingServiceUnavailable() async {
+        let createStarted = expectation(description: "Create started")
+        let createCancelled = expectation(description: "Create cancelled")
+        let refreshUnexpected = expectation(description: "Refresh should not run after cancelled create")
+        refreshUnexpected.isInverted = true
+        let store = MemoryStore(
+            listNotesOperation: {
+                refreshUnexpected.fulfill()
+                return [Self.note(id: "unexpected")]
+            },
+            createNoteOperation: { _ in
+                createStarted.fulfill()
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    createCancelled.fulfill()
+                    throw CancellationError()
+                }
+                return Self.createResponse(id: "stale")
+            },
+            attachSupervisor: false
+        )
+
+        let task = Task {
+            try await store.create(Self.createInput(title: "Stale"))
+        }
+        await fulfillment(of: [createStarted], timeout: 1)
+
+        store.cancelSurfaceWork()
+
+        await fulfillment(of: [createCancelled], timeout: 1)
+        await fulfillment(of: [refreshUnexpected], timeout: 0.05)
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled create unexpectedly succeeded")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected create error: \(error)")
+        }
+
+        XCTAssertEqual(store.state, .idle)
         XCTAssertTrue(store.notes.isEmpty)
     }
 

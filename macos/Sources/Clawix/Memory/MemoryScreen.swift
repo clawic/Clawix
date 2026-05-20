@@ -47,6 +47,9 @@ struct MemoryScreen: View {
         .task {
             if store.state == .idle { await store.refresh() }
         }
+        .onDisappear {
+            store.cancelSurfaceWork()
+        }
         .sheet(isPresented: $showCreateSheet) {
             MemoryEditSheet(
                 store: store,

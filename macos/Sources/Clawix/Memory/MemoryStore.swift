@@ -260,6 +260,14 @@ final class MemoryStore: ObservableObject {
     }
 
     func reset(reason: String) {
+        cancelSurfaceWork()
+        notes = []
+        captures = []
+        stats = nil
+        state = .error(reason)
+    }
+
+    func cancelSurfaceWork() {
         refreshGeneration += 1
         refreshTask?.cancel()
         refreshTask = nil
@@ -267,10 +275,9 @@ final class MemoryStore: ObservableObject {
         refreshTimeoutTask = nil
         clearSearch()
         cancelMutationTasks()
-        notes = []
-        captures = []
-        stats = nil
-        state = .error(reason)
+        if state == .loading {
+            state = .idle
+        }
     }
 
     // MARK: - Mutations
