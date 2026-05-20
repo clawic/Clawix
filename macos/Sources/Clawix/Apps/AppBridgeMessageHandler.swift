@@ -59,6 +59,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private weak var databaseManager: DatabaseManager?
     private let resourceRegistry: AppResourceRegistryStore
     private let surfaceReporter: SurfaceRouteReporter
+    private let highRiskActionDispatcher: AppHighRiskActionDispatcher
     private var activeRequests: [String: Task<Void, Never>] = [:]
     /// In-memory KV cache mirroring the on-disk storage file. Reads are
     /// served from cache; writes flush to disk asynchronously so the JS
@@ -72,7 +73,8 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         appState: AppState?,
         databaseManager: DatabaseManager? = nil,
         resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),
-        surfaceReporter: SurfaceRouteReporter = .noop
+        surfaceReporter: SurfaceRouteReporter = .noop,
+        highRiskActionDispatcher: AppHighRiskActionDispatcher? = nil
     ) {
         self.slug = slug
         self.appsStore = appsStore
@@ -80,6 +82,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         self.databaseManager = databaseManager
         self.resourceRegistry = resourceRegistry
         self.surfaceReporter = surfaceReporter
+        self.highRiskActionDispatcher = highRiskActionDispatcher ?? AppUnavailableHighRiskActionDispatcher()
         super.init()
     }
 
@@ -148,13 +151,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 try sendMessageToOriginatingChat(text)
                 resolve(requestId: requestId, value: NSNull())
             case "agent.callTool":
-                // v1: every tool call surfaces a native confirm sheet
-                // unless the app has the tool in `permissions.allowedTools`.
-                // Runtime tool dispatch requires a bridge frame to
-                // ClawJS; for now we gate the permission and reject so
-                // apps fail loudly until the tools are wired.
+                // v1: every high-risk tool call goes through declared
+                // capability checks, a native approval prompt, a dispatch
+                // boundary, and a host-owned audit receipt.
                 let tool = (payload["tool"] as? String) ?? ""
-                try gateToolCall(tool: tool, requestId: requestId)
+                let arguments = (payload["args"] as? [String: Any]) ?? [:]
+                try gateToolCall(tool: tool, arguments: arguments, requestId: requestId)
             case "capabilities.list":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
             case "capabilities.contracts":
@@ -310,7 +312,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         appState.dispatchAppMessage(text, toChatId: chatId)
     }
 
-    private func gateToolCall(tool: String, requestId: String) throws {
+    private func gateToolCall(tool: String, arguments: [String: Any], requestId: String) throws {
         guard let record = appsStore.record(forSlug: slug) else {
             reject(requestId: requestId, message: "App not found")
             return
@@ -354,15 +356,30 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 )
                 self.reject(requestId: requestId, message: "User denied tool: \(tool)")
             case .once, .always:
-                self.writeHighRiskReceipt(
-                    app: record,
-                    descriptor: descriptor,
-                    tool: tool,
-                    decision: decision == .always ? .approvedAlways : .approvedOnce,
-                    outcome: .approvalRecordedDispatchUnavailable,
-                    auditURL: auditURL
-                )
-                self.reject(requestId: requestId, message: "Agent tool dispatch is not available in this build")
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    let result = await self.highRiskActionDispatcher.dispatch(
+                        AppHighRiskActionDispatchRequest(
+                            app: record,
+                            descriptor: descriptor,
+                            tool: tool,
+                            arguments: arguments
+                        )
+                    )
+                    self.writeHighRiskReceipt(
+                        app: record,
+                        descriptor: descriptor,
+                        tool: tool,
+                        decision: decision == .always ? .approvedAlways : .approvedOnce,
+                        outcome: result.receiptOutcome,
+                        auditURL: auditURL
+                    )
+                    if let rejection = result.rejectionMessage {
+                        self.reject(requestId: requestId, message: rejection)
+                    } else {
+                        self.resolve(requestId: requestId, value: result.resolvedValue)
+                    }
+                }
             }
         }
     }

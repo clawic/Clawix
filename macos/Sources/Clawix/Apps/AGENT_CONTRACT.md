@@ -140,10 +140,14 @@ it.
 
 High-risk app action prompts append host-owned receipts to
 `high-risk-action-audit.jsonl`. Current receipts record capability id, action,
-decision, outcome, risk tier, interruptive flag, timestamp, and reason. The
-current build records approval/denial decisions but does not dispatch the tool
-after approval yet; approved receipts use
-`approvalRecordedDispatchUnavailable`.
+decision, outcome, risk tier, interruptive flag, timestamp, and reason.
+Outcomes distinguish `denied`, `approvalRecordedDispatchUnavailable`,
+`dispatchFailed`, and `dispatched`. Approved requests pass through an injected
+high-risk action dispatcher boundary before the JS promise resolves. The
+default dispatcher in this build still does not execute real tools and returns
+`approvalRecordedDispatchUnavailable`; a future safe ClawJS/framework runner
+must use this boundary rather than bypassing prompt, capability, and audit
+checks.
 
 Route variants use the same manifest:
 
@@ -173,9 +177,10 @@ replacing core shell surfaces.
   - `clawix.agent.sendMessage(text)` — posts a message to the chat in
     `createdByChatId` (no-op if null)
   - `clawix.agent.callTool({tool, args})` — gated by user prompt unless
-    the tool is in `permissions.allowedTools`. Currently always rejects
-    until ClawJS tool dispatch is wired; the prompt records the user's
-    approval for that request.
+    the tool is in `permissions.allowedTools`. Approved calls enter the
+    high-risk action dispatcher boundary and append a host-owned receipt.
+    The default dispatcher still rejects as unavailable until a safe
+    ClawJS/framework runner is wired.
   - `clawix.capabilities.{list,riskMap,contracts}` — visible capability
     and SDK contract metadata for the current app, including schema refs,
     redaction policy refs, and high-risk approval classification.

@@ -11,6 +11,8 @@ struct AppHighRiskActionReceipt: Codable, Equatable, Hashable, Identifiable {
     enum Outcome: String, Codable, Equatable, Hashable {
         case denied
         case approvalRecordedDispatchUnavailable
+        case dispatchFailed
+        case dispatched
     }
 
     var id: String

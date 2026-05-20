@@ -124,6 +124,47 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(receipts.first?.outcome, .approvalRecordedDispatchUnavailable)
     }
 
+    func testHighRiskActionDispatchResultsMapToAuditOutcomes() {
+        XCTAssertEqual(
+            AppHighRiskActionDispatchResult.dispatched(["ok": true]).receiptOutcome,
+            .dispatched
+        )
+        XCTAssertEqual(
+            AppHighRiskActionDispatchResult.unavailable("not wired").receiptOutcome,
+            .approvalRecordedDispatchUnavailable
+        )
+        XCTAssertEqual(
+            AppHighRiskActionDispatchResult.failed("runner failed").receiptOutcome,
+            .dispatchFailed
+        )
+        XCTAssertNil(AppHighRiskActionDispatchResult.dispatched(NSNull()).rejectionMessage)
+        XCTAssertEqual(
+            AppHighRiskActionDispatchResult.failed("runner failed").rejectionMessage,
+            "runner failed"
+        )
+    }
+
+    @MainActor
+    func testDefaultHighRiskActionDispatcherKeepsDispatchUnavailable() async throws {
+        let app = AppRecord(
+            slug: "iot-panel",
+            name: "IoT Panel",
+            declaredCapabilities: ["iot.device.action.invoke"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "iot.device.toggle"))
+        let result = await AppUnavailableHighRiskActionDispatcher().dispatch(
+            AppHighRiskActionDispatchRequest(
+                app: app,
+                descriptor: descriptor,
+                tool: "iot.device.toggle",
+                arguments: ["state": true]
+            )
+        )
+
+        XCTAssertEqual(result.receiptOutcome, .approvalRecordedDispatchUnavailable)
+        XCTAssertEqual(result.rejectionMessage, "Agent tool dispatch is not available in this build")
+    }
+
     func testHighRiskActionAuditWritesDenialReceipts() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
