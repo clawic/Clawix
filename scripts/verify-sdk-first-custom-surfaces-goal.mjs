@@ -132,6 +132,8 @@ function assertRuntimeArtifacts() {
     "macos/Sources/Clawix/Apps/AppSwiftSurfaceContract.swift": [
       "AppSwiftSurfaceRunnerSupervisor",
       "AppSwiftSurfaceProcessExecutor",
+      "AppSwiftSurfaceRenderPresentation",
+      "AppSwiftSurfaceRenderedNode",
       "Swift surface runner must be out-of-process.",
       "highRiskRead",
     ],
@@ -160,6 +162,7 @@ function assertTests() {
       "testAppsSettingsVariantDefaultPresentationAllowsUserAndWorkspaceManagement",
       "testSwiftSurfaceRunnerSupervisorRejectsInProcessPlans",
       "testSwiftSurfaceProcessExecutorTerminatesProcessWhenTaskIsCancelled",
+      "testSwiftSurfaceRenderPresentationBuildsDeclarativeTree",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [
       "testCriticalShellStartFastPathStaysBoundedWithAllHeavyDependenciesUnavailable",

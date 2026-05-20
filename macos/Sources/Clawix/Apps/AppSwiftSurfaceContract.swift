@@ -112,6 +112,89 @@ struct AppSwiftSurfaceRunnerResult: Equatable, Hashable {
     }
 }
 
+struct AppSwiftSurfaceRenderPresentation: Equatable, Hashable {
+    var title: String
+    var capabilitiesSummary: String
+    var root: AppSwiftSurfaceRenderedNode
+
+    init(
+        record: AppRecord,
+        manifest: AppSwiftSurfaceManifest,
+        plan: AppSwiftSurfaceRunnerPlan
+    ) {
+        title = record.name
+        capabilitiesSummary = plan.allowedCapabilities.isEmpty
+            ? "No declared capabilities"
+            : plan.allowedCapabilities.joined(separator: ", ")
+        root = AppSwiftSurfaceRenderedNode(node: manifest.root, path: "root")
+    }
+}
+
+struct AppSwiftSurfaceRenderedNode: Equatable, Hashable, Identifiable {
+    enum Kind: String, Equatable, Hashable {
+        case text
+        case button
+        case list
+        case stack
+    }
+
+    var id: String
+    var kind: Kind
+    var label: String
+    var dataSource: String?
+    var action: AppSwiftSurfaceRenderedAction?
+    var children: [AppSwiftSurfaceRenderedNode]
+
+    init(node: AppSwiftSurfaceNode, path: String) {
+        let trimmedID = node.id?.trimmingCharacters(in: .whitespacesAndNewlines)
+        id = trimmedID?.isEmpty == false ? trimmedID! : path
+        kind = Kind(rawValue: node.kind.rawValue) ?? .stack
+        dataSource = Self.nonEmpty(node.dataSource)
+        action = node.action.map(AppSwiftSurfaceRenderedAction.init(action:))
+        children = node.children.enumerated().map { index, child in
+            AppSwiftSurfaceRenderedNode(node: child, path: "\(path).\(index)")
+        }
+        label = Self.displayLabel(for: node, fallback: kind.rawValue)
+    }
+
+    private static func displayLabel(for node: AppSwiftSurfaceNode, fallback: String) -> String {
+        for value in [
+            node.text,
+            node.action?.operation,
+            node.dataSource,
+            node.id
+        ] {
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let trimmed, !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+        return fallback.capitalized
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == false ? trimmed : nil
+    }
+}
+
+struct AppSwiftSurfaceRenderedAction: Equatable, Hashable {
+    var invocation: AppSwiftSurfaceAction.Invocation
+    var capabilityId: String
+    var operation: String
+    var riskTier: AppCapabilityRiskTier?
+    var requiresApproval: Bool
+
+    init(action: AppSwiftSurfaceAction) {
+        invocation = action.invocation
+        capabilityId = action.capabilityId
+        operation = action.operation
+        let descriptor = AppCapabilityCatalog.descriptor(id: action.capabilityId)
+        riskTier = descriptor?.riskTier
+        requiresApproval = descriptor?.interruptiveApproval ?? (action.invocation == .sdkAction)
+    }
+}
+
 enum AppSwiftSurfaceRunnerState: Equatable, Hashable {
     case idle
     case launching

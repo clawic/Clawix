@@ -504,6 +504,78 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(plan.allowedCapabilities, ["db.query", "search.query"])
     }
 
+    func testSwiftSurfaceRenderPresentationBuildsDeclarativeTree() throws {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query", "iot.device.action.invoke"],
+            surfaceKind: .swiftDeclarative
+        )
+        let manifest = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(
+                kind: .stack,
+                children: [
+                    AppSwiftSurfaceNode(kind: .text, text: "Dashboard"),
+                    AppSwiftSurfaceNode(
+                        kind: .list,
+                        dataSource: "search.results",
+                        children: [
+                            AppSwiftSurfaceNode(
+                                kind: .button,
+                                id: "search-button",
+                                text: "Search",
+                                action: AppSwiftSurfaceAction(
+                                    invocation: .sdkRead,
+                                    capabilityId: "search.query",
+                                    operation: "search.query"
+                                )
+                            ),
+                            AppSwiftSurfaceNode(
+                                kind: .button,
+                                text: "Toggle",
+                                action: AppSwiftSurfaceAction(
+                                    invocation: .sdkAction,
+                                    capabilityId: "iot.device.action.invoke",
+                                    operation: "iot.device.toggle"
+                                )
+                            )
+                        ]
+                    )
+                ]
+            ),
+            requestedCapabilities: ["search.query", "iot.device.action.invoke"]
+        )
+        let plan = try AppSwiftSurfaceContract.runnerPlan(
+            app: app,
+            manifest: manifest,
+            manifestPath: "/tmp/swift-dashboard/surface.json"
+        )
+
+        let presentation = AppSwiftSurfaceRenderPresentation(
+            record: app,
+            manifest: manifest,
+            plan: plan
+        )
+
+        XCTAssertEqual(presentation.title, "Swift Dashboard")
+        XCTAssertEqual(presentation.capabilitiesSummary, "iot.device.action.invoke, search.query")
+        XCTAssertEqual(presentation.root.kind, .stack)
+        XCTAssertEqual(presentation.root.children[0].label, "Dashboard")
+        XCTAssertEqual(presentation.root.children[1].kind, .list)
+        XCTAssertEqual(presentation.root.children[1].dataSource, "search.results")
+        let readButton = presentation.root.children[1].children[0]
+        XCTAssertEqual(readButton.id, "search-button")
+        XCTAssertEqual(readButton.label, "Search")
+        XCTAssertEqual(readButton.action?.operation, "search.query")
+        XCTAssertEqual(readButton.action?.riskTier, .low)
+        XCTAssertEqual(readButton.action?.requiresApproval, false)
+        let actionButton = presentation.root.children[1].children[1]
+        XCTAssertEqual(actionButton.label, "Toggle")
+        XCTAssertEqual(actionButton.action?.capabilityId, "iot.device.action.invoke")
+        XCTAssertEqual(actionButton.action?.riskTier, .high)
+        XCTAssertEqual(actionButton.action?.requiresApproval, true)
+    }
+
     func testSwiftSurfaceManifestDecodesAndRunnerPathIsExplicit() throws {
         let json = """
         {

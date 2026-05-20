@@ -256,20 +256,14 @@ private struct AppSwiftSurfaceHostView: View {
                         .foregroundColor(Color(white: 0.72))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .ready(let plan):
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(record.name)
-                        .font(BodyFont.system(size: 22, wght: 650))
-                        .foregroundColor(Palette.textPrimary)
-                    Text("Swift surface runner exited cleanly.")
-                        .font(BodyFont.system(size: 13.5, wght: 400))
-                        .foregroundColor(Color(white: 0.66))
-                    Text(plan.allowedCapabilities.joined(separator: ", ").nilIfEmpty ?? "No declared capabilities")
-                        .font(BodyFont.system(size: 12.5, wght: 400))
-                        .foregroundColor(Color(white: 0.56))
+            case .ready(let presentation):
+                AppSwiftSurfaceRenderedManifestView(presentation: presentation) { action in
+                    surfaceReporter.partial(
+                        action.requiresApproval
+                            ? "Swift surface action requires host approval: \(action.capabilityId)."
+                            : "Swift surface read action is waiting for the host action bridge: \(action.capabilityId)."
+                    )
                 }
-                .padding(28)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case .failed(let message):
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
@@ -341,7 +335,14 @@ private struct AppSwiftSurfaceHostView: View {
                 state = .cancelled
                 return
             }
-            state = Self.hostState(for: runnerState, plan: plan)
+            state = Self.hostState(
+                for: runnerState,
+                presentation: AppSwiftSurfaceRenderPresentation(
+                    record: record,
+                    manifest: manifest,
+                    plan: plan
+                )
+            )
         } catch {
             state = .failed(error.localizedDescription)
         }
@@ -362,11 +363,11 @@ private struct AppSwiftSurfaceHostView: View {
 
     static func hostState(
         for runnerState: AppSwiftSurfaceRunnerState,
-        plan: AppSwiftSurfaceRunnerPlan
+        presentation: AppSwiftSurfaceRenderPresentation
     ) -> AppSwiftSurfaceHostState {
         switch runnerState {
         case .exited(code: 0):
-            return .ready(plan)
+            return .ready(presentation)
         case .exited(let code):
             return .failed("Swift surface runner exited with status \(code).")
         case .crashed(let reason):
@@ -383,9 +384,95 @@ private struct AppSwiftSurfaceHostView: View {
 
 private enum AppSwiftSurfaceHostState: Equatable {
     case loading
-    case ready(AppSwiftSurfaceRunnerPlan)
+    case ready(AppSwiftSurfaceRenderPresentation)
     case failed(String)
     case cancelled
+}
+
+private struct AppSwiftSurfaceRenderedManifestView: View {
+    let presentation: AppSwiftSurfaceRenderPresentation
+    let onAction: (AppSwiftSurfaceRenderedAction) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(presentation.title)
+                        .font(BodyFont.system(size: 22, wght: 650))
+                        .foregroundColor(Palette.textPrimary)
+                    Text(presentation.capabilitiesSummary)
+                        .font(BodyFont.system(size: 12.5, wght: 400))
+                        .foregroundColor(Color(white: 0.56))
+                }
+                AppSwiftSurfaceRenderedNodeView(node: presentation.root, onAction: onAction)
+            }
+            .padding(28)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct AppSwiftSurfaceRenderedNodeView: View {
+    let node: AppSwiftSurfaceRenderedNode
+    let onAction: (AppSwiftSurfaceRenderedAction) -> Void
+
+    var body: some View {
+        switch node.kind {
+        case .text:
+            Text(node.label)
+                .font(BodyFont.system(size: 14, wght: 500))
+                .foregroundColor(Palette.textPrimary)
+        case .button:
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    if let action = node.action {
+                        onAction(action)
+                    }
+                } label: {
+                    Text(node.label)
+                }
+                .buttonStyle(.bordered)
+                .disabled(node.action == nil)
+                if let action = node.action {
+                    AppSwiftSurfaceActionLabel(action: action)
+                }
+            }
+        case .list:
+            VStack(alignment: .leading, spacing: 10) {
+                if let dataSource = node.dataSource {
+                    Text(dataSource)
+                        .font(BodyFont.system(size: 12.5, wght: 600))
+                        .foregroundColor(Color(white: 0.62))
+                }
+                ForEach(node.children) { child in
+                    AppSwiftSurfaceRenderedNodeView(node: child, onAction: onAction)
+                }
+            }
+        case .stack:
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(node.children) { child in
+                    AppSwiftSurfaceRenderedNodeView(node: child, onAction: onAction)
+                }
+            }
+        }
+    }
+}
+
+private struct AppSwiftSurfaceActionLabel: View {
+    let action: AppSwiftSurfaceRenderedAction
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(action.operation)
+            Text(action.capabilityId)
+            if action.requiresApproval {
+                Text("approval")
+            }
+        }
+        .font(BodyFont.system(size: 11.5, wght: 500))
+        .foregroundColor(Color(white: 0.54))
+    }
 }
 
 private struct AppSurfaceWebView: NSViewRepresentable {
