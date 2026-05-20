@@ -99,6 +99,16 @@ function assertWithinApprovalWindow(bundle, label) {
   }
 }
 
+function assertEvidenceTimeline(bundle, label) {
+  const preflightCompletedAt = parseTime(bundle.evidencePacket.preflight?.completedAt, `${label}.evidencePacket.preflight.completedAt`);
+  const executionStartedAt = parseTime(bundle.evidencePacket.execution?.startedAt, `${label}.evidencePacket.execution.startedAt`);
+  const executionCompletedAt = parseTime(bundle.evidencePacket.execution?.completedAt, `${label}.evidencePacket.execution.completedAt`);
+  const reviewedAt = parseTime(bundle.evidencePacket.reviewer?.reviewedAt, `${label}.evidencePacket.reviewer.reviewedAt`);
+  assert(executionStartedAt >= preflightCompletedAt, `${label}: evidence execution must start at or after preflight completion`);
+  assert(executionCompletedAt >= executionStartedAt, `${label}: evidence execution must complete at or after execution start`);
+  assert(reviewedAt >= executionCompletedAt, `${label}: evidence review must happen at or after execution completion`);
+}
+
 function assertSameStringSet(actual, expected, label) {
   assert(Array.isArray(actual), `${label}: must be an array`);
   assert(actual.every((value) => typeof value === "string"), `${label}: must contain only strings`);
@@ -210,6 +220,7 @@ function validateClosureBundle(bundle, label) {
     `${label}: approval timestamp must match evidence run authorization`,
   );
   assertWithinApprovalWindow(bundle, label);
+  assertEvidenceTimeline(bundle, label);
   return { laneId: bundle.laneId, repoScope: bundle.repoScope };
 }
 
@@ -248,6 +259,12 @@ function mutateBundle(bundle, mutation) {
       break;
     case "evidencePacket.runAuthorization.nativeGrantRefs=wrong":
       mutated.evidencePacket.runAuthorization.nativeGrantRefs = ["wrong_native_grant_template"];
+      break;
+    case "evidencePacket.execution.completedAt=beforeExecutionStart":
+      mutated.evidencePacket.execution.completedAt = "2026-05-19T23:59:59Z";
+      break;
+    case "evidencePacket.reviewer.reviewedAt=beforeExecutionCompleted":
+      mutated.evidencePacket.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
       break;
     default:
       throw new Error(`unknown closure fixture mutation ${mutation}`);

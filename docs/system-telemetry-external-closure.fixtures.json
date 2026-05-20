@@ -87,6 +87,18 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.runAuthorization.nativeGrantRefs=wrong",
       "reason": "Evidence must use exactly the native grants authorized by the app approval packet."
+    },
+    {
+      "id": "evidence_execution_completed_before_start",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidencePacket.execution.completedAt=beforeExecutionStart",
+      "reason": "Closure bundles must reject app evidence whose execution completes before it starts."
+    },
+    {
+      "id": "evidence_reviewed_before_execution_completed",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidencePacket.reviewer.reviewedAt=beforeExecutionCompleted",
+      "reason": "Closure bundles must reject app evidence reviewed before execution completion."
     }
   ]
 }
