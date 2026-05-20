@@ -2,6 +2,13 @@ import XCTest
 @testable import Clawix
 
 final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase {
+    private let reviewedOriginClasses: [AppOriginClass] = [
+        .localUserAuthored,
+        .imported,
+        .marketplace,
+        .system
+    ]
+
     func testImportedOrUnknownCapabilitiesRequireReview() {
         let record = AppRecord(
             slug: "imported-panel",
@@ -220,6 +227,52 @@ final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase
         )
 
         XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedUnknownCapabilities(["unknown.future"]))
+    }
+
+    func testOriginClassesAndActivationReviewPolicyStayExact() {
+        XCTAssertEqual(reviewedOriginClasses.map(\.rawValue), [
+            "localUserAuthored",
+            "imported",
+            "marketplace",
+            "system"
+        ])
+
+        for originClass in reviewedOriginClasses {
+            let record = AppRecord(
+                slug: "origin-\(originClass.rawValue)",
+                name: "Origin \(originClass.rawValue)",
+                declaredCapabilities: ["search.query"],
+                originClass: originClass
+            )
+            let riskMap = AppCapabilityCatalog.riskMap(for: record)
+
+            switch originClass {
+            case .imported, .marketplace:
+                XCTAssertTrue(riskMap.requiresActivationReview, originClass.rawValue)
+                switch AppCapabilityCatalog.activationGate(for: record) {
+                case .reviewRequired:
+                    break
+                default:
+                    XCTFail("\(originClass.rawValue) should require activation review")
+                }
+            case .localUserAuthored, .system:
+                XCTAssertFalse(riskMap.requiresActivationReview, originClass.rawValue)
+                XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .allowed)
+            }
+
+            let unknownCapabilityRecord = AppRecord(
+                slug: "origin-unknown-\(originClass.rawValue)",
+                name: "Origin Unknown \(originClass.rawValue)",
+                declaredCapabilities: ["unknown.future"],
+                originClass: originClass
+            )
+
+            XCTAssertEqual(
+                AppCapabilityCatalog.activationGate(for: unknownCapabilityRecord),
+                .blockedUnknownCapabilities(["unknown.future"]),
+                originClass.rawValue
+            )
+        }
     }
 
     func testRuntimeJobCapabilitiesUseReadAndApprovalTiers() {
