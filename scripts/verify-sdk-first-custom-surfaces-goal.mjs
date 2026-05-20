@@ -202,6 +202,10 @@ function assertRuntimeArtifacts() {
       "jobs.start",
       "jobs.cancel",
       "\"blocked\"",
+      "static let canonicalSurfaceNames",
+      "static func surfaceBindingsBridgeValue(for descriptor",
+      "statuses[\"cli\"] = \"blocked\"",
+      "statuses[\"mcp\"] = \"blocked\"",
     ],
     "macos/Sources/Clawix/Apps/AppBridgeQueryDSL.swift": [
       "case invalidCollection(String)",
@@ -360,6 +364,8 @@ function assertTests() {
   ].map((relativePath) => read(relativePath)).join("\n");
   for (const snippet of [
     "testHostBridgeExposesCustomAppSDKContractPayload",
+    "testHostBridgeSurfaceBindingsAreCompleteAndResolvedWhenPublished",
+    "XCTAssertEqual(checkedSurfaceGroups, capabilities.count)",
     "testSwiftSurfaceResourceListExecutesThroughRegisteredResources",
     "testInjectedAppsSdkExposesMacPlanOnlyFacade",
     "testInjectedAppsSdkExposesIoTActionFacade",
