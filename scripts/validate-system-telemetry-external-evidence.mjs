@@ -55,13 +55,18 @@ function evidencePacketErrors(packet, compiled) {
     errors.push(`schema: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
   }
   const preflightCompletedAt = parseTime(packet.preflight?.completedAt);
+  const approvedAt = parseTime(packet.runAuthorization?.approvedAt);
   const executionStartedAt = parseTime(packet.execution?.startedAt);
   const executionCompletedAt = parseTime(packet.execution?.completedAt);
   const reviewedAt = parseTime(packet.reviewer?.reviewedAt);
+  if (approvedAt === undefined) errors.push("runAuthorization.approvedAt must be a parseable timestamp");
   if (preflightCompletedAt === undefined) errors.push("preflight.completedAt must be a parseable timestamp");
   if (executionStartedAt === undefined) errors.push("execution.startedAt must be a parseable timestamp");
   if (executionCompletedAt === undefined) errors.push("execution.completedAt must be a parseable timestamp");
   if (reviewedAt === undefined) errors.push("reviewer.reviewedAt must be a parseable timestamp");
+  if (approvedAt !== undefined && preflightCompletedAt !== undefined && preflightCompletedAt < approvedAt) {
+    errors.push("preflight.completedAt must be at or after runAuthorization.approvedAt");
+  }
   if (preflightCompletedAt !== undefined && executionStartedAt !== undefined && executionStartedAt < preflightCompletedAt) {
     errors.push("execution.startedAt must be at or after preflight.completedAt");
   }
@@ -79,6 +84,9 @@ function mutateTemplate(packet, mutation) {
   switch (mutation) {
     case "execution.completedAt before execution.startedAt":
       mutated.execution.completedAt = "2026-05-19T23:59:59Z";
+      break;
+    case "preflight.completedAt before runAuthorization.approvedAt":
+      mutated.preflight.completedAt = "2026-05-19T23:59:59Z";
       break;
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";

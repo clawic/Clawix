@@ -377,6 +377,11 @@
       "mutation": "execution.completedAt before execution.startedAt"
     },
     {
+      "id": "preflight_completed_before_authorization",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "preflight.completedAt before runAuthorization.approvedAt"
+    },
+    {
       "id": "reviewed_before_execution_completed",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "reviewer.reviewedAt before execution.completedAt"

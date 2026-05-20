@@ -99,7 +99,7 @@
     "path": "docs/system-telemetry-external-evidence.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 3,
-    "invalidTemplateCount": 5,
+    "invalidTemplateCount": 6,
     "closureRole": "proves the evidence schema accepts complete synthetic lane packets and rejects incomplete, temporally invalid, or failed approved-run packets without representing real external evidence"
   },
   "externalEvidencePacketValidator": {
