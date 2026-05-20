@@ -283,6 +283,12 @@ function assertExternalValidationManifest() {
   assert(manifest.completionAudit?.path === "docs/system-telemetry-completion-audit.md", "external validation manifest: wrong completion audit path");
   assert(manifest.completionAudit?.requiredRowPrefix === "CLX-STA", "external validation manifest: wrong completion audit row prefix");
   assert(manifest.completionAudit?.requiredRowCount === 16, "external validation manifest: wrong completion audit row count");
+  assert(manifest.completionAudit?.statusSummary?.validatedLocalRows === 12, "external validation manifest: wrong completion audit validated-local count");
+  assert(manifest.completionAudit?.statusSummary?.activeClosureGateRows === 1, "external validation manifest: wrong completion audit active-closure-gate count");
+  assert(manifest.completionAudit?.statusSummary?.externalPendingRows === 3, "external validation manifest: wrong completion audit external-pending count");
+  for (const rowId of ["CLX-STA-014", "CLX-STA-015", "CLX-STA-016"]) {
+    assert(manifest.completionAudit?.statusSummary?.externalPendingRowIds?.includes(rowId), `external validation manifest: completion audit status summary missing ${rowId}`);
+  }
   assert(manifest.completionAudit?.closureRole?.includes("requirement by requirement"), "external validation manifest: completion audit closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 

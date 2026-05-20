@@ -25,6 +25,16 @@
     "path": "docs/system-telemetry-completion-audit.md",
     "requiredRowPrefix": "CLX-STA",
     "requiredRowCount": 16,
+    "statusSummary": {
+      "validatedLocalRows": 12,
+      "activeClosureGateRows": 1,
+      "externalPendingRows": 3,
+      "externalPendingRowIds": [
+        "CLX-STA-014",
+        "CLX-STA-015",
+        "CLX-STA-016"
+      ]
+    },
     "closureRole": "tracks the full Clawix system telemetry goal requirement by requirement before goal completion"
   },
   "rows": [
