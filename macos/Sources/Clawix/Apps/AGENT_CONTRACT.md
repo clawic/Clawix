@@ -166,7 +166,11 @@ safe framework or signed-host runners are wired.
 
 `clawix.capabilities.contracts()` also exposes a per-capability `dispatch`
 object so custom UIs can distinguish contract shape from runtime availability.
-Current modes are:
+The same payload includes `executionBoundary`: the contracts call is a
+metadata-only catalog and does not execute SDK capability calls. Rich UI reads,
+DB queries, resource reads, and approved high-risk actions use the local
+`window.clawix` host bridge path, not CLI/MCP/Relay contract projections.
+Current dispatch modes are:
 
 - `localWideRead` for Search, DB, and resource reads.
 - `approvalRequiredPlanOnly` for `mac.action.plan`; it returns a dry-run Mac

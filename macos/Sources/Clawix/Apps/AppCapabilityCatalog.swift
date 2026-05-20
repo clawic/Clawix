@@ -278,12 +278,30 @@ enum AppCapabilityCatalog {
         return referencedSchemaRefs.filter { !known.contains($0) }.sorted()
     }
 
+    static var executionBoundaryBridgeValue: [String: Any] {
+        [
+            "kind": "metadata_only_contract_catalog",
+            "executesCapabilityCalls": false,
+            "richUiExecutionPath": "sdk_host_bridge",
+            "localExecutableSurface": "host_bridge",
+            "hostBridgeImplementation": "window.clawix",
+            "nonExecutableSurfaces": [
+                "cli.inspect",
+                "service_api.contracts",
+                "mcp.custom_app_sdk",
+                "relay.remote.custom_app_sdk"
+            ],
+            "dbSearchExecution": "host_bridge_only"
+        ]
+    }
+
     static func contractsBridgeValue(for record: AppRecord) -> [String: Any] {
         [
             "schemaVersion": 1,
             "source": source,
             "hostBridgeRole": "sdk_host_bridge_contract_resource",
             "richUiRuntime": "sdk_host_bridge_not_cli_process",
+            "executionBoundary": executionBoundaryBridgeValue,
             "schemaRefs": schemaRefs,
             "referencedSchemaRefs": referencedSchemaRefs,
             "missingSchemaRefs": missingSchemaRefs,
