@@ -44,6 +44,8 @@ function assertCompletionAudit() {
     "24 decision prompt ids",
     "three interrupted unanswered ids",
     "The Clawix verifier inspects sibling ClawJS evidence when that checkout is present.",
+    "The Network Control Plane now adds a typed executable route-family example",
+    "Clawix `NetworkControlBridge` projection through `system/network`",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
@@ -195,6 +197,13 @@ function assertRuntimeArtifacts() {
       "case user",
       "protectedRouteViolations",
     ],
+    "macos/Sources/Clawix/NetworkControl/NetworkControlBridge.swift": [
+      "NetworkControlBridge",
+      "resource: \"network\"",
+      "action: \"routes\"",
+      "NetworkControlRouteDecision",
+      "detail_opt_in",
+    ],
   })) {
     for (const snippet of snippets) requireSnippet(relativePath, snippet);
   }
@@ -231,6 +240,12 @@ function assertTests() {
     "macos/Tests/ClawixMeshTests/SurfaceRouteSupervisorTests.swift": [
       "SurfaceRouteSupervisor",
       "cancel",
+    ],
+    "macos/Tests/ClawixMeshTests/NetworkControlBridgeTests.swift": [
+      "testDecodesGatewayRouteDecision",
+      "testBridgeUsesSystemNetworkResourceWithoutNativeMutation",
+      "network.adapter.gateway",
+      "external_pending",
     ],
   })) {
     for (const snippet of snippets) requireSnippet(relativePath, snippet);
@@ -284,6 +299,21 @@ function assertSiblingClawJSArtifacts() {
       "relay exposes custom app SDK dispatch metadata as remote-safe contract projection",
       "/v1/remote/custom-app-sdk",
       "relay.remote.custom_app_sdk",
+    ],
+    "packages/clawjs-core/src/network-control-plane.ts": [
+      "networkPolicyEvaluationSchema",
+      "evaluateGatewayNetworkAccess",
+      "createNetworkEvent",
+      "createNetworkRuleSuggestion",
+    ],
+    "packages/clawjs-core/src/network-control-plane.test.ts": [
+      "Network policy evaluation matches gateway routes and redacts by default",
+      "Network events and rule suggestions keep detailed fields opt-in",
+      "Network access manifests and CLI registry expose the framework portal",
+    ],
+    "packages/clawjs/src/cli-network-command.test.ts": [
+      "network CLI records Monitor-backed events and keeps details redacted unless opted in",
+      "network CLI applies rules to Gateway route explanations and suggestions never auto-apply",
     ],
   })) {
     for (const snippet of snippets) requireSiblingSnippet(siblingRoot, relativePath, snippet);

@@ -56,6 +56,10 @@ the sibling ClawJS SDK-first custom surface contract.
 - `clawix.capabilities.contracts()` exposes `executionBoundary` so custom UIs
   can tell metadata-only contract catalogs from executable host bridge calls.
 - Ordinary local reads are allowed through brokered SDK-like APIs.
+- The Network Control Plane demonstrates a typed executable route family with
+  shared schemas, Gateway route policy evaluation, redacted event audit, and a
+  Clawix host projection, while unrelated future executors remain blocked until
+  they have the same policy/audit/test evidence.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.
