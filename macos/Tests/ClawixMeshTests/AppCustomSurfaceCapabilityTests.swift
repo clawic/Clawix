@@ -206,6 +206,34 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(model.rows.last?.symbolName, "exclamationmark.shield")
     }
 
+    func testAppsSettingsPerAppHighRiskAuditPresentationOmitsRepeatedAppName() throws {
+        let iot = AppRecord(
+            slug: "iot-panel",
+            name: "IoT Panel",
+            declaredCapabilities: ["iot.device.action.invoke"]
+        )
+        let descriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "iot.device.toggle"))
+        let receipt = AppHighRiskActionReceipt(
+            id: "approved",
+            app: iot,
+            descriptor: descriptor,
+            action: "iot.device.toggle",
+            decision: .approvedOnce,
+            outcome: .approvalRecordedDispatchUnavailable,
+            createdAt: Date(timeIntervalSince1970: 1),
+            reason: descriptor.summary
+        )
+
+        let model = AppsSettingsHighRiskAuditSheetModel(record: iot, receipts: [receipt])
+
+        XCTAssertEqual(model.id, "high-risk-\(iot.id.uuidString)")
+        XCTAssertEqual(model.title, "High-risk action audit")
+        XCTAssertEqual(model.subtitle, "IoT Panel · iot-panel")
+        XCTAssertEqual(model.emptyMessage, "No high-risk action receipts recorded for this app.")
+        XCTAssertEqual(model.rows.map(\.title), ["iot.device.toggle"])
+        XCTAssertTrue(model.rows[0].detail.contains("Interruptive: yes"))
+    }
+
     func testSwiftSurfaceRunnerPlanRequiresOutOfProcessDSL() throws {
         let app = AppRecord(
             slug: "swift-dashboard",

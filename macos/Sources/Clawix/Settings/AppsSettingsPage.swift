@@ -65,6 +65,7 @@ struct AppsSettingsPage: View {
                                 onClearUserDefault: { clearVariantDefault(record, scope: .user) },
                                 onClearWorkspaceDefault: { clearVariantDefault(record, scope: .workspace) },
                                 onShowTrustAudit: { showTrustAudit(record) },
+                                onShowHighRiskAudit: { showHighRiskAudit(record) },
                                 onDelete: { pendingDelete = record },
                                 sizeOnDisk: appSizeOnDisk(record)
                             )
@@ -172,7 +173,7 @@ struct AppsSettingsPage: View {
             Text("Variant")
                 .frame(width: 86, alignment: .center)
             Text("")
-                .frame(width: 120)
+                .frame(width: 140)
         }
         .font(BodyFont.system(size: 11.5, wght: 600))
         .foregroundColor(Color(white: 0.5))
@@ -277,6 +278,15 @@ struct AppsSettingsPage: View {
         }
     }
 
+    private func showHighRiskAudit(_ record: AppRecord) {
+        do {
+            let receipts = try AppHighRiskActionAudit.read(from: appsStore.highRiskActionAuditURL(for: record))
+            highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(record: record, receipts: receipts)
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
+    }
+
     private func showAllHighRiskAudit() {
         do {
             let entries = try appsStore.sortedApps.map { record in
@@ -324,6 +334,7 @@ private struct AppsSettingsRow: View {
     let onClearUserDefault: () -> Void
     let onClearWorkspaceDefault: () -> Void
     let onShowTrustAudit: () -> Void
+    let onShowHighRiskAudit: () -> Void
     let onDelete: () -> Void
     let sizeOnDisk: Int
 
@@ -398,6 +409,12 @@ private struct AppsSettingsRow: View {
                 .buttonStyle(.plain)
                 .help("Trust audit")
 
+                Button(action: onShowHighRiskAudit) {
+                    Image(systemName: "exclamationmark.shield")
+                }
+                .buttonStyle(.plain)
+                .help("High-risk action audit")
+
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                 }
@@ -407,7 +424,7 @@ private struct AppsSettingsRow: View {
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundColor(Color(white: 0.7))
-            .frame(width: 120, alignment: .trailing)
+            .frame(width: 140, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -645,16 +662,30 @@ struct AppsSettingsHighRiskAuditEntry: Equatable {
 }
 
 struct AppsSettingsHighRiskAuditSheetModel: Identifiable, Equatable {
-    let id = "all-high-risk-actions"
-    let title = "High-risk action audit"
-    let subtitle = "All apps"
-    let emptyMessage = "No high-risk action receipts recorded for installed apps."
+    let id: String
+    let title: String
+    let subtitle: String
+    let emptyMessage: String
     let rows: [AppsSettingsHighRiskAuditRowPresentation]
 
+    init(record: AppRecord, receipts: [AppHighRiskActionReceipt]) {
+        self.id = "high-risk-\(record.id.uuidString)"
+        self.title = "High-risk action audit"
+        self.subtitle = "\(record.name) · \(record.slug)"
+        self.emptyMessage = "No high-risk action receipts recorded for this app."
+        self.rows = receipts
+            .sorted { $0.createdAt > $1.createdAt }
+            .map { AppsSettingsHighRiskAuditRowPresentation(receipt: $0) }
+    }
+
     init(entries: [AppsSettingsHighRiskAuditEntry]) {
+        self.id = "all-high-risk-actions"
+        self.title = "High-risk action audit"
+        self.subtitle = "All apps"
+        self.emptyMessage = "No high-risk action receipts recorded for installed apps."
         self.rows = entries
             .flatMap { entry in
-                entry.receipts.map { AppsSettingsHighRiskAuditRowPresentation(receipt: $0) }
+                entry.receipts.map { AppsSettingsHighRiskAuditRowPresentation(receipt: $0, includeAppName: true) }
             }
             .sorted { $0.createdAt > $1.createdAt }
     }
@@ -668,10 +699,10 @@ struct AppsSettingsHighRiskAuditRowPresentation: Identifiable, Equatable {
     let symbolName: String
     let createdAt: Date
 
-    init(receipt: AppHighRiskActionReceipt) {
+    init(receipt: AppHighRiskActionReceipt, includeAppName: Bool = false) {
         id = receipt.id
         createdAt = receipt.createdAt
-        title = "\(receipt.appName) · \(receipt.action)"
+        title = includeAppName ? "\(receipt.appName) · \(receipt.action)" : receipt.action
         symbolName = receipt.outcome == .denied ? "xmark.octagon" : "exclamationmark.shield"
 
         let formatter = RelativeDateTimeFormatter()
