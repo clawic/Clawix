@@ -6,7 +6,7 @@
     "path": "tracking-registry.json",
     "schemaVersion": 1,
     "generatedAt": "2026-05-12",
-    "checksum": "sha256:6da2fbc25bb3bbad5b1765cd3006e56fe916f6da44d5daea10b9dce8b5bf2363"
+    "checksum": "sha256:baL7wluzu61bF2XNMAblb-kW9tpE1drqELnc6LW_I2M"
   },
   "service": {
     "id": "signals",

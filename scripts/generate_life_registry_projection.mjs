@@ -55,6 +55,12 @@ function writeProjection(projection) {
   }
 }
 
+function publicChecksum(checksum) {
+  const match = String(checksum).match(/^sha256:([a-f0-9]{64})$/u);
+  if (!match) return checksum;
+  return `sha256:${Buffer.from(match[1], "hex").toString("base64url")}`;
+}
+
 function generatedFallbackBlock(projection) {
   return projection.entries
     .filter((entry) => entry.status === "stable")
@@ -86,6 +92,7 @@ function updateSwiftFallbacks(projection) {
 }
 
 const projection = runClawRegistry();
+projection.source.checksum = publicChecksum(projection.source.checksum);
 writeProjection(projection);
 updateSwiftFallbacks(projection);
 console.log(JSON.stringify({

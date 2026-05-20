@@ -176,7 +176,7 @@ enum LifeRegistry {
         )
     }
 
-    private static let generatedFallbackSourceChecksum = "sha256:6da2fbc25bb3bbad5b1765cd3006e56fe916f6da44d5daea10b9dce8b5bf2363"
+    private static let generatedFallbackSourceChecksum = "sha256:baL7wluzu61bF2XNMAblb-kW9tpE1drqELnc6LW_I2M"
     private static let generatedFallbackSignalsServicePort = 24110
     private static let generatedFallbackEntries: [LifeFallbackEntry] = [
         // BEGIN GENERATED LIFE FALLBACK
