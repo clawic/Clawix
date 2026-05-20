@@ -2,6 +2,16 @@ import XCTest
 @testable import Clawix
 
 final class SurfaceRouteSupervisorTests: XCTestCase {
+    private static let reviewedSurfaceLifecycleStateKinds: Set<String> = [
+        "ready",
+        "loading",
+        "partial",
+        "degraded",
+        "error",
+        "unavailable",
+        "cancelled"
+    ]
+
     func testCoreRoutesStartReadyWithoutTimeout() {
         let descriptor = SidebarRoute.rescue.surfaceDescriptor
 
@@ -159,5 +169,74 @@ final class SurfaceRouteSupervisorTests: XCTestCase {
             ),
             .cancelled(surfaceID: "drive")
         )
+    }
+
+    func testSurfaceLifecycleStateAndReportSetsAreExact() {
+        let descriptor = SidebarRoute.databaseCollection("tasks").surfaceDescriptor
+        let loading = SurfaceRouteSupervisor.start(descriptor: descriptor)
+        let reports: [SurfaceRouteReport] = [
+            .loading(message: "Loading rows", progress: 0.25),
+            .partial(message: "Showing cached rows"),
+            .ready,
+            .degraded(reason: "Using stale rows"),
+            .error(message: "Bridge failed"),
+            .unavailable(reason: "Database unavailable"),
+            .cancelled
+        ]
+        let states = reports.map {
+            SurfaceRouteSupervisor.apply(report: $0, state: loading, descriptor: descriptor)
+        }
+
+        XCTAssertEqual(Set(states.map(Self.surfaceLifecycleStateKind)), Self.reviewedSurfaceLifecycleStateKinds)
+        XCTAssertEqual(Set(reports.map(Self.surfaceLifecycleReportKind)), Self.reviewedSurfaceLifecycleStateKinds)
+        XCTAssertEqual(Set(states.filter(\.isTerminal).map(Self.surfaceLifecycleStateKind)), [
+            "ready",
+            "degraded",
+            "error",
+            "unavailable",
+            "cancelled"
+        ])
+        XCTAssertEqual(Set(states.filter { !$0.isTerminal }.map(Self.surfaceLifecycleStateKind)), [
+            "loading",
+            "partial"
+        ])
+    }
+
+    private static func surfaceLifecycleStateKind(_ state: SurfaceRouteSupervisionState) -> String {
+        switch state {
+        case .ready:
+            return "ready"
+        case .loading:
+            return "loading"
+        case .partial:
+            return "partial"
+        case .degraded:
+            return "degraded"
+        case .error:
+            return "error"
+        case .unavailable:
+            return "unavailable"
+        case .cancelled:
+            return "cancelled"
+        }
+    }
+
+    private static func surfaceLifecycleReportKind(_ report: SurfaceRouteReport) -> String {
+        switch report {
+        case .loading:
+            return "loading"
+        case .partial:
+            return "partial"
+        case .ready:
+            return "ready"
+        case .degraded:
+            return "degraded"
+        case .error:
+            return "error"
+        case .unavailable:
+            return "unavailable"
+        case .cancelled:
+            return "cancelled"
+        }
     }
 }
