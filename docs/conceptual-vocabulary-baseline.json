@@ -1,0 +1,146 @@
+{
+  "counts": {
+    "agent": {
+      "agent-implies-authority": {
+        "docs/constitution-map.md": 1,
+        "macos/Sources/Clawix/Secrets/GrantsTab.swift": 1,
+        "macos/Sources/Clawix/Secrets/SecretDetailPane.swift": 2
+      }
+    },
+    "authority": {
+      "implicit-authority": {
+        "docs/constitution-map.md": 1,
+        "docs/decision-map.md": 1
+      }
+    },
+    "owner": {
+      "generic-owner-authority": {
+        "android/app/src/main/java/com/example/clawix/android/ClawixApplication.kt": 2,
+        "docs/adr/0003-testing-architecture.md": 3,
+        "docs/adr/0011-surface-route-graph.md": 2,
+        "docs/adr/0016-code-hygiene-program.md": 1,
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md": 1,
+        "docs/adr/0021-decision-tension-rubric-mirror.md": 3,
+        "docs/agent-rules/index.md": 4,
+        "docs/code-hygiene-baseline.json": 1,
+        "docs/code-hygiene-decision-checklist.md": 2,
+        "docs/code-hygiene-ledger.md": 1,
+        "docs/code-hygiene-report.json": 1,
+        "docs/constitution-map.md": 6,
+        "docs/data-storage-boundary.md": 3,
+        "docs/debt-ledger-projection.manifest.json": 1,
+        "docs/decision-map.md": 25,
+        "docs/discoverability.registry.json": 156,
+        "docs/governance/code-hygiene/completion.md": 1,
+        "docs/governance/decision-tension-rubric.md": 2,
+        "docs/governance/performance-governance.md": 1,
+        "docs/governance/v1-surface-closure/acceptance.json": 1,
+        "docs/governance/v1-surface-closure/completion.md": 1,
+        "docs/host-ownership.md": 4,
+        "docs/interface-matrix.md": 3,
+        "docs/interface-surface-clawix.registry.json": 37,
+        "docs/naming-style-guide.md": 3,
+        "docs/native-action-broker-allowlist.json": 1,
+        "docs/persistent-surface-clawix.manifest.json": 468,
+        "docs/ui/README.md": 3,
+        "docs/ui/debt.baseline.json": 3,
+        "docs/ui/exceptions.registry.json": 1,
+        "docs/ui/pattern-registry/README.md": 1,
+        "docs/ui/pattern-registry/patterns/notes.md": 1,
+        "docs/vocabulary.md": 5,
+        "ios/Sources/Clawix/Composer/PhotoLibraryPicker.swift": 7,
+        "ios/Sources/Clawix/Feed/FeedView.swift": 7,
+        "ios/Sources/Clawix/Marketplace/MarketplaceView.swift": 2,
+        "ios/Sources/Clawix/Profile/ProfileClient.swift": 3,
+        "macos/Sources/Clawix/Agents/AgentModels.swift": 1,
+        "macos/Sources/Clawix/AppState.swift": 1,
+        "macos/Sources/Clawix/BackgroundBridgeService.swift": 2,
+        "macos/Sources/Clawix/ClawJS/ClawJSDriveRealtimeClient.swift": 1,
+        "macos/Sources/Clawix/ClawJS/ClawJSProfileClient.swift": 3,
+        "macos/Sources/Clawix/ClawJS/ClawJSServiceManager.swift": 3,
+        "macos/Sources/Clawix/ContentSharedControls.swift": 1,
+        "macos/Sources/Clawix/Dictation/DictationCoordinator.swift": 1,
+        "macos/Sources/Clawix/Dictation/MediaController.swift": 1,
+        "macos/Sources/Clawix/Feed/FeedScreen.swift": 7,
+        "macos/Sources/Clawix/HostActions/MacControlCenter.swift": 1,
+        "macos/Sources/Clawix/HostActions/SearchEntrypointShortcutBroker.swift": 3,
+        "macos/Sources/Clawix/Index/Components/IndexCard.swift": 1,
+        "macos/Sources/Clawix/LocalModels/LocalModelsDaemon.swift": 1,
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift": 6,
+        "macos/Sources/Clawix/Profile/PeerProfileView.swift": 1,
+        "macos/Sources/Clawix/ScreenTools/ScreenToolTypes.swift": 1,
+        "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift": 6,
+        "macos/Sources/Clawix/Terminal/TerminalResizeHandle.swift": 1,
+        "macos/Sources/Clawix/Terminal/TerminalScrollIndicator.swift": 1,
+        "macos/Sources/Clawix/ThinScrollbar.swift": 1,
+        "macos/Tests/ClawixMeshTests/PersistentSurfaceRegistryTests.swift": 7,
+        "macos/Tests/ClawixMeshTests/ProfileSurfaceStoreCancellationTests.swift": 1,
+        "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift": 1,
+        "scripts/interface_surface_guard.mjs": 2,
+        "scripts/life_registry_projection_check.mjs": 1,
+        "scripts/surface-evidence-projection-check.mjs": 11,
+        "scripts/ui_governance_guard.mjs": 1
+      }
+    },
+    "sync": {
+      "sync-implies-authority": {
+        "docs/decision-map.md": 1
+      }
+    },
+    "tenant": {
+      "tenant-as-product-scope": {
+        "docs/agent-rules/index.md": 1,
+        "docs/data-storage-boundary.md": 1,
+        "docs/decision-map.md": 2,
+        "docs/naming-style-guide.md": 3,
+        "docs/vocabulary.md": 2,
+        "macos/Sources/Clawix/ClawJS/ClawJSSecretsClient.swift": 35,
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift": 1,
+        "macos/Sources/Clawix/Settings/RemoteAccessSettingsPage.swift": 2
+      }
+    }
+  },
+  "generatedAt": "2026-05-20T21:37:48.662Z",
+  "policy": "Reviewed conceptual vocabulary debt may shrink without review. Any increase in a tracked path or any new tracked path fails scripts/conceptual-vocabulary-guard.mjs unless the occurrence is removed or this baseline is deliberately updated with rationale.",
+  "protectedTerms": [
+    "owner",
+    "authority",
+    "tenant",
+    "workspace",
+    "project",
+    "agent",
+    "surface",
+    "host",
+    "relay",
+    "connector",
+    "sync"
+  ],
+  "rationale": "Initial frozen baseline for docs, UI copy, and public/stable conceptual vocabulary surfaces.",
+  "scan": {
+    "docs": "docs/**/*.md|json|yaml|yml",
+    "source": "UI copy-bearing source plus public protocol, schema, CLI, registry, route, host, relay, connector, sync, workspace, project, governance, and surface files"
+  },
+  "schemaVersion": 1,
+  "summary": {
+    "agent": {
+      "files": 3,
+      "occurrences": 4
+    },
+    "authority": {
+      "files": 2,
+      "occurrences": 2
+    },
+    "owner": {
+      "files": 65,
+      "occurrences": 835
+    },
+    "sync": {
+      "files": 1,
+      "occurrences": 1
+    },
+    "tenant": {
+      "files": 8,
+      "occurrences": 47
+    }
+  }
+}

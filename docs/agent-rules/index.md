@@ -131,6 +131,9 @@ Use relevant skills instead of pasting long procedures into context:
   decisions.
 - Capabilities are complete only when human and programmatic surfaces are
   registered or gaps are explicitly classified.
+- New API, UI, CLI, schema, storage key, route, permission, and feature flag
+  surfaces are incomplete without `surfaceNarrative` tying them to concept,
+  authorizing decision, completing surface, and non-inference boundary.
 - Performance-sensitive work classifies whole-computer resource impact before
   durable acceptance: speed, CPU, RAM, GPU/Neural Engine, disk, network,
   battery, thermals, idle behavior, and growth.
@@ -150,6 +153,10 @@ Use relevant skills instead of pasting long procedures into context:
 - Prefer fixtures, dry-run paths, interceptors, local backends, and mocks.
 - Mark missing physical/provider prerequisites as `EXTERNAL PENDING` and keep
   them separate from defects.
+- Before goal closure, classify each `EXTERNAL PENDING` row through
+  `docs/governance/goal-completion-gate.md`. A row that affects a central
+  promise blocks completion until accepted evidence exists or a later explicit
+  `scope_revision` changes the promise.
 - Performance governance starts at `docs/governance/performance-governance.md`.
   Performance work starts with reproduction and instrumentation, and validated
   fixes compare resource behavior before and after.

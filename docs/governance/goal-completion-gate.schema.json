@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clawix.dev/schemas/governance/goal-completion-gate.schema.json",
+  "title": "Clawix Goal Completion Gate Row",
+  "description": "Reusable public-safe row contract for EXTERNAL PENDING closure impact.",
+  "type": "object",
+  "required": [
+    "id",
+    "linkedPromiseIds",
+    "linkedDecisionIds",
+    "completionImpact",
+    "closureEffect",
+    "reentryCondition",
+    "evidenceRequired"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "sourcePath": { "type": "string", "minLength": 1 },
+    "linkedPromiseIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "linkedDecisionIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "completionImpact": {
+      "enum": ["central_promise_blocker", "validation_only", "future_extension"]
+    },
+    "closureEffect": {
+      "enum": ["blocks_goal", "allows_local_completion", "requires_scope_revision"]
+    },
+    "reentryCondition": { "type": "string", "minLength": 1 },
+    "evidenceRequired": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "scopeRevisionDecisionId": { "type": "string", "minLength": 1 },
+    "scopeRevisionDecisionType": { "enum": ["scope_revision"] },
+    "humanOverrideAccepted": { "type": "boolean" },
+    "linkedPromiseStatuses": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "completionImpact": { "const": "validation_only" } } },
+      "then": {
+        "properties": {
+          "closureEffect": { "const": "allows_local_completion" },
+          "linkedPromiseIds": { "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "completionImpact": { "const": "central_promise_blocker" } } },
+      "then": {
+        "properties": {
+          "closureEffect": { "enum": ["blocks_goal", "requires_scope_revision"] }
+        }
+      }
+    }
+  ]
+}

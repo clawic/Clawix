@@ -35,12 +35,17 @@ for file in \
   "docs/host-ownership.md" \
   "docs/data-storage-boundary.md" \
   "docs/constitution-map.md" \
+  "docs/constitution.assertions.json" \
   "docs/agent-rules/index.md" \
   "docs/decision-map.md" \
   "docs/governance/v1-surface-closure/decisions.json" \
   "docs/governance/v1-surface-closure/acceptance.json" \
   "docs/governance/v1-surface-closure/validation.json" \
   "docs/governance/v1-surface-closure/completion.md" \
+  "docs/governance/source-decision-audits.md" \
+  "docs/governance/source-decision-audits.registry.json" \
+  "docs/adr-operational-coverage.manifest.json" \
+  "docs/adr-operational-coverage-exceptions.json" \
   "docs/interface-matrix.md" \
   "docs/interface-surface-clawix.registry.json" \
   "docs/naming-style-guide.md" \
@@ -144,7 +149,10 @@ for file in \
   "scripts/remote_canon_alignment_check.mjs" \
   "scripts/ui_governance_guard.mjs" \
   "scripts/v1_surface_closure_audit_check.mjs" \
-  "scripts/storage_boundary_guard.mjs"
+  "scripts/storage_boundary_guard.mjs" \
+  "scripts/source_decision_audit_check.mjs" \
+  "scripts/adr-operational-coverage-check.mjs" \
+  "scripts/constitution-assertions-check.mjs"
 do
   require_file "$file"
 done
@@ -178,6 +186,11 @@ require_snippet "docs/decision-map.md" "scripts/legal_safety_check.mjs"
 require_snippet "docs/decision-map.md" "docs/constitution-map.md"
 require_snippet "docs/constitution-map.md" "not a second source of truth"
 require_snippet "docs/constitution-map.md" "Affected surfaces"
+require_snippet "docs/constitution-map.md" "docs/constitution.assertions.json"
+require_snippet "docs/decision-map.md" "constitution.assertions.json"
+require_snippet "docs/constitution.assertions.json" "\"upstream\""
+require_snippet "docs/constitution.assertions.json" "\"sourceDigest\""
+require_snippet "scripts/test.sh" "scripts/constitution-assertions-check.mjs"
 require_snippet "docs/decision-map.md" "governance identity and scope model"
 require_snippet "docs/decision-map.md" "workspace, project, folder, and manifest boundary"
 require_snippet "docs/data-storage-boundary.md" "Governance bindings owned by ClawJS"
@@ -201,11 +214,18 @@ require_snippet "docs/native-action-broker-allowlist.json" "MacControlActionBrok
 require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"
 require_snippet "docs/adr/TEMPLATE.md" "## Decision Tensions"
 require_snippet "docs/adr/TEMPLATE.md" "## Performance Impact"
+require_snippet "docs/adr/TEMPLATE.md" "## Source Decision Audit"
+require_snippet "docs/adr/TEMPLATE.md" "adr-operational-coverage.manifest.json"
 require_snippet "docs/governance/decision-tension-rubric.md" "Canon and semantic coherence"
 require_snippet "docs/governance/performance-governance.md" "whole-computer resource behavior"
+require_snippet "docs/governance/source-decision-audits.md" "ClawJS owns the general source decision audit contract"
 require_snippet "docs/agent-rules/index.md" "Decision Tension Rubric"
 require_snippet "docs/agent-rules/index.md" "Performance governance"
 require_snippet "docs/decision-map.md" "Decision Tension Rubric"
+require_snippet "docs/decision-map.md" "Source decision audits"
+require_snippet "docs/decision-map.md" "scripts/source_decision_audit_check.mjs"
+require_snippet "docs/decision-map.md" "Accepted ADRs are transactional"
+require_snippet "docs/decision-map.md" "scripts/adr-operational-coverage-check.mjs"
 require_snippet "docs/adr/0007-dual-human-programmatic-surfaces.md" "MCP is the model-native surface"
 require_snippet "docs/adr/0010-interface-governance.md" "Only explicitly authorized visual lanes"
 require_snippet "docs/adr/0010-interface-governance.md" "Existing visual drift is recorded"

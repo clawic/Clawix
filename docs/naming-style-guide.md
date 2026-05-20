@@ -35,6 +35,11 @@ shape, and agent-oriented rename workflow, also read
 - Windows pipe equivalent is `\\.\pipe\clawix-bridge`.
 - ClawJS global home is `~/.claw/`.
 - Workspace writes use `.claw/`, not `.clawjs/`.
+- Protected conceptual boundary words are checked by
+  `scripts/conceptual-vocabulary-guard.mjs`; do not use `owner`, `tenant`,
+  `workspace`, `project`, `agent`, `surface`, `host`, `relay`, `connector`, or
+  `sync` in docs, UI copy, or public interfaces outside their canonical
+  meanings.
 
 ## Protocol rules
 

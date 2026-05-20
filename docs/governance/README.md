@@ -12,6 +12,7 @@ plans, and companion validation manifests here.
 - [Legal](legal/source-audit.md)
 - [Performance Governance](performance-governance.md)
 - [SDK-First Custom Surfaces](sdk-first-custom-surfaces/plan.md)
+- [Source Decision Audits](source-decision-audits.md)
 - [System Telemetry](system-telemetry/index.md)
 - [UI Governance](ui/completion.md)
 - [V1 Surface Closure](v1-surface-closure/index.md)

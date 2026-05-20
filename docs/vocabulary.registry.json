@@ -9,6 +9,153 @@
     }
   ],
   "description": "Clawix host and UI vocabulary extensions for the shared ClawJS naming standard.",
+  "conceptualGuard": {
+    "schemaVersion": 1,
+    "enforcement": "docs-ui-public-baseline",
+    "description": "Clawix host/UI extension of the shared conceptual vocabulary guard. Existing ambiguous debt is frozen in docs/conceptual-vocabulary-baseline.json.",
+    "terms": [
+      {
+        "term": "owner",
+        "canonicalMeaning": "Domain-specific lifecycle or legal relationship only; framework authority uses principals, stewards, grants, scopes, authority edges, and restrictions.",
+        "replacementGuidance": "Use steward, principal, grant, scope, authorityEdge, restriction, or a domain-specific owner phrase.",
+        "blockedPatterns": [
+          {
+            "id": "generic-owner-authority",
+            "pattern": "\\bowner(?:Id|Kind|_id|ship)?\\b",
+            "suggestion": "Do not use generic owner vocabulary for authority. Use steward/principal/grant/scope or a documented domain owner field.",
+            "allowedContextPhrases": ["legal owner", "asset owner", "account owner", "pet owner", "provider owner", "domain owner", "host ownership docs", "host ownership", "ownership docs", "ownership relation"]
+          },
+          {
+            "id": "owner-implies-access",
+            "pattern": "\\bowner\\s+(?:access|authority|grant|permission|permissions|role|roles)\\b|\\bowned\\s+by\\s+(?:workspace|project|agent|tenant|company)\\b",
+            "suggestion": "Spell out the explicit grant, steward, principal, entity, and scope relationship."
+          }
+        ]
+      },
+      {
+        "term": "authority",
+        "canonicalMeaning": "Explicit grant/restriction graph semantics, not implied by ownership, sync, workspace membership, or hierarchy.",
+        "replacementGuidance": "Use authorityEdge, grant, restriction, effective authority, or control capability with scope.",
+        "blockedPatterns": [
+          {
+            "id": "implicit-authority",
+            "pattern": "\\b(?:workspace|project|agent|sync|relay|tenant|company)\\s+(?:authority|grants? access|permissions?)\\b",
+            "suggestion": "Do not imply authority from grouping. Use explicit grants, restrictions, and authority edges."
+          }
+        ]
+      },
+      {
+        "term": "tenant",
+        "canonicalMeaning": "Technical isolation in provider, hosting, relay, gateway, or compatibility code only.",
+        "replacementGuidance": "Use workspace, project, entity, scope, or provider tenant when the remote service really uses tenant semantics.",
+        "blockedPatterns": [
+          {
+            "id": "tenant-as-product-scope",
+            "pattern": "\\btenant(?:Id|_id)?\\b",
+            "suggestion": "Tenant is technical isolation only. Use workspace, project, entity, scope, principal, or provider tenant.",
+            "allowedContextPhrases": ["technical tenant", "provider tenant", "hosted tenant", "remote tenant", "tenant isolation", "tenant semantics", "multi-tenant", "multitenant", "compatibility tenant"]
+          }
+        ]
+      },
+      {
+        "term": "workspace",
+        "canonicalMeaning": "Isolated context for sessions, memory, resource bindings, and defaults; not an authority source by itself.",
+        "replacementGuidance": "Use workspace for isolation and scope; use grants/restrictions for authority and project for collaborable work scope.",
+        "blockedPatterns": [
+          {
+            "id": "workspace-implies-authority",
+            "pattern": "\\bworkspace\\s+(?:owner|authority|grant|grants|permission|permissions|access control|admin grants?)\\b|\\bworkspace path\\s+(?:identity|authority)\\b",
+            "suggestion": "Workspace is an isolated context. Use explicit grants/restrictions for authority and stable IDs for identity."
+          }
+        ]
+      },
+      {
+        "term": "project",
+        "canonicalMeaning": "Collaborable human work scope with stable identity and mutable folder locators.",
+        "replacementGuidance": "Use project for work scope; use folder/path only as locators and grants/restrictions for authority.",
+        "blockedPatterns": [
+          {
+            "id": "project-implies-authority",
+            "pattern": "\\bproject\\s+(?:owner|authority|grant|grants|permission|permissions|access control)\\b|\\bproject folder\\s+(?:authority|grants?|permissions?)\\b",
+            "suggestion": "Project membership or folder location must not imply authority. Use explicit grants and stable project IDs."
+          }
+        ]
+      },
+      {
+        "term": "agent",
+        "canonicalMeaning": "A principal or runtime actor that can act only within explicit effective authority.",
+        "replacementGuidance": "Use principal/grant/delegation wording for authority; use agent for the actor/runtime role.",
+        "blockedPatterns": [
+          {
+            "id": "agent-implies-authority",
+            "pattern": "\\bagent\\s+(?:owner|authority|grant|grants|permission|permissions|tenant)\\b",
+            "suggestion": "Agents do not imply authority. Model them as principals with explicit grants and delegation limits."
+          }
+        ]
+      },
+      {
+        "term": "surface",
+        "canonicalMeaning": "Registered human or programmatic interface with evidence and ownership.",
+        "replacementGuidance": "Register the surface or call it internal implementation detail.",
+        "blockedPatterns": [
+          {
+            "id": "unregistered-surface",
+            "pattern": "\\b(?:feature-only|unregistered|ad hoc)\\s+surface\\b",
+            "suggestion": "Stable capabilities need registered human/programmatic surface evidence."
+          }
+        ]
+      },
+      {
+        "term": "host",
+        "canonicalMeaning": "Signed native owner of sensitive capabilities and host-specific operational state.",
+        "replacementGuidance": "Use signed host for native authority; do not move native authority to Node or Relay.",
+        "blockedPatterns": [
+          {
+            "id": "node-native-owner",
+            "pattern": "\\bnode owner\\b|\\bnode-owned\\b|\\brelay-owned\\s+(?:permission|secret|approval|grant|native)\\b",
+            "suggestion": "Sensitive native authority belongs to the signed host."
+          }
+        ]
+      },
+      {
+        "term": "relay",
+        "canonicalMeaning": "Transport or brokering surface, not the authority owner for native permissions, secrets, or grants.",
+        "replacementGuidance": "Use relay for transport/brokering and signed host/framework governance for authority.",
+        "blockedPatterns": [
+          {
+            "id": "relay-implies-authority",
+            "pattern": "\\brelay\\s+(?:owner|authority|grant|grants|permission|permissions|tenant)\\b",
+            "suggestion": "Relay may broker routes, but authority must remain explicit in host/framework governance."
+          }
+        ]
+      },
+      {
+        "term": "connector",
+        "canonicalMeaning": "User-configured bridge to an external account or service; integration is the broader domain.",
+        "replacementGuidance": "Use connector account/setup for configured external credentials.",
+        "blockedPatterns": [
+          {
+            "id": "provider-plugin-account",
+            "pattern": "\\b(?:plugin|integration) account\\b|\\bplugin credential\\b",
+            "suggestion": "Use connector account or connector credential for configured external accounts.",
+            "allowedContextPhrases": ["broader integration account domain", "integration account domain"]
+          }
+        ]
+      },
+      {
+        "term": "sync",
+        "canonicalMeaning": "Replication or reconciliation behavior; sync/share never grants authority by itself.",
+        "replacementGuidance": "Use sync for replication and explicit grants/restrictions for access.",
+        "blockedPatterns": [
+          {
+            "id": "sync-implies-authority",
+            "pattern": "\\bsync\\s+(?:owner|authority|grant|grants|permission|permissions|access)\\b|\\bsync\\s+implies\\s+authority\\b",
+            "suggestion": "Sync does not imply authority. Use explicit grants, restrictions, and share policy."
+          }
+        ]
+      }
+    ]
+  },
   "terms": [
     {
       "preferredTerm": "session",

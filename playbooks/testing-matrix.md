@@ -28,6 +28,10 @@ public runner policy guard.
 - Important capabilities require at least one human-path validation and one
   programmatic-path validation. Missing paths must be reported as `PARTIAL`,
   `EXTERNAL PENDING`, `blocked`, or `not applicable`.
+- Goal closure audits must classify every `EXTERNAL PENDING` row with the
+  reusable goal completion gate. Rows that affect central promises block
+  completion unless real evidence exists or a later `scope_revision` changes
+  the promise.
 - Connector UI may report only the validation state backed by the framework
   Integration QA Lab matrix and host-owned approval evidence.
 - `QUARANTINED` entries must live in `qa/quarantine.json` with owner, reason,

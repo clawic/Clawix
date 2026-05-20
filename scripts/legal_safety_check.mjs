@@ -37,7 +37,8 @@ function extractTableIds(text, prefix) {
 
 function assertExternalPendingLedger(relativePath, expectedCount) {
   const text = read(relativePath);
-  const rows = text.split(/\r?\n/)
+  const currentRowsSection = text.split("## Goal Completion Impact")[0] || text;
+  const rows = currentRowsSection.split(/\r?\n/)
     .map((line) => line.match(/^\|\s*(LEGAL-EXT-\d{3})\s*\|[^|]+\|[^|]+\|[^|]+\|\s*([^|]+?)\s*\|/))
     .filter(Boolean)
     .map((match) => ({ id: match[1], status: match[2].trim() }));

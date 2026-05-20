@@ -249,11 +249,28 @@
     },
     "externalRow": {
       "type": "object",
-      "required": ["status", "blockingPrerequisites", "acceptedEvidence", "reentryCommand"],
+      "required": [
+        "status",
+        "blockingPrerequisites",
+        "acceptedEvidence",
+        "linkedPromiseIds",
+        "linkedDecisionIds",
+        "completionImpact",
+        "closureEffect",
+        "reentryCondition",
+        "evidenceRequired",
+        "reentryCommand"
+      ],
       "properties": {
         "status": { "const": "EXTERNAL PENDING" },
         "blockingPrerequisites": { "type": "array", "minItems": 4 },
         "acceptedEvidence": { "type": "array", "minItems": 4 },
+        "linkedPromiseIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "linkedDecisionIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "completionImpact": { "const": "central_promise_blocker" },
+        "closureEffect": { "const": "blocks_goal" },
+        "reentryCondition": { "type": "string", "minLength": 1 },
+        "evidenceRequired": { "type": "array", "minItems": 4, "items": { "type": "string" } },
         "reentryCommand": { "pattern": "^claw system " }
       }
     },

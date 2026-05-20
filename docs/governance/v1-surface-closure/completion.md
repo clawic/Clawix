@@ -78,8 +78,17 @@ answers, and the same 2 excluded prompts recorded above. The free-form
 Apps/Design inventory concern and the later move-now answer are both covered by
 the storage rows.
 
+## Goal Completion Impact
+
+| External pending row | linkedPromiseIds | linkedDecisionIds | completionImpact | closureEffect | reentryCondition | evidenceRequired |
+| --- | --- | --- | --- | --- | --- | --- |
+| external_integrations_policy | none | external_integrations_policy,external_pending_policy | validation_only | allows_local_completion | Approved provider-specific live validation is available through the ClawJS Integration QA Lab. | live provider credential lease, provider-side receipt, QA lab evidence |
+| domain_verticals_policy | domain_verticals_policy | domain_verticals_policy,vertical_completion_depth,missing_domain_contracts | central_promise_blocker | requires_scope_revision | A later scope_revision decision changes Close all now into minimum contract closed with live lanes pending, or the live/provider/device evidence exists. | scope revision audit or live provider receipts, native permission lane evidence, IoT or publishing/payment/provider receipts |
+
 Current close condition: all listed decisions have public-safe implementation
 or explicit external-pending evidence, the local Clawix acceptance lanes record
 no tooling blockers, and the final private-source reread has been completed.
-Live provider, device, payment, destructive, and permission-bound checks remain
-explicit `EXTERNAL PENDING`, not local implementation blockers.
+Live provider checks for integrations are validation-only, but the
+`domain_verticals_policy` answer remains a central blocker until live evidence
+exists or a later explicit `scope_revision` narrows "Close all now" to minimum
+contract closure with live lanes pending.

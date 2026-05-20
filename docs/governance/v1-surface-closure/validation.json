@@ -4,7 +4,9 @@
   "repo": "clawix",
   "generatedAt": "2026-05-17",
   "completionStatus": "local-validation-passed-with-external-pending",
-  "completionBlockers": [],
+  "completionBlockers": [
+    "clawix-domain-resource-fixtures-external"
+  ],
   "statusVocabulary": {
     "passed": "The command ran locally and returned exit code 0.",
     "external-pending": "The local harness exists, but a live, provider, Docker, paid, destructive, physical, or approved external prerequisite was intentionally not exercised.",
@@ -13,49 +15,68 @@
   "results": [
     {
       "id": "clawix-v1-audit",
-      "acceptanceCategoryIds": ["external-pending-policy"],
+      "acceptanceCategoryIds": [
+        "external-pending-policy"
+      ],
       "command": "node scripts/v1_surface_closure_audit_check.mjs",
       "status": "passed",
       "evidence": "V1 surface closure audit check passed (37 decisions)."
     },
     {
       "id": "clawix-swift-bridge",
-      "acceptanceCategoryIds": ["bridge-swift", "pairing"],
+      "acceptanceCategoryIds": [
+        "bridge-swift",
+        "pairing"
+      ],
       "command": "swift test --package-path macos --filter ClawixProtocolEncodingTests",
       "status": "passed",
       "evidence": "Swift bridge protocol encoding test filter passed: 2 tests."
     },
     {
       "id": "clawix-android-bridge",
-      "acceptanceCategoryIds": ["bridge-android"],
+      "acceptanceCategoryIds": [
+        "bridge-android"
+      ],
       "command": "bash scripts/launch-android.sh test",
       "status": "passed",
       "evidence": "Android unit lane passed through the public launcher using a cached Gradle distribution: BUILD SUCCESSFUL, :app:testDebugUnitTest."
     },
     {
       "id": "clawix-windows-bridge",
-      "acceptanceCategoryIds": ["bridge-windows"],
+      "acceptanceCategoryIds": [
+        "bridge-windows"
+      ],
       "command": "dotnet test windows/Clawix.sln",
       "status": "passed",
       "evidence": "Windows bridge and fixture parity lane passed with .NET 8 SDK: 43 tests passed."
     },
     {
       "id": "clawix-deep-links",
-      "acceptanceCategoryIds": ["deep-links"],
+      "acceptanceCategoryIds": [
+        "deep-links"
+      ],
       "command": "node scripts/interface_surface_guard.mjs",
       "status": "passed",
       "evidence": "Interface surface guard passed and enforces session/auth callback links while rejecting retired routes."
     },
     {
       "id": "clawix-storage-and-framework-artifacts",
-      "acceptanceCategoryIds": ["storage-boundary", "framework-owned-artifacts", "host-tools-policy", "provider-routing", "mcp-registry", "domain-resource-fixtures"],
+      "acceptanceCategoryIds": [
+        "storage-boundary",
+        "framework-owned-artifacts",
+        "host-tools-policy",
+        "provider-routing",
+        "mcp-registry"
+      ],
       "command": "node scripts/interface_surface_guard.mjs && node scripts/storage_boundary_guard.mjs",
       "status": "passed",
       "evidence": "Interface surface and storage boundary guards passed."
     },
     {
       "id": "clawix-integrations-external",
-      "acceptanceCategoryIds": ["integrations-qa"],
+      "acceptanceCategoryIds": [
+        "integrations-qa"
+      ],
       "command": "node scripts/interface_surface_guard.mjs && bash scripts/doc_alignment_check.sh",
       "status": "external-pending",
       "completionBlocking": false,
@@ -63,22 +84,39 @@
       "nextAction": "Run approved provider-specific live validation through the ClawJS Integration QA Lab when credentials and provider state are available."
     },
     {
+      "id": "clawix-domain-resource-fixtures-external",
+      "acceptanceCategoryIds": [
+        "domain-resource-fixtures"
+      ],
+      "command": "node scripts/interface_surface_guard.mjs && node scripts/storage_boundary_guard.mjs",
+      "status": "external-pending",
+      "completionBlocking": true,
+      "evidence": "Calendar, Contacts, Life, Database, Index, Marketplace, IoT, and Publishing have matrix/programmatic contracts, but the source answer Close all now still links live providers, devices, payments, and native permission lanes to a central v1 promise.",
+      "nextAction": "Provide live/provider/device/payment evidence or add a later scope_revision decision changing Close all now into minimum contract closed with live lanes pending."
+    },
+    {
       "id": "clawix-docs-alignment",
-      "acceptanceCategoryIds": ["docs-alignment"],
+      "acceptanceCategoryIds": [
+        "docs-alignment"
+      ],
       "command": "bash scripts/doc_alignment_check.sh",
       "status": "passed",
       "evidence": "Doc alignment passed."
     },
     {
       "id": "clawix-source-size",
-      "acceptanceCategoryIds": ["source-size"],
+      "acceptanceCategoryIds": [
+        "source-size"
+      ],
       "command": "node scripts/source-size-check.mjs",
       "status": "passed",
       "evidence": "Source size check passed with existing warnings/signals."
     },
     {
       "id": "clawix-public-hygiene",
-      "acceptanceCategoryIds": ["public-hygiene"],
+      "acceptanceCategoryIds": [
+        "public-hygiene"
+      ],
       "command": "bash macos/scripts/public_hygiene_check.sh && node scripts/tracked-ignored-check.mjs && node scripts/code-hygiene-check.mjs",
       "status": "passed",
       "evidence": "Public hygiene, tracked ignored, and code hygiene checks passed."

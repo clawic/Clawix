@@ -198,18 +198,26 @@ fast() {
   run node "$ROOT_DIR/scripts/tracked-ignored-check.mjs"
   run node "$ROOT_DIR/scripts/check-clawjs-skills-sync.mjs"
   run node "$ROOT_DIR/scripts/agent-instructions-check.mjs"
+  run node "$ROOT_DIR/scripts/constitution-assertions-check.mjs"
+  run node "$ROOT_DIR/scripts/constitution-assertions-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
+  run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
+  run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs"
+  run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" macos ios android windows web/src linux/app/src
   run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs"
+  run node "$ROOT_DIR/scripts/surface_narrative_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/surface_narrative_guard.mjs"
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"
@@ -243,6 +251,7 @@ fast() {
   run node "$ROOT_DIR/scripts/ui_release_gate_check.mjs"
   run node "$ROOT_DIR/scripts/ui_rendered_geometry_manifest_check.mjs"
   run node "$ROOT_DIR/scripts/ui_copy_governance_check.mjs"
+  run node "$ROOT_DIR/scripts/conceptual-vocabulary-guard.mjs"
   run node "$ROOT_DIR/scripts/ui_performance_budget_check.mjs"
   run node "$ROOT_DIR/scripts/ui_pattern_performance_check.mjs"
   run node "$ROOT_DIR/scripts/ui_pattern_mutation_guard.mjs"

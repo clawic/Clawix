@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "canonicalContract": "../../../clawjs/docs/governance/source-decision-audits.md",
+  "canonicalRegistry": "../../../clawjs/docs/governance/source-decision-audits.registry.json",
+  "forwardOnly": true,
+  "statusVocabulary": ["implemented", "documented", "blocked", "superseded"],
+  "rowContract": {
+    "requiredFields": [
+      "decisionId",
+      "sourceConversationId",
+      "sourceAnchor",
+      "architectureImpact",
+      "state",
+      "evidenceRefs",
+      "reviewedAt"
+    ],
+    "blockedRequires": ["blockerReason", "reentryCondition", "remaining"],
+    "supersededRequires": ["supersededBy"]
+  },
+  "seeds": [
+    {
+      "id": "ui-governance-decision-verification",
+      "artifactPath": "docs/ui/decision-verification.json",
+      "sourceConversationId": "019e2b5e-fe48-7231-8e13-49411999b001",
+      "artifactKind": "json-decision-verification",
+      "minimumDecisionRows": 39,
+      "legacyStateField": "status",
+      "legacyStateMap": {
+        "verified-complete": "implemented",
+        "open": "blocked",
+        "blocked-external-pending": "blocked"
+      },
+      "blockedRefs": [
+        "docs/ui/completion-gate.manifest.json",
+        "docs/governance/ui/completion.md"
+      ],
+      "evidenceRefs": [
+        "docs/ui/decision-verification.json",
+        "docs/ui/completion-source.manifest.json",
+        "scripts/ui_decision_verification_check.mjs"
+      ]
+    },
+    {
+      "id": "system-telemetry-source-review",
+      "artifactPath": "docs/governance/system-telemetry/source-review.json",
+      "sourceConversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "sourcePlanId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "artifactKind": "json-source-review",
+      "minimumDecisionRows": 12,
+      "legacyStateField": "disposition",
+      "legacyStateMap": {
+        "input_reference": "documented",
+        "implemented_local": "implemented",
+        "implemented_with_external_pending": "blocked",
+        "active_closure_gate": "blocked",
+        "continuation": "documented"
+      },
+      "blockedRefs": [
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "evidenceRefs": [
+        "docs/governance/system-telemetry/decision-matrix.md",
+        "docs/governance/system-telemetry/completion.md",
+        "scripts/verify-system-telemetry-goal.mjs"
+      ]
+    },
+    {
+      "id": "v1-surface-closure-decisions",
+      "artifactPath": "docs/governance/v1-surface-closure/decisions.json",
+      "sourceConversationId": "019e2727-cf2b-7c41-9feb-1fd2b5c77554",
+      "artifactKind": "json-decision-review",
+      "minimumDecisionRows": 37,
+      "normalizedStates": ["implemented", "blocked"],
+      "blockedRefs": [
+        "docs/governance/v1-surface-closure/completion.md"
+      ],
+      "evidenceRefs": [
+        "docs/governance/v1-surface-closure/acceptance.json",
+        "docs/governance/v1-surface-closure/validation.json",
+        "scripts/v1_surface_closure_audit_check.mjs"
+      ]
+    }
+  ]
+}

@@ -36,6 +36,15 @@ formal rubric entry.
 - **Debt or pending evidence**: what remains partial, blocked,
   external-pending, or scheduled for later validation.
 
+## Source Decision Audit
+
+If this ADR records or implements a conversation-made architecture decision,
+name the source decision audit row or state why the change is not
+conversation-derived. Rows must use `implemented`, `documented`, `blocked`, or
+`superseded` and follow sibling ClawJS
+`docs/governance/source-decision-audits.md` plus the local mirror in
+`docs/governance/source-decision-audits.md`.
+
 ## Surface Parity
 
 Every accepted ADR that adds or changes an important capability must answer:
@@ -67,6 +76,9 @@ Every accepted ADR that adds or changes durable meta-code must answer:
   this decision?
 - **Registry**: which `docs/discoverability.registry.json` record enforces the
   route, or which baseline entry temporarily carries the existing debt?
+- **Operational coverage**: which
+  `docs/adr-operational-coverage.manifest.json` entry, if any, records
+  inherited coverage or a scoped doc-only exception?
 
 ## Consequences
 

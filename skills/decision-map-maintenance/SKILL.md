@@ -21,8 +21,11 @@ Maintain the decision map as an index, not a duplicate source of truth.
    `docs/discoverability.registry.json` so the canonical source is reachable
    from `AGENTS.md`/`CLAUDE.md`, this skill, docs routers, and CLI discovery
    within two hops.
-6. Remove stale rows only when the canonical source has been retired or superseded.
-7. Run docs alignment checks or add a guard if the map should enforce a snippet.
+6. For accepted ADRs, keep the row aligned with
+   `docs/adr-operational-coverage.manifest.json`; a map row without a real
+   guard/test or CLI search/inspect route is incomplete.
+7. Remove stale rows only when the canonical source has been retired or superseded.
+8. Run docs alignment checks or add a guard if the map should enforce a snippet.
 
 ## Constraints
 

@@ -21,6 +21,18 @@ device, notarization service, or exact release-channel approval. Rows marked
 | LEGAL-EXT-006 | Signing, notarization, TestFlight, App Store, website, tag, or upload action | Release checklists and preflight gates exist and require exact approval. | Fresh explicit approval for the exact channel action plus the corresponding external service. | EXTERNAL PENDING |
 | LEGAL-EXT-007 | Real provider or device validation | Hermetic tests cover refusal, review gates, redaction, opt-in, labels, and local settings behavior. | Approved provider/device account, physical device, paid API, or native permission lane. | EXTERNAL PENDING |
 
+## Goal Completion Impact
+
+| External pending row | linkedPromiseIds | linkedDecisionIds | completionImpact | closureEffect | reentryCondition | evidenceRequired |
+| --- | --- | --- | --- | --- | --- | --- |
+| LEGAL-EXT-001 | none | LCA-011,LCA-019 | validation_only | allows_local_completion | Current signed macOS candidate is available through an approved launcher lane. | signed macOS clickwrap smoke result |
+| LEGAL-EXT-002 | none | LCA-011,LCA-019 | validation_only | allows_local_completion | Current signed iOS candidate or selected simulator/device lane is available. | signed iOS clickwrap smoke result |
+| LEGAL-EXT-003 | none | LCA-014,LCA-026,LCA-027 | validation_only | allows_local_completion | Current signed app settings UI can be inspected through an approved lane. | signed settings UI smoke result |
+| LEGAL-EXT-004 | none | LCA-033 | validation_only | allows_local_completion | OS share-sheet or signed app export flow can be exercised with synthetic data. | platform share-sheet smoke result |
+| LEGAL-EXT-005 | none | LCA-006,LCA-021,LCA-031 | validation_only | allows_local_completion | Store console metadata draft exists for the exact release channel. | store metadata review result |
+| LEGAL-EXT-006 | none | LCA-010,LCA-031 | future_extension | allows_local_completion | A future release goal requests the exact signing, notarization, upload, store, website, tag, or publish action. | exact action approval, external service receipt, release audit |
+| LEGAL-EXT-007 | none | LCA-018,LCA-025,LCA-027 | validation_only | allows_local_completion | Approved provider or device account, physical device, paid API, or native permission lane is available. | provider or device validation receipt |
+
 ## Rules
 
 - `EXTERNAL PENDING` means blocked by unavailable external prerequisites, not

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "description": "Machine-readable transaction gate for accepted Clawix ADRs. ADR prose is accepted only when it is routed through decision maps, discoverability, guardrails, surfaces, persistence, and CLI discovery.",
+  "exceptionsPath": "docs/adr-operational-coverage-exceptions.json",
+  "defaults": {
+    "decisionMap": "docs/decision-map.md",
+    "guardrails": [
+      "scripts/adr-operational-coverage-check.mjs",
+      "scripts/discoverability-check.mjs"
+    ],
+    "humanSurface": [
+      "docs/decision-map.md",
+      "docs/discoverability.md"
+    ],
+    "programmaticSurface": [
+      "scripts/adr-operational-coverage-check.mjs",
+      "scripts/discoverability-check.mjs"
+    ],
+    "persistence": [
+      "docs/discoverability.registry.json",
+      "docs/adr-operational-coverage.manifest.json"
+    ],
+    "cliSearch": "docs/discoverability.registry.json searchQueries",
+    "cliInspect": [
+      {
+        "command": "claw inspect why search --json"
+      }
+    ]
+  },
+  "acceptedAdrCoverage": [
+    {
+      "adr": "docs/adr/0003-testing-architecture.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/test.sh",
+        "macos/scripts/e2e_validate.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "playbooks/testing.md"
+      ],
+      "programmaticSurface": [
+        "scripts/test.sh",
+        "macos/scripts/e2e_validate.sh"
+      ],
+      "persistence": [
+        "qa/coverage-budgets.json",
+        "qa/quarantine.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw inspect why search --json"
+        }
+      ]
+    }
+  ]
+}

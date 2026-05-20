@@ -3,12 +3,15 @@
 This map is an operational router for `CONSTITUTION.md`. It is not a second source of truth,
 does not soften or replace any constitutional rule, and should
 be updated whenever a constitutional change changes which canon or guardrail a
-contributor should read first. For major architecture, product, data, agent,
-UX, security, or integration decisions, read `CONSTITUTION.md` fully.
+contributor should read first. The local assertion projection in
+[`docs/constitution.assertions.json`](constitution.assertions.json) mirrors the
+canonical ClawJS assertion contract and makes principle, red-line, tension, and
+amendment coverage checkable. For major architecture, product, data, agent, UX,
+security, or integration decisions, read `CONSTITUTION.md` fully.
 
 | Principle | Operational canon | Guardrail / validation | Affected surfaces |
 | --- | --- | --- | --- |
-| Preamble, scope, and authority | [`CONSTITUTION.md`](../CONSTITUTION.md), [`AGENTS.md`](../AGENTS.md), [`docs/decision-map.md`](decision-map.md), [`docs/agent-rules/index.md`](agent-rules/index.md) | `bash scripts/doc_alignment_check.sh`, `node scripts/discoverability-check.mjs` | Agent instructions, docs routing, discoverability, decision review |
+| Preamble, scope, and authority | [`CONSTITUTION.md`](../CONSTITUTION.md), [`docs/constitution.assertions.json`](constitution.assertions.json), [`AGENTS.md`](../AGENTS.md), [`docs/decision-map.md`](decision-map.md), [`docs/agent-rules/index.md`](agent-rules/index.md) | `bash scripts/doc_alignment_check.sh`, `node scripts/constitution-assertions-check.mjs`, `node scripts/discoverability-check.mjs` | Agent instructions, docs routing, discoverability, decision review |
 | I. Mission and stance | [`docs/decision-map.md`](decision-map.md), sibling ClawJS [`docs/decision-map.md`](../../../clawjs/docs/decision-map.md), [`docs/interface-matrix.md`](interface-matrix.md), [`docs/adr/0007-dual-human-programmatic-surfaces.md`](adr/0007-dual-human-programmatic-surfaces.md) | `node scripts/interface_surface_guard.mjs`, `node scripts/legal_safety_check.mjs` | Human UI, programmatic surfaces, regulated-domain labels, product scope |
 | II. Sovereignty | [`docs/data-storage-boundary.md`](data-storage-boundary.md), [`docs/host-ownership.md`](host-ownership.md), [`docs/adr/0001-claw-framework-host-boundary.md`](adr/0001-claw-framework-host-boundary.md), [`docs/persistent-surface-clawix.manifest.json`](persistent-surface-clawix.manifest.json) | `bash scripts/doc_alignment_check.sh`, `node scripts/storage_boundary_guard.mjs`, `node scripts/persistent-surface-guard.mjs macos ios android windows web/src linux/app/src` | Local data, workspace/project state, host state, durable literals, Codex mirrors |
 | III. Openness | [`FORKS.md`](../FORKS.md), [`NOTICE`](../NOTICE), [`TRADEMARKS.md`](../TRADEMARKS.md), [`docs/adr/0020-open-standard-official-trust-mirror.md`](adr/0020-open-standard-official-trust-mirror.md), sibling ClawJS [`docs/adr/0033-open-standard-official-trust.md`](../../../clawjs/docs/adr/0033-open-standard-official-trust.md) | `node scripts/open_source_canonicity_check.mjs`, `bash macos/scripts/public_hygiene_check.sh` | Forks, source builds, official marks, contribution provenance, public release docs |

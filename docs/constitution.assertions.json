@@ -1,0 +1,3006 @@
+{
+  "schemaVersion": 1,
+  "description": "Clawix projection of the ClawJS constitutional assertion table. This is a checkable index; CONSTITUTION.md remains the highest authority.",
+  "source": "CONSTITUTION.md",
+  "upstream": {
+    "repo": "clawjs",
+    "root": "../../clawjs",
+    "path": "docs/constitution.assertions.json",
+    "sourceDigest": "2c2d3c92f4dcaa0bd4f4f62d1d33320ac4b55f011735fd6689c3af05c305b4ae"
+  },
+  "explicitlyDocumentedLanes": [
+    "bash scripts/test.sh fast",
+    "bash scripts/doc_alignment_check.sh",
+    "node scripts/constitution-assertions-check.mjs",
+    "node scripts/constitution-assertions-check.mjs --self-test",
+    "explicit protector lane: scripts/check-clawjs-skills-sync.mjs",
+    "explicit protector lane: scripts/constitution-assertions-check.mjs",
+    "explicit protector lane: scripts/discoverability-check.mjs",
+    "explicit protector lane: scripts/doc_alignment_check.sh",
+    "explicit protector lane: scripts/interface_surface_guard.mjs",
+    "explicit protector lane: scripts/legal_safety_check.mjs",
+    "explicit protector lane: scripts/native_action_broker_check.mjs",
+    "explicit protector lane: scripts/native_permission_broker_check.mjs",
+    "explicit protector lane: scripts/open_source_canonicity_check.mjs",
+    "explicit protector lane: scripts/performance_governance_check.mjs",
+    "explicit protector lane: scripts/persistent-surface-guard.mjs",
+    "explicit protector lane: scripts/remote_canon_alignment_check.mjs",
+    "explicit protector lane: scripts/storage_boundary_guard.mjs",
+    "explicit protector lane: scripts/surface-evidence-projection-check.mjs",
+    "explicit protector lane: scripts/ui_governance_guard.mjs",
+    "explicit protector lane: scripts/ui_protected_surface_check.mjs",
+    "explicit protector lane: scripts/verify-sdk-first-custom-surfaces-goal.mjs"
+  ],
+  "assertions": [
+    {
+      "id": "Preamble.constitutional-authority-and-discoverability",
+      "principle": "Preamble",
+      "summary": "Preamble Constitutional authority and discoverability is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "AGENTS.md",
+        "docs/decision-map.md",
+        "docs/constitution-map.md",
+        "docs/agent-rules/index.md",
+        "docs/discoverability.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "I.1.the-interface-is-canonical",
+      "principle": "I.1",
+      "summary": "I.1 The interface is canonical is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.2.human-and-agent-are-equal-consumers",
+      "principle": "I.2",
+      "summary": "I.2 Human and agent are equal consumers is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.3.app-is-for-humans-framework-is-for-agents",
+      "principle": "I.3",
+      "summary": "I.3 agent-needed logic is framework-owned and app code remains a human-facing host/consumer.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.4.the-app-s-target-is-any-human-who-uses-ai",
+      "principle": "I.4",
+      "summary": "I.4 The app's target is any human who uses AI is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.5.the-cli-is-the-agent-interface-to-the-framework",
+      "principle": "I.5",
+      "summary": "I.5 The CLI is the agent interface to the framework is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.6.capabilities-are-complete-only-when-dual-surfaced",
+      "principle": "I.6",
+      "summary": "I.6 Capabilities are complete only when dual-surfaced is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.7.ai-capabilities-are-first-class-without-becoming-agents",
+      "principle": "I.7",
+      "summary": "I.7 AI capabilities are first-class without becoming agents is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.8.regulated-domains-are-assistive-never-final-decision-aut",
+      "principle": "I.8",
+      "summary": "I.8 Regulated domains are assistive, never final decision authorities is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "I.9.operational-context-is-governed-not-guessed",
+      "principle": "I.9",
+      "summary": "I.9 Operational context is governed, not guessed is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "cli",
+        "sdk",
+        "mcp",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "REGULATED_DOMAINS.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.1.local-first-by-construction",
+      "principle": "II.1",
+      "summary": "II.1 Local-first by construction is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.2.filesystem-first",
+      "principle": "II.2",
+      "summary": "II.2 Filesystem-first is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.3.the-user-owns-the-user-controls",
+      "principle": "II.3",
+      "summary": "II.3 The user owns. The user controls is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.4.zero-telemetry-by-default",
+      "principle": "II.4",
+      "summary": "II.4 Zero telemetry by default is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.5.reference-over-copy-copy-inherits-protection",
+      "principle": "II.5",
+      "summary": "II.5 Reference over copy; copy inherits protection is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.6.backups-and-export-are-a-user-right",
+      "principle": "II.6",
+      "summary": "II.6 Backups and export are a user right is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.7.inference-is-paid-by-the-user-not-by-us",
+      "principle": "II.7",
+      "summary": "II.7 Inference is paid by the user, not by us is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.8.accumulated-state-outlives-intelligence",
+      "principle": "II.8",
+      "summary": "II.8 Accumulated state outlives intelligence is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.9.organizational-sovereignty-is-policy-shaped",
+      "principle": "II.9",
+      "summary": "II.9 Organizational sovereignty is policy-shaped is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "II.10.updates-preserve-use-before-perfection",
+      "principle": "II.10",
+      "summary": "II.10 Updates preserve use before perfection is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "storage",
+        "data",
+        "host",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/persistent-surface-clawix.manifest.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "III.1.open-data-open-local-api-open-source",
+      "principle": "III.1",
+      "summary": "III.1 Open data, open local API, open source is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs",
+        "cli",
+        "sdk",
+        "relay"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "FORKS.md",
+        "NOTICE",
+        "TRADEMARKS.md",
+        "docs/adr/0020-open-standard-official-trust-mirror.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/open_source_canonicity_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "III.2.standards-are-published",
+      "principle": "III.2",
+      "summary": "III.2 Standards are published is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs",
+        "cli",
+        "sdk",
+        "relay"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "FORKS.md",
+        "NOTICE",
+        "TRADEMARKS.md",
+        "docs/adr/0020-open-standard-official-trust-mirror.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/open_source_canonicity_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "III.3.integration-completeness-is-evidence-not-intention",
+      "principle": "III.3",
+      "summary": "III.3 Integration completeness is evidence, not intention is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs",
+        "cli",
+        "sdk",
+        "relay"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "FORKS.md",
+        "NOTICE",
+        "TRADEMARKS.md",
+        "docs/adr/0020-open-standard-official-trust-mirror.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/open_source_canonicity_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "III.4.compatibility-is-open-official-trust-is-verifiable",
+      "principle": "III.4",
+      "summary": "III.4 Compatibility is open; official trust is verifiable is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs",
+        "cli",
+        "sdk",
+        "relay"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "FORKS.md",
+        "NOTICE",
+        "TRADEMARKS.md",
+        "docs/adr/0020-open-standard-official-trust-mirror.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/open_source_canonicity_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IV.1.security-is-a-positive-guarantee-not-an-absence",
+      "principle": "IV.1",
+      "summary": "IV.1 Security is a positive guarantee, not an absence is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "../../clawjs/docs/secrets-security.md",
+        "../../clawjs/docs/adr/0008-secrets-security-v1.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IV.2.service-continuity-is-engineered",
+      "principle": "IV.2",
+      "summary": "IV.2 Service continuity is engineered is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "../../clawjs/docs/secrets-security.md",
+        "../../clawjs/docs/adr/0008-secrets-security-v1.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IV.3.agents-identify-as-agents",
+      "principle": "IV.3",
+      "summary": "IV.3 Agents identify as agents is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "../../clawjs/docs/secrets-security.md",
+        "../../clawjs/docs/adr/0008-secrets-security-v1.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IV.4.authority-is-traceable-through-every-action",
+      "principle": "IV.4",
+      "summary": "IV.4 Authority is traceable through every action is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "../../clawjs/docs/secrets-security.md",
+        "../../clawjs/docs/adr/0008-secrets-security-v1.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IV.5.external-reporting-is-consentful-and-structured",
+      "principle": "IV.5",
+      "summary": "IV.5 External reporting is consentful and structured is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "../../clawjs/docs/secrets-security.md",
+        "../../clawjs/docs/adr/0008-secrets-security-v1.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.1.an-agent-that-requires-intervention-is-not-an-agent",
+      "principle": "V.1",
+      "summary": "V.1 An agent that requires intervention is not an agent is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.2.configurability-is-infinite-defaults-are-zero-decision",
+      "principle": "V.2",
+      "summary": "V.2 Configurability is infinite. Defaults are zero-decision is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.3.friction-is-the-human-s-problem-not-the-agent-s",
+      "principle": "V.3",
+      "summary": "V.3 Friction is the human's problem, not the agent's is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.4.human-and-agent-have-parity-of-access-to-system-records",
+      "principle": "V.4",
+      "summary": "V.4 Human and agent have parity of access to system records is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.5.logs-and-audits-are-first-class",
+      "principle": "V.5",
+      "summary": "V.5 Logs and audits are first-class is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.6.async-first-by-construction",
+      "principle": "V.6",
+      "summary": "V.6 Async-first by construction is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.7.multi-modal-on-both-ends",
+      "principle": "V.7",
+      "summary": "V.7 Multi-modal on both ends is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.8.time-is-explicit-infrastructure",
+      "principle": "V.8",
+      "summary": "V.8 Time is explicit infrastructure is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.9.concurrent-agent-action-is-contained",
+      "principle": "V.9",
+      "summary": "V.9 Concurrent agent action is contained is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.10.the-unit-is-the-user-s-operable-life",
+      "principle": "V.10",
+      "summary": "V.10 The unit is the user's operable life is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.11.chat-is-not-the-final-store",
+      "principle": "V.11",
+      "summary": "V.11 Chat is not the final store is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.12.local-is-a-capability-advantage",
+      "principle": "V.12",
+      "summary": "V.12 Local is a capability advantage is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "V.13.control-is-a-reversible-continuum",
+      "principle": "V.13",
+      "summary": "V.13 Control is a reversible continuum is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "host",
+        "bridge",
+        "runtime",
+        "relay",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/host-ownership.md",
+        "docs/adr/0001-claw-framework-host-boundary.md",
+        "docs/adr/0017-discoverability-and-meta-code-routing.md",
+        "docs/adr/0011-surface-route-graph.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/interface_surface_guard.mjs",
+        "scripts/surface-evidence-projection-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.1.no-catch-all-buckets",
+      "principle": "VI.1",
+      "summary": "VI.1 No catch-all buckets is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.2.words-carry-borders",
+      "principle": "VI.2",
+      "summary": "VI.2 Words carry borders is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.3.canonical-data-aims-for-broad-human-coverage",
+      "principle": "VI.3",
+      "summary": "VI.3 Canonical data aims for broad human coverage is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.4.a-type-earns-canonical-status-when-it-meets-any-of-these",
+      "principle": "VI.4",
+      "summary": "VI.4 A type earns canonical status when it meets any of these is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.5.structured-knowledge-is-a-first-class-capability-not-a-f",
+      "principle": "VI.5",
+      "summary": "VI.5 Structured knowledge is a first-class capability, not a fallback is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.6.canonical-schemas-are-sparse-by-default",
+      "principle": "VI.6",
+      "summary": "VI.6 Canonical schemas are sparse by default is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.7.relationships-are-first-class-data",
+      "principle": "VI.7",
+      "summary": "VI.7 Relationships are first-class data is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.8.every-canonical-type-has-a-canonical-visual-representati",
+      "principle": "VI.8",
+      "summary": "VI.8 Every canonical type has a canonical visual representation is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.9.every-standardizable-attribute-of-the-user-earns-a-stand",
+      "principle": "VI.9",
+      "summary": "VI.9 Every standardizable attribute of the user earns a standard form is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VI.10.schemas-evolve-conservatively",
+      "principle": "VI.10",
+      "summary": "VI.10 Schemas evolve conservatively is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "sdk",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/data-storage-boundary.md",
+        "../../clawjs/docs/canonical-data-catalog.md",
+        "../../clawjs/docs/database.md",
+        "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/persistent-surface-guard.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.1.the-user-composes-their-agents",
+      "principle": "VII.1",
+      "summary": "VII.1 The user composes their agents is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.2.the-framework-integrates-runtimes-it-is-not-married-to-o",
+      "principle": "VII.2",
+      "summary": "VII.2 The framework integrates runtimes; it is not married to one is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.3.permissions-are-granular-and-revocable",
+      "principle": "VII.3",
+      "summary": "VII.3 Permissions are granular and revocable is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.4.destruction-has-standardized-severity",
+      "principle": "VII.4",
+      "summary": "VII.4 Destruction has standardized severity is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.5.the-trash-is-the-metaphor",
+      "principle": "VII.5",
+      "summary": "VII.5 The trash is the metaphor is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.6.agents-improve-themselves",
+      "principle": "VII.6",
+      "summary": "VII.6 Agents improve themselves is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.7.agents-compose",
+      "principle": "VII.7",
+      "summary": "VII.7 Agents compose is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.8.autonomy-is-a-continuous-axis",
+      "principle": "VII.8",
+      "summary": "VII.8 Autonomy is a continuous axis is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.9.agents-operate-the-interface-as-the-human-does",
+      "principle": "VII.9",
+      "summary": "VII.9 Agents operate the interface as the human does is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.10.inference-and-code-are-equal-citizens",
+      "principle": "VII.10",
+      "summary": "VII.10 Inference and code are equal citizens is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.11.agents-operate-within-budgets",
+      "principle": "VII.11",
+      "summary": "VII.11 Agents operate within budgets is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.12.the-system-is-the-multiplier",
+      "principle": "VII.12",
+      "summary": "VII.12 The system is the multiplier is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.13.agentic-work-accumulates-capital",
+      "principle": "VII.13",
+      "summary": "VII.13 Agentic work accumulates capital is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.14.agent-autonomy-is-organized-over-a-lifecycle",
+      "principle": "VII.14",
+      "summary": "VII.14 Agent autonomy is organized over a lifecycle is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.15.no-single-agent-archetype-owns-the-framework",
+      "principle": "VII.15",
+      "summary": "VII.15 No single agent archetype owns the framework is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.16.delegation-cannot-launder-authority",
+      "principle": "VII.16",
+      "summary": "VII.16 Delegation cannot launder authority is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VII.17.the-computer-s-resources-are-product-correctness",
+      "principle": "VII.17",
+      "summary": "VII.17 The computer's resources are product correctness is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "storage",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/agent-rules/index.md",
+        "../../clawjs/docs/adr/0007-cli-agent-interface.md",
+        "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/check-clawjs-skills-sync.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.1.sub-apps-are-the-same-species-regardless-of-origin",
+      "principle": "VIII.1",
+      "summary": "VIII.1 Sub-apps are the same species, regardless of origin is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.2.every-framework-layer-is-opt-in",
+      "principle": "VIII.2",
+      "summary": "VIII.2 Every framework layer is opt-in is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.2.1.installation-is-zero-surprise",
+      "principle": "VIII.2.1",
+      "summary": "VIII.2.1 Installation is zero-surprise is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.3.modularity-is-the-heart-of-openness",
+      "principle": "VIII.3",
+      "summary": "VIII.3 Modularity is the heart of openness is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.4.generic-interfaces-per-domain-adapters-per-provider",
+      "principle": "VIII.4",
+      "summary": "VIII.4 Generic interfaces per domain; adapters per provider is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.5.what-the-user-trains-stays-portable",
+      "principle": "VIII.5",
+      "summary": "VIII.5 What the user trains stays portable is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.6.clawix-is-where-the-human-already-is",
+      "principle": "VIII.6",
+      "summary": "VIII.6 Clawix is where the human already is is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.7.the-framework-owns-the-infrastructure-agents-need-to-del",
+      "principle": "VIII.7",
+      "summary": "VIII.7 The framework owns the infrastructure agents need to deliver is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "VIII.8.sub-apps-earn-trust-through-verification-not-through-ori",
+      "principle": "VIII.8",
+      "summary": "VIII.8 Sub-apps earn trust through verification, not through origin is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "sdk",
+        "mcp",
+        "relay",
+        "ui",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+        "docs/governance/sdk-first-custom-surfaces/plan.md",
+        "../../clawjs/docs/adr/0031-progressive-modularity-and-zero-surprise-install.md",
+        "../../clawjs/docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.1.inside-the-app-means-anti-lock-in-plus-sovereignty",
+      "principle": "IX.1",
+      "summary": "IX.1 Inside the app means anti-lock-in plus sovereignty is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.2.we-follow-where-the-world-has-converged-we-innovate-wher",
+      "principle": "IX.2",
+      "summary": "IX.2 We follow where the world has converged; we innovate where we add\nvalue is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.3.first-contact-is-a-conversation-with-claw",
+      "principle": "IX.3",
+      "summary": "IX.3 First contact is a conversation with Claw is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.4.style-is-constitutional-and-lives-in-a-parallel-document",
+      "principle": "IX.4",
+      "summary": "IX.4 Style is constitutional and lives in a parallel document is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.5.the-product-speaks-the-user-s-language",
+      "principle": "IX.5",
+      "summary": "IX.5 The product speaks the user's language is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.6.the-human-consumes-what-their-agents-did",
+      "principle": "IX.6",
+      "summary": "IX.6 The human consumes what their agents did is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.7.the-feed-is-a-canonical-surface",
+      "principle": "IX.7",
+      "summary": "IX.7 The feed is a canonical surface is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "IX.8.accessibility-is-non-optional",
+      "principle": "IX.8",
+      "summary": "IX.8 Accessibility is non-optional is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "ui",
+        "docs",
+        "sdk",
+        "cli"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "STYLE.md",
+        "docs/adr/0010-interface-governance.md",
+        "docs/ui/README.md",
+        "docs/ui/protected-surfaces.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/ui_governance_guard.mjs",
+        "scripts/ui_protected_surface_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.1.we-are-where-humans-and-agents-are",
+      "principle": "X.1",
+      "summary": "X.1 We are where humans and agents are is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.2.the-user-s-mesh",
+      "principle": "X.2",
+      "summary": "X.2 The user's mesh is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.3.distribution-is-native",
+      "principle": "X.3",
+      "summary": "X.3 Distribution is native is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.4.the-user-s-mesh-extends-across-networks",
+      "principle": "X.4",
+      "summary": "X.4 The user's mesh extends across networks is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.5.meshes-can-collaborate",
+      "principle": "X.5",
+      "summary": "X.5 Meshes can collaborate is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.6.the-physical-world-is-addressable",
+      "principle": "X.6",
+      "summary": "X.6 The physical world is addressable is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "X.7.the-mesh-expands-through-controlled-extensions",
+      "principle": "X.7",
+      "summary": "X.7 The mesh expands through controlled extensions is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "mesh",
+        "relay",
+        "host",
+        "runtime",
+        "security",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "README.md",
+        "CONTRIBUTING.md",
+        "PERF.md",
+        "macos/PERF.md",
+        "../../clawjs/docs/relay.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/remote_canon_alignment_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "Red.1.user-data-never-leaves-the-device-without-explicit-conse",
+      "principle": "Red.1",
+      "summary": "Red.1 User data never leaves the device without explicit consent is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "storage",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "SAFETY.md",
+        "REGULATED_DOMAINS.md",
+        "DISCLAIMER.md",
+        "docs/governance/legal/source-audit.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/legal_safety_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "Red.2.no-paywalls-inside-the-app-or-against-user-data",
+      "principle": "Red.2",
+      "summary": "Red.2 No paywalls inside the app or against user data is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "storage",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "SAFETY.md",
+        "REGULATED_DOMAINS.md",
+        "DISCLAIMER.md",
+        "docs/governance/legal/source-audit.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/legal_safety_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "Red.3.no-lock-in-to-any-provider",
+      "principle": "Red.3",
+      "summary": "Red.3 No lock-in to any provider is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "storage",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "SAFETY.md",
+        "REGULATED_DOMAINS.md",
+        "DISCLAIMER.md",
+        "docs/governance/legal/source-audit.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/legal_safety_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "Red.4.no-user-data-is-ever-lost-irreversibly",
+      "principle": "Red.4",
+      "summary": "Red.4 No user data is ever lost irreversibly is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "security",
+        "storage",
+        "permissions",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "SAFETY.md",
+        "REGULATED_DOMAINS.md",
+        "DISCLAIMER.md",
+        "docs/governance/legal/source-audit.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/legal_safety_check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "delegated",
+      "repoScope": "shared",
+      "status": "partial"
+    },
+    {
+      "id": "Tension.1.local-first-vs-llm-cloud-inference",
+      "principle": "Tension.1",
+      "summary": "Tension.1 Local-first vs. LLM cloud inference is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/governance/decision-tension-rubric.md",
+        "docs/adr/0021-decision-tension-rubric-mirror.md",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "Tension.2.pluggable-runtimes-vs-granular-permissions",
+      "principle": "Tension.2",
+      "summary": "Tension.2 Pluggable runtimes vs. granular permissions is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/governance/decision-tension-rubric.md",
+        "docs/adr/0021-decision-tension-rubric-mirror.md",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "Tension.3.closed-messaging-surfaces-vs-sovereignty",
+      "principle": "Tension.3",
+      "summary": "Tension.3 Closed messaging surfaces vs. sovereignty is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/governance/decision-tension-rubric.md",
+        "docs/adr/0021-decision-tension-rubric-mirror.md",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "Tension.4.permissive-open-source-vs-no-paywalls-promise",
+      "principle": "Tension.4",
+      "summary": "Tension.4 Permissive open source vs. no-paywalls promise is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/governance/decision-tension-rubric.md",
+        "docs/adr/0021-decision-tension-rubric-mirror.md",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "Tension.5.app-for-humans-framework-for-agents-vs-scripts-the-user-",
+      "principle": "Tension.5",
+      "summary": "Tension.5 App for humans, framework for agents vs. scripts the user writes is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/governance/decision-tension-rubric.md",
+        "docs/adr/0021-decision-tension-rubric-mirror.md",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    },
+    {
+      "id": "Amendment.constitutional-amendment-process",
+      "principle": "Amendment",
+      "summary": "Amendment Constitutional amendment process is mapped to explicit canon, surfaces, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/constitution-map.md",
+        "docs/decision-map.md",
+        "docs/discoverability.registry.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/doc_alignment_check.sh",
+        "scripts/discoverability-check.mjs"
+      ],
+      "evidenceMode": "shape",
+      "repoScope": "shared",
+      "status": "enforced"
+    }
+  ],
+  "contractDigest": "2c2d3c92f4dcaa0bd4f4f62d1d33320ac4b55f011735fd6689c3af05c305b4ae"
+}

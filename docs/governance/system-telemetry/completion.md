@@ -33,7 +33,7 @@ can be cleared.
 | CLX-STA-008 | Keep host-specific menu configuration in Clawix while portable definitions stay in ClawJS. | validated-local | Widget placement/config tests, status item controller, and decision matrix D04-D07. | None local. |
 | CLX-STA-009 | Validate native menu-bar behavior through the signed app path. | validated-local | Preflight, accessibility smoke, combined dropdown, independent indicators, provider rows, widget toggle rows, refresh action, and seeded history graph menu content. | None local. |
 | CLX-STA-010 | Keep system telemetry discoverable from Clawix docs and verifiers. | validated-local | `docs/decision-map.md`, discoverability registry/router, completion audit, source Q/A review, and verifier checks. | None local. |
-| CLX-STA-011 | Separate external prerequisites from bugs. | validated-local | External pending ledger, external validation manifest, source Q/A review, and decision matrix D11. | External rows block goal completion until cleared or explicitly accepted later by the user. |
+| CLX-STA-011 | Separate external prerequisites from bugs. | validated-local | External pending ledger, external validation manifest, source Q/A review, and decision matrix D11. | External rows that affect central promises block goal completion until cleared by accepted evidence or replaced by a later explicit `scope_revision` decision. |
 | CLX-STA-012 | Re-read source decisions one by one before any completion claim. | active-closure-gate | `docs/governance/system-telemetry/source-review.json`, private audit alias, external manifest `sourceQaReview`, and verifier checks. | Final source reread must be repeated before `update_goal complete`. |
 | CLX-STA-013 | Keep public materials free of disallowed third-party product names. | validated-local | Boundary-aware forbidden-name scans in the Clawix verifier and final private scan record. | Repeat scan before completion. |
 | CLX-STA-014 | Surface physical sensor/fan values in the app/menu from compatible hardware and native grant. | external-pending | Bridge decoding, unavailable metric handling, signed sensor plans, provider audit metadata, and 2026-05-20 safe preflight with `willConnect=false`/`externalPending=true` exist. | `CLX-SYS-TEL-EXT-003` requires compatible hardware/provider, grant, receipt/audit, Monitor sample IDs, and same-machine app/menu evidence. |
@@ -42,8 +42,9 @@ can be cleared.
 
 ## Closure Rule
 
-The goal cannot be marked complete while any `external-pending` row remains
-without accepted evidence, or while the final source reread and forbidden-name
-scan have not been repeated in the current completion attempt. The local
+The goal cannot be marked complete while any `external-pending` row remains classified
+as `central_promise_blocker` remains without accepted evidence or a later
+explicit `scope_revision` decision. The final source reread and forbidden-name
+scan must also be repeated in the current completion attempt. The local
 `--safe-external-preflight-smoke` verifier mode proves the remaining lanes are
 still plan-first and fail-closed, but it is not external closure evidence.

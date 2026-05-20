@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-goal-completion-gate-fixtures",
+  "schemaPath": "docs/governance/goal-completion-gate.schema.json",
+  "validatorPath": "scripts/goal_completion_gate_check.mjs",
+  "validRows": [
+    {
+      "id": "fixture-central-blocker",
+      "linkedPromiseIds": ["PROMISE-001"],
+      "linkedDecisionIds": ["D01"],
+      "completionImpact": "central_promise_blocker",
+      "closureEffect": "blocks_goal",
+      "reentryCondition": "approved physical evidence replaces the external pending row",
+      "evidenceRequired": ["receipt", "same-machine evidence"]
+    },
+    {
+      "id": "fixture-validation-only",
+      "linkedPromiseIds": [],
+      "linkedDecisionIds": ["D02"],
+      "completionImpact": "validation_only",
+      "closureEffect": "allows_local_completion",
+      "reentryCondition": "optional signed-app smoke is available",
+      "evidenceRequired": ["signed-app smoke"]
+    },
+    {
+      "id": "fixture-future-extension",
+      "linkedPromiseIds": [],
+      "linkedDecisionIds": ["D03"],
+      "completionImpact": "future_extension",
+      "closureEffect": "allows_local_completion",
+      "reentryCondition": "future marketplace activation is claimed",
+      "evidenceRequired": ["marketplace receipt", "activation audit"]
+    },
+    {
+      "id": "fixture-central-rescoped",
+      "linkedPromiseIds": ["PROMISE-004"],
+      "linkedDecisionIds": ["D04", "D05"],
+      "completionImpact": "central_promise_blocker",
+      "closureEffect": "requires_scope_revision",
+      "scopeRevisionDecisionId": "D05",
+      "scopeRevisionDecisionType": "scope_revision",
+      "reentryCondition": "the later scope revision changes the original promise",
+      "evidenceRequired": ["scope revision audit"]
+    }
+  ],
+  "invalidRows": [
+    {
+      "id": "missing-completion-impact",
+      "expectedError": "missing completionImpact",
+      "row": {
+        "id": "fixture-missing-impact",
+        "linkedPromiseIds": ["PROMISE-001"],
+        "linkedDecisionIds": ["D01"],
+        "closureEffect": "blocks_goal",
+        "reentryCondition": "evidence exists",
+        "evidenceRequired": ["receipt"]
+      }
+    },
+    {
+      "id": "central-nonblocking",
+      "expectedError": "central_promise_blocker cannot allow local completion",
+      "row": {
+        "id": "fixture-central-nonblocking",
+        "linkedPromiseIds": ["PROMISE-001"],
+        "linkedDecisionIds": ["D01"],
+        "completionImpact": "central_promise_blocker",
+        "closureEffect": "allows_local_completion",
+        "reentryCondition": "human accepted the blocker",
+        "evidenceRequired": ["receipt"]
+      }
+    },
+    {
+      "id": "verified-complete-linked-central",
+      "expectedError": "verified-complete still links to central pending",
+      "row": {
+        "id": "fixture-verified-central",
+        "linkedPromiseIds": ["PROMISE-001"],
+        "linkedDecisionIds": ["D01"],
+        "completionImpact": "central_promise_blocker",
+        "closureEffect": "blocks_goal",
+        "reentryCondition": "evidence exists",
+        "evidenceRequired": ["receipt"],
+        "linkedPromiseStatuses": { "PROMISE-001": "verified-complete" }
+      }
+    },
+    {
+      "id": "override-without-scope-revision",
+      "expectedError": "human override cannot close central pending without scope_revision",
+      "row": {
+        "id": "fixture-override",
+        "linkedPromiseIds": ["PROMISE-001"],
+        "linkedDecisionIds": ["D01"],
+        "completionImpact": "central_promise_blocker",
+        "closureEffect": "blocks_goal",
+        "humanOverrideAccepted": true,
+        "reentryCondition": "human accepted the blocker",
+        "evidenceRequired": ["receipt"]
+      }
+    },
+    {
+      "id": "validation-only-links-promise",
+      "expectedError": "validation_only links to a central promise",
+      "row": {
+        "id": "fixture-validation-only-linked",
+        "linkedPromiseIds": ["PROMISE-001"],
+        "linkedDecisionIds": ["D01"],
+        "completionImpact": "validation_only",
+        "closureEffect": "allows_local_completion",
+        "reentryCondition": "signed smoke is available",
+        "evidenceRequired": ["signed smoke"]
+      }
+    }
+  ]
+}

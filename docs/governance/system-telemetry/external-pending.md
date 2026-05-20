@@ -80,6 +80,14 @@ update target, fail-rule, and evidence-packet checks before any closure attempt.
 - When a prerequisite becomes available, rerun the matching lane with explicit
   approval and replace the row with actual evidence, receipt IDs, and result.
 
+## Goal Completion Impact
+
+| External pending row | linkedPromiseIds | linkedDecisionIds | completionImpact | closureEffect | reentryCondition | evidenceRequired |
+| --- | --- | --- | --- | --- | --- | --- |
+| CLX-SYS-TEL-EXT-003 | CLX-STA-014 | D02,D11 | central_promise_blocker | blocks_goal | Compatible hardware or provider path plus native grant is available and the signed app records same-machine sensor evidence. | provider execution receipt or externalPending=false plan, Monitor sensor sample ids, redacted audit event, app or menu same-machine evidence |
+| CLX-SYS-TEL-EXT-004 | CLX-STA-015 | D03,D07,D11 | central_promise_blocker | blocks_goal | Approved credential or account lease, location grant, network access, and exact live provider approval are available. | provider execution receipt, redacted audit event, Monitor context sample ids, menu widget evidence without precise location |
+| CLX-SYS-TEL-EXT-005 | CLX-STA-016 | D11 | central_promise_blocker | blocks_goal | Exact action approval, signed-host broker, native confirmation, grants, rollback or continuity policy, and physical validation are available. | pre-execution willExecute=true plan after approval, signed-host execution receipt, redacted audit event, app or menu same-machine evidence, physical validation, rollback or continuity evidence |
+
 ## External Validation Lanes
 
 These lanes are the only accepted way to replace the remaining

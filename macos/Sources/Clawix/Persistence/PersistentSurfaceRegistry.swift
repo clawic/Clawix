@@ -85,8 +85,26 @@ struct PersistentSurfaceNode: Codable, Equatable {
     var introducedIn: String?
     var dataType: String?
     var nullable: Bool?
+    var surfaceNarrative: PersistentSurfaceNarrative?
     var notes: String?
     var warnings: [String]?
+}
+
+struct PersistentSurfaceNarrative: Codable, Equatable {
+    var concept: String
+    var authorizingDecision: PersistentSurfaceNarrativeDecision
+    var completingSurface: PersistentSurfaceNarrativeCompletion
+    var nonInference: String
+}
+
+struct PersistentSurfaceNarrativeDecision: Codable, Equatable {
+    var ref: String
+    var path: String
+}
+
+struct PersistentSurfaceNarrativeCompletion: Codable, Equatable {
+    var human: String
+    var programmatic: String
 }
 
 struct PersistentSurfaceManifest: Codable, Equatable {
@@ -95,8 +113,8 @@ struct PersistentSurfaceManifest: Codable, Equatable {
 }
 
 enum ClawixPersistentSurface {
-    static func root(id: String, name: String, path: String, storageClass: String = "nativeAppData", notes: String? = nil) -> PersistentSurfaceNode {
-        node(id: id, kind: .root, name: name, path: path, storageClass: storageClass, notes: notes)
+    static func root(id: String, name: String, path: String, storageClass: String = "nativeAppData", surfaceNarrative: PersistentSurfaceNarrative? = nil, notes: String? = nil) -> PersistentSurfaceNode {
+        node(id: id, kind: .root, name: name, path: path, storageClass: storageClass, surfaceNarrative: surfaceNarrative, notes: notes)
     }
 
     static func database(
@@ -105,9 +123,10 @@ enum ClawixPersistentSurface {
         path: String,
         parentId: String? = nil,
         storageClass: String = "nativeAppData",
+        surfaceNarrative: PersistentSurfaceNarrative? = nil,
         notes: String? = nil
     ) -> PersistentSurfaceNode {
-        node(id: id, kind: .database, name: name, path: path, storageClass: storageClass, parentId: parentId, notes: notes)
+        node(id: id, kind: .database, name: name, path: path, storageClass: storageClass, parentId: parentId, surfaceNarrative: surfaceNarrative, notes: notes)
     }
 
     static func table(_ name: String, databaseId: String) -> PersistentSurfaceNode {
@@ -194,8 +213,8 @@ enum ClawixPersistentSurface {
         )
     }
 
-    static func preference(id: String, name: String, key: String, kind: PersistentSurfaceKind = .preferenceKey, notes: String? = nil) -> PersistentSurfaceNode {
-        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", notes: notes)
+    static func preference(id: String, name: String, key: String, kind: PersistentSurfaceKind = .preferenceKey, surfaceNarrative: PersistentSurfaceNarrative? = nil, notes: String? = nil) -> PersistentSurfaceNode {
+        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", surfaceNarrative: surfaceNarrative, notes: notes)
     }
 
     static func file(
@@ -234,6 +253,7 @@ enum ClawixPersistentSurface {
         version: String? = nil,
         direction: String = "bidirectional",
         canonicality: String = "hostOnly",
+        surfaceNarrative: PersistentSurfaceNarrative? = nil,
         notes: String? = nil
     ) -> PersistentSurfaceNode {
         node(
@@ -257,6 +277,7 @@ enum ClawixPersistentSurface {
             schemaId: schemaId,
             fieldPath: fieldPath,
             enumType: enumType,
+            surfaceNarrative: surfaceNarrative,
             notes: notes
         )
     }
@@ -290,6 +311,7 @@ enum ClawixPersistentSurface {
         introducedIn: String? = nil,
         dataType: String? = nil,
         nullable: Bool? = nil,
+        surfaceNarrative: PersistentSurfaceNarrative? = nil,
         notes: String? = nil,
         warnings: [String]? = nil,
         owner: String = "clawix",
@@ -328,6 +350,7 @@ enum ClawixPersistentSurface {
             introducedIn: introducedIn,
             dataType: dataType,
             nullable: nullable,
+            surfaceNarrative: surfaceNarrative,
             notes: notes,
             warnings: warnings
         )

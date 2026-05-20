@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "clawix.existing-surfaces-without-narrative",
+      "classification": "lateral_debt",
+      "owner": "clawix",
+      "reason": "Initial bounded baseline for Clawix manifest and interface surfaces that predate the surfaceNarrative contract.",
+      "risk": "Existing host/UI surfaces remain registered, but their conceptual authorization is not yet machine-checkable.",
+      "expires": "2026-08-18",
+      "missingNarrative": {
+        "persistentNodes": {
+          "count": 461,
+          "idsSha256": "3c8339e4e0861545d12fa1547a81c0c0152f8794dada62da4728ca89231be682"
+        },
+        "routes": {
+          "count": 2,
+          "idsSha256": "15f477f10c09d58d78a95d5b4a18c58a7604366bb3338d7c49fa159d44e57a49"
+        },
+        "interfaceSurfaces": {
+          "count": 37,
+          "idsSha256": "976d995664cd3f6fd263e85ea2f57ca5bf942422b94f7935cc14abb6b02f4ae2"
+        }
+      },
+      "nextPhase": "Backfill surfaceNarrative on high-change host, route, permission, and UI surfaces, then reduce this baseline.",
+      "reentryCondition": "Any new Clawix API, UI, CLI, schema, storage key, route, permission, or feature flag surface must carry surfaceNarrative before landing."
+    }
+  ]
+}

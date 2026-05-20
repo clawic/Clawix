@@ -180,6 +180,17 @@
         "redacted_audit_event",
         "app_or_menu_same_machine_evidence"
       ],
+      "linkedPromiseIds": ["CLX-STA-014"],
+      "linkedDecisionIds": ["D02", "D11"],
+      "completionImpact": "central_promise_blocker",
+      "closureEffect": "blocks_goal",
+      "reentryCondition": "Compatible hardware or provider path plus native grant is available and the signed app records same-machine sensor evidence.",
+      "evidenceRequired": [
+        "provider_execution_receipt_or_external_pending_false_plan",
+        "monitor_sample_ids_for_sensor_temperature_or_fan_speed",
+        "redacted_audit_event",
+        "app_or_menu_same_machine_evidence"
+      ],
       "reentryCommand": "claw system providers plan system.sensors.signed --json"
     },
     {
@@ -194,6 +205,17 @@
         "provider_execution_receipt"
       ],
       "acceptedEvidence": [
+        "provider_execution_receipt",
+        "redacted_audit_event",
+        "monitor_sample_ids_for_context_weather_temperature",
+        "menu_widget_evidence_without_precise_location"
+      ],
+      "linkedPromiseIds": ["CLX-STA-015"],
+      "linkedDecisionIds": ["D03", "D07", "D11"],
+      "completionImpact": "central_promise_blocker",
+      "closureEffect": "blocks_goal",
+      "reentryCondition": "Approved credential or account lease, location grant, network access, and exact live provider approval are available.",
+      "evidenceRequired": [
         "provider_execution_receipt",
         "redacted_audit_event",
         "monitor_sample_ids_for_context_weather_temperature",
@@ -214,6 +236,19 @@
         "physical_validation"
       ],
       "acceptedEvidence": [
+        "pre_execution_plan_with_will_execute_true_after_approval",
+        "signed_host_execution_receipt",
+        "redacted_audit_event",
+        "app_or_menu_same_machine_evidence",
+        "physical_validation",
+        "rollback_or_continuity_evidence"
+      ],
+      "linkedPromiseIds": ["CLX-STA-016"],
+      "linkedDecisionIds": ["D11"],
+      "completionImpact": "central_promise_blocker",
+      "closureEffect": "blocks_goal",
+      "reentryCondition": "Exact action approval, signed-host broker, native confirmation, grants, rollback or continuity policy, and physical validation are available.",
+      "evidenceRequired": [
         "pre_execution_plan_with_will_execute_true_after_approval",
         "signed_host_execution_receipt",
         "redacted_audit_event",

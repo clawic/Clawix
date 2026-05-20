@@ -39,7 +39,8 @@ external row can be replaced.
 
 The goal is not complete while any of these are true:
 
-- Any row above is `PARTIAL LOCAL` or `EXTERNAL PENDING`.
+- Any row above is `PARTIAL LOCAL` or an `EXTERNAL PENDING`
+  `central_promise_blocker`.
 - Complete real signed-app UI/Instruments performance evidence is missing.
 - Signed-host native execution, live IoT/provider, or marketplace trust
   validation lacks explicit approval, receipts, audit, and same-machine
@@ -51,6 +52,6 @@ The goal is not complete while any of these are true:
 - The Clawix verifier or sibling ClawJS validation referenced by this audit
   fails.
 
-Do not call `update_goal` for this goal until every row is either
-`VALIDATED LOCAL` with current evidence or explicitly accepted by a later user
-decision.
+Do not call `update_goal` for this goal until every central blocker row is
+either `VALIDATED LOCAL` with current evidence or explicitly re-scoped by a
+later `scope_revision` decision.

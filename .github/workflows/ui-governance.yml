@@ -106,3 +106,5 @@ jobs:
         run: node scripts/ui_private_visual_validation_manifest_check.mjs
       - name: Validate documentation alignment
         run: bash scripts/doc_alignment_check.sh
+      - name: Validate ADR operational coverage
+        run: node scripts/adr-operational-coverage-check.mjs

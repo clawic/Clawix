@@ -118,7 +118,15 @@
       "decisionIds": ["external_integrations_policy", "external_pending_policy"],
       "evidence": ["docs/adr/0005-integration-qa-lab.md", "docs/interface-matrix.md", "docs/decision-map.md"],
       "validationCommands": ["node scripts/interface_surface_guard.mjs", "bash scripts/doc_alignment_check.sh"],
-      "externalPending": ["live provider credentials", "provider-side destructive or paid operations", "provider webhooks and physical setup"]
+      "externalPending": ["live provider credentials", "provider-side destructive or paid operations", "provider webhooks and physical setup"],
+      "goalCompletionImpact": {
+        "linkedPromiseIds": [],
+        "linkedDecisionIds": ["external_integrations_policy", "external_pending_policy"],
+        "completionImpact": "validation_only",
+        "closureEffect": "allows_local_completion",
+        "reentryCondition": "Approved provider-specific live validation is available through the ClawJS Integration QA Lab.",
+        "evidenceRequired": ["live provider credential lease", "provider-side receipt", "QA lab evidence"]
+      }
     },
     {
       "id": "domain-resource-fixtures",
@@ -127,7 +135,15 @@
       "decisionIds": ["domain_verticals_policy", "vertical_completion_depth", "missing_domain_contracts"],
       "evidence": ["docs/interface-matrix.md", "macos/Tests/ClawixMeshTests/LifeRegistryTests.swift", "macos/Tests/ClawixMeshTests/ClawJSFrameworkRecordsClientTests.swift"],
       "validationCommands": ["node scripts/interface_surface_guard.mjs", "node scripts/storage_boundary_guard.mjs"],
-      "externalPending": ["calendar and contacts native permission runs", "IoT devices", "publishing/payment/provider flows"]
+      "externalPending": ["calendar and contacts native permission runs", "IoT devices", "publishing/payment/provider flows"],
+      "goalCompletionImpact": {
+        "linkedPromiseIds": ["domain_verticals_policy"],
+        "linkedDecisionIds": ["domain_verticals_policy", "vertical_completion_depth", "missing_domain_contracts"],
+        "completionImpact": "central_promise_blocker",
+        "closureEffect": "requires_scope_revision",
+        "reentryCondition": "A later scope_revision decision changes Close all now into minimum contract closed with live lanes pending, or the live/provider/device evidence exists.",
+        "evidenceRequired": ["scope revision audit or live provider receipts", "native permission lane evidence", "IoT or publishing/payment/provider receipts"]
+      }
     },
     {
       "id": "docs-alignment",
