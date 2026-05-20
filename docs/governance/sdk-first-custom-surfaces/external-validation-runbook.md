@@ -33,6 +33,11 @@ Evidence packets are closed-shape objects matching the public schema. Unknown
 properties and empty reference strings are rejected so a packet cannot smuggle
 unstated approval claims or blank evidence placeholders.
 
+The public schema also encodes lane-specific gates: each packet may approve
+only its own lane id, must use the lane's executor, must list only the public
+closure rows for that lane, and must include the lane-specific evidence
+required by this table.
+
 ## Lanes
 
 | Lane | Safe preflight | Required approval | Required evidence | Update target | Fail rule |

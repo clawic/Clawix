@@ -142,5 +142,158 @@
         "decision": { "const": "accepted" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "laneId": { "const": "CLX-SDK-EXT-001" } } },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "approvedLaneIds": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [{ "const": "CLX-SDK-EXT-001" }]
+              }
+            }
+          },
+          "execution": { "properties": { "executor": { "const": "signed_host_native" } } },
+          "evidence": { "properties": { "nativeGrantRefs": { "$ref": "#/$defs/requiredEvidenceRefList" } } },
+          "closureImpact": {
+            "properties": {
+              "publicRows": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "allOf": [
+                  { "contains": { "const": "CLX-SDK-004" } },
+                  { "contains": { "const": "CLJ-SDK-005" } }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "laneId": { "const": "CLX-SDK-EXT-002" } } },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "approvedLaneIds": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [{ "const": "CLX-SDK-EXT-002" }]
+              }
+            }
+          },
+          "execution": { "properties": { "executor": { "const": "live_iot_provider" } } },
+          "evidence": {
+            "properties": {
+              "providerOrDeviceRefs": { "$ref": "#/$defs/requiredEvidenceRefList" },
+              "rollbackOrContinuityRefs": { "$ref": "#/$defs/requiredEvidenceRefList" }
+            }
+          },
+          "closureImpact": {
+            "properties": {
+              "publicRows": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "allOf": [
+                  { "contains": { "const": "CLX-SDK-004" } },
+                  { "contains": { "const": "CLJ-SDK-005" } }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "laneId": { "const": "CLX-SDK-EXT-003" } } },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "approvedLaneIds": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [{ "const": "CLX-SDK-EXT-003" }]
+              }
+            }
+          },
+          "execution": { "properties": { "executor": { "const": "performance_baseline_review" } } },
+          "evidence": {
+            "properties": {
+              "performanceBaselineRefs": { "$ref": "#/$defs/requiredEvidenceRefList" },
+              "approvedCriticalFlows": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/nonEmptyString" },
+                "allOf": [
+                  { "contains": { "const": "installed_app_launch" } },
+                  { "contains": { "const": "sidebar_hover_click_expand" } },
+                  { "contains": { "const": "chat_scroll" } },
+                  { "contains": { "const": "composer_typing" } },
+                  { "contains": { "const": "route_switching" } },
+                  { "contains": { "const": "web_custom_surface_load" } },
+                  { "contains": { "const": "swift_custom_surface_load" } },
+                  { "contains": { "const": "rescue_reachability" } }
+                ]
+              }
+            }
+          },
+          "closureImpact": {
+            "properties": {
+              "publicRows": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "allOf": [
+                  { "contains": { "const": "CLX-SDK-008" } },
+                  { "contains": { "const": "CLJ-SDK-008" } }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "laneId": { "const": "CLX-SDK-EXT-004" } } },
+      "then": {
+        "properties": {
+          "runAuthorization": {
+            "properties": {
+              "approvedLaneIds": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [{ "const": "CLX-SDK-EXT-004" }]
+              }
+            }
+          },
+          "execution": { "properties": { "executor": { "const": "marketplace_trust_review" } } },
+          "evidence": { "properties": { "marketplaceTrustRefs": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/nonEmptyString" } } } },
+          "closureImpact": {
+            "properties": {
+              "publicRows": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "prefixItems": [{ "const": "CLX-SDK-005" }]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
