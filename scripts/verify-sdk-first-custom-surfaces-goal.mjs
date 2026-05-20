@@ -97,6 +97,7 @@ function assertCompletionAudit() {
     "| CLX-SDK-008 | Clawix shell remains modular and nonblocking",
     "exact reviewed core survival route and heavy dependency sets",
     "exact reviewed surface lifecycle state and report sets",
+    "exact reviewed readiness mode and direct child-reported route sets",
     "docs/sdk-first-custom-surfaces-installed-performance-smoke.md",
     "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
     "launched `/Applications/Clawix.app` under Instruments",
@@ -605,6 +606,14 @@ function assertTests() {
       "\"partial\"",
       "\"unavailable\"",
       "cancel",
+    ],
+    "macos/Tests/ClawixMeshTests/SurfaceRouteRegistryTests.swift": [
+      "testReadinessModesAndDirectChildReportedRoutesStayExact",
+      "reviewedSurfaceReadinessModeKinds",
+      "reviewedDirectChildReportedReadinessRouteIds",
+      "\"immediateAfterFirstRender\"",
+      "\"childReported\"",
+      "SurfaceRouteReadinessPolicy.mode(for: entry, hasActiveCustomVariant: true)",
     ],
     "macos/Tests/ClawixMeshTests/NetworkControlBridgeTests.swift": [
       "testDecodesGatewayRouteDecision",

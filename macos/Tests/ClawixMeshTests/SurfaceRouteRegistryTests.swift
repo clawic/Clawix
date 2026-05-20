@@ -2,6 +2,15 @@ import XCTest
 @testable import Clawix
 
 final class SurfaceRouteRegistryTests: XCTestCase {
+    private static let reviewedSurfaceReadinessModeKinds: Set<String> = [
+        "immediateAfterFirstRender",
+        "childReported"
+    ]
+
+    private static let reviewedDirectChildReportedReadinessRouteIds: Set<String> = [
+        "app:00000000-0000-0000-0000-000000000003"
+    ]
+
     @MainActor
     func testRegistryEntryDescriptorMatchesSidebarRouteDescriptor() {
         for route in Self.allRepresentativeRoutes {
@@ -101,6 +110,37 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testReadinessModesAndDirectChildReportedRoutesStayExact() {
+        let entries = Self.reviewedReadinessRoutes.map(SurfaceRouteRegistry.entry(for:))
+        let reviewedModeKinds = Set(
+            [
+                SurfaceRouteReadinessMode.immediateAfterFirstRender,
+                SurfaceRouteReadinessMode.childReported
+            ].map(Self.surfaceReadinessModeKind)
+        )
+
+        XCTAssertEqual(reviewedModeKinds, Self.reviewedSurfaceReadinessModeKinds)
+        XCTAssertEqual(Set(entries.map { Self.surfaceReadinessModeKind($0.readinessMode) }), Self.reviewedSurfaceReadinessModeKinds)
+        XCTAssertEqual(
+            Set(entries.filter { $0.readinessMode == .childReported }.map(\.descriptor.id)),
+            Self.reviewedDirectChildReportedReadinessRouteIds
+        )
+
+        for entry in entries where entry.readinessMode == .immediateAfterFirstRender && entry.descriptor.canUseCustomVariantDefault {
+            XCTAssertEqual(
+                SurfaceRouteReadinessPolicy.mode(for: entry, hasActiveCustomVariant: false),
+                .immediateAfterFirstRender,
+                entry.descriptor.id
+            )
+            XCTAssertEqual(
+                SurfaceRouteReadinessPolicy.mode(for: entry, hasActiveCustomVariant: true),
+                .childReported,
+                entry.descriptor.id
+            )
+        }
+    }
+
     private static let allRepresentativeRoutes: [SidebarRoute] = [
         .home,
         .search,
@@ -152,4 +192,65 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         .lifeVertical(id: "health"),
         .lifeSettings
     ]
+
+    private static let reviewedReadinessRoutes: [SidebarRoute] = [
+        .home,
+        .search,
+        .plugins,
+        .automations,
+        .project,
+        .appsHome,
+        .app(UUID(uuidString: "00000000-0000-0000-0000-000000000003")!),
+        .chat(UUID(uuidString: "00000000-0000-0000-0000-000000000004")!),
+        .settings,
+        .rescue,
+        .secretsHome,
+        .databaseHome,
+        .databaseWorkbench,
+        .databaseCollection("tasks"),
+        .memoryHome,
+        .indexHome,
+        .marketplaceHome,
+        .driveAdmin,
+        .drivePhotos,
+        .driveDocuments,
+        .driveRecent,
+        .driveFolder("folder-1"),
+        .calendarHome,
+        .contactsHome,
+        .networkControl,
+        .skills,
+        .skillDetail(slug: "summarizer"),
+        .iotHome,
+        .iotDeviceDetail(id: "lamp-1"),
+        .designStylesHome,
+        .designStyleDetail(id: "style-1"),
+        .designTemplatesHome,
+        .designTemplateDetail(id: "template-1"),
+        .designReferencesHome,
+        .designEditor(documentId: "editor-1"),
+        .agentsHome,
+        .agentDetail(id: "agent-1"),
+        .personalitiesHome,
+        .personalityDetail(id: "personality-1"),
+        .skillCollectionsHome,
+        .skillCollectionDetail(id: "collection-1"),
+        .connectionsHome,
+        .connectionDetail(id: "connection-1"),
+        .publishingHome,
+        .publishingComposer(prefillBody: "draft", prefillScheduleAt: nil),
+        .publishingChannels,
+        .lifeHome,
+        .lifeVertical(id: "health"),
+        .lifeSettings
+    ]
+
+    private static func surfaceReadinessModeKind(_ readinessMode: SurfaceRouteReadinessMode) -> String {
+        switch readinessMode {
+        case .immediateAfterFirstRender:
+            return "immediateAfterFirstRender"
+        case .childReported:
+            return "childReported"
+        }
+    }
 }
