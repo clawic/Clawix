@@ -1363,6 +1363,13 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.riskMap"))
     }
 
+    func testInjectedAppsSdkExposesMacPlanOnlyFacade() {
+        XCTAssertTrue(ClawixAppsSDKJS.contains("mac.action.plan"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("planAction"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("dryRun: true"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("execute: false"))
+    }
+
     func testHostBridgeExposesCustomAppSDKContractPayload() throws {
         let record = AppRecord(
             slug: "dashboard",
@@ -1435,6 +1442,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("mac.action.plan"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.contracts"))
 
         for operation in AppBridgeOperationPolicy.forbiddenEscapeHatchOperations {

@@ -174,6 +174,17 @@ let ClawixAppsSDKJS = #"""
         }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
       }
     },
+    mac: {
+      planAction: function (opts) {
+        opts = opts || {};
+        return send('mac.action.plan', {
+          capabilityId: String(opts.capabilityId || opts.capability || ''),
+          arguments: opts.arguments || opts.args || {},
+          dryRun: true,
+          execute: false
+        });
+      }
+    },
     resources: {
       list: function (opts) {
         opts = opts || {};

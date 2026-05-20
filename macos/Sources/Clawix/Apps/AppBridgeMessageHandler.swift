@@ -10,6 +10,7 @@ enum AppBridgeOperationPolicy {
         "capabilities.list",
         "capabilities.riskMap",
         "db.query",
+        "mac.action.plan",
         "request.cancel",
         "resources.list",
         "resources.read",
@@ -162,6 +163,9 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 let tool = (payload["tool"] as? String) ?? ""
                 let arguments = (payload["args"] as? [String: Any]) ?? [:]
                 try gateToolCall(tool: tool, arguments: arguments, requestId: requestId)
+            case "mac.action.plan":
+                let tool = macActionPlanTool(from: payload)
+                try gateToolCall(tool: tool, arguments: payload, requestId: requestId)
             case "capabilities.list":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
             case "capabilities.contracts":
@@ -395,6 +399,12 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 }
             }
         }
+    }
+
+    private func macActionPlanTool(from payload: [String: Any]) -> String {
+        let capabilityId = ((payload["capabilityId"] as? String) ?? (payload["capability"] as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return capabilityId.isEmpty ? "mac.action.plan" : capabilityId
     }
 
     private func highRiskActionAuditURL(for record: AppRecord) -> URL {

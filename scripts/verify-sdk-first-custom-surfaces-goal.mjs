@@ -49,6 +49,8 @@ function assertCompletionAudit() {
     "Clawix now mirrors the ClawJS `system.telemetry.snapshot` and `system.telemetry.history` local-wide read contracts",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
+    "`window.clawix.mac.planAction()`",
+    "dry-run-only Mac Control planner",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
@@ -109,6 +111,7 @@ function assertPublicRouting() {
       "signed app launch and attach capture paths",
       "delayed-heavy-surface",
       "`system.telemetry.snapshot` and `system.telemetry.history` are mirrored as",
+      "`mac.action.plan` is exposed to Web custom apps through",
     ],
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
       "Bundle id: `com.clawix.app`",
@@ -180,6 +183,8 @@ function assertRuntimeArtifacts() {
       "capabilities.contracts",
       "AppCapabilityCatalog.contractsBridgeValue",
       "highRiskActionDispatcher.dispatch",
+      "\"mac.action.plan\"",
+      "macActionPlanTool",
       "handleSystemTelemetrySnapshot",
       "systemTelemetrySnapshotBridgeValue",
       "SystemTelemetryBridge",
@@ -207,6 +212,8 @@ function assertRuntimeArtifacts() {
       "contracts: function () { return send('capabilities.contracts'); }",
       "search.query",
       "db.query",
+      "mac.action.plan",
+      "planAction",
       "system.telemetry.snapshot",
       "system.telemetry.history",
     ],
@@ -294,6 +301,7 @@ function assertTests() {
   for (const [relativePath, snippets] of Object.entries({
     "macos/Tests/ClawixMeshTests/AppCustomSurfaceCapabilityTests.swift": [
       "testHostBridgeExposesCustomAppSDKContractPayload",
+      "testInjectedAppsSdkExposesMacPlanOnlyFacade",
       "testDBQueryDSLRejectsCollectionEscapesAndDDLKeys",
       "testBridgeOperationPolicyDoesNotExposeEscapeHatches",
       "testActivationReviewPresentationIncludesPackageProvenance",
@@ -356,6 +364,7 @@ function assertSiblingClawJSArtifacts() {
     "docs/sdk-first-custom-surfaces-plan.md": [
       "Expose `executionBoundary` in the shared custom-app SDK inspection payload",
       "Custom-app SDK inspection exposes `executionBoundary` across CLI/API/MCP/",
+      "Sibling Clawix exposes `mac.action.plan` through",
     ],
     "docs/decision-map.md": [
       "packages/clawjs-core/src/custom-app-sdk-inspection.ts",

@@ -64,6 +64,10 @@ the sibling ClawJS SDK-first custom surface contract.
   low-risk local-wide reads across ClawJS capability metadata and the Clawix
   host bridge, including `window.clawix.system.telemetry` SDK methods and
   contract tests for snapshot/history payloads.
+- `mac.action.plan` is exposed to Web custom apps through
+  `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
+  bridge call; signed-host native execution remains out of scope until
+  approved external evidence exists.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.
