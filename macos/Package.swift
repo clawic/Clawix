@@ -102,6 +102,10 @@ let package = Package(
             name: "ClawixSecretsXPC",
             path: "Sources/ClawixSecretsXPC"
         ),
+        .executableTarget(
+            name: "ClawixSwiftSurfaceRunner",
+            path: "Sources/ClawixSwiftSurfaceRunner"
+        ),
         .target(
             name: "ClawixSimulatorKitShim",
             path: "Sources/ClawixSimulatorKitShim",

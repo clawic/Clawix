@@ -608,6 +608,90 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         )
     }
 
+    func testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC() throws {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        let fallback = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(kind: .text, text: "Fallback"),
+            requestedCapabilities: ["search.query"]
+        )
+        let plan = try AppSwiftSurfaceContract.runnerPlan(
+            app: app,
+            manifest: fallback,
+            manifestPath: "/tmp/swift-dashboard/surface.json"
+        )
+        let message = AppSwiftSurfaceRunnerRenderMessage(
+            root: AppSwiftSurfaceNode(
+                kind: .button,
+                text: "Search",
+                action: AppSwiftSurfaceAction(
+                    invocation: .sdkRead,
+                    capabilityId: "search.query",
+                    operation: "search.query"
+                )
+            ),
+            requestedCapabilities: ["search.query"]
+        )
+        let stdout = String(data: try JSONEncoder().encode(message), encoding: .utf8)!
+
+        let rendered = try AppSwiftSurfaceContract.renderManifest(
+            from: AppSwiftSurfaceRunnerResult(exitCode: 0, stdout: stdout),
+            fallback: fallback,
+            plan: plan,
+            app: app
+        )
+
+        XCTAssertEqual(rendered.root.kind, .button)
+        XCTAssertEqual(rendered.root.text, "Search")
+        XCTAssertEqual(rendered.root.action?.capabilityId, "search.query")
+    }
+
+    func testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan() throws {
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query", "iot.device.action.invoke"],
+            surfaceKind: .swiftDeclarative
+        )
+        let fallback = AppSwiftSurfaceManifest(
+            root: AppSwiftSurfaceNode(kind: .text, text: "Fallback"),
+            requestedCapabilities: ["search.query"]
+        )
+        let plan = try AppSwiftSurfaceContract.runnerPlan(
+            app: app,
+            manifest: fallback,
+            manifestPath: "/tmp/swift-dashboard/surface.json"
+        )
+        let message = AppSwiftSurfaceRunnerRenderMessage(
+            root: AppSwiftSurfaceNode(
+                kind: .button,
+                text: "Toggle",
+                action: AppSwiftSurfaceAction(
+                    invocation: .sdkAction,
+                    capabilityId: "iot.device.action.invoke",
+                    operation: "iot.device.toggle"
+                )
+            ),
+            requestedCapabilities: ["iot.device.action.invoke"]
+        )
+        let stdout = String(data: try JSONEncoder().encode(message), encoding: .utf8)!
+
+        XCTAssertThrowsError(
+            try AppSwiftSurfaceContract.renderManifest(
+                from: AppSwiftSurfaceRunnerResult(exitCode: 0, stdout: stdout),
+                fallback: fallback,
+                plan: plan,
+                app: app
+            )
+        ) { error in
+            XCTAssertEqual(error as? AppSwiftSurfaceValidationError, .runnerCapabilityNotAllowed("iot.device.action.invoke"))
+        }
+    }
+
     func testSwiftSurfaceDSLRejectsUnknownCapabilities() {
         let app = AppRecord(
             slug: "swift-dashboard",

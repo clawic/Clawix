@@ -96,19 +96,41 @@ struct AppSwiftSurfaceRunnerResult: Equatable, Hashable {
     var timedOut: Bool
     var cancelled: Bool
     var stderr: String
+    var stdout: String
 
     init(
         pid: Int32? = nil,
         exitCode: Int32? = nil,
         timedOut: Bool = false,
         cancelled: Bool = false,
-        stderr: String = ""
+        stderr: String = "",
+        stdout: String = ""
     ) {
         self.pid = pid
         self.exitCode = exitCode
         self.timedOut = timedOut
         self.cancelled = cancelled
         self.stderr = stderr
+        self.stdout = stdout
+    }
+}
+
+struct AppSwiftSurfaceRunnerRenderMessage: Codable, Equatable, Hashable {
+    var schemaVersion: Int
+    var type: String
+    var root: AppSwiftSurfaceNode
+    var requestedCapabilities: [String]
+
+    init(
+        schemaVersion: Int = AppSwiftSurfaceContract.protocolVersion,
+        type: String = "render",
+        root: AppSwiftSurfaceNode,
+        requestedCapabilities: [String] = []
+    ) {
+        self.schemaVersion = schemaVersion
+        self.type = type
+        self.root = root
+        self.requestedCapabilities = requestedCapabilities
     }
 }
 
@@ -205,6 +227,11 @@ enum AppSwiftSurfaceRunnerState: Equatable, Hashable {
     case cancelled
 }
 
+struct AppSwiftSurfaceRunnerOutcome: Equatable, Hashable {
+    var state: AppSwiftSurfaceRunnerState
+    var result: AppSwiftSurfaceRunnerResult
+}
+
 protocol AppSwiftSurfaceRunnerExecuting {
     func run(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerResult
 }
@@ -219,14 +246,19 @@ final class AppSwiftSurfaceRunnerSupervisor {
 
     @discardableResult
     func launch(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerState {
+        launchWithResult(launch).state
+    }
+
+    @discardableResult
+    func launchWithResult(_ launch: AppSwiftSurfaceRunnerLaunch) -> AppSwiftSurfaceRunnerOutcome {
         guard launch.plan.outOfProcess else {
             state = .crashed(reason: "Swift surface runner must be out-of-process.")
-            return state
+            return AppSwiftSurfaceRunnerOutcome(state: state, result: .init(stderr: "Swift surface runner must be out-of-process."))
         }
         state = .launching
         let result = executor.run(launch)
         state = Self.classify(result: result, timeoutSeconds: launch.timeoutSeconds)
-        return state
+        return AppSwiftSurfaceRunnerOutcome(state: state, result: result)
     }
 
     static func classify(
@@ -261,7 +293,9 @@ struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
         ]
 
         let stderr = Pipe()
+        let stdout = Pipe()
         process.standardError = stderr
+        process.standardOutput = stdout
 
         do {
             try process.run()
@@ -289,12 +323,15 @@ struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
             }
             if finished.wait(timeout: .now() + .milliseconds(50)) == .success {
                 let data = stderr.fileHandleForReading.readDataToEndOfFile()
+                let stdoutData = stdout.fileHandleForReading.readDataToEndOfFile()
                 let stderrText = String(data: data, encoding: .utf8) ?? ""
+                let stdoutText = String(data: stdoutData, encoding: .utf8) ?? ""
                 return AppSwiftSurfaceRunnerResult(
                     pid: process.processIdentifier,
                     exitCode: process.terminationStatus,
                     timedOut: false,
-                    stderr: stderrText
+                    stderr: stderrText,
+                    stdout: stdoutText
                 )
             }
         }
@@ -331,6 +368,40 @@ enum AppSwiftSurfaceContract {
 
     static func decodeManifest(data: Data) throws -> AppSwiftSurfaceManifest {
         try JSONDecoder().decode(AppSwiftSurfaceManifest.self, from: data)
+    }
+
+    static func decodeRunnerRenderMessage(data: Data) throws -> AppSwiftSurfaceRunnerRenderMessage {
+        let message = try JSONDecoder().decode(AppSwiftSurfaceRunnerRenderMessage.self, from: data)
+        guard message.schemaVersion == protocolVersion else {
+            throw AppSwiftSurfaceValidationError.unsupportedSchema(message.schemaVersion)
+        }
+        guard message.type == "render" else {
+            throw AppSwiftSurfaceValidationError.unsupportedRunnerMessage(message.type)
+        }
+        return message
+    }
+
+    static func renderManifest(
+        from result: AppSwiftSurfaceRunnerResult,
+        fallback manifest: AppSwiftSurfaceManifest,
+        plan: AppSwiftSurfaceRunnerPlan,
+        app: AppRecord
+    ) throws -> AppSwiftSurfaceManifest {
+        let trimmed = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return manifest
+        }
+        guard let data = trimmed.data(using: .utf8) else {
+            throw AppSwiftSurfaceValidationError.invalidRunnerOutput
+        }
+        let message = try decodeRunnerRenderMessage(data: data)
+        let renderedManifest = AppSwiftSurfaceManifest(
+            schemaVersion: message.schemaVersion,
+            root: message.root,
+            requestedCapabilities: message.requestedCapabilities
+        )
+        try validateRunnerManifest(renderedManifest, plan: plan, app: app)
+        return renderedManifest
     }
 
     static func runnerPlan(
@@ -407,13 +478,43 @@ enum AppSwiftSurfaceContract {
             throw AppSwiftSurfaceValidationError.capabilityNotDeclared(capabilityId)
         }
     }
+
+    private static func validateRunnerManifest(
+        _ manifest: AppSwiftSurfaceManifest,
+        plan: AppSwiftSurfaceRunnerPlan,
+        app: AppRecord
+    ) throws {
+        try validate(manifest: manifest, for: app)
+        let allowed = Set(plan.allowedCapabilities)
+        let requested = Set(manifest.requestedCapabilities)
+        let used = Set(usedCapabilities(in: manifest.root))
+        for capability in requested.union(used).sorted() {
+            guard allowed.contains(capability) else {
+                throw AppSwiftSurfaceValidationError.runnerCapabilityNotAllowed(capability)
+            }
+        }
+    }
+
+    private static func usedCapabilities(in node: AppSwiftSurfaceNode) -> [String] {
+        var result: [String] = []
+        if let action = node.action {
+            result.append(action.capabilityId)
+        }
+        for child in node.children {
+            result.append(contentsOf: usedCapabilities(in: child))
+        }
+        return result
+    }
 }
 
 enum AppSwiftSurfaceValidationError: LocalizedError, Equatable {
     case notSwiftSurface(String)
     case unsupportedSchema(Int)
+    case unsupportedRunnerMessage(String)
+    case invalidRunnerOutput
     case unknownCapability(String)
     case capabilityNotDeclared(String)
+    case runnerCapabilityNotAllowed(String)
     case highRiskRead(String)
     case actionNotApprovalRequired(String)
 
@@ -423,10 +524,16 @@ enum AppSwiftSurfaceValidationError: LocalizedError, Equatable {
             return "App is not a Swift declarative surface: \(slug)"
         case .unsupportedSchema(let version):
             return "Unsupported Swift surface schema: \(version)"
+        case .unsupportedRunnerMessage(let type):
+            return "Unsupported Swift surface runner message: \(type)"
+        case .invalidRunnerOutput:
+            return "Swift surface runner output is not valid UTF-8."
         case .unknownCapability(let id):
             return "Unknown Swift surface capability: \(id)"
         case .capabilityNotDeclared(let id):
             return "Swift surface manifest does not declare capability: \(id)"
+        case .runnerCapabilityNotAllowed(let id):
+            return "Swift surface runner used a capability outside its launch plan: \(id)"
         case .highRiskRead(let id):
             return "High-risk capability cannot be used as a read: \(id)"
         case .actionNotApprovalRequired(let id):

@@ -83,6 +83,7 @@ function assertPublicRouting() {
     "docs/sdk-first-custom-surfaces-plan.md": [
       "metadata-only `executionBoundary`",
       "`clawix.capabilities.contracts()` exposes `executionBoundary`",
+      "stdout `render` message",
       "Direct SQLite is not exposed as a custom-app action surface.",
     ],
     "docs/decision-map.md": [
@@ -106,6 +107,10 @@ function assertPublicRouting() {
 
 function assertRuntimeArtifacts() {
   for (const [relativePath, snippets] of Object.entries({
+    "macos/Package.swift": [
+      "ClawixSwiftSurfaceRunner",
+      "Sources/ClawixSwiftSurfaceRunner",
+    ],
     "macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift": [
       "static var executionBoundaryBridgeValue",
       "\"metadata_only_contract_catalog\"",
@@ -132,10 +137,19 @@ function assertRuntimeArtifacts() {
     "macos/Sources/Clawix/Apps/AppSwiftSurfaceContract.swift": [
       "AppSwiftSurfaceRunnerSupervisor",
       "AppSwiftSurfaceProcessExecutor",
+      "AppSwiftSurfaceRunnerRenderMessage",
+      "renderManifest(",
+      "runnerCapabilityNotAllowed",
       "AppSwiftSurfaceRenderPresentation",
       "AppSwiftSurfaceRenderedNode",
       "Swift surface runner must be out-of-process.",
       "highRiskRead",
+    ],
+    "macos/Sources/ClawixSwiftSurfaceRunner/main.swift": [
+      "RunnerRenderMessage",
+      "--manifest",
+      "--protocol-version",
+      "\"render\"",
     ],
     "macos/Sources/Clawix/Apps/AppPackageImportValidator.swift": [
       "validatePackageContents",
@@ -163,6 +177,8 @@ function assertTests() {
       "testSwiftSurfaceRunnerSupervisorRejectsInProcessPlans",
       "testSwiftSurfaceProcessExecutorTerminatesProcessWhenTaskIsCancelled",
       "testSwiftSurfaceRenderPresentationBuildsDeclarativeTree",
+      "testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC",
+      "testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [
       "testCriticalShellStartFastPathStaysBoundedWithAllHeavyDependenciesUnavailable",

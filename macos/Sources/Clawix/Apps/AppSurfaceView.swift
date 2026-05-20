@@ -324,9 +324,9 @@ private struct AppSwiftSurfaceHostView: View {
                 executablePath: executablePath
             )
             let runnerTask = Task(priority: .userInitiated) {
-                AppSwiftSurfaceRunnerSupervisor().launch(launch)
+                AppSwiftSurfaceRunnerSupervisor().launchWithResult(launch)
             }
-            let runnerState = await withTaskCancellationHandler {
+            let runnerOutcome = await withTaskCancellationHandler {
                 await runnerTask.value
             } onCancel: {
                 runnerTask.cancel()
@@ -335,11 +335,17 @@ private struct AppSwiftSurfaceHostView: View {
                 state = .cancelled
                 return
             }
+            let renderManifest = try AppSwiftSurfaceContract.renderManifest(
+                from: runnerOutcome.result,
+                fallback: manifest,
+                plan: plan,
+                app: record
+            )
             state = Self.hostState(
-                for: runnerState,
+                for: runnerOutcome.state,
                 presentation: AppSwiftSurfaceRenderPresentation(
                     record: record,
-                    manifest: manifest,
+                    manifest: renderManifest,
                     plan: plan
                 )
             )
