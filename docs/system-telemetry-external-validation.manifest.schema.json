@@ -21,6 +21,8 @@
     "externalEvidencePacketSchema",
     "externalEvidenceFixtures",
     "externalEvidencePacketValidator",
+    "externalClosureFixtures",
+    "externalClosureBundleValidator",
     "externalValidationManifestFixtures",
     "rows"
   ],
@@ -136,6 +138,35 @@
         }
       ]
     },
+    "externalClosureFixtures": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["status", "validTemplateCount", "invalidMutationCount"],
+          "properties": {
+            "status": { "const": "synthetic_templates_not_closure" },
+            "validTemplateCount": { "const": 3 },
+            "invalidMutationCount": { "const": 4 },
+            "path": { "const": "docs/system-telemetry-external-closure.fixtures.json" }
+          }
+        }
+      ]
+    },
+    "externalClosureBundleValidator": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["path", "fixtureCommand", "bundleCommand"],
+          "properties": {
+            "path": { "const": "scripts/validate-system-telemetry-external-closure.mjs" },
+            "fixtureCommand": { "const": "node scripts/validate-system-telemetry-external-closure.mjs --fixtures" },
+            "bundleCommand": { "const": "node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>" }
+          }
+        }
+      ]
+    },
     "externalValidationManifestFixtures": {
       "allOf": [
         { "$ref": "#/$defs/requiredArtifact" },
@@ -145,7 +176,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 1 },
-            "invalidMutationCount": { "const": 5 },
+            "invalidMutationCount": { "const": 6 },
             "path": { "const": "docs/system-telemetry-external-validation.manifest.fixtures.json" }
           }
         }

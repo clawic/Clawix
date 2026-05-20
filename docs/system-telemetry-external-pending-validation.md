@@ -34,6 +34,13 @@ approval validation only and are not real approval.
 Approval packets must pass
 `node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`
 before any external execution starts.
+Synthetic closure bundles at
+`docs/system-telemetry-external-closure.fixtures.json` prove same-lane approval and evidence
+binding only and are not real closure evidence.
+They are the same-lane approval and evidence bundle gate for closure attempts.
+Closure bundles must pass
+`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`
+before any external row is replaced.
 The verifier treats the
 manifest as the structured contract for remaining external lanes, exact-run
 approval, accepted evidence, and the rule that external pending blocks goal
@@ -84,6 +91,8 @@ Synthetic approval fixtures live at
 and are explicitly not approval.
 Approval packets are checked with
 `node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`.
+Approval plus evidence closure bundles are checked with
+`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`.
 
 | Row | Lane | Required approval | Required evidence |
 | --- | --- | --- | --- |

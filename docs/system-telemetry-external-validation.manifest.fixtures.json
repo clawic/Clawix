@@ -37,6 +37,11 @@
       "id": "missing_approval_validator",
       "mutation": "delete_external_approval_packet_validator",
       "reason": "Future external execution must keep the exact-run approval packet validator gate."
+    },
+    {
+      "id": "missing_closure_bundle_validator",
+      "mutation": "delete_external_closure_bundle_validator",
+      "reason": "Future lane closure must validate that exact-run approval and accepted evidence belong to the same app lane."
     }
   ]
 }

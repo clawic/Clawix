@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-system-telemetry-external-closure-fixtures",
+  "status": "synthetic_templates_not_closure",
+  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "approvalFixturesPath": "docs/system-telemetry-external-approval.fixtures.json",
+  "evidenceFixturesPath": "docs/system-telemetry-external-evidence.fixtures.json",
+  "validatorPath": "scripts/validate-system-telemetry-external-closure.mjs",
+  "validSyntheticBundles": [
+    {
+      "id": "live_provider_closure_template",
+      "laneId": "CLX-SYS-TEL-EXT-004"
+    },
+    {
+      "id": "sensor_closure_template",
+      "laneId": "CLX-SYS-TEL-EXT-003"
+    },
+    {
+      "id": "control_closure_template",
+      "laneId": "CLX-SYS-TEL-EXT-005"
+    }
+  ],
+  "invalidSyntheticMutations": [
+    {
+      "id": "mismatched_lane",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.laneId=CLX-SYS-TEL-EXT-004",
+      "reason": "Approval and evidence must close the same external lane."
+    },
+    {
+      "id": "mismatched_repo_scope",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.repoScope=wrong-scope",
+      "reason": "Approval and evidence must belong to the same repository scope."
+    },
+    {
+      "id": "approval_not_exact",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "approvalPacket.approval.exactRunApproved=false",
+      "reason": "A closure bundle cannot replace a pending row without exact-run approval."
+    },
+    {
+      "id": "mismatched_preflight",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "approvalPacket.preflight.command=mismatch",
+      "reason": "Approval and evidence must refer to the same safe preflight command."
+    }
+  ]
+}

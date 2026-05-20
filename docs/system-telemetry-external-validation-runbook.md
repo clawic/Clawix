@@ -36,6 +36,13 @@ before updating any ledger, manifest, completion audit, or source Q/A review.
 Synthetic examples live in
 `docs/system-telemetry-external-evidence.fixtures.json`; they are templates for
 schema validation only and must not be cited as real external evidence.
+Before replacing any row, combine the exact-run approval packet and accepted
+evidence packet into a same-lane closure bundle. Synthetic closure examples
+live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
+bundle validation behavior and are not real closure evidence. Validate the
+bundle with
+`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`
+before updating any ledger, manifest, completion audit, or source Q/A review.
 
 ## Lanes
 
@@ -49,6 +56,6 @@ schema validation only and must not be cited as real external evidence.
 
 Do not mark the goal complete until every lane above is either replaced with
 accepted evidence or explicitly accepted by a later user decision, and the final
-source reread, completion audit, evidence schema check, and forbidden-name scan
+source reread, completion audit, evidence schema check, same-lane closure bundle check, and forbidden-name scan
 have been repeated. The final closure pass must also repeat the approval schema
-check before accepting any exact-run approval packet: source reread, completion audit, approval schema check, evidence schema check, and forbidden-name scan.
+check before accepting any exact-run approval packet: source reread, completion audit, approval schema check, evidence schema check, same-lane closure bundle check, and forbidden-name scan.

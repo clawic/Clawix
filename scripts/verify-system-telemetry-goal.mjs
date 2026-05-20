@@ -226,6 +226,9 @@ function assertExternalPendingLedger() {
     "not real approval",
     "`node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`",
     "before any external execution starts",
+    "`docs/system-telemetry-external-closure.fixtures.json`",
+    "`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`",
+    "same-lane approval and evidence",
     "public-safe rows, the completion audit binds each goal requirement",
     "runbook binds each remaining external lane to preflight, approval, evidence,",
     "update target, fail-rule, and evidence-packet checks",
@@ -367,12 +370,25 @@ function assertExternalValidationManifest() {
   assert(manifest.externalEvidencePacketValidator?.fixtureCommand === "node scripts/validate-system-telemetry-external-evidence.mjs --fixtures", "external validation manifest: wrong external evidence validator fixture command");
   assert(manifest.externalEvidencePacketValidator?.packetCommand === "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>", "external validation manifest: wrong external evidence validator packet command");
   assert(manifest.externalEvidencePacketValidator?.closureRole?.includes("validates any future redacted evidence packet"), "external validation manifest: external evidence validator closure role must be explicit");
+  assert(manifest.externalClosureFixtures?.required === true, "external validation manifest: external closure fixtures link must be required");
+  assert(manifest.externalClosureFixtures?.artifactId === "clawix-system-telemetry-external-closure-fixtures", "external validation manifest: wrong external closure fixtures artifact");
+  assert(manifest.externalClosureFixtures?.path === "docs/system-telemetry-external-closure.fixtures.json", "external validation manifest: wrong external closure fixtures path");
+  assert(manifest.externalClosureFixtures?.status === "synthetic_templates_not_closure", "external validation manifest: external closure fixtures must be synthetic");
+  assert(manifest.externalClosureFixtures?.validTemplateCount === 3, "external validation manifest: wrong external closure valid fixture count");
+  assert(manifest.externalClosureFixtures?.invalidMutationCount === 4, "external validation manifest: wrong external closure invalid mutation count");
+  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval and accepted evidence must belong to the same app lane"), "external validation manifest: external closure fixtures closure role must be explicit");
+  assert(manifest.externalClosureBundleValidator?.required === true, "external validation manifest: external closure validator link must be required");
+  assert(manifest.externalClosureBundleValidator?.artifactId === "clawix-system-telemetry-external-closure-validator", "external validation manifest: wrong external closure validator artifact");
+  assert(manifest.externalClosureBundleValidator?.path === "scripts/validate-system-telemetry-external-closure.mjs", "external validation manifest: wrong external closure validator path");
+  assert(manifest.externalClosureBundleValidator?.fixtureCommand === "node scripts/validate-system-telemetry-external-closure.mjs --fixtures", "external validation manifest: wrong external closure validator fixture command");
+  assert(manifest.externalClosureBundleValidator?.bundleCommand === "node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>", "external validation manifest: wrong external closure validator bundle command");
+  assert(manifest.externalClosureBundleValidator?.closureRole?.includes("approval-plus-evidence app closure bundle"), "external validation manifest: external closure validator closure role must be explicit");
   assert(manifest.externalValidationManifestFixtures?.required === true, "external validation manifest: manifest fixtures link must be required");
   assert(manifest.externalValidationManifestFixtures?.artifactId === "clawix-system-telemetry-external-validation-manifest-fixtures", "external validation manifest: wrong manifest fixtures artifact");
   assert(manifest.externalValidationManifestFixtures?.path === "docs/system-telemetry-external-validation.manifest.fixtures.json", "external validation manifest: wrong manifest fixtures path");
   assert(manifest.externalValidationManifestFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: manifest fixtures must be synthetic");
   assert(manifest.externalValidationManifestFixtures?.validTemplateCount === 1, "external validation manifest: wrong manifest valid fixture count");
-  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 5, "external validation manifest: wrong manifest invalid mutation count");
+  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 6, "external validation manifest: wrong manifest invalid mutation count");
   assert(manifest.externalValidationManifestFixtures?.closureRole?.includes("rejects accidental completion"), "external validation manifest: manifest fixtures closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
@@ -416,6 +432,8 @@ function assertExternalValidationManifestSchema() {
     "EXTERNAL PENDING",
     "docs/system-telemetry-external-approval.fixtures.json",
     "scripts/validate-system-telemetry-external-approval.mjs",
+    "docs/system-telemetry-external-closure.fixtures.json",
+    "scripts/validate-system-telemetry-external-closure.mjs",
     "scripts/validate-system-telemetry-external-evidence.mjs",
     "docs/system-telemetry-external-validation.manifest.fixtures.json",
   ]) {
@@ -439,7 +457,7 @@ function assertExternalValidationManifestFixtures() {
   assert(fixtures.schemaPath === "docs/system-telemetry-external-validation.manifest.schema.json", "external validation manifest fixtures: wrong schema path");
   assert(fixtures.manifestPath === "docs/system-telemetry-external-validation.manifest.json", "external validation manifest fixtures: wrong manifest path");
   assert(Array.isArray(fixtures.validSyntheticManifests) && fixtures.validSyntheticManifests.length === 1, "external validation manifest fixtures: must contain 1 valid manifest reference");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 5, "external validation manifest fixtures: must contain 5 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 6, "external validation manifest fixtures: must contain 6 invalid mutations");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   assert(validate(manifest), `external validation manifest fixtures: current manifest must validate: ${ajv.errorsText(validate.errors)}`);
@@ -463,6 +481,9 @@ function assertExternalValidationManifestFixtures() {
         break;
       case "delete_external_approval_packet_validator":
         delete mutated.externalApprovalPacketValidator;
+        break;
+      case "delete_external_closure_bundle_validator":
+        delete mutated.externalClosureBundleValidator;
         break;
       default:
         fail(`external validation manifest fixtures: unknown mutation ${fixture.mutation}`);
@@ -619,6 +640,10 @@ function assertExternalValidationRunbook() {
     "`docs/system-telemetry-external-evidence.fixtures.json`",
     "templates for",
     "must not be cited as real external evidence",
+    "same-lane closure bundle",
+    "`docs/system-telemetry-external-closure.fixtures.json`",
+    "not real closure evidence",
+    "`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`",
     "| Row | Safe preflight | Approval packet | Execution evidence | Update target | Fail rule |",
     "| CLX-SYS-TEL-EXT-003 | `claw system providers plan system.sensors.signed --json`",
     "Monitor sample IDs for `system.sensor.temperature` or `system.sensor.fan_speed`",
@@ -634,6 +659,7 @@ function assertExternalValidationRunbook() {
     "failed approved execution is a defect",
     "Do not mark the goal complete until every lane above is either replaced with",
     "source reread, completion audit, approval schema check, evidence schema check,",
+    "same-lane closure bundle check",
   ]) {
     assert(text.includes(snippet), `docs/system-telemetry-external-validation-runbook.md: missing ${JSON.stringify(snippet)}`);
   }
@@ -759,6 +785,41 @@ function assertExternalEvidenceValidator() {
   assert(result.invalidSyntheticPackets === 3, "external evidence validator: must reject 3 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external evidence validator: missing accepted fixture for ${rowId}`);
+  }
+}
+
+function assertExternalClosureFixtures() {
+  const fixtures = readJson("docs/system-telemetry-external-closure.fixtures.json");
+  assert(fixtures.schemaVersion === 1, "external closure fixtures: schemaVersion must be 1");
+  assert(fixtures.artifactId === "clawix-system-telemetry-external-closure-fixtures", "external closure fixtures: wrong artifact id");
+  assert(fixtures.status === "synthetic_templates_not_closure", "external closure fixtures: must be synthetic templates only");
+  assert(fixtures.conversationId === "019e359b-c0ab-7dc1-ba94-11a49d11dc76", "external closure fixtures: wrong conversation id");
+  assert(fixtures.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external closure fixtures: wrong plan id");
+  assert(fixtures.approvalFixturesPath === "docs/system-telemetry-external-approval.fixtures.json", "external closure fixtures: wrong approval fixtures path");
+  assert(fixtures.evidenceFixturesPath === "docs/system-telemetry-external-evidence.fixtures.json", "external closure fixtures: wrong evidence fixtures path");
+  assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "external closure fixtures: wrong validator path");
+  assert(Array.isArray(fixtures.validSyntheticBundles) && fixtures.validSyntheticBundles.length === 3, "external closure fixtures: must contain 3 valid synthetic bundles");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 4, "external closure fixtures: must contain 4 invalid mutations");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(fixtures.validSyntheticBundles.some((bundle) => bundle.laneId === rowId), `external closure fixtures: missing valid bundle for ${rowId}`);
+  }
+  for (const fixture of fixtures.invalidSyntheticMutations) {
+    assert(typeof fixture.baseLaneId === "string" && fixture.baseLaneId.startsWith("CLX-SYS-TEL-EXT-"), `external closure fixtures: invalid mutation ${fixture.id} must name base app lane`);
+    assert(typeof fixture.mutation === "string" && fixture.mutation.length > 0, `external closure fixtures: invalid mutation ${fixture.id} must document mutation`);
+    assert(typeof fixture.reason === "string" && fixture.reason.length > 0, `external closure fixtures: invalid mutation ${fixture.id} must document reason`);
+  }
+  assert(!JSON.stringify(fixtures).includes("/Users/"), "external closure fixtures: must not publish private filesystem paths");
+}
+
+function assertExternalClosureValidator() {
+  const output = run(process.execPath, ["scripts/validate-system-telemetry-external-closure.mjs", "--fixtures"]);
+  const result = JSON.parse(output);
+  assert(result.ok === true, "external closure validator: fixture validation must pass");
+  assert(result.status === "synthetic_templates_not_closure", "external closure validator: fixtures must remain synthetic");
+  assert(result.validSyntheticBundles === 3, "external closure validator: must accept 3 valid synthetic bundles");
+  assert(result.invalidSyntheticMutations === 4, "external closure validator: must reject 4 invalid synthetic mutations");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(result.accepted?.includes(rowId), `external closure validator: missing accepted fixture for ${rowId}`);
   }
 }
 
@@ -896,6 +957,10 @@ function assertDecisionMatrix() {
     "synthetic fixture templates",
     "scripts/validate-system-telemetry-external-evidence.mjs",
     "evidence validator",
+    "docs/system-telemetry-external-closure.fixtures.json",
+    "same-lane closure fixtures",
+    "scripts/validate-system-telemetry-external-closure.mjs",
+    "closure validator",
     "docs/system-telemetry-external-validation.manifest.json",
     "docs/system-telemetry-external-validation.manifest.schema.json",
     "manifest schema",
@@ -929,6 +994,8 @@ function assertDecisionMatrix() {
     "docs/system-telemetry-external-evidence.schema.json",
     "docs/system-telemetry-external-evidence.fixtures.json",
     "scripts/validate-system-telemetry-external-evidence.mjs",
+    "docs/system-telemetry-external-closure.fixtures.json",
+    "scripts/validate-system-telemetry-external-closure.mjs",
     "docs/system-telemetry-external-validation.manifest.json",
     "docs/system-telemetry-external-validation.manifest.schema.json",
     "docs/system-telemetry-external-validation.manifest.fixtures.json",
@@ -976,6 +1043,12 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-external-evidence-fixtures\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-evidence.fixtures.json\"",
     "\"query\": \"system telemetry external evidence fixtures\"",
+    "\"id\": \"clawix-system-telemetry-external-closure-fixtures\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-closure.fixtures.json\"",
+    "\"query\": \"system telemetry external closure fixtures\"",
+    "\"id\": \"clawix-system-telemetry-external-closure-validator\"",
+    "\"canonicalSource\": \"scripts/validate-system-telemetry-external-closure.mjs\"",
+    "\"query\": \"system telemetry external closure validator\"",
     "\"id\": \"clawix-system-telemetry-source-qa-review\"",
     "\"canonicalSource\": \"docs/system-telemetry-source-qa-review.json\"",
     "\"query\": \"system telemetry source Q/A review\"",
@@ -1009,6 +1082,10 @@ function assertDecisionMatrix() {
     "[docs/system-telemetry-external-evidence.schema.json](/system-telemetry-external-evidence.schema.json)",
     "`clawix-system-telemetry-external-evidence-fixtures`",
     "[docs/system-telemetry-external-evidence.fixtures.json](/system-telemetry-external-evidence.fixtures.json)",
+    "`clawix-system-telemetry-external-closure-fixtures`",
+    "[docs/system-telemetry-external-closure.fixtures.json](/system-telemetry-external-closure.fixtures.json)",
+    "`clawix-system-telemetry-external-closure-validator`",
+    "`scripts/validate-system-telemetry-external-closure.mjs`",
     "`clawix-system-telemetry-source-qa-review`",
     "[docs/system-telemetry-source-qa-review.json](/system-telemetry-source-qa-review.json)",
   ]) {
@@ -1047,7 +1124,10 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "widgets = enabledWidgets.filter");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "panelWidgets = enabledWidgets.filter");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "providers = await nextProviders");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "histories = await nextHistories");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static let historyRefreshInterval: TimeInterval = 60");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "guard !isRefreshing else { return }");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let nextHistories = await loadHistoriesIfNeeded");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "histories = nextHistories");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func sparkline(for metricKey: String");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory?");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func hasHistoryGraph(for widget: SystemTelemetryWidget) -> Bool");
@@ -1288,6 +1368,8 @@ function main() {
   assertExternalEvidenceSchema();
   assertExternalEvidenceFixtures();
   assertExternalEvidenceValidator();
+  assertExternalClosureFixtures();
+  assertExternalClosureValidator();
   assertSourceQaReview();
   assertCompletionAudit();
   assertDecisionMatrix();

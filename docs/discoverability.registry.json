@@ -2988,6 +2988,33 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-external-closure-fixtures",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-closure.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external closure fixtures",
+        "system telemetry same-lane app closure bundle fixtures",
+        "system telemetry app approval evidence closure fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external closure fixtures",
+          "expectPath": "docs/system-telemetry-external-closure.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-external-evidence-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",
@@ -3169,6 +3196,34 @@
         {
           "query": "system telemetry external approval validator",
           "expectPath": "scripts/validate-system-telemetry-external-approval.mjs"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-external-closure-validator",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "scripts/validate-system-telemetry-external-closure.mjs",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-closure.fixtures.json",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external closure validator",
+        "system telemetry same-lane app closure bundle validator",
+        "system telemetry app approval evidence bundle validator"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external closure validator",
+          "expectPath": "scripts/validate-system-telemetry-external-closure.mjs"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
