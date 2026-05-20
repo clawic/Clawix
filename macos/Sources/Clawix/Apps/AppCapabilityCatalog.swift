@@ -71,6 +71,8 @@ enum AppCapabilityCatalog {
     static let systemTelemetryHistorySchemaRef = "claw.system.telemetry.history.v1"
     static let jobsListSchemaRef = "claw.jobs.list.v1"
     static let jobsListResultSchemaRef = "claw.jobs.listResult.v1"
+    static let jobsGetSchemaRef = "claw.jobs.get.v1"
+    static let jobsDetailSchemaRef = "claw.jobs.detail.v1"
     static let actionsInvokeSchemaRef = "claw.actions.invoke.v1"
     static let actionsReceiptSchemaRef = "claw.actions.receipt.v1"
     static let secretsBrokerSchemaRef = "claw.secrets.broker.v1"
@@ -203,6 +205,22 @@ enum AppCapabilityCatalog {
             destructive: false
         ),
         AppCapabilityDescriptor(
+            id: "jobs.get",
+            title: "Jobs detail",
+            summary: "Read one framework job/run detail with redacted entity summaries through the host bridge.",
+            inputSchemaRef: jobsGetSchemaRef,
+            outputSchemaRef: jobsDetailSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
             id: "actions.invoke",
             title: "Framework action invoke",
             summary: "Brokered framework actions that may write or affect external state.",
@@ -319,6 +337,8 @@ enum AppCapabilityCatalog {
             actionsReceiptSchemaRef,
             iotActionResultSchemaRef,
             iotActionSchemaRef,
+            jobsDetailSchemaRef,
+            jobsGetSchemaRef,
             jobsListResultSchemaRef,
             jobsListSchemaRef,
             macActionPlanSchemaRef,
@@ -392,7 +412,7 @@ enum AppCapabilityCatalog {
 
     static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
         switch descriptor.id {
-        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history", "jobs.list":
+        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history", "jobs.list", "jobs.get":
             return [
                 "status": "available",
                 "mode": "localWideRead",

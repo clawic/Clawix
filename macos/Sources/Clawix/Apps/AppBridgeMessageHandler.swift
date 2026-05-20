@@ -14,6 +14,7 @@ enum AppBridgeOperationPolicy {
         "capabilities.source",
         "db.query",
         "iot.device.action.invoke",
+        "jobs.get",
         "jobs.list",
         "mac.action.plan",
         "request.cancel",
@@ -219,6 +220,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "jobs.list":
                 startTrackedRequest(requestId: requestId, label: "Jobs list") { [weak self] in
                     await self?.handleJobsList(payload: payload, requestId: requestId)
+                }
+            case "jobs.get":
+                startTrackedRequest(requestId: requestId, label: "Jobs detail") { [weak self] in
+                    await self?.handleJobsGet(payload: payload, requestId: requestId)
                 }
             case "system.telemetry.snapshot":
                 startTrackedRequest(requestId: requestId, label: "System telemetry snapshot") { [weak self] in
@@ -789,6 +794,40 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 
+    private func handleJobsGet(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("jobs.get")
+            let id = ((payload["id"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !id.isEmpty else {
+                reject(requestId: requestId, message: "jobs.get requires an id.")
+                return
+            }
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Reading job detail",
+                progressValue: 0.2
+            )
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
+            let detail = try await ClawJSIndexClient(bearerToken: token).getRun(id: id)
+            try Task.checkCancellation()
+            let value = Self.jobDetailBridgeValue(detail)
+            partial(requestId: requestId, value: [
+                "source": "jobs.get",
+                "partialCount": detail.entities.count,
+                "progress": 1,
+                "redactionPolicy": AppBridgeRedactionPolicy.policyId
+            ])
+            resolve(requestId: requestId, value: value)
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Jobs detail cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
     private func handleSystemTelemetrySnapshot(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
@@ -891,6 +930,37 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             "metadata": metadata,
             "redactionPolicy": AppBridgeRedactionPolicy.policyId
         ]
+    }
+
+    nonisolated static func jobDetailBridgeValue(_ detail: ClawJSIndexClient.RunDetail) -> [String: Any] {
+        [
+            "run": jobBridgeValue(detail.run),
+            "entities": detail.entities.map(jobEntityBridgeValue),
+            "source": "jobs.get",
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
+        ]
+    }
+
+    nonisolated static func jobEntityBridgeValue(_ entity: ClawJSIndexClient.Entity) -> [String: Any] {
+        var value: [String: Any] = [
+            "id": entity.id,
+            "typeId": entity.typeId,
+            "typeName": entity.typeName,
+            "firstSeenAt": entity.firstSeenAt,
+            "lastSeenAt": entity.lastSeenAt,
+            "observationCount": entity.observationCount,
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
+        ]
+        if let title = entity.title {
+            value["title"] = title
+        }
+        if entity.sourceUrl != nil {
+            value["hasSourceUrl"] = true
+        }
+        if entity.thumbnailUrl != nil {
+            value["hasThumbnail"] = true
+        }
+        return value
     }
 
     nonisolated static func systemTelemetrySnapshotBridgeValue(
