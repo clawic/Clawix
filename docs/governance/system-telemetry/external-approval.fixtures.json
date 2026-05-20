@@ -171,8 +171,23 @@
       "packetRef": "CLX-SYS-TEL-EXT-004"
     },
     {
+      "id": "approval_timestamp_not_parseable",
+      "mutation": "approval.approvedAt=notTimestamp",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
+      "id": "extra_approved_action",
+      "mutation": "approval.approvedActions=extra",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
       "id": "raw_secret_reference",
       "mutation": "authorization.credentialLeaseRefs=rawSecretRef",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
+      "id": "extra_external_pending_row",
+      "mutation": "closureImpact.externalPendingRows=extra",
       "packetRef": "CLX-SYS-TEL-EXT-004"
     }
   ]

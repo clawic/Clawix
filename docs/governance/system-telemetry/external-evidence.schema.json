@@ -58,7 +58,7 @@
         "approvedAt": { "type": "string", "format": "date-time" },
         "approvedBy": { "type": "string", "minLength": 1 },
         "exactRunScope": { "type": "string", "minLength": 1 },
-        "grants": { "type": "array", "items": { "type": "string" } },
+        "grants": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "type": "string" } },
         "credentialLeaseRefs": { "type": "array", "items": { "type": "string" } },
         "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
         "networkAccessApproved": { "type": "boolean" }
@@ -177,7 +177,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
-              "grants": { "contains": { "const": "system.sensor.read" } },
+              "grants": { "contains": { "const": "system.sensor.read" }, "maxItems": 1 },
               "nativeGrantRefs": { "minItems": 1 }
             }
           },
@@ -208,7 +208,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
-              "grants": { "contains": { "const": "context.weather.read" } },
+              "grants": { "contains": { "const": "context.weather.read" }, "maxItems": 1 },
               "credentialLeaseRefs": { "minItems": 1 },
               "networkAccessApproved": { "const": true }
             }
@@ -239,7 +239,7 @@
         "properties": {
           "runAuthorization": {
             "properties": {
-              "grants": { "contains": { "const": "system.control.execute" } },
+              "grants": { "contains": { "const": "system.control.execute" }, "maxItems": 1 },
               "nativeGrantRefs": { "minItems": 1 }
             }
           },

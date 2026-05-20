@@ -387,6 +387,11 @@
       "mutation": "runAuthorization.grants is empty"
     },
     {
+      "id": "extra_execution_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "runAuthorization.grants has extra"
+    },
+    {
       "id": "reviewed_before_execution_completed",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "reviewer.reviewedAt before execution.completedAt"
@@ -395,6 +400,11 @@
       "id": "private_path_in_app_menu_evidence",
       "baseLaneId": "CLX-SYS-TEL-EXT-004",
       "mutation": "evidence.appMenuEvidenceRefs=privatePath"
+    },
+    {
+      "id": "extra_rows_to_replace",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "closureImpact.rowsToReplace=extra"
     }
   ]
 }

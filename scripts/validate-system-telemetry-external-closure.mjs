@@ -76,6 +76,12 @@ const expectedClosureRowsByLane = new Map([
   }],
 ]);
 
+const expectedExecutionGrantsByApprovedAction = new Map([
+  ["provider_connection", ["context.weather.read"]],
+  ["physical_sensor_read", ["system.sensor.read"]],
+  ["dangerous_control_execute", ["system.control.execute"]],
+]);
+
 function validatePacket(packet, compiled, label) {
   assertPublicSafe(packet, label);
   assert(compiled.validate(packet), `${label}: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
@@ -170,6 +176,18 @@ function assertAuthorizationBindings(bundle, label) {
     bundle.evidencePacket.runAuthorization?.nativeGrantRefs,
     bundle.approvalPacket.authorization?.nativeGrantRefs ?? [],
     `${label}.evidencePacket.runAuthorization.nativeGrantRefs`,
+  );
+  const approvedActions = bundle.approvalPacket.approval?.approvedActions ?? [];
+  assertSameStringSet(
+    approvedActions,
+    approvedActions.flatMap((action) => expectedExecutionGrantsByApprovedAction.has(action) ? [action] : []),
+    `${label}.approvalPacket.approval.approvedActions`,
+  );
+  const expectedGrants = approvedActions.flatMap((action) => expectedExecutionGrantsByApprovedAction.get(action) ?? []);
+  assertSameStringSet(
+    bundle.evidencePacket.runAuthorization?.grants,
+    expectedGrants,
+    `${label}.evidencePacket.runAuthorization.grants`,
   );
 }
 
@@ -266,6 +284,9 @@ function mutateBundle(bundle, mutation) {
     case "approvalPacket.closureImpact.externalPendingRows=extra":
       mutated.approvalPacket.closureImpact.externalPendingRows = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
       break;
+    case "evidencePacket.closureImpact.rowsToReplace=extra":
+      mutated.evidencePacket.closureImpact.rowsToReplace = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
+      break;
     case "evidencePacket.runAuthorization.approvedBy=mismatch":
       mutated.evidencePacket.runAuthorization.approvedBy = "other-reviewer-template";
       break;
@@ -274,6 +295,12 @@ function mutateBundle(bundle, mutation) {
       break;
     case "evidencePacket.runAuthorization.nativeGrantRefs=wrong":
       mutated.evidencePacket.runAuthorization.nativeGrantRefs = ["wrong_native_grant_template"];
+      break;
+    case "evidencePacket.runAuthorization.grants=extra":
+      mutated.evidencePacket.runAuthorization.grants = [
+        mutated.evidencePacket.runAuthorization.grants[0],
+        "extra_unapproved_grant_template",
+      ];
       break;
     case "evidencePacket.execution.completedAt=beforeExecutionStart":
       mutated.evidencePacket.execution.completedAt = "2026-05-19T23:59:59Z";

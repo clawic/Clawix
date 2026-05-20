@@ -103,11 +103,17 @@ function mutateTemplate(packet, mutation) {
     case "runAuthorization.grants is empty":
       mutated.runAuthorization.grants = [];
       break;
+    case "runAuthorization.grants has extra":
+      mutated.runAuthorization.grants = [mutated.runAuthorization.grants[0], "extra_unapproved_grant_template"];
+      break;
     case "reviewer.reviewedAt before execution.completedAt":
       mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
       break;
     case "evidence.appMenuEvidenceRefs=privatePath":
       mutated.evidence.appMenuEvidenceRefs = ["file://private/menu-evidence-template.png"];
+      break;
+    case "closureImpact.rowsToReplace=extra":
+      mutated.closureImpact.rowsToReplace = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
       break;
     default:
       fail(`unknown evidence fixture mutation ${mutation}`);

@@ -91,8 +91,17 @@ function mutateTemplate(packet, mutation) {
     case "approval.expiresAt=beforeApprovedAt":
       mutated.approval.expiresAt = "2026-05-19T23:59:59Z";
       break;
+    case "approval.approvedAt=notTimestamp":
+      mutated.approval.approvedAt = "not-a-timestamp";
+      break;
+    case "approval.approvedActions=extra":
+      mutated.approval.approvedActions = [mutated.approval.approvedActions[0], "extra_unapproved_action_template"];
+      break;
     case "authorization.credentialLeaseRefs=rawSecretRef":
       mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
+      break;
+    case "closureImpact.externalPendingRows=extra":
+      mutated.closureImpact.externalPendingRows = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
       break;
     default:
       fail(`unknown approval fixture mutation ${mutation}`);

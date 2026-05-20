@@ -83,6 +83,12 @@
       "reason": "Approval must authorize exactly the pending row replaced by the app bundle."
     },
     {
+      "id": "extra_evidence_replacement_row",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.closureImpact.rowsToReplace=extra",
+      "reason": "Evidence must replace exactly the pending row authorized by the app bundle."
+    },
+    {
       "id": "mismatched_approved_by",
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.runAuthorization.approvedBy=mismatch",
@@ -99,6 +105,12 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.runAuthorization.nativeGrantRefs=wrong",
       "reason": "Evidence must use exactly the native grants authorized by the app approval packet."
+    },
+    {
+      "id": "extra_execution_grant",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "evidencePacket.runAuthorization.grants=extra",
+      "reason": "Evidence execution grants must match the single action authorized by the app approval packet."
     },
     {
       "id": "evidence_execution_completed_before_start",
