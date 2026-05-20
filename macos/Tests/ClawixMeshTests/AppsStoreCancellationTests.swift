@@ -79,6 +79,44 @@ final class AppsStoreCancellationTests: XCTestCase {
         store.cancelSurfaceWork()
     }
 
+    func testCreatePersistsCodeManifestVariantMetadata() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+
+        let app = try store.create(
+            name: "Database Focus",
+            slug: "database-focus",
+            declaredCapabilities: ["database.query", "search.query"],
+            originClass: .localUserAuthored,
+            surfaceKind: .swiftDeclarative,
+            routeTarget: "database",
+            variant: AppVariantMetadata(originalRoute: "database", defaultScope: "workspace"),
+            protectedRoutePolicy: .variantOnly
+        )
+
+        XCTAssertEqual(app.routeTarget, "database")
+        XCTAssertEqual(app.variant?.originalRoute, "database")
+        XCTAssertEqual(app.effectiveSurfaceKind, .swiftDeclarative)
+        XCTAssertEqual(app.effectiveDeclaredCapabilities, ["database.query", "search.query"])
+        XCTAssertEqual(app.effectiveProtectedRoutePolicy, .variantOnly)
+
+        let manifestURL = store.directory(forSlug: "database-focus").appendingPathComponent("manifest.json")
+        let data = try Data(contentsOf: manifestURL)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(AppRecord.self, from: data)
+
+        XCTAssertEqual(decoded.id, app.id)
+        XCTAssertEqual(decoded.slug, "database-focus")
+        XCTAssertEqual(decoded.routeTarget, "database")
+        XCTAssertEqual(decoded.variant?.originalRoute, "database")
+        XCTAssertEqual(decoded.variant?.defaultScope, "workspace")
+        XCTAssertEqual(decoded.effectiveSurfaceKind, .swiftDeclarative)
+        XCTAssertEqual(decoded.effectiveDeclaredCapabilities, ["database.query", "search.query"])
+        XCTAssertEqual(decoded.effectiveProtectedRoutePolicy, .variantOnly)
+    }
+
     private func makeStore(
         loadOperation: @escaping AppsStore.LoadOperation
     ) -> AppsStore {

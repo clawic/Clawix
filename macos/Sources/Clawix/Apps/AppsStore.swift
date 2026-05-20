@@ -152,7 +152,14 @@ final class AppsStore: ObservableObject {
         projectId: UUID? = nil,
         tags: [String] = [],
         permissions: AppPermissions = .defaults,
-        createdByChatId: UUID? = nil
+        createdByChatId: UUID? = nil,
+        declaredCapabilities: [String] = [],
+        originClass: AppOriginClass = .localUserAuthored,
+        surfaceKind: AppSurfaceKind = .web,
+        routeTarget: String? = nil,
+        variant: AppVariantMetadata? = nil,
+        protectedRoutePolicy: AppProtectedRoutePolicy = .blocked,
+        activationReview: AppActivationReview? = nil
     ) throws -> AppRecord {
         let resolvedSlug = try uniqueSlug(preferred: slug, name: name)
         let now = Date()
@@ -170,10 +177,13 @@ final class AppsStore: ObservableObject {
             createdAt: now,
             updatedAt: now,
             createdByChatId: createdByChatId,
-            declaredCapabilities: [],
-            originClass: .localUserAuthored,
-            surfaceKind: .web,
-            protectedRoutePolicy: .blocked
+            declaredCapabilities: declaredCapabilities,
+            originClass: originClass,
+            surfaceKind: surfaceKind,
+            routeTarget: routeTarget,
+            variant: variant,
+            protectedRoutePolicy: protectedRoutePolicy,
+            activationReview: activationReview
         )
         try writeManifest(record)
         // Seed a placeholder index.html so the user can open the app
