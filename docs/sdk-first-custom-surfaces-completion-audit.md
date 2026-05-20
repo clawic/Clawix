@@ -9,14 +9,17 @@ surfaces and nonblocking shell goal. The private source session path is
 intentionally not published here. Before the private goal can close, every row
 must be verified against the current Clawix and ClawJS trees, and any remaining
 external or private-audit row must have either approved evidence or a later
-explicit user decision accepting the blocker.
+explicit user decision accepting the blocker. When a sibling ClawJS checkout is
+available, `scripts/verify-sdk-first-custom-surfaces-goal.mjs` also inspects
+the shared custom-app SDK inspection payload, Runtime, MCP, Relay, and schema
+tests in that checkout.
 
 ## Current Rows
 
 | ID | Requirement | Current public evidence | Remaining closure gate | Status |
 | --- | --- | --- | --- | --- |
 | CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing for SDK-first custom surfaces. | ADR 0019, `docs/sdk-first-custom-surfaces-plan.md`, decision-map, discoverability registry, and sibling ClawJS ADR 0032 route the contract and `executionBoundary`. | Keep routing current with implementation changes. | VALIDATED LOCAL |
-| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity, with explicit gaps. | ClawJS capability catalog, custom-app SDK inspection payload, Runtime/MCP/Relay tests, Clawix `clawix.capabilities.contracts()`, and host bridge tests expose schemas, risk, dispatch modes, and metadata-only projection boundaries. | Future executable backend routes still need schema validation, policy, audit, and tests before being marked complete. | PARTIAL LOCAL |
+| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity, with explicit gaps. | ClawJS capability catalog, custom-app SDK inspection payload, Runtime/MCP/Relay tests, Clawix `clawix.capabilities.contracts()`, and host bridge tests expose schemas, risk, dispatch modes, and metadata-only projection boundaries. The Clawix verifier inspects sibling ClawJS evidence when that checkout is present. | Future executable backend routes still need schema validation, policy, audit, and tests before being marked complete. | PARTIAL LOCAL |
 | CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`, not direct SQLite, filesystem, native, or CLI execution. | Clawix Apps manifest fields, WebView bridge, Search/DB/resource DSL, redaction policy, collection-id guards, unsupported-key rejection, and bridge operation policy tests. | Keep future bridge operations behind the same schema and escape-hatch guards. | VALIDATED LOCAL |
 | CLX-SDK-004 | High-risk actions interrupt only for secrets, credentials, cost, external, destructive, native-sensitive, physical/IoT, regulated, or comparable risk. | App capability risk tiers, approval-required dispatch modes, high-risk action prompt/audit receipts, Mac plan-only dispatch, IoT dispatch boundary, and no plaintext secret broker runner. | Signed-host native execution and live IoT/provider actions remain externally pending until approved receipts and same-machine evidence exist. | EXTERNAL PENDING |
 | CLX-SDK-005 | Imported/marketplace apps require origin/capability/risk ficha and provenance before activation. | App package import validation, `packageProvenance`, trust audit, activation ficha, settings trust presentation, and tests for imported/unknown capability review. | Package signing and marketplace trust verification remain future external lanes unless explicitly approved. | PARTIAL LOCAL |

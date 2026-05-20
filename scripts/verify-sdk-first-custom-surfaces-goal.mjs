@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const args = new Set(process.argv.slice(2));
+const requireClawJSSibling = args.has("--require-clawjs") || process.env.CLAWJS_SDK_FIRST_REQUIRE_CLAWJS === "1";
 const errors = [];
 
 function fail(message) {
@@ -17,9 +19,18 @@ function read(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), "utf8");
 }
 
+function readFrom(baseDir, relativePath) {
+  return fs.readFileSync(path.join(baseDir, relativePath), "utf8");
+}
+
 function requireSnippet(relativePath, snippet) {
   const text = read(relativePath);
   assert(text.includes(snippet), `${relativePath}: missing ${JSON.stringify(snippet)}`);
+}
+
+function requireSiblingSnippet(siblingRoot, relativePath, snippet) {
+  const text = readFrom(siblingRoot, relativePath);
+  assert(text.includes(snippet), `clawjs:${relativePath}: missing ${JSON.stringify(snippet)}`);
 }
 
 function assertCompletionAudit() {
@@ -28,6 +39,8 @@ function assertCompletionAudit() {
     "Source conversation: `019e403c-3837-7f02-9b78-532c43cdd997`",
     "Status: `active_goal_not_complete`",
     "private source session path is",
+    "also inspects",
+    "The Clawix verifier inspects sibling ClawJS evidence when that checkout is present.",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
@@ -158,10 +171,64 @@ function assertTests() {
   }
 }
 
+function assertSiblingClawJSArtifacts() {
+  const siblingRoot = process.env.CLAWJS_SDK_FIRST_ROOT
+    ? path.resolve(process.env.CLAWJS_SDK_FIRST_ROOT)
+    : path.resolve(rootDir, "..", "..", "clawjs");
+  if (!fs.existsSync(siblingRoot)) {
+    if (requireClawJSSibling) fail(`missing sibling ClawJS checkout at ${siblingRoot}`);
+    return;
+  }
+
+  for (const [relativePath, snippets] of Object.entries({
+    "docs/adr/0032-sdk-first-custom-surfaces-and-nonblocking-shell.md": [
+      "The shared custom-app SDK inspection payload includes an `executionBoundary`",
+      "MCP `clawjs.custom_app_sdk`",
+      "Relay `/v1/remote/custom-app-sdk` are metadata-only contract projections",
+    ],
+    "docs/sdk-first-custom-surfaces-plan.md": [
+      "Expose `executionBoundary` in the shared custom-app SDK inspection payload",
+      "Custom-app SDK inspection exposes `executionBoundary` across CLI/API/MCP/",
+    ],
+    "docs/decision-map.md": [
+      "packages/clawjs-core/src/custom-app-sdk-inspection.ts",
+      "metadata-only projection boundaries",
+    ],
+    "packages/clawjs-core/src/custom-app-sdk-inspection.ts": [
+      "CUSTOM_APP_SDK_EXECUTION_BOUNDARY",
+      "metadata_only_contract_catalog",
+      "relay.remote.custom_app_sdk",
+    ],
+    "packages/clawjs-core/src/capability-catalog.test.ts": [
+      "custom-app SDK inspection payload exposes dispatch availability and gaps",
+      "payload.executionBoundary.executesCapabilityCalls",
+      "custom-app DB query schema rejects collection creation",
+    ],
+    "packages/clawjs-mcp/src/custom-app-sdk-contract.test.ts": [
+      "MCP custom app SDK contract boundary",
+      "clawjs.custom_app_sdk",
+      "payload.executionBoundary.executesCapabilityCalls",
+    ],
+    "runtime/tests/e2e/runtime.e2e.test.ts": [
+      "runtime service API exposes custom app SDK contracts as read-only metadata",
+      "runtime custom app SDK contract route does not execute DB or Search calls",
+      "contracts/custom-app-sdk",
+    ],
+    "relay/src/server/remote-sync-routes.test.ts": [
+      "relay exposes custom app SDK dispatch metadata as remote-safe contract projection",
+      "/v1/remote/custom-app-sdk",
+      "relay.remote.custom_app_sdk",
+    ],
+  })) {
+    for (const snippet of snippets) requireSiblingSnippet(siblingRoot, relativePath, snippet);
+  }
+}
+
 assertCompletionAudit();
 assertPublicRouting();
 assertRuntimeArtifacts();
 assertTests();
+assertSiblingClawJSArtifacts();
 
 if (errors.length > 0) {
   console.error(`SDK-first custom surfaces verifier failed with ${errors.length} issue(s):`);
