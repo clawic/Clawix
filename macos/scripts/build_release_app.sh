@@ -88,6 +88,39 @@ if [[ ! -f "$SECRETS_XPC_BINARY" ]]; then
     exit 1
 fi
 
+# Build the ClawJS host CLI used by system telemetry signed-host
+# recording. The app links ClawHostKit, but the recorder executes the
+# host CLI from the bundle so release builds must ship it explicitly.
+CLAWJS_HOST_PKG="${CLAWJS_HOST_PKG:-}"
+if [[ -z "$CLAWJS_HOST_PKG" ]]; then
+    for host_candidate in \
+        "$PROJECT_DIR/../../../clawjs/apps/host" \
+        "$PROJECT_DIR/../../../../clawjs/apps/host" \
+        "$HOME/Desktop/clawjs/apps/host"
+    do
+        [[ -f "$host_candidate/Package.swift" ]] || continue
+        CLAWJS_HOST_PKG="$(cd "$host_candidate" && pwd)"
+        break
+    done
+fi
+
+CLAW_HOST_BINARY=""
+if [[ -n "$CLAWJS_HOST_PKG" ]]; then
+    echo "==> Building claw-host (release)"
+    swift build -c release --package-path "$CLAWJS_HOST_PKG" \
+        -Xswiftc -file-prefix-map -Xswiftc "${CLAWJS_HOST_PKG}/.build=clawjs/apps/host/.build" \
+        -Xswiftc -file-prefix-map -Xswiftc "${CLAWJS_HOST_PKG}=clawjs/apps/host" \
+        2>&1
+    CLAW_HOST_BINARY="$CLAWJS_HOST_PKG/.build/release/claw-host"
+    if [[ ! -f "$CLAW_HOST_BINARY" ]]; then
+        echo "ERROR: claw-host binary not produced at $CLAW_HOST_BINARY" >&2
+        exit 1
+    fi
+else
+    echo "ERROR: clawjs/apps/host not found; cannot bundle system telemetry host" >&2
+    exit 1
+fi
+
 # Build the bridge daemon for release. Lives in a sibling SPM package
 # under Helpers/Bridged/, ships as Contents/Helpers/clawix-bridge so
 # SMAppService.agent can register it as a LaunchAgent at runtime.
@@ -114,6 +147,8 @@ mkdir -p "$BUNDLE_DIR/Contents/Frameworks"
 
 cp "$BINARY" "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
 chmod +x "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
+cp "$CLAW_HOST_BINARY" "$BUNDLE_DIR/Contents/MacOS/claw-host"
+chmod +x "$BUNDLE_DIR/Contents/MacOS/claw-host"
 cp "$ICON_FILE" "$BUNDLE_DIR/Contents/Resources/Clawix.icns"
 SECRETS_XPC_SERVICE_NAME="${BUNDLE_ID}.secrets-xpc"
 SECRETS_XPC_BUNDLE="$BUNDLE_DIR/Contents/XPCServices/ClawixSecretsXPC.xpc"
@@ -346,6 +381,21 @@ if [[ -f "$HELPER_BIN" ]]; then
              --sign "$DEVELOPER_ID_IDENTITY" \
              --identifier "clawix.bridge" \
              "$HELPER_BIN"
+fi
+
+HOST_BIN="$BUNDLE_DIR/Contents/MacOS/claw-host"
+if [[ -f "$HOST_BIN" ]]; then
+    echo "==> Stripping absolute build paths from claw-host"
+    python3 "$SCRIPT_DIR/strip_user_paths.py" \
+        "$HOST_BIN" \
+        --replace "${CLAWJS_HOST_PKG}/.build/=clawjs/apps/host/.build/" \
+        --replace "${CLAWJS_HOST_PKG}/=clawjs/apps/host/" \
+        --replace "${HOME}/="
+    echo "==> Signing claw-host"
+    codesign --force --options runtime --timestamp \
+             --sign "$DEVELOPER_ID_IDENTITY" \
+             --identifier "${BUNDLE_ID}.claw-host" \
+             "$HOST_BIN"
 fi
 
 if [[ -d "$BUNDLE_DIR/Contents/XPCServices" ]]; then

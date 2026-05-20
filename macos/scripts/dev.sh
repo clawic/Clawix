@@ -163,6 +163,37 @@ if [[ ! -f "$SECRETS_XPC_BIN_BUILT" ]]; then
     exit 1
 fi
 
+# 1.1) Build the local ClawJS host CLI that the system telemetry
+#      recorder uses for signed-host snapshots. Clawix links
+#      ClawHostKit, but the recorder needs the executable form so
+#      `claw system snapshot --source host --record true` can run from
+#      the app bundle without relying on a developer checkout.
+CLAWJS_HOST_PKG="${CLAWJS_HOST_PKG:-}"
+if [[ -z "$CLAWJS_HOST_PKG" ]]; then
+    for host_candidate in \
+        "$PROJECT_DIR/../../../clawjs/apps/host" \
+        "$PROJECT_DIR/../../../../clawjs/apps/host" \
+        "$HOME/Desktop/clawjs/apps/host"
+    do
+        [[ -f "$host_candidate/Package.swift" ]] || continue
+        CLAWJS_HOST_PKG="$(cd "$host_candidate" && pwd)"
+        break
+    done
+fi
+
+CLAW_HOST_BIN_BUILT=""
+if [[ -n "$CLAWJS_HOST_PKG" ]]; then
+    echo "==> Building claw-host for system telemetry"
+    swift build --package-path "$CLAWJS_HOST_PKG" 2>&1
+    CLAW_HOST_BIN_BUILT="$CLAWJS_HOST_PKG/.build/debug/claw-host"
+    if [[ ! -f "$CLAW_HOST_BIN_BUILT" ]]; then
+        echo "WARN: claw-host binary not produced; system telemetry recorder will be unavailable in app" >&2
+        CLAW_HOST_BIN_BUILT=""
+    fi
+else
+    echo "WARN: clawjs/apps/host not found; system telemetry recorder will be unavailable in app" >&2
+fi
+
 # 1.45) Wire the clawjs/iot dev pointer so ClawJSServiceManager can spawn
 #       the IoT daemon (Phase 1 IoT integration). The daemon lives in the
 #       sibling clawjs repo, not inside this tree, so a pointer file at
@@ -361,6 +392,12 @@ if [[ -n "$BRIDGED_BIN_BUILT" ]]; then
 </dict>
 </plist>
 AGENTPLIST
+fi
+
+if [[ -n "$CLAW_HOST_BIN_BUILT" ]]; then
+    mkdir -p "$BUNDLE/Contents/MacOS"
+    cp "$CLAW_HOST_BIN_BUILT" "$BUNDLE/Contents/MacOS/claw-host"
+    chmod +x "$BUNDLE/Contents/MacOS/claw-host"
 fi
 
 # 3.25) Embed the Secrets-only XPC authorization service. The service issues
@@ -581,6 +618,23 @@ if [[ -f "$HELPER_BIN" ]]; then
         echo "WARN: codesign for clawix-bridge with $SIGN_IDENTITY failed, falling back to ad-hoc:" >&2
         cat /tmp/clawix-bridge-sign.err >&2
         codesign --force --sign - --identifier "clawix.bridge" "$HELPER_BIN"
+    fi
+fi
+
+HOST_BIN="$BUNDLE/Contents/MacOS/claw-host"
+if [[ -f "$HOST_BIN" ]]; then
+    if ! codesign --force --sign "$SIGN_IDENTITY" \
+                  --identifier "${BUNDLE_ID}.claw-host" \
+                  --timestamp=none \
+                  "$HOST_BIN" 2>/tmp/clawix-claw-host-sign.err; then
+        if [[ "$REQUIRE_STABLE_SIGNING" == "1" ]]; then
+            echo "ERROR: codesign for claw-host failed:" >&2
+            cat /tmp/clawix-claw-host-sign.err >&2
+            exit 1
+        fi
+        echo "WARN: codesign for claw-host with $SIGN_IDENTITY failed, falling back to ad-hoc:" >&2
+        cat /tmp/clawix-claw-host-sign.err >&2
+        codesign --force --sign - --identifier "${BUNDLE_ID}.claw-host" "$HOST_BIN"
     fi
 fi
 
