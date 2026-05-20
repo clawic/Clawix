@@ -478,6 +478,9 @@ function assertSiblingClawJSArtifacts() {
     ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
       "custom-app SDK inspection payload exposes dispatch availability and gaps",
+      "custom-app SDK inspection payload exposes complete resolved surfaces",
+      "assert.equal(Boolean(surface.ref), true",
+      "assert.equal(surface.ref, undefined",
       "payload.executionBoundary.executesCapabilityCalls",
       "custom-app DB query schema rejects collection creation",
       "system.telemetry.snapshot",
@@ -489,20 +492,30 @@ function assertSiblingClawJSArtifacts() {
       "jobs.start",
       "jobs.cancel",
     ],
+    "packages/clawjs/src/inspect-cli.test.ts": [
+      "runCli exposes custom app SDK read contracts through inspect",
+      "custom-app-sdk",
+      "payload.executionBoundary.executesCapabilityCalls",
+      "assertCompleteResolvedSurfaces(payload.capabilities)",
+    ],
     "packages/clawjs-mcp/src/custom-app-sdk-contract.test.ts": [
       "MCP custom app SDK contract boundary",
       "clawjs.custom_app_sdk",
       "payload.executionBoundary.executesCapabilityCalls",
+      "assertCompleteResolvedSurfaces(payload.capabilities)",
+      "assertCompleteResolvedSurfaces(rpc.json().result.content.capabilities)",
     ],
     "runtime/tests/e2e/runtime.e2e.test.ts": [
       "runtime service API exposes custom app SDK contracts as read-only metadata",
       "runtime custom app SDK contract route does not execute DB or Search calls",
       "contracts/custom-app-sdk",
+      "assertCompleteResolvedSurfaces(payload.capabilities)",
     ],
     "relay/src/server/remote-sync-routes.test.ts": [
       "relay exposes custom app SDK dispatch metadata as remote-safe contract projection",
       "/v1/remote/custom-app-sdk",
       "relay.remote.custom_app_sdk",
+      "assertCompleteResolvedSurfaces(payload.capabilities)",
     ],
     "packages/clawjs-core/src/network-control-plane.ts": [
       "networkPolicyEvaluationSchema",
