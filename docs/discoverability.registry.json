@@ -827,6 +827,7 @@
       ],
       "discoveryTerms": [
         "host-dependent-validation",
+        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, real conversations, or signed native helpers.",
         "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, or signed native helpers."
       ],
       "searchQueries": [
@@ -2872,6 +2873,30 @@
         {
           "query": "system telemetry external pending validation",
           "expectPath": "docs/system-telemetry-external-pending-validation.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-manifest",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-validation.manifest.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest",
+        "system telemetry structured external lane manifest",
+        "system telemetry completion blocking manifest"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest",
+          "expectPath": "docs/system-telemetry-external-validation.manifest.json"
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",

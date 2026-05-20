@@ -216,6 +216,15 @@ Validation safety:
   and device/simulator state.
 - Do not send real prompts, touch production data, call paid APIs, mutate real
   services, or reveal secrets without explicit approval in the current thread.
+- Real conversation validation against an installed app with existing history is
+  allowed only after explicit approval for that validation session. Existing
+  conversations are read-only: agents may open, navigate, inspect layout,
+  scroll, and measure performance, but must not send, edit, delete, archive,
+  unarchive, pin, unpin, rename, move, share, export, regenerate, react, attach
+  files, change model/settings, or otherwise alter state. Agents may create and
+  mutate only conversations they created for the validation, with minimal
+  harmless prompts and explicit turn/time limits; if authorship is uncertain,
+  do not clean it up and report the uncertainty.
 - Prefer fixtures, dry-run paths, interceptors, local backends, and mocks.
 - Mark missing physical/provider prerequisites as `EXTERNAL PENDING` and keep
   them separate from defects.

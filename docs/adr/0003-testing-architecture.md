@@ -26,6 +26,20 @@ choices.
 - `live` tests are strict opt-in and must never spend money, send real prompts,
   mutate production data, or contact real services unless the operator sets an
   explicit environment variable for that lane.
+- Real conversation validation against an installed conversational app with
+  existing history is a host-dependent live/manual lane, not a normal automated
+  test. One explicit approval may authorize that validation session and its new
+  test conversations, but it never authorizes mutation of preexisting
+  conversations.
+- Preexisting conversations in a real app are read-only validation material.
+  Agents may navigate, inspect layout, scroll, and measure performance, but must
+  not send, edit, delete, archive, unarchive, pin, unpin, rename, move, share,
+  export, regenerate, react, attach files, change model/settings, or otherwise
+  alter state.
+- Test conversations created by the validating agent may be mutated only when
+  the agent is certain it created them. Prompts must be harmless, minimal, and
+  bounded by explicit turn/time limits; agents must stop runaway generations and
+  leave no active conversations running at handoff.
 - Real signed-host validation is required only for host-dependent behavior:
   native permissions, app identity, approvals, grants, TCC, LaunchAgents, local
   helpers, app windows, and bridge ownership.
