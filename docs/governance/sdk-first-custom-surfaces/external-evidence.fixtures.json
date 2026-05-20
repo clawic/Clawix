@@ -265,6 +265,14 @@
       "patch": { "laneId": "CLX-SDK-EXT-004", "evidence": { "sameMachineEvidenceRefs": [] } }
     },
     {
+      "name": "rejects malformed approval timestamp",
+      "patch": { "laneId": "CLX-SDK-EXT-001", "runAuthorization": { "approvedAt": "2026-05-20" } }
+    },
+    {
+      "name": "rejects execution after approval window",
+      "patch": { "laneId": "CLX-SDK-EXT-002", "execution": { "completedAt": "2026-05-20T02:00:00Z" } }
+    },
+    {
       "name": "rejects performance baseline missing required flow",
       "patch": { "laneId": "CLX-SDK-EXT-003", "evidence": { "approvedCriticalFlows": ["installed_app_launch"] } }
     },

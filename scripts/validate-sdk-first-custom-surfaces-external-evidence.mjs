@@ -26,6 +26,7 @@ const expectedExecutors = {
   "CLX-SDK-EXT-003": "performance_baseline_review",
   "CLX-SDK-EXT-004": "marketplace_trust_review",
 };
+const dateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
@@ -42,6 +43,14 @@ function asArray(value, label) {
 
 function requireString(value, label) {
   if (typeof value !== "string" || value.length === 0) fail(`${label} must be a non-empty string`);
+}
+
+function requireDateTime(value, label) {
+  requireString(value, label);
+  if (!dateTimePattern.test(value)) fail(`${label} must be an RFC3339 date-time`);
+  const milliseconds = Date.parse(value);
+  if (Number.isNaN(milliseconds)) fail(`${label} must be a valid date-time`);
+  return milliseconds;
 }
 
 function requireFalse(value, label) {
@@ -85,15 +94,23 @@ export function validatePacket(packet) {
 
   requireString(packet.runAuthorization?.approvalId, "runAuthorization.approvalId");
   requireString(packet.runAuthorization?.approvedBy, "runAuthorization.approvedBy");
-  requireString(packet.runAuthorization?.approvedAt, "runAuthorization.approvedAt");
-  requireString(packet.runAuthorization?.expiresAt, "runAuthorization.expiresAt");
+  const approvedAt = requireDateTime(packet.runAuthorization?.approvedAt, "runAuthorization.approvedAt");
+  const expiresAt = requireDateTime(packet.runAuthorization?.expiresAt, "runAuthorization.expiresAt");
+  if (expiresAt <= approvedAt) fail("runAuthorization.expiresAt must be after runAuthorization.approvedAt");
   requireString(packet.runAuthorization?.exactRunScope, "runAuthorization.exactRunScope");
   requireExactSet(asArray(packet.runAuthorization?.approvedLaneIds, "runAuthorization.approvedLaneIds"), [packet.laneId], "runAuthorization.approvedLaneIds");
 
+  const preflightCompletedAt = requireDateTime(packet.preflight?.completedAt, "preflight.completedAt");
   requireTrue(packet.preflight?.failClosedBeforeApproval, "preflight.failClosedBeforeApproval");
   if (asArray(packet.preflight?.checks, "preflight.checks").length < 1) fail("preflight.checks must not be empty");
   if (asArray(packet.preflight?.resultRefs, "preflight.resultRefs").length < 1) fail("preflight.resultRefs must not be empty");
 
+  const executionStartedAt = requireDateTime(packet.execution?.startedAt, "execution.startedAt");
+  const executionCompletedAt = requireDateTime(packet.execution?.completedAt, "execution.completedAt");
+  if (executionStartedAt < approvedAt) fail("execution.startedAt must not be before runAuthorization.approvedAt");
+  if (executionStartedAt < preflightCompletedAt) fail("execution.startedAt must not be before preflight.completedAt");
+  if (executionCompletedAt < executionStartedAt) fail("execution.completedAt must not be before execution.startedAt");
+  if (executionCompletedAt > expiresAt) fail("execution.completedAt must not be after runAuthorization.expiresAt");
   if (packet.execution?.executor !== expectedExecutors[packet.laneId]) fail(`execution.executor must be ${expectedExecutors[packet.laneId]}`);
   if (asArray(packet.execution?.receiptRefs, "execution.receiptRefs").length < 1) fail("execution.receiptRefs must not be empty");
   requireFalse(packet.execution?.failedApprovedRun, "execution.failedApprovedRun");
@@ -114,6 +131,8 @@ export function validatePacket(packet) {
   if (asArray(packet.closureImpact?.verifiersToRerun, "closureImpact.verifiersToRerun").length < 1) fail("closureImpact.verifiersToRerun must not be empty");
   requireTrue(packet.closureImpact?.requiresFinalSourceReread, "closureImpact.requiresFinalSourceReread");
   requireTrue(packet.closureImpact?.requiresUserReviewDecision, "closureImpact.requiresUserReviewDecision");
+  const reviewedAt = requireDateTime(packet.reviewer?.reviewedAt, "reviewer.reviewedAt");
+  if (reviewedAt < executionCompletedAt) fail("reviewer.reviewedAt must not be before execution.completedAt");
   if (packet.reviewer?.decision !== "accepted") fail("reviewer.decision must be accepted");
 
   if (packet.laneId === "CLX-SDK-EXT-001" && evidence.nativeGrantRefs.length < 1) fail("CLX-SDK-EXT-001 requires nativeGrantRefs");

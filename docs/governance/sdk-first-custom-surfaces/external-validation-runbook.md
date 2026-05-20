@@ -25,6 +25,10 @@ The validator treats `runAuthorization.approvedLaneIds` and
 entries, extra closure rows, or missing same-machine evidence are rejected even
 when the required lane row is present.
 
+Timestamp fields must be RFC3339 date-times. Execution must start after the
+approved preflight, finish inside the approval window, and reviewer acceptance
+must be recorded after execution completes.
+
 ## Lanes
 
 | Lane | Safe preflight | Required approval | Required evidence | Update target | Fail rule |
