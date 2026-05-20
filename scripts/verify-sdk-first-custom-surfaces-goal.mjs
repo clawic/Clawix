@@ -49,6 +49,8 @@ function assertCompletionAudit() {
     "Clawix now mirrors the ClawJS `system.telemetry.snapshot` and `system.telemetry.history` local-wide read contracts",
     "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
     "`list`, `get`, `riskMap`, and `source`",
+    "complete resolved surface bindings across SDK, CLI, service API, MCP, Relay, and host bridge projections",
+    "no `pending` status, concrete refs for available surfaces",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
     "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
