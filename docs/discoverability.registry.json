@@ -1623,6 +1623,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-verify-system-telemetry-goal",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/verify-system-telemetry-goal.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "verify-system-telemetry-goal",
+        "Verify System Telemetry Goal"
+      ],
+      "searchQueries": [
+        {
+          "query": "verify-system-telemetry-goal",
+          "expectPath": "scripts/verify-system-telemetry-goal.mjs"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "adr-docs-adr-0010-interface-governance",
       "kind": "ui-governance",
       "owner": "clawix",
@@ -2748,6 +2773,54 @@
       "guard": "scripts/ui_visual_scope_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-system-telemetry-decision-matrix",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-decision-matrix.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry decision matrix",
+        "system telemetry D01 D11 decisions",
+        "system telemetry completion audit gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry decision matrix",
+          "expectPath": "docs/system-telemetry-decision-matrix.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-external-pending-ledger",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-pending-validation.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry external pending validation",
+        "system telemetry external validation lanes",
+        "system telemetry provider sensor control blockers"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external pending validation",
+          "expectPath": "docs/system-telemetry-external-pending-validation.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
     }
   ]
 }

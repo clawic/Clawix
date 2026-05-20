@@ -25,6 +25,35 @@ function requireSnippet(relativePath, snippet) {
   assert(text.includes(snippet), `${relativePath}: missing ${JSON.stringify(snippet)}`);
 }
 
+function collectTextFiles(relativePaths) {
+  const allowedExtensions = new Set([".swift", ".md", ".mjs", ".js", ".ts", ".tsx", ".json", ".sh", ".yml", ".yaml"]);
+  const ignoredDirectories = new Set([".git", ".build", "build", "DerivedData", "node_modules", "dist", ".tmp", ".swiftpm", "xcuserdata"]);
+  const files = [];
+  function walk(absolutePath) {
+    if (!fs.existsSync(absolutePath)) return;
+    const stat = fs.statSync(absolutePath);
+    if (stat.isDirectory()) {
+      if (ignoredDirectories.has(path.basename(absolutePath))) return;
+      for (const entry of fs.readdirSync(absolutePath)) {
+        walk(path.join(absolutePath, entry));
+      }
+      return;
+    }
+    if (stat.isFile() && allowedExtensions.has(path.extname(absolutePath))) {
+      files.push(path.relative(rootDir, absolutePath));
+    }
+  }
+  for (const relativePath of relativePaths) {
+    walk(path.join(rootDir, relativePath));
+  }
+  return [...new Set(files)].sort();
+}
+
+function containsForbiddenExternalProductName(text, term) {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+}
+
 function run(command, commandArgs, options = {}) {
   try {
     return execFileSync(command, commandArgs, {
@@ -56,9 +85,71 @@ function appTelemetryEnvironment() {
     CLAW_WORKSPACE: path.join(supportRoot, "workspace"),
     CLAW_HOME: path.join(os.homedir(), ".claw"),
     CLAW_DATA_DIR: supportRoot,
-    CLAW_DB_PATH: path.join(supportRoot, "claw.sqlite"),
+    CLAW_DB_PATH: path.join(supportRoot, "clawix.sqlite"),
     CLAW_FILES_DIR: path.join(supportRoot, "files"),
   };
+}
+
+function appMonitorDatabasePath() {
+  return path.join(os.homedir(), "Library", "Application Support", "Clawix", "clawjs", "monitor.sqlite");
+}
+
+function readAppMonitorMetricStats() {
+  const dbPath = appMonitorDatabasePath();
+  if (!fs.existsSync(dbPath)) return { count: 0, maxCapturedAt: 0 };
+  try {
+    const output = execFileSync("sqlite3", [
+      "-separator",
+      "\t",
+      dbPath,
+      "SELECT COUNT(*), COALESCE(MAX(captured_at), 0) FROM metric_samples;",
+    ], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: 10_000,
+    }).trim();
+    const [count, maxCapturedAt] = output.split("\t").map((value) => Number(value));
+    return {
+      count: Number.isFinite(count) ? count : 0,
+      maxCapturedAt: Number.isFinite(maxCapturedAt) ? maxCapturedAt : 0,
+    };
+  } catch {
+    return { count: 0, maxCapturedAt: 0 };
+  }
+}
+
+function clickCombinedMenuRefresh() {
+  const refreshScript = `
+set deadlineDate to (current date) + 12
+tell application "System Events"
+  tell process "Clawix"
+    repeat while (current date) < deadlineDate
+      set targetItem to missing value
+      repeat with barIndex from 1 to (count of menu bars)
+        repeat with candidate in menu bar items of menu bar barIndex
+          try
+            set candidateTitle to title of candidate as text
+            if candidateTitle starts with "System" then
+              set targetItem to candidate
+              exit repeat
+            end if
+          end try
+        end repeat
+        if targetItem is not missing value then exit repeat
+      end repeat
+      if targetItem is not missing value then
+        click targetItem
+        delay 0.3
+        click menu item "Refresh" of menu 1 of targetItem
+        return
+      end if
+      delay 0.5
+    end repeat
+    error "missing system telemetry combined status item"
+  end tell
+end tell
+`;
+  run("osascript", ["-e", refreshScript], { cwd: rootDir, timeout: 30_000 });
 }
 
 function seedLocalMonitorHistory() {
@@ -86,20 +177,19 @@ function assertNoForbiddenPublicNames() {
     [105, 115, 116, 97, 116],
     [98, 106, 97, 110, 103, 111],
   ].map((chars) => String.fromCharCode(...chars).toLowerCase());
-  const scanned = [
-    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift",
-    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift",
-    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift",
-    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift",
-    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift",
+  const scanned = collectTextFiles([
+    "docs",
+    "macos/Sources/Clawix/SystemTelemetry",
     "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTests.swift",
+    "macos/scripts/dev.sh",
+    "macos/scripts/build_release_app.sh",
     "docs/system-telemetry-external-pending-validation.md",
     "scripts/verify-system-telemetry-goal.mjs",
-  ];
+  ]);
   for (const file of scanned) {
     const text = read(file).toLowerCase();
     for (const term of forbidden) {
-      if (text.includes(term)) fail(`${file}: contains a forbidden external product name`);
+      if (containsForbiddenExternalProductName(text, term)) fail(`${file}: contains a forbidden external product name`);
     }
   }
 }
@@ -117,22 +207,112 @@ function assertExternalPendingLedger() {
     "| CLX-SYS-TEL-EXT-004 | Live external context provider displayed in menu-bar widgets |",
     "| CLX-SYS-TEL-EXT-005 | Dangerous controls reachable from UI only through governed plans |",
     "| CLX-SYS-TEL-EXT-006 | Native rendered graph view over retained telemetry |",
+    "read-only experimental AppleSMC path",
+    "missing AppleSMC service or missing compatible keys remains a valid external blocker",
+    "fixture/offline context provider samples",
+    "redacted location tags",
+    "Framework CLI plans append redacted JSONL evidence locally",
+    "Framework CLI and signed-host provider plans record redacted JSONL audit evidence",
+    "provided_redacted",
+    "provider `auditPlan` redaction metadata",
+    "portable `auditPlan` redaction metadata",
+    "redacted JSONL audit evidence for blocked signed-sensor provider plans",
+    "not a provider execution receipt",
+    "redacted JSONL audit evidence for unsupported/high-risk blocked controls",
+    "not an execution receipt",
+    "## External Validation Lanes",
+    "| CLX-SYS-TEL-EXT-003 | Signed sensor provider lane:",
+    "| CLX-SYS-TEL-EXT-004 | Live context provider lane:",
+    "| CLX-SYS-TEL-EXT-005 | Dangerous-control lane:",
+    "Rows must stay `EXTERNAL PENDING` if any approval, hardware/provider path,",
     "must not be downgraded to `EXTERNAL PENDING`",
   ]) {
     assert(text.includes(snippet), `docs/system-telemetry-external-pending-validation.md: missing ${JSON.stringify(snippet)}`);
   }
 
   const requiredRows = [
-    "CLX-SYS-TEL-EXT-001",
-    "CLX-SYS-TEL-EXT-002",
     "CLX-SYS-TEL-EXT-003",
     "CLX-SYS-TEL-EXT-004",
     "CLX-SYS-TEL-EXT-005",
-    "CLX-SYS-TEL-EXT-006",
   ];
   for (const rowId of requiredRows) {
     const rowPattern = new RegExp(`\\|\\s*${rowId}\\s*\\|[^\\n]*\\|\\s*EXTERNAL PENDING\\s*\\|`);
     assert(rowPattern.test(text), `docs/system-telemetry-external-pending-validation.md: ${rowId} must remain EXTERNAL PENDING`);
+  }
+
+  const validatedRows = [
+    "CLX-SYS-TEL-EXT-001",
+    "CLX-SYS-TEL-EXT-002",
+    "CLX-SYS-TEL-EXT-006",
+  ];
+  for (const rowId of validatedRows) {
+    const rowPattern = new RegExp(`\\|\\s*${rowId}\\s*\\|[^\\n]*\\|\\s*VALIDATED LOCAL\\s*\\|`);
+    assert(rowPattern.test(text), `docs/system-telemetry-external-pending-validation.md: ${rowId} must remain VALIDATED LOCAL`);
+  }
+}
+
+function assertDecisionMatrix() {
+  const text = read("docs/system-telemetry-decision-matrix.md");
+  for (const snippet of [
+    "Source conversation: `019e359b-c0ab-7dc1-ba94-11a49d11dc76`",
+    "Plan item: `019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan`",
+    "Status: `active_goal_not_complete`",
+    "source session path is intentionally not published here.",
+    "| D01 | Provide a first-class framework plane",
+    "| D02 | Cover computer hardware with a Mac-first portable contract",
+    "Bluetooth/peripheral aggregate counts",
+    "| D03 | Keep weather/time as useful context",
+    "| D04 | Support multiple independent menu-bar indicators",
+    "| D05 | Support a combined menu-bar widget/panel",
+    "| D06 | Allow broad indicator variability",
+    "| D07 | Prepare host and app surfaces for real-time display",
+    "| D08 | Reuse and centralize retention, charts, rules, and events in Monitor",
+    "metric purge fallback to rollups",
+    "operational `health_check` events stay in Monitor",
+    "| D09 | Do not mention third-party monitoring product names",
+    "| D10 | Pin the goal to the conversation id, plan id, source review",
+    "| D11 | Do not close the goal until everything is implemented",
+    "`CLX-SYS-TEL-EXT-003`, `CLX-SYS-TEL-EXT-004`, or",
+    "`CLX-SYS-TEL-EXT-005` remain `EXTERNAL PENDING`",
+    "The private source session has not been re-read",
+    "The forbidden-name scan has not been repeated",
+  ]) {
+    assert(text.includes(snippet), `docs/system-telemetry-decision-matrix.md: missing ${JSON.stringify(snippet)}`);
+  }
+  const decisionRows = text.match(/^\| D\d{2} \|/gm) ?? [];
+  assert(decisionRows.length === 11, "docs/system-telemetry-decision-matrix.md: must contain exactly D01-D11 decision rows");
+  assert(!text.includes("/Users/"), "docs/system-telemetry-decision-matrix.md: must not publish private filesystem paths");
+
+  const decisionMap = read("docs/decision-map.md");
+  for (const snippet of [
+    "System telemetry, context widgets, Monitor-backed history, and menu-bar indicators",
+    "docs/system-telemetry-decision-matrix.md",
+    "docs/system-telemetry-external-pending-validation.md",
+    "node scripts/verify-system-telemetry-goal.mjs",
+  ]) {
+    assert(decisionMap.includes(snippet), `docs/decision-map.md: missing ${JSON.stringify(snippet)}`);
+  }
+
+  const registry = read("docs/discoverability.registry.json");
+  for (const snippet of [
+    "\"id\": \"clawix-system-telemetry-decision-matrix\"",
+    "\"canonicalSource\": \"docs/system-telemetry-decision-matrix.md\"",
+    "\"query\": \"system telemetry decision matrix\"",
+    "\"id\": \"clawix-system-telemetry-external-pending-ledger\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-pending-validation.md\"",
+    "\"query\": \"system telemetry external pending validation\"",
+  ]) {
+    assert(registry.includes(snippet), `docs/discoverability.registry.json: missing ${JSON.stringify(snippet)}`);
+  }
+
+  const router = read("docs/discoverability.md");
+  for (const snippet of [
+    "`clawix-system-telemetry-decision-matrix`",
+    "[docs/system-telemetry-decision-matrix.md](/system-telemetry-decision-matrix)",
+    "`clawix-system-telemetry-external-pending-ledger`",
+    "[docs/system-telemetry-external-pending-validation.md](/system-telemetry-external-pending-validation)",
+  ]) {
+    assert(router.includes(snippet), `docs/discoverability.md: missing ${JSON.stringify(snippet)}`);
   }
 }
 
@@ -142,6 +322,13 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func history(metricKey: String, range: String = \"1h\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "static func decodeHistory(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "struct SystemTelemetryProviderPlan");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "struct SystemTelemetryPlanAuditProjection");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "var auditPlan: SystemTelemetryPlanAuditProjection?");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static func decodeAuditPlan");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "credentialRefRedacted: bool(from: redaction[\"credential_ref_redacted\"]) ?? bool(from: redaction[\"credentialRefRedacted\"]) ?? false");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "targetRedacted: bool(from: redaction[\"target_redacted\"]) ?? bool(from: redaction[\"targetRedacted\"]) ?? false");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static func redactedCredentialRef(from request: [String: Any]) -> String?");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "return \"provided_redacted\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func providerPlan(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func controlPlan(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "metricKeys: stringArray(from: object[\"metric_keys\"]) ?? stringArray(from: object[\"metricKeys\"]) ?? stringArray(from: object[\"metrics\"]) ?? []");
@@ -189,6 +376,10 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "\"--record\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "reason: \"minimum_interval\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "reason: \"host_command_unavailable\"");
+  requireSnippet("macos/scripts/dev.sh", "Building claw-host for system telemetry");
+  requireSnippet("macos/scripts/dev.sh", "$BUNDLE/Contents/MacOS/claw-host");
+  requireSnippet("macos/scripts/build_release_app.sh", "Building claw-host (release)");
+  requireSnippet("macos/scripts/build_release_app.sh", "$BUNDLE_DIR/Contents/MacOS/claw-host");
 }
 
 function assertSwiftTestCoverage() {
@@ -197,12 +388,17 @@ function assertSwiftTestCoverage() {
     "testDecodesSnapshotPolicySamplesAndUnavailableMetrics",
     "testDecodesHistoryChartPayload",
     "testHistoryReaderRunsClawSystemHistoryCommand",
+    "\"24h\"",
     "testDecodesPortableCliSnapshotPayload",
+    "system.peripheral.bluetooth_count",
     "testDecodesPortableCliWidgetListPayload",
     "testDecodesControlCatalogAndPlanPayloads",
     "testDecodesProviderCatalogAndPlanPayloads",
     "testControlPlanBridgeSendsPlanOnlyRequestArguments",
     "testProviderPlanBridgeSendsPlanOnlyRequestArguments",
+    "XCTAssertEqual(plan.credentialRef, \"provided_redacted\")",
+    "XCTAssertEqual(plan.auditPlan?.redaction.credentialRefRedacted, true)",
+    "XCTAssertEqual(plan.auditPlan?.redaction.targetRedacted, true)",
     "testMenuBarModelLoadsProviderStatusRows",
     "testMenuBarConfigurationTogglesFromDefaultWidgetCatalog",
     "testMenuBarModelIncludesPortableBothPlacement",
@@ -211,6 +407,7 @@ function assertSwiftTestCoverage() {
     "SystemTelemetryHistoryGraphView",
     "CPU history graph",
     "testMenuBarModelLoadsHistoryGraphForChartWidgets",
+    "testHistoryGraphViewRendersNativeBitmap",
     "Hardware Overview",
     "testMonitorRecorderRecordsHostSnapshotThroughClawCLI",
     "minimum_interval",
@@ -258,19 +455,46 @@ function assertOptionalAccessibilitySmoke() {
   const titlesScript = `
 tell application "System Events"
   tell process "Clawix"
-    return title of every menu bar item of menu bar 2
+    set itemTitles to {}
+    repeat with barIndex from 1 to (count of menu bars)
+      repeat with candidate in menu bar items of menu bar barIndex
+        try
+          set end of itemTitles to (title of candidate as text)
+        on error
+          set end of itemTitles to ""
+        end try
+      end repeat
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    return itemTitles as text
   end tell
 end tell
 `;
   const titlesOutput = run("osascript", ["-e", titlesScript], { cwd: rootDir, timeout: 30_000 });
-  const titles = titlesOutput.split(",").map((title) => title.trim()).filter(Boolean);
-  assert(titles.length >= 3, `accessibility smoke: expected at least 3 status items, got ${titles.length}`);
-  assert(titles.includes("System OK"), "accessibility smoke: missing combined System OK status item");
+  const titles = titlesOutput.split(/\r?\n/).map((title) => title.trim()).filter(Boolean);
+  const appMenuTitles = new Set(["Apple", "Clawix", "File", "Edit", "View", "Window", "Help"]);
+  const statusTitles = titles.filter((title) => !appMenuTitles.has(title) && title !== "missing value");
+  const independentIndicatorTitles = statusTitles.filter((title) => !title.startsWith("System"));
+  assert(independentIndicatorTitles.length >= 2, `accessibility smoke: expected at least 2 independent status indicators, got ${independentIndicatorTitles.length}: ${JSON.stringify(statusTitles)}`);
+  assert(statusTitles.some((title) => title.startsWith("System")), "accessibility smoke: missing combined System status item");
 
   const menuScript = `
 tell application "System Events"
   tell process "Clawix"
-    set targetItem to first menu bar item of menu bar 2 whose title is "System OK"
+    set targetItem to missing value
+    repeat with barIndex from 1 to (count of menu bars)
+      repeat with candidate in menu bar items of menu bar barIndex
+        try
+          set candidateTitle to title of candidate as text
+          if candidateTitle starts with "System" then
+            set targetItem to candidate
+            exit repeat
+          end if
+        end try
+      end repeat
+      if targetItem is not missing value then exit repeat
+    end repeat
+    if targetItem is missing value then error "missing system telemetry combined status item"
     click targetItem
     delay 0.3
     set itemNames to {}
@@ -295,6 +519,17 @@ end tell
     "Mock weather context: Ready",
     "Live weather context: External Pending",
     "Signed hardware sensor provider: External Pending",
+    "CPU + Memory",
+    "Disk + Network",
+    "Hardware Overview",
+    "Weather",
+    "Build",
+    "Services",
+    "Agents",
+    "Reminders",
+    "Calendar",
+    "Notifications",
+    "Context",
   ]) {
     assert(menuOutput.includes(snippet), `accessibility smoke: menu missing ${JSON.stringify(snippet)}`);
   }
@@ -303,16 +538,37 @@ end tell
   }
 }
 
+function assertOptionalLiveRecorderSmoke() {
+  if (!args.has("--live-recorder-smoke")) return;
+
+  const before = readAppMonitorMetricStats();
+  clickCombinedMenuRefresh();
+  run("sleep", ["6"], { timeout: 10_000 });
+  let after = readAppMonitorMetricStats();
+
+  if (after.count <= before.count) {
+    run("sleep", ["65"], { timeout: 70_000 });
+    clickCombinedMenuRefresh();
+    run("sleep", ["6"], { timeout: 10_000 });
+    after = readAppMonitorMetricStats();
+  }
+
+  assert(after.count > before.count, `live recorder smoke: expected metric_samples to increase after menu Refresh (${before.count} -> ${after.count})`);
+  assert(after.maxCapturedAt > before.maxCapturedAt, `live recorder smoke: expected captured_at to advance after menu Refresh (${before.maxCapturedAt} -> ${after.maxCapturedAt})`);
+}
+
 function main() {
   seedLocalMonitorHistory();
   assertNoForbiddenPublicNames();
   assertExternalPendingLedger();
+  assertDecisionMatrix();
   assertBridgeContracts();
   assertStatusItemAndRecorder();
   assertSwiftTestCoverage();
   assertOptionalPreflight();
   assertOptionalSwiftTests();
   assertOptionalAccessibilitySmoke();
+  assertOptionalLiveRecorderSmoke();
 
   if (errors.length) {
     console.error(`Clawix system telemetry goal verifier failed with ${errors.length} issue(s):`);
