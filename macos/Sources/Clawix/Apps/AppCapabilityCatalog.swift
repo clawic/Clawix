@@ -98,6 +98,15 @@ enum AppCapabilityCatalog {
     static let requestCancelSchemaRef = "claw.customApp.request.cancel.v1"
     static let requestProgressSchemaRef = "claw.customApp.request.progress.v1"
     static let requestPartialSchemaRef = "claw.customApp.request.partial.v1"
+    static let protectedRouteTargets: Set<String> = [
+        "approvals",
+        "chat",
+        "chat-core",
+        "native-permissions",
+        "permissions",
+        "rescue",
+        "secrets"
+    ]
 
     static let readEventSchemaRefs = AppCapabilityEventSchemaRefs(
         cancel: requestCancelSchemaRef,
@@ -384,8 +393,7 @@ enum AppCapabilityCatalog {
               !target.isEmpty else {
             return []
         }
-        let protectedRoutes: Set<String> = ["secrets", "native-permissions", "permissions", "rescue", "approvals", "chat", "chat-core"]
-        guard protectedRoutes.contains(target) else { return [] }
+        guard protectedRouteTargets.contains(target) else { return [] }
         switch record.effectiveProtectedRoutePolicy {
         case .blocked:
             return ["Route \(target) is protected and cannot be replaced."]

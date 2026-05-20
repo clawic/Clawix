@@ -191,4 +191,54 @@ final class AppVariantDefaultsTests: AppCustomSurfaceCapabilityTestCase {
 
         XCTAssertThrowsError(try store.setDefault(app: unsafe, scope: .user))
     }
+
+    func testProtectedRouteTargetSetIsExactAndVariantOnly() {
+        let expectedTargets: Set<String> = [
+            "approvals",
+            "chat",
+            "chat-core",
+            "native-permissions",
+            "permissions",
+            "rescue",
+            "secrets"
+        ]
+
+        XCTAssertEqual(AppCapabilityCatalog.protectedRouteTargets, expectedTargets)
+
+        for target in expectedTargets {
+            let unsafe = AppRecord(
+                slug: "unsafe-\(target.replacingOccurrences(of: ":", with: "-"))",
+                name: "Unsafe \(target)",
+                routeTarget: target,
+                protectedRoutePolicy: .none
+            )
+            XCTAssertFalse(AppCapabilityCatalog.protectedRouteViolations(for: unsafe).isEmpty, target)
+
+            let blocked = AppRecord(
+                slug: "blocked-\(target.replacingOccurrences(of: ":", with: "-"))",
+                name: "Blocked \(target)",
+                routeTarget: target,
+                protectedRoutePolicy: .blocked
+            )
+            XCTAssertFalse(AppCapabilityCatalog.protectedRouteViolations(for: blocked).isEmpty, target)
+
+            let validVariant = AppRecord(
+                slug: "variant-\(target.replacingOccurrences(of: ":", with: "-"))",
+                name: "Variant \(target)",
+                routeTarget: target,
+                variant: AppVariantMetadata(originalRoute: target, defaultScope: "user"),
+                protectedRoutePolicy: .variantOnly
+            )
+            XCTAssertEqual(AppCapabilityCatalog.protectedRouteViolations(for: validVariant), [], target)
+
+            let invalidVariant = AppRecord(
+                slug: "invalid-\(target.replacingOccurrences(of: ":", with: "-"))",
+                name: "Invalid \(target)",
+                routeTarget: target,
+                variant: AppVariantMetadata(originalRoute: "database", defaultScope: "user"),
+                protectedRoutePolicy: .variantOnly
+            )
+            XCTAssertFalse(AppCapabilityCatalog.protectedRouteViolations(for: invalidVariant).isEmpty, target)
+        }
+    }
 }
