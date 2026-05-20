@@ -120,6 +120,46 @@ struct SystemTelemetryProvider: Equatable, Identifiable {
     var credentialRefRequired: Bool
     var freshnessMS: Int
     var description: String
+    var adapterContract: SystemTelemetryProviderAdapterContract?
+}
+
+struct SystemTelemetryProviderAdapterContract: Equatable {
+    var providerID: String
+    var adapterKind: String
+    var mode: String
+    var input: SystemTelemetryProviderAdapterInput
+    var output: SystemTelemetryProviderAdapterOutput
+    var audit: SystemTelemetryProviderAdapterAudit
+    var executionPolicy: SystemTelemetryProviderAdapterExecutionPolicy
+}
+
+struct SystemTelemetryProviderAdapterInput: Equatable {
+    var credentialRef: String
+    var requiredGrants: [String]
+    var networkAccess: String
+}
+
+struct SystemTelemetryProviderAdapterOutput: Equatable {
+    var metrics: [String]
+    var sampleShape: String
+    var monitorWriteRequired: Bool
+}
+
+struct SystemTelemetryProviderAdapterAudit: Equatable {
+    var event: String
+    var receiptRequired: Bool
+    var durableReceiptSource: String
+    var redaction: SystemTelemetryProviderAdapterRedaction
+}
+
+struct SystemTelemetryProviderAdapterRedaction: Equatable {
+    var credentialRefRedacted: Bool
+    var preciseLocationRedacted: Bool
+}
+
+struct SystemTelemetryProviderAdapterExecutionPolicy: Equatable {
+    var failClosed: Bool
+    var externalPendingUntilReceipt: Bool
 }
 
 struct SystemTelemetryProviderPlanStep: Equatable, Identifiable {
@@ -604,7 +644,48 @@ final class SystemTelemetryBridge {
             requiresGrant: string(from: object["requires_grant"]) ?? string(from: object["requiresGrant"]),
             credentialRefRequired: bool(from: object["credential_ref_required"]) ?? bool(from: object["credentialRefRequired"]) ?? false,
             freshnessMS: integer(from: object["freshness_ms"]) ?? integer(from: object["freshnessMs"]) ?? 0,
-            description: string(from: object["description"]) ?? ""
+            description: string(from: object["description"]) ?? "",
+            adapterContract: decodeProviderAdapterContract(object["adapter_contract"] as? [String: Any] ?? object["adapterContract"] as? [String: Any])
+        )
+    }
+
+    private static func decodeProviderAdapterContract(_ object: [String: Any]?) -> SystemTelemetryProviderAdapterContract? {
+        guard let object,
+              let providerID = string(from: object["provider_id"]) ?? string(from: object["providerId"]) else {
+            return nil
+        }
+        let input = object["input"] as? [String: Any] ?? [:]
+        let output = object["output"] as? [String: Any] ?? [:]
+        let audit = object["audit"] as? [String: Any] ?? [:]
+        let redaction = audit["redaction"] as? [String: Any] ?? [:]
+        let executionPolicy = object["execution_policy"] as? [String: Any] ?? object["executionPolicy"] as? [String: Any] ?? [:]
+        return SystemTelemetryProviderAdapterContract(
+            providerID: providerID,
+            adapterKind: string(from: object["adapter_kind"]) ?? string(from: object["adapterKind"]) ?? "",
+            mode: string(from: object["mode"]) ?? "",
+            input: SystemTelemetryProviderAdapterInput(
+                credentialRef: string(from: input["credential_ref"]) ?? string(from: input["credentialRef"]) ?? "",
+                requiredGrants: stringArray(from: input["required_grants"]) ?? stringArray(from: input["requiredGrants"]) ?? [],
+                networkAccess: string(from: input["network_access"]) ?? string(from: input["networkAccess"]) ?? ""
+            ),
+            output: SystemTelemetryProviderAdapterOutput(
+                metrics: stringArray(from: output["metrics"]) ?? stringArray(from: output["metric_keys"]) ?? stringArray(from: output["metricKeys"]) ?? [],
+                sampleShape: string(from: output["sample_shape"]) ?? string(from: output["sampleShape"]) ?? "",
+                monitorWriteRequired: bool(from: output["monitor_write_required"]) ?? bool(from: output["monitorWriteRequired"]) ?? false
+            ),
+            audit: SystemTelemetryProviderAdapterAudit(
+                event: string(from: audit["event"]) ?? "",
+                receiptRequired: bool(from: audit["receipt_required"]) ?? bool(from: audit["receiptRequired"]) ?? false,
+                durableReceiptSource: string(from: audit["durable_receipt_source"]) ?? string(from: audit["durableReceiptSource"]) ?? "",
+                redaction: SystemTelemetryProviderAdapterRedaction(
+                    credentialRefRedacted: bool(from: redaction["credential_ref_redacted"]) ?? bool(from: redaction["credentialRefRedacted"]) ?? false,
+                    preciseLocationRedacted: bool(from: redaction["precise_location_redacted"]) ?? bool(from: redaction["preciseLocationRedacted"]) ?? false
+                )
+            ),
+            executionPolicy: SystemTelemetryProviderAdapterExecutionPolicy(
+                failClosed: bool(from: executionPolicy["fail_closed"]) ?? bool(from: executionPolicy["failClosed"]) ?? false,
+                externalPendingUntilReceipt: bool(from: executionPolicy["external_pending_until_receipt"]) ?? bool(from: executionPolicy["externalPendingUntilReceipt"]) ?? false
+            )
         )
     }
 

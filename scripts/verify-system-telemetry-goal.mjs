@@ -322,6 +322,10 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func history(metricKey: String, range: String = \"1h\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "static func decodeHistory(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "struct SystemTelemetryProviderPlan");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "struct SystemTelemetryProviderAdapterContract");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "var adapterContract: SystemTelemetryProviderAdapterContract?");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static func decodeProviderAdapterContract");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "metrics: stringArray(from: output[\"metrics\"])");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "struct SystemTelemetryPlanAuditProjection");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "var auditPlan: SystemTelemetryPlanAuditProjection?");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static func decodeAuditPlan");
@@ -394,8 +398,10 @@ function assertSwiftTestCoverage() {
     "testDecodesPortableCliWidgetListPayload",
     "testDecodesControlCatalogAndPlanPayloads",
     "testDecodesProviderCatalogAndPlanPayloads",
+    "XCTAssertEqual(providers[0].adapterContract?.output.metrics, [\"context.weather.temperature\"])",
     "testControlPlanBridgeSendsPlanOnlyRequestArguments",
     "testProviderPlanBridgeSendsPlanOnlyRequestArguments",
+    "XCTAssertEqual(plan.provider.adapterContract?.output.metrics, [\"context.weather.temperature\"])",
     "XCTAssertEqual(plan.credentialRef, \"provided_redacted\")",
     "XCTAssertEqual(plan.auditPlan?.redaction.credentialRefRedacted, true)",
     "XCTAssertEqual(plan.auditPlan?.redaction.targetRedacted, true)",

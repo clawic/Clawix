@@ -417,6 +417,38 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                         "credentialRefRequired": .bool(true),
                         "freshnessMs": .integer(900000),
                         "description": .string("Live provider slot."),
+                        "adapterContract": .object([
+                            "providerId": .string("context.weather.live"),
+                            "adapterKind": .string("weather"),
+                            "mode": .string("live"),
+                            "input": .object([
+                                "credentialRef": .string("required_redacted"),
+                                "requiredGrants": .array([
+                                    .string("weather.location.read"),
+                                ]),
+                                "networkAccess": .string("blocked_until_granted"),
+                            ]),
+                            "output": .object([
+                                "metrics": .array([
+                                    .string("context.weather.temperature"),
+                                ]),
+                                "sampleShape": .string("system_telemetry_metric_sample"),
+                                "monitorWriteRequired": .bool(true),
+                            ]),
+                            "audit": .object([
+                                "event": .string("system.telemetry.provider.weather.live"),
+                                "receiptRequired": .bool(true),
+                                "durableReceiptSource": .string("provider_broker_or_signed_host"),
+                                "redaction": .object([
+                                    "credentialRefRedacted": .bool(true),
+                                    "preciseLocationRedacted": .bool(true),
+                                ]),
+                            ]),
+                            "executionPolicy": .object([
+                                "failClosed": .bool(true),
+                                "externalPendingUntilReceipt": .bool(true),
+                            ]),
+                        ]),
                     ]),
                     .object([
                         "id": .string("system.sensors.signed"),
@@ -452,6 +484,18 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(providers[0].metricKeys, ["context.weather.temperature"])
         XCTAssertEqual(providers[0].requiresGrant, "weather.location.read")
         XCTAssertEqual(providers[0].credentialRefRequired, true)
+        XCTAssertEqual(providers[0].adapterContract?.providerID, "context.weather.live")
+        XCTAssertEqual(providers[0].adapterContract?.input.credentialRef, "required_redacted")
+        XCTAssertEqual(providers[0].adapterContract?.input.requiredGrants, ["weather.location.read"])
+        XCTAssertEqual(providers[0].adapterContract?.input.networkAccess, "blocked_until_granted")
+        XCTAssertEqual(providers[0].adapterContract?.output.metrics, ["context.weather.temperature"])
+        XCTAssertEqual(providers[0].adapterContract?.output.sampleShape, "system_telemetry_metric_sample")
+        XCTAssertEqual(providers[0].adapterContract?.output.monitorWriteRequired, true)
+        XCTAssertEqual(providers[0].adapterContract?.audit.durableReceiptSource, "provider_broker_or_signed_host")
+        XCTAssertEqual(providers[0].adapterContract?.audit.redaction.credentialRefRedacted, true)
+        XCTAssertEqual(providers[0].adapterContract?.audit.redaction.preciseLocationRedacted, true)
+        XCTAssertEqual(providers[0].adapterContract?.executionPolicy.failClosed, true)
+        XCTAssertEqual(providers[0].adapterContract?.executionPolicy.externalPendingUntilReceipt, true)
         XCTAssertEqual(providers[1].kind, "hardware_sensor")
         XCTAssertEqual(providers[1].metricKeys, ["system.sensor.temperature", "system.sensor.fan_speed"])
         XCTAssertEqual(providers[1].requiresGrant, "system.sensor.read")
@@ -670,6 +714,38 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                         "credential_ref_required": .bool(true),
                         "freshness_ms": .integer(900000),
                         "description": .string("Live provider slot."),
+                        "adapter_contract": .object([
+                            "provider_id": .string("context.weather.live"),
+                            "adapter_kind": .string("weather"),
+                            "mode": .string("live"),
+                            "input": .object([
+                                "credential_ref": .string("required_redacted"),
+                                "required_grants": .array([
+                                    .string("weather.location.read"),
+                                ]),
+                                "network_access": .string("blocked_until_granted"),
+                            ]),
+                            "output": .object([
+                                "metrics": .array([
+                                    .string("context.weather.temperature"),
+                                ]),
+                                "sample_shape": .string("system_telemetry_metric_sample"),
+                                "monitor_write_required": .bool(true),
+                            ]),
+                            "audit": .object([
+                                "event": .string("system.telemetry.provider.weather.live"),
+                                "receipt_required": .bool(true),
+                                "durable_receipt_source": .string("provider_broker_or_signed_host"),
+                                "redaction": .object([
+                                    "credential_ref_redacted": .bool(true),
+                                    "precise_location_redacted": .bool(true),
+                                ]),
+                            ]),
+                            "execution_policy": .object([
+                                "fail_closed": .bool(true),
+                                "external_pending_until_receipt": .bool(true),
+                            ]),
+                        ]),
                     ]),
                     "request": .object([
                         "credential_ref": .string("provided_redacted"),
@@ -711,6 +787,10 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         )
 
         XCTAssertEqual(plan.provider.id, "context.weather.live")
+        XCTAssertEqual(plan.provider.adapterContract?.providerID, "context.weather.live")
+        XCTAssertEqual(plan.provider.adapterContract?.output.metrics, ["context.weather.temperature"])
+        XCTAssertEqual(plan.provider.adapterContract?.audit.receiptRequired, true)
+        XCTAssertEqual(plan.provider.adapterContract?.executionPolicy.externalPendingUntilReceipt, true)
         XCTAssertEqual(plan.credentialRef, "provided_redacted")
         XCTAssertEqual(plan.requiredGrants, ["weather.location.read"])
         XCTAssertEqual(plan.credentialRefRequired, true)
