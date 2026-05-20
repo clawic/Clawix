@@ -253,6 +253,18 @@
       "patch": { "laneId": "CLX-SDK-EXT-001", "evidence": { "nativeGrantRefs": [] } }
     },
     {
+      "name": "rejects extra approved lane id",
+      "patch": { "laneId": "CLX-SDK-EXT-001", "runAuthorization": { "approvedLaneIds": ["CLX-SDK-EXT-001", "CLX-SDK-EXT-002"] } }
+    },
+    {
+      "name": "rejects extra public closure row",
+      "patch": { "laneId": "CLX-SDK-EXT-003", "closureImpact": { "publicRows": ["CLX-SDK-008", "CLJ-SDK-008", "CLX-SDK-004"] } }
+    },
+    {
+      "name": "rejects missing same-machine evidence",
+      "patch": { "laneId": "CLX-SDK-EXT-004", "evidence": { "sameMachineEvidenceRefs": [] } }
+    },
+    {
       "name": "rejects performance baseline missing required flow",
       "patch": { "laneId": "CLX-SDK-EXT-003", "evidence": { "approvedCriticalFlows": ["installed_app_launch"] } }
     },

@@ -20,6 +20,11 @@ Synthetic fixtures in
 `docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json`
 prove validator behavior only and are not approval or evidence.
 
+The validator treats `runAuthorization.approvedLaneIds` and
+`closureImpact.publicRows` as exact lane-scoped sets. Extra lane ids, duplicate
+entries, extra closure rows, or missing same-machine evidence are rejected even
+when the required lane row is present.
+
 ## Lanes
 
 | Lane | Safe preflight | Required approval | Required evidence | Update target | Fail rule |

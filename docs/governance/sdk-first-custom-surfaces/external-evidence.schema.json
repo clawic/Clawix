@@ -42,7 +42,7 @@
         "approvedAt": { "type": "string", "format": "date-time" },
         "expiresAt": { "type": "string", "format": "date-time" },
         "exactRunScope": { "type": "string", "minLength": 1 },
-        "approvedLaneIds": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        "approvedLaneIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
       }
     },
     "preflight": {
@@ -76,7 +76,7 @@
       "required": ["auditRefs", "sameMachineEvidenceRefs", "nativeGrantRefs", "providerOrDeviceRefs", "performanceBaselineRefs", "marketplaceTrustRefs", "approvedCriticalFlows", "rollbackOrContinuityRefs"],
       "properties": {
         "auditRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "sameMachineEvidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "sameMachineEvidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
         "providerOrDeviceRefs": { "type": "array", "items": { "type": "string" } },
         "performanceBaselineRefs": { "type": "array", "items": { "type": "string" } },
@@ -103,7 +103,7 @@
       "additionalProperties": false,
       "required": ["publicRows", "docsToUpdate", "verifiersToRerun", "requiresFinalSourceReread", "requiresUserReviewDecision"],
       "properties": {
-        "publicRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "publicRows": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
         "docsToUpdate": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "verifiersToRerun": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "requiresFinalSourceReread": { "const": true },

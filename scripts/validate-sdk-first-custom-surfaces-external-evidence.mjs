@@ -57,6 +57,13 @@ function includesAll(actual, expected, label) {
   if (missing.length > 0) fail(`${label} is missing ${missing.join(", ")}`);
 }
 
+function requireExactSet(actual, expected, label) {
+  includesAll(actual, expected, label);
+  const unexpected = actual.filter((item) => !expected.includes(item));
+  if (unexpected.length > 0) fail(`${label} has unexpected entries ${unexpected.join(", ")}`);
+  if (new Set(actual).size !== actual.length) fail(`${label} must not contain duplicates`);
+}
+
 function mergePatch(base, patch) {
   if (!patch || typeof patch !== "object" || Array.isArray(patch)) return patch;
   const next = { ...base };
@@ -81,7 +88,7 @@ export function validatePacket(packet) {
   requireString(packet.runAuthorization?.approvedAt, "runAuthorization.approvedAt");
   requireString(packet.runAuthorization?.expiresAt, "runAuthorization.expiresAt");
   requireString(packet.runAuthorization?.exactRunScope, "runAuthorization.exactRunScope");
-  includesAll(asArray(packet.runAuthorization?.approvedLaneIds, "runAuthorization.approvedLaneIds"), [packet.laneId], "runAuthorization.approvedLaneIds");
+  requireExactSet(asArray(packet.runAuthorization?.approvedLaneIds, "runAuthorization.approvedLaneIds"), [packet.laneId], "runAuthorization.approvedLaneIds");
 
   requireTrue(packet.preflight?.failClosedBeforeApproval, "preflight.failClosedBeforeApproval");
   if (asArray(packet.preflight?.checks, "preflight.checks").length < 1) fail("preflight.checks must not be empty");
@@ -96,12 +103,13 @@ export function validatePacket(packet) {
   for (const field of ["sameMachineEvidenceRefs", "nativeGrantRefs", "providerOrDeviceRefs", "performanceBaselineRefs", "marketplaceTrustRefs", "approvedCriticalFlows", "rollbackOrContinuityRefs"]) {
     asArray(evidence[field], `evidence.${field}`);
   }
+  if (evidence.sameMachineEvidenceRefs.length < 1) fail("evidence.sameMachineEvidenceRefs must not be empty");
 
   for (const field of ["containsSecrets", "containsRawCredentials", "containsPrivatePaths", "containsRawTrace", "containsPreciseLocation", "containsDeviceIdentifiers"]) {
     requireFalse(packet.redaction?.[field], `redaction.${field}`);
   }
 
-  includesAll(asArray(packet.closureImpact?.publicRows, "closureImpact.publicRows"), expectedRows[packet.laneId], "closureImpact.publicRows");
+  requireExactSet(asArray(packet.closureImpact?.publicRows, "closureImpact.publicRows"), expectedRows[packet.laneId], "closureImpact.publicRows");
   if (asArray(packet.closureImpact?.docsToUpdate, "closureImpact.docsToUpdate").length < 1) fail("closureImpact.docsToUpdate must not be empty");
   if (asArray(packet.closureImpact?.verifiersToRerun, "closureImpact.verifiersToRerun").length < 1) fail("closureImpact.verifiersToRerun must not be empty");
   requireTrue(packet.closureImpact?.requiresFinalSourceReread, "closureImpact.requiresFinalSourceReread");
