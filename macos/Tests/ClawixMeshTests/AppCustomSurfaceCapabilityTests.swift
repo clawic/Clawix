@@ -31,18 +31,27 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let record = AppRecord(
             slug: "workspace-panel",
             name: "Workspace Panel",
-            declaredCapabilities: ["search.query", "db.query", "secrets.broker", "iot.device.action.invoke"]
+            declaredCapabilities: [
+                "search.query",
+                "db.query",
+                "system.telemetry.snapshot",
+                "system.telemetry.history",
+                "secrets.broker",
+                "iot.device.action.invoke"
+            ]
         )
 
         let riskMap = AppCapabilityCatalog.riskMap(for: record)
 
         XCTAssertEqual(riskMap.authorityModel, "localWideReadsHighRiskApproval")
-        XCTAssertTrue(riskMap.ordinaryAccess.contains("search.query"))
-        XCTAssertTrue(riskMap.ordinaryAccess.contains("db.query"))
-        XCTAssertTrue(riskMap.approvalRequired.contains("secrets.broker"))
-        XCTAssertTrue(riskMap.approvalRequired.contains("iot.device.action.invoke"))
-        XCTAssertTrue(riskMap.highRisk.contains("secrets.broker"))
-        XCTAssertTrue(riskMap.highRisk.contains("iot.device.action.invoke"))
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("search.query"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("db.query"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.snapshot"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.history"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.approvalRequired.contains("secrets.broker"), "\(riskMap.approvalRequired)")
+        XCTAssertTrue(riskMap.approvalRequired.contains("iot.device.action.invoke"), "\(riskMap.approvalRequired)")
+        XCTAssertTrue(riskMap.highRisk.contains("secrets.broker"), "\(riskMap.highRisk)")
+        XCTAssertTrue(riskMap.highRisk.contains("iot.device.action.invoke"), "\(riskMap.highRisk)")
         XCTAssertFalse(riskMap.capabilityIds.contains("core.sqlite"))
     }
 
@@ -59,7 +68,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
     func testOrdinaryReadCapabilitiesExposeSharedRedactionPolicy() {
         let ordinary = AppCapabilityCatalog.descriptors.filter { $0.customAppAccess == .localWide }
-        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.read", "search.query"])
+        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
         for descriptor in ordinary {
             XCTAssertEqual(descriptor.redactionPolicyRef, AppBridgeRedactionPolicy.policyId, descriptor.id)
             XCTAssertEqual(descriptor.bridgeValue["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
@@ -72,6 +81,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "search.query")?.inputSchemaRef, "claw.search.query.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "db.query")?.outputSchemaRef, "claw.db.records.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "resources.read")?.inputSchemaRef, "claw.resources.read.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.snapshot")?.outputSchemaRef, "claw.system.telemetry.snapshot.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.history")?.inputSchemaRef, "claw.system.telemetry.history.request.v1")
     }
 
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
@@ -1374,6 +1385,13 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
         let resources = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.read" })
         XCTAssertEqual(resources["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
+        let snapshot = try XCTUnwrap(capabilities.first { $0["id"] as? String == "system.telemetry.snapshot" })
+        XCTAssertEqual(snapshot["outputSchemaRef"] as? String, "claw.system.telemetry.snapshot.v1")
+        XCTAssertEqual(snapshot["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
+        let history = try XCTUnwrap(capabilities.first { $0["id"] as? String == "system.telemetry.history" })
+        XCTAssertEqual(history["inputSchemaRef"] as? String, "claw.system.telemetry.history.request.v1")
+        let historyDispatch = try XCTUnwrap(history["dispatch"] as? [String: Any])
+        XCTAssertEqual(historyDispatch["mode"] as? String, "localWideRead")
         let mac = try XCTUnwrap(capabilities.first { $0["id"] as? String == "mac.action.plan" })
         XCTAssertEqual(mac["inputSchemaRef"] as? String, "claw.mac.actionRequest.v1")
         XCTAssertEqual(mac["outputSchemaRef"] as? String, "claw.mac.actionPlan.v1")
@@ -1386,6 +1404,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("resources.read"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("resources.list"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.snapshot"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.history"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.progress"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.partial"))
@@ -1401,6 +1421,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("search.query"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("db.query"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.contracts"))
 
         for operation in AppBridgeOperationPolicy.forbiddenEscapeHatchOperations {
@@ -1414,6 +1436,78 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("fs.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("process.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("native.") })
+    }
+
+    func testSystemTelemetryBridgeValuesMatchSdkContracts() throws {
+        let snapshot = SystemTelemetrySnapshotState(
+            capturedAt: "2026-05-20T00:00:00Z",
+            samples: [
+                SystemTelemetrySample(
+                    metricKey: "cpu.load",
+                    value: 0.25,
+                    stringValue: nil,
+                    unit: "percent",
+                    capturedAt: "2026-05-20T00:00:00Z",
+                    source: "system.telemetry.local",
+                    confidence: "official"
+                ),
+                SystemTelemetrySample(
+                    metricKey: "focus.mode",
+                    value: 0,
+                    stringValue: "on",
+                    unit: "state",
+                    capturedAt: "2026-05-20T00:00:00Z",
+                    source: "system.telemetry.local",
+                    confidence: "local"
+                )
+            ],
+            unavailableMetricKeys: ["fan.rpm"],
+            defaultAgentAccess: "safe_read",
+            retentionOwner: "monitor"
+        )
+
+        let bridgeSnapshot = AppBridgeMessageHandler.systemTelemetrySnapshotBridgeValue(
+            snapshot,
+            metricKeys: ["cpu.load", "fan.rpm"],
+            includeUnavailable: true
+        )
+        XCTAssertEqual(bridgeSnapshot["schemaVersion"] as? Int, 1)
+        XCTAssertEqual(bridgeSnapshot["source"] as? String, "system.telemetry.snapshot")
+        XCTAssertEqual(bridgeSnapshot["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
+        XCTAssertEqual(bridgeSnapshot["unavailableMetrics"] as? [String], ["fan.rpm"])
+        let samples = try XCTUnwrap(bridgeSnapshot["samples"] as? [[String: Any]])
+        XCTAssertEqual(samples.count, 1)
+        XCTAssertEqual(samples.first?["key"] as? String, "cpu.load")
+        let sampleSource = try XCTUnwrap(samples.first?["source"] as? [String: Any])
+        XCTAssertEqual(sampleSource["adapter"] as? String, "signed_host")
+        XCTAssertEqual(sampleSource["confidence"] as? String, "official")
+
+        let history = SystemTelemetryHistory(
+            metricKey: "cpu.load",
+            rangeMS: 3_600_000,
+            retentionStatus: "recorded",
+            chart: SystemTelemetryHistoryChart(
+                kind: "line",
+                metricKey: "cpu.load",
+                unit: "percent",
+                source: "metric_samples",
+                points: [
+                    SystemTelemetryHistoryPoint(timestampMS: 1, value: 0.1, sourceID: "system.telemetry.local", count: nil),
+                    SystemTelemetryHistoryPoint(timestampMS: 2, value: 0.2, sourceID: "system.telemetry.local", count: 2)
+                ],
+                empty: false
+            )
+        )
+        let bridgeHistory = AppBridgeMessageHandler.systemTelemetryHistoryBridgeValue(history)
+        XCTAssertEqual(bridgeHistory["metricKey"] as? String, "cpu.load")
+        XCTAssertEqual(bridgeHistory["source"] as? String, "system.telemetry.history")
+        XCTAssertEqual(bridgeHistory["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
+        let retention = try XCTUnwrap(bridgeHistory["retention"] as? [String: Any])
+        XCTAssertEqual(retention["store"] as? String, "monitor.sqlite")
+        XCTAssertEqual(retention["status"] as? String, "recorded")
+        let chart = try XCTUnwrap(bridgeHistory["chart"] as? [String: Any])
+        XCTAssertEqual(chart["source"] as? String, "metric_samples")
+        XCTAssertEqual((chart["points"] as? [[String: Any]])?.count, 2)
     }
 
     @MainActor

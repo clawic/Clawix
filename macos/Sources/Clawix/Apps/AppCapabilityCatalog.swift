@@ -63,6 +63,10 @@ enum AppCapabilityCatalog {
     static let dbRecordsSchemaRef = "claw.db.records.v1"
     static let resourcesReadSchemaRef = "claw.resources.read.v1"
     static let resourcesPayloadSchemaRef = "claw.resources.payload.v1"
+    static let systemTelemetrySnapshotRequestSchemaRef = "claw.system.telemetry.snapshot.request.v1"
+    static let systemTelemetrySnapshotSchemaRef = "claw.system.telemetry.snapshot.v1"
+    static let systemTelemetryHistoryRequestSchemaRef = "claw.system.telemetry.history.request.v1"
+    static let systemTelemetryHistorySchemaRef = "claw.system.telemetry.history.v1"
     static let actionsInvokeSchemaRef = "claw.actions.invoke.v1"
     static let actionsReceiptSchemaRef = "claw.actions.receipt.v1"
     static let secretsBrokerSchemaRef = "claw.secrets.broker.v1"
@@ -120,6 +124,38 @@ enum AppCapabilityCatalog {
             summary: "Read registered resources through resource contracts.",
             inputSchemaRef: resourcesReadSchemaRef,
             outputSchemaRef: resourcesPayloadSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
+            id: "system.telemetry.snapshot",
+            title: "System telemetry snapshot",
+            summary: "Read the safe local system telemetry snapshot through the host bridge.",
+            inputSchemaRef: systemTelemetrySnapshotRequestSchemaRef,
+            outputSchemaRef: systemTelemetrySnapshotSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
+            id: "system.telemetry.history",
+            title: "System telemetry history",
+            summary: "Read retained Monitor-backed telemetry history for approved local metrics.",
+            inputSchemaRef: systemTelemetryHistoryRequestSchemaRef,
+            outputSchemaRef: systemTelemetryHistorySchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
@@ -257,7 +293,11 @@ enum AppCapabilityCatalog {
             secretsBrokerSchemaRef,
             secretsReceiptSchemaRef,
             searchQuerySchemaRef,
-            searchResultsSchemaRef
+            searchResultsSchemaRef,
+            systemTelemetryHistoryRequestSchemaRef,
+            systemTelemetryHistorySchemaRef,
+            systemTelemetrySnapshotRequestSchemaRef,
+            systemTelemetrySnapshotSchemaRef
         ].sorted()
     }
 
@@ -312,7 +352,7 @@ enum AppCapabilityCatalog {
 
     static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
         switch descriptor.id {
-        case "search.query", "db.query", "resources.read":
+        case "search.query", "db.query", "resources.read", "system.telemetry.snapshot", "system.telemetry.history":
             return [
                 "status": "available",
                 "mode": "localWideRead",

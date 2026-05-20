@@ -191,6 +191,25 @@ let ClawixAppsSDKJS = #"""
         }, { signal: input.signal, onProgress: input.onProgress, onPartial: input.onPartial });
       }
     },
+    system: {
+      telemetry: {
+        snapshot: function (opts) {
+          opts = opts || {};
+          return send('system.telemetry.snapshot', {
+            source: opts.source == null ? 'local' : String(opts.source),
+            metricKeys: Array.isArray(opts.metricKeys) ? opts.metricKeys : [],
+            includeUnavailable: opts.includeUnavailable !== false
+          }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
+        },
+        history: function (opts) {
+          opts = opts || {};
+          return send('system.telemetry.history', {
+            metricKey: String(opts.metricKey || opts.key || ''),
+            range: opts.range == null ? '1h' : String(opts.range)
+          }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
+        }
+      }
+    },
     ui: {
       setTitle: function (title) { return send('ui.setTitle', { title: String(title || '') }); },
       setBadge: function (text) {

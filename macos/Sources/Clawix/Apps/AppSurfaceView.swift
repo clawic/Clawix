@@ -550,6 +550,7 @@ private struct AppSurfaceWebView: NSViewRepresentable {
             appsStore: appsStore,
             appState: appState,
             databaseManager: databaseManager,
+            systemTelemetryBridge: .localStatusBridge(),
             surfaceReporter: surfaceReporter,
             highRiskActionDispatcher: AppFrameworkHighRiskActionDispatcher(iotManager: iotManager)
         )

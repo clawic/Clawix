@@ -14,6 +14,8 @@ enum AppBridgeOperationPolicy {
         "resources.list",
         "resources.read",
         "search.query",
+        "system.telemetry.history",
+        "system.telemetry.snapshot",
         "storage.delete",
         "storage.get",
         "storage.keys",
@@ -58,6 +60,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private weak var appState: AppState?
     private weak var databaseManager: DatabaseManager?
     private let resourceRegistry: AppResourceRegistryStore
+    private let systemTelemetryBridge: SystemTelemetryBridge?
     private let surfaceReporter: SurfaceRouteReporter
     private let highRiskActionDispatcher: AppHighRiskActionDispatcher
     private var activeRequests: [String: Task<Void, Never>] = [:]
@@ -73,6 +76,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         appState: AppState?,
         databaseManager: DatabaseManager? = nil,
         resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),
+        systemTelemetryBridge: SystemTelemetryBridge? = nil,
         surfaceReporter: SurfaceRouteReporter = .noop,
         highRiskActionDispatcher: AppHighRiskActionDispatcher? = nil
     ) {
@@ -81,6 +85,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         self.appState = appState
         self.databaseManager = databaseManager
         self.resourceRegistry = resourceRegistry
+        self.systemTelemetryBridge = systemTelemetryBridge
         self.surfaceReporter = surfaceReporter
         self.highRiskActionDispatcher = highRiskActionDispatcher ?? AppUnavailableHighRiskActionDispatcher()
         super.init()
@@ -186,6 +191,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "resources.read":
                 startTrackedRequest(requestId: requestId, label: "Resource read") { [weak self] in
                     await self?.handleResourceRead(payload: payload, requestId: requestId)
+                }
+            case "system.telemetry.snapshot":
+                startTrackedRequest(requestId: requestId, label: "System telemetry snapshot") { [weak self] in
+                    await self?.handleSystemTelemetrySnapshot(payload: payload, requestId: requestId)
+                }
+            case "system.telemetry.history":
+                startTrackedRequest(requestId: requestId, label: "System telemetry history") { [weak self] in
+                    await self?.handleSystemTelemetryHistory(payload: payload, requestId: requestId)
                 }
             case "request.cancel":
                 let target = (payload["requestId"] as? String) ?? requestId
@@ -694,6 +707,189 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             reject(requestId: requestId, message: "Request cancelled")
         } catch {
             reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func handleSystemTelemetrySnapshot(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("system.telemetry.snapshot")
+            guard let systemTelemetryBridge else {
+                reject(requestId: requestId, message: "System telemetry bridge is unavailable")
+                return
+            }
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Reading system telemetry snapshot",
+                progressValue: 0.2
+            )
+            let snapshot = try await systemTelemetryBridge.snapshot()
+            try Task.checkCancellation()
+            let metricKeys = (payload["metricKeys"] as? [String] ?? [])
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            let includeUnavailable = (payload["includeUnavailable"] as? Bool) ?? true
+            let value = Self.systemTelemetrySnapshotBridgeValue(
+                snapshot,
+                metricKeys: metricKeys,
+                includeUnavailable: includeUnavailable
+            )
+            partial(requestId: requestId, value: [
+                "source": "system.telemetry.snapshot",
+                "partialCount": snapshot.samples.count,
+                "progress": 1,
+                "redactionPolicy": AppBridgeRedactionPolicy.policyId
+            ])
+            resolve(requestId: requestId, value: value)
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("System telemetry snapshot cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    private func handleSystemTelemetryHistory(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("system.telemetry.history")
+            guard let systemTelemetryBridge else {
+                reject(requestId: requestId, message: "System telemetry bridge is unavailable")
+                return
+            }
+            let metricKey = ((payload["metricKey"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !metricKey.isEmpty else {
+                reject(requestId: requestId, message: "system.telemetry.history requires a metricKey.")
+                return
+            }
+            let range = ((payload["range"] as? String) ?? "1h").trimmingCharacters(in: .whitespacesAndNewlines)
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Reading system telemetry history",
+                progressValue: 0.2
+            )
+            let history = try await systemTelemetryBridge.history(metricKey: metricKey, range: range.isEmpty ? "1h" : range)
+            try Task.checkCancellation()
+            let value = Self.systemTelemetryHistoryBridgeValue(history)
+            partial(requestId: requestId, value: [
+                "source": "system.telemetry.history",
+                "partialCount": history.chart.points.count,
+                "progress": 1,
+                "redactionPolicy": AppBridgeRedactionPolicy.policyId
+            ])
+            resolve(requestId: requestId, value: value)
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("System telemetry history cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
+    nonisolated static func systemTelemetrySnapshotBridgeValue(
+        _ snapshot: SystemTelemetrySnapshotState,
+        metricKeys: [String] = [],
+        includeUnavailable: Bool = true
+    ) -> [String: Any] {
+        let requested = Set(metricKeys)
+        let samples = snapshot.samples
+            .filter { requested.isEmpty || requested.contains($0.metricKey) }
+            .map { sample -> [String: Any] in
+                [
+                    "key": sample.metricKey,
+                    "value": sample.stringValue ?? sample.value,
+                    "unit": sample.unit,
+                    "capturedAt": sample.capturedAt,
+                    "availability": "available",
+                    "source": [
+                        "adapter": "signed_host",
+                        "confidence": normalizedTelemetryConfidence(sample.confidence),
+                        "detail": sample.source
+                    ],
+                    "quality": "ok"
+                ]
+            }
+        let unavailable = includeUnavailable
+            ? snapshot.unavailableMetricKeys.filter { requested.isEmpty || requested.contains($0) }
+            : []
+        return [
+            "schemaVersion": 1,
+            "generatedAt": snapshot.capturedAt,
+            "host": [
+                "platform": "macOS",
+                "arch": "local",
+                "id": "local"
+            ],
+            "policy": [
+                "defaultAgentAccess": snapshot.defaultAgentAccess.isEmpty ? "safe_read" : snapshot.defaultAgentAccess,
+                "sensitiveRequiresGrant": true,
+                "controlsRequireSignedHostBroker": true
+            ],
+            "samples": samples,
+            "unavailableMetrics": unavailable,
+            "source": "system.telemetry.snapshot",
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
+        ]
+    }
+
+    nonisolated static func systemTelemetryHistoryBridgeValue(_ history: SystemTelemetryHistory) -> [String: Any] {
+        let source = normalizedHistorySource(history.chart.source)
+        let points = history.chart.points.map { point -> [String: Any] in
+            var value: [String: Any] = [
+                "metricKey": history.metricKey,
+                "capturedAt": point.timestampMS,
+                "value": point.value,
+                "sourceId": point.sourceID
+            ]
+            if let count = point.count {
+                value["count"] = count
+            }
+            return value
+        }
+        return [
+            "metricKey": history.metricKey,
+            "rangeMs": history.rangeMS,
+            "retention": [
+                "store": "monitor.sqlite",
+                "status": history.retentionStatus == "recorded" ? "recorded" : "empty"
+            ],
+            "samples": points,
+            "rollups": [],
+            "incidents": [],
+            "chart": [
+                "kind": "line",
+                "source": source,
+                "empty": history.chart.empty,
+                "points": points
+            ],
+            "render": [
+                "kind": "ascii_sparkline",
+                "source": source,
+                "empty": history.chart.empty,
+                "line": history.chart.empty ? "" : "sparkline_private_render"
+            ],
+            "source": "system.telemetry.history",
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
+        ]
+    }
+
+    nonisolated private static func normalizedTelemetryConfidence(_ value: String) -> String {
+        switch value {
+        case "official", "derived", "experimental", "provider":
+            return value
+        default:
+            return "derived"
+        }
+    }
+
+    nonisolated private static func normalizedHistorySource(_ value: String) -> String {
+        switch value {
+        case "metric_samples", "metric_rollups", "empty":
+            return value
+        default:
+            return "empty"
         }
     }
 
