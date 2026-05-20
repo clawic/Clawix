@@ -2987,6 +2987,34 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-external-validation-manifest-fixtures",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-validation.manifest.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-validation.manifest.json",
+        "docs/system-telemetry-external-validation.manifest.schema.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest fixtures",
+        "system telemetry manifest schema negative fixtures",
+        "system telemetry accidental completion fixture"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest fixtures",
+          "expectPath": "docs/system-telemetry-external-validation.manifest.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-external-validation-manifest",
       "kind": "validation-manifest",
       "owner": "clawix",

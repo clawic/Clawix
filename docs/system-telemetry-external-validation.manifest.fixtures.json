@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-system-telemetry-external-validation-manifest-fixtures",
+  "status": "synthetic_templates_not_evidence",
+  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "schemaPath": "docs/system-telemetry-external-validation.manifest.schema.json",
+  "manifestPath": "docs/system-telemetry-external-validation.manifest.json",
+  "validSyntheticManifests": [
+    {
+      "id": "current_manifest",
+      "source": "docs/system-telemetry-external-validation.manifest.json"
+    }
+  ],
+  "invalidSyntheticMutations": [
+    {
+      "id": "goal_status_complete",
+      "mutation": "set_manifest_status_complete",
+      "reason": "The goal cannot be marked complete while external lanes remain pending."
+    },
+    {
+      "id": "external_pending_count_zero",
+      "mutation": "set_external_pending_rows_zero",
+      "reason": "The completion audit summary must preserve the exact remaining external-pending row count."
+    },
+    {
+      "id": "sensor_lane_validated_without_evidence",
+      "mutation": "mark_first_external_lane_validated_local",
+      "reason": "The physical sensor lane must not become validated-local without approved external evidence."
+    },
+    {
+      "id": "missing_packet_validator",
+      "mutation": "delete_external_evidence_packet_validator",
+      "reason": "Future lane closure must keep the packet validator gate."
+    }
+  ]
+}

@@ -19,6 +19,10 @@ lane-closing record.
 The structured manifest must continue to validate against
 `docs/system-telemetry-external-validation.manifest.schema.json` after any
 lane status update.
+Synthetic manifest fixtures live in
+`docs/system-telemetry-external-validation.manifest.fixtures.json`; they are
+schema validation templates only and must not be cited as real external
+evidence.
 Validate the packet with
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before updating any ledger, manifest, completion audit, or source Q/A review.

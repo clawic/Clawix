@@ -19,6 +19,9 @@ status in `docs/system-telemetry-completion-audit.md` and external run steps in
 evidence must conform to `docs/system-telemetry-external-evidence.schema.json`.
 The external manifest must conform to
 `docs/system-telemetry-external-validation.manifest.schema.json`.
+Synthetic manifest fixtures at
+`docs/system-telemetry-external-validation.manifest.fixtures.json` prove that
+accidental completion or lane-clear mutations fail validation.
 Evidence packets must pass
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before any row is updated.

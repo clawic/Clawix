@@ -18,6 +18,7 @@
     "externalEvidencePacketSchema",
     "externalEvidenceFixtures",
     "externalEvidencePacketValidator",
+    "externalValidationManifestFixtures",
     "rows"
   ],
   "properties": {
@@ -98,6 +99,21 @@
             "path": { "const": "scripts/validate-system-telemetry-external-evidence.mjs" },
             "fixtureCommand": { "const": "node scripts/validate-system-telemetry-external-evidence.mjs --fixtures" },
             "packetCommand": { "const": "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>" }
+          }
+        }
+      ]
+    },
+    "externalValidationManifestFixtures": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["status", "validTemplateCount", "invalidMutationCount"],
+          "properties": {
+            "status": { "const": "synthetic_templates_not_evidence" },
+            "validTemplateCount": { "const": 1 },
+            "invalidMutationCount": { "const": 4 },
+            "path": { "const": "docs/system-telemetry-external-validation.manifest.fixtures.json" }
           }
         }
       ]

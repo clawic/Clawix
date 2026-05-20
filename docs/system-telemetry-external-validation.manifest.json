@@ -81,6 +81,15 @@
     "packetCommand": "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>",
     "closureRole": "validates any future redacted evidence packet before a lane can replace EXTERNAL PENDING"
   },
+  "externalValidationManifestFixtures": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-validation-manifest-fixtures",
+    "path": "docs/system-telemetry-external-validation.manifest.fixtures.json",
+    "status": "synthetic_templates_not_evidence",
+    "validTemplateCount": 1,
+    "invalidMutationCount": 4,
+    "closureRole": "proves the manifest schema accepts the current active manifest and rejects accidental completion or lane-clear mutations"
+  },
   "rows": [
     {
       "id": "CLX-SYS-TEL-EXT-001",
