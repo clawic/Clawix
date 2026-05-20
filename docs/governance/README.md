@@ -10,6 +10,7 @@ plans, and companion validation manifests here.
 - [Code Hygiene](code-hygiene/completion.md)
 - [Decision Tension Rubric](decision-tension-rubric.md)
 - [Legal](legal/source-audit.md)
+- [Performance Governance](performance-governance.md)
 - [SDK-First Custom Surfaces](sdk-first-custom-surfaces/plan.md)
 - [System Telemetry](system-telemetry/index.md)
 - [UI Governance](ui/completion.md)

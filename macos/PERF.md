@@ -6,6 +6,11 @@ Diagnostic system for the macOS app. Built so any agent receiving
 in one command, without asking the user to do anything beyond
 reproducing the symptom.
 
+Performance governance treats whole-computer resource pressure as product
+correctness: CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals,
+idle behavior, caches, logs, indexes, and background work are bounded product
+budgets.
+
 This file is the single source of truth for: what to capture, how to
 read it, and which file to look at first per symptom. Update it when
 a new symptom shows up or when a hot-path moves to a different file.

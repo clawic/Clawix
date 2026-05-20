@@ -2,6 +2,11 @@
 
 This is the public performance router for Clawix.
 
+Performance governance treats whole-computer resource pressure as product
+correctness: CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals,
+idle behavior, caches, logs, indexes, and background work are bounded product
+budgets.
+
 Performance work starts with measured reproduction and instrumentation, not
 static code reading. For macOS investigations, use
 [`macos/PERF.md`](macos/PERF.md); it defines the capture stack, symptom table,

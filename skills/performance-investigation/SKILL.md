@@ -6,7 +6,7 @@ keywords: [performance, latency, memory, hitches, profiling, instrumentation]
 
 # performance-investigation
 
-Diagnose performance before changing code.
+Diagnose performance before changing code. Cover CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals, and perceived responsiveness before claiming that a performance fix is complete.
 
 ## Procedure
 

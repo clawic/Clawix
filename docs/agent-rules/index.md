@@ -11,6 +11,10 @@ always-loaded instructions prompt.
 - Decision router: `docs/decision-map.md`.
 - Decision Tension Rubric: `docs/governance/decision-tension-rubric.md` for
   accepted durable ADRs and governance changes.
+- Performance governance: `docs/governance/performance-governance.md` and
+  sibling ClawJS `docs/governance/performance-governance.md` for
+  whole-computer resource impact across CPU, RAM, GPU/Neural Engine, disk,
+  network, battery, thermals, idle behavior, and growth.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.
 - Visual canon: `STYLE.md` before user-facing UI, chrome, tokens, layout,
@@ -52,6 +56,10 @@ always-loaded instructions prompt.
   `TRADEMARKS.md`, `NOTICE`.
 - Durable ADR/governance decisions: `docs/governance/decision-tension-rubric.md`
   and `docs/adr/TEMPLATE.md`.
+- Performance-sensitive durable decisions:
+  `docs/governance/performance-governance.md`,
+  `docs/adr/0022-performance-governance-mirror.md`, and sibling ClawJS
+  `docs/adr/0036-performance-governance.md`.
 
 ## Skill Routing
 
@@ -108,6 +116,9 @@ Use relevant skills instead of pasting long procedures into context:
   decisions.
 - Capabilities are complete only when human and programmatic surfaces are
   registered or gaps are explicitly classified.
+- Performance-sensitive work classifies whole-computer resource impact before
+  durable acceptance: speed, CPU, RAM, GPU/Neural Engine, disk, network,
+  battery, thermals, idle behavior, and growth.
 - Background bridge daemon mode must not be replaced by a second GUI-owned
   backend or bridge.
 - New hand-authored files at 1200+ lines need a split plan or baseline
@@ -124,7 +135,9 @@ Use relevant skills instead of pasting long procedures into context:
 - Prefer fixtures, dry-run paths, interceptors, local backends, and mocks.
 - Mark missing physical/provider prerequisites as `EXTERNAL PENDING` and keep
   them separate from defects.
-- Performance work starts with reproduction and instrumentation.
+- Performance governance starts at `docs/governance/performance-governance.md`.
+  Performance work starts with reproduction and instrumentation, and validated
+  fixes compare resource behavior before and after.
 - Real installed-app conversation validation needs explicit approval for that
   validation session. Existing conversations are read-only; agents may only
   mutate conversations they created for validation.

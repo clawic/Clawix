@@ -12,6 +12,15 @@ Describe the decision pressure, existing behavior, and constraints.
 
 State the decision in implementation-neutral terms.
 
+## Performance Impact
+
+For durable decisions that touch UI, daemon, bridge, storage, search, sync,
+logs, caches, local models, IPC, streaming, timers, indexes, background loops,
+workers, or long-running agents, classify whole-computer resource impact:
+speed, CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals, idle
+behavior, and growth over time. State the boundedness rule and measurement
+evidence, or explain why performance impact is not material.
+
 ## Decision Tensions
 
 Accepted ADRs that change durable architecture, governance, data, security,

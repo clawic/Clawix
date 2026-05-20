@@ -520,6 +520,41 @@
       "canonicalName": "adr:decision-tension-rubric"
     },
     {
+      "id": "adr-docs-adr-0022-performance-governance-mirror",
+      "kind": "adr",
+      "owner": "clawix",
+      "canonicalSource": "docs/adr/0022-performance-governance-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0022: Performance governance mirror",
+        "0022-performance-governance-mirror",
+        "ADR 0022",
+        "performance governance",
+        "Performance Governance",
+        "adr:performance-governance"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0022: Performance governance mirror",
+          "expectPath": "docs/adr/0022-performance-governance-mirror.md"
+        },
+        {
+          "query": "adr:performance-governance",
+          "expectPath": "docs/adr/0022-performance-governance-mirror.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:performance-governance"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "owner": "clawix",
@@ -1677,6 +1712,31 @@
         }
       ],
       "guard": "scripts/package_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-performance-governance-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/performance_governance_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "performance_governance_check",
+        "Performance Governance Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "performance_governance_check",
+          "expectPath": "scripts/performance_governance_check.mjs"
+        }
+      ],
+      "guard": "scripts/performance_governance_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
