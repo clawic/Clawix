@@ -29,6 +29,10 @@ Timestamp fields must be RFC3339 date-times. Execution must start after the
 approved preflight, finish inside the approval window, and reviewer acceptance
 must be recorded after execution completes.
 
+Evidence packets are closed-shape objects matching the public schema. Unknown
+properties and empty reference strings are rejected so a packet cannot smuggle
+unstated approval claims or blank evidence placeholders.
+
 ## Lanes
 
 | Lane | Safe preflight | Required approval | Required evidence | Update target | Fail rule |

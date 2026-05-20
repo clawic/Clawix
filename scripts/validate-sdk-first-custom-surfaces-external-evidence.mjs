@@ -27,6 +27,49 @@ const expectedExecutors = {
   "CLX-SDK-EXT-004": "marketplace_trust_review",
 };
 const dateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const packetKeys = [
+  "schemaVersion",
+  "conversationId",
+  "goal",
+  "laneId",
+  "status",
+  "runAuthorization",
+  "preflight",
+  "execution",
+  "evidence",
+  "redaction",
+  "closureImpact",
+  "reviewer",
+];
+const runAuthorizationKeys = ["approvalId", "approvedBy", "approvedAt", "expiresAt", "exactRunScope", "approvedLaneIds"];
+const preflightKeys = ["completedAt", "failClosedBeforeApproval", "checks", "resultRefs"];
+const executionKeys = ["startedAt", "completedAt", "executor", "receiptRefs", "failedApprovedRun"];
+const evidenceKeys = [
+  "auditRefs",
+  "sameMachineEvidenceRefs",
+  "nativeGrantRefs",
+  "providerOrDeviceRefs",
+  "performanceBaselineRefs",
+  "marketplaceTrustRefs",
+  "approvedCriticalFlows",
+  "rollbackOrContinuityRefs",
+];
+const redactionKeys = [
+  "containsSecrets",
+  "containsRawCredentials",
+  "containsPrivatePaths",
+  "containsRawTrace",
+  "containsPreciseLocation",
+  "containsDeviceIdentifiers",
+];
+const closureImpactKeys = [
+  "publicRows",
+  "docsToUpdate",
+  "verifiersToRerun",
+  "requiresFinalSourceReread",
+  "requiresUserReviewDecision",
+];
+const reviewerKeys = ["reviewedAt", "reviewedBy", "decision"];
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
@@ -41,8 +84,27 @@ function asArray(value, label) {
   return value;
 }
 
+function requirePlainObject(value, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) fail(`${label} must be an object`);
+  return value;
+}
+
+function requireOnlyKeys(value, allowedKeys, label) {
+  const object = requirePlainObject(value, label);
+  const allowed = new Set(allowedKeys);
+  const unexpected = Object.keys(object).filter((key) => !allowed.has(key));
+  if (unexpected.length > 0) fail(`${label} has unexpected properties ${unexpected.join(", ")}`);
+  return object;
+}
+
 function requireString(value, label) {
   if (typeof value !== "string" || value.length === 0) fail(`${label} must be a non-empty string`);
+}
+
+function asStringArray(value, label) {
+  const array = asArray(value, label);
+  array.forEach((item, index) => requireString(item, `${label}[${index}]`));
+  return array;
 }
 
 function requireDateTime(value, label) {
@@ -86,54 +148,63 @@ function mergePatch(base, patch) {
 
 export function validatePacket(packet) {
   if (!packet || typeof packet !== "object" || Array.isArray(packet)) fail("packet must be an object");
+  requireOnlyKeys(packet, packetKeys, "packet");
+  const runAuthorization = requireOnlyKeys(packet.runAuthorization, runAuthorizationKeys, "runAuthorization");
+  const preflight = requireOnlyKeys(packet.preflight, preflightKeys, "preflight");
+  const execution = requireOnlyKeys(packet.execution, executionKeys, "execution");
+  const evidence = requireOnlyKeys(packet.evidence, evidenceKeys, "evidence");
+  const redaction = requireOnlyKeys(packet.redaction, redactionKeys, "redaction");
+  const closureImpact = requireOnlyKeys(packet.closureImpact, closureImpactKeys, "closureImpact");
+  const reviewer = requireOnlyKeys(packet.reviewer, reviewerKeys, "reviewer");
+
   if (packet.schemaVersion !== 1) fail("schemaVersion must be 1");
   if (packet.conversationId !== "019e403c-3837-7f02-9b78-532c43cdd997") fail("conversationId mismatch");
   if (packet.goal !== "sdk-first-custom-surfaces") fail("goal mismatch");
   if (packet.status !== "accepted_external_evidence") fail("status must be accepted_external_evidence");
   if (!expectedRows[packet.laneId]) fail("laneId is not a known SDK-first external lane");
 
-  requireString(packet.runAuthorization?.approvalId, "runAuthorization.approvalId");
-  requireString(packet.runAuthorization?.approvedBy, "runAuthorization.approvedBy");
-  const approvedAt = requireDateTime(packet.runAuthorization?.approvedAt, "runAuthorization.approvedAt");
-  const expiresAt = requireDateTime(packet.runAuthorization?.expiresAt, "runAuthorization.expiresAt");
+  requireString(runAuthorization.approvalId, "runAuthorization.approvalId");
+  requireString(runAuthorization.approvedBy, "runAuthorization.approvedBy");
+  const approvedAt = requireDateTime(runAuthorization.approvedAt, "runAuthorization.approvedAt");
+  const expiresAt = requireDateTime(runAuthorization.expiresAt, "runAuthorization.expiresAt");
   if (expiresAt <= approvedAt) fail("runAuthorization.expiresAt must be after runAuthorization.approvedAt");
-  requireString(packet.runAuthorization?.exactRunScope, "runAuthorization.exactRunScope");
-  requireExactSet(asArray(packet.runAuthorization?.approvedLaneIds, "runAuthorization.approvedLaneIds"), [packet.laneId], "runAuthorization.approvedLaneIds");
+  requireString(runAuthorization.exactRunScope, "runAuthorization.exactRunScope");
+  requireExactSet(asStringArray(runAuthorization.approvedLaneIds, "runAuthorization.approvedLaneIds"), [packet.laneId], "runAuthorization.approvedLaneIds");
 
-  const preflightCompletedAt = requireDateTime(packet.preflight?.completedAt, "preflight.completedAt");
-  requireTrue(packet.preflight?.failClosedBeforeApproval, "preflight.failClosedBeforeApproval");
-  if (asArray(packet.preflight?.checks, "preflight.checks").length < 1) fail("preflight.checks must not be empty");
-  if (asArray(packet.preflight?.resultRefs, "preflight.resultRefs").length < 1) fail("preflight.resultRefs must not be empty");
+  const preflightCompletedAt = requireDateTime(preflight.completedAt, "preflight.completedAt");
+  requireTrue(preflight.failClosedBeforeApproval, "preflight.failClosedBeforeApproval");
+  if (asStringArray(preflight.checks, "preflight.checks").length < 1) fail("preflight.checks must not be empty");
+  if (asStringArray(preflight.resultRefs, "preflight.resultRefs").length < 1) fail("preflight.resultRefs must not be empty");
 
-  const executionStartedAt = requireDateTime(packet.execution?.startedAt, "execution.startedAt");
-  const executionCompletedAt = requireDateTime(packet.execution?.completedAt, "execution.completedAt");
+  const executionStartedAt = requireDateTime(execution.startedAt, "execution.startedAt");
+  const executionCompletedAt = requireDateTime(execution.completedAt, "execution.completedAt");
   if (executionStartedAt < approvedAt) fail("execution.startedAt must not be before runAuthorization.approvedAt");
   if (executionStartedAt < preflightCompletedAt) fail("execution.startedAt must not be before preflight.completedAt");
   if (executionCompletedAt < executionStartedAt) fail("execution.completedAt must not be before execution.startedAt");
   if (executionCompletedAt > expiresAt) fail("execution.completedAt must not be after runAuthorization.expiresAt");
-  if (packet.execution?.executor !== expectedExecutors[packet.laneId]) fail(`execution.executor must be ${expectedExecutors[packet.laneId]}`);
-  if (asArray(packet.execution?.receiptRefs, "execution.receiptRefs").length < 1) fail("execution.receiptRefs must not be empty");
-  requireFalse(packet.execution?.failedApprovedRun, "execution.failedApprovedRun");
+  if (execution.executor !== expectedExecutors[packet.laneId]) fail(`execution.executor must be ${expectedExecutors[packet.laneId]}`);
+  if (asStringArray(execution.receiptRefs, "execution.receiptRefs").length < 1) fail("execution.receiptRefs must not be empty");
+  requireFalse(execution.failedApprovedRun, "execution.failedApprovedRun");
 
-  const evidence = packet.evidence ?? {};
-  if (asArray(evidence.auditRefs, "evidence.auditRefs").length < 1) fail("evidence.auditRefs must not be empty");
+  if (asStringArray(evidence.auditRefs, "evidence.auditRefs").length < 1) fail("evidence.auditRefs must not be empty");
   for (const field of ["sameMachineEvidenceRefs", "nativeGrantRefs", "providerOrDeviceRefs", "performanceBaselineRefs", "marketplaceTrustRefs", "approvedCriticalFlows", "rollbackOrContinuityRefs"]) {
-    asArray(evidence[field], `evidence.${field}`);
+    asStringArray(evidence[field], `evidence.${field}`);
   }
   if (evidence.sameMachineEvidenceRefs.length < 1) fail("evidence.sameMachineEvidenceRefs must not be empty");
 
   for (const field of ["containsSecrets", "containsRawCredentials", "containsPrivatePaths", "containsRawTrace", "containsPreciseLocation", "containsDeviceIdentifiers"]) {
-    requireFalse(packet.redaction?.[field], `redaction.${field}`);
+    requireFalse(redaction[field], `redaction.${field}`);
   }
 
-  requireExactSet(asArray(packet.closureImpact?.publicRows, "closureImpact.publicRows"), expectedRows[packet.laneId], "closureImpact.publicRows");
-  if (asArray(packet.closureImpact?.docsToUpdate, "closureImpact.docsToUpdate").length < 1) fail("closureImpact.docsToUpdate must not be empty");
-  if (asArray(packet.closureImpact?.verifiersToRerun, "closureImpact.verifiersToRerun").length < 1) fail("closureImpact.verifiersToRerun must not be empty");
-  requireTrue(packet.closureImpact?.requiresFinalSourceReread, "closureImpact.requiresFinalSourceReread");
-  requireTrue(packet.closureImpact?.requiresUserReviewDecision, "closureImpact.requiresUserReviewDecision");
-  const reviewedAt = requireDateTime(packet.reviewer?.reviewedAt, "reviewer.reviewedAt");
+  requireExactSet(asStringArray(closureImpact.publicRows, "closureImpact.publicRows"), expectedRows[packet.laneId], "closureImpact.publicRows");
+  if (asStringArray(closureImpact.docsToUpdate, "closureImpact.docsToUpdate").length < 1) fail("closureImpact.docsToUpdate must not be empty");
+  if (asStringArray(closureImpact.verifiersToRerun, "closureImpact.verifiersToRerun").length < 1) fail("closureImpact.verifiersToRerun must not be empty");
+  requireTrue(closureImpact.requiresFinalSourceReread, "closureImpact.requiresFinalSourceReread");
+  requireTrue(closureImpact.requiresUserReviewDecision, "closureImpact.requiresUserReviewDecision");
+  const reviewedAt = requireDateTime(reviewer.reviewedAt, "reviewer.reviewedAt");
   if (reviewedAt < executionCompletedAt) fail("reviewer.reviewedAt must not be before execution.completedAt");
-  if (packet.reviewer?.decision !== "accepted") fail("reviewer.decision must be accepted");
+  requireString(reviewer.reviewedBy, "reviewer.reviewedBy");
+  if (reviewer.decision !== "accepted") fail("reviewer.decision must be accepted");
 
   if (packet.laneId === "CLX-SDK-EXT-001" && evidence.nativeGrantRefs.length < 1) fail("CLX-SDK-EXT-001 requires nativeGrantRefs");
   if (packet.laneId === "CLX-SDK-EXT-002") {
