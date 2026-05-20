@@ -19,6 +19,7 @@ struct AppsSettingsPage: View {
 
     @State private var pendingDelete: AppRecord?
     @State private var trustAuditSheet: AppsSettingsTrustAuditSheetModel?
+    @State private var highRiskAuditSheet: AppsSettingsHighRiskAuditSheetModel?
 
     private var totalSizeBytes: Int {
         appsStore.apps.reduce(0) { partial, record in
@@ -116,6 +117,9 @@ struct AppsSettingsPage: View {
         .sheet(item: $trustAuditSheet) { model in
             AppsTrustAuditSheet(model: model)
         }
+        .sheet(item: $highRiskAuditSheet) { model in
+            AppsHighRiskAuditSheet(model: model)
+        }
     }
 
     private var header: some View {
@@ -131,13 +135,23 @@ struct AppsSettingsPage: View {
 
             Spacer()
 
-            Button(action: showAllTrustAudit) {
-                Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 14, weight: .semibold))
+            HStack(spacing: 10) {
+                Button(action: showAllTrustAudit) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(Color(white: 0.72))
+                .help("Trust audit")
+
+                Button(action: showAllHighRiskAudit) {
+                    Image(systemName: "exclamationmark.shield")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(Color(white: 0.72))
+                .help("High-risk action audit")
             }
-            .buttonStyle(.plain)
-            .foregroundColor(Color(white: 0.72))
-            .help("Trust audit")
         }
     }
 
@@ -258,6 +272,18 @@ struct AppsSettingsPage: View {
                 return AppsSettingsTrustAuditEntry(record: record, events: events)
             }
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(entries: entries)
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
+    }
+
+    private func showAllHighRiskAudit() {
+        do {
+            let entries = try appsStore.sortedApps.map { record in
+                let receipts = try AppHighRiskActionAudit.read(from: appsStore.highRiskActionAuditURL(for: record))
+                return AppsSettingsHighRiskAuditEntry(record: record, receipts: receipts)
+            }
+            highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(entries: entries)
         } catch {
             ToastCenter.shared.show(error.localizedDescription, icon: .error)
         }
@@ -554,6 +580,117 @@ struct AppsSettingsTrustAuditRowPresentation: Identifiable, Equatable {
 
 private struct AppsTrustAuditSheet: View {
     let model: AppsSettingsTrustAuditSheetModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(model.title)
+                    .font(BodyFont.system(size: 18, wght: 700))
+                    .foregroundColor(Palette.textPrimary)
+                Text(model.subtitle)
+                    .font(BodyFont.system(size: 12.5, wght: 500))
+                    .foregroundColor(Color(white: 0.58))
+            }
+
+            if model.rows.isEmpty {
+                Text(model.emptyMessage)
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color(white: 0.58))
+                    .frame(maxWidth: .infinity, minHeight: 120)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 10) {
+                        ForEach(model.rows) { row in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: row.symbolName)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(Color(white: 0.75))
+                                    .frame(width: 20, height: 20)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(row.title)
+                                            .font(BodyFont.system(size: 13.5, wght: 650))
+                                            .foregroundColor(Color(white: 0.90))
+                                        Spacer()
+                                        Text(row.subtitle)
+                                            .font(BodyFont.system(size: 11.5, wght: 500))
+                                            .foregroundColor(Color(white: 0.48))
+                                    }
+                                    Text(row.detail)
+                                        .font(BodyFont.system(size: 12, wght: 400))
+                                        .foregroundColor(Color(white: 0.62))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.white.opacity(0.035))
+                            )
+                        }
+                    }
+                }
+                .frame(minHeight: 160, maxHeight: 360)
+            }
+        }
+        .padding(22)
+        .frame(width: 560)
+        .background(Palette.background)
+    }
+}
+
+struct AppsSettingsHighRiskAuditEntry: Equatable {
+    let record: AppRecord
+    let receipts: [AppHighRiskActionReceipt]
+}
+
+struct AppsSettingsHighRiskAuditSheetModel: Identifiable, Equatable {
+    let id = "all-high-risk-actions"
+    let title = "High-risk action audit"
+    let subtitle = "All apps"
+    let emptyMessage = "No high-risk action receipts recorded for installed apps."
+    let rows: [AppsSettingsHighRiskAuditRowPresentation]
+
+    init(entries: [AppsSettingsHighRiskAuditEntry]) {
+        self.rows = entries
+            .flatMap { entry in
+                entry.receipts.map { AppsSettingsHighRiskAuditRowPresentation(receipt: $0) }
+            }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+}
+
+struct AppsSettingsHighRiskAuditRowPresentation: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let detail: String
+    let symbolName: String
+    let createdAt: Date
+
+    init(receipt: AppHighRiskActionReceipt) {
+        id = receipt.id
+        createdAt = receipt.createdAt
+        title = "\(receipt.appName) · \(receipt.action)"
+        symbolName = receipt.outcome == .denied ? "xmark.octagon" : "exclamationmark.shield"
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        subtitle = formatter.localizedString(for: receipt.createdAt, relativeTo: Date())
+
+        detail = [
+            "Capability: \(receipt.capabilityId)",
+            "Decision: \(receipt.decision.rawValue)",
+            "Outcome: \(receipt.outcome.rawValue)",
+            "Risk tier: \(receipt.riskTier.rawValue)",
+            "Interruptive: \(receipt.interruptiveApproval ? "yes" : "no")",
+            receipt.reason
+        ].joined(separator: "\n")
+    }
+}
+
+private struct AppsHighRiskAuditSheet: View {
+    let model: AppsSettingsHighRiskAuditSheetModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {

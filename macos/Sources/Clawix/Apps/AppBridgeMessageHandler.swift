@@ -368,8 +368,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     }
 
     private func highRiskActionAuditURL(for record: AppRecord) -> URL {
-        appsStore.directory(forSlug: record.slug)
-            .appendingPathComponent(AppHighRiskActionAudit.filename, isDirectory: false)
+        appsStore.highRiskActionAuditURL(for: record)
     }
 
     private func writeHighRiskReceipt(

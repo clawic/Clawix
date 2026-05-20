@@ -153,6 +153,59 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(receipts[0].outcome, .denied)
     }
 
+    func testAppsSettingsHighRiskAuditPresentationSortsAndSummarizesReceipts() throws {
+        let iot = AppRecord(
+            slug: "iot-panel",
+            name: "IoT Panel",
+            declaredCapabilities: ["iot.device.action.invoke"]
+        )
+        let secrets = AppRecord(
+            slug: "secrets-panel",
+            name: "Secrets Panel",
+            declaredCapabilities: ["secrets.broker"]
+        )
+        let iotDescriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "iot.device.toggle"))
+        let secretsDescriptor = try XCTUnwrap(AppHighRiskActionAudit.descriptor(forTool: "secrets.read"))
+        let approved = AppHighRiskActionReceipt(
+            id: "approved",
+            app: iot,
+            descriptor: iotDescriptor,
+            action: "iot.device.toggle",
+            decision: .approvedOnce,
+            outcome: .approvalRecordedDispatchUnavailable,
+            createdAt: Date(timeIntervalSince1970: 1),
+            reason: iotDescriptor.summary
+        )
+        let denied = AppHighRiskActionReceipt(
+            id: "denied",
+            app: secrets,
+            descriptor: secretsDescriptor,
+            action: "secrets.read",
+            decision: .denied,
+            outcome: .denied,
+            createdAt: Date(timeIntervalSince1970: 2),
+            reason: secretsDescriptor.summary
+        )
+
+        let model = AppsSettingsHighRiskAuditSheetModel(entries: [
+            AppsSettingsHighRiskAuditEntry(record: iot, receipts: [approved]),
+            AppsSettingsHighRiskAuditEntry(record: secrets, receipts: [denied])
+        ])
+
+        XCTAssertEqual(model.title, "High-risk action audit")
+        XCTAssertEqual(model.subtitle, "All apps")
+        XCTAssertEqual(model.emptyMessage, "No high-risk action receipts recorded for installed apps.")
+        XCTAssertEqual(model.rows.map(\.id), ["denied", "approved"])
+        XCTAssertEqual(model.rows.first?.title, "Secrets Panel · secrets.read")
+        XCTAssertEqual(model.rows.first?.symbolName, "xmark.octagon")
+        XCTAssertTrue(model.rows.first?.detail.contains("Capability: secrets.broker") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("Decision: denied") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("Outcome: denied") == true)
+        XCTAssertTrue(model.rows.first?.detail.contains("Risk tier: critical") == true)
+        XCTAssertEqual(model.rows.last?.title, "IoT Panel · iot.device.toggle")
+        XCTAssertEqual(model.rows.last?.symbolName, "exclamationmark.shield")
+    }
+
     func testSwiftSurfaceRunnerPlanRequiresOutOfProcessDSL() throws {
         let app = AppRecord(
             slug: "swift-dashboard",

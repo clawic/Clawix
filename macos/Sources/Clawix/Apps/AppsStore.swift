@@ -352,6 +352,10 @@ final class AppsStore: ObservableObject {
         directory(forSlug: record.slug).appendingPathComponent(AppTrustAudit.filename, isDirectory: false)
     }
 
+    func highRiskActionAuditURL(for record: AppRecord) -> URL {
+        directory(forSlug: record.slug).appendingPathComponent(AppHighRiskActionAudit.filename, isDirectory: false)
+    }
+
     // MARK: - Internals
 
     private func ensureRootExists() {

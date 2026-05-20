@@ -138,6 +138,13 @@ and high-risk capability ids that were shown before the app was allowed to run.
 Agents may read this file for local diagnostics, but must not write or rewrite
 it.
 
+High-risk app action prompts append host-owned receipts to
+`high-risk-action-audit.jsonl`. Current receipts record capability id, action,
+decision, outcome, risk tier, interruptive flag, timestamp, and reason. The
+current build records approval/denial decisions but does not dispatch the tool
+after approval yet; approved receipts use
+`approvalRecordedDispatchUnavailable`.
+
 Route variants use the same manifest:
 
 ```jsonc
