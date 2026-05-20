@@ -585,24 +585,13 @@ struct AppActivationReviewPresentation: Equatable {
             lines.append(
                 AppActivationReviewLine(
                     title: "Signature",
-                    value: Self.signatureStatusLabel(provenance.signatureStatus)
+                    value: provenance.signatureStatus.displayLabel
                 )
             )
             lines.append(AppActivationReviewLine(title: "Review reason", value: provenance.reviewReason))
         }
 
         self.lines = lines
-    }
-
-    private static func signatureStatusLabel(_ status: AppPackageSignatureStatus) -> String {
-        switch status {
-        case .notVerified:
-            return "Not verified"
-        case .verified:
-            return "Verified"
-        case .failed:
-            return "Failed"
-        }
     }
 }
 

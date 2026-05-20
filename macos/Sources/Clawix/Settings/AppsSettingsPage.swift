@@ -136,6 +136,8 @@ struct AppsSettingsPage: View {
                 .frame(width: 80, alignment: .trailing)
             Text("Net")
                 .frame(width: 50, alignment: .center)
+            Text("Trust")
+                .frame(width: 90, alignment: .center)
             Text("Variant")
                 .frame(width: 86, alignment: .center)
             Text("")
@@ -306,6 +308,9 @@ private struct AppsSettingsRow: View {
             .frame(width: 50, alignment: .center)
             .help(record.permissions.internet ? "Internet access enabled. Click to revoke." : "Offline. Click to allow internet.")
 
+            trustControl
+                .frame(width: 90, alignment: .center)
+
             variantDefaultControl
                 .frame(width: 86, alignment: .center)
 
@@ -335,6 +340,20 @@ private struct AppsSettingsRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var trustControl: some View {
+        let trust = AppsSettingsTrustPresentation(record: record)
+        HStack(spacing: 5) {
+            Image(systemName: trust.symbolName)
+                .font(.system(size: 12, weight: .semibold))
+            Text(trust.statusLabel)
+                .font(BodyFont.system(size: 11.5, wght: 600))
+                .lineLimit(1)
+        }
+        .foregroundColor(trust.tint)
+        .help(trust.helpText)
     }
 
     @ViewBuilder
@@ -389,6 +408,71 @@ private struct AppsSettingsRow: View {
         formatter.allowedUnits = [.useKB, .useMB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+struct AppsSettingsTrustPresentation: Equatable {
+    let statusLabel: String
+    let symbolName: String
+    let helpText: String
+    let tone: Tone
+
+    enum Tone: Equatable {
+        case normal
+        case warning
+        case muted
+    }
+
+    var tint: Color {
+        switch tone {
+        case .normal:
+            return Color(white: 0.72)
+        case .warning:
+            return Color(red: 0.95, green: 0.62, blue: 0.30)
+        case .muted:
+            return Color(white: 0.50)
+        }
+    }
+
+    init(record: AppRecord) {
+        let origin = record.effectiveOriginClass
+        let provenance = record.packageProvenance
+
+        switch origin {
+        case .localUserAuthored:
+            statusLabel = "Local"
+            symbolName = "person.crop.square"
+            tone = .normal
+        case .imported:
+            statusLabel = "Imported"
+            symbolName = "tray.and.arrow.down"
+            tone = provenance?.signatureStatus == .verified ? .normal : .warning
+        case .marketplace:
+            statusLabel = "Market"
+            symbolName = "shippingbox"
+            tone = provenance?.signatureStatus == .verified ? .normal : .warning
+        case .system:
+            statusLabel = "System"
+            symbolName = "checkmark.seal"
+            tone = .normal
+        }
+
+        if let provenance {
+            var parts = [
+                "Origin: \(origin.rawValue)",
+                "Signature: \(provenance.signatureStatus.displayLabel)",
+                "Package: \(provenance.packageKind)"
+            ]
+            if let sourceSlug = provenance.sourceSlug, !sourceSlug.isEmpty {
+                parts.append("Source slug: \(sourceSlug)")
+            }
+            if let sourcePath = provenance.sourcePath, !sourcePath.isEmpty {
+                parts.append("Source path: \(sourcePath)")
+            }
+            helpText = parts.joined(separator: "\n")
+        } else {
+            helpText = "Origin: \(origin.rawValue)"
+        }
     }
 }
 

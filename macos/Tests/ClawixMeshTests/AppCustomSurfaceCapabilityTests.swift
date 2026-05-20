@@ -433,6 +433,33 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Review reason", value: "Imported packages require local review before activation.")))
     }
 
+    func testAppsSettingsTrustPresentationIncludesPackageProvenance() {
+        let record = AppRecord(
+            slug: "imported-known-panel",
+            name: "Imported Known Panel",
+            originClass: .imported,
+            packageProvenance: AppPackageProvenance(
+                importedAt: Date(timeIntervalSince1970: 0),
+                importedBy: "Tester",
+                sourcePath: "/tmp/focus-panel",
+                sourceSlug: "focus-panel",
+                sourceOriginClass: .localUserAuthored,
+                packageKind: "folder",
+                signatureStatus: .notVerified
+            )
+        )
+
+        let presentation = AppsSettingsTrustPresentation(record: record)
+
+        XCTAssertEqual(presentation.statusLabel, "Imported")
+        XCTAssertEqual(presentation.symbolName, "tray.and.arrow.down")
+        XCTAssertEqual(presentation.tone, .warning)
+        XCTAssertTrue(presentation.helpText.contains("Origin: imported"))
+        XCTAssertTrue(presentation.helpText.contains("Signature: Not verified"))
+        XCTAssertTrue(presentation.helpText.contains("Source slug: focus-panel"))
+        XCTAssertTrue(presentation.helpText.contains("Source path: /tmp/focus-panel"))
+    }
+
     func testUnknownCapabilitiesBlockActivation() {
         let record = AppRecord(
             slug: "unknown-panel",

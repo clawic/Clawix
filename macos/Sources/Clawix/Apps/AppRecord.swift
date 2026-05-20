@@ -166,6 +166,17 @@ enum AppPackageSignatureStatus: String, Codable, Equatable, Hashable {
     case notVerified
     case verified
     case failed
+
+    var displayLabel: String {
+        switch self {
+        case .notVerified:
+            return "Not verified"
+        case .verified:
+            return "Verified"
+        case .failed:
+            return "Failed"
+        }
+    }
 }
 
 struct AppPackageProvenance: Codable, Equatable, Hashable {
