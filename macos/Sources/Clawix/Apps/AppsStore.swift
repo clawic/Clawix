@@ -248,14 +248,17 @@ final class AppsStore: ObservableObject {
         from sourceURL: URL,
         originClass: AppOriginClass = .imported
     ) throws -> AppRecord {
+        try AppPackageImportValidator.validateSourceDirectory(sourceURL, manifestName: manifestName)
         let manifestURL = sourceURL.appendingPathComponent(manifestName)
-        guard fileManager.fileExists(atPath: manifestURL.path) else {
-            throw AppsStoreImportError.missingManifest(sourceURL.path)
-        }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let data = try Data(contentsOf: manifestURL)
         var record = try decoder.decode(AppRecord.self, from: data)
+        try AppPackageImportValidator.validatePackageContents(
+            sourceURL: sourceURL,
+            manifestName: manifestName,
+            record: record
+        )
         let sourceSlug = record.slug
         let sourceOriginClass = record.originClass
         let resolvedSlug = try uniqueSlug(preferred: record.slug, name: record.name, includingFilesystem: true)
@@ -310,9 +313,13 @@ final class AppsStore: ObservableObject {
         let appDir = directory(forSlug: slug)
         let trimmed = relativePath.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
         let resolvedName = trimmed.isEmpty ? "index.html" : trimmed
-        let target = appDir.appendingPathComponent(resolvedName).standardizedFileURL
+        let target = appDir
+            .appendingPathComponent(resolvedName)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let resolvedAppDir = appDir.standardizedFileURL.resolvingSymlinksInPath()
         // Path traversal guard: ensure target is still under appDir.
-        guard target.path.hasPrefix(appDir.standardizedFileURL.path + "/") || target.path == appDir.standardizedFileURL.path else {
+        guard target.path.hasPrefix(resolvedAppDir.path + "/") || target.path == resolvedAppDir.path else {
             return nil
         }
         guard fileManager.fileExists(atPath: target.path) else { return nil }
@@ -543,6 +550,10 @@ final class AppsStore: ObservableObject {
 enum AppsStoreImportError: LocalizedError, Equatable {
     case missingManifest(String)
     case sourceAlreadyManaged(String)
+    case sourceNotDirectory(String)
+    case missingRenderEntry(String)
+    case symlinkNotAllowed(String)
+    case hostOwnedFileNotAllowed(String)
 
     var errorDescription: String? {
         switch self {
@@ -550,6 +561,14 @@ enum AppsStoreImportError: LocalizedError, Equatable {
             return "App package is missing manifest.json: \(path)"
         case .sourceAlreadyManaged(let path):
             return "App package is already managed by this Apps store: \(path)"
+        case .sourceNotDirectory(let path):
+            return "App package source is not a directory: \(path)"
+        case .missingRenderEntry(let entry):
+            return "App package is missing required render entry: \(entry)"
+        case .symlinkNotAllowed(let path):
+            return "App package contains a symbolic link, which is not allowed: \(path)"
+        case .hostOwnedFileNotAllowed(let path):
+            return "App package contains a host-owned audit file, which is not allowed on import: \(path)"
         }
     }
 }

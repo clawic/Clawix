@@ -93,6 +93,14 @@ still code+manifest, not a visual builder: the host copies the folder into
 `~/.claw/apps/`, rewrites the managed manifest, and picks a unique slug if the
 source slug already exists.
 
+Package import validation is host-owned. A folder package must be a real
+directory with a root `manifest.json`, must not contain symbolic links, and
+must not include host-owned audit files such as `trust-audit.jsonl` or
+`high-risk-action-audit.jsonl`. Web packages must include `index.html`; Swift
+declarative packages must include a valid `surface.json` DSL manifest. Imported
+packages that fail these checks are rejected before being copied into the
+managed Apps folder.
+
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
 `activationReview` from the source package. The first render then shows the

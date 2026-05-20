@@ -175,6 +175,100 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(audit.first?.signatureStatus, .notVerified)
     }
 
+    func testImportAppRejectsPackageWithoutRenderEntry() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        try writeManifest(AppRecord(slug: "missing-entry", name: "Missing Entry"), to: sourceRoot)
+
+        XCTAssertThrowsError(try store.importApp(from: sourceRoot, originClass: .imported)) { error in
+            XCTAssertEqual(error as? AppsStoreImportError, .missingRenderEntry("index.html"))
+        }
+    }
+
+    func testImportAppRejectsHostOwnedAuditFiles() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        try writeManifest(AppRecord(slug: "forged-audit", name: "Forged Audit"), to: sourceRoot)
+        try "<main>Forged</main>".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent("index.html"),
+            options: .atomic
+        )
+        try "{}".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent(AppTrustAudit.filename),
+            options: .atomic
+        )
+
+        XCTAssertThrowsError(try store.importApp(from: sourceRoot, originClass: .imported)) { error in
+            guard case .hostOwnedFileNotAllowed(let path) = error as? AppsStoreImportError else {
+                return XCTFail("Expected hostOwnedFileNotAllowed, got \(error)")
+            }
+            XCTAssertTrue(path.hasSuffix(AppTrustAudit.filename))
+        }
+    }
+
+    func testImportAppRejectsSymbolicLinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let outside = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: false)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+            try? FileManager.default.removeItem(at: outside)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        try writeManifest(AppRecord(slug: "symlinked", name: "Symlinked"), to: sourceRoot)
+        try "<main>Symlinked</main>".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent("index.html"),
+            options: .atomic
+        )
+        try "outside".data(using: .utf8)?.write(to: outside, options: .atomic)
+        try FileManager.default.createSymbolicLink(
+            at: sourceRoot.appendingPathComponent("outside-link.txt"),
+            withDestinationURL: outside
+        )
+
+        XCTAssertThrowsError(try store.importApp(from: sourceRoot, originClass: .imported)) { error in
+            guard case .symlinkNotAllowed(let path) = error as? AppsStoreImportError else {
+                return XCTFail("Expected symlinkNotAllowed, got \(error)")
+            }
+            XCTAssertTrue(path.hasSuffix("outside-link.txt"))
+        }
+    }
+
+    func testManagedAppReadFileRejectsSymlinkEscape() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let outside = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: false)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: outside)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        let app = try store.create(name: "Safe", slug: "safe")
+        try "outside".data(using: .utf8)?.write(to: outside, options: .atomic)
+        try FileManager.default.createSymbolicLink(
+            at: store.directory(forSlug: app.slug).appendingPathComponent("outside-link.txt"),
+            withDestinationURL: outside
+        )
+
+        XCTAssertNil(store.readFile(slug: app.slug, relativePath: "outside-link.txt"))
+    }
+
     func testApproveActivationWritesTrustAuditWithRiskMap() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
