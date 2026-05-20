@@ -2832,6 +2832,31 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-completion-audit",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-completion-audit.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-decision-matrix.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry completion audit",
+        "system telemetry requirement status",
+        "system telemetry requirement-by-requirement closure gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry completion audit",
+          "expectPath": "docs/system-telemetry-completion-audit.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-decision-matrix",
       "kind": "docs-page",
       "owner": "clawix",

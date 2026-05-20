@@ -347,6 +347,41 @@ function assertSourceQaReview() {
   assert(review.completionPolicy?.externalPendingBlocksCompletion === true, "source Q/A review: external pending must block completion");
 }
 
+function assertCompletionAudit() {
+  const text = read("docs/system-telemetry-completion-audit.md");
+  for (const snippet of [
+    "Source conversation: `019e359b-c0ab-7dc1-ba94-11a49d11dc76`",
+    "Plan item: `019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan`",
+    "Status: `active_goal_not_complete`",
+    "This public-safe Clawix audit mirrors the framework system telemetry goal",
+    "| CLX-STA-001 | Consume the framework `claw system` plane",
+    "| CLX-STA-002 | Render multiple independent menu-bar indicators plus one combined item.",
+    "| CLX-STA-003 | Support text, icon, gauge, sparkline, thresholds, provider rows, dropdown, toggles, and refresh behavior.",
+    "| CLX-STA-004 | Record safe host telemetry into Monitor through the app path.",
+    "| CLX-STA-005 | Display retained history and graph output from Monitor, not a parallel app store.",
+    "| CLX-STA-006 | Decode CPU, GPU, memory, disk, network, power, process, display, audio, Bluetooth/peripheral, focus, notification, sensor, and weather/context metrics.",
+    "| CLX-STA-007 | Preserve fail-closed provider and control planning with redacted audit metadata.",
+    "| CLX-STA-008 | Keep host-specific menu configuration in Clawix while portable definitions stay in ClawJS.",
+    "| CLX-STA-009 | Validate native menu-bar behavior through the signed app path.",
+    "| CLX-STA-010 | Keep system telemetry discoverable from Clawix docs and verifiers.",
+    "| CLX-STA-011 | Separate external prerequisites from bugs.",
+    "| CLX-STA-012 | Re-read source decisions one by one before any completion claim.",
+    "| CLX-STA-013 | Keep public materials free of disallowed third-party product names.",
+    "| CLX-STA-014 | Surface physical sensor/fan values in the app/menu",
+    "| CLX-STA-015 | Display live external context provider values in menu-bar widgets.",
+    "| CLX-STA-016 | Execute dangerous controls from UI only through governed signed-host plans.",
+    "`CLX-SYS-TEL-EXT-003` requires compatible hardware/provider",
+    "`CLX-SYS-TEL-EXT-004` requires approved provider access",
+    "`CLX-SYS-TEL-EXT-005` requires exact approval",
+    "The goal cannot be marked complete while any `external-pending` row remains",
+  ]) {
+    assert(text.includes(snippet), `docs/system-telemetry-completion-audit.md: missing ${JSON.stringify(snippet)}`);
+  }
+  const requirementRows = text.match(/^\| CLX-STA-\d{3} \|/gm) ?? [];
+  assert(requirementRows.length === 16, "docs/system-telemetry-completion-audit.md: must contain exactly CLX-STA-001..CLX-STA-016 rows");
+  assert(!text.includes("/Users/"), "docs/system-telemetry-completion-audit.md: must not publish private filesystem paths");
+}
+
 function assertDecisionMatrix() {
   const text = read("docs/system-telemetry-decision-matrix.md");
   for (const snippet of [
@@ -368,6 +403,8 @@ function assertDecisionMatrix() {
     "| D09 | Do not mention third-party monitoring product names",
     "| D10 | Pin the goal to the conversation id, plan id, source review",
     "| D11 | Do not close the goal until everything is implemented",
+    "docs/system-telemetry-completion-audit.md",
+    "completion audit",
     "docs/system-telemetry-external-validation.manifest.json",
     "external validation manifest",
     "docs/system-telemetry-source-qa-review.json",
@@ -388,6 +425,7 @@ function assertDecisionMatrix() {
   for (const snippet of [
     "System telemetry, context widgets, Monitor-backed history, and menu-bar indicators",
     "docs/system-telemetry-decision-matrix.md",
+    "docs/system-telemetry-completion-audit.md",
     "docs/system-telemetry-external-pending-validation.md",
     "docs/system-telemetry-external-validation.manifest.json",
     "docs/system-telemetry-source-qa-review.json",
@@ -401,6 +439,9 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-decision-matrix\"",
     "\"canonicalSource\": \"docs/system-telemetry-decision-matrix.md\"",
     "\"query\": \"system telemetry decision matrix\"",
+    "\"id\": \"clawix-system-telemetry-completion-audit\"",
+    "\"canonicalSource\": \"docs/system-telemetry-completion-audit.md\"",
+    "\"query\": \"system telemetry completion audit\"",
     "\"id\": \"clawix-system-telemetry-external-pending-ledger\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-pending-validation.md\"",
     "\"query\": \"system telemetry external pending validation\"",
@@ -418,6 +459,8 @@ function assertDecisionMatrix() {
   for (const snippet of [
     "`clawix-system-telemetry-decision-matrix`",
     "[docs/system-telemetry-decision-matrix.md](/system-telemetry-decision-matrix)",
+    "`clawix-system-telemetry-completion-audit`",
+    "[docs/system-telemetry-completion-audit.md](/system-telemetry-completion-audit)",
     "`clawix-system-telemetry-external-pending-ledger`",
     "[docs/system-telemetry-external-pending-validation.md](/system-telemetry-external-pending-validation)",
     "`clawix-system-telemetry-external-validation-manifest`",
@@ -690,6 +733,7 @@ function main() {
   assertExternalPendingLedger();
   assertExternalValidationManifest();
   assertSourceQaReview();
+  assertCompletionAudit();
   assertDecisionMatrix();
   assertBridgeContracts();
   assertStatusItemAndRecorder();
