@@ -64,12 +64,21 @@ Clawix route manifest entries must keep explicit steps, owner, transport,
 contract, validation, tests, and gaps when applicable. Host-real validation is
 still required for signed-host or native-permission behavior; hermetic route
 fixtures are partial for those paths.
+New Clawix manifest nodes, routes, UI/interface surfaces, permissions, storage
+keys, and feature flags must also carry `surfaceNarrative`: the concept they
+implement, the decision authorizing them, the human/programmatic surface that
+completes them, and what must not be inferred from the surface. Existing
+missing narratives are bounded by
+`docs/surface-narrative-clawix-baseline.json`.
 `scripts/surface-evidence-projection-check.mjs` protects the Clawix projection:
 route docs/tests/ADR evidence must resolve to files, route steps must point to
 registered edges and nodes, and the current generated missing-source gap is
 frozen in `docs/surface-evidence-projection-baseline.json` as expiring lateral
 debt. New or changed missing declaration locators fail until the Swift manifest
 exporter carries source metadata.
+`scripts/surface_narrative_guard.mjs` blocks new Clawix surfaces without
+`surfaceNarrative` so technically valid host/UI growth cannot drift
+conceptually.
 
 ## Consequences
 
