@@ -205,6 +205,17 @@ function seedLocalMonitorHistory() {
   }
 }
 
+function assertSameStringSet(actual, expected, label) {
+  assert(Array.isArray(actual), `${label}: must be an array`);
+  if (!Array.isArray(actual)) return;
+  const normalizedActual = [...actual].sort();
+  const normalizedExpected = [...expected].sort();
+  assert(normalizedActual.length === normalizedExpected.length, `${label}: must contain exactly ${normalizedExpected.length} entries`);
+  for (let index = 0; index < normalizedExpected.length; index += 1) {
+    assert(normalizedActual[index] === normalizedExpected[index], `${label}: expected exact set ${normalizedExpected.join(", ")}`);
+  }
+}
+
 function assertNoForbiddenPublicNames() {
   const forbidden = [
     [105, 115, 116, 97, 116],
@@ -421,7 +432,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalValidationManifestFixtures?.path === "docs/governance/system-telemetry/external-validation.manifest.fixtures.json", "external validation manifest: wrong manifest fixtures path");
   assert(manifest.externalValidationManifestFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: manifest fixtures must be synthetic");
   assert(manifest.externalValidationManifestFixtures?.validTemplateCount === 1, "external validation manifest: wrong manifest valid fixture count");
-  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 8, "external validation manifest: wrong manifest invalid mutation count");
+  assert(manifest.externalValidationManifestFixtures?.invalidMutationCount === 9, "external validation manifest: wrong manifest invalid mutation count");
   assert(manifest.externalValidationManifestFixtures?.closureRole?.includes("rejects accidental completion"), "external validation manifest: manifest fixtures closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
@@ -491,7 +502,7 @@ function assertExternalValidationManifestFixtures() {
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-validation.manifest.schema.json", "external validation manifest fixtures: wrong schema path");
   assert(fixtures.manifestPath === "docs/governance/system-telemetry/external-validation.manifest.json", "external validation manifest fixtures: wrong manifest path");
   assert(Array.isArray(fixtures.validSyntheticManifests) && fixtures.validSyntheticManifests.length === 1, "external validation manifest fixtures: must contain 1 valid manifest reference");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 8, "external validation manifest fixtures: must contain 8 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 9, "external validation manifest fixtures: must contain 9 invalid mutations");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   assert(validate(manifest), `external validation manifest fixtures: current manifest must validate: ${ajv.errorsText(validate.errors)}`);
@@ -527,6 +538,9 @@ function assertExternalValidationManifestFixtures() {
         row.acceptedEvidence = row.acceptedEvidence.filter((entry) => entry !== "app_or_menu_same_machine_evidence");
         break;
       }
+      case "drop_external_pending_lane_id":
+        mutated.externalValidationRunbook.externalPendingRowIds = ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004"];
+        break;
       default:
         fail(`external validation manifest fixtures: unknown mutation ${fixture.mutation}`);
     }
@@ -740,6 +754,8 @@ function assertExternalValidationRunbook() {
   }
   const laneRows = text.match(/^\| CLX-SYS-TEL-EXT-\d{3} \|/gm) ?? [];
   assert(laneRows.length === 3, "docs/governance/system-telemetry/external-validation-runbook.md: must contain exactly 3 external lane rows");
+  const laneIds = laneRows.map((row) => row.match(/CLX-SYS-TEL-EXT-\d{3}/)?.[0]).filter(Boolean);
+  assertSameStringSet(laneIds, ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"], "docs/governance/system-telemetry/external-validation-runbook.md: lane rows");
   assert(!text.includes("/Users/"), "docs/governance/system-telemetry/external-validation-runbook.md: must not publish private filesystem paths");
 }
 
@@ -967,15 +983,21 @@ function assertSourceQaReview() {
   assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
   assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
   assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
-  assert(review.reviewedUserRoleMessages === 158, "source Q/A review: reviewed user-role message count drifted");
+  assert(review.reviewedUserRoleMessages === 161, "source Q/A review: reviewed user-role message count drifted");
   assert(review.decisionBearingRowsReviewed === 12, "source Q/A review: decision-bearing row count drifted");
-  for (const decisionId of ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"]) {
+  const decisionIds = ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"];
+  assertSameStringSet(review.decisionIdsReviewed, decisionIds, "source Q/A review: decisionIdsReviewed");
+  for (const decisionId of decisionIds) {
     assert(review.decisionIdsReviewed?.includes(decisionId), `source Q/A review: missing ${decisionId}`);
   }
-  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+  const externalRows = ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"];
+  assertSameStringSet(review.externalPendingRows, externalRows, "source Q/A review: externalPendingRows");
+  for (const rowId of externalRows) {
     assert(review.externalPendingRows?.includes(rowId), `source Q/A review: missing external-pending ${rowId}`);
   }
-  for (const rowId of ["CLX-SYS-TEL-EXT-001", "CLX-SYS-TEL-EXT-002", "CLX-SYS-TEL-EXT-006"]) {
+  const localRows = ["CLX-SYS-TEL-EXT-001", "CLX-SYS-TEL-EXT-002", "CLX-SYS-TEL-EXT-006"];
+  assertSameStringSet(review.validatedLocalRows, localRows, "source Q/A review: validatedLocalRows");
+  for (const rowId of localRows) {
     assert(review.validatedLocalRows?.includes(rowId), `source Q/A review: missing validated-local ${rowId}`);
   }
   assert(Array.isArray(review.rows) && review.rows.length === 12, "source Q/A review: must contain exactly 12 reviewed source rows");

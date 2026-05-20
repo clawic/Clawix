@@ -52,6 +52,11 @@
       "id": "control_lane_missing_app_menu_evidence",
       "mutation": "remove_control_lane_app_menu_evidence",
       "reason": "Dangerous-control closure must keep same-machine app/menu evidence, not only physical and rollback evidence."
+    },
+    {
+      "id": "missing_external_lane_id",
+      "mutation": "drop_external_pending_lane_id",
+      "reason": "Every app external-lane artifact must preserve the exact physical sensor, live provider, and dangerous-control pending row ids."
     }
   ]
 }

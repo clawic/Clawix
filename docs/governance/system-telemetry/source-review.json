@@ -11,7 +11,7 @@
   "sourceSessionRef": "private-session-not-published",
   "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
   "status": "complete_with_external_pending",
-  "reviewedUserRoleMessages": 158,
+  "reviewedUserRoleMessages": 161,
   "decisionBearingRowsReviewed": 12,
   "decisionIdsReviewed": [
     "D01",

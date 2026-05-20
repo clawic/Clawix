@@ -72,7 +72,12 @@
             "externalPendingRowIds": {
               "type": "array",
               "minItems": 3,
-              "contains": { "const": "CLX-STA-014" }
+              "maxItems": 3,
+              "allOf": [
+                { "contains": { "const": "CLX-STA-014" } },
+                { "contains": { "const": "CLX-STA-015" } },
+                { "contains": { "const": "CLX-STA-016" } }
+              ]
             }
           }
         }
@@ -176,7 +181,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 1 },
-            "invalidMutationCount": { "const": 8 },
+            "invalidMutationCount": { "const": 9 },
             "path": { "const": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json" }
           }
         }
@@ -219,7 +224,12 @@
             "externalPendingRowIds": {
               "type": "array",
               "minItems": 3,
-              "contains": { "const": "CLX-SYS-TEL-EXT-003" }
+              "maxItems": 3,
+              "allOf": [
+                { "contains": { "const": "CLX-SYS-TEL-EXT-003" } },
+                { "contains": { "const": "CLX-SYS-TEL-EXT-004" } },
+                { "contains": { "const": "CLX-SYS-TEL-EXT-005" } }
+              ]
             }
           }
         }
