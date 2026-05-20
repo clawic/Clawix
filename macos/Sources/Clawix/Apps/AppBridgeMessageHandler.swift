@@ -7,8 +7,10 @@ enum AppBridgeOperationPolicy {
         "agent.callTool",
         "agent.sendMessage",
         "capabilities.contracts",
+        "capabilities.get",
         "capabilities.list",
         "capabilities.riskMap",
+        "capabilities.source",
         "db.query",
         "mac.action.plan",
         "request.cancel",
@@ -168,12 +170,20 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 try gateToolCall(tool: tool, arguments: payload, requestId: requestId)
             case "capabilities.list":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
+            case "capabilities.get":
+                let id = (payload["id"] as? String) ?? ""
+                resolve(
+                    requestId: requestId,
+                    value: AppCapabilityCatalog.descriptor(id: id.trimmingCharacters(in: .whitespacesAndNewlines))?.bridgeValue ?? NSNull()
+                )
             case "capabilities.contracts":
                 guard let record = appsStore.record(forSlug: slug) else {
                     reject(requestId: requestId, message: "App not found")
                     return
                 }
                 resolve(requestId: requestId, value: AppCapabilityCatalog.contractsBridgeValue(for: record))
+            case "capabilities.source":
+                resolve(requestId: requestId, value: AppCapabilityCatalog.source)
             case "capabilities.riskMap":
                 guard let record = appsStore.record(forSlug: slug) else {
                     reject(requestId: requestId, message: "App not found")

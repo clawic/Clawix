@@ -1409,7 +1409,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
     func testInjectedAppsSdkExposesCapabilityInspection() {
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.list"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.get"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.contracts"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.source"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("capabilities.riskMap"))
     }
 
@@ -1502,7 +1504,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("mac.action.plan"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.get"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.contracts"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.source"))
 
         for operation in AppBridgeOperationPolicy.forbiddenEscapeHatchOperations {
             XCTAssertFalse(AppBridgeOperationPolicy.isAllowed(operation), operation)

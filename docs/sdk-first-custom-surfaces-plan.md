@@ -55,6 +55,9 @@ the sibling ClawJS SDK-first custom surface contract.
 - Hosted Web apps can inspect available capabilities.
 - `clawix.capabilities.contracts()` exposes `executionBoundary` so custom UIs
   can tell metadata-only contract catalogs from executable host bridge calls.
+- `window.clawix.capabilities` mirrors the shared SDK facade shape for
+  `list`, `get`, `riskMap`, and `source`, with `contracts` carrying the
+  Clawix-specific host bridge boundary payload.
 - Ordinary local reads are allowed through brokered SDK-like APIs.
 - The Network Control Plane demonstrates a typed executable route family with
   shared schemas, Gateway route policy evaluation, redacted event audit, and a

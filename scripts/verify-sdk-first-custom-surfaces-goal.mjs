@@ -47,6 +47,8 @@ function assertCompletionAudit() {
     "The Network Control Plane now adds a typed executable route-family example",
     "Clawix `NetworkControlBridge` projection through `system/network`",
     "Clawix now mirrors the ClawJS `system.telemetry.snapshot` and `system.telemetry.history` local-wide read contracts",
+    "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
+    "`list`, `get`, `riskMap`, and `source`",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
     "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
@@ -104,6 +106,7 @@ function assertPublicRouting() {
     "docs/sdk-first-custom-surfaces-plan.md": [
       "metadata-only `executionBoundary`",
       "`clawix.capabilities.contracts()` exposes `executionBoundary`",
+      "`window.clawix.capabilities` mirrors the shared SDK facade shape",
       "stdout `render` message",
       "Direct SQLite is not exposed as a custom-app action surface.",
       "Installed-app smoke verified that a local `database/tasks` variant default",
@@ -213,7 +216,9 @@ function assertRuntimeArtifacts() {
     ],
     "macos/Sources/Clawix/Apps/ClawixAppsSDK.swift": [
       "capabilities",
+      "get: function (id) { return send('capabilities.get'",
       "contracts: function () { return send('capabilities.contracts'); }",
+      "source: function () { return send('capabilities.source'); }",
       "search.query",
       "db.query",
       "resources.list",
@@ -308,6 +313,8 @@ function assertTests() {
       "testHostBridgeExposesCustomAppSDKContractPayload",
       "testSwiftSurfaceResourceListExecutesThroughRegisteredResources",
       "testInjectedAppsSdkExposesMacPlanOnlyFacade",
+      "capabilities.get",
+      "capabilities.source",
       "testDBQueryDSLRejectsCollectionEscapesAndDDLKeys",
       "testBridgeOperationPolicyDoesNotExposeEscapeHatches",
       "testActivationReviewPresentationIncludesPackageProvenance",
@@ -370,6 +377,7 @@ function assertSiblingClawJSArtifacts() {
     "docs/sdk-first-custom-surfaces-plan.md": [
       "Expose `executionBoundary` in the shared custom-app SDK inspection payload",
       "Custom-app SDK inspection exposes `executionBoundary` across CLI/API/MCP/",
+      "Sibling Clawix mirrors the ClawJS capability facade shape",
       "Sibling Clawix exposes `mac.action.plan` through",
     ],
     "docs/decision-map.md": [
