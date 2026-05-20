@@ -208,8 +208,10 @@ function assertExternalPendingLedger() {
     "`docs/system-telemetry-external-validation.manifest.json` and",
     "`docs/system-telemetry-source-qa-review.json`",
     "status in `docs/system-telemetry-completion-audit.md`",
-    "public-safe rows, and the completion audit binds each goal requirement",
-    "the completion audit binds each goal requirement",
+    "external run steps in",
+    "`docs/system-telemetry-external-validation-runbook.md`",
+    "public-safe rows, the completion audit binds each goal requirement",
+    "runbook binds each remaining external lane to preflight, approval, evidence,",
     "| CLX-SYS-TEL-EXT-001 | Strict native menu-bar visual validation |",
     "| CLX-SYS-TEL-EXT-002 | Live host telemetry recording through the app |",
     "| CLX-SYS-TEL-EXT-003 | Physical sensor and fan readings surfaced in the UI |",
@@ -230,6 +232,7 @@ function assertExternalPendingLedger() {
     "redacted JSONL audit evidence for unsupported/high-risk blocked controls",
     "not an execution receipt",
     "## External Validation Lanes",
+    "[System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md)",
     "| CLX-SYS-TEL-EXT-003 | Signed sensor provider lane:",
     "| CLX-SYS-TEL-EXT-004 | Live context provider lane:",
     "| CLX-SYS-TEL-EXT-005 | Dangerous-control lane:",
@@ -271,6 +274,7 @@ function assertExternalValidationManifest() {
   assert(manifest.completionPolicy?.requiresFinalSourceAudit === true, "external validation manifest: final source audit must be required");
   assert(manifest.completionPolicy?.requiresSourceQaReview === true, "external validation manifest: source Q/A review must be required");
   assert(manifest.completionPolicy?.requiresCompletionAudit === true, "external validation manifest: completion audit must be required");
+  assert(manifest.completionPolicy?.requiresExternalValidationRunbook === true, "external validation manifest: external validation runbook must be required");
   assert(manifest.completionPolicy?.requiresForbiddenNameScan === true, "external validation manifest: forbidden-name scan must be required");
   assert(manifest.completionPolicy?.requiresExactRunApprovalForExternalLanes === true, "external validation manifest: exact-run approval must be required");
   assert(manifest.sourceQaReview?.required === true, "external validation manifest: source Q/A review link must be required");
@@ -290,6 +294,14 @@ function assertExternalValidationManifest() {
     assert(manifest.completionAudit?.statusSummary?.externalPendingRowIds?.includes(rowId), `external validation manifest: completion audit status summary missing ${rowId}`);
   }
   assert(manifest.completionAudit?.closureRole?.includes("requirement by requirement"), "external validation manifest: completion audit closure role must be explicit");
+  assert(manifest.externalValidationRunbook?.required === true, "external validation manifest: external validation runbook link must be required");
+  assert(manifest.externalValidationRunbook?.artifactId === "clawix-system-telemetry-external-validation-runbook", "external validation manifest: wrong external validation runbook artifact");
+  assert(manifest.externalValidationRunbook?.path === "docs/system-telemetry-external-validation-runbook.md", "external validation manifest: wrong external validation runbook path");
+  assert(manifest.externalValidationRunbook?.laneCount === 3, "external validation manifest: wrong external validation runbook lane count");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(manifest.externalValidationRunbook?.externalPendingRowIds?.includes(rowId), `external validation manifest: external validation runbook missing ${rowId}`);
+  }
+  assert(manifest.externalValidationRunbook?.closureRole?.includes("safe preflight"), "external validation manifest: external validation runbook closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
   const rows = new Map(manifest.rows.map((row) => [row.id, row]));
@@ -312,6 +324,39 @@ function assertExternalValidationManifest() {
     assert(row?.status === "VALIDATED LOCAL", `external validation manifest: ${rowId} must remain VALIDATED LOCAL`);
     assert(Array.isArray(row.blockingPrerequisites) && row.blockingPrerequisites.length === 0, `external validation manifest: ${rowId} must not keep external prerequisites`);
   }
+}
+
+function assertExternalValidationRunbook() {
+  const text = read("docs/system-telemetry-external-validation-runbook.md");
+  for (const snippet of [
+    "Source conversation: `019e359b-c0ab-7dc1-ba94-11a49d11dc76`",
+    "Plan item: `019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan`",
+    "Status: `active_goal_not_complete`",
+    "This runbook defines the only accepted way to replace the remaining Clawix",
+    "It does not authorize provider calls,",
+    "Each lane requires",
+    "explicit approval for the exact run before execution.",
+    "| Row | Safe preflight | Approval packet | Execution evidence | Update target | Fail rule |",
+    "| CLX-SYS-TEL-EXT-003 | `claw system providers plan system.sensors.signed --json`",
+    "Monitor sample IDs for `system.sensor.temperature` or `system.sensor.fan_speed`",
+    "app/menu same-machine evidence",
+    "fake zero samples are defects",
+    "| CLX-SYS-TEL-EXT-004 | `claw system providers plan context.weather.live --json`",
+    "Provider execution receipt, redacted audit event, Monitor sample IDs for `context.weather.temperature`",
+    "Replace `CLX-SYS-TEL-EXT-004` in the ledger, manifest, completion audit, and source Q/A review",
+    "a failed approved run is a defect, not a pending row",
+    "| CLX-SYS-TEL-EXT-005 | `claw system controls plan <control-id> --json`",
+    "Pre-execution plan with `willExecute=true` only after approval",
+    "app/menu evidence, and rollback/continuity evidence",
+    "failed approved execution is a defect",
+    "Do not mark the goal complete until every lane above is either replaced with",
+    "source reread, completion audit, and forbidden-name scan have been repeated.",
+  ]) {
+    assert(text.includes(snippet), `docs/system-telemetry-external-validation-runbook.md: missing ${JSON.stringify(snippet)}`);
+  }
+  const laneRows = text.match(/^\| CLX-SYS-TEL-EXT-\d{3} \|/gm) ?? [];
+  assert(laneRows.length === 3, "docs/system-telemetry-external-validation-runbook.md: must contain exactly 3 external lane rows");
+  assert(!text.includes("/Users/"), "docs/system-telemetry-external-validation-runbook.md: must not publish private filesystem paths");
 }
 
 function assertSourceQaReview() {
@@ -433,6 +478,8 @@ function assertDecisionMatrix() {
     "| D11 | Do not close the goal until everything is implemented",
     "docs/system-telemetry-completion-audit.md",
     "completion audit",
+    "docs/system-telemetry-external-validation-runbook.md",
+    "external validation runbook",
     "docs/system-telemetry-external-validation.manifest.json",
     "external validation manifest",
     "docs/system-telemetry-source-qa-review.json",
@@ -455,6 +502,7 @@ function assertDecisionMatrix() {
     "docs/system-telemetry-decision-matrix.md",
     "docs/system-telemetry-completion-audit.md",
     "docs/system-telemetry-external-pending-validation.md",
+    "docs/system-telemetry-external-validation-runbook.md",
     "docs/system-telemetry-external-validation.manifest.json",
     "docs/system-telemetry-source-qa-review.json",
     "node scripts/verify-system-telemetry-goal.mjs",
@@ -476,6 +524,9 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-external-validation-manifest\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-validation.manifest.json\"",
     "\"query\": \"system telemetry external validation manifest\"",
+    "\"id\": \"clawix-system-telemetry-external-validation-runbook\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-validation-runbook.md\"",
+    "\"query\": \"system telemetry external validation runbook\"",
     "\"id\": \"clawix-system-telemetry-source-qa-review\"",
     "\"canonicalSource\": \"docs/system-telemetry-source-qa-review.json\"",
     "\"query\": \"system telemetry source Q/A review\"",
@@ -493,6 +544,8 @@ function assertDecisionMatrix() {
     "[docs/system-telemetry-external-pending-validation.md](/system-telemetry-external-pending-validation)",
     "`clawix-system-telemetry-external-validation-manifest`",
     "[docs/system-telemetry-external-validation.manifest.json](/system-telemetry-external-validation.manifest.json)",
+    "`clawix-system-telemetry-external-validation-runbook`",
+    "[docs/system-telemetry-external-validation-runbook.md](/system-telemetry-external-validation-runbook)",
     "`clawix-system-telemetry-source-qa-review`",
     "[docs/system-telemetry-source-qa-review.json](/system-telemetry-source-qa-review.json)",
   ]) {
@@ -760,6 +813,7 @@ function main() {
   assertNoForbiddenPublicNames();
   assertExternalPendingLedger();
   assertExternalValidationManifest();
+  assertExternalValidationRunbook();
   assertSourceQaReview();
   assertCompletionAudit();
   assertDecisionMatrix();

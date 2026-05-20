@@ -9,6 +9,7 @@
     "requiresFinalSourceAudit": true,
     "requiresSourceQaReview": true,
     "requiresCompletionAudit": true,
+    "requiresExternalValidationRunbook": true,
     "requiresForbiddenNameScan": true,
     "requiresExactRunApprovalForExternalLanes": true
   },
@@ -36,6 +37,18 @@
       ]
     },
     "closureRole": "tracks the full Clawix system telemetry goal requirement by requirement before goal completion"
+  },
+  "externalValidationRunbook": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-validation-runbook",
+    "path": "docs/system-telemetry-external-validation-runbook.md",
+    "laneCount": 3,
+    "externalPendingRowIds": [
+      "CLX-SYS-TEL-EXT-003",
+      "CLX-SYS-TEL-EXT-004",
+      "CLX-SYS-TEL-EXT-005"
+    ],
+    "closureRole": "defines safe preflight, exact approval, accepted evidence, update targets, and fail rules for every remaining external lane"
   },
   "rows": [
     {
