@@ -49,6 +49,15 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         "jobs.stream"
     ]
     private let expectedMcpBlockedSurfaceCapabilityIds = ["secrets.broker"]
+    private let expectedApprovalDispatchCapabilityIds = [
+        "iot.device.action.invoke",
+        "jobs.cancel",
+        "jobs.start"
+    ]
+    private let expectedPlanOnlyDispatchCapabilityIds = ["mac.action.plan"]
+    private let expectedNoRunnerDispatchCapabilityIds = ["actions.invoke"]
+    private let expectedNoPlaintextBrokerDispatchCapabilityIds = ["secrets.broker"]
+    private let expectedExternalPendingDispatchCapabilityIds = ["iot.device.action.invoke"]
 
     func testLegacyAppManifestDecodesWithSdkFirstDefaults() throws {
         let json = """
@@ -221,6 +230,43 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
                 XCTAssertEqual(dispatch["status"] as? String, "unavailable", descriptor.id)
             }
         }
+    }
+
+    func testDispatchModesKeepReviewedPartitions() throws {
+        var localWide: [String] = []
+        var approvalDispatch: [String] = []
+        var planOnly: [String] = []
+        var noRunner: [String] = []
+        var noPlaintextBroker: [String] = []
+        var blocked: [String] = []
+        var unclassifiedBlocked: [String] = []
+        var externalPending: [String] = []
+
+        for descriptor in AppCapabilityCatalog.descriptors {
+            let dispatch = try XCTUnwrap(descriptor.bridgeValue["dispatch"] as? [String: Any], descriptor.id)
+            switch dispatch["mode"] as? String {
+            case "localWideRead": localWide.append(descriptor.id)
+            case "approvalRequiredDispatch": approvalDispatch.append(descriptor.id)
+            case "approvalRequiredPlanOnly": planOnly.append(descriptor.id)
+            case "approvalRequiredNoRunner": noRunner.append(descriptor.id)
+            case "approvalRequiredNoPlaintextBroker": noPlaintextBroker.append(descriptor.id)
+            case "blocked": blocked.append(descriptor.id)
+            case "unclassifiedBlocked": unclassifiedBlocked.append(descriptor.id)
+            default: XCTFail("Unexpected dispatch mode for \(descriptor.id)")
+            }
+            if dispatch["externalValidation"] as? String == "EXTERNAL PENDING" {
+                externalPending.append(descriptor.id)
+            }
+        }
+
+        XCTAssertEqual(localWide.sorted(), expectedOrdinaryAccessCapabilityIds)
+        XCTAssertEqual(approvalDispatch.sorted(), expectedApprovalDispatchCapabilityIds)
+        XCTAssertEqual(planOnly.sorted(), expectedPlanOnlyDispatchCapabilityIds)
+        XCTAssertEqual(noRunner.sorted(), expectedNoRunnerDispatchCapabilityIds)
+        XCTAssertEqual(noPlaintextBroker.sorted(), expectedNoPlaintextBrokerDispatchCapabilityIds)
+        XCTAssertEqual(blocked, [])
+        XCTAssertEqual(unclassifiedBlocked, [])
+        XCTAssertEqual(externalPending.sorted(), expectedExternalPendingDispatchCapabilityIds)
     }
 
     func testSurfaceBindingsKeepReviewedBlockedPartitions() throws {
