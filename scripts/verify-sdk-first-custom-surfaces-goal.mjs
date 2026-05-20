@@ -46,6 +46,9 @@ function assertCompletionAudit() {
     "The Clawix verifier inspects sibling ClawJS evidence when that checkout is present.",
     "The Network Control Plane now adds a typed executable route-family example",
     "Clawix `NetworkControlBridge` projection through `system/network`",
+    "Clawix now mirrors the ClawJS `system.telemetry.snapshot` and `system.telemetry.history` local-wide read contracts",
+    "`window.clawix.system.telemetry`",
+    "`SystemTelemetryBridge.localStatusBridge`",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
     "| CLX-SDK-003 | Web custom apps use code plus manifest and `window.clawix`",
@@ -102,6 +105,7 @@ function assertPublicRouting() {
       "Installed-app Time Profiler smoke",
       "signed app launch and attach capture paths",
       "delayed-heavy-surface",
+      "`system.telemetry.snapshot` and `system.telemetry.history` are mirrored as",
     ],
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
       "Bundle id: `com.clawix.app`",
@@ -160,6 +164,9 @@ function assertRuntimeArtifacts() {
       "\"hostBridgeImplementation\": \"window.clawix\"",
       "\"approvalRequiredNoPlaintextBroker\"",
       "\"EXTERNAL PENDING\"",
+      "systemTelemetrySnapshotSchemaRef",
+      "system.telemetry.snapshot",
+      "system.telemetry.history",
     ],
     "macos/Sources/Clawix/Apps/AppBridgeQueryDSL.swift": [
       "case invalidCollection(String)",
@@ -170,6 +177,14 @@ function assertRuntimeArtifacts() {
       "capabilities.contracts",
       "AppCapabilityCatalog.contractsBridgeValue",
       "highRiskActionDispatcher.dispatch",
+      "handleSystemTelemetrySnapshot",
+      "systemTelemetrySnapshotBridgeValue",
+      "SystemTelemetryBridge",
+    ],
+    "macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift": [
+      "localStatusBridge",
+      "telemetry",
+      "history",
     ],
     "macos/Sources/Clawix/Apps/AppSwiftSurfaceActionBridge.swift": [
       "AppSwiftSurfaceActionBridge",
@@ -189,6 +204,8 @@ function assertRuntimeArtifacts() {
       "contracts: function () { return send('capabilities.contracts'); }",
       "search.query",
       "db.query",
+      "system.telemetry.snapshot",
+      "system.telemetry.history",
     ],
     "macos/Sources/Clawix/Apps/AppSwiftSurfaceContract.swift": [
       "AppSwiftSurfaceRunnerSupervisor",
@@ -269,6 +286,7 @@ function assertTests() {
       "testSwiftSurfaceDBQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceSearchQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
+      "testSystemTelemetryBridgeValuesMatchSdkContracts",
     ],
     "macos/Tests/ClawixMeshTests/AppsStoreCancellationTests.swift": [
       "testImportAppVerifiesSignedPackageDigestWhenTrustedKeyMatches",
@@ -321,10 +339,18 @@ function assertSiblingClawJSArtifacts() {
       "metadata_only_contract_catalog",
       "relay.remote.custom_app_sdk",
     ],
+    "packages/clawjs-core/src/capability-catalog.ts": [
+      "id: \"system.telemetry.snapshot\"",
+      "id: \"system.telemetry.history\"",
+      "@clawjs/claw:system.telemetry.snapshot",
+      "@clawjs/claw:system.telemetry.history",
+    ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
       "custom-app SDK inspection payload exposes dispatch availability and gaps",
       "payload.executionBoundary.executesCapabilityCalls",
       "custom-app DB query schema rejects collection creation",
+      "system.telemetry.snapshot",
+      "system.telemetry.history",
     ],
     "packages/clawjs-mcp/src/custom-app-sdk-contract.test.ts": [
       "MCP custom app SDK contract boundary",

@@ -60,6 +60,10 @@ the sibling ClawJS SDK-first custom surface contract.
   shared schemas, Gateway route policy evaluation, redacted event audit, and a
   Clawix host projection, while unrelated future executors remain blocked until
   they have the same policy/audit/test evidence.
+- `system.telemetry.snapshot` and `system.telemetry.history` are mirrored as
+  low-risk local-wide reads across ClawJS capability metadata and the Clawix
+  host bridge, including `window.clawix.system.telemetry` SDK methods and
+  contract tests for snapshot/history payloads.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.
