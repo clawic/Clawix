@@ -119,7 +119,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 3 }
+            "invalidTemplateCount": { "const": 5 }
           }
         }
       ]

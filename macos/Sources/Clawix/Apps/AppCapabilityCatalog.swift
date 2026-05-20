@@ -354,8 +354,10 @@ enum AppCapabilityCatalog {
         if !riskMap.unknown.isEmpty {
             return .blockedUnknownCapabilities(riskMap.unknown)
         }
-        if !riskMap.blocked.isEmpty {
-            return .blockedCapabilities(riskMap.blocked)
+        let requested = Set(record.effectiveDeclaredCapabilities)
+        let requestedBlocked = riskMap.blocked.filter { requested.contains($0) }
+        if !requestedBlocked.isEmpty {
+            return .blockedCapabilities(requestedBlocked)
         }
         if riskMap.requiresActivationReview && record.activationReview == nil {
             return .reviewRequired(riskMap)

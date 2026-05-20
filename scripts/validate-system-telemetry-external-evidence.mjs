@@ -40,12 +40,60 @@ function assertPublicSafePacket(packet, label) {
   }
 }
 
+function parseTime(value) {
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : undefined;
+}
+
+function evidencePacketErrors(packet, compiled) {
+  const errors = [];
+  const serialized = JSON.stringify(packet);
+  if (serialized.includes("/Users/")) {
+    errors.push("packet contains a private filesystem path");
+  }
+  if (!compiled.validate(packet)) {
+    errors.push(`schema: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
+  }
+  const preflightCompletedAt = parseTime(packet.preflight?.completedAt);
+  const executionStartedAt = parseTime(packet.execution?.startedAt);
+  const executionCompletedAt = parseTime(packet.execution?.completedAt);
+  const reviewedAt = parseTime(packet.reviewer?.reviewedAt);
+  if (preflightCompletedAt === undefined) errors.push("preflight.completedAt must be a parseable timestamp");
+  if (executionStartedAt === undefined) errors.push("execution.startedAt must be a parseable timestamp");
+  if (executionCompletedAt === undefined) errors.push("execution.completedAt must be a parseable timestamp");
+  if (reviewedAt === undefined) errors.push("reviewer.reviewedAt must be a parseable timestamp");
+  if (preflightCompletedAt !== undefined && executionStartedAt !== undefined && executionStartedAt < preflightCompletedAt) {
+    errors.push("execution.startedAt must be at or after preflight.completedAt");
+  }
+  if (executionStartedAt !== undefined && executionCompletedAt !== undefined && executionCompletedAt < executionStartedAt) {
+    errors.push("execution.completedAt must be at or after execution.startedAt");
+  }
+  if (executionCompletedAt !== undefined && reviewedAt !== undefined && reviewedAt < executionCompletedAt) {
+    errors.push("reviewer.reviewedAt must be at or after execution.completedAt");
+  }
+  return errors;
+}
+
+function mutateTemplate(packet, mutation) {
+  const mutated = JSON.parse(JSON.stringify(packet));
+  switch (mutation) {
+    case "execution.completedAt before execution.startedAt":
+      mutated.execution.completedAt = "2026-05-19T23:59:59Z";
+      break;
+    case "reviewer.reviewedAt before execution.completedAt":
+      mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
+      break;
+    default:
+      fail(`unknown evidence fixture mutation ${mutation}`);
+  }
+  return mutated;
+}
+
 function validatePacket(packet, label) {
-  assertPublicSafePacket(packet, label);
-  const { ajv, validate } = compileSchema();
-  const ok = validate(packet);
-  if (!ok) {
-    fail(`${label}: packet does not conform to system telemetry external evidence schema`, ajv.errorsText(validate.errors));
+  const compiled = compileSchema();
+  const errors = evidencePacketErrors(packet, compiled);
+  if (errors.length > 0) {
+    fail(`${label}: packet does not conform to system telemetry external evidence requirements`, errors.join("; "));
   }
   return { laneId: packet.laneId, repoScope: packet.repoScope };
 }
@@ -55,20 +103,25 @@ function validateFixtures() {
   if (fixtures.status !== "synthetic_templates_not_evidence") {
     fail("fixtures must remain synthetic templates only");
   }
-  const { ajv, validate } = compileSchema();
+  const compiled = compileSchema();
   const validSyntheticPackets = fixtures.validSyntheticPackets ?? [];
   const invalidSyntheticPackets = fixtures.invalidSyntheticPackets ?? [];
+  const validByLaneId = new Map();
   const accepted = [];
   for (const packet of validSyntheticPackets) {
-    assertPublicSafePacket(packet, `valid fixture ${packet.laneId}`);
-    if (!validate(packet)) {
-      fail(`valid fixture ${packet.laneId} did not validate`, ajv.errorsText(validate.errors));
+    const errors = evidencePacketErrors(packet, compiled);
+    if (errors.length > 0) {
+      fail(`valid fixture ${packet.laneId} did not validate`, errors.join("; "));
     }
+    validByLaneId.set(packet.laneId, packet);
     accepted.push(packet.laneId);
   }
   for (const fixture of invalidSyntheticPackets) {
-    assertPublicSafePacket(fixture.packet, `invalid fixture ${fixture.id}`);
-    if (validate(fixture.packet)) {
+    const packet = fixture.packet ?? mutateTemplate(validByLaneId.get(fixture.baseLaneId), fixture.mutation);
+    if (!packet) {
+      fail(`invalid fixture ${fixture.id} references unknown lane ${fixture.baseLaneId}`);
+    }
+    if (evidencePacketErrors(packet, compiled).length === 0) {
       fail(`invalid fixture ${fixture.id} unexpectedly validated`);
     }
   }

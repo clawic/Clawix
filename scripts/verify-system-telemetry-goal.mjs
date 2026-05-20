@@ -362,7 +362,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalEvidenceFixtures?.path === "docs/system-telemetry-external-evidence.fixtures.json", "external validation manifest: wrong external evidence fixtures path");
   assert(manifest.externalEvidenceFixtures?.status === "synthetic_templates_not_evidence", "external validation manifest: external evidence fixtures must be marked synthetic");
   assert(manifest.externalEvidenceFixtures?.validTemplateCount === 3, "external validation manifest: wrong valid fixture count");
-  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 3, "external validation manifest: wrong invalid fixture count");
+  assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 5, "external validation manifest: wrong invalid fixture count");
   assert(manifest.externalEvidenceFixtures?.closureRole?.includes("without representing real external evidence"), "external validation manifest: external evidence fixtures closure role must be explicit");
   assert(manifest.externalEvidencePacketValidator?.required === true, "external validation manifest: external evidence validator link must be required");
   assert(manifest.externalEvidencePacketValidator?.artifactId === "clawix-system-telemetry-external-evidence-validator", "external validation manifest: wrong external evidence validator artifact");
@@ -765,6 +765,45 @@ function assertExternalEvidenceSchema() {
   assert(!serialized.includes("/Users/"), "external evidence schema: must not publish private filesystem paths");
 }
 
+function evidenceTemplateErrors(packet, validate, ajv) {
+  const errors = [];
+  if (!validate(packet)) errors.push(ajv.errorsText(validate.errors));
+  const preflightCompletedAt = Date.parse(packet.preflight?.completedAt);
+  const executionStartedAt = Date.parse(packet.execution?.startedAt);
+  const executionCompletedAt = Date.parse(packet.execution?.completedAt);
+  const reviewedAt = Date.parse(packet.reviewer?.reviewedAt);
+  if (!Number.isFinite(preflightCompletedAt)) errors.push("preflight.completedAt must be parseable");
+  if (!Number.isFinite(executionStartedAt)) errors.push("execution.startedAt must be parseable");
+  if (!Number.isFinite(executionCompletedAt)) errors.push("execution.completedAt must be parseable");
+  if (!Number.isFinite(reviewedAt)) errors.push("reviewer.reviewedAt must be parseable");
+  if (Number.isFinite(preflightCompletedAt) && Number.isFinite(executionStartedAt) && executionStartedAt < preflightCompletedAt) {
+    errors.push("execution.startedAt must be at or after preflight.completedAt");
+  }
+  if (Number.isFinite(executionStartedAt) && Number.isFinite(executionCompletedAt) && executionCompletedAt < executionStartedAt) {
+    errors.push("execution.completedAt must be at or after execution.startedAt");
+  }
+  if (Number.isFinite(executionCompletedAt) && Number.isFinite(reviewedAt) && reviewedAt < executionCompletedAt) {
+    errors.push("reviewer.reviewedAt must be at or after execution.completedAt");
+  }
+  return errors;
+}
+
+function mutateEvidenceTemplate(packet, mutation) {
+  if (!packet) return undefined;
+  const mutated = JSON.parse(JSON.stringify(packet));
+  switch (mutation) {
+    case "execution.completedAt before execution.startedAt":
+      mutated.execution.completedAt = "2026-05-19T23:59:59Z";
+      break;
+    case "reviewer.reviewedAt before execution.completedAt":
+      mutated.reviewer.reviewedAt = "2026-05-19T23:59:59Z";
+      break;
+    default:
+      return undefined;
+  }
+  return mutated;
+}
+
 function assertExternalEvidenceFixtures() {
   const fixtures = readJson("docs/system-telemetry-external-evidence.fixtures.json");
   assert(fixtures.schemaVersion === 1, "external evidence fixtures: schemaVersion must be 1");
@@ -774,14 +813,14 @@ function assertExternalEvidenceFixtures() {
   assert(fixtures.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external evidence fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/system-telemetry-external-evidence.schema.json", "external evidence fixtures: wrong schema path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external evidence fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 3, "external evidence fixtures: must contain 3 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 5, "external evidence fixtures: must contain 5 invalid synthetic packets");
   const schema = readJson("docs/system-telemetry-external-evidence.schema.json");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   const validLaneIds = new Set();
   for (const packet of fixtures.validSyntheticPackets) {
-    const ok = validate(packet);
-    assert(ok, `external evidence fixtures: valid packet ${packet.laneId} must validate: ${ajv.errorsText(validate.errors)}`);
+    const errors = evidenceTemplateErrors(packet, validate, ajv);
+    assert(errors.length === 0, `external evidence fixtures: valid packet ${packet.laneId} must validate: ${errors.join("; ")}`);
     validLaneIds.add(packet.laneId);
     assert(packet.redaction?.containsSecrets === false, `external evidence fixtures: ${packet.laneId} must not contain secrets`);
     assert(packet.redaction?.preciseLocationIncluded === false, `external evidence fixtures: ${packet.laneId} must not contain precise location`);
@@ -791,8 +830,10 @@ function assertExternalEvidenceFixtures() {
     assert(validLaneIds.has(rowId), `external evidence fixtures: missing valid template for ${rowId}`);
   }
   for (const fixture of fixtures.invalidSyntheticPackets) {
-    const ok = validate(fixture.packet);
-    assert(!ok, `external evidence fixtures: invalid packet ${fixture.id} must fail validation`);
+    const base = fixtures.validSyntheticPackets.find((packet) => packet.laneId === fixture.baseLaneId);
+    const packet = fixture.packet ?? mutateEvidenceTemplate(base, fixture.mutation);
+    assert(packet, `external evidence fixtures: invalid packet ${fixture.id} must provide packet or valid mutation`);
+    assert(evidenceTemplateErrors(packet, validate, ajv).length > 0, `external evidence fixtures: invalid packet ${fixture.id} must fail validation`);
     assert(typeof fixture.mutation === "string" && fixture.mutation.length > 0, `external evidence fixtures: invalid packet ${fixture.id} must document mutation`);
   }
   const serialized = JSON.stringify(fixtures);
@@ -805,7 +846,7 @@ function assertExternalEvidenceValidator() {
   assert(result.ok === true, "external evidence validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_evidence", "external evidence validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external evidence validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 3, "external evidence validator: must reject 3 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 5, "external evidence validator: must reject 5 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external evidence validator: missing accepted fixture for ${rowId}`);
   }

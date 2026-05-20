@@ -370,6 +370,16 @@
           "decision": "accepted"
         }
       }
+    },
+    {
+      "id": "execution_completed_before_started",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "execution.completedAt before execution.startedAt"
+    },
+    {
+      "id": "reviewed_before_execution_completed",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "reviewer.reviewedAt before execution.completedAt"
     }
   ]
 }
