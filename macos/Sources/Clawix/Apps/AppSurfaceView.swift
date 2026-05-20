@@ -541,12 +541,78 @@ private enum AppSurfaceLoadState: Equatable {
     case failed(String)
 }
 
+struct AppActivationReviewLine: Equatable, Identifiable {
+    var title: String
+    var value: String
+
+    var id: String { title }
+}
+
+struct AppActivationReviewPresentation: Equatable {
+    var lines: [AppActivationReviewLine]
+
+    init(record: AppRecord, riskMap: AppCapabilityRiskMap) {
+        var lines = [
+            AppActivationReviewLine(title: "Origin", value: record.effectiveOriginClass.rawValue),
+            AppActivationReviewLine(
+                title: "Ordinary access",
+                value: riskMap.ordinaryAccess.joined(separator: ", ").nilIfEmpty ?? "None"
+            ),
+            AppActivationReviewLine(
+                title: "Approval required",
+                value: riskMap.approvalRequired.joined(separator: ", ").nilIfEmpty ?? "None"
+            ),
+            AppActivationReviewLine(
+                title: "High risk",
+                value: riskMap.highRisk.joined(separator: ", ").nilIfEmpty ?? "None"
+            )
+        ]
+
+        if let provenance = record.packageProvenance {
+            lines.append(
+                AppActivationReviewLine(
+                    title: "Imported from",
+                    value: provenance.sourcePath?.nilIfEmpty ?? "Unknown package source"
+                )
+            )
+            if let sourceSlug = provenance.sourceSlug?.nilIfEmpty {
+                lines.append(AppActivationReviewLine(title: "Source slug", value: sourceSlug))
+            }
+            if let sourceOrigin = provenance.sourceOriginClass {
+                lines.append(AppActivationReviewLine(title: "Source origin", value: sourceOrigin.rawValue))
+            }
+            lines.append(AppActivationReviewLine(title: "Package kind", value: provenance.packageKind))
+            lines.append(
+                AppActivationReviewLine(
+                    title: "Signature",
+                    value: Self.signatureStatusLabel(provenance.signatureStatus)
+                )
+            )
+            lines.append(AppActivationReviewLine(title: "Review reason", value: provenance.reviewReason))
+        }
+
+        self.lines = lines
+    }
+
+    private static func signatureStatusLabel(_ status: AppPackageSignatureStatus) -> String {
+        switch status {
+        case .notVerified:
+            return "Not verified"
+        case .verified:
+            return "Verified"
+        case .failed:
+            return "Failed"
+        }
+    }
+}
+
 private struct AppActivationReviewGate: View {
     let record: AppRecord
     let riskMap: AppCapabilityRiskMap
     let onActivate: () -> Void
 
     var body: some View {
+        let presentation = AppActivationReviewPresentation(record: record, riskMap: riskMap)
         VStack(alignment: .leading, spacing: 16) {
             Text(record.name)
                 .font(BodyFont.system(size: 22, wght: 650))
@@ -556,10 +622,9 @@ private struct AppActivationReviewGate: View {
                 .foregroundColor(Color(white: 0.68))
 
             VStack(alignment: .leading, spacing: 10) {
-                riskLine(title: "Origin", value: record.effectiveOriginClass.rawValue)
-                riskLine(title: "Ordinary access", value: riskMap.ordinaryAccess.joined(separator: ", ").nilIfEmpty ?? "None")
-                riskLine(title: "Approval required", value: riskMap.approvalRequired.joined(separator: ", ").nilIfEmpty ?? "None")
-                riskLine(title: "High risk", value: riskMap.highRisk.joined(separator: ", ").nilIfEmpty ?? "None")
+                ForEach(presentation.lines) { line in
+                    riskLine(title: line.title, value: line.value)
+                }
             }
 
             HStack(spacing: 10) {

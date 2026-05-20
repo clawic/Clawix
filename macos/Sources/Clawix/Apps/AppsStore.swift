@@ -159,6 +159,7 @@ final class AppsStore: ObservableObject {
         routeTarget: String? = nil,
         variant: AppVariantMetadata? = nil,
         protectedRoutePolicy: AppProtectedRoutePolicy = .blocked,
+        packageProvenance: AppPackageProvenance? = nil,
         activationReview: AppActivationReview? = nil
     ) throws -> AppRecord {
         let resolvedSlug = try uniqueSlug(preferred: slug, name: name)
@@ -183,6 +184,7 @@ final class AppsStore: ObservableObject {
             routeTarget: routeTarget,
             variant: variant,
             protectedRoutePolicy: protectedRoutePolicy,
+            packageProvenance: packageProvenance,
             activationReview: activationReview
         )
         try writeManifest(record)
@@ -254,6 +256,8 @@ final class AppsStore: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
         let data = try Data(contentsOf: manifestURL)
         var record = try decoder.decode(AppRecord.self, from: data)
+        let sourceSlug = record.slug
+        let sourceOriginClass = record.originClass
         let resolvedSlug = try uniqueSlug(preferred: record.slug, name: record.name, includingFilesystem: true)
         let destinationURL = directory(forSlug: resolvedSlug)
         guard sourceURL.standardizedFileURL.path != destinationURL.standardizedFileURL.path else {
@@ -262,6 +266,11 @@ final class AppsStore: ObservableObject {
         try fileManager.copyItem(at: sourceURL, to: destinationURL)
         record.slug = resolvedSlug
         record.originClass = originClass
+        record.packageProvenance = AppPackageProvenance(
+            sourcePath: sourceURL.standardizedFileURL.path,
+            sourceSlug: sourceSlug,
+            sourceOriginClass: sourceOriginClass
+        )
         if originClass == .imported || originClass == .marketplace {
             record.activationReview = nil
         }

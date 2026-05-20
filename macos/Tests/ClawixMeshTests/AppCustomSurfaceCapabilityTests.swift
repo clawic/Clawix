@@ -405,6 +405,34 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.activationGate(for: reviewed), .allowed)
     }
 
+    func testActivationReviewPresentationIncludesPackageProvenance() {
+        let record = AppRecord(
+            slug: "imported-known-panel",
+            name: "Imported Known Panel",
+            declaredCapabilities: ["search.query", "db.query"],
+            originClass: .imported,
+            packageProvenance: AppPackageProvenance(
+                importedAt: Date(timeIntervalSince1970: 0),
+                importedBy: "Tester",
+                sourcePath: "/tmp/focus-panel",
+                sourceSlug: "focus-panel",
+                sourceOriginClass: .localUserAuthored,
+                packageKind: "folder",
+                signatureStatus: .notVerified,
+                reviewReason: "Imported packages require local review before activation."
+            )
+        )
+        let riskMap = AppCapabilityCatalog.riskMap(for: record)
+
+        let presentation = AppActivationReviewPresentation(record: record, riskMap: riskMap)
+
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Imported from", value: "/tmp/focus-panel")))
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Source slug", value: "focus-panel")))
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Source origin", value: "localUserAuthored")))
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Signature", value: "Not verified")))
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Review reason", value: "Imported packages require local review before activation.")))
+    }
+
     func testUnknownCapabilitiesBlockActivation() {
         let record = AppRecord(
             slug: "unknown-panel",

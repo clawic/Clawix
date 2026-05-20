@@ -50,6 +50,10 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
     var variant: AppVariantMetadata?
     /// Replacement policy for sensitive built-in routes.
     var protectedRoutePolicy: AppProtectedRoutePolicy?
+    /// Structured package provenance for imported/marketplace app folders.
+    /// This is intentionally distinct from `originClass`: origin answers
+    /// "trust lane", provenance answers "where did this package come from".
+    var packageProvenance: AppPackageProvenance?
     /// Review receipt for imported/marketplace apps after the user has seen
     /// the origin/capability/risk ficha.
     var activationReview: AppActivationReview?
@@ -77,6 +81,7 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         routeTarget: String? = nil,
         variant: AppVariantMetadata? = nil,
         protectedRoutePolicy: AppProtectedRoutePolicy = .blocked,
+        packageProvenance: AppPackageProvenance? = nil,
         activationReview: AppActivationReview? = nil
     ) {
         self.id = id
@@ -99,6 +104,7 @@ struct AppRecord: Identifiable, Codable, Equatable, Hashable {
         self.routeTarget = routeTarget
         self.variant = variant
         self.protectedRoutePolicy = protectedRoutePolicy
+        self.packageProvenance = packageProvenance
         self.activationReview = activationReview
     }
 
@@ -153,6 +159,43 @@ struct AppVariantMetadata: Codable, Equatable, Hashable {
         self.originalRoute = originalRoute
         self.defaultScope = defaultScope
         self.notes = notes
+    }
+}
+
+enum AppPackageSignatureStatus: String, Codable, Equatable, Hashable {
+    case notVerified
+    case verified
+    case failed
+}
+
+struct AppPackageProvenance: Codable, Equatable, Hashable {
+    var importedAt: Date
+    var importedBy: String
+    var sourcePath: String?
+    var sourceSlug: String?
+    var sourceOriginClass: AppOriginClass?
+    var packageKind: String
+    var signatureStatus: AppPackageSignatureStatus
+    var reviewReason: String
+
+    init(
+        importedAt: Date = Date(),
+        importedBy: String = NSFullUserName(),
+        sourcePath: String? = nil,
+        sourceSlug: String? = nil,
+        sourceOriginClass: AppOriginClass? = nil,
+        packageKind: String = "folder",
+        signatureStatus: AppPackageSignatureStatus = .notVerified,
+        reviewReason: String = "Imported packages require local review before activation."
+    ) {
+        self.importedAt = importedAt
+        self.importedBy = importedBy
+        self.sourcePath = sourcePath
+        self.sourceSlug = sourceSlug
+        self.sourceOriginClass = sourceOriginClass
+        self.packageKind = packageKind
+        self.signatureStatus = signatureStatus
+        self.reviewReason = reviewReason
     }
 }
 
