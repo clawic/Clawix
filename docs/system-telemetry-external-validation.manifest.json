@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "id": "clawix-system-telemetry-external-validation-manifest",
   "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
   "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
   "status": "active_goal_not_complete",
@@ -9,6 +10,13 @@
     "requiresSourceQaReview": true,
     "requiresForbiddenNameScan": true,
     "requiresExactRunApprovalForExternalLanes": true
+  },
+  "sourceQaReview": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-source-qa-review",
+    "path": "docs/system-telemetry-source-qa-review.json",
+    "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
+    "closureRole": "binds private source decisions to public-safe validation rows before goal completion"
   },
   "rows": [
     {

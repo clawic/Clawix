@@ -261,6 +261,7 @@ function assertExternalPendingLedger() {
 function assertExternalValidationManifest() {
   const manifest = readJson("docs/system-telemetry-external-validation.manifest.json");
   assert(manifest.schemaVersion === 1, "external validation manifest: schemaVersion must be 1");
+  assert(manifest.id === "clawix-system-telemetry-external-validation-manifest", "external validation manifest: wrong id");
   assert(manifest.conversationId === "019e359b-c0ab-7dc1-ba94-11a49d11dc76", "external validation manifest: wrong conversationId");
   assert(manifest.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external validation manifest: wrong planId");
   assert(manifest.status === "active_goal_not_complete", "external validation manifest: goal must remain active");
@@ -269,6 +270,11 @@ function assertExternalValidationManifest() {
   assert(manifest.completionPolicy?.requiresSourceQaReview === true, "external validation manifest: source Q/A review must be required");
   assert(manifest.completionPolicy?.requiresForbiddenNameScan === true, "external validation manifest: forbidden-name scan must be required");
   assert(manifest.completionPolicy?.requiresExactRunApprovalForExternalLanes === true, "external validation manifest: exact-run approval must be required");
+  assert(manifest.sourceQaReview?.required === true, "external validation manifest: source Q/A review link must be required");
+  assert(manifest.sourceQaReview?.artifactId === "clawix-system-telemetry-source-qa-review", "external validation manifest: wrong source Q/A artifact");
+  assert(manifest.sourceQaReview?.path === "docs/system-telemetry-source-qa-review.json", "external validation manifest: wrong source Q/A path");
+  assert(manifest.sourceQaReview?.privateAuditAlias === "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20", "external validation manifest: wrong private audit alias");
+  assert(manifest.sourceQaReview?.closureRole?.includes("public-safe validation rows"), "external validation manifest: source Q/A closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
   const rows = new Map(manifest.rows.map((row) => [row.id, row]));
