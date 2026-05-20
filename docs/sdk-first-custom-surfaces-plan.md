@@ -79,3 +79,7 @@ the sibling ClawJS SDK-first custom surface contract.
   `render` message that the host validates against the launch plan before
   native rendering and a host-owned action bridge for rendered controls,
   including registered-resource read execution.
+- Installed-app smoke verified the signed bundled Swift surface runner, valid
+  stdout `render` output, runner-local failure isolation with the main Clawix
+  process still alive, and host-owned native rendering for a local Swift
+  declarative app.

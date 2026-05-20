@@ -55,6 +55,8 @@ function assertCompletionAudit() {
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md",
     "verified a local `database/tasks` variant default rendered as `User`",
     "| CLX-SDK-007 | Swift custom surfaces are native but isolated",
+    "verified the signed bundled helper, valid stdout `render` output",
+    "main Clawix PID unchanged",
     "| CLX-SDK-008 | Clawix shell remains modular and nonblocking",
     "| CLX-SDK-009 | Unanswered `data_access_lock`, `custom_collections`, and `cli_escape_hatch`",
     "| CLX-SDK-010 | Final decision-by-decision source-session audit",
@@ -69,6 +71,7 @@ function assertCompletionAudit() {
   for (const [rowId, status] of [
     ["CLX-SDK-004", "EXTERNAL PENDING"],
     ["CLX-SDK-006", "VALIDATED LOCAL"],
+    ["CLX-SDK-007", "VALIDATED LOCAL"],
     ["CLX-SDK-008", "EXTERNAL PENDING"],
     ["CLX-SDK-010", "VALIDATED PRIVATE"],
   ]) {
@@ -91,12 +94,17 @@ function assertPublicRouting() {
       "stdout `render` message",
       "Direct SQLite is not exposed as a custom-app action surface.",
       "Installed-app smoke verified that a local `database/tasks` variant default",
+      "Installed-app smoke verified the signed bundled Swift surface runner",
     ],
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
       "Bundle id: `com.clawix.app`",
       "`codex-variant-smoke-tasks`",
       "`User default variant for database/tasks`",
       "`clawix-app://codex-variant-smoke-tasks/index.html`",
+      "`/Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner`",
+      "`codex-swift-runner-smoke`",
+      "`Rendered by the installed Swift surface runner.`",
+      "The Clawix app process stayed alive with the same PID",
       "This smoke does not validate signed-host native permissions",
     ],
     "docs/decision-map.md": [

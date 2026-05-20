@@ -39,3 +39,38 @@ Scope:
   tests unless a workspace is selected in the installed app.
 - This smoke does not validate signed-host native permissions, marketplace
   trust providers, or real Instruments performance captures.
+
+## 2026-05-20 Swift Runner Isolation Smoke
+
+Validation target:
+
+- Installed app: `/Applications/Clawix.app`
+- Installed helper: `/Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner`
+- Bundle id: `com.clawix.app`
+- App mode: `real`
+- Preflight: `scripts-dev/clawix-launcher.sh preflight-computer-use`
+
+Observed evidence:
+
+- The installed helper exists under `Contents/Helpers/ClawixSwiftSurfaceRunner`
+  and `codesign` verified the helper as signed.
+- Running the installed helper with a valid Swift surface manifest emitted a
+  protocol-v1 stdout `render` message.
+- Running the installed helper with an unsupported manifest schema returned
+  exit code `1` with a runner-local error.
+- The Clawix app process stayed alive with the same PID before and after the
+  failed helper execution.
+- A local Swift declarative app with slug `codex-swift-runner-smoke` appeared
+  in the installed app sidebar.
+- Opening that app rendered host-owned native text from the Swift surface DSL:
+  `Codex Swift Runner Smoke` and
+  `Rendered by the installed Swift surface runner.`
+
+Scope:
+
+- This validates that the installed, signed helper can render valid Swift DSL
+  output and fail independently from the main Clawix process.
+- This validates the installed app's Swift declarative route from local
+  manifest to bundled helper to host-owned native rendering.
+- This does not validate native Mac permissions, live provider actions,
+  marketplace trust roots, or real Instruments performance captures.
