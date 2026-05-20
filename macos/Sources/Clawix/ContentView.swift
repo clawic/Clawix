@@ -127,7 +127,7 @@ struct ContentView: View {
             return true
         case .automations, .settings, .rescue, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
              .indexHome, .marketplaceHome,
-             .calendarHome, .contactsHome,
+             .calendarHome, .contactsHome, .networkControl,
              .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent, .driveFolder,
              .app, .appsHome, .skills, .skillDetail,
              .iotHome, .iotDeviceDetail,
@@ -161,6 +161,7 @@ struct ContentView: View {
         case .marketplaceHome: return "marketplace"
         case .calendarHome: return "calendar"
         case .contactsHome: return "contacts"
+        case .networkControl: return "network-control"
         case .driveAdmin: return "drive-admin"
         case .drivePhotos: return "drive-photos"
         case .driveDocuments: return "drive-documents"

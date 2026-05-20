@@ -14,6 +14,7 @@ enum SurfaceRouteModule: String, Equatable, Hashable, CaseIterable {
     case agents
     case publishing
     case life
+    case network
 }
 
 struct SurfaceRouteRegistryEntry {
@@ -101,6 +102,8 @@ enum SurfaceRouteRegistry {
             return entry(route, module: .time) { CalendarScreen() }
         case .contactsHome:
             return entry(route, module: .time) { ContactsScreen() }
+        case .networkControl:
+            return entry(route, module: .network) { NetworkControlCenterScreen() }
         case .skills:
             return entry(route, module: .skills) { SkillsView() }
         case .skillDetail(let slug):

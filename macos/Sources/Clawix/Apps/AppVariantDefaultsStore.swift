@@ -185,6 +185,8 @@ extension SidebarRoute {
             return "calendar"
         case .contactsHome:
             return "contacts"
+        case .networkControl:
+            return "network-control"
         case .skills:
             return "skills"
         case .iotHome:

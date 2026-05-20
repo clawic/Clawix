@@ -76,6 +76,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             .driveFolder("folder-1"),
             .calendarHome,
             .contactsHome,
+            .networkControl,
             .skills,
             .skillDetail(slug: "summarizer"),
             .iotHome,
@@ -120,6 +121,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             .databaseCollection("tasks"),
             .driveAdmin,
             .calendarHome,
+            .networkControl,
             .iotHome,
             .designTemplatesHome,
             .agentsHome,
@@ -143,6 +145,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             (.indexHome, [.searchIndex]),
             (.driveAdmin, [.connectors, .downloads]),
             (.calendarHome, [.connectors, .downloads]),
+            (.networkControl, [.connectors]),
             (.iotHome, [.connectors, .externalProviders]),
             (.agentsHome, [.languageModels]),
             (.publishingHome, [.connectors, .externalProviders])
@@ -190,5 +193,9 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
         let database = SidebarRoute.databaseCollection("tasks").surfaceDescriptor
         XCTAssertEqual(database.routeTarget, "database/tasks")
         XCTAssertTrue(database.canUseCustomVariantDefault)
+
+        let network = SidebarRoute.networkControl.surfaceDescriptor
+        XCTAssertEqual(network.routeTarget, "network-control")
+        XCTAssertTrue(network.canUseCustomVariantDefault)
     }
 }

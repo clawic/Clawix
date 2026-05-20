@@ -86,6 +86,8 @@ enum SidebarToolsCatalog {
                          icon: .system("square.stack"),              route: .skillCollectionsHome),
         SidebarToolEntry(id: "connections", title: "Connections", titleString: "Connections",
                          icon: .system("link.circle"),               route: .connectionsHome),
+        SidebarToolEntry(id: "network", title: "Network", titleString: "Network",
+                         icon: .system("network"),                   route: .networkControl),
         SidebarToolEntry(id: "publishing",    title: "Publishing",    titleString: "Publishing",
                          icon: .system("megaphone"),                 route: .publishingHome),
     ]
@@ -107,6 +109,7 @@ enum SidebarToolsCatalog {
         case "personalities":    return .agents
         case "skillCollections": return .skillCollections
         case "connections":      return .agents
+        case "network":          return nil
         case "publishing":           return .publishing
         default:                 return nil
         }

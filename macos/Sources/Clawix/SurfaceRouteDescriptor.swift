@@ -65,6 +65,9 @@ enum SurfaceShellIsolationPolicy {
         if descriptor.id.hasPrefix("agent") || descriptor.id.hasPrefix("personality") {
             return [.languageModels]
         }
+        if descriptor.id == "network-control" {
+            return [.connectors]
+        }
         if descriptor.id.hasPrefix("publishing") {
             return [.connectors, .externalProviders]
         }
@@ -117,7 +120,7 @@ extension SidebarRoute {
              .databaseWorkbench, .databaseCollection, .memoryHome, .indexHome,
              .marketplaceHome, .driveAdmin, .drivePhotos, .driveDocuments,
              .driveRecent, .driveFolder, .calendarHome, .contactsHome,
-             .skills, .skillDetail, .iotHome, .iotDeviceDetail,
+             .networkControl, .skills, .skillDetail, .iotHome, .iotDeviceDetail,
              .designStylesHome, .designStyleDetail, .designTemplatesHome,
              .designTemplateDetail, .designReferencesHome, .designEditor,
              .agentsHome, .agentDetail, .personalitiesHome, .personalityDetail,
@@ -190,6 +193,8 @@ extension SidebarRoute {
             return "calendar"
         case .contactsHome:
             return "contacts"
+        case .networkControl:
+            return "network-control"
         case .skills:
             return "skills"
         case .skillDetail(let slug):

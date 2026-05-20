@@ -79,6 +79,9 @@ enum SidebarRoute: Equatable {
     case calendarHome
     /// Contacts mini-app home.
     case contactsHome
+    /// Network Control Center for Claw/Gateway route policy, review, and
+    /// native adapter readiness.
+    case networkControl
     /// Skills catalog (⌘⇧K). Top-level destination: a full page with
     /// search, filters, grid of cards. Click a card → `.skillDetail`.
     case skills
@@ -165,6 +168,8 @@ extension SidebarRoute {
             return .calendar
         case .contactsHome:
             return .contacts
+        case .networkControl:
+            return nil
         case .skills, .skillDetail:
             return .skills
         case .iotHome, .iotDeviceDetail:

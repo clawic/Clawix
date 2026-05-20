@@ -62,6 +62,7 @@ final class SurfaceRouteRegistryTests: XCTestCase {
             .driveAdmin,
             .iotHome,
             .agentsHome,
+            .networkControl,
             .publishingHome
         ]
 
@@ -125,6 +126,7 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         .driveFolder("folder-1"),
         .calendarHome,
         .contactsHome,
+        .networkControl,
         .skills,
         .skillDetail(slug: "summarizer"),
         .iotHome,

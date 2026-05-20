@@ -1,4 +1,5 @@
 import ClawHostKit
+import CommanderCore
 import Foundation
 import SwiftUI
 
@@ -86,6 +87,29 @@ final class NetworkControlBridge {
     convenience init(service: CommandService) {
         self.init { request in
             await service.execute(request)
+        }
+    }
+
+    @MainActor
+    static func bundledCLI() -> NetworkControlBridge {
+        let runner = NetworkControlCLIRunner(
+            executableURL: ClawJSRuntime.nodeBinaryURL,
+            cliScriptURL: ClawJSRuntime.cliScriptURL,
+            workspaceURL: ClawJSServiceManager.workspaceURL,
+            environment: ClawJSServiceManager.cliEnvironment()
+        )
+        return NetworkControlBridge { request in
+            do {
+                let data = try await runner.run(request: request)
+                return try commandResponse(from: data)
+            } catch {
+                return CommandResponse(
+                    ok: false,
+                    data: nil,
+                    error: CommanderError.invalidCommand(error.localizedDescription).payload,
+                    meta: .init(adapter: "network-control", source: .framework, durationMS: 0)
+                )
+            }
         }
     }
 
@@ -275,6 +299,22 @@ final class NetworkControlBridge {
         return try JSONSerialization.jsonObject(with: data)
     }
 
+    private static func commandResponse(from data: Data) throws -> CommandResponse {
+        guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw NetworkControlBridgeError.invalidPayload("Network control CLI returned invalid JSON.")
+        }
+        let ok = bool(from: envelope["ok"]) ?? false
+        let payload = envelope["data"].map { CommanderCore.JSONValue.from(any: $0) }
+        let errorMessage = ((envelope["error"] as? [String: Any])?["message"] as? String)
+            ?? (ok ? nil : "Network control CLI failed.")
+        return CommandResponse(
+            ok: ok,
+            data: payload,
+            error: ok ? nil : CommanderError.invalidCommand(errorMessage ?? "Network control CLI failed.").payload,
+            meta: .init(adapter: "network-control", source: .framework, durationMS: 0)
+        )
+    }
+
     private static func string(from value: Any?) -> String? {
         if let string = value as? String { return string }
         if let number = value as? NSNumber { return number.stringValue }
@@ -300,6 +340,97 @@ final class NetworkControlBridge {
 
     private static func stringArray(from value: Any?) -> [String]? {
         (value as? [Any])?.compactMap { string(from: $0) }
+    }
+}
+
+@MainActor
+private final class NetworkControlCLIRunner {
+    private let executableURL: URL
+    private let cliScriptURL: URL
+    private let workspaceURL: URL
+    private let environment: [String: String]
+
+    init(
+        executableURL: URL,
+        cliScriptURL: URL,
+        workspaceURL: URL,
+        environment: [String: String]
+    ) {
+        self.executableURL = executableURL
+        self.cliScriptURL = cliScriptURL
+        self.workspaceURL = workspaceURL
+        self.environment = environment
+    }
+
+    func run(request: CommandRequest) async throws -> Data {
+        guard ClawJSRuntime.isAvailable else {
+            throw NetworkControlBridgeError.commandFailed("ClawJS bundle is not available in this build.")
+        }
+        let args = try arguments(for: request) + ["--json"]
+        return try await Self.runProcess(
+            executableURL: executableURL,
+            arguments: [cliScriptURL.path] + args,
+            currentDirectoryURL: workspaceURL,
+            environment: environment
+        )
+    }
+
+    private func arguments(for request: CommandRequest) throws -> [String] {
+        guard request.resource == "network" else {
+            throw NetworkControlBridgeError.invalidPayload("Unsupported network control resource: \(request.resource).")
+        }
+        var args: [String]
+        switch request.action {
+        case "status":
+            args = ["network", "status"]
+        case "adapters":
+            args = ["network", "adapters"]
+        case "events":
+            args = ["network", "events", "--limit", request.arguments["limit"] ?? "20"]
+        case "rules":
+            args = ["network", "rules", "list"]
+        case "routes":
+            args = ["network", "routes"]
+            if let routeID = request.arguments["route_id"], !routeID.isEmpty {
+                args += ["--route-id", routeID]
+            }
+        default:
+            throw NetworkControlBridgeError.invalidPayload("Unsupported network control action: \(request.action).")
+        }
+        if request.arguments["detail_opt_in"] == "true" {
+            args += ["--detail-opt-in", "true"]
+        }
+        return args
+    }
+
+    private static func runProcess(
+        executableURL: URL,
+        arguments: [String],
+        currentDirectoryURL: URL,
+        environment: [String: String]
+    ) async throws -> Data {
+        try await Task.detached(priority: .utility) {
+            let process = Process()
+            process.executableURL = executableURL
+            process.arguments = arguments
+            process.currentDirectoryURL = currentDirectoryURL
+            process.environment = environment
+
+            let stdout = Pipe()
+            let stderr = Pipe()
+            process.standardOutput = stdout
+            process.standardError = stderr
+            try process.run()
+            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            let err = stderr.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+
+            guard process.terminationStatus == 0 else {
+                let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "network control CLI failed"
+                throw NetworkControlBridgeError.commandFailed(message.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+            return data
+        }.value
     }
 }
 
@@ -421,5 +552,16 @@ struct NetworkControlCenterView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+}
+
+struct NetworkControlCenterScreen: View {
+    @StateObject private var model = NetworkControlModel(bridge: .bundledCLI())
+
+    var body: some View {
+        NetworkControlCenterView(model: model)
+            .task {
+                await model.refresh()
+            }
     }
 }
