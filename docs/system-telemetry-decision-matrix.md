@@ -26,15 +26,16 @@ explicit later user decision accepting the blocker.
 | D07 | Prepare host and app surfaces for real-time display of important information. | Validated locally. | Menu refresh path, `SystemTelemetryMonitorRecorder`, bundled signed host, and live recorder smoke in `CLX-SYS-TEL-EXT-002`. | Physical/live-provider samples can only replace fixture or unavailable states through external lanes. |
 | D08 | Reuse and centralize retention, charts, rules, and events in Monitor rather than creating a parallel time-series store. | Implemented and consumed by Clawix. | Recorder writes through framework Monitor; history reader consumes retained payloads, including metric purge fallback to rollups; menu sparklines and AppKit graph view use retained history while operational `health_check` events stay in Monitor. | Ongoing guard: Clawix must not create a parallel system telemetry history store. |
 | D09 | Do not mention third-party monitoring product names in public docs, code, comments, commands, fixtures, tests, or goal materials. | Enforced. | Clawix verifier scans docs, SystemTelemetry sources, tests, scripts, ledger, and verifier with boundary-aware matching. | Repeat the scan before any completion claim. |
-| D10 | Pin the goal to the conversation id, plan id, source review, and one-by-one decision audit. | Implemented as a closure gate. | This matrix, `docs/system-telemetry-external-pending-validation.md`, and `scripts/verify-system-telemetry-goal.mjs`. | Re-read the private source session before completion and refresh this matrix if any decision changed. |
-| D11 | Do not close the goal until everything is implemented, validated, documented, or explicitly blocked by a later user decision. | Active. | `active_goal_not_complete`, external-pending ledger, decision matrix, and verifier. | Do not call completion while `CLX-SYS-TEL-EXT-003`, `CLX-SYS-TEL-EXT-004`, or `CLX-SYS-TEL-EXT-005` remain without approved evidence or a later explicit acceptance decision. |
+| D10 | Pin the goal to the conversation id, plan id, source review, and one-by-one decision audit. | Implemented as a closure gate. | This matrix, `docs/system-telemetry-external-pending-validation.md`, `docs/system-telemetry-external-validation.manifest.json`, and `scripts/verify-system-telemetry-goal.mjs`. | Re-read the private source session before completion and refresh this matrix if any decision changed. |
+| D11 | Do not close the goal until everything is implemented, validated, documented, or explicitly blocked by a later user decision. | Active. | `active_goal_not_complete`, external-pending ledger, external validation manifest, decision matrix, and verifier. | Do not call completion while `CLX-SYS-TEL-EXT-003`, `CLX-SYS-TEL-EXT-004`, or `CLX-SYS-TEL-EXT-005` remain without approved evidence or a later explicit acceptance decision. |
 
 ## Closure Rule
 
 The goal is not complete while any of these are true:
 
 - `CLX-SYS-TEL-EXT-003`, `CLX-SYS-TEL-EXT-004`, or
-  `CLX-SYS-TEL-EXT-005` remain `EXTERNAL PENDING`.
+  `CLX-SYS-TEL-EXT-005` remain `EXTERNAL PENDING` in the ledger or structured
+  external-validation manifest.
 - The private source session has not been re-read for the final completion
   audit.
 - Any D01-D11 row lacks current public evidence.
