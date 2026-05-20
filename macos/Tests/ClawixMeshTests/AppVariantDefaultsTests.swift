@@ -2,6 +2,12 @@ import XCTest
 @testable import Clawix
 
 final class AppVariantDefaultsTests: AppCustomSurfaceCapabilityTestCase {
+    private static let reviewedProtectedRoutePolicyRawValues: Set<String> = [
+        "blocked",
+        "none",
+        "variantOnly"
+    ]
+
     @MainActor
     func testVariantDefaultsResolveWorkspaceBeforeUserDefaultAndPreserveOriginal() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -192,6 +198,31 @@ final class AppVariantDefaultsTests: AppCustomSurfaceCapabilityTestCase {
         XCTAssertThrowsError(try store.setDefault(app: unsafe, scope: .user))
     }
 
+    func testProtectedRoutePolicySetAndDefaultStayExact() throws {
+        let reviewedPolicies: [AppProtectedRoutePolicy] = [
+            .blocked,
+            .none,
+            .variantOnly
+        ]
+
+        XCTAssertEqual(Set(reviewedPolicies.map(Self.protectedRoutePolicyRawValue)), Self.reviewedProtectedRoutePolicyRawValues)
+
+        let legacy = AppRecord(slug: "legacy-policy-panel", name: "Legacy Policy Panel")
+        XCTAssertEqual(legacy.effectiveProtectedRoutePolicy, .blocked)
+
+        for policy in reviewedPolicies {
+            let record = AppRecord(
+                slug: "policy-\(Self.protectedRoutePolicyRawValue(policy))",
+                name: "Policy \(Self.protectedRoutePolicyRawValue(policy))",
+                protectedRoutePolicy: policy
+            )
+            let data = try JSONEncoder().encode(record)
+            let decoded = try JSONDecoder().decode(AppRecord.self, from: data)
+
+            XCTAssertEqual(decoded.effectiveProtectedRoutePolicy, policy)
+        }
+    }
+
     func testProtectedRouteTargetSetIsExactAndVariantOnly() {
         let expectedTargets: Set<String> = [
             "approvals",
@@ -239,6 +270,17 @@ final class AppVariantDefaultsTests: AppCustomSurfaceCapabilityTestCase {
                 protectedRoutePolicy: .variantOnly
             )
             XCTAssertFalse(AppCapabilityCatalog.protectedRouteViolations(for: invalidVariant).isEmpty, target)
+        }
+    }
+
+    private static func protectedRoutePolicyRawValue(_ policy: AppProtectedRoutePolicy) -> String {
+        switch policy {
+        case .blocked:
+            return "blocked"
+        case .none:
+            return "none"
+        case .variantOnly:
+            return "variantOnly"
         }
     }
 }
