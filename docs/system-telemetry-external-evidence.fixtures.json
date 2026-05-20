@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-system-telemetry-external-evidence-fixtures",
+  "status": "synthetic_templates_not_evidence",
+  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "schemaPath": "docs/system-telemetry-external-evidence.schema.json",
+  "validSyntheticPackets": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "laneId": "CLX-SYS-TEL-EXT-003",
+      "repoScope": "clawix-app",
+      "runAuthorization": {
+        "approvalId": "approval_sensor_template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "approvedBy": "user",
+        "exactRunScope": "physical sensor app template only",
+        "grants": ["system.sensor.read"],
+        "credentialLeaseRefs": [],
+        "nativeGrantRefs": ["grant_sensor_template"],
+        "networkAccessApproved": false
+      },
+      "preflight": {
+        "command": "claw system providers plan system.sensors.signed --json",
+        "completedAt": "2026-05-20T00:00:00Z",
+        "outcome": "passed",
+        "failClosedBeforeApproval": true,
+        "planRef": "plan_sensor_template"
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:00:00Z",
+        "completedAt": "2026-05-20T00:00:01Z",
+        "executor": "signed_app_host",
+        "receiptRefs": ["receipt_sensor_template"],
+        "externalPendingCleared": true,
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditEventRefs": ["audit_sensor_template"],
+        "monitorSampleIds": ["sample_system_sensor_temperature_template"],
+        "sameMachineEvidenceRefs": ["machine_sensor_template"],
+        "appMenuEvidenceRefs": ["menu_sensor_template"],
+        "physicalValidationRefs": [],
+        "rollbackOrContinuityRefs": []
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "preciseLocationIncluded": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "rowsToReplace": ["CLX-SYS-TEL-EXT-003"],
+        "completionAuditRows": ["CLX-STA-014"],
+        "sourceQaRows": ["CLX-STQA-003"],
+        "manifestRows": ["CLX-SYS-TEL-EXT-003"],
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:00:02Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "laneId": "CLX-SYS-TEL-EXT-004",
+      "repoScope": "clawix-app",
+      "runAuthorization": {
+        "approvalId": "approval_live_provider_template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "approvedBy": "user",
+        "exactRunScope": "live context menu template only",
+        "grants": ["context.weather.read"],
+        "credentialLeaseRefs": ["lease_weather_template"],
+        "nativeGrantRefs": [],
+        "networkAccessApproved": true
+      },
+      "preflight": {
+        "command": "claw system providers plan context.weather.live --json",
+        "completedAt": "2026-05-20T00:00:00Z",
+        "outcome": "passed",
+        "failClosedBeforeApproval": true,
+        "planRef": "plan_weather_template"
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:00:00Z",
+        "completedAt": "2026-05-20T00:00:01Z",
+        "executor": "provider_broker",
+        "receiptRefs": ["receipt_weather_template"],
+        "externalPendingCleared": true,
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditEventRefs": ["audit_weather_template"],
+        "monitorSampleIds": ["sample_context_weather_temperature_template"],
+        "sameMachineEvidenceRefs": [],
+        "appMenuEvidenceRefs": ["menu_weather_template"],
+        "physicalValidationRefs": [],
+        "rollbackOrContinuityRefs": []
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "preciseLocationIncluded": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "rowsToReplace": ["CLX-SYS-TEL-EXT-004"],
+        "completionAuditRows": ["CLX-STA-015"],
+        "sourceQaRows": ["CLX-STQA-003"],
+        "manifestRows": ["CLX-SYS-TEL-EXT-004"],
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:00:02Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "laneId": "CLX-SYS-TEL-EXT-005",
+      "repoScope": "clawix-app",
+      "runAuthorization": {
+        "approvalId": "approval_control_template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "approvedBy": "user",
+        "exactRunScope": "dangerous control app template only",
+        "grants": ["system.control.execute"],
+        "credentialLeaseRefs": [],
+        "nativeGrantRefs": ["grant_control_template"],
+        "networkAccessApproved": false
+      },
+      "preflight": {
+        "command": "claw system controls plan system.fan.set_speed --json",
+        "completedAt": "2026-05-20T00:00:00Z",
+        "outcome": "passed",
+        "failClosedBeforeApproval": true,
+        "planRef": "plan_control_template"
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:00:00Z",
+        "completedAt": "2026-05-20T00:00:01Z",
+        "executor": "signed_host_broker",
+        "receiptRefs": ["receipt_control_template"],
+        "externalPendingCleared": true,
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditEventRefs": ["audit_control_template"],
+        "monitorSampleIds": [],
+        "sameMachineEvidenceRefs": [],
+        "appMenuEvidenceRefs": ["menu_control_template"],
+        "physicalValidationRefs": ["physical_control_template"],
+        "rollbackOrContinuityRefs": ["rollback_control_template"]
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "preciseLocationIncluded": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "rowsToReplace": ["CLX-SYS-TEL-EXT-005"],
+        "completionAuditRows": ["CLX-STA-016"],
+        "sourceQaRows": ["CLX-STQA-003"],
+        "manifestRows": ["CLX-SYS-TEL-EXT-005"],
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:00:02Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    }
+  ],
+  "invalidSyntheticPackets": [
+    {
+      "id": "missing_sensor_app_menu_evidence",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "appMenuEvidenceRefs is empty",
+      "packet": {
+        "schemaVersion": 1,
+        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "laneId": "CLX-SYS-TEL-EXT-003",
+        "repoScope": "clawix-app",
+        "runAuthorization": {
+          "approvalId": "approval_sensor_template",
+          "approvedAt": "2026-05-20T00:00:00Z",
+          "approvedBy": "user",
+          "exactRunScope": "invalid physical sensor app template",
+          "grants": ["system.sensor.read"],
+          "credentialLeaseRefs": [],
+          "nativeGrantRefs": ["grant_sensor_template"],
+          "networkAccessApproved": false
+        },
+        "preflight": {
+          "command": "claw system providers plan system.sensors.signed --json",
+          "completedAt": "2026-05-20T00:00:00Z",
+          "outcome": "passed",
+          "failClosedBeforeApproval": true,
+          "planRef": "plan_sensor_template"
+        },
+        "execution": {
+          "startedAt": "2026-05-20T00:00:00Z",
+          "completedAt": "2026-05-20T00:00:01Z",
+          "executor": "signed_app_host",
+          "receiptRefs": ["receipt_sensor_template"],
+          "externalPendingCleared": true,
+          "failedApprovedRun": false
+        },
+        "evidence": {
+          "auditEventRefs": ["audit_sensor_template"],
+          "monitorSampleIds": ["sample_system_sensor_temperature_template"],
+          "sameMachineEvidenceRefs": ["machine_sensor_template"],
+          "appMenuEvidenceRefs": [],
+          "physicalValidationRefs": [],
+          "rollbackOrContinuityRefs": []
+        },
+        "redaction": {
+          "containsSecrets": false,
+          "preciseLocationIncluded": false,
+          "privatePathsIncluded": false
+        },
+        "closureImpact": {
+          "rowsToReplace": ["CLX-SYS-TEL-EXT-003"],
+          "completionAuditRows": ["CLX-STA-014"],
+          "sourceQaRows": ["CLX-STQA-003"],
+          "manifestRows": ["CLX-SYS-TEL-EXT-003"],
+          "requiresFinalSourceReread": true,
+          "requiresForbiddenNameScan": true
+        },
+        "reviewer": {
+          "reviewedAt": "2026-05-20T00:00:02Z",
+          "reviewedBy": "user",
+          "decision": "accepted"
+        }
+      }
+    },
+    {
+      "id": "missing_live_credential_lease",
+      "baseLaneId": "CLX-SYS-TEL-EXT-004",
+      "mutation": "credentialLeaseRefs is empty",
+      "packet": {
+        "schemaVersion": 1,
+        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "laneId": "CLX-SYS-TEL-EXT-004",
+        "repoScope": "clawix-app",
+        "runAuthorization": {
+          "approvalId": "approval_live_provider_template",
+          "approvedAt": "2026-05-20T00:00:00Z",
+          "approvedBy": "user",
+          "exactRunScope": "invalid live context menu template",
+          "grants": ["context.weather.read"],
+          "credentialLeaseRefs": [],
+          "nativeGrantRefs": [],
+          "networkAccessApproved": true
+        },
+        "preflight": {
+          "command": "claw system providers plan context.weather.live --json",
+          "completedAt": "2026-05-20T00:00:00Z",
+          "outcome": "passed",
+          "failClosedBeforeApproval": true,
+          "planRef": "plan_weather_template"
+        },
+        "execution": {
+          "startedAt": "2026-05-20T00:00:00Z",
+          "completedAt": "2026-05-20T00:00:01Z",
+          "executor": "provider_broker",
+          "receiptRefs": ["receipt_weather_template"],
+          "externalPendingCleared": true,
+          "failedApprovedRun": false
+        },
+        "evidence": {
+          "auditEventRefs": ["audit_weather_template"],
+          "monitorSampleIds": ["sample_context_weather_temperature_template"],
+          "sameMachineEvidenceRefs": [],
+          "appMenuEvidenceRefs": ["menu_weather_template"],
+          "physicalValidationRefs": [],
+          "rollbackOrContinuityRefs": []
+        },
+        "redaction": {
+          "containsSecrets": false,
+          "preciseLocationIncluded": false,
+          "privatePathsIncluded": false
+        },
+        "closureImpact": {
+          "rowsToReplace": ["CLX-SYS-TEL-EXT-004"],
+          "completionAuditRows": ["CLX-STA-015"],
+          "sourceQaRows": ["CLX-STQA-003"],
+          "manifestRows": ["CLX-SYS-TEL-EXT-004"],
+          "requiresFinalSourceReread": true,
+          "requiresForbiddenNameScan": true
+        },
+        "reviewer": {
+          "reviewedAt": "2026-05-20T00:00:02Z",
+          "reviewedBy": "user",
+          "decision": "accepted"
+        }
+      }
+    },
+    {
+      "id": "failed_control_execution",
+      "baseLaneId": "CLX-SYS-TEL-EXT-005",
+      "mutation": "failedApprovedRun is true",
+      "packet": {
+        "schemaVersion": 1,
+        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "laneId": "CLX-SYS-TEL-EXT-005",
+        "repoScope": "clawix-app",
+        "runAuthorization": {
+          "approvalId": "approval_control_template",
+          "approvedAt": "2026-05-20T00:00:00Z",
+          "approvedBy": "user",
+          "exactRunScope": "invalid dangerous control app template",
+          "grants": ["system.control.execute"],
+          "credentialLeaseRefs": [],
+          "nativeGrantRefs": ["grant_control_template"],
+          "networkAccessApproved": false
+        },
+        "preflight": {
+          "command": "claw system controls plan system.fan.set_speed --json",
+          "completedAt": "2026-05-20T00:00:00Z",
+          "outcome": "passed",
+          "failClosedBeforeApproval": true,
+          "planRef": "plan_control_template"
+        },
+        "execution": {
+          "startedAt": "2026-05-20T00:00:00Z",
+          "completedAt": "2026-05-20T00:00:01Z",
+          "executor": "signed_host_broker",
+          "receiptRefs": ["receipt_control_template"],
+          "externalPendingCleared": true,
+          "failedApprovedRun": true
+        },
+        "evidence": {
+          "auditEventRefs": ["audit_control_template"],
+          "monitorSampleIds": [],
+          "sameMachineEvidenceRefs": [],
+          "appMenuEvidenceRefs": ["menu_control_template"],
+          "physicalValidationRefs": ["physical_control_template"],
+          "rollbackOrContinuityRefs": ["rollback_control_template"]
+        },
+        "redaction": {
+          "containsSecrets": false,
+          "preciseLocationIncluded": false,
+          "privatePathsIncluded": false
+        },
+        "closureImpact": {
+          "rowsToReplace": ["CLX-SYS-TEL-EXT-005"],
+          "completionAuditRows": ["CLX-STA-016"],
+          "sourceQaRows": ["CLX-STQA-003"],
+          "manifestRows": ["CLX-SYS-TEL-EXT-005"],
+          "requiresFinalSourceReread": true,
+          "requiresForbiddenNameScan": true
+        },
+        "reviewer": {
+          "reviewedAt": "2026-05-20T00:00:02Z",
+          "reviewedBy": "user",
+          "decision": "accepted"
+        }
+      }
+    }
+  ]
+}

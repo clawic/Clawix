@@ -57,6 +57,9 @@ operational checklist for each lane is the
 [System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md),
 and the accepted evidence packet schema is
 [`docs/system-telemetry-external-evidence.schema.json`](./system-telemetry-external-evidence.schema.json).
+Synthetic packet fixtures live at
+[`docs/system-telemetry-external-evidence.fixtures.json`](./system-telemetry-external-evidence.fixtures.json)
+and are explicitly not accepted evidence.
 
 | Row | Lane | Required approval | Required evidence |
 | --- | --- | --- | --- |

@@ -16,6 +16,9 @@ Any accepted run must produce a redacted evidence packet conforming to
 `docs/system-telemetry-external-evidence.schema.json`. A transcript, screenshot,
 or receipt that is not represented by that packet is supporting material, not a
 lane-closing record.
+Synthetic examples live in
+`docs/system-telemetry-external-evidence.fixtures.json`; they are templates for
+schema validation only and must not be cited as real external evidence.
 
 ## Lanes
 

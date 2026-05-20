@@ -63,6 +63,15 @@
     ],
     "closureRole": "defines the redacted receipt, audit, sample, app/menu, physical, rollback, and reviewer fields required before any external lane can replace EXTERNAL PENDING"
   },
+  "externalEvidenceFixtures": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-evidence-fixtures",
+    "path": "docs/system-telemetry-external-evidence.fixtures.json",
+    "status": "synthetic_templates_not_evidence",
+    "validTemplateCount": 3,
+    "invalidTemplateCount": 3,
+    "closureRole": "proves the evidence schema accepts complete synthetic lane packets and rejects incomplete or failed approved-run packets without representing real external evidence"
+  },
   "rows": [
     {
       "id": "CLX-SYS-TEL-EXT-001",

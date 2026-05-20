@@ -2931,6 +2931,33 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-external-evidence-fixtures",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-evidence.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-evidence.schema.json",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external evidence fixtures",
+        "system telemetry synthetic evidence packets",
+        "system telemetry evidence schema negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external evidence fixtures",
+          "expectPath": "docs/system-telemetry-external-evidence.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-external-evidence-schema",
       "kind": "validation-manifest",
       "owner": "clawix",
@@ -2940,6 +2967,7 @@
         "docs/decision-map.md",
         "docs/system-telemetry-external-pending-validation.md",
         "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-evidence.fixtures.json",
         "docs/system-telemetry-external-validation.manifest.json"
       ],
       "discoveryTerms": [
