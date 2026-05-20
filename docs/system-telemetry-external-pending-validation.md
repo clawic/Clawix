@@ -15,14 +15,16 @@ Machine-readable closure gates live in
 `docs/system-telemetry-external-validation.manifest.json` and
 `docs/system-telemetry-source-qa-review.json`, with requirement-by-requirement
 status in `docs/system-telemetry-completion-audit.md` and external run steps in
-`docs/system-telemetry-external-validation-runbook.md`. The verifier treats the
+`docs/system-telemetry-external-validation-runbook.md`. Accepted external
+evidence must conform to `docs/system-telemetry-external-evidence.schema.json`.
+The verifier treats the
 manifest as the structured contract for remaining external lanes, exact-run
 approval, accepted evidence, and the rule that external pending blocks goal
 completion. The source Q/A review binds the private decision audit to
 public-safe rows, the completion audit binds each goal requirement to
 validated-local, active-closure-gate, or external-pending status, and the
 runbook binds each remaining external lane to preflight, approval, evidence,
-update target, and fail-rule checks before any closure attempt.
+update target, fail-rule, and evidence-packet checks before any closure attempt.
 
 ## Current Rows
 
@@ -52,7 +54,9 @@ update target, and fail-rule checks before any closure attempt.
 These lanes are the only accepted way to replace the remaining
 `EXTERNAL PENDING` rows. They require explicit approval for the exact run. The
 operational checklist for each lane is the
-[System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md).
+[System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md),
+and the accepted evidence packet schema is
+[`docs/system-telemetry-external-evidence.schema.json`](./system-telemetry-external-evidence.schema.json).
 
 | Row | Lane | Required approval | Required evidence |
 | --- | --- | --- | --- |

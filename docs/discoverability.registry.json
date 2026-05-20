@@ -2931,6 +2931,33 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-external-evidence-schema",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-evidence.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external evidence schema",
+        "system telemetry external evidence packet",
+        "system telemetry lane closing evidence"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external evidence schema",
+          "expectPath": "docs/system-telemetry-external-evidence.schema.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-external-validation-manifest",
       "kind": "validation-manifest",
       "owner": "clawix",

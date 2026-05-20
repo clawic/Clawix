@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clawix.dev/schemas/system-telemetry-external-evidence.schema.json",
+  "title": "Clawix System Telemetry External Evidence Packet",
+  "description": "Public-safe evidence packet required before replacing a Clawix system telemetry EXTERNAL PENDING lane.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "conversationId",
+    "planId",
+    "laneId",
+    "repoScope",
+    "runAuthorization",
+    "preflight",
+    "execution",
+    "evidence",
+    "redaction",
+    "closureImpact",
+    "reviewer"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "conversationId": {
+      "const": "019e359b-c0ab-7dc1-ba94-11a49d11dc76"
+    },
+    "planId": {
+      "const": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan"
+    },
+    "laneId": {
+      "enum": [
+        "CLX-SYS-TEL-EXT-003",
+        "CLX-SYS-TEL-EXT-004",
+        "CLX-SYS-TEL-EXT-005"
+      ]
+    },
+    "repoScope": {
+      "const": "clawix-app"
+    },
+    "runAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalId",
+        "approvedAt",
+        "approvedBy",
+        "exactRunScope",
+        "grants",
+        "credentialLeaseRefs",
+        "nativeGrantRefs",
+        "networkAccessApproved"
+      ],
+      "properties": {
+        "approvalId": { "type": "string", "minLength": 1 },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "exactRunScope": { "type": "string", "minLength": 1 },
+        "grants": { "type": "array", "items": { "type": "string" } },
+        "credentialLeaseRefs": { "type": "array", "items": { "type": "string" } },
+        "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
+        "networkAccessApproved": { "type": "boolean" }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "completedAt",
+        "outcome",
+        "failClosedBeforeApproval",
+        "planRef"
+      ],
+      "properties": {
+        "command": { "type": "string", "pattern": "^claw system " },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "outcome": { "enum": ["passed"] },
+        "failClosedBeforeApproval": { "const": true },
+        "planRef": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startedAt",
+        "completedAt",
+        "executor",
+        "receiptRefs",
+        "externalPendingCleared",
+        "failedApprovedRun"
+      ],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "executor": { "enum": ["provider_broker", "signed_host", "signed_host_broker", "signed_app_host"] },
+        "receiptRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "externalPendingCleared": { "const": true },
+        "failedApprovedRun": { "const": false }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "auditEventRefs",
+        "monitorSampleIds",
+        "sameMachineEvidenceRefs",
+        "appMenuEvidenceRefs",
+        "physicalValidationRefs",
+        "rollbackOrContinuityRefs"
+      ],
+      "properties": {
+        "auditEventRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "monitorSampleIds": { "type": "array", "items": { "type": "string" } },
+        "sameMachineEvidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "appMenuEvidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "physicalValidationRefs": { "type": "array", "items": { "type": "string" } },
+        "rollbackOrContinuityRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "containsSecrets",
+        "preciseLocationIncluded",
+        "privatePathsIncluded"
+      ],
+      "properties": {
+        "containsSecrets": { "const": false },
+        "preciseLocationIncluded": { "const": false },
+        "privatePathsIncluded": { "const": false }
+      }
+    },
+    "closureImpact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rowsToReplace",
+        "completionAuditRows",
+        "sourceQaRows",
+        "manifestRows",
+        "requiresFinalSourceReread",
+        "requiresForbiddenNameScan"
+      ],
+      "properties": {
+        "rowsToReplace": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "completionAuditRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "sourceQaRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "manifestRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "requiresFinalSourceReread": { "const": true },
+        "requiresForbiddenNameScan": { "const": true }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewedAt", "reviewedBy", "decision"],
+      "properties": {
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedBy": { "type": "string", "minLength": 1 },
+        "decision": { "enum": ["accepted"] }
+      }
+    }
+  }
+}

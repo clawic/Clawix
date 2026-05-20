@@ -12,6 +12,11 @@ hardware access, native permission requests, dangerous controls, production
 data access, paid APIs, release actions, or network runs. Each lane requires
 explicit approval for the exact run before execution.
 
+Any accepted run must produce a redacted evidence packet conforming to
+`docs/system-telemetry-external-evidence.schema.json`. A transcript, screenshot,
+or receipt that is not represented by that packet is supporting material, not a
+lane-closing record.
+
 ## Lanes
 
 | Row | Safe preflight | Approval packet | Execution evidence | Update target | Fail rule |
@@ -24,4 +29,5 @@ explicit approval for the exact run before execution.
 
 Do not mark the goal complete until every lane above is either replaced with
 accepted evidence or explicitly accepted by a later user decision, and the final
-source reread, completion audit, and forbidden-name scan have been repeated.
+source reread, completion audit, evidence schema check, and forbidden-name scan
+have been repeated.

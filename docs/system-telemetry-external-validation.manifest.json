@@ -10,6 +10,7 @@
     "requiresSourceQaReview": true,
     "requiresCompletionAudit": true,
     "requiresExternalValidationRunbook": true,
+    "requiresExternalEvidenceSchema": true,
     "requiresForbiddenNameScan": true,
     "requiresExactRunApprovalForExternalLanes": true
   },
@@ -49,6 +50,18 @@
       "CLX-SYS-TEL-EXT-005"
     ],
     "closureRole": "defines safe preflight, exact approval, accepted evidence, update targets, and fail rules for every remaining external lane"
+  },
+  "externalEvidencePacketSchema": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-evidence-schema",
+    "path": "docs/system-telemetry-external-evidence.schema.json",
+    "laneCount": 3,
+    "externalPendingRowIds": [
+      "CLX-SYS-TEL-EXT-003",
+      "CLX-SYS-TEL-EXT-004",
+      "CLX-SYS-TEL-EXT-005"
+    ],
+    "closureRole": "defines the redacted receipt, audit, sample, app/menu, physical, rollback, and reviewer fields required before any external lane can replace EXTERNAL PENDING"
   },
   "rows": [
     {
