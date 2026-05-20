@@ -214,6 +214,8 @@ fast() {
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"
   run node "$ROOT_DIR/scripts/verify-system-telemetry-goal.mjs"
+  run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs"
+  run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/remote_canon_alignment_check.mjs"
   run node "$ROOT_DIR/scripts/ui_governance_guard.mjs"
   run node "$ROOT_DIR/scripts/ui_canon_docs_check.mjs"

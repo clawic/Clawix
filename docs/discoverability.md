@@ -58,6 +58,7 @@ file; do not hand-maintain this table.
 | `skill-skills-visual-regression` | skill |  | `skills/visual-regression/SKILL.md` | visual-regression, Run and interpret Clawix UI geometry, screenshot, protected-surface, and debt-baseline checks without authorizing visual repair. | `scripts/discoverability-check.mjs` |
 | `guard-scripts-agent-instructions-check` | guardrail |  | `scripts/agent-instructions-check.mjs` | agent-instructions-check, Agent Instructions Check | `scripts/agent-instructions-check.mjs` |
 | `guard-scripts-check-clawjs-skills-sync` | guardrail |  | `scripts/check-clawjs-skills-sync.mjs` | check-clawjs-skills-sync, Check Clawjs Skills Sync | `scripts/check-clawjs-skills-sync.mjs` |
+| `guard-scripts-clawjs-mirror-contradiction-check` | guardrail |  | `scripts/clawjs_mirror_contradiction_check.mjs` | clawjs_mirror_contradiction_check, Clawjs Mirror Contradiction Check | `scripts/clawjs_mirror_contradiction_check.mjs` |
 | `guard-scripts-code-hygiene-check` | guardrail |  | `scripts/code-hygiene-check.mjs` | code-hygiene-check, Code Hygiene Check | `scripts/code-hygiene-check.mjs` |
 | `guard-scripts-debt-ledger-projection-check` | guardrail |  | `scripts/debt-ledger-projection-check.mjs` | debt-ledger-projection-check, Debt Ledger Projection Check | `scripts/debt-ledger-projection-check.mjs` |
 | `guard-scripts-discoverability-check` | guardrail |  | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |

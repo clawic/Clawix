@@ -1439,6 +1439,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-clawjs-mirror-contradiction-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/clawjs_mirror_contradiction_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "clawjs_mirror_contradiction_check",
+        "Clawjs Mirror Contradiction Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "clawjs_mirror_contradiction_check",
+          "expectPath": "scripts/clawjs_mirror_contradiction_check.mjs"
+        }
+      ],
+      "guard": "scripts/clawjs_mirror_contradiction_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-code-hygiene-check",
       "kind": "guardrail",
       "owner": "clawix",
