@@ -497,8 +497,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
         let model = AppsSettingsTrustAuditSheetModel(record: record, events: [imported, approved])
 
-        XCTAssertEqual(model.appName, "Imported Known Panel")
-        XCTAssertEqual(model.appSlug, "imported-known-panel")
+        XCTAssertEqual(model.title, "Trust audit")
+        XCTAssertEqual(model.subtitle, "Imported Known Panel · imported-known-panel")
+        XCTAssertEqual(model.emptyMessage, "No trust events recorded for this app.")
         XCTAssertEqual(model.rows.map(\.id), ["approve", "import"])
         XCTAssertEqual(model.rows.first?.title, "Activation approved")
         XCTAssertTrue(model.rows.first?.detail.contains("Risk map: \(AppCapabilityCatalog.source)") == true)
@@ -508,6 +509,51 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(model.rows.last?.title, "Package imported")
         XCTAssertTrue(model.rows.last?.detail.contains("Signature: Not verified") == true)
         XCTAssertTrue(model.rows.last?.detail.contains("Source path: /tmp/focus-panel") == true)
+    }
+
+    func testAppsSettingsGlobalTrustAuditPresentationSortsAcrossApps() {
+        let first = AppRecord(
+            slug: "first-panel",
+            name: "First Panel",
+            declaredCapabilities: ["search.query"],
+            originClass: .imported
+        )
+        let second = AppRecord(
+            slug: "second-panel",
+            name: "Second Panel",
+            declaredCapabilities: ["db.query"],
+            originClass: .marketplace
+        )
+        let firstEvent = AppTrustAuditEvent(
+            id: "first-import",
+            app: first,
+            eventType: .packageImported,
+            actor: "Tester",
+            createdAt: Date(timeIntervalSince1970: 1),
+            reason: "First imported."
+        )
+        let secondEvent = AppTrustAuditEvent(
+            id: "second-approve",
+            app: second,
+            eventType: .activationApproved,
+            actor: "Tester",
+            createdAt: Date(timeIntervalSince1970: 3),
+            riskMap: AppCapabilityCatalog.riskMap(for: second),
+            reason: "Second approved."
+        )
+
+        let model = AppsSettingsTrustAuditSheetModel(entries: [
+            AppsSettingsTrustAuditEntry(record: first, events: [firstEvent]),
+            AppsSettingsTrustAuditEntry(record: second, events: [secondEvent])
+        ])
+
+        XCTAssertEqual(model.title, "Trust audit")
+        XCTAssertEqual(model.subtitle, "All apps")
+        XCTAssertEqual(model.emptyMessage, "No trust events recorded for installed apps.")
+        XCTAssertEqual(model.rows.map(\.id), ["second-approve", "first-import"])
+        XCTAssertEqual(model.rows.first?.title, "Second Panel · Activation approved")
+        XCTAssertTrue(model.rows.first?.detail.contains("Risk map: \(AppCapabilityCatalog.source)") == true)
+        XCTAssertEqual(model.rows.last?.title, "First Panel · Package imported")
     }
 
     func testUnknownCapabilitiesBlockActivation() {

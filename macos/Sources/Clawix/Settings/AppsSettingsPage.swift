@@ -119,13 +119,25 @@ struct AppsSettingsPage: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Apps")
-                .font(BodyFont.system(size: 20, wght: 700))
-                .foregroundColor(Palette.textPrimary)
-            Text("Mini web apps your agent has built. They live under \(AppsStore.defaultRootURL().path) and you can sync that folder with anything that knows about file paths.")
-                .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.62))
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Apps")
+                    .font(BodyFont.system(size: 20, wght: 700))
+                    .foregroundColor(Palette.textPrimary)
+                Text("Mini web apps your agent has built. They live under \(AppsStore.defaultRootURL().path) and you can sync that folder with anything that knows about file paths.")
+                    .font(BodyFont.system(size: 13, wght: 400))
+                    .foregroundColor(Color(white: 0.62))
+            }
+
+            Spacer()
+
+            Button(action: showAllTrustAudit) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(Color(white: 0.72))
+            .help("Trust audit")
         }
     }
 
@@ -234,6 +246,18 @@ struct AppsSettingsPage: View {
         do {
             let events = try AppTrustAudit.read(from: appsStore.trustAuditURL(for: record))
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(record: record, events: events)
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
+    }
+
+    private func showAllTrustAudit() {
+        do {
+            let entries = try appsStore.sortedApps.map { record in
+                let events = try AppTrustAudit.read(from: appsStore.trustAuditURL(for: record))
+                return AppsSettingsTrustAuditEntry(record: record, events: events)
+            }
+            trustAuditSheet = AppsSettingsTrustAuditSheetModel(entries: entries)
         } catch {
             ToastCenter.shared.show(error.localizedDescription, icon: .error)
         }
@@ -432,19 +456,40 @@ private struct AppsSettingsRow: View {
     }
 }
 
+struct AppsSettingsTrustAuditEntry: Equatable {
+    let record: AppRecord
+    let events: [AppTrustAuditEvent]
+}
+
 struct AppsSettingsTrustAuditSheetModel: Identifiable, Equatable {
-    let id: UUID
-    let appName: String
-    let appSlug: String
+    let id: String
+    let title: String
+    let subtitle: String
+    let emptyMessage: String
     let rows: [AppsSettingsTrustAuditRowPresentation]
 
     init(record: AppRecord, events: [AppTrustAuditEvent]) {
-        self.id = record.id
-        self.appName = record.name
-        self.appSlug = record.slug
+        self.id = record.id.uuidString
+        self.title = "Trust audit"
+        self.subtitle = "\(record.name) · \(record.slug)"
+        self.emptyMessage = "No trust events recorded for this app."
         self.rows = events
             .sorted { $0.createdAt > $1.createdAt }
-            .map(AppsSettingsTrustAuditRowPresentation.init(event:))
+            .map { AppsSettingsTrustAuditRowPresentation(event: $0) }
+    }
+
+    init(entries: [AppsSettingsTrustAuditEntry]) {
+        self.id = "all-apps"
+        self.title = "Trust audit"
+        self.subtitle = "All apps"
+        self.emptyMessage = "No trust events recorded for installed apps."
+        self.rows = entries
+            .flatMap { entry in
+                entry.events.map { event in
+                    AppsSettingsTrustAuditRowPresentation(event: event, includeAppName: true)
+                }
+            }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 }
 
@@ -454,17 +499,21 @@ struct AppsSettingsTrustAuditRowPresentation: Identifiable, Equatable {
     let subtitle: String
     let detail: String
     let symbolName: String
+    let createdAt: Date
 
-    init(event: AppTrustAuditEvent) {
+    init(event: AppTrustAuditEvent, includeAppName: Bool = false) {
         id = event.id
+        createdAt = event.createdAt
+        let eventTitle: String
         switch event.eventType {
         case .packageImported:
-            title = "Package imported"
+            eventTitle = "Package imported"
             symbolName = "tray.and.arrow.down"
         case .activationApproved:
-            title = "Activation approved"
+            eventTitle = "Activation approved"
             symbolName = "checkmark.seal"
         }
+        title = includeAppName ? "\(event.appName) · \(eventTitle)" : eventTitle
 
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
@@ -506,16 +555,16 @@ private struct AppsTrustAuditSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Trust audit")
+                Text(model.title)
                     .font(BodyFont.system(size: 18, wght: 700))
                     .foregroundColor(Palette.textPrimary)
-                Text("\(model.appName) · \(model.appSlug)")
+                Text(model.subtitle)
                     .font(BodyFont.system(size: 12.5, wght: 500))
                     .foregroundColor(Color(white: 0.58))
             }
 
             if model.rows.isEmpty {
-                Text("No trust events recorded for this app.")
+                Text(model.emptyMessage)
                     .font(BodyFont.system(size: 13, wght: 500))
                     .foregroundColor(Color(white: 0.58))
                     .frame(maxWidth: .infinity, minHeight: 120)
