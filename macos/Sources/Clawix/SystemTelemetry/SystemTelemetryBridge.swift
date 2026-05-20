@@ -68,6 +68,24 @@ struct SystemTelemetryControlPlanStep: Equatable, Identifiable {
     var reason: String?
 }
 
+struct SystemTelemetryPlanAuditRedaction: Equatable {
+    var credentialRefRedacted: Bool
+    var preciseLocationRedacted: Bool
+    var targetRedacted: Bool
+    var valueRedacted: Bool
+    var sensitiveDetailRedacted: Bool
+}
+
+struct SystemTelemetryPlanAuditProjection: Equatable {
+    var status: String
+    var durable: Bool
+    var event: String
+    var outcome: String
+    var receiptStatus: String
+    var note: String
+    var redaction: SystemTelemetryPlanAuditRedaction
+}
+
 struct SystemTelemetryControlPlan: Equatable, Identifiable {
     var id: String
     var status: String
@@ -83,6 +101,7 @@ struct SystemTelemetryControlPlan: Equatable, Identifiable {
     var riskTier: String
     var receiptStatus: String
     var auditEvent: String
+    var auditPlan: SystemTelemetryPlanAuditProjection?
     var steps: [SystemTelemetryControlPlanStep]
 }
 
@@ -125,6 +144,7 @@ struct SystemTelemetryProviderPlan: Equatable, Identifiable {
     var networkAccess: String
     var receiptStatus: String
     var auditEvent: String
+    var auditPlan: SystemTelemetryPlanAuditProjection?
     var steps: [SystemTelemetryProviderPlanStep]
 }
 
@@ -458,6 +478,7 @@ final class SystemTelemetryBridge {
             riskTier: string(from: policy["risk_tier"]) ?? string(from: policy["riskTier"]) ?? action.riskTier,
             receiptStatus: string(from: receipt["status"]) ?? "not_issued",
             auditEvent: string(from: receipt["audit_event"]) ?? string(from: receipt["auditEvent"]) ?? action.auditEvent,
+            auditPlan: decodeAuditPlan(object["audit_plan"] as? [String: Any] ?? object["auditPlan"] as? [String: Any]),
             steps: stepObjects.compactMap(decodeControlPlanStep)
         )
     }
@@ -489,7 +510,7 @@ final class SystemTelemetryBridge {
             willConnect: bool(from: object["will_connect"]) ?? bool(from: object["willConnect"]) ?? false,
             externalPending: bool(from: object["external_pending"]) ?? bool(from: object["externalPending"]) ?? true,
             provider: provider,
-            credentialRef: string(from: request["credential_ref"]) ?? string(from: request["credentialRef"]),
+            credentialRef: redactedCredentialRef(from: request),
             reason: string(from: request["reason"]) ?? "not_provided",
             brokerStatus: string(from: broker["status"]) ?? "external_pending",
             failClosed: bool(from: broker["fail_closed"]) ?? bool(from: broker["failClosed"]) ?? true,
@@ -499,6 +520,7 @@ final class SystemTelemetryBridge {
             networkAccess: string(from: policy["network_access"]) ?? string(from: policy["networkAccess"]) ?? "",
             receiptStatus: string(from: receipt["status"]) ?? "not_issued",
             auditEvent: string(from: receipt["audit_event"]) ?? string(from: receipt["auditEvent"]) ?? "",
+            auditPlan: decodeAuditPlan(object["audit_plan"] as? [String: Any] ?? object["auditPlan"] as? [String: Any]),
             steps: stepObjects.compactMap(decodeProviderPlanStep)
         )
     }
@@ -631,6 +653,36 @@ final class SystemTelemetryBridge {
             id: id,
             status: string(from: object["status"]) ?? "pending",
             owner: string(from: object["owner"]) ?? "provider_broker"
+        )
+    }
+
+    private static func redactedCredentialRef(from request: [String: Any]) -> String? {
+        guard let credentialRef = string(from: request["credential_ref"]) ?? string(from: request["credentialRef"]),
+              !credentialRef.isEmpty else {
+            return nil
+        }
+        return "provided_redacted"
+    }
+
+    private static func decodeAuditPlan(_ object: [String: Any]?) -> SystemTelemetryPlanAuditProjection? {
+        guard let object else {
+            return nil
+        }
+        let redaction = object["redaction"] as? [String: Any] ?? [:]
+        return SystemTelemetryPlanAuditProjection(
+            status: string(from: object["status"]) ?? "planned",
+            durable: bool(from: object["durable"]) ?? false,
+            event: string(from: object["event"]) ?? "",
+            outcome: string(from: object["outcome"]) ?? "blocked",
+            receiptStatus: string(from: object["receipt_status"]) ?? string(from: object["receiptStatus"]) ?? "not_issued",
+            note: string(from: object["note"]) ?? "",
+            redaction: SystemTelemetryPlanAuditRedaction(
+                credentialRefRedacted: bool(from: redaction["credential_ref_redacted"]) ?? bool(from: redaction["credentialRefRedacted"]) ?? false,
+                preciseLocationRedacted: bool(from: redaction["precise_location_redacted"]) ?? bool(from: redaction["preciseLocationRedacted"]) ?? false,
+                targetRedacted: bool(from: redaction["target_redacted"]) ?? bool(from: redaction["targetRedacted"]) ?? false,
+                valueRedacted: bool(from: redaction["value_redacted"]) ?? bool(from: redaction["valueRedacted"]) ?? false,
+                sensitiveDetailRedacted: bool(from: redaction["sensitive_detail_redacted"]) ?? bool(from: redaction["sensitiveDetailRedacted"]) ?? false
+            )
         )
     }
 

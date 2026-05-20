@@ -1,3 +1,4 @@
+import AppKit
 import ClawHostKit
 import XCTest
 @testable import Clawix
@@ -58,6 +59,16 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                             "confidence": .string("official"),
                         ]),
                     ]),
+                    .object([
+                        "key": .string("system.peripheral.bluetooth_count"),
+                        "value": .number(2),
+                        "unit": .string("count"),
+                        "capturedAt": .string("2026-05-18T12:00:00Z"),
+                        "source": .object([
+                            "adapter": .string("signed_host"),
+                            "confidence": .string("official"),
+                        ]),
+                    ]),
                 ]),
                 "unavailableMetrics": .array([
                     .string("context.weather.temperature"),
@@ -75,6 +86,8 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(snapshot.capturedAt, "2026-05-18T12:00:00Z")
         XCTAssertEqual(snapshot.sample(for: "system.memory.used")?.source, "node")
         XCTAssertEqual(snapshot.sample(for: "system.memory.used")?.confidence, "official")
+        XCTAssertEqual(snapshot.sample(for: "system.peripheral.bluetooth_count")?.value, 2)
+        XCTAssertEqual(snapshot.sample(for: "system.peripheral.bluetooth_count")?.source, "signed_host")
         XCTAssertEqual(snapshot.unavailableMetricKeys, ["context.weather.temperature"])
     }
 
@@ -336,6 +349,19 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                     "status": .string("not_issued"),
                     "audit_event": .string("system.telemetry.control.audio.set_output_volume"),
                 ]),
+                "auditPlan": .object([
+                    "status": .string("planned"),
+                    "durable": .bool(false),
+                    "event": .string("system.telemetry.control.audio.set_output_volume"),
+                    "outcome": .string("blocked"),
+                    "receiptStatus": .string("not_issued"),
+                    "note": .string("Portable audit projection; local CLI or signed host records durable JSONL evidence."),
+                    "redaction": .object([
+                        "targetRedacted": .bool(true),
+                        "valueRedacted": .bool(true),
+                        "sensitiveDetailRedacted": .bool(true),
+                    ]),
+                ]),
             ]),
             error: nil,
             meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
@@ -353,6 +379,14 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(plan.requiredGrants, ["system.audio.control"])
         XCTAssertEqual(plan.receiptStatus, "not_issued")
         XCTAssertEqual(plan.auditEvent, "system.telemetry.control.audio.set_output_volume")
+        XCTAssertEqual(plan.auditPlan?.status, "planned")
+        XCTAssertEqual(plan.auditPlan?.durable, false)
+        XCTAssertEqual(plan.auditPlan?.event, "system.telemetry.control.audio.set_output_volume")
+        XCTAssertEqual(plan.auditPlan?.outcome, "blocked")
+        XCTAssertEqual(plan.auditPlan?.receiptStatus, "not_issued")
+        XCTAssertEqual(plan.auditPlan?.redaction.targetRedacted, true)
+        XCTAssertEqual(plan.auditPlan?.redaction.valueRedacted, true)
+        XCTAssertEqual(plan.auditPlan?.redaction.sensitiveDetailRedacted, true)
         XCTAssertEqual(plan.steps.first?.status, "blocked")
     }
 
@@ -454,7 +488,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                     "description": .string("Signed sensor slot."),
                 ]),
                 "request": .object([
-                    "credentialRef": .string("secret://sensor/local"),
+                    "credentialRef": .string("provided_redacted"),
                     "reason": .string("test"),
                 ]),
                 "broker": .object([
@@ -485,6 +519,18 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                     "status": .string("not_issued"),
                     "auditEvent": .string("system.telemetry.provider.hardware_sensor.live"),
                 ]),
+                "auditPlan": .object([
+                    "status": .string("planned"),
+                    "durable": .bool(false),
+                    "event": .string("system.telemetry.provider.hardware_sensor.live"),
+                    "outcome": .string("blocked"),
+                    "receiptStatus": .string("not_issued"),
+                    "note": .string("Portable audit projection; local CLI or signed host records durable JSONL evidence."),
+                    "redaction": .object([
+                        "credentialRefRedacted": .bool(true),
+                        "preciseLocationRedacted": .bool(true),
+                    ]),
+                ]),
             ]),
             error: nil,
             meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
@@ -495,7 +541,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(plan.provider.id, "system.sensors.signed")
         XCTAssertEqual(plan.willConnect, false)
         XCTAssertEqual(plan.externalPending, true)
-        XCTAssertEqual(plan.credentialRef, "secret://sensor/local")
+        XCTAssertEqual(plan.credentialRef, "provided_redacted")
         XCTAssertEqual(plan.reason, "test")
         XCTAssertEqual(plan.brokerStatus, "external_pending")
         XCTAssertEqual(plan.failClosed, true)
@@ -504,6 +550,13 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(plan.networkAccess, "blocked_until_granted")
         XCTAssertEqual(plan.receiptStatus, "not_issued")
         XCTAssertEqual(plan.auditEvent, "system.telemetry.provider.hardware_sensor.live")
+        XCTAssertEqual(plan.auditPlan?.status, "planned")
+        XCTAssertEqual(plan.auditPlan?.durable, false)
+        XCTAssertEqual(plan.auditPlan?.event, "system.telemetry.provider.hardware_sensor.live")
+        XCTAssertEqual(plan.auditPlan?.outcome, "blocked")
+        XCTAssertEqual(plan.auditPlan?.receiptStatus, "not_issued")
+        XCTAssertEqual(plan.auditPlan?.redaction.credentialRefRedacted, true)
+        XCTAssertEqual(plan.auditPlan?.redaction.preciseLocationRedacted, true)
         XCTAssertEqual(plan.steps.map(\.status), ["skipped", "blocked"])
     }
 
@@ -619,7 +672,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                         "description": .string("Live provider slot."),
                     ]),
                     "request": .object([
-                        "credential_ref": .string("secret://weather/local"),
+                        "credential_ref": .string("provided_redacted"),
                         "reason": .string("test"),
                     ]),
                     "broker": .object([
@@ -658,6 +711,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         )
 
         XCTAssertEqual(plan.provider.id, "context.weather.live")
+        XCTAssertEqual(plan.credentialRef, "provided_redacted")
         XCTAssertEqual(plan.requiredGrants, ["weather.location.read"])
         XCTAssertEqual(plan.credentialRefRequired, true)
         XCTAssertEqual(plan.steps.first?.status, "blocked")
@@ -1405,5 +1459,63 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(model.panelWidgets.map(\.id), ["hardware-overview"])
         XCTAssertEqual(model.historyGraph(for: model.panelWidgets[0])?.chart.points.count, 2)
         XCTAssertTrue(model.hasHistoryGraph(for: model.panelWidgets[0]))
+    }
+
+    @MainActor
+    func testHistoryGraphViewRendersNativeBitmap() throws {
+        let history = SystemTelemetryHistory(
+            metricKey: "system.cpu.load1",
+            rangeMS: 3_600_000,
+            retentionStatus: "recorded",
+            chart: SystemTelemetryHistoryChart(
+                kind: "line",
+                metricKey: "system.cpu.load1",
+                unit: "count",
+                source: "metric_samples",
+                points: [
+                    SystemTelemetryHistoryPoint(timestampMS: 1, value: 1, sourceID: "system.telemetry.local", count: nil),
+                    SystemTelemetryHistoryPoint(timestampMS: 2, value: 4, sourceID: "system.telemetry.local", count: nil),
+                    SystemTelemetryHistoryPoint(timestampMS: 3, value: 2, sourceID: "system.telemetry.local", count: nil),
+                    SystemTelemetryHistoryPoint(timestampMS: 4, value: 5, sourceID: "system.telemetry.local", count: nil),
+                ],
+                empty: false
+            )
+        )
+        let view = SystemTelemetryHistoryGraphView(history: history, title: "CPU")
+        let size = SystemTelemetryHistoryGraphView.preferredSize
+        let rep = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(size.width),
+            pixelsHigh: Int(size.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ))
+        rep.size = size
+
+        view.cacheDisplay(in: view.bounds, to: rep)
+
+        var nonTransparentPixels = 0
+        var graphTintPixels = 0
+        for y in 0..<rep.pixelsHigh {
+            for x in 0..<rep.pixelsWide {
+                guard let color = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if color.alphaComponent > 0.01 {
+                    nonTransparentPixels += 1
+                }
+                if color.blueComponent > 0.35,
+                   color.blueComponent > color.redComponent + 0.08,
+                   color.blueComponent > color.greenComponent + 0.02 {
+                    graphTintPixels += 1
+                }
+            }
+        }
+
+        XCTAssertGreaterThan(nonTransparentPixels, rep.pixelsWide * rep.pixelsHigh / 2)
+        XCTAssertGreaterThan(graphTintPixels, 20)
     }
 }
