@@ -53,6 +53,7 @@ final class CalendarStore: ObservableObject {
     private let backend: CalendarBackend
     private let calendar: Foundation.Calendar
     private let displayLocale: Locale
+    private var bootstrapTask: Task<Void, Never>?
     private var bootstrapGeneration = 0
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
@@ -66,6 +67,7 @@ final class CalendarStore: ObservableObject {
     }
 
     deinit {
+        bootstrapTask?.cancel()
         reloadTask?.cancel()
         writeTask?.cancel()
     }
@@ -88,6 +90,17 @@ final class CalendarStore: ObservableObject {
     func bootstrap() async {
         guard access == .unknown else { return }
         let generation = nextBootstrapGeneration()
+        bootstrapTask?.cancel()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runBootstrap(generation: generation)
+        }
+        bootstrapTask = task
+        await task.value
+    }
+
+    private func runBootstrap(generation: Int) async {
+        guard isCurrentBootstrap(generation) else { return }
         access = .requesting
         let result = await backend.requestAccess()
         guard isCurrentBootstrap(generation), !Task.isCancelled else { return }
@@ -100,10 +113,13 @@ final class CalendarStore: ObservableObject {
         case .unavailable:
             access = .unavailable
         }
+        finishBootstrapIfCurrent(generation)
     }
 
     func cancelSurfaceWork() {
         bootstrapGeneration += 1
+        bootstrapTask?.cancel()
+        bootstrapTask = nil
         reloadGeneration += 1
         reloadTask?.cancel()
         reloadTask = nil
@@ -381,6 +397,11 @@ final class CalendarStore: ObservableObject {
 
     private func isCurrentBootstrap(_ generation: Int) -> Bool {
         bootstrapGeneration == generation
+    }
+
+    private func finishBootstrapIfCurrent(_ generation: Int) {
+        guard isCurrentBootstrap(generation) else { return }
+        bootstrapTask = nil
     }
 
     private func nextReloadGeneration() -> Int {
