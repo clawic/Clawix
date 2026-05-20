@@ -66,6 +66,11 @@ the sibling ClawJS SDK-first custom surface contract.
 - Critical shell fast-path measurement stays bounded when all heavy
   dependencies are unavailable; realistic UI captures remain required before
   final closure.
+- Installed-app Time Profiler smoke in
+  `docs/sdk-first-custom-surfaces-installed-performance-smoke.md` verified the
+  signed app capture path for Web and Swift custom-surface routing, sidebar
+  scroll, and chat composer editing; launch, rescue, delayed-heavy-surface, and
+  full stack-attributed Instruments analysis remain closure blockers.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
 - Installed-app smoke verified that a local `database/tasks` variant default
