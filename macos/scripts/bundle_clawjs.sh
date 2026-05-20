@@ -400,7 +400,9 @@ PY
     fi
     # Memory server: same layout as secrets.
     OVERLAY_MEMORY="$CLAWJS_DEV_OVERLAY/memory"
-    if [[ -d "$OVERLAY_MEMORY" ]]; then
+    if [[ "${CLAWIX_DEV_SKIP_MEMORY_OVERLAY:-0}" == "1" ]]; then
+        echo "==> Skipping memory dev overlay (CLAWIX_DEV_SKIP_MEMORY_OVERLAY=1)"
+    elif [[ -d "$OVERLAY_MEMORY" ]]; then
         build_overlay_package "$OVERLAY_MEMORY"
         echo "==> Dev overlay: copying $OVERLAY_MEMORY/dist → $CLAWJS_DEST/node_modules/memory/dist"
         rm -rf "$CLAWJS_DEST/node_modules/memory/dist"
@@ -415,7 +417,9 @@ PY
     fi
     # Drive surface.
     OVERLAY_DRIVE="$CLAWJS_DEV_OVERLAY/drive"
-    if [[ -d "$OVERLAY_DRIVE" ]]; then
+    if [[ "${CLAWIX_DEV_SKIP_DRIVE_OVERLAY:-0}" == "1" ]]; then
+        echo "==> Skipping drive dev overlay (CLAWIX_DEV_SKIP_DRIVE_OVERLAY=1)"
+    elif [[ -d "$OVERLAY_DRIVE" ]]; then
         build_overlay_package "$OVERLAY_DRIVE"
         echo "==> Dev overlay: copying $OVERLAY_DRIVE/dist → $CLAWJS_DEST/node_modules/drive/dist"
         rm -rf "$CLAWJS_DEST/node_modules/drive/dist"
