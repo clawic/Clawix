@@ -14,6 +14,7 @@ enum AppBridgeOperationPolicy {
         "capabilities.source",
         "db.query",
         "iot.device.action.invoke",
+        "jobs.list",
         "mac.action.plan",
         "request.cancel",
         "resources.list",
@@ -214,6 +215,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "resources.read":
                 startTrackedRequest(requestId: requestId, label: "Resource read") { [weak self] in
                     await self?.handleResourceRead(payload: payload, requestId: requestId)
+                }
+            case "jobs.list":
+                startTrackedRequest(requestId: requestId, label: "Jobs list") { [weak self] in
+                    await self?.handleJobsList(payload: payload, requestId: requestId)
                 }
             case "system.telemetry.snapshot":
                 startTrackedRequest(requestId: requestId, label: "System telemetry snapshot") { [weak self] in
@@ -739,6 +744,51 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 
+    private func handleJobsList(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("jobs.list")
+            let kind = sanitizedOptionalString(payload["kind"])
+            let status = sanitizedOptionalString(payload["status"])
+            let requestedLimit = payload["limit"] as? Int ?? 50
+            let limit = min(max(requestedLimit, 1), 100)
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Listing jobs",
+                progressValue: 0.2
+            )
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
+            let runs = try await ClawJSIndexClient(bearerToken: token).listRuns()
+            try Task.checkCancellation()
+            let bridgedRuns = runs
+                .map(Self.jobBridgeValue)
+                .filter { item in
+                    let itemKind = item["kind"] as? String
+                    let itemStatus = item["status"] as? String
+                    return (kind == nil || itemKind == kind) && (status == nil || itemStatus == status)
+                }
+                .prefix(limit)
+            let items = Array(bridgedRuns)
+            partial(requestId: requestId, value: [
+                "items": items,
+                "partialCount": items.count,
+                "source": "jobs.list",
+                "redactionPolicy": AppBridgeRedactionPolicy.policyId
+            ])
+            resolve(requestId: requestId, value: [
+                "items": items,
+                "source": "jobs.list",
+                "redactionPolicy": AppBridgeRedactionPolicy.policyId
+            ])
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Jobs list cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
     private func handleSystemTelemetrySnapshot(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
@@ -815,6 +865,32 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         } catch {
             reject(requestId: requestId, message: error.localizedDescription)
         }
+    }
+
+    nonisolated static func jobBridgeValue(_ run: ClawJSIndexClient.Run) -> [String: Any] {
+        var metadata: [String: Any] = [
+            "entitiesSeen": run.entitiesSeen,
+            "observationsCount": run.observationsCount,
+            "alertsFired": run.alertsFired
+        ]
+        if let monitorId = run.monitorId { metadata["monitorId"] = monitorId }
+        if let searchId = run.searchId { metadata["searchId"] = searchId }
+        if let codexSessionId = run.codexSessionId { metadata["codexSessionId"] = codexSessionId }
+        if let tokensIn = run.tokensIn { metadata["tokensIn"] = tokensIn }
+        if let tokensOut = run.tokensOut { metadata["tokensOut"] = tokensOut }
+        if run.prompt != nil { metadata["hasPrompt"] = true }
+        if let error = run.error { metadata["error"] = error }
+        return [
+            "id": run.id,
+            "kind": run.kind,
+            "status": run.status,
+            "startedAt": run.startedAt ?? NSNull(),
+            "endedAt": run.endedAt ?? NSNull(),
+            "createdAt": run.createdAt,
+            "source": "index.runs",
+            "metadata": metadata,
+            "redactionPolicy": AppBridgeRedactionPolicy.policyId
+        ]
     }
 
     nonisolated static func systemTelemetrySnapshotBridgeValue(

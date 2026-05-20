@@ -69,6 +69,8 @@ enum AppCapabilityCatalog {
     static let systemTelemetrySnapshotSchemaRef = "claw.system.telemetry.snapshot.v1"
     static let systemTelemetryHistoryRequestSchemaRef = "claw.system.telemetry.history.request.v1"
     static let systemTelemetryHistorySchemaRef = "claw.system.telemetry.history.v1"
+    static let jobsListSchemaRef = "claw.jobs.list.v1"
+    static let jobsListResultSchemaRef = "claw.jobs.listResult.v1"
     static let actionsInvokeSchemaRef = "claw.actions.invoke.v1"
     static let actionsReceiptSchemaRef = "claw.actions.receipt.v1"
     static let secretsBrokerSchemaRef = "claw.secrets.broker.v1"
@@ -174,6 +176,22 @@ enum AppCapabilityCatalog {
             summary: "Read retained Monitor-backed telemetry history for approved local metrics.",
             inputSchemaRef: systemTelemetryHistoryRequestSchemaRef,
             outputSchemaRef: systemTelemetryHistorySchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
+            id: "jobs.list",
+            title: "Jobs list",
+            summary: "Read recent framework jobs and run records through the host bridge without starting work.",
+            inputSchemaRef: jobsListSchemaRef,
+            outputSchemaRef: jobsListResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
@@ -301,6 +319,8 @@ enum AppCapabilityCatalog {
             actionsReceiptSchemaRef,
             iotActionResultSchemaRef,
             iotActionSchemaRef,
+            jobsListResultSchemaRef,
+            jobsListSchemaRef,
             macActionPlanSchemaRef,
             macActionRequestSchemaRef,
             requestCancelSchemaRef,
@@ -372,7 +392,7 @@ enum AppCapabilityCatalog {
 
     static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
         switch descriptor.id {
-        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history":
+        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history", "jobs.list":
             return [
                 "status": "available",
                 "mode": "localWideRead",

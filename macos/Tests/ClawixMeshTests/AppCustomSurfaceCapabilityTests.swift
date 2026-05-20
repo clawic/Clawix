@@ -34,6 +34,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             declaredCapabilities: [
                 "search.query",
                 "db.query",
+                "jobs.list",
                 "system.telemetry.snapshot",
                 "system.telemetry.history",
                 "secrets.broker",
@@ -46,6 +47,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(riskMap.authorityModel, "localWideReadsHighRiskApproval")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("search.query"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("db.query"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.list"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.snapshot"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.history"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.approvalRequired.contains("secrets.broker"), "\(riskMap.approvalRequired)")
@@ -68,7 +70,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
     func testOrdinaryReadCapabilitiesExposeSharedRedactionPolicy() {
         let ordinary = AppCapabilityCatalog.descriptors.filter { $0.customAppAccess == .localWide }
-        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "resources.list", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
+        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "jobs.list", "resources.list", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
         for descriptor in ordinary {
             XCTAssertEqual(descriptor.redactionPolicyRef, AppBridgeRedactionPolicy.policyId, descriptor.id)
             XCTAssertEqual(descriptor.bridgeValue["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
@@ -85,6 +87,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "resources.read")?.inputSchemaRef, "claw.resources.read.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.snapshot")?.outputSchemaRef, "claw.system.telemetry.snapshot.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "system.telemetry.history")?.inputSchemaRef, "claw.system.telemetry.history.request.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.list")?.inputSchemaRef, "claw.jobs.list.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.list")?.outputSchemaRef, "claw.jobs.listResult.v1")
     }
 
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
@@ -1476,12 +1480,19 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(ClawixAppsSDKJS.contains("secrets.read"))
     }
 
+    func testInjectedAppsSdkExposesJobsListFacade() {
+        XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.list"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("kind"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("status"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("limit"))
+    }
+
     func testHostBridgeExposesCustomAppSDKContractPayload() throws {
         let record = AppRecord(
             slug: "dashboard",
             name: "Dashboard",
             createdByChatId: nil,
-            declaredCapabilities: ["search.query", "db.query", "resources.list", "resources.read", "actions.invoke"]
+            declaredCapabilities: ["search.query", "db.query", "jobs.list", "resources.list", "resources.read", "actions.invoke"]
         )
         let payload = AppCapabilityCatalog.contractsBridgeValue(for: record)
         XCTAssertEqual(payload["schemaVersion"] as? Int, 1)
@@ -1502,12 +1513,15 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.search.query.v1") == true)
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.resources.list.v1") == true)
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.resources.listResult.v1") == true)
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.jobs.list.v1") == true)
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.jobs.listResult.v1") == true)
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.mac.actionRequest.v1") == true)
         XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.customApp.request.partial.v1") == true)
         XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.actions.invoke.v1") == true)
         let riskMap = try XCTUnwrap(payload["riskMap"] as? [String: Any])
         XCTAssertEqual(riskMap["authorityModel"] as? String, "localWideReadsHighRiskApproval")
         XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("db.query") == true)
+        XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("jobs.list") == true)
         XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("resources.list") == true)
         XCTAssertTrue((riskMap["approvalRequired"] as? [String])?.contains("actions.invoke") == true)
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
@@ -1525,6 +1539,12 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(history["inputSchemaRef"] as? String, "claw.system.telemetry.history.request.v1")
         let historyDispatch = try XCTUnwrap(history["dispatch"] as? [String: Any])
         XCTAssertEqual(historyDispatch["mode"] as? String, "localWideRead")
+        let jobs = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.list" })
+        XCTAssertEqual(jobs["inputSchemaRef"] as? String, "claw.jobs.list.v1")
+        XCTAssertEqual(jobs["outputSchemaRef"] as? String, "claw.jobs.listResult.v1")
+        XCTAssertEqual(jobs["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
+        let jobsDispatch = try XCTUnwrap(jobs["dispatch"] as? [String: Any])
+        XCTAssertEqual(jobsDispatch["mode"] as? String, "localWideRead")
         let mac = try XCTUnwrap(capabilities.first { $0["id"] as? String == "mac.action.plan" })
         XCTAssertEqual(mac["inputSchemaRef"] as? String, "claw.mac.actionRequest.v1")
         XCTAssertEqual(mac["outputSchemaRef"] as? String, "claw.mac.actionPlan.v1")
@@ -1537,6 +1557,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("db.query"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("resources.read"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("resources.list"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.list"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.snapshot"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.history"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
@@ -1555,6 +1576,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("db.query"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.list"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.list"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("actions.invoke"))
@@ -1576,6 +1598,40 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("fs.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("process.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("native.") })
+    }
+
+    func testJobsListBridgeValueRedactsRunMetadataThroughSharedPolicy() {
+        let run = ClawJSIndexClient.Run(
+            id: "run-1",
+            monitorId: "monitor-1",
+            searchId: "search-1",
+            kind: "search.run",
+            status: "completed",
+            startedAt: "2026-05-20T00:00:00Z",
+            endedAt: nil,
+            codexSessionId: "session-1",
+            error: nil,
+            entitiesSeen: 2,
+            observationsCount: 3,
+            alertsFired: 1,
+            tokensIn: 10,
+            tokensOut: 20,
+            prompt: "Find updates",
+            createdAt: "2026-05-20T00:00:01Z"
+        )
+
+        let value = AppBridgeMessageHandler.jobBridgeValue(run)
+
+        XCTAssertEqual(value["id"] as? String, "run-1")
+        XCTAssertEqual(value["kind"] as? String, "search.run")
+        XCTAssertEqual(value["status"] as? String, "completed")
+        XCTAssertEqual(value["source"] as? String, "index.runs")
+        XCTAssertEqual(value["redactionPolicy"] as? String, AppBridgeRedactionPolicy.policyId)
+        let metadata = value["metadata"] as? [String: Any]
+        XCTAssertEqual(metadata?["searchId"] as? String, "search-1")
+        XCTAssertEqual(metadata?["entitiesSeen"] as? Int, 2)
+        XCTAssertEqual(metadata?["hasPrompt"] as? Bool, true)
+        XCTAssertNil(metadata?["prompt"])
     }
 
     func testSystemTelemetryBridgeValuesMatchSdkContracts() throws {

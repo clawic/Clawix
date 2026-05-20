@@ -116,8 +116,9 @@ hosted Web apps. `resources.list`, `resources.read`, `search.query`, and
 `db.query` controls execute through host-owned registries/`DatabaseManager`
 using the shared DSL guards and redaction boundary, so Swift surfaces can read
 only registered resources and cannot supply arbitrary filesystem paths or raw
-database escapes. Signed end-to-end isolation/crash evidence remains a separate
-closure gate.
+database escapes. `jobs.list` is currently a Web host bridge read for recent
+jobs/run records only; it does not start, cancel, or mutate jobs. Signed
+end-to-end isolation/crash evidence remains a separate closure gate.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
@@ -259,6 +260,9 @@ replacing core shell surfaces.
     resources from `~/.claw/resources/resources.json` (or the configured
     `CLAW_RESOURCES_DIR`/`CLAW_HOME` location), do not accept arbitrary
     unregistered paths, cap file reads, and reject non-file resources.
+  - `clawix.jobs.list(opts)` — SDK bridge read for recent framework jobs/run
+    records. It exposes redacted job metadata and does not start or cancel
+    work.
   - `clawix.ui.{setTitle,setBadge,openExternal}` — best-effort UI hooks
   - `clawix.events.on('focus' | 'blur', cb)` — focus events fire from
     the SDK when the WKWebView gains/loses keyboard focus
