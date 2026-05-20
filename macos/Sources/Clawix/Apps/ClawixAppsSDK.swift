@@ -251,6 +251,30 @@ let ClawixAppsSDKJS = #"""
           status: opts.status == null ? null : String(opts.status),
           limit: opts.limit
         }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
+      },
+      stream: function (opts) {
+        opts = opts || {};
+        return send('jobs.stream', {
+          id: opts.id == null ? null : String(opts.id),
+          after: opts.after,
+          limit: opts.limit
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
+      },
+      start: function (opts) {
+        opts = opts || {};
+        return send('jobs.start', {
+          kind: String(opts.kind || ''),
+          input: opts.input || {},
+          reason: opts.reason == null ? null : String(opts.reason)
+        }, { signal: opts.signal, onProgress: opts.onProgress, onPartial: opts.onPartial });
+      },
+      cancel: function (idOrOpts, opts) {
+        var input = typeof idOrOpts === 'object' && idOrOpts !== null ? idOrOpts : (opts || {});
+        var id = typeof idOrOpts === 'string' ? idOrOpts : String(input.id || '');
+        return send('jobs.cancel', {
+          id: id,
+          reason: input.reason == null ? null : String(input.reason)
+        }, { signal: input.signal, onProgress: input.onProgress, onPartial: input.onPartial });
       }
     },
     resources: {

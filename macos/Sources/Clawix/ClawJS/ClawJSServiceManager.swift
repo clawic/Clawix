@@ -52,6 +52,7 @@ final class ClawJSServiceManager: ObservableObject {
     /// Services that need a per-session bearer/shared token. The token is
     /// bootstrapped over anonymous stdin, never process environment or disk.
     private static let adminTokenEnvVar: [ClawJSService: String] = [
+        .runtime: "RUNTIME_SHARED_SECRET",
         .database: "CLAW_DATABASE_ADMIN_TOKEN",
         .drive: "CLAW_DRIVE_ADMIN_TOKEN",
         .secrets: "CLAW_SECRETS_ADMIN_TOKEN",
@@ -440,6 +441,23 @@ final class ClawJSServiceManager: ObservableObject {
             guard FileManager.default.fileExists(atPath: serverJs.path) else { return nil }
             return [serverJs.path]
         }
+        if service == .runtime {
+            let packageURL = ClawJSRuntime.bundleRootURL
+                .appendingPathComponent("node_modules/@clawjs/runtime/package.json", isDirectory: false)
+            guard FileManager.default.fileExists(atPath: packageURL.path) else { return nil }
+            return [
+                "--input-type=module",
+                "--eval",
+                """
+                import { buildRuntimeApp } from '@clawjs/runtime';
+                const app = buildRuntimeApp();
+                const host = process.env.RUNTIME_HOST || process.env.HOST || '127.0.0.1';
+                const port = Number(process.env.RUNTIME_PORT || process.env.PORT || '24100');
+                await app.listen({ host, port });
+                """
+            ]
+        }
+
         guard Self.bundledLauncherScript(for: service) != nil else { return nil }
 
         var arguments = [
@@ -452,6 +470,8 @@ final class ClawJSServiceManager: ObservableObject {
         ]
 
         switch service {
+        case .runtime:
+            return arguments
         case .database:
             arguments += [
                 "--data-dir", Self.mainDataDirectoryURL.path,
@@ -783,6 +803,12 @@ final class ClawJSServiceManager: ObservableObject {
         env["CLAW_FILES_DIR"] = mainFilesDirectoryURL.path
         env["CLAW_SERVICE_PORT"] = String(service.port)
         env["CLAW_SERVICE_NAME"] = service.rawValue
+        env["RUNTIME_HOST"] = "127.0.0.1"
+        env["RUNTIME_PORT"] = String(ClawJSService.runtime.port)
+        env["RUNTIME_DATA_DIR"] = dataDirectoryURL(for: .runtime).path
+        env["RUNTIME_DB_PATH"] = dataDirectoryURL(for: .runtime)
+            .appendingPathComponent("runtime.sqlite", isDirectory: false).path
+        env["CLAW_RUNTIME_SESSIONS_URL"] = "http://127.0.0.1:\(ClawJSService.sessions.port)"
         for (key, value) in ClawJSActorAssertion.environment() {
             env[key] = value
         }
@@ -828,7 +854,9 @@ final class ClawJSServiceManager: ObservableObject {
             env["CLAW_PUBLISHING_STATUS_FILE"] = statusFileURL(for: service).path
         }
         if adminToken != nil, adminTokenEnvVar[service] != nil {
-            if service == .secrets {
+            if service == .runtime {
+                env["RUNTIME_SHARED_SECRET"] = adminToken
+            } else if service == .secrets {
                 env["CLAW_SECRETS_BOOTSTRAP_STDIN"] = "1"
             } else {
                 env["CLAW_LOCAL_ADMIN_BOOTSTRAP_STDIN"] = "1"

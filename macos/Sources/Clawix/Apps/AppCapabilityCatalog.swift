@@ -81,6 +81,12 @@ enum AppCapabilityCatalog {
     static let jobsDetailSchemaRef = "claw.jobs.detail.v1"
     static let jobsEventsSchemaRef = "claw.jobs.events.v1"
     static let jobsEventsResultSchemaRef = "claw.jobs.eventsResult.v1"
+    static let jobsStreamSchemaRef = "claw.jobs.stream.v1"
+    static let jobsStreamResultSchemaRef = "claw.jobs.streamResult.v1"
+    static let jobsStartSchemaRef = "claw.jobs.start.v1"
+    static let jobsStartResultSchemaRef = "claw.jobs.startResult.v1"
+    static let jobsCancelSchemaRef = "claw.jobs.cancel.v1"
+    static let jobsCancelResultSchemaRef = "claw.jobs.cancelResult.v1"
     static let actionsInvokeSchemaRef = "claw.actions.invoke.v1"
     static let actionsReceiptSchemaRef = "claw.actions.receipt.v1"
     static let secretsBrokerSchemaRef = "claw.secrets.broker.v1"
@@ -247,8 +253,12 @@ enum AppCapabilityCatalog {
         AppCapabilityDescriptor(
             id: "jobs.stream",
             title: "Jobs stream",
-            summary: "Blocked custom-app gap for true live job/run event streams until a backend stream, policy, audit, and host adapter exist.",
-            customAppAccess: .blocked,
+            summary: "Read runtime job events from the host bridge stream contract without starting or cancelling work.",
+            inputSchemaRef: jobsStreamSchemaRef,
+            outputSchemaRef: jobsStreamResultSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .localWide,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
             touchesSecrets: false,
@@ -259,10 +269,14 @@ enum AppCapabilityCatalog {
         AppCapabilityDescriptor(
             id: "jobs.start",
             title: "Jobs start",
-            summary: "Blocked custom-app gap for starting jobs until a mutation contract, policy, audit, and host adapter exist.",
-            customAppAccess: .blocked,
+            summary: "Start an allowlisted runtime job through native approval, host audit, and the runtime jobs API.",
+            inputSchemaRef: jobsStartSchemaRef,
+            outputSchemaRef: jobsStartResultSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .approvalRequired,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .high,
-            interruptiveApproval: false,
+            interruptiveApproval: true,
             touchesSecrets: false,
             touchesNativeHost: false,
             touchesPhysicalWorld: false,
@@ -271,10 +285,14 @@ enum AppCapabilityCatalog {
         AppCapabilityDescriptor(
             id: "jobs.cancel",
             title: "Jobs cancel",
-            summary: "Blocked custom-app gap for cancelling jobs until a mutation contract, policy, audit, and host adapter exist.",
-            customAppAccess: .blocked,
+            summary: "Cancel a runtime job through native approval, host audit, and the runtime jobs API.",
+            inputSchemaRef: jobsCancelSchemaRef,
+            outputSchemaRef: jobsCancelResultSchemaRef,
+            eventSchemaRefs: readEventSchemaRefs,
+            customAppAccess: .approvalRequired,
+            redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .high,
-            interruptiveApproval: false,
+            interruptiveApproval: true,
             touchesSecrets: false,
             touchesNativeHost: false,
             touchesPhysicalWorld: false,
@@ -406,8 +424,14 @@ enum AppCapabilityCatalog {
             jobsEventsResultSchemaRef,
             jobsEventsSchemaRef,
             jobsGetSchemaRef,
+            jobsCancelResultSchemaRef,
+            jobsCancelSchemaRef,
             jobsListResultSchemaRef,
             jobsListSchemaRef,
+            jobsStartResultSchemaRef,
+            jobsStartSchemaRef,
+            jobsStreamResultSchemaRef,
+            jobsStreamSchemaRef,
             macActionPlanSchemaRef,
             macActionRequestSchemaRef,
             requestCancelSchemaRef,
@@ -472,10 +496,8 @@ enum AppCapabilityCatalog {
         var statuses = Dictionary(uniqueKeysWithValues: canonicalSurfaceNames.map { ($0, "available") })
 
         switch descriptor.id {
-        case "jobs.list", "jobs.get", "jobs.events":
+        case "jobs.list", "jobs.get", "jobs.events", "jobs.stream", "jobs.start", "jobs.cancel":
             statuses["cli"] = "blocked"
-        case "jobs.stream", "jobs.start", "jobs.cancel":
-            statuses = Dictionary(uniqueKeysWithValues: canonicalSurfaceNames.map { ($0, "blocked") })
         case "secrets.broker":
             statuses["mcp"] = "blocked"
         default:
@@ -538,6 +560,12 @@ enum AppCapabilityCatalog {
             return "window.clawix.jobs.get"
         case "jobs.events":
             return "window.clawix.jobs.events"
+        case "jobs.stream":
+            return "window.clawix.jobs.stream"
+        case "jobs.start":
+            return "window.clawix.jobs.start"
+        case "jobs.cancel":
+            return "window.clawix.jobs.cancel"
         case "actions.invoke":
             return "window.clawix.actions.invoke"
         case "secrets.broker":
@@ -595,13 +623,21 @@ enum AppCapabilityCatalog {
 
     static func dispatchBridgeValue(for descriptor: AppCapabilityDescriptor) -> [String: Any] {
         switch descriptor.id {
-        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history", "jobs.list", "jobs.get", "jobs.events":
+        case "search.query", "db.query", "resources.list", "resources.read", "system.telemetry.snapshot", "system.telemetry.history", "jobs.list", "jobs.get", "jobs.events", "jobs.stream":
             return [
                 "status": "available",
                 "mode": "localWideRead",
                 "approvalRequired": false,
                 "runner": "clawix.hostBridge",
                 "reason": "Local-wide read through the host bridge; no CLI process required."
+            ]
+        case "jobs.start", "jobs.cancel":
+            return [
+                "status": "available",
+                "mode": "approvalRequiredDispatch",
+                "approvalRequired": true,
+                "runner": "ClawJSRuntimeClient",
+                "reason": "Dispatches through the runtime jobs API after native approval and host audit."
             ]
         case "mac.action.plan":
             return [

@@ -67,6 +67,12 @@ enum AppHighRiskActionAudit {
         if normalized.hasPrefix("iot.") || normalized.contains("device") {
             return "iot.device.action.invoke"
         }
+        if normalized == "jobs.start" {
+            return "jobs.start"
+        }
+        if normalized == "jobs.cancel" {
+            return "jobs.cancel"
+        }
         return "actions.invoke"
     }
 

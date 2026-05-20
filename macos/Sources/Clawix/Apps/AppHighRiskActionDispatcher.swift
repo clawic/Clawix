@@ -65,6 +65,10 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
 
     func dispatch(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
         switch request.descriptor.id {
+        case "jobs.start":
+            await dispatchJobsStart(request)
+        case "jobs.cancel":
+            await dispatchJobsCancel(request)
         case "mac.action.plan":
             dispatchMacActionPlan(request)
         case "iot.device.action.invoke":
@@ -75,6 +79,44 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
             .unavailable("Secrets broker dispatch is unavailable until a safe non-plaintext lease/ref runner is registered")
         default:
             .unavailable("No safe framework dispatcher is registered for capability: \(request.descriptor.id)")
+        }
+    }
+
+    private func dispatchJobsStart(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
+        do {
+            let kind = ((request.arguments["kind"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !kind.isEmpty else {
+                return .failed("jobs.start requires a kind.")
+            }
+            let input = (request.arguments["input"] as? [String: Any]) ?? [:]
+            let reason = (request.arguments["reason"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .runtime)
+            let value = try await ClawJSRuntimeClient(bearerToken: token).startJob(
+                kind: kind,
+                input: input,
+                reason: reason?.isEmpty == true ? nil : reason
+            )
+            return .dispatched(value)
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    private func dispatchJobsCancel(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
+        do {
+            let id = ((request.arguments["id"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !id.isEmpty else {
+                return .failed("jobs.cancel requires an id.")
+            }
+            let reason = (request.arguments["reason"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .runtime)
+            let value = try await ClawJSRuntimeClient(bearerToken: token).cancelJob(
+                id: id,
+                reason: reason?.isEmpty == true ? nil : reason
+            )
+            return .dispatched(value)
+        } catch {
+            return .failed(error.localizedDescription)
         }
     }
 

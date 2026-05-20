@@ -37,6 +37,9 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
                 "jobs.list",
                 "jobs.get",
                 "jobs.events",
+                "jobs.stream",
+                "jobs.start",
+                "jobs.cancel",
                 "system.telemetry.snapshot",
                 "system.telemetry.history",
                 "secrets.broker",
@@ -52,6 +55,9 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.list"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.get"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.events"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.stream"), "\(riskMap.ordinaryAccess)")
+        XCTAssertTrue(riskMap.approvalRequired.contains("jobs.start"), "\(riskMap.approvalRequired)")
+        XCTAssertTrue(riskMap.approvalRequired.contains("jobs.cancel"), "\(riskMap.approvalRequired)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.snapshot"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("system.telemetry.history"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.approvalRequired.contains("secrets.broker"), "\(riskMap.approvalRequired)")
@@ -74,7 +80,7 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
 
     func testOrdinaryReadCapabilitiesExposeSharedRedactionPolicy() {
         let ordinary = AppCapabilityCatalog.descriptors.filter { $0.customAppAccess == .localWide }
-        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "jobs.events", "jobs.get", "jobs.list", "resources.list", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
+        XCTAssertEqual(ordinary.map(\.id).sorted(), ["db.query", "jobs.events", "jobs.get", "jobs.list", "jobs.stream", "resources.list", "resources.read", "search.query", "system.telemetry.history", "system.telemetry.snapshot"])
         for descriptor in ordinary {
             XCTAssertEqual(descriptor.redactionPolicyRef, AppBridgeRedactionPolicy.policyId, descriptor.id)
             XCTAssertEqual(descriptor.bridgeValue["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
@@ -97,15 +103,8 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.get")?.outputSchemaRef, "claw.jobs.detail.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.events")?.inputSchemaRef, "claw.jobs.events.v1")
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.events")?.outputSchemaRef, "claw.jobs.eventsResult.v1")
-        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.customAppAccess, .blocked)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.inputSchemaRef)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.outputSchemaRef)
-        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.start")?.customAppAccess, .blocked)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.start")?.inputSchemaRef)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.start")?.outputSchemaRef)
-        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.customAppAccess, .blocked)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.inputSchemaRef)
-        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.outputSchemaRef)
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.inputSchemaRef, "claw.jobs.stream.v1")
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.outputSchemaRef, "claw.jobs.streamResult.v1")
     }
 
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
@@ -118,6 +117,8 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
     func testApprovalRequiredCapabilitiesExposeSharedSchemaRefs() throws {
         let expected: [String: (String, String)] = [
             "actions.invoke": ("claw.actions.invoke.v1", "claw.actions.receipt.v1"),
+            "jobs.start": ("claw.jobs.start.v1", "claw.jobs.startResult.v1"),
+            "jobs.cancel": ("claw.jobs.cancel.v1", "claw.jobs.cancelResult.v1"),
             "secrets.broker": ("claw.secrets.broker.v1", "claw.secrets.receipt.v1"),
             "mac.action.plan": ("claw.mac.actionRequest.v1", "claw.mac.actionPlan.v1"),
             "iot.device.action.invoke": ("claw.iot.action.v1", "claw.iot.actionResult.v1")
@@ -157,15 +158,26 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         let secrets = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "secrets.broker")?.bridgeValue["dispatch"] as? [String: Any])
         XCTAssertEqual(secrets["status"] as? String, "unavailable")
         XCTAssertEqual(secrets["mode"] as? String, "approvalRequiredNoPlaintextBroker")
+
+        let jobStream = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(jobStream["status"] as? String, "available")
+        XCTAssertEqual(jobStream["mode"] as? String, "localWideRead")
+
+        let jobStart = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "jobs.start")?.bridgeValue["dispatch"] as? [String: Any])
+        XCTAssertEqual(jobStart["status"] as? String, "available")
+        XCTAssertEqual(jobStart["mode"] as? String, "approvalRequiredDispatch")
+        XCTAssertEqual(jobStart["runner"] as? String, "ClawJSRuntimeClient")
     }
 
     func testAgentToolNamesMapToHighRiskCapabilities() {
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "secrets.read"), "secrets.broker")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "mac.window.plan"), "mac.action.plan")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "iot.device.toggle"), "iot.device.action.invoke")
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "jobs.start"), "jobs.start")
+        XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "jobs.cancel"), "jobs.cancel")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "database_create_task"), "actions.invoke")
 
-        for tool in ["secrets.read", "mac.window.plan", "iot.device.toggle", "database_create_task"] {
+        for tool in ["secrets.read", "mac.window.plan", "iot.device.toggle", "jobs.start", "jobs.cancel", "database_create_task"] {
             let descriptor = AppHighRiskActionAudit.descriptor(forTool: tool)
             XCTAssertEqual(descriptor?.customAppAccess, .approvalRequired)
             XCTAssertEqual(descriptor?.interruptiveApproval, true)

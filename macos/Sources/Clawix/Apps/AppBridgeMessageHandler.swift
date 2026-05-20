@@ -17,6 +17,9 @@ enum AppBridgeOperationPolicy {
         "jobs.events",
         "jobs.get",
         "jobs.list",
+        "jobs.cancel",
+        "jobs.start",
+        "jobs.stream",
         "mac.action.plan",
         "request.cancel",
         "resources.list",
@@ -230,6 +233,14 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 startTrackedRequest(requestId: requestId, label: "Jobs events") { [weak self] in
                     await self?.handleJobsEvents(payload: payload, requestId: requestId)
                 }
+            case "jobs.stream":
+                startTrackedRequest(requestId: requestId, label: "Jobs stream") { [weak self] in
+                    await self?.handleJobsStream(payload: payload, requestId: requestId)
+                }
+            case "jobs.start":
+                try gateToolCall(tool: "jobs.start", arguments: payload, requestId: requestId)
+            case "jobs.cancel":
+                try gateToolCall(tool: "jobs.cancel", arguments: payload, requestId: requestId)
             case "system.telemetry.snapshot":
                 startTrackedRequest(requestId: requestId, label: "System telemetry snapshot") { [weak self] in
                     await self?.handleSystemTelemetrySnapshot(payload: payload, requestId: requestId)
@@ -879,6 +890,49 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 
+    private func handleJobsStream(payload: [String: Any], requestId: String) async {
+        do {
+            try Task.checkCancellation()
+            try requireLocalWideCapability("jobs.stream")
+            let id = sanitizedOptionalString(payload["id"])
+            let after = sanitizedOptionalInt(payload["after"])
+            let requestedLimit = sanitizedOptionalInt(payload["limit"]) ?? 100
+            let limit = min(max(requestedLimit, 1), 500)
+            reportQueryProgress(
+                requestId: requestId,
+                message: "Reading runtime job stream",
+                progressValue: 0.2
+            )
+            let token = ClawJSServiceManager.shared.adminTokenIfSpawned(for: .runtime)
+            let client = ClawJSRuntimeClient(bearerToken: token)
+            let value: Any
+            if let id {
+                value = try await client.listEventsForJob(id: id, after: after, limit: limit)
+            } else {
+                value = try await client.listJobEvents(jobId: nil, after: after, limit: limit)
+            }
+            try Task.checkCancellation()
+            if let dict = value as? [String: Any] {
+                var partialValue = dict
+                partialValue["source"] = "jobs.stream"
+                partialValue["redactionPolicy"] = AppBridgeRedactionPolicy.policyId
+                partial(requestId: requestId, value: partialValue)
+                var resolved = dict
+                resolved["source"] = "jobs.stream"
+                resolved["redactionPolicy"] = AppBridgeRedactionPolicy.policyId
+                resolve(requestId: requestId, value: resolved)
+            } else {
+                resolve(requestId: requestId, value: value)
+            }
+            surfaceReporter.ready()
+        } catch is CancellationError {
+            surfaceReporter.partial("Jobs stream cancelled")
+            reject(requestId: requestId, message: "Request cancelled")
+        } catch {
+            reject(requestId: requestId, message: error.localizedDescription)
+        }
+    }
+
     private func handleSystemTelemetrySnapshot(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
@@ -1204,6 +1258,13 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
         guard let string = value as? String else { return nil }
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func sanitizedOptionalInt(_ value: Any?) -> Int? {
+        if let int = value as? Int { return int }
+        if let number = value as? NSNumber { return number.intValue }
+        if let string = sanitizedOptionalString(value) { return Int(string) }
+        return nil
     }
 
     private func requireLocalWideCapability(_ capabilityId: String) throws {

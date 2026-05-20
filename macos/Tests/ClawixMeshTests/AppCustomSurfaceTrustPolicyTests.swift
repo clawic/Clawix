@@ -222,10 +222,10 @@ final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase
         XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedUnknownCapabilities(["unknown.future"]))
     }
 
-    func testBlockedCapabilitiesBlockActivationEvenAfterReview() {
+    func testRuntimeJobCapabilitiesUseReadAndApprovalTiers() {
         let record = AppRecord(
-            slug: "blocked-stream-panel",
-            name: "Blocked Stream Panel",
+            slug: "runtime-jobs-panel",
+            name: "Runtime Jobs Panel",
             declaredCapabilities: ["jobs.stream", "jobs.start", "jobs.cancel"],
             originClass: .localUserAuthored,
             activationReview: AppActivationReview(approvedBy: "Test", riskMapSource: AppCapabilityCatalog.source)
@@ -233,9 +233,10 @@ final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase
 
         let riskMap = AppCapabilityCatalog.riskMap(for: record)
 
-        XCTAssertEqual(riskMap.blocked, ["jobs.stream", "jobs.start", "jobs.cancel"])
-        XCTAssertEqual(riskMap.ordinaryAccess, [])
-        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedCapabilities(["jobs.stream", "jobs.start", "jobs.cancel"]))
+        XCTAssertEqual(riskMap.blocked, [])
+        XCTAssertEqual(riskMap.ordinaryAccess, ["jobs.stream"])
+        XCTAssertEqual(riskMap.approvalRequired, ["jobs.start", "jobs.cancel"])
+        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .allowed)
     }
 
     func testProtectedRoutesCannotBeReplacedWithoutVariantFallback() {

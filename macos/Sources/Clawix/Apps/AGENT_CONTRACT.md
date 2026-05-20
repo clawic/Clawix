@@ -116,13 +116,11 @@ hosted Web apps. `resources.list`, `resources.read`, `search.query`, and
 `db.query` controls execute through host-owned registries/`DatabaseManager`
 using the shared DSL guards and redaction boundary, so Swift surfaces can read
 only registered resources and cannot supply arbitrary filesystem paths or raw
-database escapes. `jobs.list`, `jobs.get`, and `jobs.events` are currently Web
-host bridge reads for recent jobs/run records, redacted job detail, and derived
-job timelines only; they do not start, cancel, or mutate jobs. Signed
-end-to-end isolation/crash evidence remains a separate closure gate.
-`jobs.stream`, `jobs.start`, and `jobs.cancel` are explicit blocked capability
-gaps and must not be wired to the SDK or bridge until real backend stream or
-mutation contracts, policy, audit, and host adapters exist.
+database escapes. `jobs.list`, `jobs.get`, `jobs.events`, and `jobs.stream`
+are Web host bridge reads for recent jobs/run records, redacted job detail, and
+runtime event snapshots. `jobs.start` and `jobs.cancel` are approval-gated
+runtime mutations that must pass native approval and write host audit receipts.
+Signed end-to-end isolation/crash evidence remains a separate closure gate.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
@@ -269,9 +267,10 @@ replacing core shell surfaces.
     jobs/run records, one redacted job detail, and derived job timelines. They
     expose redacted job metadata, entity summaries, and event summaries, and do
     not start or cancel work.
-  - `clawix.jobs.stream`, `clawix.jobs.start`, and `clawix.jobs.cancel` are
-    intentionally absent. `jobs.stream`, `jobs.start`, and `jobs.cancel` are
-    visible only as blocked capability gaps in `clawix.capabilities.contracts()`.
+  - `clawix.jobs.stream(opts)` — SDK bridge read for runtime job event
+    snapshots.
+  - `clawix.jobs.start(opts)` and `clawix.jobs.cancel(idOrOpts)` —
+    approval-gated runtime job mutations with host audit receipts.
   - `clawix.ui.{setTitle,setBadge,openExternal}` — best-effort UI hooks
   - `clawix.events.on('focus' | 'blur', cb)` — focus events fire from
     the SDK when the WKWebView gains/loses keyboard focus

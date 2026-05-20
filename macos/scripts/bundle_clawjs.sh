@@ -426,6 +426,54 @@ EOF
         rm -rf "$CLAWJS_DEST/node_modules/@clawjs/sessions/node_modules/better-sqlite3"
         copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/sessions/node_modules/@clawjs/core"
     fi
+    OVERLAY_USER_MODEL="$CLAWJS_DEV_OVERLAY/packages/clawjs-user-model"
+    if [[ -d "$OVERLAY_USER_MODEL" ]]; then
+        build_overlay_package "$OVERLAY_USER_MODEL"
+        echo "==> Dev overlay: copying $OVERLAY_USER_MODEL -> $CLAWJS_DEST/node_modules/@clawjs/user-model"
+        rm -rf "$CLAWJS_DEST/node_modules/@clawjs/user-model"
+        mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
+        cp -R "$OVERLAY_USER_MODEL" "$CLAWJS_DEST/node_modules/@clawjs/user-model"
+        (
+            cd "$CLAWJS_DEST/node_modules/@clawjs/user-model"
+            npm_config_arch=arm64 \
+            npm_config_target_arch=arm64 \
+            npm_config_target_platform=darwin \
+            run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
+        )
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/user-model/node_modules/@clawjs/core"
+    fi
+    OVERLAY_RUNTIME="$CLAWJS_DEV_OVERLAY/packages/clawjs-runtime"
+    if [[ -d "$OVERLAY_RUNTIME" ]]; then
+        build_overlay_package "$OVERLAY_RUNTIME"
+        echo "==> Dev overlay: copying $OVERLAY_RUNTIME -> $CLAWJS_DEST/node_modules/@clawjs/runtime"
+        rm -rf "$CLAWJS_DEST/node_modules/@clawjs/runtime"
+        mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
+        cp -R "$OVERLAY_RUNTIME" "$CLAWJS_DEST/node_modules/@clawjs/runtime"
+        /usr/bin/python3 - "$CLAWJS_DEST/node_modules/@clawjs/runtime/package.json" <<'PY'
+import json
+import sys
+
+package_json = sys.argv[1]
+with open(package_json, encoding="utf-8") as handle:
+    data = json.load(handle)
+deps = data.setdefault("dependencies", {})
+if deps.get("@clawjs/sessions", "").startswith("file:"):
+    deps["@clawjs/sessions"] = "file:../sessions"
+if deps.get("@clawjs/user-model", "").startswith("file:"):
+    deps["@clawjs/user-model"] = "file:../user-model"
+with open(package_json, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
+        (
+            cd "$CLAWJS_DEST/node_modules/@clawjs/runtime"
+            npm_config_arch=arm64 \
+            npm_config_target_arch=arm64 \
+            npm_config_target_platform=darwin \
+            run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
+        )
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/runtime/node_modules/@clawjs/core"
+    fi
     # Secrets server: launchers resolve `<HERE>/../../../secrets/dist/server.js`
     # from @clawjs/cli/bin, i.e. node_modules/secrets/dist/server.js.
     OVERLAY_SECRETS="$CLAWJS_DEV_OVERLAY/secrets"

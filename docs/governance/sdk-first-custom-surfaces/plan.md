@@ -74,17 +74,20 @@ the sibling ClawJS SDK-first custom surface contract.
   through `window.clawix.jobs.{list,get,events}()` as local-wide jobs/run
   listing, detail, and derived event timeline bridges with shared redaction
   policy and no start/cancel mutation.
-- `jobs.stream` is present only as a blocked explicit gap in the capability
-  map; it is not exposed through `window.clawix` or the host bridge until a
-  true backend stream, policy, audit, and adapter exist.
-- `jobs.start` and `jobs.cancel` are present only as blocked explicit mutation
-  gaps in the capability map; they are not exposed through `window.clawix` or
-  the host bridge until mutation contracts, policy, audit, and adapters exist.
+- `jobs.stream` is exposed through the runtime jobs event stream contract via
+  `window.clawix.jobs.stream()` as a local-wide runtime job event stream
+  snapshot contract.
+- `jobs.start` and `jobs.cancel` are approval-gated runtime job mutations
+  exposed through
+  `window.clawix.jobs.{start,cancel}()` as approval-gated runtime job mutations
+  with host audit receipts.
+- `window.clawix.jobs.stream/start/cancel` is the public Web custom-app SDK
+  path for runtime job event snapshots and approval-gated mutations.
 - Sibling ClawJS runtime now has local authenticated backend routes for
   `runtime/jobs/start`, `runtime/jobs/:id/cancel`, `runtime/jobs/events`, and
-  per-job event snapshots, covered by Runtime E2E. Clawix still blocks
-  `window.clawix.jobs.stream/start/cancel` until host bridge policy, audit, and
-  adapters are added.
+  per-job event snapshots, covered by Runtime E2E.
+  `window.clawix.jobs.stream/start/cancel` is the Clawix SDK facade for those
+  runtime-backed contracts.
 - `mac.action.plan` is exposed to Web custom apps through
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until

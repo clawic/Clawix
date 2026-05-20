@@ -4,6 +4,7 @@ import Foundation
 /// Each service is a long-lived HTTP server bound to loopback. Ports are
 /// stable across launches so UI and feature consumers can share endpoints.
 enum ClawJSService: String, CaseIterable, Identifiable {
+    case runtime
     case database
     case memory
     case drive
@@ -21,6 +22,7 @@ enum ClawJSService: String, CaseIterable, Identifiable {
     /// `24080-24099`; framework services use `24100-24199`.
     var port: UInt16 {
         switch self {
+        case .runtime: return 24100
         case .sessions: return 24101
         case .database: return 24102
         case .secrets:  return 24103
@@ -36,6 +38,7 @@ enum ClawJSService: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .runtime: return "Runtime"
         case .database: return "Database"
         case .memory:   return "Memory"
         case .drive:    return "Drive"
