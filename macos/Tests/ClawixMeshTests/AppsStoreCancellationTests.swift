@@ -165,6 +165,49 @@ final class AppsStoreCancellationTests: XCTestCase {
         } else {
             XCTFail("Imported app should require a fresh activation review")
         }
+        let audit = try AppTrustAudit.read(from: store.trustAuditURL(for: imported))
+        XCTAssertEqual(audit.count, 1)
+        XCTAssertEqual(audit.first?.eventType, .packageImported)
+        XCTAssertEqual(audit.first?.originClass, .imported)
+        XCTAssertEqual(audit.first?.sourcePath, sourceRoot.standardizedFileURL.path)
+        XCTAssertEqual(audit.first?.sourceSlug, "focus-panel")
+        XCTAssertEqual(audit.first?.sourceOriginClass, .localUserAuthored)
+        XCTAssertEqual(audit.first?.signatureStatus, .notVerified)
+    }
+
+    func testApproveActivationWritesTrustAuditWithRiskMap() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        let sourceManifest = AppRecord(
+            slug: "control-panel",
+            name: "Control Panel",
+            declaredCapabilities: ["search.query", "iot.device.action.invoke"],
+            originClass: .localUserAuthored
+        )
+        try writeManifest(sourceManifest, to: sourceRoot)
+        try "<main>Control</main>".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent("index.html"),
+            options: .atomic
+        )
+
+        let imported = try store.importApp(from: sourceRoot, originClass: .imported)
+        let riskMap = AppCapabilityCatalog.riskMap(for: imported)
+        let approved = try store.approveActivation(imported, riskMap: riskMap)
+
+        XCTAssertNotNil(approved.activationReview)
+        let audit = try AppTrustAudit.read(from: store.trustAuditURL(for: approved))
+        XCTAssertEqual(audit.map(\.eventType), [.packageImported, .activationApproved])
+        XCTAssertEqual(audit.last?.riskMapSource, AppCapabilityCatalog.source)
+        XCTAssertEqual(audit.last?.ordinaryAccess, ["search.query"])
+        XCTAssertEqual(audit.last?.approvalRequired, ["iot.device.action.invoke"])
+        XCTAssertEqual(audit.last?.highRisk, ["iot.device.action.invoke"])
     }
 
     private func makeStore(

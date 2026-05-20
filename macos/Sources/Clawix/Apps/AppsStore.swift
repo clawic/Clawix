@@ -276,9 +276,28 @@ final class AppsStore: ObservableObject {
         }
         record.updatedAt = Date()
         try writeManifest(record)
+        try appendTrustAudit(
+            app: record,
+            eventType: .packageImported,
+            reason: record.packageProvenance?.reviewReason ?? "Imported package requires local review before activation."
+        )
         upsertInMemory(record)
         reloadFromDisk()
         return record
+    }
+
+    @discardableResult
+    func approveActivation(_ record: AppRecord, riskMap: AppCapabilityRiskMap) throws -> AppRecord {
+        var updated = record
+        updated.activationReview = AppActivationReview(riskMapSource: riskMap.source)
+        try update(updated)
+        try appendTrustAudit(
+            app: updated,
+            eventType: .activationApproved,
+            riskMap: riskMap,
+            reason: "Activation approved after reviewing origin, capabilities, risk, and provenance."
+        )
+        return updated
     }
 
     // MARK: - File I/O for the WKURLSchemeHandler
@@ -317,6 +336,10 @@ final class AppsStore: ObservableObject {
         rootURL.appendingPathComponent(slug)
     }
 
+    func trustAuditURL(for record: AppRecord) -> URL {
+        directory(forSlug: record.slug).appendingPathComponent(AppTrustAudit.filename, isDirectory: false)
+    }
+
     // MARK: - Internals
 
     private func ensureRootExists() {
@@ -334,6 +357,21 @@ final class AppsStore: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(record)
         try data.write(to: manifestURL, options: .atomic)
+    }
+
+    private func appendTrustAudit(
+        app: AppRecord,
+        eventType: AppTrustAuditEvent.EventType,
+        riskMap: AppCapabilityRiskMap? = nil,
+        reason: String
+    ) throws {
+        try AppTrustAudit.append(
+            app: app,
+            eventType: eventType,
+            riskMap: riskMap,
+            reason: reason,
+            auditURL: trustAuditURL(for: app)
+        )
     }
 
     private func upsertInMemory(_ record: AppRecord) {

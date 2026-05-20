@@ -14,6 +14,7 @@ All apps live under:
 ~/.claw/apps/
 └── <slug>/
     ├── manifest.json           ← single source of truth for metadata
+    ├── trust-audit.jsonl       ← host-owned import/activation trust log
     ├── index.html              ← entry point, loaded as clawix-app://<slug>/
     ├── app.js                  ← optional
     ├── style.css               ← optional
@@ -118,6 +119,13 @@ Agents should not forge `packageProvenance`, `activationReview`, or signature
 state. Those fields are host-owned trust records. Until package signing exists,
 imports are explicit `notVerified` packages and the review ficha must show that
 state to the user.
+
+The host also appends trust events to `trust-audit.jsonl` inside the managed app
+folder. Current events are `packageImported` and `activationApproved`. Activation
+approval events include the risk map source plus ordinary, approval-required,
+and high-risk capability ids that were shown before the app was allowed to run.
+Agents may read this file for local diagnostics, but must not write or rewrite
+it.
 
 Route variants use the same manifest:
 

@@ -152,9 +152,13 @@ struct AppSurfaceView: View {
     }
 
     private func approve(_ record: AppRecord, riskMap: AppCapabilityRiskMap) {
-        var updated = record
-        updated.activationReview = AppActivationReview(riskMapSource: riskMap.source)
-        try? appsStore.update(updated)
+        do {
+            try appsStore.approveActivation(record, riskMap: riskMap)
+        } catch {
+            surfaceReporter.error("Activation review could not be recorded.")
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            return
+        }
         loadState = .loading
         reloadToken &+= 1
     }
