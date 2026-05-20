@@ -42,6 +42,7 @@ final class ProfileSurfaceStore: ObservableObject {
     private var messageSendTasks: [UUID: Task<ClawJSProfileClient.ChatMessage, Error>] = [:]
     private var messageSendGeneration = 0
     private var profileMutationGeneration = 0
+    private var profileMutationTaskCancellations: [UUID: () -> Void] = [:]
     private var marketplaceRefreshTask: Task<Void, Never>?
     private var marketplaceRefreshGeneration = 0
 
@@ -67,6 +68,7 @@ final class ProfileSurfaceStore: ObservableObject {
         chatsRefreshTask?.cancel()
         messageLoadTasks.values.forEach { $0.cancel() }
         messageSendTasks.values.forEach { $0.cancel() }
+        profileMutationTaskCancellations.values.forEach { $0() }
         marketplaceRefreshTask?.cancel()
     }
 
@@ -231,7 +233,7 @@ final class ProfileSurfaceStore: ObservableObject {
         chatsRefreshTask = nil
         cancelMessageLoadTasks()
         cancelMessageSendTasks()
-        profileMutationGeneration += 1
+        cancelProfileMutationTasks()
         marketplaceRefreshGeneration += 1
         marketplaceRefreshTask?.cancel()
         marketplaceRefreshTask = nil
@@ -257,83 +259,91 @@ final class ProfileSurfaceStore: ObservableObject {
     // MARK: - Mutations
 
     func initProfile(alias: String, mnemonic: String?) async throws -> ClawJSProfileClient.InitResponse {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let resp = try await client.initProfile(alias: alias, mnemonic: mnemonic, passphrase: nil)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.me = resp.profile
-        return resp
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let resp = try await store.client.initProfile(alias: alias, mnemonic: mnemonic, passphrase: nil)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.me = resp.profile
+            return resp
+        }
     }
 
     func renameHandle(to alias: String) async throws {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let updated = try await client.setHandle(alias: alias)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.me = updated
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let updated = try await store.client.setHandle(alias: alias)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.me = updated
+        }
     }
 
     func createBlock(_ input: ClawJSProfileClient.CreateBlockInput) async throws {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let block = try await client.createBlock(input)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.ownBlocks.insert(block, at: 0)
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let block = try await store.client.createBlock(input)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.ownBlocks.insert(block, at: 0)
+        }
     }
 
     func deleteBlock(_ blockId: String) async throws {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        try await client.deleteBlock(blockId)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.ownBlocks.removeAll { $0.blockId == blockId }
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            try await store.client.deleteBlock(blockId)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.ownBlocks.removeAll { $0.blockId == blockId }
+        }
     }
 
     func createGroup(id: String, label: String? = nil) async throws {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let g = try await client.createGroup(id: id, label: label)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.groups.append(g)
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let g = try await store.client.createGroup(id: id, label: label)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.groups.append(g)
+        }
     }
 
     func addMember(groupId: String, rootPubkeyHex: String) async throws {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let updated = try await client.addMember(groupId: groupId, rootPubkeyHex: rootPubkeyHex)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        if let idx = groups.firstIndex(where: { $0.id == updated.id }) {
-            groups[idx] = updated
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let updated = try await store.client.addMember(groupId: groupId, rootPubkeyHex: rootPubkeyHex)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            if let idx = store.groups.firstIndex(where: { $0.id == updated.id }) {
+                store.groups[idx] = updated
+            }
         }
     }
 
     func pair(link: String) async throws -> ClawJSProfileClient.Handle {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let handle = try await client.pairByFingerprint(pairingLink: link)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        // Refresh the directory so the new peer is visible immediately.
-        let updatedPeers = (try? await client.listPeers()) ?? self.peers
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        self.peers = updatedPeers
-        return handle
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let handle = try await store.client.pairByFingerprint(pairingLink: link)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            // Refresh the directory so the new peer is visible immediately.
+            let updatedPeers = (try? await store.client.listPeers()) ?? store.peers
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            store.peers = updatedPeers
+            return handle
+        }
     }
 
     func issueCapability(blockId: String, level: String, ttlSeconds: Int? = nil) async throws -> ClawJSProfileClient.Capability {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let capability = try await client.issueCapability(blockId: blockId, level: level, issuedToHex: nil, ttlSeconds: ttlSeconds)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        return capability
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let capability = try await store.client.issueCapability(blockId: blockId, level: level, issuedToHex: nil, ttlSeconds: ttlSeconds)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            return capability
+        }
     }
 
     func sendMessage(peer: String, body: String) async throws -> ClawJSProfileClient.ChatMessage {
@@ -399,12 +409,13 @@ final class ProfileSurfaceStore: ObservableObject {
     }
 
     func expressInterest(intentId: String) async throws -> ClawJSProfileClient.ExpressInterestResult {
-        let generation = currentProfileMutationGeneration()
-        ensureToken()
-        let result = try await client.expressInterest(intentId: intentId, template: nil)
-        try Task.checkCancellation()
-        guard isCurrentProfileMutation(generation) else { throw CancellationError() }
-        return result
+        try await runProfileMutation { store, generation in
+            store.ensureToken()
+            let result = try await store.client.expressInterest(intentId: intentId, template: nil)
+            try Task.checkCancellation()
+            guard store.isCurrentProfileMutation(generation) else { throw CancellationError() }
+            return result
+        }
     }
 
     private func nextBootstrapGeneration() -> Int {
@@ -496,6 +507,36 @@ final class ProfileSurfaceStore: ObservableObject {
 
     private func isCurrentProfileMutation(_ generation: Int) -> Bool {
         profileMutationGeneration == generation
+    }
+
+    private func runProfileMutation<T>(
+        _ operation: @escaping @MainActor (ProfileSurfaceStore, Int) async throws -> T
+    ) async throws -> T {
+        let generation = currentProfileMutationGeneration()
+        let taskId = UUID()
+        let task = Task<T, Error> { @MainActor [weak self] in
+            guard let self else { throw CancellationError() }
+            return try await operation(self, generation)
+        }
+        profileMutationTaskCancellations[taskId] = { task.cancel() }
+        do {
+            let result = try await task.value
+            finishProfileMutationTask(taskId)
+            return result
+        } catch {
+            finishProfileMutationTask(taskId)
+            throw error
+        }
+    }
+
+    private func finishProfileMutationTask(_ taskId: UUID) {
+        profileMutationTaskCancellations.removeValue(forKey: taskId)
+    }
+
+    private func cancelProfileMutationTasks() {
+        profileMutationGeneration += 1
+        profileMutationTaskCancellations.values.forEach { $0() }
+        profileMutationTaskCancellations.removeAll()
     }
 
     private func nextMarketplaceRefreshGeneration() -> Int {

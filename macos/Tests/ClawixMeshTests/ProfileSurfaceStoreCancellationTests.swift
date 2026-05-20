@@ -278,16 +278,23 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
         XCTAssertEqual(Set(store.messages(forPeer: "peer").map(\.id)), Set(["first", "second"]))
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightProfileRename() async {
+    func testCancelSurfaceWorkCancelsInFlightProfileRename() async {
         let renameStarted = expectation(description: "Profile rename started")
-        let renameReturned = expectation(description: "Profile rename returned after teardown")
+        let renameCancelled = expectation(description: "Profile rename cancelled")
+        let renameReturned = expectation(description: "Profile rename should not return after teardown")
+        renameReturned.isInverted = true
         let client = FakeProfileClient()
         client.onSetHandle = { alias in
             XCTAssertEqual(alias, "stale")
             renameStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            renameReturned.fulfill()
-            return makeProfile(alias: alias)
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                renameReturned.fulfill()
+                return makeProfile(alias: alias)
+            } catch is CancellationError {
+                renameCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
 
@@ -296,22 +303,29 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [renameReturned], timeout: 1)
+        await fulfillment(of: [renameCancelled, renameReturned], timeout: 1)
         let result: Void? = await task.value
         XCTAssertNil(result)
         XCTAssertNil(store.me)
     }
 
-    func testCancelSurfaceWorkSuppressesInFlightBlockCreation() async {
+    func testCancelSurfaceWorkCancelsInFlightBlockCreation() async {
         let blockStarted = expectation(description: "Block creation started")
-        let blockReturned = expectation(description: "Block creation returned after teardown")
+        let blockCancelled = expectation(description: "Block creation cancelled")
+        let blockReturned = expectation(description: "Block creation should not return after teardown")
+        blockReturned.isInverted = true
         let client = FakeProfileClient()
         client.onCreateBlock = { input in
             XCTAssertEqual(input.archetype, "note")
             blockStarted.fulfill()
-            try? await Task.sleep(nanoseconds: 50_000_000)
-            blockReturned.fulfill()
-            return makeBlock(id: "stale")
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                blockReturned.fulfill()
+                return makeBlock(id: "stale")
+            } catch is CancellationError {
+                blockCancelled.fulfill()
+                throw CancellationError()
+            }
         }
         let store = ProfileSurfaceStore(client: client, tokenOperation: { "token" })
 
@@ -320,7 +334,7 @@ final class ProfileSurfaceStoreCancellationTests: XCTestCase {
 
         store.cancelSurfaceWork()
 
-        await fulfillment(of: [blockReturned], timeout: 1)
+        await fulfillment(of: [blockCancelled, blockReturned], timeout: 1)
         let result: Void? = await task.value
         XCTAssertNil(result)
         XCTAssertTrue(store.ownBlocks.isEmpty)
