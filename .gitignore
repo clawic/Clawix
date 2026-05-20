@@ -7,6 +7,7 @@
 !.codex/skills/
 !.codex/skills/*/
 !.codex/skills/*/SKILL.md
+.claw/data/
 .build/
 ios/.build/
 ios/.build-test/
