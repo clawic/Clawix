@@ -80,4 +80,38 @@ final class SurfaceShellPerformanceTests: XCTestCase {
             "Extension surface dependency classification should stay bounded and route-local in synthetic heavy-failure measurement; measured \(elapsedMilliseconds)ms."
         )
     }
+
+    func testDelayedHeavySurfaceTimeoutDoesNotAffectRescueFastPath() {
+        let heavyDescriptor = SidebarRoute.app(UUID(uuidString: "00000000-0000-0000-0000-000000000021")!).surfaceDescriptor
+        let rescueDescriptor = SidebarRoute.rescue.surfaceDescriptor
+        let unavailableDependencies = Set(SurfaceRouteDependency.allCases)
+        let iterations = 10_000
+
+        let start = DispatchTime.now().uptimeNanoseconds
+        var degradedCount = 0
+        var rescueReadyCount = 0
+        for _ in 0..<iterations {
+            let loading = SurfaceRouteSupervisor.start(descriptor: heavyDescriptor)
+            if case .degraded(let surfaceID, _) = SurfaceRouteSupervisor.timeout(state: loading, descriptor: heavyDescriptor),
+               surfaceID == heavyDescriptor.id {
+                degradedCount += 1
+            }
+            if SurfaceShellIsolationPolicy.startCriticalShellState(
+                for: rescueDescriptor,
+                unavailableDependencies: unavailableDependencies
+            ) == .ready(surfaceID: rescueDescriptor.id) {
+                rescueReadyCount += 1
+            }
+        }
+        let elapsedNanoseconds = DispatchTime.now().uptimeNanoseconds - start
+        let elapsedMilliseconds = Double(elapsedNanoseconds) / 1_000_000
+
+        XCTAssertEqual(degradedCount, iterations)
+        XCTAssertEqual(rescueReadyCount, iterations)
+        XCTAssertLessThan(
+            elapsedMilliseconds,
+            250,
+            "Delayed heavy custom surface timeout must stay route-local and keep rescue fast-path ready; measured \(elapsedMilliseconds)ms."
+        )
+    }
 }
