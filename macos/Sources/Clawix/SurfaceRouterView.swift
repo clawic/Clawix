@@ -228,6 +228,22 @@ private struct AppVariantOriginalRouteControlModel {
     var isShowingOriginal: Bool
 }
 
+struct AppVariantOriginalRouteControlPresentation: Equatable {
+    let symbolName: String
+    let primaryLabel: String
+    let scopeLabel: String
+    let helpText: String
+
+    init(appName: String, scope: AppVariantDefaultScope, isShowingOriginal: Bool) {
+        let trimmedName = appName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let variantName = trimmedName.isEmpty ? "Custom view" : trimmedName
+        self.symbolName = isShowingOriginal ? "square.grid.2x2" : "arrow.uturn.backward"
+        self.primaryLabel = isShowingOriginal ? variantName : "Original"
+        self.scopeLabel = scope.rawValue
+        self.helpText = isShowingOriginal ? "Show custom variant" : "Show original surface"
+    }
+}
+
 private struct AppVariantOriginalRouteControl: View {
     let appName: String
     let scope: AppVariantDefaultScope
@@ -236,17 +252,22 @@ private struct AppVariantOriginalRouteControl: View {
     let onShowVariant: () -> Void
 
     var body: some View {
+        let presentation = AppVariantOriginalRouteControlPresentation(
+            appName: appName,
+            scope: scope,
+            isShowingOriginal: isShowingOriginal
+        )
         Button {
             isShowingOriginal ? onShowVariant() : onShowOriginal()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: isShowingOriginal ? "square.grid.2x2" : "arrow.uturn.backward")
+                Image(systemName: presentation.symbolName)
                     .font(.system(size: 11, weight: .semibold))
                     .frame(width: 18, height: 18)
-                Text(isShowingOriginal ? appName : "Original")
+                Text(presentation.primaryLabel)
                     .font(BodyFont.system(size: 12.5, wght: 600))
                     .lineLimit(1)
-                Text(scope.rawValue)
+                Text(presentation.scopeLabel)
                     .font(BodyFont.system(size: 11, wght: 500))
                     .foregroundColor(Color(white: 0.58))
             }
@@ -263,6 +284,6 @@ private struct AppVariantOriginalRouteControl: View {
         )
         .foregroundColor(Color(white: 0.92))
         .buttonStyle(.plain)
-        .help(isShowingOriginal ? "Show custom variant" : "Show original surface")
+        .help(presentation.helpText)
     }
 }

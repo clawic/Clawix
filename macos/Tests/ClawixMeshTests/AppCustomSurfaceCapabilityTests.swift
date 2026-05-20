@@ -787,6 +787,38 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertNil(original)
     }
 
+    func testVariantOriginalRouteControlPresentsExplicitFallbackAffordance() {
+        let variantActive = AppVariantOriginalRouteControlPresentation(
+            appName: "Tasks Focus",
+            scope: .workspace,
+            isShowingOriginal: false
+        )
+        XCTAssertEqual(variantActive.symbolName, "arrow.uturn.backward")
+        XCTAssertEqual(variantActive.primaryLabel, "Original")
+        XCTAssertEqual(variantActive.scopeLabel, "workspace")
+        XCTAssertEqual(variantActive.helpText, "Show original surface")
+
+        let originalActive = AppVariantOriginalRouteControlPresentation(
+            appName: "Tasks Focus",
+            scope: .workspace,
+            isShowingOriginal: true
+        )
+        XCTAssertEqual(originalActive.symbolName, "square.grid.2x2")
+        XCTAssertEqual(originalActive.primaryLabel, "Tasks Focus")
+        XCTAssertEqual(originalActive.scopeLabel, "workspace")
+        XCTAssertEqual(originalActive.helpText, "Show custom variant")
+    }
+
+    func testVariantOriginalRouteControlFallsBackToGenericVariantName() {
+        let presentation = AppVariantOriginalRouteControlPresentation(
+            appName: "  ",
+            scope: .user,
+            isShowingOriginal: true
+        )
+        XCTAssertEqual(presentation.primaryLabel, "Custom view")
+        XCTAssertEqual(presentation.scopeLabel, "user")
+    }
+
     @MainActor
     func testVariantDefaultsRejectProtectedReplacementWithoutVariantPolicy() throws {
         let defaults = try makeDefaults()
