@@ -4,6 +4,11 @@ Detailed operating rules for Clawix agents. `AGENTS.md` is the compact
 entrypoint; this file keeps routing and safety details out of the
 always-loaded instructions prompt.
 
+This index preserves the operational routes agents must not drop: project
+primary folders carry handoff manifests and managed instruction shims;
+Sensitive native permissions stay with the active signed host; Regulated
+domains are assistive only.
+
 ## Canon Routers
 
 - Highest authority: `CONSTITUTION.md`.
