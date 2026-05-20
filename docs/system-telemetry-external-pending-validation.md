@@ -31,6 +31,9 @@ before any row is updated.
 Synthetic approval templates at
 `docs/system-telemetry-external-approval.fixtures.json` prove exact-run
 approval validation only and are not real approval.
+Approval packets must pass
+`node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`
+before any external execution starts.
 The verifier treats the
 manifest as the structured contract for remaining external lanes, exact-run
 approval, accepted evidence, and the rule that external pending blocks goal
@@ -79,6 +82,8 @@ and are explicitly not accepted evidence.
 Synthetic approval fixtures live at
 [`docs/system-telemetry-external-approval.fixtures.json`](./system-telemetry-external-approval.fixtures.json)
 and are explicitly not approval.
+Approval packets are checked with
+`node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`.
 
 | Row | Lane | Required approval | Required evidence |
 | --- | --- | --- | --- |

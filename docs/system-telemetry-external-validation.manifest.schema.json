@@ -17,6 +17,7 @@
     "externalValidationRunbook",
     "externalApprovalPacketSchema",
     "externalApprovalFixtures",
+    "externalApprovalPacketValidator",
     "externalEvidencePacketSchema",
     "externalEvidenceFixtures",
     "externalEvidencePacketValidator",
@@ -92,6 +93,20 @@
         }
       ]
     },
+    "externalApprovalPacketValidator": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["path", "fixtureCommand", "packetCommand"],
+          "properties": {
+            "path": { "const": "scripts/validate-system-telemetry-external-approval.mjs" },
+            "fixtureCommand": { "const": "node scripts/validate-system-telemetry-external-approval.mjs --fixtures" },
+            "packetCommand": { "const": "node scripts/validate-system-telemetry-external-approval.mjs <packet.json>" }
+          }
+        }
+      ]
+    },
     "externalEvidencePacketSchema": { "$ref": "#/$defs/laneArtifact" },
     "externalEvidenceFixtures": {
       "allOf": [
@@ -130,7 +145,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_evidence" },
             "validTemplateCount": { "const": 1 },
-            "invalidMutationCount": { "const": 4 },
+            "invalidMutationCount": { "const": 5 },
             "path": { "const": "docs/system-telemetry-external-validation.manifest.fixtures.json" }
           }
         }

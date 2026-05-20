@@ -73,6 +73,14 @@
     "invalidTemplateCount": 3,
     "closureRole": "proves the app approval schema accepts complete exact-run approvals and rejects incomplete signed-app or app-menu approval packets without representing real approval"
   },
+  "externalApprovalPacketValidator": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-approval-validator",
+    "path": "scripts/validate-system-telemetry-external-approval.mjs",
+    "fixtureCommand": "node scripts/validate-system-telemetry-external-approval.mjs --fixtures",
+    "packetCommand": "node scripts/validate-system-telemetry-external-approval.mjs <packet.json>",
+    "closureRole": "validates any future exact-run app approval packet before a physical sensor, live provider, or dangerous-control lane may execute"
+  },
   "externalEvidencePacketSchema": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-evidence-schema",
@@ -108,7 +116,7 @@
     "path": "docs/system-telemetry-external-validation.manifest.fixtures.json",
     "status": "synthetic_templates_not_evidence",
     "validTemplateCount": 1,
-    "invalidMutationCount": 4,
+    "invalidMutationCount": 5,
     "closureRole": "proves the manifest schema accepts the current active manifest and rejects accidental completion or lane-clear mutations"
   },
   "rows": [

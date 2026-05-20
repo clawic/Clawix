@@ -4,6 +4,7 @@
   "title": "Clawix System Telemetry External Approval Packet",
   "description": "Public-safe exact-run approval packet required before any Clawix system telemetry external lane execution.",
   "x-fixturePath": "docs/system-telemetry-external-approval.fixtures.json",
+  "x-validatorPath": "scripts/validate-system-telemetry-external-approval.mjs",
   "type": "object",
   "additionalProperties": false,
   "required": [

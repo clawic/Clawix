@@ -32,6 +32,11 @@
       "id": "missing_packet_validator",
       "mutation": "delete_external_evidence_packet_validator",
       "reason": "Future lane closure must keep the packet validator gate."
+    },
+    {
+      "id": "missing_approval_validator",
+      "mutation": "delete_external_approval_packet_validator",
+      "reason": "Future external execution must keep the exact-run approval packet validator gate."
     }
   ]
 }

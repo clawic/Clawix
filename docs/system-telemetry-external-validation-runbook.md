@@ -16,6 +16,9 @@ Before any execution, the approval must be represented by an exact-run packet
 conforming to `docs/system-telemetry-external-approval.schema.json`. Synthetic
 approval templates live in `docs/system-telemetry-external-approval.fixtures.json`;
 they only prove schema behavior and are not real approval.
+Validate the approval packet with
+`node scripts/validate-system-telemetry-external-approval.mjs <packet.json>`
+before any provider, sensor, or control execution starts.
 Any accepted run must produce a redacted evidence packet conforming to
 `docs/system-telemetry-external-evidence.schema.json`. A transcript, screenshot,
 or receipt that is not represented by that packet is supporting material, not a
