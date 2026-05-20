@@ -1105,6 +1105,77 @@ final class SystemTelemetryBridgeTests: XCTestCase {
     }
 
     @MainActor
+    func testMenuBarModelLimitsAutomaticHistoryRefreshes() async {
+        let counter = TelemetryRequestCounter()
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array((1...5).map { index in
+                            .object([
+                                "id": .string("metric-\(index)"),
+                                "title": .string("Metric \(index)"),
+                                "placement": .string("menubar"),
+                                "metricKey": .string("system.metric.\(index)"),
+                                "presentation": .string("sparkline"),
+                            ])
+                        }),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            case ("history", "get"):
+                await counter.incrementHistories()
+                let metricKey = request.arguments["metric_key"] ?? "system.metric.unknown"
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "metric": .object(["key": .string(metricKey)]),
+                        "rangeMs": .integer(3600000),
+                        "retention": .object(["status": .string("recorded")]),
+                        "chart": .object([
+                            "kind": .string("line"),
+                            "metricKey": .string(metricKey),
+                            "unit": .string("count"),
+                            "source": .string("metric_samples"),
+                            "empty": .bool(false),
+                            "points": .array([
+                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
+                                .object(["t": .integer(2), "value": .number(2), "sourceId": .string("system.telemetry.local")]),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        await model.refresh(now: Date(timeIntervalSince1970: 100))
+        var counts = await counter.counts()
+        XCTAssertEqual(counts.histories, 3)
+
+        await model.refresh(forceHistory: true, now: Date(timeIntervalSince1970: 200))
+        counts = await counter.counts()
+        XCTAssertEqual(counts.histories, 8)
+    }
+
+    @MainActor
     func testMenuBarModelIncludesPortableBothPlacement() async {
         let bridge = SystemTelemetryBridge { request in
             switch (request.resource, request.action) {

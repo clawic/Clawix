@@ -25,7 +25,7 @@ final class SystemTelemetryStatusItemController {
             bridge: .localStatusBridge(historyReader: historyReader),
             configuration: { SystemTelemetryMenuBarConfiguration.load() }
         )
-        Task { await refreshNow(forceHistory: true) }
+        Task { await refreshNow() }
         timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.refreshNow()
@@ -269,7 +269,7 @@ final class SystemTelemetryStatusItemController {
     }
 
     @objc private func refreshFromMenu() {
-        Task { await refreshNow(forceHistory: true) }
+        Task { await refreshNow() }
     }
 
     @objc private func toggleWidgetFromMenu(_ sender: NSMenuItem) {
@@ -279,12 +279,12 @@ final class SystemTelemetryStatusItemController {
             .load()
             .toggling(widgetID: widgetID, widgets: model.allWidgets)
         next.save()
-        Task { await refreshNow(forceHistory: true) }
+        Task { await refreshNow() }
     }
 
     @objc private func resetWidgetConfigurationFromMenu() {
         SystemTelemetryMenuBarConfiguration.default.save()
-        Task { await refreshNow(forceHistory: true) }
+        Task { await refreshNow() }
     }
 
     private static func menuValue(_ sample: SystemTelemetrySample) -> String {

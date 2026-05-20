@@ -1121,8 +1121,12 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func providerPlan(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func controlPlan(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "metricKeys: stringArray(from: object[\"metric_keys\"]) ?? stringArray(from: object[\"metricKeys\"]) ?? stringArray(from: object[\"metrics\"]) ?? []");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "widgets = enabledWidgets.filter");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "panelWidgets = enabledWidgets.filter");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static let automaticHistoryMetricLimit = 3");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let menuBarWidgets = enabledWidgets.filter");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let panelWidgets = enabledWidgets.filter");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let historyWidgets = menuBarWidgets + panelWidgets.prefix(Self.automaticHistoryMetricLimit)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "widgets = menuBarWidgets");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "self.panelWidgets = panelWidgets");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "providers = await nextProviders");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "private static let historyRefreshInterval: TimeInterval = 60");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "guard !isRefreshing else { return }");

@@ -855,6 +855,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
     @Published private(set) var isRefreshing = false
 
     private static let historyRefreshInterval: TimeInterval = 60
+    private static let automaticHistoryMetricLimit = 3
 
     private let bridge: SystemTelemetryBridge
     private let configuration: () -> SystemTelemetryMenuBarConfiguration
@@ -883,14 +884,17 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
             let enabledWidgets = widgetCatalog.filter {
                 currentConfiguration.isEnabled($0)
             }
-            let nextHistories = await loadHistoriesIfNeeded(for: enabledWidgets, force: forceHistory, now: now)
-            allWidgets = widgetCatalog
-            widgets = enabledWidgets.filter {
+            let menuBarWidgets = enabledWidgets.filter {
                 $0.placement == "menu_bar" || $0.placement == "both"
             }
-            panelWidgets = enabledWidgets.filter {
+            let panelWidgets = enabledWidgets.filter {
                 $0.placement == "panel" || $0.placement == "both"
             }
+            let historyWidgets = menuBarWidgets + panelWidgets.prefix(Self.automaticHistoryMetricLimit)
+            let nextHistories = await loadHistoriesIfNeeded(for: historyWidgets, force: forceHistory, now: now)
+            allWidgets = widgetCatalog
+            widgets = menuBarWidgets
+            self.panelWidgets = panelWidgets
             providers = await nextProviders
             snapshot = try await nextSnapshot
             histories = nextHistories
@@ -905,7 +909,10 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         force: Bool,
         now: Date
     ) async -> [String: SystemTelemetryHistory] {
-        let metricKeys = Set(widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys))
+        let allMetricKeys = Set(widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys))
+        let metricKeys = force
+            ? allMetricKeys
+            : Set(allMetricKeys.sorted().prefix(Self.automaticHistoryMetricLimit))
         guard !metricKeys.isEmpty else {
             lastHistoryRefreshAt = nil
             lastHistoryMetricKeys = []
