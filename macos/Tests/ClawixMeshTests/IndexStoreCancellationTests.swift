@@ -3,9 +3,11 @@ import XCTest
 
 @MainActor
 final class IndexStoreCancellationTests: XCTestCase {
-    func testStartingSecondRunSearchSuppressesStaleRunPublication() async {
+    func testStartingSecondRunSearchCancelsStaleRun() async {
         let staleStarted = expectation(description: "Stale run search started")
+        let staleCancelled = expectation(description: "Stale run search cancelled")
         let staleReturned = expectation(description: "Stale run search returned")
+        staleReturned.isInverted = true
         let freshReturned = expectation(description: "Fresh run search returned")
         let client = FakeIndexClient()
         var calls = 0
@@ -13,7 +15,12 @@ final class IndexStoreCancellationTests: XCTestCase {
             calls += 1
             if calls == 1 {
                 staleStarted.fulfill()
-                try await Task.sleep(nanoseconds: 50_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch is CancellationError {
+                    staleCancelled.fulfill()
+                    throw CancellationError()
+                }
                 staleReturned.fulfill()
                 return Self.run(id: "stale", searchId: id)
             }
@@ -27,66 +34,63 @@ final class IndexStoreCancellationTests: XCTestCase {
 
         let second = Task { try? await store.runSearch(id: "search") }
 
-        await fulfillment(of: [staleReturned, freshReturned], timeout: 1)
-        _ = await first.value
-        _ = await second.value
+        await fulfillment(of: [staleCancelled, freshReturned], timeout: 1)
+        await fulfillment(of: [staleReturned], timeout: 0.1)
+        let firstResult = await first.value
+        let secondResult = await second.value
+        XCTAssertNil(firstResult)
+        XCTAssertEqual(secondResult?.id, "fresh")
 
         XCTAssertEqual(store.runs.map(\.id), ["fresh"])
         XCTAssertNil(store.state.errorMessage)
     }
 
-    func testRunSearchGenerationsDoNotRecycleWhileStaleActionIsStillReturning() async {
-        let staleStarted = expectation(description: "Stale run search started")
-        let staleReturned = expectation(description: "Stale run search returned")
-        let secondReturned = expectation(description: "Second run search returned")
-        let thirdStarted = expectation(description: "Third run search started")
+    func testCancelSurfaceWorkCancelsInFlightRunSearch() async {
+        let runStarted = expectation(description: "Run search started")
+        let runCancelled = expectation(description: "Run search cancelled")
+        let runReturned = expectation(description: "Run search returned after teardown")
+        runReturned.isInverted = true
         let client = FakeIndexClient()
-        var calls = 0
         client.onRunSearch = { id in
-            calls += 1
-            switch calls {
-            case 1:
-                staleStarted.fulfill()
-                try await Task.sleep(nanoseconds: 80_000_000)
-                staleReturned.fulfill()
-                return Self.run(id: "stale", searchId: id)
-            case 2:
-                secondReturned.fulfill()
-                return Self.run(id: "second", searchId: id)
-            default:
-                thirdStarted.fulfill()
-                try await Task.sleep(nanoseconds: 150_000_000)
-                return Self.run(id: "third", searchId: id)
+            runStarted.fulfill()
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                runCancelled.fulfill()
+                throw CancellationError()
             }
+            runReturned.fulfill()
+            return Self.run(id: "late", searchId: id)
         }
         let store = IndexStore(client: client, attachSupervisor: false)
 
-        let first = Task { try? await store.runSearch(id: "search") }
-        await fulfillment(of: [staleStarted], timeout: 1)
+        let task = Task { try? await store.runSearch(id: "search") }
+        await fulfillment(of: [runStarted], timeout: 1)
 
-        let second = Task { try? await store.runSearch(id: "search") }
-        await fulfillment(of: [secondReturned], timeout: 1)
-        _ = await second.value
+        store.cancelSurfaceWork()
 
-        let third = Task { try? await store.runSearch(id: "search") }
-        await fulfillment(of: [thirdStarted], timeout: 1)
-        await fulfillment(of: [staleReturned], timeout: 1)
-        _ = await first.value
-
-        XCTAssertEqual(store.runs.map(\.id), ["second"])
-
-        _ = await third.value
-        XCTAssertEqual(store.runs.map(\.id), ["third", "second"])
+        await fulfillment(of: [runCancelled], timeout: 1)
+        await fulfillment(of: [runReturned], timeout: 0.1)
+        let result = await task.value
+        XCTAssertNil(result)
+        XCTAssertTrue(store.runs.isEmpty)
         XCTAssertNil(store.state.errorMessage)
     }
 
-    func testCancelInFlightWorkSuppressesIndexActionError() async {
+    func testCancelSurfaceWorkCancelsInFlightIndexAction() async {
         let deleteStarted = expectation(description: "Delete search started")
         let deleteReturned = expectation(description: "Delete search returned after teardown")
+        deleteReturned.isInverted = true
+        let deleteCancelled = expectation(description: "Delete search cancelled")
         let client = FakeIndexClient()
         client.onDeleteSearch = { _ in
             deleteStarted.fulfill()
-            try await Task.sleep(nanoseconds: 50_000_000)
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch is CancellationError {
+                deleteCancelled.fulfill()
+                throw CancellationError()
+            }
             deleteReturned.fulfill()
             throw ClawJSIndexClient.Error.serviceNotReady
         }
@@ -95,9 +99,10 @@ final class IndexStoreCancellationTests: XCTestCase {
         let task = Task { await store.deleteSearch(id: "search") }
         await fulfillment(of: [deleteStarted], timeout: 1)
 
-        store.cancelInFlightWork()
+        store.cancelSurfaceWork()
 
-        await fulfillment(of: [deleteReturned], timeout: 1)
+        await fulfillment(of: [deleteCancelled], timeout: 1)
+        await fulfillment(of: [deleteReturned], timeout: 0.1)
         await task.value
 
         XCTAssertNil(store.state.errorMessage)

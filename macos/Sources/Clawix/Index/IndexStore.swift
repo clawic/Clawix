@@ -36,6 +36,7 @@ final class IndexStore: ObservableObject {
     private var refreshGeneration = 0
     private var entityLoadGeneration = 0
     private var actionGenerations: [IndexActionKey: Int] = [:]
+    private var actionTaskCancellations: [IndexActionKey: [UUID: () -> Void]] = [:]
 
     init(
         client: (any ClawJSIndexClienting)? = nil,
@@ -56,6 +57,9 @@ final class IndexStore: ObservableObject {
     deinit {
         refreshTask?.cancel()
         entityLoadTask?.cancel()
+        for cancellations in actionTaskCancellations.values {
+            cancellations.values.forEach { $0() }
+        }
     }
 
     private func attachSupervisorObserver() {
@@ -100,9 +104,14 @@ final class IndexStore: ObservableObject {
         for key in Array(actionGenerations.keys) {
             actionGenerations[key, default: 0] += 1
         }
+        cancelAllActionTasks()
         if state == .loading {
             state = .idle
         }
+    }
+
+    func cancelSurfaceWork() {
+        cancelInFlightWork()
     }
 
     func refresh() async {
@@ -274,44 +283,50 @@ final class IndexStore: ObservableObject {
     func createSearch(name: String, type: String?, criteria: [String: AnyJSON], prompt: String?) async throws -> ClawJSIndexClient.Search {
         let key = IndexActionKey(kind: .createSearch, id: name)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
         var payload: [String: AnyJSON] = [
             "name": .string(name),
             "criteria": .object(criteria),
         ]
         if let type { payload["type"] = .string(type) }
         if let prompt { payload["promptTemplate"] = .string(prompt) }
-        let search = try await client.createSearch(payload: payload)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        searches.insert(search, at: 0)
-        finishActionIfCurrent(key: key, generation: generation)
-        return search
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let search = try await store.client.createSearch(payload: payload)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.searches.insert(search, at: 0)
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return search
+        }
     }
 
     @discardableResult
     func runSearch(id: String) async throws -> ClawJSIndexClient.Run {
         let key = IndexActionKey(kind: .runSearch, id: id)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
-        let run = try await client.runSearch(id: id)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        runs.insert(run, at: 0)
-        finishActionIfCurrent(key: key, generation: generation)
-        return run
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let run = try await store.client.runSearch(id: id)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.runs.insert(run, at: 0)
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return run
+        }
     }
 
     func deleteSearch(id: String) async {
         let key = IndexActionKey(kind: .deleteSearch, id: id)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
         do {
-            try await client.deleteSearch(id: id)
-            try Task.checkCancellation()
-            guard isCurrentAction(key: key, generation: generation) else { return }
-            searches.removeAll { $0.id == id }
-            finishActionIfCurrent(key: key, generation: generation)
+            try await runIndexAction(key: key, generation: generation) { store in
+                store.ensureToken()
+                try await store.client.deleteSearch(id: id)
+                try Task.checkCancellation()
+                guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+                store.searches.removeAll { $0.id == id }
+                store.finishActionIfCurrent(key: key, generation: generation)
+            }
         } catch is CancellationError {
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
@@ -324,7 +339,6 @@ final class IndexStore: ObservableObject {
     func createMonitor(searchId: String, cron: String, name: String?, alertRules: [ClawJSIndexClient.AlertRule]) async throws -> ClawJSIndexClient.Monitor {
         let key = IndexActionKey(kind: .createMonitor, id: "\(searchId):\(name ?? "")")
         let generation = nextActionGeneration(for: key)
-        ensureToken()
         let rulesJson: [AnyJSON] = alertRules.map { rule in
             var obj: [String: AnyJSON] = [
                 "id": .string(rule.id),
@@ -342,41 +356,48 @@ final class IndexStore: ObservableObject {
             "alertRules": .array(rulesJson),
         ]
         if let name { payload["name"] = .string(name) }
-        let monitor = try await client.createMonitor(payload: payload)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        monitors.insert(monitor, at: 0)
-        finishActionIfCurrent(key: key, generation: generation)
-        return monitor
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let monitor = try await store.client.createMonitor(payload: payload)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.monitors.insert(monitor, at: 0)
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return monitor
+        }
     }
 
     @discardableResult
     func fireMonitor(id: String) async throws -> ClawJSIndexClient.Run {
         let key = IndexActionKey(kind: .fireMonitor, id: id)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
-        let run = try await client.fireMonitor(id: id)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        runs.insert(run, at: 0)
-        finishActionIfCurrent(key: key, generation: generation)
-        return run
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let run = try await store.client.fireMonitor(id: id)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.runs.insert(run, at: 0)
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return run
+        }
     }
 
     func ackAlert(id: String) async {
         let key = IndexActionKey(kind: .ackAlert, id: id)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
         do {
-            try await client.ackAlert(id: id)
-            try Task.checkCancellation()
-            guard isCurrentAction(key: key, generation: generation) else { return }
-            if let index = alerts.firstIndex(where: { $0.id == id }) {
-                let alert = alerts[index]
-                if alert.ackAt == nil { unreadAlerts = max(0, unreadAlerts - 1) }
+            try await runIndexAction(key: key, generation: generation) { store in
+                store.ensureToken()
+                try await store.client.ackAlert(id: id)
+                try Task.checkCancellation()
+                guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+                if let index = store.alerts.firstIndex(where: { $0.id == id }) {
+                    let alert = store.alerts[index]
+                    if alert.ackAt == nil { store.unreadAlerts = max(0, store.unreadAlerts - 1) }
+                }
+                store.alerts.removeAll { $0.id == id }
+                store.finishActionIfCurrent(key: key, generation: generation)
             }
-            alerts.removeAll { $0.id == id }
-            finishActionIfCurrent(key: key, generation: generation)
         } catch is CancellationError {
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
@@ -389,38 +410,66 @@ final class IndexStore: ObservableObject {
     func applyTag(entityId: String, name: String, color: String? = nil) async throws -> ClawJSIndexClient.Tag {
         let key = IndexActionKey(kind: .applyTag, id: "\(entityId):\(name)")
         let generation = nextActionGeneration(for: key)
-        ensureToken()
-        let tag = try await client.applyTag(entityId: entityId, name: name, color: color)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        if !tags.contains(where: { $0.id == tag.id }) {
-            tags.append(tag)
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let tag = try await store.client.applyTag(entityId: entityId, name: name, color: color)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            if !store.tags.contains(where: { $0.id == tag.id }) {
+                store.tags.append(tag)
+            }
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return tag
         }
-        finishActionIfCurrent(key: key, generation: generation)
-        return tag
     }
 
     @discardableResult
     func createCollection(name: String, description: String? = nil) async throws -> ClawJSIndexClient.Collection {
         let key = IndexActionKey(kind: .createCollection, id: name)
         let generation = nextActionGeneration(for: key)
-        ensureToken()
-        let collection = try await client.createCollection(name: name, description: description)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        collections.insert(collection, at: 0)
-        finishActionIfCurrent(key: key, generation: generation)
-        return collection
+        return try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            let collection = try await store.client.createCollection(name: name, description: description)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.collections.insert(collection, at: 0)
+            store.finishActionIfCurrent(key: key, generation: generation)
+            return collection
+        }
     }
 
     func addToCollection(collectionId: String, entityId: String) async throws {
         let key = IndexActionKey(kind: .addToCollection, id: "\(collectionId):\(entityId)")
         let generation = nextActionGeneration(for: key)
-        ensureToken()
-        try await client.addToCollection(collectionId: collectionId, entityId: entityId)
-        try Task.checkCancellation()
-        guard isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-        finishActionIfCurrent(key: key, generation: generation)
+        try await runIndexAction(key: key, generation: generation) { store in
+            store.ensureToken()
+            try await store.client.addToCollection(collectionId: collectionId, entityId: entityId)
+            try Task.checkCancellation()
+            guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
+            store.finishActionIfCurrent(key: key, generation: generation)
+        }
+    }
+
+    private func runIndexAction<T>(
+        key: IndexActionKey,
+        generation: Int,
+        _ operation: @escaping @MainActor (IndexStore) async throws -> T
+    ) async throws -> T {
+        cancelActionTasks(for: key)
+        let taskId = UUID()
+        let task = Task<T, Error> { @MainActor [weak self] in
+            guard let self else { throw CancellationError() }
+            return try await operation(self)
+        }
+        actionTaskCancellations[key, default: [:]][taskId] = { task.cancel() }
+        do {
+            let result = try await task.value
+            finishActionTask(key: key, taskId: taskId)
+            return result
+        } catch {
+            finishActionTask(key: key, taskId: taskId)
+            throw error
+        }
     }
 
     private func nextActionGeneration(for key: IndexActionKey) -> Int {
@@ -436,6 +485,24 @@ final class IndexStore: ObservableObject {
     private func finishActionIfCurrent(key: IndexActionKey, generation: Int) {
         guard isCurrentAction(key: key, generation: generation) else { return }
         actionGenerations[key] = generation
+    }
+
+    private func cancelActionTasks(for key: IndexActionKey) {
+        actionTaskCancellations[key]?.values.forEach { $0() }
+        actionTaskCancellations[key] = nil
+    }
+
+    private func cancelAllActionTasks() {
+        for key in Array(actionTaskCancellations.keys) {
+            cancelActionTasks(for: key)
+        }
+    }
+
+    private func finishActionTask(key: IndexActionKey, taskId: UUID) {
+        actionTaskCancellations[key]?[taskId] = nil
+        if actionTaskCancellations[key]?.isEmpty == true {
+            actionTaskCancellations[key] = nil
+        }
     }
 
     private struct IndexActionKey: Hashable {

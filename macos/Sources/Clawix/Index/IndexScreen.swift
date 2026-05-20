@@ -56,7 +56,7 @@ struct IndexScreen: View {
             }
         }
         .onDisappear {
-            store.cancelInFlightWork()
+            store.cancelSurfaceWork()
         }
         .sheet(isPresented: $showCreateSearchSheet) {
             SearchEditorSheet(store: store, onDismiss: { showCreateSearchSheet = false })
