@@ -2,6 +2,25 @@ import XCTest
 @testable import Clawix
 
 final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTestCase {
+    private let expectedCustomAppCapabilityIds = [
+        "actions.invoke",
+        "db.query",
+        "iot.device.action.invoke",
+        "jobs.cancel",
+        "jobs.events",
+        "jobs.get",
+        "jobs.list",
+        "jobs.start",
+        "jobs.stream",
+        "mac.action.plan",
+        "resources.list",
+        "resources.read",
+        "search.query",
+        "secrets.broker",
+        "system.telemetry.history",
+        "system.telemetry.snapshot"
+    ]
+
     func testLegacyAppManifestDecodesWithSdkFirstDefaults() throws {
         let json = """
         {
@@ -31,25 +50,14 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         let record = AppRecord(
             slug: "workspace-panel",
             name: "Workspace Panel",
-            declaredCapabilities: [
-                "search.query",
-                "db.query",
-                "jobs.list",
-                "jobs.get",
-                "jobs.events",
-                "jobs.stream",
-                "jobs.start",
-                "jobs.cancel",
-                "system.telemetry.snapshot",
-                "system.telemetry.history",
-                "secrets.broker",
-                "iot.device.action.invoke"
-            ]
+            declaredCapabilities: expectedCustomAppCapabilityIds
         )
 
         let riskMap = AppCapabilityCatalog.riskMap(for: record)
 
         XCTAssertEqual(riskMap.authorityModel, "localWideReadsHighRiskApproval")
+        XCTAssertEqual(riskMap.capabilityIds.sorted(), expectedCustomAppCapabilityIds)
+        XCTAssertEqual(AppCapabilityCatalog.descriptors.map(\.id).sorted(), expectedCustomAppCapabilityIds)
         XCTAssertTrue(riskMap.ordinaryAccess.contains("search.query"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("db.query"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.list"), "\(riskMap.ordinaryAccess)")
