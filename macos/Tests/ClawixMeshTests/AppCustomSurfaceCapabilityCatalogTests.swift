@@ -40,6 +40,15 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         "mac.action.plan",
         "secrets.broker"
     ]
+    private let expectedCliBlockedSurfaceCapabilityIds = [
+        "jobs.cancel",
+        "jobs.events",
+        "jobs.get",
+        "jobs.list",
+        "jobs.start",
+        "jobs.stream"
+    ]
+    private let expectedMcpBlockedSurfaceCapabilityIds = ["secrets.broker"]
 
     func testLegacyAppManifestDecodesWithSdkFirstDefaults() throws {
         let json = """
@@ -212,6 +221,29 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
                 XCTAssertEqual(dispatch["status"] as? String, "unavailable", descriptor.id)
             }
         }
+    }
+
+    func testSurfaceBindingsKeepReviewedBlockedPartitions() throws {
+        var cliBlocked: [String] = []
+        var mcpBlocked: [String] = []
+
+        for descriptor in AppCapabilityCatalog.descriptors {
+            let surfaces = try XCTUnwrap(descriptor.bridgeValue["surfaces"] as? [[String: String]], descriptor.id)
+            XCTAssertEqual(surfaces.map { $0["surface"] }, AppCapabilityCatalog.canonicalSurfaceNames, descriptor.id)
+            for surface in surfaces {
+                if surface["status"] == "blocked" {
+                    XCTAssertNil(surface["ref"], "\(descriptor.id):\(surface["surface"] ?? "unknown")")
+                    if surface["surface"] == "cli" { cliBlocked.append(descriptor.id) }
+                    if surface["surface"] == "mcp" { mcpBlocked.append(descriptor.id) }
+                }
+                if surface["surface"] == "relay", surface["status"] == "available" {
+                    XCTAssertEqual(surface["ref"], "relay.remote.custom_app_sdk metadata-only contract projection", descriptor.id)
+                }
+            }
+        }
+
+        XCTAssertEqual(cliBlocked.sorted(), expectedCliBlockedSurfaceCapabilityIds)
+        XCTAssertEqual(mcpBlocked.sorted(), expectedMcpBlockedSurfaceCapabilityIds)
     }
 
     func testAgentToolNamesMapToHighRiskCapabilities() {
