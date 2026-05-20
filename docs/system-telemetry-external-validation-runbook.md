@@ -39,7 +39,9 @@ schema validation only and must not be cited as real external evidence.
 Before replacing any row, combine the exact-run approval packet and accepted
 evidence packet into a same-lane closure bundle. Synthetic closure examples
 live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
-bundle validation behavior and are not real closure evidence. Validate the
+bundle validation behavior and are not real closure evidence. The bundle must
+bind the evidence `runAuthorization.approvalId` to the exact approval packet.
+Validate the
 bundle with
 `node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`
 before updating any ledger, manifest, completion audit, or source Q/A review.
