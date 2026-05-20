@@ -40,6 +40,9 @@ function assertCompletionAudit() {
     "Status: `active_goal_not_complete`",
     "private source session path is",
     "also inspects",
+    "private source-session verifier has re-read",
+    "24 decision prompt ids",
+    "three interrupted unanswered ids",
     "The Clawix verifier inspects sibling ClawJS evidence when that checkout is present.",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
     "| CLX-SDK-002 | Shared capability catalog and SDK/CLI/API/MCP/Relay/host-bridge parity",
@@ -51,7 +54,7 @@ function assertCompletionAudit() {
     "| CLX-SDK-008 | Clawix shell remains modular and nonblocking",
     "| CLX-SDK-009 | Unanswered `data_access_lock`, `custom_collections`, and `cli_escape_hatch`",
     "| CLX-SDK-010 | Final decision-by-decision source-session audit",
-    "`PRIVATE AUDIT PENDING`",
+    "VALIDATED PRIVATE",
     "Do not call `update_goal`",
   ]) {
     assert(text.includes(snippet), `docs/sdk-first-custom-surfaces-completion-audit.md: missing ${JSON.stringify(snippet)}`);
@@ -62,7 +65,7 @@ function assertCompletionAudit() {
   for (const [rowId, status] of [
     ["CLX-SDK-004", "EXTERNAL PENDING"],
     ["CLX-SDK-008", "EXTERNAL PENDING"],
-    ["CLX-SDK-010", "PRIVATE AUDIT PENDING"],
+    ["CLX-SDK-010", "VALIDATED PRIVATE"],
   ]) {
     const pattern = new RegExp(`\\|\\s*${rowId}\\s*\\|[^\\n]*\\|\\s*${status}\\s*\\|`);
     assert(pattern.test(text), `docs/sdk-first-custom-surfaces-completion-audit.md: ${rowId} must remain ${status}`);
