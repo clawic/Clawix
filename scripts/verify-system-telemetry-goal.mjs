@@ -216,6 +216,8 @@ function assertExternalPendingLedger() {
     "`docs/system-telemetry-external-validation-runbook.md`",
     "Accepted external",
     "`docs/system-telemetry-external-evidence.schema.json`",
+    "`node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`",
+    "before any row is updated",
     "public-safe rows, the completion audit binds each goal requirement",
     "runbook binds each remaining external lane to preflight, approval, evidence,",
     "update target, fail-rule, and evidence-packet checks",
@@ -326,6 +328,12 @@ function assertExternalValidationManifest() {
   assert(manifest.externalEvidenceFixtures?.validTemplateCount === 3, "external validation manifest: wrong valid fixture count");
   assert(manifest.externalEvidenceFixtures?.invalidTemplateCount === 3, "external validation manifest: wrong invalid fixture count");
   assert(manifest.externalEvidenceFixtures?.closureRole?.includes("without representing real external evidence"), "external validation manifest: external evidence fixtures closure role must be explicit");
+  assert(manifest.externalEvidencePacketValidator?.required === true, "external validation manifest: external evidence validator link must be required");
+  assert(manifest.externalEvidencePacketValidator?.artifactId === "clawix-system-telemetry-external-evidence-validator", "external validation manifest: wrong external evidence validator artifact");
+  assert(manifest.externalEvidencePacketValidator?.path === "scripts/validate-system-telemetry-external-evidence.mjs", "external validation manifest: wrong external evidence validator path");
+  assert(manifest.externalEvidencePacketValidator?.fixtureCommand === "node scripts/validate-system-telemetry-external-evidence.mjs --fixtures", "external validation manifest: wrong external evidence validator fixture command");
+  assert(manifest.externalEvidencePacketValidator?.packetCommand === "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>", "external validation manifest: wrong external evidence validator packet command");
+  assert(manifest.externalEvidencePacketValidator?.closureRole?.includes("validates any future redacted evidence packet"), "external validation manifest: external evidence validator closure role must be explicit");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
 
   const rows = new Map(manifest.rows.map((row) => [row.id, row]));
@@ -363,6 +371,8 @@ function assertExternalValidationRunbook() {
     "Any accepted run must produce a redacted evidence packet conforming to",
     "`docs/system-telemetry-external-evidence.schema.json`",
     "lane-closing record",
+    "`node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`",
+    "before updating any ledger, manifest, completion audit, or source Q/A review",
     "`docs/system-telemetry-external-evidence.fixtures.json`",
     "templates for",
     "must not be cited as real external evidence",
@@ -497,6 +507,18 @@ function assertExternalEvidenceFixtures() {
   assert(!serialized.includes("/Users/"), "external evidence fixtures: must not publish private filesystem paths");
 }
 
+function assertExternalEvidenceValidator() {
+  const output = run(process.execPath, ["scripts/validate-system-telemetry-external-evidence.mjs", "--fixtures"]);
+  const result = JSON.parse(output);
+  assert(result.ok === true, "external evidence validator: fixture validation must pass");
+  assert(result.status === "synthetic_templates_not_evidence", "external evidence validator: fixtures must remain synthetic");
+  assert(result.validSyntheticPackets === 3, "external evidence validator: must accept 3 valid synthetic packets");
+  assert(result.invalidSyntheticPackets === 3, "external evidence validator: must reject 3 invalid synthetic packets");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(result.accepted?.includes(rowId), `external evidence validator: missing accepted fixture for ${rowId}`);
+  }
+}
+
 function assertSourceQaReview() {
   const review = readJson("docs/system-telemetry-source-qa-review.json");
   assert(review.schemaVersion === 1, "source Q/A review: schemaVersion must be 1");
@@ -622,6 +644,8 @@ function assertDecisionMatrix() {
     "evidence schema",
     "docs/system-telemetry-external-evidence.fixtures.json",
     "synthetic fixture templates",
+    "scripts/validate-system-telemetry-external-evidence.mjs",
+    "evidence validator",
     "docs/system-telemetry-external-validation.manifest.json",
     "external validation manifest",
     "docs/system-telemetry-source-qa-review.json",
@@ -647,6 +671,7 @@ function assertDecisionMatrix() {
     "docs/system-telemetry-external-validation-runbook.md",
     "docs/system-telemetry-external-evidence.schema.json",
     "docs/system-telemetry-external-evidence.fixtures.json",
+    "scripts/validate-system-telemetry-external-evidence.mjs",
     "docs/system-telemetry-external-validation.manifest.json",
     "docs/system-telemetry-source-qa-review.json",
     "node scripts/verify-system-telemetry-goal.mjs",
@@ -761,8 +786,11 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addWidgetConfigurationItems(to menu: NSMenu, model: SystemTelemetryMenuBarModel) -> Bool");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addPanelItems(to menu: NSMenu, model: SystemTelemetryMenuBarModel, currentWidgetID: String)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private let historyReader = SystemTelemetryHistoryReader()");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "case (\"history\", \"get\")");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "historyReader.historyPayload");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "bridge: .localStatusBridge(historyReader: historyReader)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "static func localStatusBridge(historyReader: SystemTelemetryHistoryReader? = nil)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let historyReader = historyReader ?? SystemTelemetryHistoryReader()");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "case (\"history\", \"get\")");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "historyReader.historyPayload");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addHistoryGraphItems(");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "NSMenuItem(title: \"\\(widget.title) history graph\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
@@ -970,6 +998,7 @@ function main() {
   assertExternalValidationRunbook();
   assertExternalEvidenceSchema();
   assertExternalEvidenceFixtures();
+  assertExternalEvidenceValidator();
   assertSourceQaReview();
   assertCompletionAudit();
   assertDecisionMatrix();

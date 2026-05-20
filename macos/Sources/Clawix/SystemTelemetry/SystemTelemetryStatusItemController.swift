@@ -21,54 +21,8 @@ final class SystemTelemetryStatusItemController {
         guard !isStarted else { return }
         isStarted = true
 
-        let historyReader = historyReader
         model = SystemTelemetryMenuBarModel(
-            bridge: SystemTelemetryBridge(execute: { request in
-            let data: CommanderCore.JSONValue
-            switch (request.resource, request.action) {
-            case ("telemetry", "snapshot"), ("snapshot", "get"):
-                data = SystemTelemetry.snapshot()
-            case ("widgets", "list"):
-                data = SystemTelemetry.defaultWidgets()
-            case ("providers", "list"):
-                data = SystemTelemetry.providersCatalog()
-            case ("history", "get"):
-                guard let metricKey = request.arguments["metric_key"], !metricKey.isEmpty else {
-                    return CommandResponse(
-                        ok: false,
-                        data: nil,
-                        error: CommanderError.invalidCommand("Missing system telemetry history metric key").payload,
-                        meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                    )
-                }
-                do {
-                    data = try await historyReader.historyPayload(
-                        metricKey: metricKey,
-                        range: request.arguments["range"] ?? "1h"
-                    )
-                } catch {
-                    return CommandResponse(
-                        ok: false,
-                        data: nil,
-                        error: CommanderError.invalidCommand(error.localizedDescription).payload,
-                        meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                    )
-                }
-            default:
-                return CommandResponse(
-                    ok: false,
-                    data: nil,
-                    error: CommanderError.invalidCommand("Unsupported system telemetry status item request").payload,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
-            }
-            return CommandResponse(
-                ok: true,
-                data: data,
-                error: nil,
-                meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-            )
-        }),
+            bridge: .localStatusBridge(historyReader: historyReader),
             configuration: { SystemTelemetryMenuBarConfiguration.load() }
         )
         Task { await refreshNow() }

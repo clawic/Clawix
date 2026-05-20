@@ -72,6 +72,14 @@
     "invalidTemplateCount": 3,
     "closureRole": "proves the evidence schema accepts complete synthetic lane packets and rejects incomplete or failed approved-run packets without representing real external evidence"
   },
+  "externalEvidencePacketValidator": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-evidence-validator",
+    "path": "scripts/validate-system-telemetry-external-evidence.mjs",
+    "fixtureCommand": "node scripts/validate-system-telemetry-external-evidence.mjs --fixtures",
+    "packetCommand": "node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>",
+    "closureRole": "validates any future redacted evidence packet before a lane can replace EXTERNAL PENDING"
+  },
   "rows": [
     {
       "id": "CLX-SYS-TEL-EXT-001",
