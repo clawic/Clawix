@@ -90,7 +90,7 @@
       "additionalProperties": false,
       "required": ["externalPendingRows", "requiresEvidencePacket", "requiresFinalSourceReread", "requiresForbiddenNameScan"],
       "properties": {
-        "externalPendingRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "externalPendingRows": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "type": "string" } },
         "requiresEvidencePacket": { "const": true },
         "requiresFinalSourceReread": { "const": true },
         "requiresForbiddenNameScan": { "const": true }
@@ -111,7 +111,7 @@
             }
           },
           "risk": { "properties": { "tier": { "const": "sensor-read" } } },
-          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-003" } } } }
+          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-003" }, "maxItems": 1 } } }
         }
       }
     },
@@ -129,7 +129,7 @@
             }
           },
           "risk": { "properties": { "tier": { "const": "provider-live" } } },
-          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-004" } } } }
+          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-004" }, "maxItems": 1 } } }
         }
       }
     },
@@ -151,7 +151,7 @@
               "physicalValidationPlanRef": { "minLength": 1 }
             }
           },
-          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-005" } } } }
+          "closureImpact": { "properties": { "externalPendingRows": { "contains": { "const": "CLX-SYS-TEL-EXT-005" }, "maxItems": 1 } } }
         }
       }
     }
