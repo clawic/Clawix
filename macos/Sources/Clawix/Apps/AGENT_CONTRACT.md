@@ -45,7 +45,14 @@ restart.
   "lastOpenedAt": null,
   "createdAt": "2026-05-09T12:34:00Z",
   "updatedAt": "2026-05-09T12:34:00Z",
-  "createdByChatId": null                        // chat UUID, optional
+  "createdByChatId": null,                       // chat UUID, optional
+  "declaredCapabilities": ["search.query"],      // SDK capability ids
+  "originClass": "localUserAuthored",            // localUserAuthored/imported/marketplace/system
+  "surfaceKind": "web",                          // web/swiftDeclarative
+  "routeTarget": null,                           // optional built-in route target
+  "variant": null,                               // optional fork/variant metadata
+  "protectedRoutePolicy": "blocked",             // blocked/variantOnly/none
+  "activationReview": null                       // host-owned review receipt
 }
 ```
 
@@ -76,6 +83,32 @@ HTML
 ```
 
 That's it. The app shows up in the sidebar in <5s.
+
+## Importing an existing package
+
+A package is an app folder with `manifest.json` plus its files. Importing is
+still code+manifest, not a visual builder: the host copies the folder into
+`~/.claw/apps/`, rewrites the managed manifest, and picks a unique slug if the
+source slug already exists.
+
+Imported and marketplace packages must not be treated as pre-approved. The host
+sets the requested origin (`imported` or `marketplace`) and clears any stale
+`activationReview` from the source package. The first render then shows the
+origin/capability/risk review ficha before the app can run.
+
+Route variants use the same manifest:
+
+```jsonc
+{
+  "routeTarget": "database",
+  "variant": { "originalRoute": "database", "defaultScope": "workspace" },
+  "protectedRoutePolicy": "variantOnly"
+}
+```
+
+The original route must remain available. Invalid variant metadata or protected
+route policy violations block defaulting and activation paths instead of
+replacing core shell surfaces.
 
 ## Runtime guarantees inside the app
 

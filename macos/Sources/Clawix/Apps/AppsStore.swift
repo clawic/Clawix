@@ -237,6 +237,41 @@ final class AppsStore: ObservableObject {
         try? update(updated)
     }
 
+    /// Import an existing code+manifest app folder into the managed Apps
+    /// store. Imported and marketplace packages must pass the activation
+    /// review gate again inside `AppSurfaceView`, even if the source manifest
+    /// carried a stale review receipt.
+    @discardableResult
+    func importApp(
+        from sourceURL: URL,
+        originClass: AppOriginClass = .imported
+    ) throws -> AppRecord {
+        let manifestURL = sourceURL.appendingPathComponent(manifestName)
+        guard fileManager.fileExists(atPath: manifestURL.path) else {
+            throw AppsStoreImportError.missingManifest(sourceURL.path)
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let data = try Data(contentsOf: manifestURL)
+        var record = try decoder.decode(AppRecord.self, from: data)
+        let resolvedSlug = try uniqueSlug(preferred: record.slug, name: record.name, includingFilesystem: true)
+        let destinationURL = directory(forSlug: resolvedSlug)
+        guard sourceURL.standardizedFileURL.path != destinationURL.standardizedFileURL.path else {
+            throw AppsStoreImportError.sourceAlreadyManaged(sourceURL.path)
+        }
+        try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        record.slug = resolvedSlug
+        record.originClass = originClass
+        if originClass == .imported || originClass == .marketplace {
+            record.activationReview = nil
+        }
+        record.updatedAt = Date()
+        try writeManifest(record)
+        upsertInMemory(record)
+        reloadFromDisk()
+        return record
+    }
+
     // MARK: - File I/O for the WKURLSchemeHandler
 
     /// Look up a file inside an app's folder and return its bytes plus
@@ -306,22 +341,30 @@ final class AppsStore: ObservableObject {
         lastSeenMtime[record.slug] = nil
     }
 
-    private func uniqueSlug(preferred: String?, name: String) throws -> String {
+    private func uniqueSlug(
+        preferred: String?,
+        name: String,
+        includingFilesystem: Bool = false
+    ) throws -> String {
         let base = AppsStore.normalizedSlug(from: preferred?.isEmpty == false ? preferred! : name)
         guard !base.isEmpty else {
             throw NSError(domain: "AppsStore", code: 1, userInfo: [NSLocalizedDescriptionKey: "Cannot derive a slug from name '\(name)'"])
         }
         // Disambiguate "todos" → "todos-2" → "todos-3" if needed.
         let existing = Set(apps.map(\.slug))
-        if !existing.contains(base) { return base }
+        if !existing.contains(base), !slugExistsOnDisk(base, enabled: includingFilesystem) { return base }
         var counter = 2
-        while existing.contains("\(base)-\(counter)") {
+        while existing.contains("\(base)-\(counter)") || slugExistsOnDisk("\(base)-\(counter)", enabled: includingFilesystem) {
             counter += 1
             if counter > 999 {
                 throw NSError(domain: "AppsStore", code: 2, userInfo: [NSLocalizedDescriptionKey: "Too many slugs starting with '\(base)'"])
             }
         }
         return "\(base)-\(counter)"
+    }
+
+    private func slugExistsOnDisk(_ slug: String, enabled: Bool) -> Bool {
+        enabled && fileManager.fileExists(atPath: directory(forSlug: slug).path)
     }
 
     /// Lowercase, hyphen-separated, alphanumeric only. "Hello, World!" → "hello-world".
@@ -447,5 +490,19 @@ final class AppsStore: ObservableObject {
         <p>This app has no content yet. Ask the agent to build it, or drop files into <code>~/.claw/apps/</code>.</p>
         </div></body></html>
         """
+    }
+}
+
+enum AppsStoreImportError: LocalizedError, Equatable {
+    case missingManifest(String)
+    case sourceAlreadyManaged(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingManifest(let path):
+            return "App package is missing manifest.json: \(path)"
+        case .sourceAlreadyManaged(let path):
+            return "App package is already managed by this Apps store: \(path)"
+        }
     }
 }

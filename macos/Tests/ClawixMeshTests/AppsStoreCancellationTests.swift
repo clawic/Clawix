@@ -117,6 +117,50 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(decoded.effectiveProtectedRoutePolicy, .variantOnly)
     }
 
+    func testImportAppCopiesCodeManifestAndRequiresFreshReview() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let sourceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: sourceRoot)
+        }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        _ = try store.create(name: "Existing Panel", slug: "focus-panel")
+
+        try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
+        let sourceManifest = AppRecord(
+            slug: "focus-panel",
+            name: "Focus Panel",
+            declaredCapabilities: ["search.query"],
+            originClass: .localUserAuthored,
+            surfaceKind: .web,
+            routeTarget: "search",
+            variant: AppVariantMetadata(originalRoute: "search", defaultScope: "user"),
+            protectedRoutePolicy: .variantOnly,
+            activationReview: AppActivationReview(approvedBy: "Source", riskMapSource: "stale")
+        )
+        try writeManifest(sourceManifest, to: sourceRoot)
+        try "<main>Focus</main>".data(using: .utf8)?.write(
+            to: sourceRoot.appendingPathComponent("index.html"),
+            options: .atomic
+        )
+
+        let imported = try store.importApp(from: sourceRoot, originClass: .imported)
+
+        XCTAssertEqual(imported.slug, "focus-panel-2")
+        XCTAssertEqual(imported.effectiveOriginClass, .imported)
+        XCTAssertNil(imported.activationReview)
+        XCTAssertEqual(imported.routeTarget, "search")
+        XCTAssertEqual(imported.variant?.originalRoute, "search")
+        XCTAssertEqual(store.readFile(slug: imported.slug, relativePath: "index.html")?.mimeType, "text/html; charset=utf-8")
+        XCTAssertEqual(store.apps.map(\.slug).sorted(), ["focus-panel", "focus-panel-2"])
+        if case .reviewRequired(let riskMap) = AppCapabilityCatalog.activationGate(for: imported) {
+            XCTAssertEqual(riskMap.ordinaryAccess, ["search.query"])
+        } else {
+            XCTFail("Imported app should require a fresh activation review")
+        }
+    }
+
     private func makeStore(
         loadOperation: @escaping AppsStore.LoadOperation
     ) -> AppsStore {
@@ -134,5 +178,13 @@ final class AppsStoreCancellationTests: XCTestCase {
             apps: [AppRecord(slug: slug, name: slug)],
             mtimes: [slug: Date()]
         )
+    }
+
+    private func writeManifest(_ record: AppRecord, to directory: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        let data = try encoder.encode(record)
+        try data.write(to: directory.appendingPathComponent("manifest.json"), options: .atomic)
     }
 }
