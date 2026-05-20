@@ -348,6 +348,24 @@ EOF
         fi
         echo "==> Skipping optional ClawJS dev overlays (CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY=1)"
     else
+    copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/signals-core" "$CLAWJS_DEST/node_modules/@clawjs/signals-core"
+    OVERLAY_SIGNALS="$CLAWJS_DEV_OVERLAY/packages/signals"
+    if [[ -d "$OVERLAY_SIGNALS" ]]; then
+        build_overlay_package "$OVERLAY_SIGNALS"
+        echo "==> Dev overlay: copying $OVERLAY_SIGNALS → $CLAWJS_DEST/node_modules/@clawjs/signals"
+        rm -rf "$CLAWJS_DEST/node_modules/@clawjs/signals"
+        mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
+        cp -R "$OVERLAY_SIGNALS" "$CLAWJS_DEST/node_modules/@clawjs/signals"
+        (
+            cd "$CLAWJS_DEST/node_modules/@clawjs/signals"
+            npm_config_arch=arm64 \
+            npm_config_target_arch=arm64 \
+            npm_config_target_platform=darwin \
+            run_npm install --omit=dev --ignore-scripts --no-audit --no-fund --no-bin-links 2>&1 | tail -3
+        )
+        rm -rf "$CLAWJS_DEST/node_modules/@clawjs/signals/node_modules/better-sqlite3"
+        copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/signals/node_modules/@clawjs/core"
+    fi
     OVERLAY_SEARCH="$CLAWJS_DEV_OVERLAY/packages/clawjs-search"
     if [[ -d "$OVERLAY_SEARCH" ]]; then
         copy_overlay_package "$OVERLAY_SEARCH" "$CLAWJS_DEST/node_modules/@clawjs/search"
