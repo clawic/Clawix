@@ -52,6 +52,8 @@ function assertCompletionAudit() {
     "| CLX-SDK-004 | High-risk actions interrupt only",
     "| CLX-SDK-005 | Imported/marketplace apps require origin/capability/risk ficha",
     "| CLX-SDK-006 | Protected routes and variants keep secrets",
+    "docs/sdk-first-custom-surfaces-installed-app-smoke.md",
+    "verified a local `database/tasks` variant default rendered as `User`",
     "| CLX-SDK-007 | Swift custom surfaces are native but isolated",
     "| CLX-SDK-008 | Clawix shell remains modular and nonblocking",
     "| CLX-SDK-009 | Unanswered `data_access_lock`, `custom_collections`, and `cli_escape_hatch`",
@@ -66,6 +68,7 @@ function assertCompletionAudit() {
   assert(!text.includes("/Users/"), "docs/sdk-first-custom-surfaces-completion-audit.md: must not publish private filesystem paths");
   for (const [rowId, status] of [
     ["CLX-SDK-004", "EXTERNAL PENDING"],
+    ["CLX-SDK-006", "VALIDATED LOCAL"],
     ["CLX-SDK-008", "EXTERNAL PENDING"],
     ["CLX-SDK-010", "VALIDATED PRIVATE"],
   ]) {
@@ -87,6 +90,14 @@ function assertPublicRouting() {
       "`clawix.capabilities.contracts()` exposes `executionBoundary`",
       "stdout `render` message",
       "Direct SQLite is not exposed as a custom-app action surface.",
+      "Installed-app smoke verified that a local `database/tasks` variant default",
+    ],
+    "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
+      "Bundle id: `com.clawix.app`",
+      "`codex-variant-smoke-tasks`",
+      "`User default variant for database/tasks`",
+      "`clawix-app://codex-variant-smoke-tasks/index.html`",
+      "This smoke does not validate signed-host native permissions",
     ],
     "docs/decision-map.md": [
       "docs/sdk-first-custom-surfaces-completion-audit.md",

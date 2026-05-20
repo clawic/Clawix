@@ -68,6 +68,9 @@ the sibling ClawJS SDK-first custom surface contract.
   final closure.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
+- Installed-app smoke verified that a local `database/tasks` variant default
+  is read and rendered as a user default in Apps settings, then opens through
+  the isolated `clawix-app://` Web surface.
 - Imported packages compute a canonical package SHA-256, can verify an
   optional Ed25519 `package-signature.json` against trusted host keys, and
   still require the origin/capability/risk ficha before activation.
