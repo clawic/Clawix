@@ -2902,6 +2902,31 @@
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
       "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-source-qa-review",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-source-qa-review.json",
+      "requiredEntrypoints": [
+        "docs/decision-map.md",
+        "docs/discoverability.md",
+        "docs/system-telemetry-decision-matrix.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry source Q/A review",
+        "system telemetry source decision review",
+        "system telemetry final source audit gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry source Q/A review",
+          "expectPath": "docs/system-telemetry-source-qa-review.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-20"
     }
   ]
 }

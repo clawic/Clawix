@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-system-telemetry-source-qa-review",
+  "discoveryTerms": [
+    "system telemetry source Q/A review",
+    "system telemetry source decision review",
+    "system telemetry final source audit gate"
+  ],
+  "sourceConversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "sourcePlanId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "sourceSessionRef": "private-session-not-published",
+  "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
+  "status": "complete_with_external_pending",
+  "reviewedUserRoleMessages": 102,
+  "decisionBearingRowsReviewed": 10,
+  "decisionIdsReviewed": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11"
+  ],
+  "externalPendingRows": [
+    "CLX-SYS-TEL-EXT-003",
+    "CLX-SYS-TEL-EXT-004",
+    "CLX-SYS-TEL-EXT-005"
+  ],
+  "validatedLocalRows": [
+    "CLX-SYS-TEL-EXT-001",
+    "CLX-SYS-TEL-EXT-002",
+    "CLX-SYS-TEL-EXT-006"
+  ],
+  "rows": [
+    {
+      "qaId": "CLX-STQA-001",
+      "sourceRow": "USER_002",
+      "sourceLine": 6,
+      "disposition": "input_reference",
+      "decisionIds": [],
+      "requirement": "Use the initial research request only as private input and keep third-party monitoring names out of public artifacts.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D09",
+        "scripts/verify-system-telemetry-goal.mjs"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-002",
+      "sourceRow": "USER_004",
+      "sourceLine": 55,
+      "disposition": "implemented_local",
+      "decisionIds": [
+        "D01",
+        "D02",
+        "D03",
+        "D04",
+        "D05",
+        "D06",
+        "D07"
+      ],
+      "requirement": "Cover the discovered system, context, and menu-bar feature classes without publishing private source names.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D01-D07",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-003",
+      "sourceRow": "USER_005",
+      "sourceLine": 325,
+      "disposition": "implemented_with_external_pending",
+      "decisionIds": [
+        "D01",
+        "D02",
+        "D03",
+        "D04",
+        "D05",
+        "D06",
+        "D07"
+      ],
+      "requirement": "Consume the framework plane, Mac-first hardware model, context providers, independent indicators, combined widget, broad indicator variability, and real-time display; keep live providers, physical sensors, and dangerous controls externally gated.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D01-D07",
+        "docs/system-telemetry-external-validation.manifest.json",
+        "macos/Sources/Clawix/SystemTelemetry/",
+        "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTests.swift"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-004",
+      "sourceRow": "USER_006",
+      "sourceLine": 450,
+      "disposition": "implemented_local",
+      "decisionIds": [
+        "D08"
+      ],
+      "requirement": "Consume Monitor-backed samples, retention, history, rollups, incidents, rules, charts, and events instead of introducing a parallel app time-series store.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D08",
+        "macos/Sources/Clawix/SystemTelemetry/",
+        "scripts/verify-system-telemetry-goal.mjs"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-005",
+      "sourceRow": "USER_007",
+      "sourceLine": 462,
+      "disposition": "implemented_local",
+      "decisionIds": [
+        "D09"
+      ],
+      "requirement": "Keep forbidden third-party monitoring names out of public docs, code, comments, commands, fixtures, tests, and goal materials.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D09",
+        "scripts/verify-system-telemetry-goal.mjs"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-006",
+      "sourceRow": "USER_008",
+      "sourceLine": 514,
+      "disposition": "active_closure_gate",
+      "decisionIds": [
+        "D10",
+        "D11"
+      ],
+      "requirement": "Bind the goal to the conversation id, plan id, private source session, full plan, and one-by-one decision review before completion.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D10-D11",
+        "docs/system-telemetry-source-qa-review.json",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-007",
+      "sourceRow": "USER_009",
+      "sourceLine": 657,
+      "disposition": "active_closure_gate",
+      "decisionIds": [
+        "D10",
+        "D11"
+      ],
+      "requirement": "Continue implementation until everything is implemented, documented, validated, or explicitly externally blocked.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D11",
+        "docs/system-telemetry-external-pending-validation.md"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-008",
+      "sourceRow": "USER_017",
+      "sourceLine": 3584,
+      "disposition": "continuation",
+      "decisionIds": [
+        "D11"
+      ],
+      "requirement": "Continue the same active goal without reducing scope.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D11"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-009",
+      "sourceRow": "USER_049",
+      "sourceLine": 11030,
+      "disposition": "continuation",
+      "decisionIds": [
+        "D11"
+      ],
+      "requirement": "Continue the same active goal without reducing scope.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D11"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-010",
+      "sourceRow": "USER_102",
+      "sourceLine": 21355,
+      "disposition": "continuation",
+      "decisionIds": [
+        "D11"
+      ],
+      "requirement": "Continue the same active goal after interruption without reducing scope.",
+      "evidenceRefs": [
+        "docs/system-telemetry-decision-matrix.md#D11"
+      ]
+    }
+  ],
+  "completionPolicy": {
+    "requiresFinalSourceSessionReread": true,
+    "requiresOneByOneDecisionReview": true,
+    "requiresPublicVerifiers": true,
+    "requiresForbiddenNameScan": true,
+    "externalPendingBlocksCompletion": true
+  }
+}

@@ -263,6 +263,7 @@ function assertExternalValidationManifest() {
   assert(manifest.status === "active_goal_not_complete", "external validation manifest: goal must remain active");
   assert(manifest.completionPolicy?.externalPendingBlocksCompletion === true, "external validation manifest: external pending must block completion");
   assert(manifest.completionPolicy?.requiresFinalSourceAudit === true, "external validation manifest: final source audit must be required");
+  assert(manifest.completionPolicy?.requiresSourceQaReview === true, "external validation manifest: source Q/A review must be required");
   assert(manifest.completionPolicy?.requiresForbiddenNameScan === true, "external validation manifest: forbidden-name scan must be required");
   assert(manifest.completionPolicy?.requiresExactRunApprovalForExternalLanes === true, "external validation manifest: exact-run approval must be required");
   assert(Array.isArray(manifest.rows), "external validation manifest: rows must be an array");
@@ -287,6 +288,54 @@ function assertExternalValidationManifest() {
     assert(row?.status === "VALIDATED LOCAL", `external validation manifest: ${rowId} must remain VALIDATED LOCAL`);
     assert(Array.isArray(row.blockingPrerequisites) && row.blockingPrerequisites.length === 0, `external validation manifest: ${rowId} must not keep external prerequisites`);
   }
+}
+
+function assertSourceQaReview() {
+  const review = readJson("docs/system-telemetry-source-qa-review.json");
+  assert(review.schemaVersion === 1, "source Q/A review: schemaVersion must be 1");
+  assert(review.artifactId === "clawix-system-telemetry-source-qa-review", "source Q/A review: wrong artifactId");
+  assert(review.discoveryTerms?.includes("system telemetry source Q/A review"), "source Q/A review: missing discovery term");
+  assert(review.sourceConversationId === "019e359b-c0ab-7dc1-ba94-11a49d11dc76", "source Q/A review: wrong sourceConversationId");
+  assert(review.sourcePlanId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "source Q/A review: wrong sourcePlanId");
+  assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
+  assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
+  assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
+  assert(review.reviewedUserRoleMessages === 102, "source Q/A review: reviewed user-role message count drifted");
+  assert(review.decisionBearingRowsReviewed === 10, "source Q/A review: decision-bearing row count drifted");
+  for (const decisionId of ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"]) {
+    assert(review.decisionIdsReviewed?.includes(decisionId), `source Q/A review: missing ${decisionId}`);
+  }
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(review.externalPendingRows?.includes(rowId), `source Q/A review: missing external-pending ${rowId}`);
+  }
+  for (const rowId of ["CLX-SYS-TEL-EXT-001", "CLX-SYS-TEL-EXT-002", "CLX-SYS-TEL-EXT-006"]) {
+    assert(review.validatedLocalRows?.includes(rowId), `source Q/A review: missing validated-local ${rowId}`);
+  }
+  assert(Array.isArray(review.rows) && review.rows.length === 10, "source Q/A review: must contain exactly 10 reviewed source rows");
+  const rows = new Map(review.rows.map((row) => [row.qaId, row]));
+  for (const [qaId, sourceRow, sourceLine] of [
+    ["CLX-STQA-001", "USER_002", 6],
+    ["CLX-STQA-002", "USER_004", 55],
+    ["CLX-STQA-003", "USER_005", 325],
+    ["CLX-STQA-004", "USER_006", 450],
+    ["CLX-STQA-005", "USER_007", 462],
+    ["CLX-STQA-006", "USER_008", 514],
+    ["CLX-STQA-007", "USER_009", 657],
+    ["CLX-STQA-008", "USER_017", 3584],
+    ["CLX-STQA-009", "USER_049", 11030],
+    ["CLX-STQA-010", "USER_102", 21355],
+  ]) {
+    const row = rows.get(qaId);
+    assert(row?.sourceRow === sourceRow, `source Q/A review: ${qaId} must map to ${sourceRow}`);
+    assert(row?.sourceLine === sourceLine, `source Q/A review: ${qaId} source line drifted`);
+    assert(Array.isArray(row?.evidenceRefs) && row.evidenceRefs.length > 0, `source Q/A review: ${qaId} must cite evidence`);
+  }
+  assert(rows.get("CLX-STQA-003")?.disposition === "implemented_with_external_pending", "source Q/A review: main plan row must preserve external-pending disposition");
+  assert(rows.get("CLX-STQA-006")?.disposition === "active_closure_gate", "source Q/A review: goal creation row must stay an active closure gate");
+  assert(review.completionPolicy?.requiresFinalSourceSessionReread === true, "source Q/A review: final source reread must be required");
+  assert(review.completionPolicy?.requiresOneByOneDecisionReview === true, "source Q/A review: one-by-one decision review must be required");
+  assert(review.completionPolicy?.requiresForbiddenNameScan === true, "source Q/A review: forbidden-name scan must be required");
+  assert(review.completionPolicy?.externalPendingBlocksCompletion === true, "source Q/A review: external pending must block completion");
 }
 
 function assertDecisionMatrix() {
@@ -330,6 +379,7 @@ function assertDecisionMatrix() {
     "docs/system-telemetry-decision-matrix.md",
     "docs/system-telemetry-external-pending-validation.md",
     "docs/system-telemetry-external-validation.manifest.json",
+    "docs/system-telemetry-source-qa-review.json",
     "node scripts/verify-system-telemetry-goal.mjs",
   ]) {
     assert(decisionMap.includes(snippet), `docs/decision-map.md: missing ${JSON.stringify(snippet)}`);
@@ -346,6 +396,9 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-external-validation-manifest\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-validation.manifest.json\"",
     "\"query\": \"system telemetry external validation manifest\"",
+    "\"id\": \"clawix-system-telemetry-source-qa-review\"",
+    "\"canonicalSource\": \"docs/system-telemetry-source-qa-review.json\"",
+    "\"query\": \"system telemetry source Q/A review\"",
   ]) {
     assert(registry.includes(snippet), `docs/discoverability.registry.json: missing ${JSON.stringify(snippet)}`);
   }
@@ -358,6 +411,8 @@ function assertDecisionMatrix() {
     "[docs/system-telemetry-external-pending-validation.md](/system-telemetry-external-pending-validation)",
     "`clawix-system-telemetry-external-validation-manifest`",
     "[docs/system-telemetry-external-validation.manifest.json](/system-telemetry-external-validation.manifest.json)",
+    "`clawix-system-telemetry-source-qa-review`",
+    "[docs/system-telemetry-source-qa-review.json](/system-telemetry-source-qa-review.json)",
   ]) {
     assert(router.includes(snippet), `docs/discoverability.md: missing ${JSON.stringify(snippet)}`);
   }
@@ -623,6 +678,7 @@ function main() {
   assertNoForbiddenPublicNames();
   assertExternalPendingLedger();
   assertExternalValidationManifest();
+  assertSourceQaReview();
   assertDecisionMatrix();
   assertBridgeContracts();
   assertStatusItemAndRecorder();

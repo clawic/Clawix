@@ -6,6 +6,7 @@
   "completionPolicy": {
     "externalPendingBlocksCompletion": true,
     "requiresFinalSourceAudit": true,
+    "requiresSourceQaReview": true,
     "requiresForbiddenNameScan": true,
     "requiresExactRunApprovalForExternalLanes": true
   },
