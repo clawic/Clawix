@@ -419,6 +419,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
                 sourceOriginClass: .localUserAuthored,
                 packageKind: "folder",
                 signatureStatus: .notVerified,
+                packageDigestSHA256: "abc123",
                 reviewReason: "Imported packages require local review before activation."
             )
         )
@@ -430,6 +431,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Source slug", value: "focus-panel")))
         XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Source origin", value: "localUserAuthored")))
         XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Signature", value: "Not verified")))
+        XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Package SHA-256", value: "abc123")))
         XCTAssertTrue(presentation.lines.contains(AppActivationReviewLine(title: "Review reason", value: "Imported packages require local review before activation.")))
     }
 
@@ -445,7 +447,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
                 sourceSlug: "focus-panel",
                 sourceOriginClass: .localUserAuthored,
                 packageKind: "folder",
-                signatureStatus: .notVerified
+                signatureStatus: .notVerified,
+                packageDigestSHA256: "abc123"
             )
         )
 
@@ -456,6 +459,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(presentation.tone, .warning)
         XCTAssertTrue(presentation.helpText.contains("Origin: imported"))
         XCTAssertTrue(presentation.helpText.contains("Signature: Not verified"))
+        XCTAssertTrue(presentation.helpText.contains("Package SHA-256: abc123"))
         XCTAssertTrue(presentation.helpText.contains("Source slug: focus-panel"))
         XCTAssertTrue(presentation.helpText.contains("Source path: /tmp/focus-panel"))
     }
@@ -473,7 +477,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
                 sourceSlug: "focus-panel",
                 sourceOriginClass: .localUserAuthored,
                 packageKind: "folder",
-                signatureStatus: .notVerified
+                signatureStatus: .notVerified,
+                packageDigestSHA256: "abc123"
             )
         )
         let riskMap = AppCapabilityCatalog.riskMap(for: record)
@@ -508,6 +513,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(model.rows.first?.detail.contains("High risk: iot.device.action.invoke") == true)
         XCTAssertEqual(model.rows.last?.title, "Package imported")
         XCTAssertTrue(model.rows.last?.detail.contains("Signature: Not verified") == true)
+        XCTAssertTrue(model.rows.last?.detail.contains("Package SHA-256: abc123") == true)
         XCTAssertTrue(model.rows.last?.detail.contains("Source path: /tmp/focus-panel") == true)
     }
 

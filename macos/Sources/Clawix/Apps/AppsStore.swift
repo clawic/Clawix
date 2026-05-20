@@ -259,6 +259,10 @@ final class AppsStore: ObservableObject {
             manifestName: manifestName,
             record: record
         )
+        let packageDigest = try AppPackageImportValidator.contentDigestSHA256(
+            sourceURL: sourceURL,
+            manifestName: manifestName
+        )
         let sourceSlug = record.slug
         let sourceOriginClass = record.originClass
         let resolvedSlug = try uniqueSlug(preferred: record.slug, name: record.name, includingFilesystem: true)
@@ -272,7 +276,8 @@ final class AppsStore: ObservableObject {
         record.packageProvenance = AppPackageProvenance(
             sourcePath: sourceURL.standardizedFileURL.path,
             sourceSlug: sourceSlug,
-            sourceOriginClass: sourceOriginClass
+            sourceOriginClass: sourceOriginClass,
+            packageDigestSHA256: packageDigest
         )
         if originClass == .imported || originClass == .marketplace {
             record.activationReview = nil

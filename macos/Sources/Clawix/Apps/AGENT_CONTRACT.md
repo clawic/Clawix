@@ -118,6 +118,7 @@ The host also writes `packageProvenance` on import:
     "sourceOriginClass": "localUserAuthored",
     "packageKind": "folder",
     "signatureStatus": "notVerified",
+    "packageDigestSHA256": "d2a6...f91c",
     "reviewReason": "Imported packages require local review before activation."
   }
 }
@@ -126,7 +127,9 @@ The host also writes `packageProvenance` on import:
 Agents should not forge `packageProvenance`, `activationReview`, or signature
 state. Those fields are host-owned trust records. Until package signing exists,
 imports are explicit `notVerified` packages and the review ficha must show that
-state to the user.
+state to the user. `packageDigestSHA256` is a host-computed content fingerprint
+of the validated folder package. It is not a signature and does not imply trust,
+but it lets the user and future tooling compare the reviewed package contents.
 
 The host also appends trust events to `trust-audit.jsonl` inside the managed app
 folder. Current events are `packageImported` and `activationApproved`. Activation

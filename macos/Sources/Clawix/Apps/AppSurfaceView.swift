@@ -592,6 +592,9 @@ struct AppActivationReviewPresentation: Equatable {
                     value: provenance.signatureStatus.displayLabel
                 )
             )
+            if let digest = provenance.packageDigestSHA256?.nilIfEmpty {
+                lines.append(AppActivationReviewLine(title: "Package SHA-256", value: digest))
+            }
             lines.append(AppActivationReviewLine(title: "Review reason", value: provenance.reviewReason))
         }
 

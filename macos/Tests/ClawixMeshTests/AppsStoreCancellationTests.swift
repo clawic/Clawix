@@ -155,6 +155,8 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(imported.packageProvenance?.sourceOriginClass, .localUserAuthored)
         XCTAssertEqual(imported.packageProvenance?.packageKind, "folder")
         XCTAssertEqual(imported.packageProvenance?.signatureStatus, .notVerified)
+        XCTAssertEqual(imported.packageProvenance?.packageDigestSHA256?.count, 64)
+        XCTAssertTrue(imported.packageProvenance?.packageDigestSHA256?.allSatisfy(\.isHexDigit) == true)
         XCTAssertEqual(imported.packageProvenance?.reviewReason, "Imported packages require local review before activation.")
         XCTAssertEqual(imported.routeTarget, "search")
         XCTAssertEqual(imported.variant?.originalRoute, "search")
@@ -173,6 +175,7 @@ final class AppsStoreCancellationTests: XCTestCase {
         XCTAssertEqual(audit.first?.sourceSlug, "focus-panel")
         XCTAssertEqual(audit.first?.sourceOriginClass, .localUserAuthored)
         XCTAssertEqual(audit.first?.signatureStatus, .notVerified)
+        XCTAssertEqual(audit.first?.packageDigestSHA256, imported.packageProvenance?.packageDigestSHA256)
     }
 
     func testImportAppRejectsPackageWithoutRenderEntry() throws {

@@ -19,6 +19,7 @@ struct AppTrustAuditEvent: Codable, Equatable, Hashable, Identifiable {
     var sourceOriginClass: AppOriginClass?
     var packageKind: String?
     var signatureStatus: AppPackageSignatureStatus?
+    var packageDigestSHA256: String?
     var riskMapSource: String?
     var ordinaryAccess: [String]
     var approvalRequired: [String]
@@ -48,6 +49,7 @@ struct AppTrustAuditEvent: Codable, Equatable, Hashable, Identifiable {
         self.sourceOriginClass = provenance?.sourceOriginClass
         self.packageKind = provenance?.packageKind
         self.signatureStatus = provenance?.signatureStatus
+        self.packageDigestSHA256 = provenance?.packageDigestSHA256
         self.riskMapSource = riskMap?.source
         self.ordinaryAccess = riskMap?.ordinaryAccess ?? []
         self.approvalRequired = riskMap?.approvalRequired ?? []
