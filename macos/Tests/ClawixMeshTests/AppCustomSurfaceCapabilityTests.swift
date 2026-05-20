@@ -81,6 +81,24 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
     }
 
+    func testApprovalRequiredCapabilitiesExposeSharedSchemaRefs() throws {
+        let expected: [String: (String, String)] = [
+            "actions.invoke": ("claw.actions.invoke.v1", "claw.actions.receipt.v1"),
+            "secrets.broker": ("claw.secrets.broker.v1", "claw.secrets.receipt.v1"),
+            "mac.action.plan": ("claw.mac.actionRequest.v1", "claw.mac.actionPlan.v1"),
+            "iot.device.action.invoke": ("claw.iot.action.v1", "claw.iot.actionResult.v1")
+        ]
+
+        for (id, refs) in expected {
+            let descriptor = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: id))
+            XCTAssertEqual(descriptor.inputSchemaRef, refs.0)
+            XCTAssertEqual(descriptor.outputSchemaRef, refs.1)
+            XCTAssertTrue(AppCapabilityCatalog.schemaRefs.contains(refs.0), id)
+            XCTAssertTrue(AppCapabilityCatalog.schemaRefs.contains(refs.1), id)
+        }
+        XCTAssertEqual(AppCapabilityCatalog.missingSchemaRefs, [])
+    }
+
     func testAgentToolNamesMapToHighRiskCapabilities() {
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "secrets.read"), "secrets.broker")
         XCTAssertEqual(AppHighRiskActionAudit.capabilityId(forTool: "mac.window.plan"), "mac.action.plan")
@@ -880,7 +898,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(payload["richUiRuntime"] as? String, "sdk_host_bridge_not_cli_process")
         XCTAssertEqual(payload["missingSchemaRefs"] as? [String], [])
         XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.search.query.v1") == true)
+        XCTAssertTrue((payload["schemaRefs"] as? [String])?.contains("claw.mac.actionRequest.v1") == true)
         XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.customApp.request.partial.v1") == true)
+        XCTAssertTrue((payload["referencedSchemaRefs"] as? [String])?.contains("claw.actions.invoke.v1") == true)
         let riskMap = try XCTUnwrap(payload["riskMap"] as? [String: Any])
         XCTAssertEqual(riskMap["authorityModel"] as? String, "localWideReadsHighRiskApproval")
         XCTAssertTrue((riskMap["ordinaryAccess"] as? [String])?.contains("db.query") == true)
@@ -888,6 +908,9 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
         let resources = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.read" })
         XCTAssertEqual(resources["redactionPolicyRef"] as? String, AppBridgeRedactionPolicy.policyId)
+        let mac = try XCTUnwrap(capabilities.first { $0["id"] as? String == "mac.action.plan" })
+        XCTAssertEqual(mac["inputSchemaRef"] as? String, "claw.mac.actionRequest.v1")
+        XCTAssertEqual(mac["outputSchemaRef"] as? String, "claw.mac.actionPlan.v1")
     }
 
     func testInjectedAppsSdkExposesSearchAndDBContracts() {

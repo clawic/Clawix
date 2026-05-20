@@ -63,6 +63,14 @@ enum AppCapabilityCatalog {
     static let dbRecordsSchemaRef = "claw.db.records.v1"
     static let resourcesReadSchemaRef = "claw.resources.read.v1"
     static let resourcesPayloadSchemaRef = "claw.resources.payload.v1"
+    static let actionsInvokeSchemaRef = "claw.actions.invoke.v1"
+    static let actionsReceiptSchemaRef = "claw.actions.receipt.v1"
+    static let secretsBrokerSchemaRef = "claw.secrets.broker.v1"
+    static let secretsReceiptSchemaRef = "claw.secrets.receipt.v1"
+    static let macActionRequestSchemaRef = "claw.mac.actionRequest.v1"
+    static let macActionPlanSchemaRef = "claw.mac.actionPlan.v1"
+    static let iotActionSchemaRef = "claw.iot.action.v1"
+    static let iotActionResultSchemaRef = "claw.iot.actionResult.v1"
     static let requestCancelSchemaRef = "claw.customApp.request.cancel.v1"
     static let requestProgressSchemaRef = "claw.customApp.request.progress.v1"
     static let requestPartialSchemaRef = "claw.customApp.request.partial.v1"
@@ -126,6 +134,8 @@ enum AppCapabilityCatalog {
             id: "actions.invoke",
             title: "Framework action invoke",
             summary: "Brokered framework actions that may write or affect external state.",
+            inputSchemaRef: actionsInvokeSchemaRef,
+            outputSchemaRef: actionsReceiptSchemaRef,
             customAppAccess: .approvalRequired,
             riskTier: .high,
             interruptiveApproval: true,
@@ -138,6 +148,8 @@ enum AppCapabilityCatalog {
             id: "secrets.broker",
             title: "Secrets broker",
             summary: "Brokered secret references and leases without exposing plaintext secrets.",
+            inputSchemaRef: secretsBrokerSchemaRef,
+            outputSchemaRef: secretsReceiptSchemaRef,
             customAppAccess: .approvalRequired,
             riskTier: .critical,
             interruptiveApproval: true,
@@ -150,6 +162,8 @@ enum AppCapabilityCatalog {
             id: "mac.action.plan",
             title: "Mac action plan",
             summary: "Plan and evaluate native Mac actions before signed-host execution.",
+            inputSchemaRef: macActionRequestSchemaRef,
+            outputSchemaRef: macActionPlanSchemaRef,
             customAppAccess: .approvalRequired,
             riskTier: .high,
             interruptiveApproval: true,
@@ -162,6 +176,8 @@ enum AppCapabilityCatalog {
             id: "iot.device.action.invoke",
             title: "IoT device action",
             summary: "Invoke physical device actions through policy, plan, and audit.",
+            inputSchemaRef: iotActionSchemaRef,
+            outputSchemaRef: iotActionResultSchemaRef,
             customAppAccess: .approvalRequired,
             riskTier: .high,
             interruptiveApproval: true,
@@ -227,11 +243,19 @@ enum AppCapabilityCatalog {
         [
             dbQuerySchemaRef,
             dbRecordsSchemaRef,
+            actionsInvokeSchemaRef,
+            actionsReceiptSchemaRef,
+            iotActionResultSchemaRef,
+            iotActionSchemaRef,
+            macActionPlanSchemaRef,
+            macActionRequestSchemaRef,
             requestCancelSchemaRef,
             requestPartialSchemaRef,
             requestProgressSchemaRef,
             resourcesPayloadSchemaRef,
             resourcesReadSchemaRef,
+            secretsBrokerSchemaRef,
+            secretsReceiptSchemaRef,
             searchQuerySchemaRef,
             searchResultsSchemaRef
         ].sorted()
