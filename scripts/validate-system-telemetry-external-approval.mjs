@@ -97,6 +97,9 @@ function mutateTemplate(packet, mutation) {
     case "approval.approvedActions=extra":
       mutated.approval.approvedActions = [mutated.approval.approvedActions[0], "extra_unapproved_action_template"];
       break;
+    case "authorization.credentialLeaseRefs=extra":
+      mutated.authorization.credentialLeaseRefs = [mutated.authorization.credentialLeaseRefs[0], "extra_lease_template"];
+      break;
     case "authorization.credentialLeaseRefs=rawSecretRef":
       mutated.authorization.credentialLeaseRefs = ["secret://raw-template"];
       break;

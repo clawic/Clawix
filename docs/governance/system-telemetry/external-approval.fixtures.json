@@ -181,6 +181,11 @@
       "packetRef": "CLX-SYS-TEL-EXT-004"
     },
     {
+      "id": "extra_credential_lease_ref",
+      "mutation": "authorization.credentialLeaseRefs=extra",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
       "id": "raw_secret_reference",
       "mutation": "authorization.credentialLeaseRefs=rawSecretRef",
       "packetRef": "CLX-SYS-TEL-EXT-004"
