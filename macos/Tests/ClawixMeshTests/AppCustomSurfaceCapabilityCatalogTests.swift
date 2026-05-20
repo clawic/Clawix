@@ -20,6 +20,26 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         "system.telemetry.history",
         "system.telemetry.snapshot"
     ]
+    private let expectedOrdinaryAccessCapabilityIds = [
+        "db.query",
+        "jobs.events",
+        "jobs.get",
+        "jobs.list",
+        "jobs.stream",
+        "resources.list",
+        "resources.read",
+        "search.query",
+        "system.telemetry.history",
+        "system.telemetry.snapshot"
+    ]
+    private let expectedApprovalRequiredCapabilityIds = [
+        "actions.invoke",
+        "iot.device.action.invoke",
+        "jobs.cancel",
+        "jobs.start",
+        "mac.action.plan",
+        "secrets.broker"
+    ]
 
     func testLegacyAppManifestDecodesWithSdkFirstDefaults() throws {
         let json = """
@@ -58,6 +78,10 @@ final class AppCustomSurfaceCapabilityCatalogTests: AppCustomSurfaceCapabilityTe
         XCTAssertEqual(riskMap.authorityModel, "localWideReadsHighRiskApproval")
         XCTAssertEqual(riskMap.capabilityIds.sorted(), expectedCustomAppCapabilityIds)
         XCTAssertEqual(AppCapabilityCatalog.descriptors.map(\.id).sorted(), expectedCustomAppCapabilityIds)
+        XCTAssertEqual(riskMap.ordinaryAccess.sorted(), expectedOrdinaryAccessCapabilityIds)
+        XCTAssertEqual(riskMap.approvalRequired.sorted(), expectedApprovalRequiredCapabilityIds)
+        XCTAssertEqual(riskMap.highRisk.sorted(), expectedApprovalRequiredCapabilityIds)
+        XCTAssertEqual(riskMap.blocked, [])
         XCTAssertTrue(riskMap.ordinaryAccess.contains("search.query"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("db.query"), "\(riskMap.ordinaryAccess)")
         XCTAssertTrue(riskMap.ordinaryAccess.contains("jobs.list"), "\(riskMap.ordinaryAccess)")
