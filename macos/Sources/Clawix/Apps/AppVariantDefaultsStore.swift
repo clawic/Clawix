@@ -19,7 +19,7 @@ final class AppVariantDefaultsStore: ObservableObject {
     @Published private(set) var defaults: [String: UUID] = [:]
 
     private let userDefaults: UserDefaults
-    private let storageKey = "clawix.apps.variantDefaults.v1"
+    private let storageKey = ClawixPersistentSurfaceKeys.appsVariantDefaults
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults

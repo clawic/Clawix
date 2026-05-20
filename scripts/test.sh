@@ -203,6 +203,8 @@ fast() {
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" macos ios android windows web/src linux/app/src
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"

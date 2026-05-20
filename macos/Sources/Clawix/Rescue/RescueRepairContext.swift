@@ -295,7 +295,7 @@ enum RescueRepairContextExporter {
             ])
         }
 
-        let lastResourcesURL = ResourceSampler.diagnosticsFileURL(named: "last-resources.json")
+        let lastResourcesURL = ResourceSampler.diagnosticsFileURL(named: ResourceSampler.lastResourcesFileName)
         let evolutionData = try? RescueEvolutionCommandClient().repairReport()
         let runtimeAvailable = ClawJSRuntime.isAvailable
         let liveHealth = ResourceSampler.latestHealthSnapshot(

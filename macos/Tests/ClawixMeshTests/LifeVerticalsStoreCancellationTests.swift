@@ -11,7 +11,7 @@ final class LifeVerticalsStoreCancellationTests: XCTestCase {
             tokenProvider: { nil }
         )
         LifeVerticalsURLProtocol.handler = { request, loader in
-            XCTAssertEqual(request.url?.path, "/v1/health/catalog")
+            XCTAssertEqual(request.url?.path, Self.lifePath("health", "catalog"))
             requestStarted.fulfill()
             let delayedLoader = LifeVerticalsURLProtocol.Loader(loader)
             let responseBody = Self.catalogEnvelope(id: "late-catalog")
@@ -49,7 +49,7 @@ final class LifeVerticalsStoreCancellationTests: XCTestCase {
             tokenProvider: { nil }
         )
         LifeVerticalsURLProtocol.handler = { request, loader in
-            XCTAssertEqual(request.url?.path, "/v1/health/observations")
+            XCTAssertEqual(request.url?.path, Self.lifePath("health", "observations"))
             lock.lock()
             calls += 1
             let currentCall = calls
@@ -103,7 +103,7 @@ final class LifeVerticalsStoreCancellationTests: XCTestCase {
         )
         LifeVerticalsURLProtocol.handler = { request, loader in
             XCTAssertEqual(request.httpMethod, "POST")
-            XCTAssertEqual(request.url?.path, "/v1/health/observations")
+            XCTAssertEqual(request.url?.path, Self.lifePath("health", "observations"))
             mutationStarted.fulfill()
             let delayedLoader = LifeVerticalsURLProtocol.Loader(loader)
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) {
@@ -148,6 +148,10 @@ final class LifeVerticalsStoreCancellationTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [LifeVerticalsURLProtocol.self]
         return URLSession(configuration: configuration)
+    }
+
+    nonisolated private static func lifePath(_ verticalId: String, _ path: String) -> String {
+        "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/\(verticalId)/\(path)"
     }
 
     nonisolated private static func catalogEnvelope(id: String) -> String {

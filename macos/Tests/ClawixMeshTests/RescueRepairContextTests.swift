@@ -11,7 +11,7 @@ final class RescueRepairContextTests: XCTestCase {
             decision: decision,
             evolutionEnvelopeData: Self.fixtureRepairEnvelope,
             diagnosticFiles: [
-                URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/last-resources.json"),
+                URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/\(ResourceSampler.lastResourcesFileName)"),
                 URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/repair-receipt.json")
             ],
             runtimeHealth: RescueRuntimeHealthSnapshot(
@@ -42,7 +42,7 @@ final class RescueRepairContextTests: XCTestCase {
         XCTAssertFalse(package.redaction.promptsIncluded)
         XCTAssertFalse(package.redaction.secretsIncluded)
         XCTAssertFalse(package.redaction.fullLocalPathsIncluded)
-        XCTAssertEqual(package.diagnosticReferences.map(\.name), ["last-resources.json", "repair-receipt.json"])
+        XCTAssertEqual(package.diagnosticReferences.map(\.name), [ResourceSampler.lastResourcesFileName, "repair-receipt.json"])
         XCTAssertTrue(package.agentInstructions.contains { $0.contains("ephemeral chat") })
     }
 
@@ -98,7 +98,7 @@ final class RescueRepairContextTests: XCTestCase {
         let export = try RescueRepairContextExporter.write(
             decision: decision,
             evolutionEnvelopeData: Self.fixtureRepairEnvelope,
-            diagnosticFiles: [URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/last-resources.json")],
+            diagnosticFiles: [URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/\(ResourceSampler.lastResourcesFileName)")],
             runtimeHealth: RescueRuntimeHealthSnapshot(
                 processCpuPercent: 95,
                 residentBytes: 1_024,
@@ -120,7 +120,7 @@ final class RescueRepairContextTests: XCTestCase {
         let decoded = try JSONDecoder().decode(RescueRepairContextPackage.self, from: data)
         XCTAssertEqual(decoded.mode, .ephemeralChat)
         XCTAssertEqual(decoded.evolutionStatus, "needs_approval")
-        XCTAssertEqual(decoded.diagnosticReferences.map(\.name), ["last-resources.json"])
+        XCTAssertEqual(decoded.diagnosticReferences.map(\.name), [ResourceSampler.lastResourcesFileName])
         XCTAssertEqual(decoded.suggestedPatch?.redacted, true)
 
         try? FileManager.default.removeItem(at: tempDir)
@@ -130,7 +130,7 @@ final class RescueRepairContextTests: XCTestCase {
         let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("RescueResourceSamplerTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        let sampleURL = tempDir.appendingPathComponent("last-resources.json")
+        let sampleURL = tempDir.appendingPathComponent(ResourceSampler.lastResourcesFileName)
         try Data("""
         {
           "timestamp": 1779123456,

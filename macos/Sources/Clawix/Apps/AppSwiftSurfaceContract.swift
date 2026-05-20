@@ -533,7 +533,7 @@ enum AppSwiftSurfaceContract {
         environment: [String: String] = ProcessInfo.processInfo.environment,
         bundledExecutablePath: String? = nil
     ) -> String? {
-        let value = environment["CLAWIX_SWIFT_SURFACE_RUNNER"]?
+        let value = environment[ClawixPersistentSurfaceKeys.swiftSurfaceRunnerEnv]?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if value?.isEmpty == false {
             return value

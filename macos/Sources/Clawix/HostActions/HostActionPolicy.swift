@@ -59,7 +59,7 @@ enum HostActionPolicy {
     static let screenToolsApprovalKey = "clawix.hostPolicy.screenTools.approval"
     static let macUtilitiesApprovalKey = "clawix.hostPolicy.macUtilities.approval"
     static let macControlApprovalKey = "clawix.hostPolicy.macControl.approval"
-    static let auditFilename = "host-action-audit.jsonl"
+    static let auditFilename = ClawixPersistentSurfacePaths.components.hostActionAuditFile
 
     static func approval(
         for surface: HostActionSurface,
@@ -122,7 +122,7 @@ enum HostActionPolicy {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         return base
-            .appendingPathComponent("Clawix", isDirectory: true)
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
             .appendingPathComponent(auditFilename)
     }
 

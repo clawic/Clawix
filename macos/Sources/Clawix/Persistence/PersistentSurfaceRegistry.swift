@@ -36,6 +36,7 @@ enum PersistentSurfaceKind: String, Codable {
     case packageExport
     case packageBin
     case nativeIdentity
+    case nativePermission
     case fileFormat
     case cliCommand
     case cliFlag
@@ -377,6 +378,21 @@ enum ClawixPersistentSurfaceRegistry {
                 notes: "Framework-owned app manifests and static app files consumed by Clawix UI."
             ),
             ClawixPersistentSurface.frameworkFolder(
+                id: "claw.framework.resources",
+                name: "Resources",
+                path: "~/.claw/resources",
+                parentId: nil,
+                notes: "Framework-owned app resource registry directory consumed by Clawix custom surfaces."
+            ),
+            ClawixPersistentSurface.file(
+                id: "claw.framework.resources.state",
+                name: "Resources registry state",
+                path: "~/.claw/resources/resources.json",
+                parentId: "claw.framework.resources",
+                storageClass: "frameworkGlobal",
+                notes: "Framework-owned resource registry state. Clawix reads it as a host UI/bridge consumer."
+            ),
+            ClawixPersistentSurface.frameworkFolder(
                 id: "claw.framework.design",
                 name: "Design",
                 path: "~/.claw/design",
@@ -653,7 +669,9 @@ enum ClawixPersistentSurfaceRegistry {
             "CLAWIX_SECRETS_DISABLE",
             "CLAWIX_SECRETS_FIXTURE",
             "CLAWIX_SECRETS_PROXY_PATH",
+            "CLAWIX_SWIFT_SURFACE_RUNNER",
             "CLAWIX_THREAD_FIXTURE",
+            "CLAW_SYSTEM_TELEMETRY_HOST_COMMAND",
         ].map { key in
             ClawixPersistentSurface.contract(
                 id: "clawix.env.\(key.lowercased())",
@@ -682,6 +700,48 @@ enum ClawixPersistentSurfaceRegistry {
                 value: value,
                 direction: "outbound",
                 notes: value == "com.example.clawix" ? "Real signing identities stay private; public repos only carry placeholders." : nil
+            )
+        }
+        let nativePermissions = [
+            ("clawix.native.permission.mac.microphone", "mac.permission.microphone", "macOS microphone permission"),
+            ("clawix.native.permission.mac.speechRecognition", "mac.permission.speech_recognition", "macOS speech recognition permission"),
+            ("clawix.native.permission.mac.camera", "mac.permission.camera", "macOS camera permission"),
+            ("clawix.native.permission.mac.accessibility", "mac.permission.accessibility", "macOS Accessibility permission"),
+            ("clawix.native.permission.mac.inputMonitoring", "mac.permission.input_monitoring", "macOS Input Monitoring permission"),
+            ("clawix.native.permission.mac.automationAppleEvents", "mac.permission.automation_apple_events", "macOS Automation Apple Events permission"),
+            ("clawix.native.permission.mac.contacts", "mac.permission.contacts", "macOS Contacts permission"),
+            ("clawix.native.permission.mac.calendar", "mac.permission.calendar", "macOS Calendar permission"),
+            ("clawix.native.permission.mac.reminders", "mac.permission.reminders", "macOS Reminders permission"),
+            ("clawix.native.permission.apple.cameraUsage", "NSCameraUsageDescription", "Apple camera usage description"),
+            ("clawix.native.permission.apple.localNetworkUsage", "NSLocalNetworkUsageDescription", "Apple local network usage description"),
+            ("clawix.native.permission.apple.microphoneUsage", "NSMicrophoneUsageDescription", "Apple microphone usage description"),
+            ("clawix.native.permission.apple.photoLibraryAddUsage", "NSPhotoLibraryAddUsageDescription", "Apple photo library add usage description"),
+            ("clawix.native.permission.apple.photoLibraryUsage", "NSPhotoLibraryUsageDescription", "Apple photo library usage description"),
+            ("clawix.native.permission.apple.speechRecognitionUsage", "NSSpeechRecognitionUsageDescription", "Apple speech recognition usage description"),
+            ("clawix.native.permission.apple.calendarsUsage", "NSCalendarsUsageDescription", "Apple calendars usage description"),
+            ("clawix.native.permission.apple.calendarsFullAccessUsage", "NSCalendarsFullAccessUsageDescription", "Apple calendars full access usage description"),
+            ("clawix.native.permission.apple.contactsUsage", "NSContactsUsageDescription", "Apple contacts usage description"),
+            ("clawix.native.permission.android.internet", "android.permission.INTERNET", "Android internet permission"),
+            ("clawix.native.permission.android.accessNetworkState", "android.permission.ACCESS_NETWORK_STATE", "Android network state permission"),
+            ("clawix.native.permission.android.accessWifiState", "android.permission.ACCESS_WIFI_STATE", "Android Wi-Fi state permission"),
+            ("clawix.native.permission.android.changeWifiMulticastState", "android.permission.CHANGE_WIFI_MULTICAST_STATE", "Android multicast state permission"),
+            ("clawix.native.permission.android.camera", "android.permission.CAMERA", "Android camera permission"),
+            ("clawix.native.permission.android.recordAudio", "android.permission.RECORD_AUDIO", "Android record audio permission"),
+            ("clawix.native.permission.android.vibrate", "android.permission.VIBRATE", "Android vibration permission"),
+            ("clawix.native.permission.android.readMediaImages", "android.permission.READ_MEDIA_IMAGES", "Android read media images permission"),
+            ("clawix.native.permission.android.readExternalStorage", "android.permission.READ_EXTERNAL_STORAGE", "Android read external storage permission"),
+        ].map { id, value, name in
+            ClawixPersistentSurface.contract(
+                id: id,
+                kind: .nativePermission,
+                name: name,
+                parentId: "claw.contracts.native",
+                project: "core",
+                surfaceClass: "native-permission",
+                value: value,
+                key: value,
+                direction: "outbound",
+                notes: "Permission declaration or broker-visible permission id; real permission prompts remain host/platform-owned."
             )
         }
         let formatSurfaces = [
@@ -788,6 +848,7 @@ enum ClawixPersistentSurfaceRegistry {
             + packageSurfaces
             + envSurfaces
             + nativeSurfaces
+            + nativePermissions
             + formatSurfaces
             + routeNodes
             + remoteJobEvents
@@ -813,6 +874,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.apps.expanded", "Apps sidebar expanded", ClawixPersistentSurfaceKeys.sidebarAppsExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultInternetAllowed", "Apps default internet allowed", ClawixPersistentSurfaceKeys.appsDefaultInternetAllowed, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultCallAgent", "Apps default call agent", ClawixPersistentSurfaceKeys.appsDefaultCallAgent, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.apps.variantDefaults", "Apps variant defaults", ClawixPersistentSurfaceKeys.appsVariantDefaults, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.design.expanded", "Design sidebar expanded", ClawixPersistentSurfaceKeys.sidebarDesignExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.life.expanded", "Life sidebar expanded", ClawixPersistentSurfaceKeys.sidebarLifeExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.content.leftSidebarWidth", "Left sidebar width", ClawixPersistentSurfaceKeys.leftSidebarWidth, PersistentSurfaceKind.appStorageKey),
@@ -839,6 +901,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.legal.localAuditRetentionDays", "Legal local audit retention days", LegalSafetyDefaultsKeys.localAuditRetentionDays, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.browser.historyApproval", "Browser history approval", ClawixPersistentSurfaceKeys.browserHistoryApproval, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.settings.usageDisplayMode", "Usage display mode", ClawixPersistentSurfaceKeys.usageDisplayMode, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.systemTelemetry.menuBarWidgets", "System telemetry menu bar widgets", ClawixPersistentSurfaceKeys.systemTelemetryMenuBarWidgets, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.skills.autoImport", "Skills auto import", ClawixPersistentSurfaceKeys.skillsAutoImport, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.index.catalogDisplayMode", "Index catalog display mode", ClawixPersistentSurfaceKeys.indexCatalogDisplayMode, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.iot.tab", "IoT tab", ClawixPersistentSurfaceKeys.iotTab, PersistentSurfaceKind.appStorageKey),
@@ -1015,6 +1078,7 @@ enum ClawixPersistentSurfaceKeys {
     static let sidebarAppsExpanded = "SidebarAppsExpanded"
     static let appsDefaultInternetAllowed = "AppsDefaultInternetAllowed"
     static let appsDefaultCallAgent = "AppsDefaultCallAgent"
+    static let appsVariantDefaults = "clawix.apps.variantDefaults.v1"
     static let sidebarDesignExpanded = "SidebarDesignExpanded"
     static let sidebarLifeExpanded = "SidebarLifeExpanded"
     static let leftSidebarWidth = "LeftSidebarWidth"
@@ -1027,6 +1091,7 @@ enum ClawixPersistentSurfaceKeys {
     static let remoteTenantId = "clawix.remote.tenantId"
     static let browserHistoryApproval = "clawix.browser.historyApproval"
     static let usageDisplayMode = "clawix.settings.usage.displayMode"
+    static let systemTelemetryMenuBarWidgets = "SystemTelemetry.MenuBar.EnabledWidgetIDs"
     static let skillsAutoImport = "ClawixSkillsAutoImport"
     static let indexCatalogDisplayMode = "clawix.index.catalog.displayMode"
     static let iotTab = "clawix.iot.tab"
@@ -1054,6 +1119,8 @@ enum ClawixPersistentSurfaceKeys {
     static let binaryPath = "ClawixBinaryPath"
     static let backgroundBridgeWasEnabled = "clawix.backgroundBridge.wasEnabled"
     static let appleLanguages = "AppleLanguages"
+    static let swiftSurfaceRunnerEnv = "CLAWIX_SWIFT_SURFACE_RUNNER"
+    static let systemTelemetryHostCommandEnv = "CLAW_SYSTEM_TELEMETRY_HOST_COMMAND"
 }
 
 enum ClawixPersistentSurfacePaths {
@@ -1107,6 +1174,8 @@ enum ClawixPersistentSurfacePaths {
         static let logs = "Logs"
         static let devCache = "Clawix-Dev"
         static let apps = "Apps"
+        static let resources = "resources"
+        static let resourcesStateFile = "resources.json"
         static let design = "Design"
         static let clawjs = "clawjs"
         static let secrets = "secrets"
@@ -1121,6 +1190,9 @@ enum ClawixPersistentSurfacePaths {
         static let appStorageFile = ".clawix-storage.json"
         static let bundleName = "Clawix_Clawix.bundle"
         static let bridgeStatusFile = "bridge-status.json"
+        static let hostActionAuditFile = "host-action-audit.jsonl"
+        static let macControlTimelineFile = "mac-control-timeline.jsonl"
+        static let macControlPendingApprovalsFile = "mac-control-pending-approvals.json"
         static let sqlite = "clawix.sqlite"
         static let sqliteExtension = "sqlite"
         static let sessionsDatabase = "sessions.sqlite"

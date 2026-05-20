@@ -201,7 +201,7 @@ struct SystemTelemetrySnapshotState: Equatable {
 }
 
 struct SystemTelemetryMenuBarConfiguration: Equatable {
-    static let storageKey = "SystemTelemetry.MenuBar.EnabledWidgetIDs"
+    static let storageKey = ClawixPersistentSurfaceKeys.systemTelemetryMenuBarWidgets
     static let `default` = SystemTelemetryMenuBarConfiguration(enabledWidgetIDs: nil)
 
     var enabledWidgetIDs: Set<String>?

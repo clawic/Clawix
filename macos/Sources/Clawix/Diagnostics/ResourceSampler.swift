@@ -13,6 +13,8 @@ import os
 /// Boot from `AppDelegate.applicationDidFinishLaunching`; persist on
 /// `applicationWillTerminate`. Always-on, ~10 µs per tick.
 enum ResourceSampler {
+    static let lastResourcesFileName = "last-resources.json"
+
     private static let queue = DispatchQueue(label: "clawix.diag.sampler", qos: .utility)
     nonisolated(unsafe) private static var timer: DispatchSourceTimer?
     nonisolated(unsafe) private static var lastTotalTicks: UInt64 = 0
@@ -62,7 +64,7 @@ enum ResourceSampler {
         // for a few hundred microseconds at exit time.
         queue.sync {
             guard let sample = lastSample else { return }
-            guard let url = diagnosticsFileURL(named: "last-resources.json") else { return }
+            guard let url = diagnosticsFileURL(named: lastResourcesFileName) else { return }
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             if let data = try? encoder.encode(sample) {

@@ -1,7 +1,7 @@
 import Foundation
 
 struct AppResourceRegistryStore: Sendable {
-    static let stateFileName = "resources.json"
+    static let stateFileName = ClawixPersistentSurfacePaths.components.resourcesStateFile
 
     let directory: URL
 
@@ -15,8 +15,8 @@ struct AppResourceRegistryStore: Sendable {
             return expandHome(clawHome).appendingPathComponent("resources", isDirectory: true)
         }
         return FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".claw", isDirectory: true)
-            .appendingPathComponent("resources", isDirectory: true)
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawHome, isDirectory: true)
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.resources, isDirectory: true)
     }
 
     static func expandHome(_ value: String) -> URL {
