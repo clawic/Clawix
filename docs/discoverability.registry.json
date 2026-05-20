@@ -3357,6 +3357,31 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/completion.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces performance closure summary",
+        "CLX-SDK-008 performance baseline blocker",
+        "custom surface performance review packet"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces performance closure summary",
+          "expectPath": "docs/sdk-first-custom-surfaces-performance-closure-summary.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-completion-audit",
       "kind": "docs-page",
       "owner": "clawix",

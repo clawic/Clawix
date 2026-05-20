@@ -115,7 +115,9 @@ the sibling ClawJS SDK-first custom surface contract.
   newer host-liveness and all-process captures confirmed post-capture app
   liveness and redacted stack attribution separating Clawix host
   SwiftUI/route/render work from WebKit WebContent and GPU work. An approved
-  baseline and reviewable closure summary remain closure blockers.
+  baseline remains the closure blocker; the reviewable summary in
+  `docs/sdk-first-custom-surfaces-performance-closure-summary.md` maps current
+  evidence to required flows without treating it as an approved baseline.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
 - Installed-app smoke verified that a local `database/tasks` variant default
