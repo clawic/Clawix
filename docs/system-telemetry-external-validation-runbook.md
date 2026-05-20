@@ -41,6 +41,8 @@ evidence packet into a same-lane closure bundle. Synthetic closure examples
 live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
 bundle validation behavior and are not real closure evidence. The bundle must
 bind the evidence `runAuthorization.approvalId` to the exact approval packet.
+All evidence timestamps must remain inside that approval packet's
+`approvedAt`/`expiresAt` window.
 Validate the
 bundle with
 `node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`

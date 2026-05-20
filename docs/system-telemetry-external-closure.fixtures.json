@@ -51,6 +51,12 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.runAuthorization.approvalId=mismatch",
       "reason": "Evidence must reference the exact approval packet in the closure bundle."
+    },
+    {
+      "id": "execution_after_approval_expiry",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.execution.completedAt=afterApprovalExpiry",
+      "reason": "Evidence timestamps must stay inside the exact approval window."
     }
   ]
 }

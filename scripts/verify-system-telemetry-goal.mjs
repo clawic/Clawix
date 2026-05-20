@@ -375,8 +375,8 @@ function assertExternalValidationManifest() {
   assert(manifest.externalClosureFixtures?.path === "docs/system-telemetry-external-closure.fixtures.json", "external validation manifest: wrong external closure fixtures path");
   assert(manifest.externalClosureFixtures?.status === "synthetic_templates_not_closure", "external validation manifest: external closure fixtures must be synthetic");
   assert(manifest.externalClosureFixtures?.validTemplateCount === 3, "external validation manifest: wrong external closure valid fixture count");
-  assert(manifest.externalClosureFixtures?.invalidMutationCount === 5, "external validation manifest: wrong external closure invalid mutation count");
-  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval and accepted evidence must belong to the same app lane and approval id"), "external validation manifest: external closure fixtures closure role must be explicit");
+  assert(manifest.externalClosureFixtures?.invalidMutationCount === 6, "external validation manifest: wrong external closure invalid mutation count");
+  assert(manifest.externalClosureFixtures?.closureRole?.includes("approval id, and approval window"), "external validation manifest: external closure fixtures closure role must be explicit");
   assert(manifest.externalClosureBundleValidator?.required === true, "external validation manifest: external closure validator link must be required");
   assert(manifest.externalClosureBundleValidator?.artifactId === "clawix-system-telemetry-external-closure-validator", "external validation manifest: wrong external closure validator artifact");
   assert(manifest.externalClosureBundleValidator?.path === "scripts/validate-system-telemetry-external-closure.mjs", "external validation manifest: wrong external closure validator path");
@@ -645,6 +645,7 @@ function assertExternalValidationRunbook() {
     "same-lane closure bundle",
     "`docs/system-telemetry-external-closure.fixtures.json`",
     "not real closure evidence",
+    "All evidence timestamps must remain inside that approval packet's",
     "`node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`",
     "| Row | Safe preflight | Approval packet | Execution evidence | Update target | Fail rule |",
     "| CLX-SYS-TEL-EXT-003 | `claw system providers plan system.sensors.signed --json`",
@@ -801,7 +802,7 @@ function assertExternalClosureFixtures() {
   assert(fixtures.evidenceFixturesPath === "docs/system-telemetry-external-evidence.fixtures.json", "external closure fixtures: wrong evidence fixtures path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "external closure fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticBundles) && fixtures.validSyntheticBundles.length === 3, "external closure fixtures: must contain 3 valid synthetic bundles");
-  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 5, "external closure fixtures: must contain 5 invalid mutations");
+  assert(Array.isArray(fixtures.invalidSyntheticMutations) && fixtures.invalidSyntheticMutations.length === 6, "external closure fixtures: must contain 6 invalid mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(fixtures.validSyntheticBundles.some((bundle) => bundle.laneId === rowId), `external closure fixtures: missing valid bundle for ${rowId}`);
   }
@@ -819,7 +820,7 @@ function assertExternalClosureValidator() {
   assert(result.ok === true, "external closure validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_closure", "external closure validator: fixtures must remain synthetic");
   assert(result.validSyntheticBundles === 3, "external closure validator: must accept 3 valid synthetic bundles");
-  assert(result.invalidSyntheticMutations === 5, "external closure validator: must reject 5 invalid synthetic mutations");
+  assert(result.invalidSyntheticMutations === 6, "external closure validator: must reject 6 invalid synthetic mutations");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external closure validator: missing accepted fixture for ${rowId}`);
   }

@@ -56,6 +56,29 @@ function validatePacket(packet, compiled, label) {
   assert(compiled.validate(packet), `${label}: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
 }
 
+function parseTime(value, label) {
+  const time = Date.parse(value);
+  assert(Number.isFinite(time), `${label}: must be a parseable timestamp`);
+  return time;
+}
+
+function assertWithinApprovalWindow(bundle, label) {
+  const approvedAt = parseTime(bundle.approvalPacket.approval?.approvedAt, `${label}.approvalPacket.approval.approvedAt`);
+  const expiresAt = parseTime(bundle.approvalPacket.approval?.expiresAt, `${label}.approvalPacket.approval.expiresAt`);
+  assert(expiresAt > approvedAt, `${label}: approval expiry must be after approval time`);
+  const checks = [
+    ["evidencePacket.runAuthorization.approvedAt", bundle.evidencePacket.runAuthorization?.approvedAt],
+    ["evidencePacket.preflight.completedAt", bundle.evidencePacket.preflight?.completedAt],
+    ["evidencePacket.execution.startedAt", bundle.evidencePacket.execution?.startedAt],
+    ["evidencePacket.execution.completedAt", bundle.evidencePacket.execution?.completedAt],
+    ["evidencePacket.reviewer.reviewedAt", bundle.evidencePacket.reviewer?.reviewedAt],
+  ];
+  for (const [field, value] of checks) {
+    const time = parseTime(value, `${label}.${field}`);
+    assert(time >= approvedAt && time <= expiresAt, `${label}: ${field} must be within the exact approval window`);
+  }
+}
+
 function buildFixtureBundle(laneId) {
   const approvalFixtures = readJson(approvalFixturesPath);
   const evidenceFixtures = readJson(evidenceFixturesPath);
@@ -109,6 +132,11 @@ function validateClosureBundle(bundle, label) {
     bundle.approvalPacket.approval?.approvalId === bundle.evidencePacket.runAuthorization?.approvalId,
     `${label}: approval id must match evidence run authorization`,
   );
+  assert(
+    bundle.approvalPacket.approval?.approvedAt === bundle.evidencePacket.runAuthorization?.approvedAt,
+    `${label}: approval timestamp must match evidence run authorization`,
+  );
+  assertWithinApprovalWindow(bundle, label);
   return { laneId: bundle.laneId, repoScope: bundle.repoScope };
 }
 
@@ -129,6 +157,9 @@ function mutateBundle(bundle, mutation) {
       break;
     case "evidencePacket.runAuthorization.approvalId=mismatch":
       mutated.evidencePacket.runAuthorization.approvalId = "approval_mismatched_template";
+      break;
+    case "evidencePacket.execution.completedAt=afterApprovalExpiry":
+      mutated.evidencePacket.execution.completedAt = "2026-05-22T00:00:00Z";
       break;
     default:
       throw new Error(`unknown closure fixture mutation ${mutation}`);
