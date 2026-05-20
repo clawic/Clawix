@@ -194,7 +194,7 @@ for (const [id, expectedPath] of [
 
 for (const [id, requiredNote] of [
   ["clawix.database.local", "UI/cache/snapshot"],
-  ["clawix.clawjs", "Not a framework data root"],
+  ["clawix.embeddedRuntimeDistribution", "compatibility layout only"],
   ["clawix.secrets", "opaque secret ids only"],
   ["clawix.localModels", "model binaries"],
   ["clawix.dictationSounds", "framework audio surface"],
@@ -212,6 +212,10 @@ for (const [id, requiredNote] of [
   if (!node.notes || !node.notes.includes(requiredNote)) {
     fail(`${id} must document host-only storage boundary note ${JSON.stringify(requiredNote)}`);
   }
+}
+
+if (nodes.has("clawix.clawjs")) {
+  fail("persistent surface manifest must use clawix.embeddedRuntimeDistribution instead of clawix.clawjs");
 }
 
 for (const staleId of ["clawix.apps", "clawix.design", "clawix.audioCatalog", "clawix.audioCatalogMetadata", "clawix.dictationAudio"]) {

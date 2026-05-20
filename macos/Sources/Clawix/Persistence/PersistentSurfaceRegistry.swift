@@ -446,12 +446,12 @@ enum ClawixPersistentSurfaceRegistry {
                 notes: "Framework-owned provider/model routing and provider enabled state. Secret material stays in the host vault; records store opaque refs only."
             ),
             ClawixPersistentSurface.folder(
-                id: "clawix.clawjs",
-                name: "Embedded ClawJS",
+                id: "clawix.embeddedRuntimeDistribution",
+                name: "Embedded runtime distribution",
                 path: "~/Library/Application Support/Clawix/clawjs",
                 parentId: "clawix.applicationSupport",
                 storageClass: "hostOperational",
-                notes: "Host-managed embedded runtime distribution/cache. Not a framework data root and not a canonical ClawJS store."
+                notes: "Host-managed embedded runtime distribution/cache. The local clawjs path segment is compatibility layout only; this is not a framework data root and not a canonical ClawJS store."
             ),
             ClawixPersistentSurface.folder(
                 id: "clawix.secrets",
