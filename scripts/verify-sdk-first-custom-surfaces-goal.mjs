@@ -98,6 +98,7 @@ function assertCompletionAudit() {
     "exact reviewed core survival route and heavy dependency sets",
     "exact reviewed surface lifecycle state and report sets",
     "exact reviewed readiness mode and direct child-reported route sets",
+    "exact reviewed surface route module set",
     "docs/sdk-first-custom-surfaces-installed-performance-smoke.md",
     "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
     "launched `/Applications/Clawix.app` under Instruments",
@@ -608,6 +609,10 @@ function assertTests() {
       "cancel",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceRouteRegistryTests.swift": [
+      "testSurfaceRouteModuleSetAndRepresentativeRoutingStayExact",
+      "reviewedSurfaceRouteModuleKinds",
+      "SurfaceRouteModule.allCases",
+      "\"network\"",
       "testReadinessModesAndDirectChildReportedRoutesStayExact",
       "reviewedSurfaceReadinessModeKinds",
       "reviewedDirectChildReportedReadinessRouteIds",

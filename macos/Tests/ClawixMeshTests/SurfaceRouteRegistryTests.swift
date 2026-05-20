@@ -2,6 +2,23 @@ import XCTest
 @testable import Clawix
 
 final class SurfaceRouteRegistryTests: XCTestCase {
+    private static let reviewedSurfaceRouteModuleKinds: Set<String> = [
+        "core",
+        "protected",
+        "apps",
+        "automation",
+        "data",
+        "drive",
+        "time",
+        "skills",
+        "iot",
+        "design",
+        "agents",
+        "publishing",
+        "life",
+        "network"
+    ]
+
     private static let reviewedSurfaceReadinessModeKinds: Set<String> = [
         "immediateAfterFirstRender",
         "childReported"
@@ -45,6 +62,35 @@ final class SurfaceRouteRegistryTests: XCTestCase {
             let entry = SurfaceRouteRegistry.entry(for: route)
 
             XCTAssertNotEqual(entry.module, .core, entry.descriptor.id)
+        }
+    }
+
+    @MainActor
+    func testSurfaceRouteModuleSetAndRepresentativeRoutingStayExact() {
+        let reviewedModuleCases: [(SidebarRoute, SurfaceRouteModule)] = [
+            (.home, .core),
+            (.secretsHome, .protected),
+            (.appsHome, .apps),
+            (.automations, .automation),
+            (.databaseHome, .data),
+            (.driveAdmin, .drive),
+            (.calendarHome, .time),
+            (.skills, .skills),
+            (.iotHome, .iot),
+            (.designTemplatesHome, .design),
+            (.agentsHome, .agents),
+            (.publishingHome, .publishing),
+            (.lifeHome, .life),
+            (.networkControl, .network)
+        ]
+
+        XCTAssertEqual(Set(SurfaceRouteModule.allCases.map(\.rawValue)), Self.reviewedSurfaceRouteModuleKinds)
+        XCTAssertEqual(Set(reviewedModuleCases.map { $0.1.rawValue }), Self.reviewedSurfaceRouteModuleKinds)
+
+        for (route, module) in reviewedModuleCases {
+            let entry = SurfaceRouteRegistry.entry(for: route)
+
+            XCTAssertEqual(entry.module, module, entry.descriptor.id)
         }
     }
 
