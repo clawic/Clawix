@@ -4,6 +4,7 @@ import WebKit
 
 enum AppBridgeOperationPolicy {
     static let allowedOperations: Set<String> = [
+        "actions.invoke",
         "agent.callTool",
         "agent.sendMessage",
         "capabilities.contracts",
@@ -18,6 +19,7 @@ enum AppBridgeOperationPolicy {
         "resources.list",
         "resources.read",
         "search.query",
+        "secrets.broker",
         "system.telemetry.history",
         "system.telemetry.snapshot",
         "storage.delete",
@@ -166,6 +168,10 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                 let tool = (payload["tool"] as? String) ?? ""
                 let arguments = (payload["args"] as? [String: Any]) ?? [:]
                 try gateToolCall(tool: tool, arguments: arguments, requestId: requestId)
+            case "actions.invoke":
+                try gateToolCall(tool: "actions.invoke", arguments: payload, requestId: requestId)
+            case "secrets.broker":
+                try gateToolCall(tool: "secrets.broker", arguments: payload, requestId: requestId)
             case "mac.action.plan":
                 let tool = macActionPlanTool(from: payload)
                 try gateToolCall(tool: tool, arguments: payload, requestId: requestId)

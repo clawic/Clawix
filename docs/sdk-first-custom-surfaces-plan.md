@@ -79,6 +79,10 @@ the sibling ClawJS SDK-first custom surface contract.
   reuses declared capability checks, dispatcher policy, and high-risk audit
   receipts; live provider or physical-device validation remains external
   pending until explicitly approved.
+- `actions.invoke` and `secrets.broker` are exposed to Web custom apps through
+  `window.clawix.actions.invoke()` and `window.clawix.secrets.broker()` as
+  approval-gated host bridge calls that currently fail closed with explicit
+  no-runner and no-plaintext-broker dispatch reasons.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.

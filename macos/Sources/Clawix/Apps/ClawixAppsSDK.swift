@@ -148,6 +148,31 @@ let ClawixAppsSDKJS = #"""
       source: function () { return send('capabilities.source'); },
       riskMap: function () { return send('capabilities.riskMap'); }
     },
+    actions: {
+      invoke: function (opts) {
+        opts = opts || {};
+        return send('actions.invoke', {
+          capabilityId: String(opts.capabilityId || opts.capability || 'actions.invoke'),
+          domain: opts.domain == null ? null : String(opts.domain),
+          action: String(opts.action || opts.id || ''),
+          arguments: opts.arguments || opts.args || {},
+          dryRun: opts.dryRun !== false,
+          reason: opts.reason == null ? null : String(opts.reason)
+        });
+      }
+    },
+    secrets: {
+      broker: function (opts) {
+        opts = opts || {};
+        return send('secrets.broker', {
+          operation: String(opts.operation || ''),
+          secretRef: String(opts.secretRef || opts.ref || ''),
+          purpose: opts.purpose == null ? null : String(opts.purpose),
+          ttlSeconds: opts.ttlSeconds,
+          reason: opts.reason == null ? null : String(opts.reason)
+        });
+      }
+    },
     search: {
       query: function (opts) {
         opts = opts || {};

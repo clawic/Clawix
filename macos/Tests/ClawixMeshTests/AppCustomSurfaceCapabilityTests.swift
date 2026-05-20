@@ -369,6 +369,45 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(result.rejectionMessage, "Agent tool dispatch is not available in this build")
     }
 
+    @MainActor
+    func testFrameworkHighRiskActionDispatcherKeepsGenericActionsAndSecretsUnavailable() async throws {
+        let app = AppRecord(
+            slug: "ops-panel",
+            name: "Ops Panel",
+            declaredCapabilities: ["actions.invoke", "secrets.broker"]
+        )
+        let actions = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "actions.invoke"))
+        let secrets = try XCTUnwrap(AppCapabilityCatalog.descriptor(id: "secrets.broker"))
+
+        let actionResult = await AppFrameworkHighRiskActionDispatcher().dispatch(
+            AppHighRiskActionDispatchRequest(
+                app: app,
+                descriptor: actions,
+                tool: "actions.invoke",
+                arguments: ["action": "record.create", "dryRun": true]
+            )
+        )
+        XCTAssertEqual(actionResult.receiptOutcome, .approvalRecordedDispatchUnavailable)
+        XCTAssertEqual(
+            actionResult.rejectionMessage,
+            "Generic framework action dispatch is unavailable until an allowlisted safe runner is registered"
+        )
+
+        let secretResult = await AppFrameworkHighRiskActionDispatcher().dispatch(
+            AppHighRiskActionDispatchRequest(
+                app: app,
+                descriptor: secrets,
+                tool: "secrets.broker",
+                arguments: ["operation": "lease", "secretRef": "secret://service/token"]
+            )
+        )
+        XCTAssertEqual(secretResult.receiptOutcome, .approvalRecordedDispatchUnavailable)
+        XCTAssertEqual(
+            secretResult.rejectionMessage,
+            "Secrets broker dispatch is unavailable until a safe non-plaintext lease/ref runner is registered"
+        )
+    }
+
     func testHighRiskActionAuditWritesDenialReceipts() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -1429,6 +1468,14 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("targets"))
     }
 
+    func testInjectedAppsSdkExposesActionsAndSecretsBrokerFacades() {
+        XCTAssertTrue(ClawixAppsSDKJS.contains("actions.invoke"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("secrets.broker"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("secretRef"))
+        XCTAssertTrue(ClawixAppsSDKJS.contains("ttlSeconds"))
+        XCTAssertFalse(ClawixAppsSDKJS.contains("secrets.read"))
+    }
+
     func testHostBridgeExposesCustomAppSDKContractPayload() throws {
         let record = AppRecord(
             slug: "dashboard",
@@ -1510,6 +1557,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("resources.read"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("actions.invoke"))
+        XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("secrets.broker"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("mac.action.plan"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("iot.device.action.invoke"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("capabilities.get"))
@@ -1522,7 +1571,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         }
 
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.contains("sqlite") })
-        XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("secrets.") })
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("secrets.read"))
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("cli.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("fs.") })
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("process.") })

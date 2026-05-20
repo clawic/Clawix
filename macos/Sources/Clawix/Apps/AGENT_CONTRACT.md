@@ -191,6 +191,13 @@ the final segment of an `iot.*` tool name as a fallback. Other high-risk
 capabilities still return `approvalRecordedDispatchUnavailable` until their
 safe framework or signed-host runners are wired.
 
+Web custom apps also have explicit `window.clawix.actions.invoke(...)` and
+`window.clawix.secrets.broker(...)` facades. Both enter the same high-risk
+approval and audit boundary as generic tool calls, but the framework dispatcher
+currently returns unavailable for them: generic framework actions need an
+allowlisted safe runner, and Secrets requires a non-plaintext lease/ref broker.
+Do not add `secrets.read` or any plaintext secret operation to the bridge.
+
 `clawix.capabilities.contracts()` also exposes a per-capability `dispatch`
 object so custom UIs can distinguish contract shape from runtime availability.
 The same payload includes `executionBoundary`: the contracts call is a

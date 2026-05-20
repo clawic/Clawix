@@ -69,6 +69,10 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
             dispatchMacActionPlan(request)
         case "iot.device.action.invoke":
             await dispatchIoTAction(request)
+        case "actions.invoke":
+            .unavailable("Generic framework action dispatch is unavailable until an allowlisted safe runner is registered")
+        case "secrets.broker":
+            .unavailable("Secrets broker dispatch is unavailable until a safe non-plaintext lease/ref runner is registered")
         default:
             .unavailable("No safe framework dispatcher is registered for capability: \(request.descriptor.id)")
         }
