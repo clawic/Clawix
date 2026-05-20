@@ -2932,6 +2932,62 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-system-telemetry-external-approval-fixtures",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-approval.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-approval.schema.json",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external approval fixtures",
+        "system telemetry synthetic app approval packets",
+        "system telemetry app approval schema negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external approval fixtures",
+          "expectPath": "docs/system-telemetry-external-approval.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-system-telemetry-external-approval-schema",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/system-telemetry-external-approval.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/system-telemetry-external-pending-validation.md",
+        "docs/system-telemetry-external-validation-runbook.md",
+        "docs/system-telemetry-external-approval.fixtures.json",
+        "docs/system-telemetry-external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external approval schema",
+        "system telemetry exact-run app approval packet",
+        "system telemetry signed app approval gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external approval schema",
+          "expectPath": "docs/system-telemetry-external-approval.schema.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-system-telemetry-external-evidence-fixtures",
       "kind": "validation-manifest",
       "owner": "clawix",

@@ -214,6 +214,7 @@ function assertExternalPendingLedger() {
     "status in `docs/system-telemetry-completion-audit.md`",
     "external run steps in",
     "`docs/system-telemetry-external-validation-runbook.md`",
+    "`docs/system-telemetry-external-approval.schema.json`",
     "Accepted external",
     "`docs/system-telemetry-external-evidence.schema.json`",
     "`docs/system-telemetry-external-validation.manifest.schema.json`",
@@ -221,6 +222,8 @@ function assertExternalPendingLedger() {
     "accidental completion or lane-clear mutations fail validation",
     "`node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`",
     "before any row is updated",
+    "`docs/system-telemetry-external-approval.fixtures.json`",
+    "not real approval",
     "public-safe rows, the completion audit binds each goal requirement",
     "runbook binds each remaining external lane to preflight, approval, evidence,",
     "update target, fail-rule, and evidence-packet checks",
@@ -246,6 +249,8 @@ function assertExternalPendingLedger() {
     "## External Validation Lanes",
     "[System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md)",
     "[`docs/system-telemetry-external-evidence.schema.json`](./system-telemetry-external-evidence.schema.json)",
+    "[`docs/system-telemetry-external-approval.schema.json`](./system-telemetry-external-approval.schema.json)",
+    "[`docs/system-telemetry-external-approval.fixtures.json`](./system-telemetry-external-approval.fixtures.json)",
     "| CLX-SYS-TEL-EXT-003 | Signed sensor provider lane:",
     "| CLX-SYS-TEL-EXT-004 | Live context provider lane:",
     "| CLX-SYS-TEL-EXT-005 | Dangerous-control lane:",
@@ -317,6 +322,21 @@ function assertExternalValidationManifest() {
     assert(manifest.externalValidationRunbook?.externalPendingRowIds?.includes(rowId), `external validation manifest: external validation runbook missing ${rowId}`);
   }
   assert(manifest.externalValidationRunbook?.closureRole?.includes("safe preflight"), "external validation manifest: external validation runbook closure role must be explicit");
+  assert(manifest.externalApprovalPacketSchema?.required === true, "external validation manifest: external approval packet schema link must be required");
+  assert(manifest.externalApprovalPacketSchema?.artifactId === "clawix-system-telemetry-external-approval-schema", "external validation manifest: wrong external approval schema artifact");
+  assert(manifest.externalApprovalPacketSchema?.path === "docs/system-telemetry-external-approval.schema.json", "external validation manifest: wrong external approval schema path");
+  assert(manifest.externalApprovalPacketSchema?.laneCount === 3, "external validation manifest: wrong external approval schema lane count");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(manifest.externalApprovalPacketSchema?.externalPendingRowIds?.includes(rowId), `external validation manifest: external approval schema missing ${rowId}`);
+  }
+  assert(manifest.externalApprovalPacketSchema?.closureRole?.includes("exact-run approval packet"), "external validation manifest: external approval schema closure role must be explicit");
+  assert(manifest.externalApprovalFixtures?.required === true, "external validation manifest: external approval fixtures link must be required");
+  assert(manifest.externalApprovalFixtures?.artifactId === "clawix-system-telemetry-external-approval-fixtures", "external validation manifest: wrong external approval fixtures artifact");
+  assert(manifest.externalApprovalFixtures?.path === "docs/system-telemetry-external-approval.fixtures.json", "external validation manifest: wrong external approval fixtures path");
+  assert(manifest.externalApprovalFixtures?.status === "synthetic_templates_not_approval", "external validation manifest: external approval fixtures must be marked synthetic");
+  assert(manifest.externalApprovalFixtures?.validTemplateCount === 3, "external validation manifest: wrong external approval valid fixture count");
+  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 3, "external validation manifest: wrong external approval invalid fixture count");
+  assert(manifest.externalApprovalFixtures?.closureRole?.includes("without representing real approval"), "external validation manifest: external approval fixtures closure role must be explicit");
   assert(manifest.externalEvidencePacketSchema?.required === true, "external validation manifest: external evidence packet schema link must be required");
   assert(manifest.externalEvidencePacketSchema?.artifactId === "clawix-system-telemetry-external-evidence-schema", "external validation manifest: wrong external evidence schema artifact");
   assert(manifest.externalEvidencePacketSchema?.path === "docs/system-telemetry-external-evidence.schema.json", "external validation manifest: wrong external evidence schema path");
@@ -385,6 +405,7 @@ function assertExternalValidationManifestSchema() {
     "CLX-SYS-TEL-EXT-005",
     "VALIDATED LOCAL",
     "EXTERNAL PENDING",
+    "docs/system-telemetry-external-approval.fixtures.json",
     "scripts/validate-system-telemetry-external-evidence.mjs",
     "docs/system-telemetry-external-validation.manifest.fixtures.json",
   ]) {
@@ -439,6 +460,111 @@ function assertExternalValidationManifestFixtures() {
   assert(!JSON.stringify(fixtures).includes("/Users/"), "external validation manifest fixtures: must not publish private filesystem paths");
 }
 
+function mutateApprovalTemplate(packet, mutation) {
+  const mutated = JSON.parse(JSON.stringify(packet));
+  switch (mutation) {
+    case "approval.exactRunApproved=false":
+      mutated.approval.exactRunApproved = false;
+      break;
+    case "authorization.signedAppRefs=[]":
+      mutated.authorization.signedAppRefs = [];
+      break;
+    case "risk.appMenuValidationPlanRef=\"\"":
+      mutated.risk.appMenuValidationPlanRef = "";
+      break;
+    default:
+      fail(`external approval fixtures: unknown mutation ${mutation}`);
+  }
+  return mutated;
+}
+
+function assertExternalApprovalSchema() {
+  const schema = readJson("docs/system-telemetry-external-approval.schema.json");
+  const serialized = JSON.stringify(schema);
+  assert(schema.$schema === "https://json-schema.org/draft/2020-12/schema", "external approval schema: wrong JSON schema version");
+  assert(schema.$id === "https://clawix.dev/schemas/system-telemetry-external-approval.schema.json", "external approval schema: wrong id");
+  assert(schema.title === "Clawix System Telemetry External Approval Packet", "external approval schema: wrong title");
+  assert(schema.properties?.schemaVersion?.const === 1, "external approval schema: schemaVersion must be 1");
+  assert(schema.properties?.conversationId?.const === "019e359b-c0ab-7dc1-ba94-11a49d11dc76", "external approval schema: wrong conversation id");
+  assert(schema.properties?.planId?.const === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external approval schema: wrong plan id");
+  assert(schema.properties?.repoScope?.const === "clawix-app", "external approval schema: wrong repo scope");
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(schema.properties?.laneId?.enum?.includes(rowId), `external approval schema: missing lane ${rowId}`);
+  }
+  for (const required of ["approval", "preflight", "authorization", "risk", "privacy", "closureImpact"]) {
+    assert(schema.required?.includes(required), `external approval schema: missing required field ${required}`);
+  }
+  assert(schema.properties?.approval?.properties?.decision?.const === "approved", "external approval schema: decision must be approved");
+  assert(schema.properties?.approval?.properties?.exactRunApproved?.const === true, "external approval schema: exact-run approval must be true");
+  assert(schema.properties?.preflight?.properties?.command?.pattern === "^claw system ", "external approval schema: preflight command must be claw system");
+  assert(schema.properties?.preflight?.properties?.mustFailClosedBeforeApproval?.const === true, "external approval schema: preflight must fail closed before approval");
+  assert(schema.properties?.privacy?.properties?.containsSecrets?.const === false, "external approval schema: secrets must be forbidden");
+  assert(schema.properties?.privacy?.properties?.preciseLocationApprovedForStorage?.const === false, "external approval schema: precise location storage must be forbidden");
+  assert(schema.properties?.privacy?.properties?.privatePathsIncluded?.const === false, "external approval schema: private paths must be forbidden");
+  for (const snippet of [
+    "provider_connection",
+    "physical_sensor_read",
+    "dangerous_control_execute",
+    "credentialLeaseRefs",
+    "nativeGrantRefs",
+    "networkAccessApproved",
+    "hardwareProviderRefs",
+    "signedAppRefs",
+    "rollbackOrContinuityPlanRef",
+    "physicalValidationPlanRef",
+    "appMenuValidationPlanRef",
+  ]) {
+    assert(serialized.includes(snippet), `external approval schema: missing ${snippet}`);
+  }
+  const laneRules = new Map((schema.allOf ?? []).map((rule) => [rule.if?.properties?.laneId?.const, rule.then]));
+  assert(laneRules.size === 3, "external approval schema: must define exactly 3 lane-specific rules");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-003")?.properties?.authorization?.properties?.nativeGrantRefs?.minItems === 1, "external approval schema: sensor lane must require native grant refs");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-003")?.properties?.authorization?.properties?.hardwareProviderRefs?.minItems === 1, "external approval schema: sensor lane must require hardware provider refs");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-003")?.properties?.authorization?.properties?.signedAppRefs?.minItems === 1, "external approval schema: sensor lane must require signed app refs");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-004")?.properties?.authorization?.properties?.credentialLeaseRefs?.minItems === 1, "external approval schema: live lane must require credential lease refs");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-004")?.properties?.authorization?.properties?.networkAccessApproved?.const === true, "external approval schema: live lane must require network approval");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-005")?.properties?.risk?.properties?.rollbackOrContinuityPlanRef?.minLength === 1, "external approval schema: control lane must require rollback plan");
+  assert(laneRules.get("CLX-SYS-TEL-EXT-005")?.properties?.risk?.properties?.physicalValidationPlanRef?.minLength === 1, "external approval schema: control lane must require physical validation plan");
+  const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
+  const validate = ajv.compile(schema);
+  for (const packet of readJson("docs/system-telemetry-external-approval.fixtures.json").validSyntheticPackets) {
+    assert(validate(packet), `external approval schema: valid packet ${packet.laneId} must validate: ${ajv.errorsText(validate.errors)}`);
+  }
+  assert(!serialized.includes("/Users/"), "external approval schema: must not publish private filesystem paths");
+}
+
+function assertExternalApprovalFixtures() {
+  const fixtures = readJson("docs/system-telemetry-external-approval.fixtures.json");
+  const schema = readJson("docs/system-telemetry-external-approval.schema.json");
+  assert(fixtures.schemaVersion === 1, "external approval fixtures: schemaVersion must be 1");
+  assert(fixtures.artifactId === "clawix-system-telemetry-external-approval-fixtures", "external approval fixtures: wrong artifact id");
+  assert(fixtures.status === "synthetic_templates_not_approval", "external approval fixtures: must be synthetic templates only");
+  assert(fixtures.conversationId === "019e359b-c0ab-7dc1-ba94-11a49d11dc76", "external approval fixtures: wrong conversation id");
+  assert(fixtures.planId === "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan", "external approval fixtures: wrong plan id");
+  assert(fixtures.schemaPath === "docs/system-telemetry-external-approval.schema.json", "external approval fixtures: wrong schema path");
+  assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external approval fixtures: must contain 3 valid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 3, "external approval fixtures: must contain 3 invalid synthetic packets");
+  const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
+  const validate = ajv.compile(schema);
+  const validByLaneId = new Map();
+  for (const packet of fixtures.validSyntheticPackets) {
+    assert(validate(packet), `external approval fixtures: valid packet ${packet.laneId} must validate: ${ajv.errorsText(validate.errors)}`);
+    validByLaneId.set(packet.laneId, packet);
+    assert(packet.privacy?.containsSecrets === false, `external approval fixtures: ${packet.laneId} must not contain secrets`);
+    assert(packet.privacy?.preciseLocationApprovedForStorage === false, `external approval fixtures: ${packet.laneId} must not store precise location`);
+    assert(packet.privacy?.privatePathsIncluded === false, `external approval fixtures: ${packet.laneId} must not include private paths`);
+  }
+  for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
+    assert(validByLaneId.has(rowId), `external approval fixtures: missing valid template for ${rowId}`);
+  }
+  for (const fixture of fixtures.invalidSyntheticPackets) {
+    const base = validByLaneId.get(fixture.packetRef);
+    assert(base, `external approval fixtures: invalid packet ${fixture.id} references unknown lane ${fixture.packetRef}`);
+    assert(!validate(mutateApprovalTemplate(base, fixture.mutation)), `external approval fixtures: invalid packet ${fixture.id} must fail validation`);
+  }
+  assert(!JSON.stringify(fixtures).includes("/Users/"), "external approval fixtures: must not publish private filesystem paths");
+}
+
 function assertExternalValidationRunbook() {
   const text = read("docs/system-telemetry-external-validation-runbook.md");
   for (const snippet of [
@@ -449,6 +575,9 @@ function assertExternalValidationRunbook() {
     "It does not authorize provider calls,",
     "Each lane requires",
     "explicit approval for the exact run before execution.",
+    "`docs/system-telemetry-external-approval.schema.json`",
+    "`docs/system-telemetry-external-approval.fixtures.json`",
+    "they only prove schema behavior and are not real approval",
     "Any accepted run must produce a redacted evidence packet conforming to",
     "`docs/system-telemetry-external-evidence.schema.json`",
     "lane-closing record",
@@ -475,7 +604,7 @@ function assertExternalValidationRunbook() {
     "app/menu evidence, and rollback/continuity evidence",
     "failed approved execution is a defect",
     "Do not mark the goal complete until every lane above is either replaced with",
-    "source reread, completion audit, evidence schema check, and forbidden-name scan",
+    "source reread, completion audit, approval schema check, evidence schema check,",
   ]) {
     assert(text.includes(snippet), `docs/system-telemetry-external-validation-runbook.md: missing ${JSON.stringify(snippet)}`);
   }
@@ -725,6 +854,11 @@ function assertDecisionMatrix() {
     "completion audit",
     "docs/system-telemetry-external-validation-runbook.md",
     "external validation runbook",
+    "docs/system-telemetry-external-approval.schema.json",
+    "synthetic approval templates",
+    "docs/system-telemetry-external-approval.fixtures.json",
+    "approval schema",
+    "approval fixture templates",
     "docs/system-telemetry-external-evidence.schema.json",
     "evidence schema",
     "docs/system-telemetry-external-evidence.fixtures.json",
@@ -758,6 +892,8 @@ function assertDecisionMatrix() {
     "docs/system-telemetry-completion-audit.md",
     "docs/system-telemetry-external-pending-validation.md",
     "docs/system-telemetry-external-validation-runbook.md",
+    "docs/system-telemetry-external-approval.schema.json",
+    "docs/system-telemetry-external-approval.fixtures.json",
     "docs/system-telemetry-external-evidence.schema.json",
     "docs/system-telemetry-external-evidence.fixtures.json",
     "scripts/validate-system-telemetry-external-evidence.mjs",
@@ -793,6 +929,12 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-external-validation-runbook\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-validation-runbook.md\"",
     "\"query\": \"system telemetry external validation runbook\"",
+    "\"id\": \"clawix-system-telemetry-external-approval-schema\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-approval.schema.json\"",
+    "\"query\": \"system telemetry external approval schema\"",
+    "\"id\": \"clawix-system-telemetry-external-approval-fixtures\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-approval.fixtures.json\"",
+    "\"query\": \"system telemetry external approval fixtures\"",
     "\"id\": \"clawix-system-telemetry-external-evidence-schema\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-evidence.schema.json\"",
     "\"query\": \"system telemetry external evidence schema\"",
@@ -822,6 +964,10 @@ function assertDecisionMatrix() {
     "[docs/system-telemetry-external-validation.manifest.fixtures.json](/system-telemetry-external-validation.manifest.fixtures.json)",
     "`clawix-system-telemetry-external-validation-runbook`",
     "[docs/system-telemetry-external-validation-runbook.md](/system-telemetry-external-validation-runbook)",
+    "`clawix-system-telemetry-external-approval-schema`",
+    "[docs/system-telemetry-external-approval.schema.json](/system-telemetry-external-approval.schema.json)",
+    "`clawix-system-telemetry-external-approval-fixtures`",
+    "[docs/system-telemetry-external-approval.fixtures.json](/system-telemetry-external-approval.fixtures.json)",
     "`clawix-system-telemetry-external-evidence-schema`",
     "[docs/system-telemetry-external-evidence.schema.json](/system-telemetry-external-evidence.schema.json)",
     "`clawix-system-telemetry-external-evidence-fixtures`",
@@ -1099,6 +1245,8 @@ function main() {
   assertExternalValidationManifestSchema();
   assertExternalValidationManifestFixtures();
   assertExternalValidationRunbook();
+  assertExternalApprovalSchema();
+  assertExternalApprovalFixtures();
   assertExternalEvidenceSchema();
   assertExternalEvidenceFixtures();
   assertExternalEvidenceValidator();

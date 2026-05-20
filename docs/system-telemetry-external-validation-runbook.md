@@ -12,6 +12,10 @@ hardware access, native permission requests, dangerous controls, production
 data access, paid APIs, release actions, or network runs. Each lane requires
 explicit approval for the exact run before execution.
 
+Before any execution, the approval must be represented by an exact-run packet
+conforming to `docs/system-telemetry-external-approval.schema.json`. Synthetic
+approval templates live in `docs/system-telemetry-external-approval.fixtures.json`;
+they only prove schema behavior and are not real approval.
 Any accepted run must produce a redacted evidence packet conforming to
 `docs/system-telemetry-external-evidence.schema.json`. A transcript, screenshot,
 or receipt that is not represented by that packet is supporting material, not a
@@ -43,4 +47,5 @@ schema validation only and must not be cited as real external evidence.
 Do not mark the goal complete until every lane above is either replaced with
 accepted evidence or explicitly accepted by a later user decision, and the final
 source reread, completion audit, evidence schema check, and forbidden-name scan
-have been repeated.
+have been repeated. The final closure pass must also repeat the approval schema
+check before accepting any exact-run approval packet: source reread, completion audit, approval schema check, evidence schema check, and forbidden-name scan.

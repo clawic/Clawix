@@ -52,6 +52,27 @@
     ],
     "closureRole": "defines safe preflight, exact approval, accepted evidence, update targets, and fail rules for every remaining external lane"
   },
+  "externalApprovalPacketSchema": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-approval-schema",
+    "path": "docs/system-telemetry-external-approval.schema.json",
+    "laneCount": 3,
+    "externalPendingRowIds": [
+      "CLX-SYS-TEL-EXT-003",
+      "CLX-SYS-TEL-EXT-004",
+      "CLX-SYS-TEL-EXT-005"
+    ],
+    "closureRole": "defines the exact-run approval packet required before any physical sensor, live provider, or dangerous-control lane may execute through the signed app/host path"
+  },
+  "externalApprovalFixtures": {
+    "required": true,
+    "artifactId": "clawix-system-telemetry-external-approval-fixtures",
+    "path": "docs/system-telemetry-external-approval.fixtures.json",
+    "status": "synthetic_templates_not_approval",
+    "validTemplateCount": 3,
+    "invalidTemplateCount": 3,
+    "closureRole": "proves the app approval schema accepts complete exact-run approvals and rejects incomplete signed-app or app-menu approval packets without representing real approval"
+  },
   "externalEvidencePacketSchema": {
     "required": true,
     "artifactId": "clawix-system-telemetry-external-evidence-schema",

@@ -15,6 +15,8 @@
     "sourceQaReview",
     "completionAudit",
     "externalValidationRunbook",
+    "externalApprovalPacketSchema",
+    "externalApprovalFixtures",
     "externalEvidencePacketSchema",
     "externalEvidenceFixtures",
     "externalEvidencePacketValidator",
@@ -74,6 +76,22 @@
       }
     },
     "externalValidationRunbook": { "$ref": "#/$defs/laneArtifact" },
+    "externalApprovalPacketSchema": { "$ref": "#/$defs/laneArtifact" },
+    "externalApprovalFixtures": {
+      "allOf": [
+        { "$ref": "#/$defs/requiredArtifact" },
+        {
+          "type": "object",
+          "required": ["status", "validTemplateCount", "invalidTemplateCount"],
+          "properties": {
+            "status": { "const": "synthetic_templates_not_approval" },
+            "validTemplateCount": { "const": 3 },
+            "invalidTemplateCount": { "const": 3 },
+            "path": { "const": "docs/system-telemetry-external-approval.fixtures.json" }
+          }
+        }
+      ]
+    },
     "externalEvidencePacketSchema": { "$ref": "#/$defs/laneArtifact" },
     "externalEvidenceFixtures": {
       "allOf": [

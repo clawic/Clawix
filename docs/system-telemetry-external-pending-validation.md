@@ -16,7 +16,10 @@ Machine-readable closure gates live in
 `docs/system-telemetry-source-qa-review.json`, with requirement-by-requirement
 status in `docs/system-telemetry-completion-audit.md` and external run steps in
 `docs/system-telemetry-external-validation-runbook.md`. Accepted external
-evidence must conform to `docs/system-telemetry-external-evidence.schema.json`.
+approval must conform to
+`docs/system-telemetry-external-approval.schema.json` before execution, and
+accepted external evidence must conform to
+`docs/system-telemetry-external-evidence.schema.json`.
 The external manifest must conform to
 `docs/system-telemetry-external-validation.manifest.schema.json`.
 Synthetic manifest fixtures at
@@ -25,6 +28,9 @@ accidental completion or lane-clear mutations fail validation.
 Evidence packets must pass
 `node scripts/validate-system-telemetry-external-evidence.mjs <packet.json>`
 before any row is updated.
+Synthetic approval templates at
+`docs/system-telemetry-external-approval.fixtures.json` prove exact-run
+approval validation only and are not real approval.
 The verifier treats the
 manifest as the structured contract for remaining external lanes, exact-run
 approval, accepted evidence, and the rule that external pending blocks goal
@@ -65,9 +71,14 @@ operational checklist for each lane is the
 [System Telemetry External Validation Runbook](./system-telemetry-external-validation-runbook.md),
 and the accepted evidence packet schema is
 [`docs/system-telemetry-external-evidence.schema.json`](./system-telemetry-external-evidence.schema.json).
+The required approval packet schema is
+[`docs/system-telemetry-external-approval.schema.json`](./system-telemetry-external-approval.schema.json).
 Synthetic packet fixtures live at
 [`docs/system-telemetry-external-evidence.fixtures.json`](./system-telemetry-external-evidence.fixtures.json)
 and are explicitly not accepted evidence.
+Synthetic approval fixtures live at
+[`docs/system-telemetry-external-approval.fixtures.json`](./system-telemetry-external-approval.fixtures.json)
+and are explicitly not approval.
 
 | Row | Lane | Required approval | Required evidence |
 | --- | --- | --- | --- |

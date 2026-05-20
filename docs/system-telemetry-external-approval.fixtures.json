@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-system-telemetry-external-approval-fixtures",
+  "status": "synthetic_templates_not_approval",
+  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "schemaPath": "docs/system-telemetry-external-approval.schema.json",
+  "validSyntheticPackets": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "repoScope": "clawix-app",
+      "laneId": "CLX-SYS-TEL-EXT-003",
+      "approval": {
+        "decision": "approved",
+        "exactRunApproved": true,
+        "approvedBy": "reviewer-template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-21T00:00:00Z",
+        "approvedActions": ["physical_sensor_read"],
+        "reason": "template only"
+      },
+      "preflight": {
+        "command": "claw system providers plan system.sensors.signed --json",
+        "mustFailClosedBeforeApproval": true
+      },
+      "authorization": {
+        "credentialLeaseRefs": [],
+        "nativeGrantRefs": ["system_sensor_read_grant_template"],
+        "networkAccessApproved": false,
+        "locationGrantRefs": [],
+        "hardwareProviderRefs": ["compatible_hardware_template"],
+        "signedAppRefs": ["signed_app_template"]
+      },
+      "risk": {
+        "tier": "sensor-read",
+        "rollbackOrContinuityPlanRef": "",
+        "physicalValidationPlanRef": "",
+        "appMenuValidationPlanRef": "same_machine_menu_validation_template"
+      },
+      "privacy": {
+        "containsSecrets": false,
+        "preciseLocationApprovedForStorage": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "externalPendingRows": ["CLX-SYS-TEL-EXT-003"],
+        "requiresEvidencePacket": true,
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "repoScope": "clawix-app",
+      "laneId": "CLX-SYS-TEL-EXT-004",
+      "approval": {
+        "decision": "approved",
+        "exactRunApproved": true,
+        "approvedBy": "reviewer-template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-21T00:00:00Z",
+        "approvedActions": ["provider_connection"],
+        "reason": "template only"
+      },
+      "preflight": {
+        "command": "claw system providers plan context.weather.live --json",
+        "mustFailClosedBeforeApproval": true
+      },
+      "authorization": {
+        "credentialLeaseRefs": ["credential_lease_template"],
+        "nativeGrantRefs": [],
+        "networkAccessApproved": true,
+        "locationGrantRefs": ["location_grant_template"],
+        "hardwareProviderRefs": [],
+        "signedAppRefs": ["signed_app_template"]
+      },
+      "risk": {
+        "tier": "provider-live",
+        "rollbackOrContinuityPlanRef": "",
+        "physicalValidationPlanRef": "",
+        "appMenuValidationPlanRef": "same_machine_menu_validation_template"
+      },
+      "privacy": {
+        "containsSecrets": false,
+        "preciseLocationApprovedForStorage": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "externalPendingRows": ["CLX-SYS-TEL-EXT-004"],
+        "requiresEvidencePacket": true,
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "repoScope": "clawix-app",
+      "laneId": "CLX-SYS-TEL-EXT-005",
+      "approval": {
+        "decision": "approved",
+        "exactRunApproved": true,
+        "approvedBy": "reviewer-template",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-21T00:00:00Z",
+        "approvedActions": ["dangerous_control_execute"],
+        "reason": "template only"
+      },
+      "preflight": {
+        "command": "claw system controls plan system.fan.set_speed --json",
+        "mustFailClosedBeforeApproval": true
+      },
+      "authorization": {
+        "credentialLeaseRefs": [],
+        "nativeGrantRefs": ["system_hardware_control_grant_template"],
+        "networkAccessApproved": false,
+        "locationGrantRefs": [],
+        "hardwareProviderRefs": [],
+        "signedAppRefs": ["signed_app_template"]
+      },
+      "risk": {
+        "tier": "dangerous-control",
+        "rollbackOrContinuityPlanRef": "rollback_plan_template",
+        "physicalValidationPlanRef": "physical_validation_template",
+        "appMenuValidationPlanRef": "same_machine_menu_validation_template"
+      },
+      "privacy": {
+        "containsSecrets": false,
+        "preciseLocationApprovedForStorage": false,
+        "privatePathsIncluded": false
+      },
+      "closureImpact": {
+        "externalPendingRows": ["CLX-SYS-TEL-EXT-005"],
+        "requiresEvidencePacket": true,
+        "requiresFinalSourceReread": true,
+        "requiresForbiddenNameScan": true
+      }
+    }
+  ],
+  "invalidSyntheticPackets": [
+    {
+      "id": "missing_exact_approval",
+      "mutation": "approval.exactRunApproved=false",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
+    },
+    {
+      "id": "missing_signed_app",
+      "mutation": "authorization.signedAppRefs=[]",
+      "packetRef": "CLX-SYS-TEL-EXT-003"
+    },
+    {
+      "id": "missing_app_menu_validation_plan",
+      "mutation": "risk.appMenuValidationPlanRef=\"\"",
+      "packetRef": "CLX-SYS-TEL-EXT-005"
+    }
+  ]
+}
