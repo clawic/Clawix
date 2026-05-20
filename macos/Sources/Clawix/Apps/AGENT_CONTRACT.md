@@ -104,17 +104,20 @@ managed Apps folder.
 Swift declarative surfaces are rendered by the host from a constrained DSL, not
 from arbitrary in-process SwiftUI. The out-of-process
 `ClawixSwiftSurfaceRunner` target reads `surface.json` and emits a versioned
-stdout `render` message. The host validates that message against the launch
-plan and declared capabilities before it renders native nodes. Rendered controls
-enter `AppSwiftSurfaceActionBridge`: read actions report a route-local
+stdout `render` message. Dev and release bundles embed that runner at
+`Contents/Helpers/ClawixSwiftSurfaceRunner`, with `CLAWIX_SWIFT_SURFACE_RUNNER`
+kept only as an explicit developer override. The host validates runner output
+against the launch plan and declared capabilities before it renders native
+nodes. Rendered controls enter `AppSwiftSurfaceActionBridge`: read actions
+report a route-local
 non-interruptive event, while high-risk `sdkAction` controls use the same
 approval, dispatcher, and `high-risk-action-audit.jsonl` receipt boundary as
 hosted Web apps. `resources.list`, `resources.read`, `search.query`, and
 `db.query` controls execute through host-owned registries/`DatabaseManager`
 using the shared DSL guards and redaction boundary, so Swift surfaces can read
 only registered resources and cannot supply arbitrary filesystem paths or raw
-database escapes. Signed app bundling/configuration and signed end-to-end
-isolation/crash evidence remain separate closure gates.
+database escapes. Signed end-to-end isolation/crash evidence remains a separate
+closure gate.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale

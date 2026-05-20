@@ -151,6 +151,8 @@ function assertRuntimeArtifacts() {
       "AppSwiftSurfaceRunnerSupervisor",
       "AppSwiftSurfaceProcessExecutor",
       "AppSwiftSurfaceRunnerRenderMessage",
+      "runnerBundledExecutablePath",
+      "Contents/Helpers/\\(runnerExecutableName)",
       "renderManifest(",
       "runnerCapabilityNotAllowed",
       "AppSwiftSurfaceRenderPresentation",
@@ -163,6 +165,21 @@ function assertRuntimeArtifacts() {
       "--manifest",
       "--protocol-version",
       "\"render\"",
+    ],
+    "macos/scripts/dev.sh": [
+      "swift build --target ClawixSwiftSurfaceRunner",
+      "Contents/Helpers/ClawixSwiftSurfaceRunner",
+      "swift-surface-runner",
+    ],
+    "macos/scripts/build_release_app.sh": [
+      "swift build -c release --target ClawixSwiftSurfaceRunner",
+      "Contents/Helpers/ClawixSwiftSurfaceRunner",
+      "swift-surface-runner",
+    ],
+    "macos/scripts/build_app.sh": [
+      "swift build -c release --target ClawixSwiftSurfaceRunner",
+      "Contents/Helpers/ClawixSwiftSurfaceRunner",
+      "swift-surface-runner",
     ],
     "macos/Sources/Clawix/Apps/AppPackageImportValidator.swift": [
       "validatePackageContents",
@@ -192,6 +209,7 @@ function assertTests() {
       "testSwiftSurfaceRenderPresentationBuildsDeclarativeTree",
       "testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC",
       "testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan",
+      "testSwiftSurfaceRunnerExecutablePathFallsBackToBundledHelper",
       "testSwiftSurfaceReadActionDoesNotRequestInterruptiveApproval",
       "testSwiftSurfaceResourceReadExecutesThroughRegisteredResources",
       "testSwiftSurfaceDBQueryExecutesThroughDatabaseManager",
