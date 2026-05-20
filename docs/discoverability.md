@@ -63,6 +63,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-naming-shape-check` | guardrail | `scripts/naming-shape-check.mjs` | naming-shape-check, Naming Shape Check | `scripts/naming-shape-check.mjs` |
 | `guard-scripts-native-action-broker-check` | guardrail | `scripts/native_action_broker_check.mjs` | native_action_broker_check, Native Action Broker Check | `scripts/native_action_broker_check.mjs` |
 | `guard-scripts-native-permission-broker-check` | guardrail | `scripts/native_permission_broker_check.mjs` | native_permission_broker_check, Native Permission Broker Check | `scripts/native_permission_broker_check.mjs` |
+| `guard-scripts-persistent-surface-guard` | guardrail | `scripts/persistent-surface-guard.mjs` | persistent-surface-guard, Persistent Surface Guard, literal surface guard, persistent surface literals | `scripts/persistent-surface-guard.mjs` |
 | `guard-scripts-open-source-canonicity-check` | guardrail | `scripts/open_source_canonicity_check.mjs` | open_source_canonicity_check, Open Source Canonicity Check, open source canonicity guard, Clawix official trust guardrail | `scripts/open_source_canonicity_check.mjs` |
 | `guard-scripts-package-surface-guard` | guardrail | `scripts/package_surface_guard.mjs` | package_surface_guard, Package Surface Guard | `scripts/package_surface_guard.mjs` |
 | `guard-scripts-remote-canon-alignment-check` | guardrail | `scripts/remote_canon_alignment_check.mjs` | remote_canon_alignment_check, Remote Canon Alignment Check | `scripts/remote_canon_alignment_check.mjs` |

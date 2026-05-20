@@ -101,7 +101,7 @@ final class SystemTelemetryMonitorRecorder {
     }
 
     private static func defaultHostCommand() -> String? {
-        if let configured = ProcessInfo.processInfo.environment["CLAW_SYSTEM_TELEMETRY_HOST_COMMAND"],
+        if let configured = ProcessInfo.processInfo.environment[ClawixPersistentSurfaceKeys.systemTelemetryHostCommandEnv],
            !configured.isEmpty {
             return configured
         }

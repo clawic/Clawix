@@ -175,6 +175,25 @@ enum ClawixPersistentSurface {
         )
     }
 
+    static func frameworkFile(id: String, name: String, path: String, parentId: String? = nil, notes: String? = nil) -> PersistentSurfaceNode {
+        node(
+            id: id,
+            kind: .file,
+            name: name,
+            path: path,
+            storageClass: "frameworkGlobal",
+            canonicality: "frameworkCanonical",
+            privacy: "userData",
+            lifecycle: "durable",
+            parentId: parentId,
+            project: "framework",
+            notes: notes,
+            owner: "claw",
+            repo: "clawjs",
+            language: "cross-platform"
+        )
+    }
+
     static func preference(id: String, name: String, key: String, kind: PersistentSurfaceKind = .preferenceKey, notes: String? = nil) -> PersistentSurfaceNode {
         node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", notes: notes)
     }
@@ -384,12 +403,11 @@ enum ClawixPersistentSurfaceRegistry {
                 parentId: nil,
                 notes: "Framework-owned app resource registry directory consumed by Clawix custom surfaces."
             ),
-            ClawixPersistentSurface.file(
+            ClawixPersistentSurface.frameworkFile(
                 id: "claw.framework.resources.state",
                 name: "Resources registry state",
                 path: "~/.claw/resources/resources.json",
                 parentId: "claw.framework.resources",
-                storageClass: "frameworkGlobal",
                 notes: "Framework-owned resource registry state. Clawix reads it as a host UI/bridge consumer."
             ),
             ClawixPersistentSurface.frameworkFolder(

@@ -1454,6 +1454,33 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-persistent-surface-guard",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/persistent-surface-guard.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "persistent-surface-guard",
+        "Persistent Surface Guard",
+        "literal surface guard",
+        "persistent surface literals"
+      ],
+      "searchQueries": [
+        {
+          "query": "persistent-surface-guard",
+          "expectPath": "scripts/persistent-surface-guard.mjs"
+        }
+      ],
+      "guard": "scripts/persistent-surface-guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-open-source-canonicity-check",
       "kind": "guardrail",
       "owner": "clawix",
