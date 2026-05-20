@@ -134,6 +134,8 @@ function assertRuntimeArtifacts() {
       "AppHighRiskActionAudit.append",
       "highRiskActionDispatcher.dispatch",
       "Swift surface read action accepted",
+      "executeResourceRead",
+      "resources.read",
     ],
     "macos/Sources/Clawix/Apps/ClawixAppsSDK.swift": [
       "capabilities",
@@ -187,6 +189,7 @@ function assertTests() {
       "testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC",
       "testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan",
       "testSwiftSurfaceReadActionReportsWithoutApproval",
+      "testSwiftSurfaceResourceReadExecutesThroughRegisteredResources",
       "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [

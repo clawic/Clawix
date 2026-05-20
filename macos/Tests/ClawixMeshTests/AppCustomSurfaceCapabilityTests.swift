@@ -587,7 +587,11 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             "action": {
               "invocation": "sdkRead",
               "capabilityId": "search.query",
-              "operation": "search.query"
+              "operation": "search.query",
+              "arguments": {
+                "query": "agent",
+                "limit": 5
+              }
             },
             "children": []
           }
@@ -598,6 +602,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
         XCTAssertEqual(manifest.schemaVersion, 1)
         XCTAssertEqual(manifest.requestedCapabilities, ["search.query"])
+        XCTAssertEqual(manifest.root.action?.arguments?["query"], .string("agent"))
+        XCTAssertEqual(manifest.root.action?.arguments?["limit"], .int(5))
         XCTAssertNil(AppSwiftSurfaceContract.runnerExecutablePath(environment: [:]))
         XCTAssertNil(
             AppSwiftSurfaceContract.runnerExecutablePath(environment: ["CLAWIX_SWIFT_SURFACE_RUNNER": "   "])
@@ -727,6 +733,60 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
 
         XCTAssertEqual(result, .reportedRead("search.query"))
         XCTAssertTrue(reports.contains(.partial(message: "Swift surface read action accepted: search.query")))
+    }
+
+    @MainActor
+    func testSwiftSurfaceResourceReadExecutesThroughRegisteredResources() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let registryRoot = root.appendingPathComponent("registry", isDirectory: true)
+        let fileURL = root.appendingPathComponent("swift-resource.md", isDirectory: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try "swift resource content".write(to: fileURL, atomically: true, encoding: .utf8)
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["resources.read"],
+            surfaceKind: .swiftDeclarative
+        )
+        let appsStore = AppsStore(rootURL: root.appendingPathComponent("apps", isDirectory: true))
+        let resource = makeResource(
+            id: "res_swift1",
+            kind: "instruction",
+            locator: AppResourceLocator(kind: "path", value: fileURL.path)
+        )
+        try writeResources([resource], to: registryRoot)
+        let registry = AppResourceRegistryStore(directory: registryRoot)
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:swift-dashboard") { report in
+            reports.append(report)
+        }
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkRead,
+                capabilityId: "resources.read",
+                operation: "resources.read",
+                arguments: [
+                    "id": .string("res_swift1"),
+                    "maxBytes": .int(5)
+                ]
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            resourceRegistry: registry,
+            surfaceReporter: reporter,
+            highRiskActionDispatcher: AppUnavailableHighRiskActionDispatcher(),
+            approvalHandler: { _, _, _ in
+                XCTFail("Resource reads should not request interruptive approval")
+            }
+        ).handle(action)
+
+        XCTAssertEqual(result, .executedRead("resources.read", 1))
+        XCTAssertTrue(reports.contains(.loading(message: "Reading Swift surface resource", progress: 0.2)))
+        XCTAssertTrue(reports.contains(.partial(message: "Swift surface read resource: res_swift1")))
     }
 
     @MainActor

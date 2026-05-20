@@ -57,11 +57,113 @@ struct AppSwiftSurfaceAction: Codable, Equatable, Hashable {
     var invocation: Invocation
     var capabilityId: String
     var operation: String
+    var arguments: [String: AppSwiftSurfaceJSONValue]?
 
-    init(invocation: Invocation, capabilityId: String, operation: String) {
+    init(
+        invocation: Invocation,
+        capabilityId: String,
+        operation: String,
+        arguments: [String: AppSwiftSurfaceJSONValue]? = nil
+    ) {
         self.invocation = invocation
         self.capabilityId = capabilityId
         self.operation = operation
+        self.arguments = arguments
+    }
+}
+
+enum AppSwiftSurfaceJSONValue: Codable, Equatable, Hashable {
+    case null
+    case bool(Bool)
+    case int(Int)
+    case double(Double)
+    case string(String)
+    case array([AppSwiftSurfaceJSONValue])
+    case object([String: AppSwiftSurfaceJSONValue])
+
+    var foundationValue: Any {
+        switch self {
+        case .null:
+            return NSNull()
+        case .bool(let value):
+            return value
+        case .int(let value):
+            return value
+        case .double(let value):
+            return value
+        case .string(let value):
+            return value
+        case .array(let values):
+            return values.map(\.foundationValue)
+        case .object(let values):
+            return values.mapValues(\.foundationValue)
+        }
+    }
+
+    init(_ value: Any) {
+        switch value {
+        case is NSNull:
+            self = .null
+        case let value as Bool:
+            self = .bool(value)
+        case let value as Int:
+            self = .int(value)
+        case let value as Int64:
+            self = .int(Int(value))
+        case let value as Double:
+            self = .double(value)
+        case let value as Float:
+            self = .double(Double(value))
+        case let value as String:
+            self = .string(value)
+        case let value as [Any]:
+            self = .array(value.map(AppSwiftSurfaceJSONValue.init))
+        case let value as [String: Any]:
+            self = .object(value.mapValues(AppSwiftSurfaceJSONValue.init))
+        default:
+            self = .null
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(Int.self) {
+            self = .int(value)
+        } else if let value = try? container.decode(Double.self) {
+            self = .double(value)
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode([AppSwiftSurfaceJSONValue].self) {
+            self = .array(value)
+        } else if let value = try? container.decode([String: AppSwiftSurfaceJSONValue].self) {
+            self = .object(value)
+        } else {
+            self = .null
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .null:
+            try container.encodeNil()
+        case .bool(let value):
+            try container.encode(value)
+        case .int(let value):
+            try container.encode(value)
+        case .double(let value):
+            try container.encode(value)
+        case .string(let value):
+            try container.encode(value)
+        case .array(let value):
+            try container.encode(value)
+        case .object(let value):
+            try container.encode(value)
+        }
     }
 }
 
@@ -204,6 +306,7 @@ struct AppSwiftSurfaceRenderedAction: Equatable, Hashable {
     var invocation: AppSwiftSurfaceAction.Invocation
     var capabilityId: String
     var operation: String
+    var arguments: [String: AppSwiftSurfaceJSONValue]
     var riskTier: AppCapabilityRiskTier?
     var requiresApproval: Bool
 
@@ -211,9 +314,14 @@ struct AppSwiftSurfaceRenderedAction: Equatable, Hashable {
         invocation = action.invocation
         capabilityId = action.capabilityId
         operation = action.operation
+        arguments = action.arguments ?? [:]
         let descriptor = AppCapabilityCatalog.descriptor(id: action.capabilityId)
         riskTier = descriptor?.riskTier
         requiresApproval = descriptor?.interruptiveApproval ?? (action.invocation == .sdkAction)
+    }
+
+    var bridgeArguments: [String: Any] {
+        arguments.mapValues(\.foundationValue)
     }
 }
 

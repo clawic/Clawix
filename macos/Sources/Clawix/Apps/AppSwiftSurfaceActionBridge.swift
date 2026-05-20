@@ -2,6 +2,7 @@ import Foundation
 
 enum AppSwiftSurfaceActionBridgeResult: Equatable {
     case reportedRead(String)
+    case executedRead(String, Int)
     case denied(String)
     case dispatched(AppHighRiskActionReceipt.Outcome)
     case failed(String)
@@ -17,6 +18,7 @@ struct AppSwiftSurfaceActionBridge {
 
     let app: AppRecord
     let appsStore: AppsStore
+    let resourceRegistry: AppResourceRegistryStore
     let surfaceReporter: SurfaceRouteReporter
     let highRiskActionDispatcher: AppHighRiskActionDispatcher
     let approvalHandler: ApprovalHandler
@@ -24,12 +26,14 @@ struct AppSwiftSurfaceActionBridge {
     init(
         app: AppRecord,
         appsStore: AppsStore,
+        resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),
         surfaceReporter: SurfaceRouteReporter = .noop,
         highRiskActionDispatcher: AppHighRiskActionDispatcher,
         approvalHandler: ApprovalHandler? = nil
     ) {
         self.app = app
         self.appsStore = appsStore
+        self.resourceRegistry = resourceRegistry
         self.surfaceReporter = surfaceReporter
         self.highRiskActionDispatcher = highRiskActionDispatcher
         self.approvalHandler = approvalHandler ?? { app, action, completion in
@@ -44,18 +48,31 @@ struct AppSwiftSurfaceActionBridge {
     func handle(_ action: AppSwiftSurfaceRenderedAction) async -> AppSwiftSurfaceActionBridgeResult {
         switch action.invocation {
         case .sdkRead:
-            return handleRead(action)
+            return await handleRead(action)
         case .sdkAction:
             return await handleHighRiskAction(action)
         }
     }
 
-    private func handleRead(_ action: AppSwiftSurfaceRenderedAction) -> AppSwiftSurfaceActionBridgeResult {
+    private func handleRead(_ action: AppSwiftSurfaceRenderedAction) async -> AppSwiftSurfaceActionBridgeResult {
+        guard case .allowed = AppCapabilityCatalog.activationGate(for: app) else {
+            let message = "App activation review is required before using this capability"
+            surfaceReporter.error(message)
+            return .failed(message)
+        }
         guard let descriptor = AppCapabilityCatalog.descriptor(id: action.capabilityId),
               descriptor.customAppAccess == .localWide else {
             let message = "Swift surface read action is not local-wide: \(action.capabilityId)"
             surfaceReporter.error(message)
             return .failed(message)
+        }
+        guard app.effectiveDeclaredCapabilities.isEmpty || app.effectiveDeclaredCapabilities.contains(descriptor.id) else {
+            let message = "App manifest does not declare capability: \(descriptor.id)"
+            surfaceReporter.error(message)
+            return .failed(message)
+        }
+        if action.capabilityId == "resources.read" {
+            return await executeResourceRead(action)
         }
         let message = "Swift surface read action accepted: \(action.operation)"
         surfaceReporter.partial(message)
@@ -103,7 +120,7 @@ struct AppSwiftSurfaceActionBridge {
                     app: app,
                     descriptor: descriptor,
                     tool: action.operation,
-                    arguments: [:]
+                    arguments: action.bridgeArguments
                 )
             )
             appendReceipt(
@@ -119,6 +136,57 @@ struct AppSwiftSurfaceActionBridge {
             }
             surfaceReporter.partial("Swift surface action dispatched: \(action.operation)")
             return .dispatched(result.receiptOutcome)
+        }
+    }
+
+    private func executeResourceRead(_ action: AppSwiftSurfaceRenderedAction) async -> AppSwiftSurfaceActionBridgeResult {
+        do {
+            switch action.operation {
+            case "resources.list":
+                let status = string(action.bridgeArguments["status"])
+                let kind = string(action.bridgeArguments["kind"])
+                surfaceReporter.loading("Listing Swift surface resources", progress: 0.2)
+                let registry = resourceRegistry
+                let resources = try await CancellableBackgroundTask.run {
+                    try Task.checkCancellation()
+                    let resources = try registry.list(status: status, kind: kind)
+                    try Task.checkCancellation()
+                    return resources
+                }
+                surfaceReporter.partial("Swift surface listed \(resources.count) resources")
+                return .executedRead(action.operation, resources.count)
+            case "resources.read":
+                guard let id = string(action.bridgeArguments["id"]) else {
+                    let message = "Swift surface resources.read requires an id."
+                    surfaceReporter.error(message)
+                    return .failed(message)
+                }
+                let maxBytes = int(action.bridgeArguments["maxBytes"]) ?? 64_000
+                surfaceReporter.loading("Reading Swift surface resource", progress: 0.2)
+                let registry = resourceRegistry
+                let result = try await CancellableBackgroundTask.run {
+                    try Task.checkCancellation()
+                    let result = try registry.read(id, maxBytes: maxBytes)
+                    try Task.checkCancellation()
+                    return result
+                }
+                if let error = result.error {
+                    surfaceReporter.degraded(error)
+                    return .failed(error)
+                }
+                surfaceReporter.partial("Swift surface read resource: \(id)")
+                return .executedRead(action.operation, result.content == nil ? 0 : 1)
+            default:
+                let message = "Swift surface resource operation is unsupported: \(action.operation)"
+                surfaceReporter.error(message)
+                return .failed(message)
+            }
+        } catch is CancellationError {
+            surfaceReporter.partial("Swift surface resource read cancelled")
+            return .failed("Request cancelled")
+        } catch {
+            surfaceReporter.error(error.localizedDescription)
+            return .failed(error.localizedDescription)
         }
     }
 
@@ -150,5 +218,20 @@ struct AppSwiftSurfaceActionBridge {
         } catch {
             surfaceReporter.error("Swift surface action audit write failed: \(error.localizedDescription)")
         }
+    }
+
+    private func string(_ value: Any?) -> String? {
+        guard let string = value as? String else { return nil }
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func int(_ value: Any?) -> Int? {
+        if let int = value as? Int { return int }
+        if let int64 = value as? Int64 { return Int(int64) }
+        if let double = value as? Double { return Int(double) }
+        if let number = value as? NSNumber { return number.intValue }
+        if let string = string(value) { return Int(string) }
+        return nil
     }
 }

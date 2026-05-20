@@ -34,8 +34,9 @@ the sibling ClawJS SDK-first custom surface contract.
    bridge before allowing arbitrary native Swift views in-process. The current
    runner target emits a versioned stdout `render` message, and rendered
    controls enter a host-owned action bridge for non-interruptive read events
-   or approval-gated high-risk dispatch/audit. Signed-app bundling and richer
-   Swift SDK read execution remain closure gates.
+   or approval-gated high-risk dispatch/audit. Swift controls can execute
+   registered-resource SDK reads through the host resource registry. Signed-app
+   bundling and Search/DB Swift SDK read execution remain closure gates.
 7. Validation: add focused unit/UI tests and mark native/physical/provider
    dependencies as `EXTERNAL PENDING` until host-real validation is performed.
 8. Performance validation: keep a repeatable shell-isolation measurement for
@@ -63,4 +64,5 @@ the sibling ClawJS SDK-first custom surface contract.
 - Swift custom surfaces have a constrained process/bridge design before
   executing user Swift in the main app, including a versioned runner IPC
   `render` message that the host validates against the launch plan before
-  native rendering and a host-owned action bridge for rendered controls.
+  native rendering and a host-owned action bridge for rendered controls,
+  including registered-resource read execution.
