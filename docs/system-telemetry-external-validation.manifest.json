@@ -116,8 +116,8 @@
     "path": "docs/system-telemetry-external-closure.fixtures.json",
     "status": "synthetic_templates_not_closure",
     "validTemplateCount": 3,
-    "invalidMutationCount": 6,
-    "closureRole": "proves exact-run approval and accepted evidence must belong to the same app lane, approval id, and approval window before any row can replace EXTERNAL PENDING"
+    "invalidMutationCount": 8,
+    "closureRole": "proves exact-run approval and accepted evidence must belong to the same app lane, approval id, approval window, and exact closure rows before any row can replace EXTERNAL PENDING"
   },
   "externalClosureBundleValidator": {
     "required": true,

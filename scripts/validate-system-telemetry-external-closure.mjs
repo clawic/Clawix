@@ -50,6 +50,26 @@ function compileSchema(schemaPath) {
 
 const approvalSchema = compileSchema(approvalSchemaPath);
 const evidenceSchema = compileSchema(evidenceSchemaPath);
+const expectedClosureRowsByLane = new Map([
+  ["CLX-SYS-TEL-EXT-003", {
+    rowsToReplace: ["CLX-SYS-TEL-EXT-003"],
+    manifestRows: ["CLX-SYS-TEL-EXT-003"],
+    completionAuditRows: ["CLX-STA-014"],
+    sourceQaRows: ["CLX-STQA-003"],
+  }],
+  ["CLX-SYS-TEL-EXT-004", {
+    rowsToReplace: ["CLX-SYS-TEL-EXT-004"],
+    manifestRows: ["CLX-SYS-TEL-EXT-004"],
+    completionAuditRows: ["CLX-STA-015"],
+    sourceQaRows: ["CLX-STQA-003"],
+  }],
+  ["CLX-SYS-TEL-EXT-005", {
+    rowsToReplace: ["CLX-SYS-TEL-EXT-005"],
+    manifestRows: ["CLX-SYS-TEL-EXT-005"],
+    completionAuditRows: ["CLX-STA-016"],
+    sourceQaRows: ["CLX-STQA-003"],
+  }],
+]);
 
 function validatePacket(packet, compiled, label) {
   assertPublicSafe(packet, label);
@@ -77,6 +97,48 @@ function assertWithinApprovalWindow(bundle, label) {
     const time = parseTime(value, `${label}.${field}`);
     assert(time >= approvedAt && time <= expiresAt, `${label}: ${field} must be within the exact approval window`);
   }
+}
+
+function assertSameStringSet(actual, expected, label) {
+  assert(Array.isArray(actual), `${label}: must be an array`);
+  assert(actual.every((value) => typeof value === "string"), `${label}: must contain only strings`);
+  const actualSorted = [...actual].sort();
+  const expectedSorted = [...expected].sort();
+  assert(new Set(actualSorted).size === actualSorted.length, `${label}: must not contain duplicates`);
+  assert(actualSorted.length === expectedSorted.length, `${label}: wrong row count`);
+  for (let index = 0; index < expectedSorted.length; index += 1) {
+    assert(actualSorted[index] === expectedSorted[index], `${label}: expected ${expectedSorted.join(", ")}, got ${actualSorted.join(", ")}`);
+  }
+}
+
+function assertExactClosureImpact(bundle, label) {
+  const expected = expectedClosureRowsByLane.get(bundle.laneId);
+  assert(expected, `${label}: missing expected closure rows for ${bundle.laneId}`);
+  assertSameStringSet(
+    bundle.approvalPacket.closureImpact?.externalPendingRows,
+    expected.rowsToReplace,
+    `${label}.approvalPacket.closureImpact.externalPendingRows`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.closureImpact?.rowsToReplace,
+    expected.rowsToReplace,
+    `${label}.evidencePacket.closureImpact.rowsToReplace`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.closureImpact?.manifestRows,
+    expected.manifestRows,
+    `${label}.evidencePacket.closureImpact.manifestRows`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.closureImpact?.completionAuditRows,
+    expected.completionAuditRows,
+    `${label}.evidencePacket.closureImpact.completionAuditRows`,
+  );
+  assertSameStringSet(
+    bundle.evidencePacket.closureImpact?.sourceQaRows,
+    expected.sourceQaRows,
+    `${label}.evidencePacket.closureImpact.sourceQaRows`,
+  );
 }
 
 function buildFixtureBundle(laneId) {
@@ -112,14 +174,7 @@ function validateClosureBundle(bundle, label) {
     assert(bundle[field] === bundle.evidencePacket[field], `${label}: ${field} does not match evidence packet`);
   }
 
-  assert(
-    bundle.approvalPacket.closureImpact?.externalPendingRows?.includes(bundle.laneId),
-    `${label}: approval packet does not authorize closure for ${bundle.laneId}`,
-  );
-  assert(
-    bundle.evidencePacket.closureImpact?.rowsToReplace?.includes(bundle.laneId),
-    `${label}: evidence packet does not replace ${bundle.laneId}`,
-  );
+  assertExactClosureImpact(bundle, label);
   assert(
     bundle.approvalPacket.preflight?.command === bundle.evidencePacket.preflight?.command,
     `${label}: approval and evidence preflight commands must match`,
@@ -160,6 +215,12 @@ function mutateBundle(bundle, mutation) {
       break;
     case "evidencePacket.execution.completedAt=afterApprovalExpiry":
       mutated.evidencePacket.execution.completedAt = "2026-05-22T00:00:00Z";
+      break;
+    case "evidencePacket.closureImpact.completionAuditRows=wrong":
+      mutated.evidencePacket.closureImpact.completionAuditRows = ["CLX-STA-999"];
+      break;
+    case "approvalPacket.closureImpact.externalPendingRows=extra":
+      mutated.approvalPacket.closureImpact.externalPendingRows = [mutated.laneId, "CLX-SYS-TEL-EXT-999"];
       break;
     default:
       throw new Error(`unknown closure fixture mutation ${mutation}`);

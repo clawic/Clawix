@@ -42,7 +42,9 @@ live in `docs/system-telemetry-external-closure.fixtures.json`; they only prove
 bundle validation behavior and are not real closure evidence. The bundle must
 bind the evidence `runAuthorization.approvalId` to the exact approval packet.
 All evidence timestamps must remain inside that approval packet's
-`approvedAt`/`expiresAt` window.
+`approvedAt`/`expiresAt` window, and its approved pending rows, replacement
+rows, manifest rows, completion-audit rows, and source Q/A rows must match the
+exact app lane being closed.
 Validate the
 bundle with
 `node scripts/validate-system-telemetry-external-closure.mjs <bundle.json>`

@@ -57,6 +57,18 @@
       "baseLaneId": "CLX-SYS-TEL-EXT-003",
       "mutation": "evidencePacket.execution.completedAt=afterApprovalExpiry",
       "reason": "Evidence timestamps must stay inside the exact approval window."
+    },
+    {
+      "id": "wrong_completion_audit_row",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "evidencePacket.closureImpact.completionAuditRows=wrong",
+      "reason": "Evidence must target the exact completion-audit row for the app lane."
+    },
+    {
+      "id": "extra_approved_pending_row",
+      "baseLaneId": "CLX-SYS-TEL-EXT-003",
+      "mutation": "approvalPacket.closureImpact.externalPendingRows=extra",
+      "reason": "Approval must authorize exactly the pending row replaced by the app bundle."
     }
   ]
 }
