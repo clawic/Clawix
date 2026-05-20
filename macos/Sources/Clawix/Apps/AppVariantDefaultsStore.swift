@@ -45,6 +45,23 @@ final class AppVariantDefaultsStore: ObservableObject {
         persist()
     }
 
+    func defaultAppId(
+        routeTarget: String,
+        scope: AppVariantDefaultScope,
+        workspaceId: UUID? = nil
+    ) -> UUID? {
+        defaults[key(routeTarget: routeTarget, scope: scope, workspaceId: workspaceId)]
+    }
+
+    func isDefault(
+        app: AppRecord,
+        scope: AppVariantDefaultScope,
+        workspaceId: UUID? = nil
+    ) -> Bool {
+        guard let routeTarget = app.routeTarget else { return false }
+        return defaultAppId(routeTarget: routeTarget, scope: scope, workspaceId: workspaceId) == app.id
+    }
+
     func resolution(
         for routeTarget: String,
         workspaceId: UUID? = nil,
@@ -74,7 +91,7 @@ final class AppVariantDefaultsStore: ObservableObject {
         return nil
     }
 
-    static func normalizedRouteTarget(_ routeTarget: String) -> String {
+    nonisolated static func normalizedRouteTarget(_ routeTarget: String) -> String {
         routeTarget.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 

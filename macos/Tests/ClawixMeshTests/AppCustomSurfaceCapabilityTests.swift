@@ -787,6 +787,99 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertNil(original)
     }
 
+    @MainActor
+    func testVariantDefaultsExposeDefaultAppIdsForSettingsUI() throws {
+        let defaults = try makeDefaults()
+        let store = AppVariantDefaultsStore(userDefaults: defaults)
+        let workspaceId = UUID()
+        let variant = AppRecord(
+            slug: "database-workbench-focus",
+            name: "Database Workbench Focus",
+            routeTarget: "database-workbench",
+            variant: AppVariantMetadata(originalRoute: "database-workbench", defaultScope: "workspace"),
+            protectedRoutePolicy: .variantOnly
+        )
+
+        XCTAssertNil(store.defaultAppId(routeTarget: "database-workbench", scope: .workspace, workspaceId: workspaceId))
+        XCTAssertFalse(store.isDefault(app: variant, scope: .workspace, workspaceId: workspaceId))
+
+        try store.setDefault(app: variant, scope: .workspace, workspaceId: workspaceId)
+
+        XCTAssertEqual(
+            store.defaultAppId(routeTarget: " database-workbench ", scope: .workspace, workspaceId: workspaceId),
+            variant.id
+        )
+        XCTAssertTrue(store.isDefault(app: variant, scope: .workspace, workspaceId: workspaceId))
+
+        store.clearDefault(routeTarget: "database-workbench", scope: .workspace, workspaceId: workspaceId)
+
+        XCTAssertNil(store.defaultAppId(routeTarget: "database-workbench", scope: .workspace, workspaceId: workspaceId))
+    }
+
+    func testAppsSettingsVariantDefaultPresentationAllowsUserAndWorkspaceManagement() {
+        let workspaceId = UUID()
+        let variant = AppRecord(
+            slug: "database-focus",
+            name: "Database Focus",
+            routeTarget: "database",
+            variant: AppVariantMetadata(originalRoute: "database", defaultScope: "user"),
+            protectedRoutePolicy: .variantOnly
+        )
+
+        let settable = AppsSettingsVariantDefaultPresentation(
+            record: variant,
+            workspaceId: workspaceId,
+            userDefaultActive: false,
+            workspaceDefaultActive: false
+        )
+        XCTAssertTrue(settable.isVariant)
+        XCTAssertTrue(settable.canManageDefaults)
+        XCTAssertTrue(settable.canSetWorkspaceDefault)
+        XCTAssertEqual(settable.statusLabel, "Set")
+        XCTAssertEqual(settable.symbolName, "square.grid.2x2")
+
+        let workspaceDefault = AppsSettingsVariantDefaultPresentation(
+            record: variant,
+            workspaceId: workspaceId,
+            userDefaultActive: true,
+            workspaceDefaultActive: true
+        )
+        XCTAssertEqual(workspaceDefault.statusLabel, "Workspace")
+        XCTAssertEqual(workspaceDefault.symbolName, "building.2")
+
+        let noWorkspace = AppsSettingsVariantDefaultPresentation(
+            record: variant,
+            workspaceId: nil,
+            userDefaultActive: false,
+            workspaceDefaultActive: false
+        )
+        XCTAssertTrue(noWorkspace.canManageDefaults)
+        XCTAssertFalse(noWorkspace.canSetWorkspaceDefault)
+    }
+
+    func testAppsSettingsVariantDefaultPresentationBlocksInvalidVariants() {
+        let invalid = AppRecord(
+            slug: "invalid-database-focus",
+            name: "Invalid Database Focus",
+            routeTarget: "database",
+            variant: AppVariantMetadata(originalRoute: "memory", defaultScope: "user"),
+            protectedRoutePolicy: .variantOnly
+        )
+
+        let presentation = AppsSettingsVariantDefaultPresentation(
+            record: invalid,
+            workspaceId: nil,
+            userDefaultActive: true,
+            workspaceDefaultActive: false
+        )
+
+        XCTAssertTrue(presentation.isVariant)
+        XCTAssertFalse(presentation.canManageDefaults)
+        XCTAssertFalse(presentation.canSetWorkspaceDefault)
+        XCTAssertEqual(presentation.statusLabel, "Blocked")
+        XCTAssertEqual(presentation.symbolName, "exclamationmark.triangle")
+    }
+
     func testVariantOriginalRouteControlPresentsExplicitFallbackAffordance() {
         let variantActive = AppVariantOriginalRouteControlPresentation(
             appName: "Tasks Focus",

@@ -7,6 +7,7 @@ import SwiftUI
 /// per-row actions (open, pin, delete, toggle internet access).
 struct AppsSettingsPage: View {
     @ObservedObject private var appsStore: AppsStore = .shared
+    @ObservedObject private var variantDefaults: AppVariantDefaultsStore = .shared
     @EnvironmentObject var appState: AppState
 
     @AppStorage(ClawixPersistentSurfaceKeys.appsFeatureEnabled, store: SidebarPrefs.store)
@@ -53,9 +54,14 @@ struct AppsSettingsPage: View {
                         ForEach(appsStore.sortedApps) { record in
                             AppsSettingsRow(
                                 record: record,
+                                variantDefault: variantDefaultPresentation(for: record),
                                 onOpen: { appState.currentRoute = .app(record.id) },
                                 onTogglePin: { appsStore.togglePinned(record) },
                                 onToggleInternet: { toggleInternet(record) },
+                                onSetUserDefault: { setVariantDefault(record, scope: .user) },
+                                onSetWorkspaceDefault: { setVariantDefault(record, scope: .workspace) },
+                                onClearUserDefault: { clearVariantDefault(record, scope: .user) },
+                                onClearWorkspaceDefault: { clearVariantDefault(record, scope: .workspace) },
                                 onDelete: { pendingDelete = record },
                                 sizeOnDisk: appSizeOnDisk(record)
                             )
@@ -130,8 +136,10 @@ struct AppsSettingsPage: View {
                 .frame(width: 80, alignment: .trailing)
             Text("Net")
                 .frame(width: 50, alignment: .center)
+            Text("Variant")
+                .frame(width: 86, alignment: .center)
             Text("")
-                .frame(width: 96)
+                .frame(width: 104)
         }
         .font(BodyFont.system(size: 11.5, wght: 600))
         .foregroundColor(Color(white: 0.5))
@@ -180,6 +188,41 @@ struct AppsSettingsPage: View {
         try? appsStore.update(updated)
     }
 
+    private func variantDefaultPresentation(for record: AppRecord) -> AppsSettingsVariantDefaultPresentation {
+        let workspaceId = appState.selectedProject?.id
+        return AppsSettingsVariantDefaultPresentation(
+            record: record,
+            workspaceId: workspaceId,
+            userDefaultActive: variantDefaults.isDefault(app: record, scope: .user),
+            workspaceDefaultActive: workspaceId.map { workspaceId in
+                variantDefaults.isDefault(app: record, scope: .workspace, workspaceId: workspaceId)
+            } ?? false
+        )
+    }
+
+    private func setVariantDefault(_ record: AppRecord, scope: AppVariantDefaultScope) {
+        do {
+            try variantDefaults.setDefault(
+                app: record,
+                scope: scope,
+                workspaceId: scope == .workspace ? appState.selectedProject?.id : nil
+            )
+            ToastCenter.shared.show(scope == .workspace ? "Workspace variant default set" : "User variant default set")
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
+    }
+
+    private func clearVariantDefault(_ record: AppRecord, scope: AppVariantDefaultScope) {
+        guard let routeTarget = record.routeTarget else { return }
+        variantDefaults.clearDefault(
+            routeTarget: routeTarget,
+            scope: scope,
+            workspaceId: scope == .workspace ? appState.selectedProject?.id : nil
+        )
+        ToastCenter.shared.show(scope == .workspace ? "Workspace variant default cleared" : "User variant default cleared")
+    }
+
     private func appSizeOnDisk(_ record: AppRecord) -> Int {
         let dir = appsStore.directory(forSlug: record.slug)
         guard let enumerator = FileManager.default.enumerator(
@@ -206,9 +249,14 @@ struct AppsSettingsPage: View {
 
 private struct AppsSettingsRow: View {
     let record: AppRecord
+    let variantDefault: AppsSettingsVariantDefaultPresentation
     let onOpen: () -> Void
     let onTogglePin: () -> Void
     let onToggleInternet: () -> Void
+    let onSetUserDefault: () -> Void
+    let onSetWorkspaceDefault: () -> Void
+    let onClearUserDefault: () -> Void
+    let onClearWorkspaceDefault: () -> Void
     let onDelete: () -> Void
     let sizeOnDisk: Int
 
@@ -258,6 +306,9 @@ private struct AppsSettingsRow: View {
             .frame(width: 50, alignment: .center)
             .help(record.permissions.internet ? "Internet access enabled. Click to revoke." : "Offline. Click to allow internet.")
 
+            variantDefaultControl
+                .frame(width: 86, alignment: .center)
+
             HStack(spacing: 4) {
                 Button(action: onOpen) {
                     Image(systemName: "arrow.up.right.square")
@@ -280,10 +331,42 @@ private struct AppsSettingsRow: View {
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundColor(Color(white: 0.7))
-            .frame(width: 96, alignment: .trailing)
+            .frame(width: 104, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var variantDefaultControl: some View {
+        if variantDefault.isVariant {
+            Menu {
+                Button("Set as user default", action: onSetUserDefault)
+                    .disabled(!variantDefault.canManageDefaults)
+                Button("Set as workspace default", action: onSetWorkspaceDefault)
+                    .disabled(!variantDefault.canSetWorkspaceDefault)
+                Divider()
+                Button("Clear user default", action: onClearUserDefault)
+                    .disabled(!variantDefault.isUserDefault)
+                Button("Clear workspace default", action: onClearWorkspaceDefault)
+                    .disabled(!variantDefault.isWorkspaceDefault)
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: variantDefault.symbolName)
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(variantDefault.statusLabel)
+                        .font(BodyFont.system(size: 11.5, wght: 600))
+                        .lineLimit(1)
+                }
+                .foregroundColor(variantDefault.canManageDefaults ? Color(white: 0.78) : Color(white: 0.42))
+            }
+            .buttonStyle(.plain)
+            .help(variantDefault.helpText)
+        } else {
+            Text("—")
+                .font(BodyFont.system(size: 12.5, wght: 500))
+                .foregroundColor(Color(white: 0.34))
+        }
     }
 
     private var projectName: String {
@@ -306,5 +389,75 @@ private struct AppsSettingsRow: View {
         formatter.allowedUnits = [.useKB, .useMB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+struct AppsSettingsVariantDefaultPresentation: Equatable {
+    let isVariant: Bool
+    let canManageDefaults: Bool
+    let hasWorkspace: Bool
+    let isUserDefault: Bool
+    let isWorkspaceDefault: Bool
+    let statusLabel: String
+    let symbolName: String
+    let helpText: String
+
+    var canSetWorkspaceDefault: Bool {
+        canManageDefaults && hasWorkspace
+    }
+
+    init(
+        record: AppRecord,
+        workspaceId: UUID?,
+        userDefaultActive: Bool,
+        workspaceDefaultActive: Bool
+    ) {
+        let normalizedTarget = AppVariantDefaultsStore.normalizedRouteTarget(record.routeTarget ?? "")
+        let normalizedOriginal = AppVariantDefaultsStore.normalizedRouteTarget(record.variant?.originalRoute ?? "")
+        let hasValidVariantTarget = !normalizedTarget.isEmpty && normalizedTarget == normalizedOriginal
+        let isAllowed: Bool
+        if case .allowed = AppCapabilityCatalog.activationGate(for: record) {
+            isAllowed = true
+        } else {
+            isAllowed = false
+        }
+        let hasProtectedViolations = !AppCapabilityCatalog.protectedRouteViolations(for: record).isEmpty
+
+        let isVariant = record.variant != nil
+        let canManageDefaults = hasValidVariantTarget && isAllowed && !hasProtectedViolations
+        let statusLabel: String
+        let symbolName: String
+        let helpText: String
+
+        if !isVariant {
+            statusLabel = ""
+            symbolName = "square.grid.2x2"
+            helpText = ""
+        } else if !canManageDefaults {
+            statusLabel = "Blocked"
+            symbolName = "exclamationmark.triangle"
+            helpText = "This variant cannot be used as a default"
+        } else if workspaceDefaultActive {
+            statusLabel = "Workspace"
+            symbolName = "building.2"
+            helpText = "Workspace default variant for \(normalizedTarget)"
+        } else if userDefaultActive {
+            statusLabel = "User"
+            symbolName = "person"
+            helpText = "User default variant for \(normalizedTarget)"
+        } else {
+            statusLabel = "Set"
+            symbolName = "square.grid.2x2"
+            helpText = "Set this app as a route variant default"
+        }
+
+        self.isVariant = isVariant
+        self.canManageDefaults = canManageDefaults
+        self.hasWorkspace = workspaceId != nil
+        self.isUserDefault = userDefaultActive
+        self.isWorkspaceDefault = workspaceDefaultActive
+        self.statusLabel = statusLabel
+        self.symbolName = symbolName
+        self.helpText = helpText
     }
 }
