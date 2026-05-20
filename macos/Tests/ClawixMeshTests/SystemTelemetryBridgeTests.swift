@@ -26,6 +26,18 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         }
     }
 
+    private actor StringRecorder {
+        private var values: [String] = []
+
+        func append(_ value: String) {
+            values.append(value)
+        }
+
+        func recorded() -> [String] {
+            values
+        }
+    }
+
     func testDecodesSnapshotPolicySamplesAndUnavailableMetrics() throws {
         let response = CommandResponse(
             ok: true,
@@ -1643,7 +1655,8 @@ final class SystemTelemetryBridgeTests: XCTestCase {
 
         let first = await recorder.recordIfDue(now: Date(timeIntervalSince1970: 100))
         let second = await recorder.recordIfDue(now: Date(timeIntervalSince1970: 120))
-        let third = await recorder.recordIfDue(now: Date(timeIntervalSince1970: 170))
+        let forced = await recorder.recordIfDue(now: Date(timeIntervalSince1970: 121), force: true)
+        let third = await recorder.recordIfDue(now: Date(timeIntervalSince1970: 190))
 
         XCTAssertEqual(first.status, .recorded)
         XCTAssertEqual(first.sampleCount, 3)
@@ -1652,9 +1665,10 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(first.dbPath, "/tmp/monitor.sqlite")
         XCTAssertEqual(second.status, .skipped)
         XCTAssertEqual(second.reason, "minimum_interval")
+        XCTAssertEqual(forced.status, .recorded)
         XCTAssertEqual(third.status, .recorded)
         let calls = await capture.calls
-        XCTAssertEqual(calls.count, 2)
+        XCTAssertEqual(calls.count, 3)
         XCTAssertEqual(calls[0], [
             "system",
             "snapshot",
@@ -1838,6 +1852,90 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(model.panelWidgets.map(\.id), ["hardware-overview"])
         XCTAssertEqual(model.historyGraph(for: model.panelWidgets[0])?.chart.points.count, 2)
         XCTAssertTrue(model.hasHistoryGraph(for: model.panelWidgets[0]))
+    }
+
+    @MainActor
+    func testMenuBarModelPrioritizesWidgetMetricOrderForHistoryGraphs() async {
+        let requestedHistoryKeys = StringRecorder()
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array([
+                            .object([
+                                "id": .string("hardware-overview"),
+                                "title": .string("Hardware Overview"),
+                                "placement": .string("panel"),
+                                "metric_keys": .array([
+                                    .string("system.cpu.load1"),
+                                    .string("context.agent.active_runs"),
+                                    .string("context.build.status"),
+                                    .string("system.memory.used"),
+                                ]),
+                                "render_mode": .string("chart"),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            case ("history", "get"):
+                await requestedHistoryKeys.append(request.arguments["metric_key"] ?? "")
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "metric": .object(["key": .string(request.arguments["metric_key"] ?? "")]),
+                        "rangeMs": .integer(3600000),
+                        "retention": .object(["status": .string("recorded")]),
+                        "chart": .object([
+                            "kind": .string("line"),
+                            "metricKey": .string(request.arguments["metric_key"] ?? ""),
+                            "unit": .string("count"),
+                            "source": .string("metric_samples"),
+                            "empty": .bool(false),
+                            "points": .array([
+                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
+                                .object(["t": .integer(2), "value": .number(2), "sourceId": .string("system.telemetry.local")]),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([
+                            .object([
+                                "key": .string("system.cpu.load1"),
+                                "value": .number(1.25),
+                                "unit": .string("load"),
+                                "capturedAt": .string("2026-05-18T12:00:00Z"),
+                            ]),
+                        ]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        await model.refresh()
+
+        let recordedKeys = await requestedHistoryKeys.recorded()
+        XCTAssertEqual(Array(recordedKeys.prefix(3)), [
+            "system.cpu.load1",
+            "context.agent.active_runs",
+            "context.build.status",
+        ])
+        XCTAssertEqual(model.historyGraph(for: model.panelWidgets[0])?.metricKey, "system.cpu.load1")
     }
 
     @MainActor

@@ -37,8 +37,8 @@ final class SystemTelemetryMonitorRecorder {
         self.minimumInterval = minimumInterval
     }
 
-    func recordIfDue(now: Date = Date()) async -> SystemTelemetryMonitorRecordResult {
-        if let lastAttemptAt, now.timeIntervalSince(lastAttemptAt) < minimumInterval {
+    func recordIfDue(now: Date = Date(), force: Bool = false) async -> SystemTelemetryMonitorRecordResult {
+        if !force, let lastAttemptAt, now.timeIntervalSince(lastAttemptAt) < minimumInterval {
             return SystemTelemetryMonitorRecordResult(
                 status: .skipped,
                 sampleCount: 0,

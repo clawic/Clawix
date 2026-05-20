@@ -148,6 +148,7 @@
         "independent_indicators",
         "combined_dropdown",
         "provider_rows",
+        "forced_refresh_action",
         "history_graph_menu_content"
       ]
     },
@@ -159,6 +160,7 @@
       "acceptedEvidence": [
         "preflight",
         "live_recorder_smoke",
+        "forced_refresh_record",
         "app_monitor_rows_advanced"
       ]
     },
@@ -228,6 +230,7 @@
       "blockingPrerequisites": [],
       "acceptedEvidence": [
         "seeded_history_graph_menu_content",
+        "ordered_widget_metric_history",
         "native_bitmap_pixel_check",
         "retained_monitor_history"
       ]

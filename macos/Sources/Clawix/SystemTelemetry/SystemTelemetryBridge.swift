@@ -923,11 +923,14 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         force: Bool,
         now: Date
     ) async -> [String: SystemTelemetryHistory] {
-        let allMetricKeys = Set(widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys))
-        let metricKeys = force
-            ? allMetricKeys
-            : Set(allMetricKeys.sorted().prefix(Self.automaticHistoryMetricLimit))
-        guard !metricKeys.isEmpty else {
+        let orderedMetricKeys = widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\.metricKeys)
+        var seenMetricKeys = Set<String>()
+        let uniqueMetricKeys = orderedMetricKeys.filter { seenMetricKeys.insert($0).inserted }
+        let selectedMetricKeys = force
+            ? uniqueMetricKeys
+            : Array(uniqueMetricKeys.prefix(Self.automaticHistoryMetricLimit))
+        let metricKeys = Set(selectedMetricKeys)
+        guard !selectedMetricKeys.isEmpty else {
             lastHistoryRefreshAt = nil
             lastHistoryMetricKeys = []
             return [:]
@@ -941,7 +944,7 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
         }
 
         var next: [String: SystemTelemetryHistory] = [:]
-        for metricKey in metricKeys.sorted() {
+        for metricKey in selectedMetricKeys {
             do {
                 let history = try await bridge.history(metricKey: metricKey)
                 if !history.chart.points.isEmpty {

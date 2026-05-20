@@ -918,8 +918,8 @@ function assertSourceQaReview() {
   assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
   assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
   assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
-  assert(review.reviewedUserRoleMessages === 137, "source Q/A review: reviewed user-role message count drifted");
-  assert(review.decisionBearingRowsReviewed === 11, "source Q/A review: decision-bearing row count drifted");
+  assert(review.reviewedUserRoleMessages === 152, "source Q/A review: reviewed user-role message count drifted");
+  assert(review.decisionBearingRowsReviewed === 12, "source Q/A review: decision-bearing row count drifted");
   for (const decisionId of ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11"]) {
     assert(review.decisionIdsReviewed?.includes(decisionId), `source Q/A review: missing ${decisionId}`);
   }
@@ -929,7 +929,7 @@ function assertSourceQaReview() {
   for (const rowId of ["CLX-SYS-TEL-EXT-001", "CLX-SYS-TEL-EXT-002", "CLX-SYS-TEL-EXT-006"]) {
     assert(review.validatedLocalRows?.includes(rowId), `source Q/A review: missing validated-local ${rowId}`);
   }
-  assert(Array.isArray(review.rows) && review.rows.length === 11, "source Q/A review: must contain exactly 11 reviewed source rows");
+  assert(Array.isArray(review.rows) && review.rows.length === 12, "source Q/A review: must contain exactly 12 reviewed source rows");
   const rows = new Map(review.rows.map((row) => [row.qaId, row]));
   for (const [qaId, sourceRow, sourceLine] of [
     ["CLX-STQA-001", "USER_002", 6],
@@ -943,6 +943,7 @@ function assertSourceQaReview() {
     ["CLX-STQA-009", "USER_049", 11030],
     ["CLX-STQA-010", "USER_102", 21355],
     ["CLX-STQA-011", "USER_113", 25003],
+    ["CLX-STQA-012", "USER_151", 33114],
   ]) {
     const row = rows.get(qaId);
     assert(row?.sourceRow === sourceRow, `source Q/A review: ${qaId} must map to ${sourceRow}`);
@@ -1218,6 +1219,9 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "guard !isRefreshing else { return }");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let nextHistories = await loadHistoriesIfNeeded");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "histories = nextHistories");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let orderedMetricKeys = widgets.filter { Self.supportsHistoryGraph($0) }.flatMap(\\.metricKeys)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let selectedMetricKeys = force");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "for metricKey in selectedMetricKeys");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func sparkline(for metricKey: String");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func historyGraph(for widget: SystemTelemetryWidget) -> SystemTelemetryHistory?");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "func hasHistoryGraph(for widget: SystemTelemetryWidget) -> Bool");
@@ -1230,6 +1234,7 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "\"--range\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "CommanderCore.JSONValue.from(any: payload)");
   requireSnippet("macos/scripts/bundle_clawjs.sh", "packages/clawjs-search");
+  requireSnippet("macos/scripts/bundle_clawjs.sh", "FASTIFY_STAGE=\"$CACHE_ROOT/fastify-runtime\"");
 }
 
 function assertStatusItemAndRecorder() {
@@ -1250,6 +1255,7 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let refresh = NSMenuItem(title: \"Refresh\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "await refreshNow(forceHistory: true)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "monitorRecorder.recordIfDue(force: forceHistory)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "final class SystemTelemetryHistoryGraphView: NSView");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "setAccessibilityLabel(\"\\(title) history graph\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "history.chart.points");
@@ -1260,6 +1266,8 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "\"--source\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "\"host\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "\"--record\"");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "func recordIfDue(now: Date = Date(), force: Bool = false)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "if !force, let lastAttemptAt");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "reason: \"minimum_interval\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryMonitorRecorder.swift", "reason: \"host_command_unavailable\"");
   requireSnippet("macos/scripts/dev.sh", "Building claw-host for system telemetry");

@@ -11,8 +11,8 @@
   "sourceSessionRef": "private-session-not-published",
   "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
   "status": "complete_with_external_pending",
-  "reviewedUserRoleMessages": 137,
-  "decisionBearingRowsReviewed": 11,
+  "reviewedUserRoleMessages": 152,
+  "decisionBearingRowsReviewed": 12,
   "decisionIdsReviewed": [
     "D01",
     "D02",
@@ -200,6 +200,19 @@
         "D11"
       ],
       "requirement": "Continue the same active goal without reducing scope after the refreshed goal-context run.",
+      "evidenceRefs": [
+        "docs/governance/system-telemetry/decision-matrix.md#D11"
+      ]
+    },
+    {
+      "qaId": "CLX-STQA-012",
+      "sourceRow": "USER_151",
+      "sourceLine": 33114,
+      "disposition": "continuation",
+      "decisionIds": [
+        "D11"
+      ],
+      "requirement": "Continue the same active goal without reducing scope after the menu-real gate-hardening run.",
       "evidenceRefs": [
         "docs/governance/system-telemetry/decision-matrix.md#D11"
       ]

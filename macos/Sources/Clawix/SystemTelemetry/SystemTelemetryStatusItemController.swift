@@ -44,9 +44,9 @@ final class SystemTelemetryStatusItemController {
 
     private func refreshNow(forceHistory: Bool = false) async {
         guard let model else { return }
+        _ = await monitorRecorder.recordIfDue(force: forceHistory)
         await model.refresh(forceHistory: forceHistory)
         render(model: model)
-        _ = await monitorRecorder.recordIfDue()
     }
 
     private func render(model: SystemTelemetryMenuBarModel) {
