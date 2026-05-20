@@ -11,6 +11,12 @@ menu-bar indicators, host-side recording, and native interaction from
 validation that requires current signed-app inspection, live providers,
 physical hardware, or native approvals. Rows marked `EXTERNAL PENDING` are not passes and must not be used to close the goal.
 
+Machine-readable closure gates live in
+`docs/system-telemetry-external-validation.manifest.json`. The verifier treats
+that manifest as the structured contract for remaining external lanes, exact-run
+approval, accepted evidence, and the rule that external pending blocks goal
+completion.
+
 ## Current Rows
 
 | ID | Requirement | Local evidence | Missing prerequisite | Status |

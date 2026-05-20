@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
+  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "status": "active_goal_not_complete",
+  "completionPolicy": {
+    "externalPendingBlocksCompletion": true,
+    "requiresFinalSourceAudit": true,
+    "requiresForbiddenNameScan": true,
+    "requiresExactRunApprovalForExternalLanes": true
+  },
+  "rows": [
+    {
+      "id": "CLX-SYS-TEL-EXT-001",
+      "requirement": "Strict native menu-bar visual validation",
+      "status": "VALIDATED LOCAL",
+      "blockingPrerequisites": [],
+      "acceptedEvidence": [
+        "preflight",
+        "accessibility_smoke",
+        "independent_indicators",
+        "combined_dropdown",
+        "provider_rows",
+        "history_graph_menu_content"
+      ]
+    },
+    {
+      "id": "CLX-SYS-TEL-EXT-002",
+      "requirement": "Live host telemetry recording through the app",
+      "status": "VALIDATED LOCAL",
+      "blockingPrerequisites": [],
+      "acceptedEvidence": [
+        "preflight",
+        "live_recorder_smoke",
+        "app_monitor_rows_advanced"
+      ]
+    },
+    {
+      "id": "CLX-SYS-TEL-EXT-003",
+      "requirement": "Physical sensor and fan readings surfaced in the UI",
+      "status": "EXTERNAL PENDING",
+      "blockingPrerequisites": [
+        "compatible_hardware_or_provider_path",
+        "native_sensor_grant",
+        "signed_host_sensor_bridge",
+        "same_machine_evidence"
+      ],
+      "acceptedEvidence": [
+        "provider_execution_receipt_or_external_pending_false_plan",
+        "monitor_sample_ids_for_sensor_temperature_or_fan_speed",
+        "redacted_audit_event",
+        "app_or_menu_same_machine_evidence"
+      ],
+      "reentryCommand": "claw system providers plan system.sensors.signed --json"
+    },
+    {
+      "id": "CLX-SYS-TEL-EXT-004",
+      "requirement": "Live external context provider displayed in menu-bar widgets",
+      "status": "EXTERNAL PENDING",
+      "blockingPrerequisites": [
+        "explicit_approval",
+        "approved_credential_or_account_lease",
+        "location_grant",
+        "network_access_for_exact_run",
+        "provider_execution_receipt"
+      ],
+      "acceptedEvidence": [
+        "provider_execution_receipt",
+        "redacted_audit_event",
+        "monitor_sample_ids_for_context_weather_temperature",
+        "menu_widget_evidence_without_precise_location"
+      ],
+      "reentryCommand": "claw system providers plan context.weather.live --json"
+    },
+    {
+      "id": "CLX-SYS-TEL-EXT-005",
+      "requirement": "Dangerous controls reachable from UI only through governed plans",
+      "status": "EXTERNAL PENDING",
+      "blockingPrerequisites": [
+        "exact_action_approval",
+        "signed_host_broker",
+        "native_confirmation",
+        "required_grants",
+        "rollback_or_continuity_policy",
+        "physical_validation"
+      ],
+      "acceptedEvidence": [
+        "pre_execution_plan_with_will_execute_true_after_approval",
+        "signed_host_execution_receipt",
+        "redacted_audit_event",
+        "physical_validation",
+        "rollback_or_continuity_evidence"
+      ],
+      "reentryCommand": "claw system controls plan <control-id> --json"
+    },
+    {
+      "id": "CLX-SYS-TEL-EXT-006",
+      "requirement": "Native rendered graph view over retained telemetry",
+      "status": "VALIDATED LOCAL",
+      "blockingPrerequisites": [],
+      "acceptedEvidence": [
+        "seeded_history_graph_menu_content",
+        "native_bitmap_pixel_check",
+        "retained_monitor_history"
+      ]
+    }
+  ]
+}
