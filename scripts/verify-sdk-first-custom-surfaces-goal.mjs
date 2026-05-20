@@ -580,9 +580,12 @@ function assertSiblingClawJSArtifacts() {
       "ClawJS and sibling Clawix expose `jobs.start` and `jobs.cancel` as",
       "ClawJS runtime has local authenticated backend routes",
       "Public CLI job mutation",
+      "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
     ],
     "docs/decision-map.md": [
       "packages/clawjs-core/src/custom-app-sdk-inspection.ts",
+      "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
       "metadata-only projection boundaries",
     ],
     "packages/clawjs-core/src/custom-app-sdk-inspection.ts": [
