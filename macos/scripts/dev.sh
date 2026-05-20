@@ -59,6 +59,13 @@ done
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 REQUIRE_STABLE_SIGNING="${CLAWIX_DEV_REQUIRE_STABLE_SIGNING:-0}"
+PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
+if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+    # shellcheck disable=SC1090
+    source "$PRIVATE_SIGNING_GUARD"
+    clawix_require_identity_team SIGN_IDENTITY "macOS development signing identity"
+    REQUIRE_STABLE_SIGNING=1
+fi
 if [[ "$REQUIRE_STABLE_SIGNING" == "1" && ( -z "$SIGN_IDENTITY" || "$SIGN_IDENTITY" == "-" ) ]]; then
     echo "ERROR: SIGN_IDENTITY is required for this dev install; refusing ad-hoc signing." >&2
     exit 1
@@ -577,6 +584,7 @@ if [[ "${CLAWIX_DEV_BUNDLE_CLAWJS:-1}" == "1" ]]; then
     fi
     CLAWJS_SIGN_IDENTITY="$SIGN_IDENTITY" \
     CLAWJS_SIGN_OPTS="--timestamp=none" \
+    CLAWJS_REQUIRE_ALLOWED_SIGNING="${CLAWIX_SIGNING_GUARD_ACTIVE:-0}" \
         bash "$SCRIPT_DIR/bundle_clawjs.sh" "$BUNDLE"
 else
     echo "==> Skipping ClawJS bundling (set CLAWIX_DEV_BUNDLE_CLAWJS=1 to enable)"
@@ -709,6 +717,9 @@ if [[ -n "$INSTALL_BUNDLE" ]]; then
     if codesign -dv "$BUNDLE" 2>&1 | grep -q 'Signature=adhoc'; then
         echo "ERROR: staged bundle is ad-hoc signed; refusing install." >&2
         exit 1
+    fi
+    if declare -F clawix_assert_signed_artifact_team >/dev/null; then
+        clawix_assert_signed_artifact_team "$BUNDLE"
     fi
 
     echo "==> Installing $INSTALL_BUNDLE"

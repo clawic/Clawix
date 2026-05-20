@@ -27,6 +27,12 @@ do
 done
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
+if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+    # shellcheck disable=SC1090
+    source "$PRIVATE_SIGNING_GUARD"
+    clawix_require_identity_team SIGN_IDENTITY "macOS development signing identity"
+fi
 
 # Resolve marketing + build version for the generated Info.plist.
 # shellcheck disable=SC1091
@@ -225,6 +231,9 @@ if [[ -f "$SWIFT_SURFACE_RUNNER_BIN" ]]; then
              "$SWIFT_SURFACE_RUNNER_BIN"
 fi
 codesign --force --sign "$SIGN_IDENTITY" --identifier "$BUNDLE_ID" --timestamp=none "$BUNDLE_DIR"
+if declare -F clawix_assert_signed_artifact_team >/dev/null; then
+    clawix_assert_signed_artifact_team "$BUNDLE_DIR"
+fi
 
 # Minimal PkgInfo
 printf "APPL????" > "$BUNDLE_DIR/Contents/PkgInfo"

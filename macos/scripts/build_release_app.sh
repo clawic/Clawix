@@ -43,6 +43,12 @@ do
 done
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 DEVELOPER_ID_IDENTITY="${DEVELOPER_ID_IDENTITY:-}"
+PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
+if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+    # shellcheck disable=SC1090
+    source "$PRIVATE_SIGNING_GUARD"
+    clawix_require_identity_team DEVELOPER_ID_IDENTITY "macOS release Developer ID identity"
+fi
 
 if [[ -z "$DEVELOPER_ID_IDENTITY" ]]; then
     echo "ERROR: DEVELOPER_ID_IDENTITY not set." >&2
@@ -449,6 +455,9 @@ codesign --force --options runtime --timestamp \
 
 echo "==> Verifying signature"
 codesign --verify --deep --strict --verbose=2 "$BUNDLE_DIR"
+if declare -F clawix_assert_signed_artifact_team >/dev/null; then
+    clawix_assert_signed_artifact_team "$BUNDLE_DIR"
+fi
 
 echo ""
 echo "Done: $BUNDLE_DIR"

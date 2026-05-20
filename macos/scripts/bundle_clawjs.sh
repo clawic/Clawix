@@ -484,6 +484,10 @@ sign_one() {
             return
         fi
     fi
+    if [[ "${CLAWJS_REQUIRE_ALLOWED_SIGNING:-0}" == "1" ]]; then
+        echo "ERROR: refusing ad-hoc fallback while private signing guard is active: $target" >&2
+        exit 1
+    fi
     # Ad-hoc fallback. Used when SIGN_ID is empty/"-" (dev without
     # .signing.env) or when the configured identity is unavailable.
     codesign --force --sign - --timestamp=none "$target"
