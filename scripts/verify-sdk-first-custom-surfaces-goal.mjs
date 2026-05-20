@@ -49,6 +49,7 @@ function assertCompletionAudit() {
     "Clawix now mirrors the ClawJS `system.telemetry.snapshot` and `system.telemetry.history` local-wide read contracts",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
+    "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
     "`window.clawix.mac.planAction()`",
     "dry-run-only Mac Control planner",
     "| CLX-SDK-001 | ADR, scope, decision-map, and discoverability routing",
@@ -111,6 +112,7 @@ function assertPublicRouting() {
       "signed app launch and attach capture paths",
       "delayed-heavy-surface",
       "`system.telemetry.snapshot` and `system.telemetry.history` are mirrored as",
+      "`resources.list` and `resources.read` are separate local-wide capabilities",
       "`mac.action.plan` is exposed to Web custom apps through",
     ],
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
@@ -173,6 +175,8 @@ function assertRuntimeArtifacts() {
       "systemTelemetrySnapshotSchemaRef",
       "system.telemetry.snapshot",
       "system.telemetry.history",
+      "resourcesListSchemaRef",
+      "resources.list",
     ],
     "macos/Sources/Clawix/Apps/AppBridgeQueryDSL.swift": [
       "case invalidCollection(String)",
@@ -212,6 +216,7 @@ function assertRuntimeArtifacts() {
       "contracts: function () { return send('capabilities.contracts'); }",
       "search.query",
       "db.query",
+      "resources.list",
       "mac.action.plan",
       "planAction",
       "system.telemetry.snapshot",
@@ -301,6 +306,7 @@ function assertTests() {
   for (const [relativePath, snippets] of Object.entries({
     "macos/Tests/ClawixMeshTests/AppCustomSurfaceCapabilityTests.swift": [
       "testHostBridgeExposesCustomAppSDKContractPayload",
+      "testSwiftSurfaceResourceListExecutesThroughRegisteredResources",
       "testInjectedAppsSdkExposesMacPlanOnlyFacade",
       "testDBQueryDSLRejectsCollectionEscapesAndDDLKeys",
       "testBridgeOperationPolicyDoesNotExposeEscapeHatches",
@@ -378,6 +384,7 @@ function assertSiblingClawJSArtifacts() {
     "packages/clawjs-core/src/capability-catalog.ts": [
       "id: \"system.telemetry.snapshot\"",
       "id: \"system.telemetry.history\"",
+      "id: \"resources.list\"",
       "@clawjs/claw:system.telemetry.snapshot",
       "@clawjs/claw:system.telemetry.history",
     ],
@@ -387,6 +394,7 @@ function assertSiblingClawJSArtifacts() {
       "custom-app DB query schema rejects collection creation",
       "system.telemetry.snapshot",
       "system.telemetry.history",
+      "resources.list",
     ],
     "packages/clawjs-mcp/src/custom-app-sdk-contract.test.ts": [
       "MCP custom app SDK contract boundary",
