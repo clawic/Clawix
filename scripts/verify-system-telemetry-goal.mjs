@@ -1249,6 +1249,7 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "NSMenuItem(title: \"\\(widget.title) history graph\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let refresh = NSMenuItem(title: \"Refresh\"");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "await refreshNow(forceHistory: true)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "final class SystemTelemetryHistoryGraphView: NSView");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "setAccessibilityLabel(\"\\(title) history graph\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "history.chart.points");
@@ -1337,6 +1338,7 @@ function assertOptionalSwiftTests() {
 function assertOptionalAccessibilitySmoke() {
   if (!args.has("--accessibility-smoke")) return;
   if (args.has("--seed-local-history")) {
+    clickCombinedMenuRefresh();
     run("sleep", ["4"], { timeout: 10_000 });
   }
   const titlesScript = `
