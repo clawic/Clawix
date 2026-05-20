@@ -1,6 +1,24 @@
 import ClawHostKit
+import Foundation
 import XCTest
 @testable import Clawix
+
+private final class CapturedRequestBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: CommandRequest?
+
+    func set(_ request: CommandRequest) {
+        lock.lock()
+        value = request
+        lock.unlock()
+    }
+
+    func get() -> CommandRequest? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+}
 
 final class NetworkControlBridgeTests: XCTestCase {
     func testDecodesNetworkStatusAdaptersRulesAndEvents() throws {
@@ -155,9 +173,9 @@ final class NetworkControlBridgeTests: XCTestCase {
     }
 
     func testBridgeUsesSystemNetworkResourceWithoutNativeMutation() async throws {
-        var captured: CommandRequest?
+        let captured = CapturedRequestBox()
         let bridge = NetworkControlBridge { request in
-            captured = request
+            captured.set(request)
             return CommandResponse(
                 ok: true,
                 data: .object([
@@ -178,11 +196,12 @@ final class NetworkControlBridgeTests: XCTestCase {
         }
 
         let status = try await bridge.status(detailOptIn: true)
+        let request = captured.get()
 
         XCTAssertEqual(status.detailOptIn, true)
-        XCTAssertEqual(captured?.domain, .system)
-        XCTAssertEqual(captured?.resource, "network")
-        XCTAssertEqual(captured?.action, "status")
-        XCTAssertEqual(captured?.arguments["detail_opt_in"], "true")
+        XCTAssertEqual(request?.domain, .system)
+        XCTAssertEqual(request?.resource, "network")
+        XCTAssertEqual(request?.action, "status")
+        XCTAssertEqual(request?.arguments["detail_opt_in"], "true")
     }
 }
