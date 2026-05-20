@@ -854,11 +854,13 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var isRefreshing = false
 
+    private static let snapshotRefreshInterval: TimeInterval = 15
     private static let historyRefreshInterval: TimeInterval = 60
     private static let automaticHistoryMetricLimit = 3
 
     private let bridge: SystemTelemetryBridge
     private let configuration: () -> SystemTelemetryMenuBarConfiguration
+    private var lastSnapshotRefreshAt: Date?
     private var lastHistoryRefreshAt: Date?
     private var lastHistoryMetricKeys: Set<String> = []
 
@@ -877,7 +879,6 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
 
         do {
             async let nextWidgets = bridge.widgets()
-            async let nextSnapshot = bridge.snapshot()
             async let nextProviders = loadProviders()
             let currentConfiguration = configuration()
             let widgetCatalog = try await nextWidgets
@@ -892,16 +893,29 @@ final class SystemTelemetryMenuBarModel: ObservableObject {
             }
             let historyWidgets = menuBarWidgets + panelWidgets.prefix(Self.automaticHistoryMetricLimit)
             let nextHistories = await loadHistoriesIfNeeded(for: historyWidgets, force: forceHistory, now: now)
+            let nextSnapshot = try await loadSnapshotIfNeeded(force: forceHistory, now: now)
             allWidgets = widgetCatalog
             widgets = menuBarWidgets
             self.panelWidgets = panelWidgets
             providers = await nextProviders
-            snapshot = try await nextSnapshot
+            snapshot = nextSnapshot
             histories = nextHistories
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func loadSnapshotIfNeeded(force: Bool, now: Date) async throws -> SystemTelemetrySnapshotState {
+        if !force,
+           let snapshot,
+           let lastSnapshotRefreshAt,
+           now.timeIntervalSince(lastSnapshotRefreshAt) < Self.snapshotRefreshInterval {
+            return snapshot
+        }
+        let nextSnapshot = try await bridge.snapshot()
+        lastSnapshotRefreshAt = now
+        return nextSnapshot
     }
 
     private func loadHistoriesIfNeeded(

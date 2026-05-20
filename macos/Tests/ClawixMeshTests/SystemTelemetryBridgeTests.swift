@@ -6,18 +6,23 @@ import XCTest
 final class SystemTelemetryBridgeTests: XCTestCase {
     private actor TelemetryRequestCounter {
         private var widgets = 0
+        private var snapshots = 0
         private var histories = 0
 
         func incrementWidgets() {
             widgets += 1
         }
 
+        func incrementSnapshots() {
+            snapshots += 1
+        }
+
         func incrementHistories() {
             histories += 1
         }
 
-        func counts() -> (widgets: Int, histories: Int) {
-            (widgets, histories)
+        func counts() -> (widgets: Int, snapshots: Int, histories: Int) {
+            (widgets, snapshots, histories)
         }
     }
 
@@ -1102,6 +1107,73 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         await model.refresh(now: Date(timeIntervalSince1970: 182))
         counts = await counter.counts()
         XCTAssertEqual(counts.histories, 3)
+    }
+
+    @MainActor
+    func testMenuBarModelThrottlesSnapshotRefreshes() async {
+        let counter = TelemetryRequestCounter()
+        let bridge = SystemTelemetryBridge { request in
+            switch (request.resource, request.action) {
+            case ("widgets", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "widgets": .array([
+                            .object([
+                                "id": .string("cpu-load"),
+                                "title": .string("CPU"),
+                                "placement": .string("menubar"),
+                                "metricKey": .string("system.cpu.load1"),
+                                "presentation": .string("text"),
+                            ]),
+                        ]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            case ("providers", "list"):
+                return CommandResponse(
+                    ok: true,
+                    data: .object(["providers": .array([])]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            default:
+                await counter.incrementSnapshots()
+                return CommandResponse(
+                    ok: true,
+                    data: .object([
+                        "generatedAt": .string("2026-05-18T12:00:00Z"),
+                        "samples": .array([
+                            .object([
+                                "key": .string("system.cpu.load1"),
+                                "value": .number(1.25),
+                                "unit": .string("load"),
+                                "capturedAt": .string("2026-05-18T12:00:00Z"),
+                            ]),
+                        ]),
+                        "unavailableMetrics": .array([]),
+                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
+                    ]),
+                    error: nil,
+                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
+                )
+            }
+        }
+        let model = SystemTelemetryMenuBarModel(bridge: bridge)
+
+        await model.refresh(now: Date(timeIntervalSince1970: 100))
+        await model.refresh(now: Date(timeIntervalSince1970: 110))
+        var counts = await counter.counts()
+        XCTAssertEqual(counts.snapshots, 1)
+
+        await model.refresh(forceHistory: true, now: Date(timeIntervalSince1970: 111))
+        counts = await counter.counts()
+        XCTAssertEqual(counts.snapshots, 2)
+
+        await model.refresh(now: Date(timeIntervalSince1970: 127))
+        counts = await counter.counts()
+        XCTAssertEqual(counts.snapshots, 3)
     }
 
     @MainActor
