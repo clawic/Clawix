@@ -12,10 +12,12 @@ validation that requires current signed-app inspection, live providers,
 physical hardware, or native approvals. Rows marked `EXTERNAL PENDING` are not passes and must not be used to close the goal.
 
 Machine-readable closure gates live in
-`docs/system-telemetry-external-validation.manifest.json`. The verifier treats
-that manifest as the structured contract for remaining external lanes, exact-run
-approval, accepted evidence, and the rule that external pending blocks goal
-completion.
+`docs/system-telemetry-external-validation.manifest.json` and
+`docs/system-telemetry-source-qa-review.json`. The verifier treats the manifest
+as the structured contract for remaining external lanes, exact-run approval,
+accepted evidence, and the rule that external pending blocks goal completion.
+The source Q/A review binds the private decision audit to public-safe rows
+before any closure attempt.
 
 ## Current Rows
 
