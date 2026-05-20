@@ -29,6 +29,11 @@ function requireSnippet(relativePath, snippet) {
   assert(text.includes(snippet), `${relativePath}: missing ${JSON.stringify(snippet)}`);
 }
 
+function forbidSnippet(relativePath, snippet) {
+  const text = read(relativePath);
+  assert(!text.includes(snippet), `${relativePath}: must not contain ${JSON.stringify(snippet)}`);
+}
+
 function requireSiblingSnippet(siblingRoot, relativePath, snippet) {
   const text = readFrom(siblingRoot, relativePath);
   assert(text.includes(snippet), `clawjs:${relativePath}: missing ${JSON.stringify(snippet)}`);
@@ -268,6 +273,8 @@ function assertPublicRouting() {
       "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
       "`window.clawix` host bridge",
+      "Generic `actions.invoke` and `secrets.broker` are explicit approval-gated no-runner/no-plaintext-broker gaps",
+      "accepted explicit gaps, not an unstated executor blocker",
     ],
     "docs/discoverability.registry.json": [
       "docs/governance/sdk-first-custom-surfaces/completion.md",
@@ -286,6 +293,8 @@ function assertPublicRouting() {
   })) {
     for (const snippet of snippets) requireSnippet(relativePath, snippet);
   }
+
+  forbidSnippet("docs/decision-map.md", "backend executor");
 }
 
 function assertRuntimeArtifacts() {
