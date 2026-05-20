@@ -245,6 +245,48 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
         XCTAssertFalse(AppBridgeOperationPolicy.allowedOperations.contains { $0.hasPrefix("native.") })
     }
 
+    func testBridgeOperationPolicyKeepsReviewedAllowlistExact() {
+        let expectedOperations: Set<String> = [
+            "actions.invoke",
+            "agent.callTool",
+            "agent.sendMessage",
+            "capabilities.contracts",
+            "capabilities.get",
+            "capabilities.list",
+            "capabilities.riskMap",
+            "capabilities.source",
+            "db.query",
+            "iot.device.action.invoke",
+            "jobs.cancel",
+            "jobs.events",
+            "jobs.get",
+            "jobs.list",
+            "jobs.start",
+            "jobs.stream",
+            "mac.action.plan",
+            "request.cancel",
+            "resources.list",
+            "resources.read",
+            "search.query",
+            "secrets.broker",
+            "storage.delete",
+            "storage.get",
+            "storage.keys",
+            "storage.set",
+            "system.telemetry.history",
+            "system.telemetry.snapshot",
+            "ui.openExternal",
+            "ui.setBadge",
+            "ui.setTitle"
+        ]
+
+        XCTAssertEqual(AppBridgeOperationPolicy.allowedOperations, expectedOperations)
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("db.schema.create"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("db.collection.create"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("resources.path.read"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("native.permissions.request"))
+    }
+
     func testJobsListBridgeValueRedactsRunMetadataThroughSharedPolicy() {
         let run = ClawJSIndexClient.Run(
             id: "run-1",
