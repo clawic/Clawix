@@ -212,6 +212,7 @@ for (const contract of skillContracts) {
 }
 
 for (const skillName of expectedSkillNames) {
+  requireSnippet("AGENTS.md", skillName);
   requireSnippet("docs/agent-rules/index.md", skillName);
   requireSnippet("scripts/check-clawjs-skills-sync.mjs", `"${skillName}"`);
 }
