@@ -70,6 +70,8 @@ struct AppSurfaceView: View {
                         riskMap: riskMap,
                         onActivate: { approve(record, riskMap: riskMap) }
                     )
+                case .blockedCapabilities(let blocked):
+                    AppActivationBlockedGate(record: record, unknownCapabilities: blocked)
                 case .blockedUnknownCapabilities(let unknown):
                     AppActivationBlockedGate(record: record, unknownCapabilities: unknown)
                 }
@@ -173,6 +175,8 @@ struct AppSurfaceView: View {
             reportLoadState(loadState)
         case .reviewRequired:
             surfaceReporter.partial("Review required before this app can run.")
+        case .blockedCapabilities(let blocked):
+            surfaceReporter.unavailable("Blocked capabilities: \(blocked.joined(separator: ", ")).")
         case .blockedUnknownCapabilities(let unknown):
             surfaceReporter.unavailable("Unsupported capabilities: \(unknown.joined(separator: ", ")).")
         }

@@ -52,6 +52,7 @@ struct AppCapabilityRiskMap: Codable, Equatable, Hashable {
 enum AppActivationGate: Equatable {
     case allowed
     case reviewRequired(AppCapabilityRiskMap)
+    case blockedCapabilities([String])
     case blockedUnknownCapabilities([String])
 }
 
@@ -239,6 +240,18 @@ enum AppCapabilityCatalog {
             destructive: false
         ),
         AppCapabilityDescriptor(
+            id: "jobs.stream",
+            title: "Jobs stream",
+            summary: "Blocked custom-app gap for true live job/run event streams until a backend stream, policy, audit, and host adapter exist.",
+            customAppAccess: .blocked,
+            riskTier: .low,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
             id: "actions.invoke",
             title: "Framework action invoke",
             summary: "Brokered framework actions that may write or affect external state.",
@@ -340,6 +353,9 @@ enum AppCapabilityCatalog {
         let riskMap = riskMap(for: record)
         if !riskMap.unknown.isEmpty {
             return .blockedUnknownCapabilities(riskMap.unknown)
+        }
+        if !riskMap.blocked.isEmpty {
+            return .blockedCapabilities(riskMap.blocked)
         }
         if riskMap.requiresActivationReview && record.activationReview == nil {
             return .reviewRequired(riskMap)
@@ -472,6 +488,14 @@ enum AppCapabilityCatalog {
                 "approvalRequired": true,
                 "runner": "pending",
                 "reason": "Secrets broker dispatch still needs a safe lease/ref runner and must not expose plaintext."
+            ]
+        case _ where descriptor.customAppAccess == .blocked:
+            return [
+                "status": "unavailable",
+                "mode": "blocked",
+                "approvalRequired": false,
+                "runner": "pending",
+                "reason": "This custom-app capability is an explicit blocked gap until a safe backend contract and host adapter exist."
             ]
         default:
             return [
