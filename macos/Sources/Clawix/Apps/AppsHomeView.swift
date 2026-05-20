@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// "All apps" landing screen the user reaches from the sidebar Apps
@@ -115,6 +116,24 @@ struct AppsHomeView: View {
                     .foregroundColor(Color(white: 0.62))
             }
             Spacer()
+            Button {
+                importPackage()
+            } label: {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 26, height: 26)
+            }
+            .buttonStyle(.plain)
+            .help("Import app package")
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(white: 0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+            )
+            .foregroundColor(Color(white: 0.86))
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
@@ -138,6 +157,26 @@ struct AppsHomeView: View {
         .padding(.horizontal, 32)
         .padding(.top, 28)
         .padding(.bottom, 16)
+    }
+
+    private func importPackage() {
+        let panel = NSOpenPanel()
+        panel.title = "Import App Package"
+        panel.message = "Choose a folder containing a Clawix manifest.json package."
+        panel.prompt = "Import"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = AppsStore.defaultRootURL().deletingLastPathComponent()
+
+        guard panel.runModal() == .OK, let sourceURL = panel.url else { return }
+        do {
+            let imported = try appsStore.importApp(from: sourceURL, originClass: .imported)
+            ToastCenter.shared.show("Imported \(imported.name)")
+            appState.currentRoute = .app(imported.id)
+        } catch {
+            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+        }
     }
 
     private var filterBar: some View {
