@@ -162,6 +162,9 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
             XCTAssertEqual(surfaces.map { $0["surface"] }, AppCapabilityCatalog.canonicalSurfaceNames, capability["id"] as? String ?? "unknown")
             for surface in surfaces {
                 XCTAssertNotEqual(surface["status"], "pending", "\(capability["id"] as? String ?? "unknown"):\(surface["surface"] ?? "unknown")")
+                if surface["status"] == "available" {
+                    XCTAssertNotNil(surface["ref"], "\(capability["id"] as? String ?? "unknown"):\(surface["surface"] ?? "unknown")")
+                }
             }
         }
 
@@ -169,9 +172,13 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
         let jobsList = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.list" })
         let jobsListSurfaces = try XCTUnwrap(jobsList["surfaces"] as? [[String: String]])
         XCTAssertEqual(jobsListSurfaces.first { $0["surface"] == "cli" }?["status"], "blocked")
+        XCTAssertNil(jobsListSurfaces.first { $0["surface"] == "cli" }?["ref"])
+        XCTAssertEqual(jobsListSurfaces.first { $0["surface"] == "sdk" }?["ref"], "window.clawix.jobs.list")
         let secrets = try XCTUnwrap(capabilities.first { $0["id"] as? String == "secrets.broker" })
         let secretsSurfaces = try XCTUnwrap(secrets["surfaces"] as? [[String: String]])
         XCTAssertEqual(secretsSurfaces.first { $0["surface"] == "mcp" }?["status"], "blocked")
+        XCTAssertNil(secretsSurfaces.first { $0["surface"] == "mcp" }?["ref"])
+        XCTAssertEqual(secretsSurfaces.first { $0["surface"] == "hostBridge" }?["ref"], "window.clawix")
     }
 
     func testInjectedAppsSdkExposesSearchAndDBContracts() {

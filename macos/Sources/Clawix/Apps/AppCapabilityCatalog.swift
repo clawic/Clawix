@@ -482,12 +482,99 @@ enum AppCapabilityCatalog {
             break
         }
 
-        return surfaceBindingsBridgeValue(statuses: statuses)
+        return surfaceBindingsBridgeValue(statuses: statuses, descriptor: descriptor)
     }
 
-    private static func surfaceBindingsBridgeValue(statuses: [String: String]) -> [[String: String]] {
+    private static func surfaceBindingsBridgeValue(
+        statuses: [String: String],
+        descriptor: AppCapabilityDescriptor? = nil
+    ) -> [[String: String]] {
         canonicalSurfaceNames.map { surface in
-            ["surface": surface, "status": statuses[surface] ?? "blocked"]
+            let status = statuses[surface] ?? "blocked"
+            var value = ["surface": surface, "status": status]
+            if status == "available", let descriptor, let ref = surfaceRef(for: descriptor, surface: surface) {
+                value["ref"] = ref
+            }
+            return value
+        }
+    }
+
+    private static func surfaceRef(for descriptor: AppCapabilityDescriptor, surface: String) -> String? {
+        switch surface {
+        case "sdk":
+            return sdkSurfaceRef(for: descriptor.id)
+        case "cli":
+            return cliSurfaceRef(for: descriptor.id)
+        case "serviceApi":
+            return "service_api.contracts/custom-app-sdk"
+        case "mcp":
+            return "mcp.custom_app_sdk metadata-only contract projection"
+        case "relay":
+            return "relay.remote.custom_app_sdk metadata-only contract projection"
+        case "hostBridge":
+            return "window.clawix"
+        default:
+            return nil
+        }
+    }
+
+    private static func sdkSurfaceRef(for capabilityID: String) -> String {
+        switch capabilityID {
+        case "search.query":
+            return "window.clawix.search.query"
+        case "db.query":
+            return "window.clawix.db.query"
+        case "resources.list":
+            return "window.clawix.resources.list"
+        case "resources.read":
+            return "window.clawix.resources.read"
+        case "system.telemetry.snapshot":
+            return "window.clawix.system.telemetry.snapshot"
+        case "system.telemetry.history":
+            return "window.clawix.system.telemetry.history"
+        case "jobs.list":
+            return "window.clawix.jobs.list"
+        case "jobs.get":
+            return "window.clawix.jobs.get"
+        case "jobs.events":
+            return "window.clawix.jobs.events"
+        case "actions.invoke":
+            return "window.clawix.actions.invoke"
+        case "secrets.broker":
+            return "window.clawix.secrets.broker"
+        case "mac.action.plan":
+            return "window.clawix.mac.planAction"
+        case "iot.device.action.invoke":
+            return "window.clawix.iot.invokeAction"
+        default:
+            return "window.clawix.capabilities.get"
+        }
+    }
+
+    private static func cliSurfaceRef(for capabilityID: String) -> String {
+        switch capabilityID {
+        case "search.query":
+            return "claw search query --json"
+        case "db.query":
+            return "claw db <collection> query --json"
+        case "resources.list":
+            return "claw resources list --json"
+        case "resources.read":
+            return "claw resources read --json"
+        case "system.telemetry.snapshot":
+            return "claw system snapshot --json"
+        case "system.telemetry.history":
+            return "claw system history <metric-key> --range 1h|24h --json"
+        case "actions.invoke":
+            return "brokered claw <domain> <action> --json"
+        case "secrets.broker":
+            return "claw secrets ... --json"
+        case "mac.action.plan":
+            return "claw wifi/window/permissions/system mac --json"
+        case "iot.device.action.invoke":
+            return "claw iot ... --json"
+        default:
+            return "claw inspect custom-app-sdk --json"
         }
     }
 
