@@ -152,6 +152,8 @@ echo "==> Building Swift package…"
 swift build 2>&1
 echo "==> Building Secrets XPC service…"
 swift build --target ClawixSecretsXPC 2>&1
+echo "==> Building Swift surface runner…"
+swift build --target ClawixSwiftSurfaceRunner 2>&1
 
 if [[ ! -f "$PROJECT_DIR/.build/debug/${APP_NAME}" ]]; then
     echo "ERROR: binary not produced at .build/debug/${APP_NAME}"
@@ -160,6 +162,11 @@ fi
 SECRETS_XPC_BIN_BUILT="$PROJECT_DIR/.build/debug/ClawixSecretsXPC"
 if [[ ! -f "$SECRETS_XPC_BIN_BUILT" ]]; then
     echo "ERROR: Secrets XPC service binary not produced at $SECRETS_XPC_BIN_BUILT"
+    exit 1
+fi
+SWIFT_SURFACE_RUNNER_BIN_BUILT="$PROJECT_DIR/.build/debug/ClawixSwiftSurfaceRunner"
+if [[ ! -f "$SWIFT_SURFACE_RUNNER_BIN_BUILT" ]]; then
+    echo "ERROR: Swift surface runner binary not produced at $SWIFT_SURFACE_RUNNER_BIN_BUILT"
     exit 1
 fi
 
@@ -400,6 +407,10 @@ if [[ -n "$CLAW_HOST_BIN_BUILT" ]]; then
     chmod +x "$BUNDLE/Contents/MacOS/claw-host"
 fi
 
+mkdir -p "$BUNDLE/Contents/Helpers"
+cp "$SWIFT_SURFACE_RUNNER_BIN_BUILT" "$BUNDLE/Contents/Helpers/ClawixSwiftSurfaceRunner"
+chmod +x "$BUNDLE/Contents/Helpers/ClawixSwiftSurfaceRunner"
+
 # 3.25) Embed the Secrets-only XPC authorization service. The service issues
 #      short HMAC assertions for sensitive Secrets HTTP requests after macOS
 #      XPC connects a caller whose code signature identifier matches this app.
@@ -635,6 +646,23 @@ if [[ -f "$HOST_BIN" ]]; then
         echo "WARN: codesign for claw-host with $SIGN_IDENTITY failed, falling back to ad-hoc:" >&2
         cat /tmp/clawix-claw-host-sign.err >&2
         codesign --force --sign - --identifier "${BUNDLE_ID}.claw-host" "$HOST_BIN"
+    fi
+fi
+
+SWIFT_SURFACE_RUNNER_BIN="$BUNDLE/Contents/Helpers/ClawixSwiftSurfaceRunner"
+if [[ -f "$SWIFT_SURFACE_RUNNER_BIN" ]]; then
+    if ! codesign --force --sign "$SIGN_IDENTITY" \
+                  --identifier "${BUNDLE_ID}.swift-surface-runner" \
+                  --timestamp=none \
+                  "$SWIFT_SURFACE_RUNNER_BIN" 2>/tmp/clawix-swift-surface-runner-sign.err; then
+        if [[ "$REQUIRE_STABLE_SIGNING" == "1" ]]; then
+            echo "ERROR: codesign for ClawixSwiftSurfaceRunner failed:" >&2
+            cat /tmp/clawix-swift-surface-runner-sign.err >&2
+            exit 1
+        fi
+        echo "WARN: codesign for ClawixSwiftSurfaceRunner with $SIGN_IDENTITY failed, falling back to ad-hoc:" >&2
+        cat /tmp/clawix-swift-surface-runner-sign.err >&2
+        codesign --force --sign - --identifier "${BUNDLE_ID}.swift-surface-runner" "$SWIFT_SURFACE_RUNNER_BIN"
     fi
 fi
 

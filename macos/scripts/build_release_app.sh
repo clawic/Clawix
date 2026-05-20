@@ -76,6 +76,11 @@ swift build -c release --target ClawixSecretsXPC \
     -Xswiftc -file-prefix-map -Xswiftc "${PROJECT_DIR}/.build=clawix/.build" \
     -Xswiftc -file-prefix-map -Xswiftc "${PROJECT_DIR}=clawix/macos" \
     2>&1
+echo "==> Building Swift surface runner (release)"
+swift build -c release --target ClawixSwiftSurfaceRunner \
+    -Xswiftc -file-prefix-map -Xswiftc "${PROJECT_DIR}/.build=clawix/.build" \
+    -Xswiftc -file-prefix-map -Xswiftc "${PROJECT_DIR}=clawix/macos" \
+    2>&1
 
 BINARY="$PROJECT_DIR/.build/release/${APP_NAME}"
 if [[ ! -f "$BINARY" ]]; then
@@ -85,6 +90,11 @@ fi
 SECRETS_XPC_BINARY="$PROJECT_DIR/.build/release/ClawixSecretsXPC"
 if [[ ! -f "$SECRETS_XPC_BINARY" ]]; then
     echo "ERROR: Secrets XPC service binary not produced at $SECRETS_XPC_BINARY" >&2
+    exit 1
+fi
+SWIFT_SURFACE_RUNNER_BINARY="$PROJECT_DIR/.build/release/ClawixSwiftSurfaceRunner"
+if [[ ! -f "$SWIFT_SURFACE_RUNNER_BINARY" ]]; then
+    echo "ERROR: Swift surface runner binary not produced at $SWIFT_SURFACE_RUNNER_BINARY" >&2
     exit 1
 fi
 
@@ -144,11 +154,14 @@ rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR/Contents/MacOS"
 mkdir -p "$BUNDLE_DIR/Contents/Resources"
 mkdir -p "$BUNDLE_DIR/Contents/Frameworks"
+mkdir -p "$BUNDLE_DIR/Contents/Helpers"
 
 cp "$BINARY" "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
 chmod +x "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
 cp "$CLAW_HOST_BINARY" "$BUNDLE_DIR/Contents/MacOS/claw-host"
 chmod +x "$BUNDLE_DIR/Contents/MacOS/claw-host"
+cp "$SWIFT_SURFACE_RUNNER_BINARY" "$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
+chmod +x "$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
 cp "$ICON_FILE" "$BUNDLE_DIR/Contents/Resources/Clawix.icns"
 SECRETS_XPC_SERVICE_NAME="${BUNDLE_ID}.secrets-xpc"
 SECRETS_XPC_BUNDLE="$BUNDLE_DIR/Contents/XPCServices/ClawixSecretsXPC.xpc"
@@ -396,6 +409,22 @@ if [[ -f "$HOST_BIN" ]]; then
              --sign "$DEVELOPER_ID_IDENTITY" \
              --identifier "${BUNDLE_ID}.claw-host" \
              "$HOST_BIN"
+fi
+
+SWIFT_SURFACE_RUNNER_BIN="$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
+if [[ -f "$SWIFT_SURFACE_RUNNER_BIN" ]]; then
+    echo "==> Stripping absolute build paths from ClawixSwiftSurfaceRunner"
+    python3 "$SCRIPT_DIR/strip_user_paths.py" \
+        "$SWIFT_SURFACE_RUNNER_BIN" \
+        --replace "${PROJECT_DIR}/.build/=clawix/macos/.build/" \
+        --replace "${PROJECT_DIR}/=clawix/macos/" \
+        --replace "$(dirname "${PROJECT_DIR}")/=clawix/" \
+        --replace "${HOME}/="
+    echo "==> Signing ClawixSwiftSurfaceRunner helper"
+    codesign --force --options runtime --timestamp \
+             --sign "$DEVELOPER_ID_IDENTITY" \
+             --identifier "${BUNDLE_ID}.swift-surface-runner" \
+             "$SWIFT_SURFACE_RUNNER_BIN"
 fi
 
 if [[ -d "$BUNDLE_DIR/Contents/XPCServices" ]]; then

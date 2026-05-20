@@ -459,6 +459,7 @@ struct AppSwiftSurfaceProcessExecutor: AppSwiftSurfaceRunnerExecuting {
 enum AppSwiftSurfaceContract {
     static let protocolVersion = 1
     static let manifestFilename = "surface.json"
+    static let runnerExecutableName = "ClawixSwiftSurfaceRunner"
 
     static func validate(manifest: AppSwiftSurfaceManifest, for app: AppRecord) throws {
         guard app.effectiveSurfaceKind == .swiftDeclarative else {
@@ -528,10 +529,34 @@ enum AppSwiftSurfaceContract {
         )
     }
 
-    static func runnerExecutablePath(environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+    static func runnerExecutablePath(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        bundledExecutablePath: String? = nil
+    ) -> String? {
         let value = environment["CLAWIX_SWIFT_SURFACE_RUNNER"]?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return value?.isEmpty == false ? value : nil
+        if value?.isEmpty == false {
+            return value
+        }
+        if let bundled = bundledExecutablePath?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !bundled.isEmpty {
+            return bundled
+        }
+        return runnerBundledExecutablePath()
+    }
+
+    static func runnerBundledExecutablePath(bundle: Bundle = .main) -> String? {
+        var candidates: [URL] = []
+        if let auxiliary = bundle.url(forAuxiliaryExecutable: runnerExecutableName) {
+            candidates.append(auxiliary)
+        }
+        candidates.append(bundle.bundleURL.appendingPathComponent("Contents/Helpers/\(runnerExecutableName)", isDirectory: false))
+        candidates.append(bundle.bundleURL.appendingPathComponent("Contents/MacOS/\(runnerExecutableName)", isDirectory: false))
+
+        for candidate in candidates where FileManager.default.isExecutableFile(atPath: candidate.path) {
+            return candidate.path
+        }
+        return nil
     }
 
     private static func validateNode(

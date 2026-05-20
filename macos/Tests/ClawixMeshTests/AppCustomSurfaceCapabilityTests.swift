@@ -614,6 +614,24 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         )
     }
 
+    func testSwiftSurfaceRunnerExecutablePathFallsBackToBundledHelper() throws {
+        XCTAssertEqual(AppSwiftSurfaceContract.runnerExecutableName, "ClawixSwiftSurfaceRunner")
+        XCTAssertEqual(
+            AppSwiftSurfaceContract.runnerExecutablePath(
+                environment: ["CLAWIX_SWIFT_SURFACE_RUNNER": "  "],
+                bundledExecutablePath: " /Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner "
+            ),
+            "/Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner"
+        )
+        XCTAssertEqual(
+            AppSwiftSurfaceContract.runnerExecutablePath(
+                environment: ["CLAWIX_SWIFT_SURFACE_RUNNER": "/tmp/dev-runner"],
+                bundledExecutablePath: "/Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner"
+            ),
+            "/tmp/dev-runner"
+        )
+    }
+
     func testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC() throws {
         let app = AppRecord(
             slug: "swift-dashboard",

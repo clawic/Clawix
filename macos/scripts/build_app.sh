@@ -40,6 +40,8 @@ cd "$PROJECT_DIR"
 swift build -c release 2>&1
 echo "==> Building Secrets XPC service (release)…"
 swift build -c release --target ClawixSecretsXPC 2>&1
+echo "==> Building Swift surface runner (release)…"
+swift build -c release --target ClawixSwiftSurfaceRunner 2>&1
 
 BINARY="$PROJECT_DIR/.build/release/${APP_NAME}"
 if [[ ! -f "$BINARY" ]]; then
@@ -51,14 +53,22 @@ if [[ ! -f "$SECRETS_XPC_BINARY" ]]; then
     echo "ERROR: Secrets XPC service binary not found at $SECRETS_XPC_BINARY"
     exit 1
 fi
+SWIFT_SURFACE_RUNNER_BINARY="$PROJECT_DIR/.build/release/ClawixSwiftSurfaceRunner"
+if [[ ! -f "$SWIFT_SURFACE_RUNNER_BINARY" ]]; then
+    echo "ERROR: Swift surface runner binary not found at $SWIFT_SURFACE_RUNNER_BINARY"
+    exit 1
+fi
 
 echo "==> Assembling app bundle at $BUNDLE_DIR"
 rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR/Contents/MacOS"
 mkdir -p "$BUNDLE_DIR/Contents/Resources"
+mkdir -p "$BUNDLE_DIR/Contents/Helpers"
 
 cp "$BINARY" "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
 chmod +x "$BUNDLE_DIR/Contents/MacOS/${APP_NAME}"
+cp "$SWIFT_SURFACE_RUNNER_BINARY" "$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
+chmod +x "$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
 cp "$ICON_FILE" "$BUNDLE_DIR/Contents/Resources/Clawix.icns"
 SECRETS_XPC_SERVICE_NAME="${BUNDLE_ID}.secrets-xpc"
 SECRETS_XPC_BUNDLE="$BUNDLE_DIR/Contents/XPCServices/ClawixSecretsXPC.xpc"
@@ -206,6 +216,13 @@ if [[ -d "$BUNDLE_DIR/Contents/XPCServices" ]]; then
     while IFS= read -r xpc; do
         sign_one "$xpc"
     done < <(find "$BUNDLE_DIR/Contents/XPCServices" -maxdepth 1 -name "*.xpc" 2>/dev/null || true)
+fi
+SWIFT_SURFACE_RUNNER_BIN="$BUNDLE_DIR/Contents/Helpers/ClawixSwiftSurfaceRunner"
+if [[ -f "$SWIFT_SURFACE_RUNNER_BIN" ]]; then
+    codesign --force --sign "$SIGN_IDENTITY" \
+             --identifier "${BUNDLE_ID}.swift-surface-runner" \
+             --timestamp=none \
+             "$SWIFT_SURFACE_RUNNER_BIN"
 fi
 codesign --force --sign "$SIGN_IDENTITY" --identifier "$BUNDLE_ID" --timestamp=none "$BUNDLE_DIR"
 
