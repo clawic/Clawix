@@ -29,9 +29,15 @@ screenshots, console dumps, or machine-specific metadata.
 - Rescue plus delayed-heavy route duration: 50 seconds.
 - Rescue plus delayed-heavy route artifact:
   `macos/artifacts/traces/20260520T161127Z-clean-rescue-delayed-heavy-time-profiler.trace`.
+- Host-liveness rescue plus delayed-heavy route duration: 65 seconds.
+- Host-liveness rescue plus delayed-heavy route artifact:
+  `macos/artifacts/traces/20260520T183831Z-liveness-rescue-delayed-heavy-time-profiler.trace`.
+- All-process rescue plus delayed-heavy route duration: 50 seconds.
+- All-process rescue plus delayed-heavy route artifact:
+  `macos/artifacts/traces/20260520T184057Z-allprocess-rescue-delayed-heavy-time-profiler.trace`.
 - Local delayed-heavy-surface fixture:
   `codex-delayed-heavy-surface` under the framework apps directory.
-- Companion render logs copied into both local trace bundles:
+- Companion render logs copied into the relevant local trace bundles:
   `clawix-renders.log`.
 
 ## Exercised Route
@@ -49,6 +55,11 @@ The capture covered a short host-real route through the installed app:
   rescue diagnostics surface as ready.
 - The local `codex-delayed-heavy-surface` Web app was opened from the sidebar;
   its startup intentionally kept Web content busy for about 18 seconds.
+- A host-only liveness rerun repeated the rescue and delayed-heavy route while
+  Time Profiler remained attached to the installed Clawix process.
+- A final all-process Time Profiler rerun repeated the same route to capture
+  the host, WebKit WebContent, and WebKit GPU process families in the same
+  redacted local trace.
 
 ## Observations
 
@@ -73,15 +84,30 @@ Confirmed:
   content later reported its 18 second startup completion.
 - The paired render log for that capture recorded the rescue/app route changes
   and `SidebarView.makeSnapshot` stayed below 6.30 ms in those windows.
+- A separate idle attach check showed that attaching Time Profiler to the
+  installed app process did not by itself terminate the app.
+- The host-liveness rescue plus delayed-heavy capture reached the configured
+  Time Profiler limit and the installed Clawix process was still alive after
+  capture.
+- The all-process rescue plus delayed-heavy capture reached the configured
+  Time Profiler limit and the installed Clawix process was still alive after
+  capture.
+- Redacted stack attribution from the host-liveness capture placed Clawix-owned
+  samples mostly in SwiftUI layout/accessibility, route publication,
+  `SidebarView.makeSnapshot`, `ContentView`, and telemetry/status rendering.
+- Redacted stack attribution from the all-process capture added WebKit
+  WebContent samples in WebCore/JSC `performance.now` and render-layer work
+  that match the delayed-heavy fixture, plus WebKit GPU remote graphics work.
 
 Probable:
 
 - A custom surface timeout appeared after a route/scroll transition. This needs
   a focused custom-surface readiness capture before it can be classified as a
   shell isolation bug, fixture issue, or expected timeout behavior.
-- The delayed-heavy fixture exercised the intended route-local timeout path,
-  but this run is not sufficient to classify whole-app liveness because the
-  post-capture process check did not find the attached app process.
+- The delayed-heavy fixture exercised the intended route-local timeout path.
+- The all-process capture ties the busy delayed-heavy Web fixture to WebKit
+  WebContent stacks rather than the Clawix host process, which supports the
+  intended failure-domain separation.
 
 Discarded:
 
@@ -92,19 +118,25 @@ Partial / not closed:
 
 - The first installed-app capture did not exercise rescue or a deliberately
   delayed heavy surface.
-- The rescue plus delayed-heavy capture did not leave enough evidence for a
-  closure-grade liveness claim because the attached app process was not present
-  in the post-capture status check.
-- It was not a full Instruments analysis pass with stack attribution.
+- The first rescue plus delayed-heavy capture did not leave enough evidence for
+  a closure-grade liveness claim because the attached app process was not
+  present in the post-capture status check.
+- Later host-liveness and all-process reruns did confirm post-capture app
+  liveness and redacted stack attribution for this fixture, but they are still
+  not an approved performance baseline.
 - It is not an approved performance baseline for UI budgets.
 - The raw trace and exported Instruments table of contents include local
   process environment details, so only this redacted summary belongs in the
   public repo.
+- The all-process trace includes unrelated local process metadata by design, so
+  it is useful for private diagnosis but unsuitable as a public raw audit
+  artifact.
 
 ## Closure Gate
 
-`CLX-SDK-008` remains `EXTERNAL PENDING` until closure-grade signed-app
-captures cover rescue and delayed heavy surfaces with post-capture app liveness
-and approved stack-attributed analysis. This smoke only proves that the
-installed-app launch and attached capture paths work and adds partial evidence
-for sidebar, chat composer, rescue, and custom-surface routing.
+`CLX-SDK-008` remains `EXTERNAL PENDING` until the signed-app performance lane
+has an approved baseline and reviewable closure summary. This smoke proves that
+the installed-app launch and attached capture paths work, that rescue and a
+delayed-heavy Web surface stay route-local with the Clawix app alive after the
+newer captures, and that redacted stack attribution separates host SwiftUI
+work from WebKit WebContent/GPU work.

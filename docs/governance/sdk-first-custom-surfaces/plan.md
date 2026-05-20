@@ -104,8 +104,10 @@ the sibling ClawJS SDK-first custom surface contract.
   signed app launch and attach capture paths for Web and Swift custom-surface
   routing, sidebar scroll, chat composer editing, rescue reachability, and a
   deliberately delayed-heavy-surface Web fixture reaching route-local timeout;
-  post-capture app liveness and full stack-attributed Instruments analysis
-  remain closure blockers.
+  newer host-liveness and all-process captures confirmed post-capture app
+  liveness and redacted stack attribution separating Clawix host
+  SwiftUI/route/render work from WebKit WebContent and GPU work. An approved
+  baseline and reviewable closure summary remain closure blockers.
 - Protected surfaces cannot be replaced.
 - Variants retain original-screen fallback.
 - Installed-app smoke verified that a local `database/tasks` variant default
