@@ -231,9 +231,9 @@ final class MacControlCenter: ObservableObject {
         do {
             lastError = nil
             lastEvaluation = nil
-            let data = try requestData(for: capability, arguments: arguments, dryRun: true, approved: false)
-            let planData = try NativeMacActionWire.planJSON(for: data)
-            lastPlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planData)
+            let data = try requestBytes(for: capability, arguments: arguments, dryRun: true, approved: false)
+            let planBytes = try NativeMacActionWire.planJSON(for: data)
+            lastPlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planBytes)
             recordPlan(lastPlan)
         } catch {
             recordError(error.localizedDescription, capabilityId: capability.id)
@@ -243,7 +243,7 @@ final class MacControlCenter: ObservableObject {
     func execute(_ capability: MacControlSettingsCapability, arguments: [String: String] = [:], approved: Bool = true) {
         do {
             lastError = nil
-            let data = try requestData(for: capability, arguments: arguments, dryRun: false, approved: approved)
+            let data = try requestBytes(for: capability, arguments: arguments, dryRun: false, approved: approved)
             let evaluationData = try NativeMacActionWire.evaluateJSON(for: data, defaults: defaults, auditURL: auditURL, runner: runner)
             lastEvaluation = try JSONDecoder().decode(NativeMacActionWireEvaluation.self, from: evaluationData)
             lastPlan = nil
@@ -319,7 +319,7 @@ final class MacControlCenter: ObservableObject {
         return arguments
     }
 
-    private func requestData(
+    private func requestBytes(
         for capability: MacControlSettingsCapability,
         arguments: [String: String],
         dryRun: Bool,

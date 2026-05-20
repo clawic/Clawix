@@ -44,7 +44,7 @@ struct NativeSystemSearchSourceSnapshot: Codable, Equatable {
 }
 
 struct NativeSystemSearchIndexResult: Decodable, Equatable {
-    struct DataPayload: Decodable, Equatable {
+    struct IndexRebuildPayload: Decodable, Equatable {
         let rebuilt: Bool
         let reindexed: Int
         let indexedBySource: [String: Int]
@@ -52,7 +52,7 @@ struct NativeSystemSearchIndexResult: Decodable, Equatable {
     }
 
     let ok: Bool
-    let data: DataPayload
+    let data: IndexRebuildPayload
 }
 
 enum NativeSystemSearchSourceBridge {

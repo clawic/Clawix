@@ -160,7 +160,7 @@ final class MacControlCenterTests: XCTestCase {
         }
     }
 
-    func testPermissionSnapshotIncludesPrivacyDataDomains() {
+    func testPermissionSnapshotIncludesPrivacyDomains() {
         let ids = Set(MacControlPermissionSnapshot.current.map(\.id))
 
         XCTAssertTrue(ids.contains("mac.permission.calendar"))

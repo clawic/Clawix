@@ -127,13 +127,13 @@ final class RootSearchPanelStore: ObservableObject {
                     self.actionPlans[key] = .planned(Self.summary(for: searchPlan))
                     return
                 }
-                let planData = try JSONEncoder().encode(searchPlan)
-                let requestData = try SearchHostActionBridge.nativeRequestData(
-                    from: planData,
+                let planBytes = try JSONEncoder().encode(searchPlan)
+                let requestBytes = try SearchHostActionBridge.nativeRequestBytes(
+                    from: planBytes,
                     host: Self.hostIdentity()
                 )
-                let nativePlanData = try NativeMacActionWire.planJSON(for: requestData)
-                let nativePlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: nativePlanData)
+                let nativePlanBytes = try NativeMacActionWire.planJSON(for: requestBytes)
+                let nativePlan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: nativePlanBytes)
                 self.actionPlans[key] = .planned(Self.summary(for: nativePlan))
             } catch is CancellationError {
                 return

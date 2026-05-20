@@ -122,13 +122,13 @@ final class RootSearchQueryBridgeTests: XCTestCase {
         }
         """)
 
-        let planData = try RootSearchQueryBridge.actionPlanData(
+        let planBytes = try RootSearchQueryBridge.actionPlanBytes(
             resultId: "native.system:shortcut:daily-plan",
             actionId: "run",
             runner: RootSearchQueryBridge.ClawSearchCommandRunner(run: runner.run)
         )
         let nativeRequest = try SearchHostActionBridge.nativeRequest(
-            from: planData,
+            from: planBytes,
             host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
         )
 

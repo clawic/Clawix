@@ -2,10 +2,10 @@ import Foundation
 
 struct RootSearchQueryResponse: Decodable, Equatable {
     let ok: Bool
-    let data: RootSearchQueryData
+    let data: RootSearchQueryPayload
 }
 
-struct RootSearchQueryData: Decodable, Equatable {
+struct RootSearchQueryPayload: Decodable, Equatable {
     let query: String
     let profile: String
     let results: [RootSearchResult]
@@ -40,10 +40,10 @@ struct RootSearchOmittedSource: Decodable, Equatable {
 
 struct RootSearchActionPlanResponse: Decodable, Equatable {
     let ok: Bool
-    let data: RootSearchActionPlanData
+    let data: RootSearchActionPlanPayload
 }
 
-struct RootSearchActionPlanData: Decodable, Equatable {
+struct RootSearchActionPlanPayload: Decodable, Equatable {
     let plan: SearchHostActionExecutionPlan
 }
 
@@ -124,7 +124,7 @@ enum RootSearchQueryBridge {
         return response.data.plan
     }
 
-    static func actionPlanData(
+    static func actionPlanBytes(
         resultId: String,
         actionId: String,
         actor: String = "user:clawix.root-search",

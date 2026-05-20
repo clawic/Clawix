@@ -82,8 +82,8 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
         do {
             let action = try AppCustomMacActionPlanRequest(app: request.app, arguments: request.arguments, fallbackTool: request.tool)
             let data = try JSONEncoder().encode(action.request)
-            let planData = try NativeMacActionWire.planJSON(for: data)
-            let plan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planData)
+            let planBytes = try NativeMacActionWire.planJSON(for: data)
+            let plan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planBytes)
             return .dispatched(Self.bridgeValue(plan))
         } catch {
             return .failed(error.localizedDescription)

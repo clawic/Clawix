@@ -66,19 +66,19 @@ enum SearchHostActionBridgeError: Error, Equatable, LocalizedError {
 }
 
 enum SearchHostActionBridge {
-    static func nativeRequestData(
-        from planData: Data,
+    static func nativeRequestBytes(
+        from planBytes: Data,
         host: NativeMacActionWireHost
     ) throws -> Data {
-        let request = try nativeRequest(from: planData, host: host)
+        let request = try nativeRequest(from: planBytes, host: host)
         return try JSONEncoder().encode(request)
     }
 
     static func nativeRequest(
-        from planData: Data,
+        from planBytes: Data,
         host: NativeMacActionWireHost
     ) throws -> NativeMacActionWireRequest {
-        let plan = try JSONDecoder().decode(SearchHostActionExecutionPlan.self, from: planData)
+        let plan = try JSONDecoder().decode(SearchHostActionExecutionPlan.self, from: planBytes)
         guard let template = plan.hostRequest else {
             throw SearchHostActionBridgeError.missingHostRequest
         }

@@ -14,12 +14,12 @@ final class SearchHostActionBridgeTests: XCTestCase {
             appVersion: "1.0"
         )
 
-        let requestData = try SearchHostActionBridge.nativeRequestData(
+        let requestBytes = try SearchHostActionBridge.nativeRequestBytes(
             from: Self.searchPlanJSON(dryRun: true, approved: false, commandAction: "plan"),
             host: host
         )
-        let planData = try NativeMacActionWire.planJSON(for: requestData)
-        let plan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planData)
+        let planBytes = try NativeMacActionWire.planJSON(for: requestBytes)
+        let plan = try JSONDecoder().decode(NativeMacActionWirePlan.self, from: planBytes)
 
         XCTAssertEqual(plan.schemaVersion, 1)
         XCTAssertEqual(plan.requestId, "searchreq_shortcut_daily_plan")
@@ -35,12 +35,12 @@ final class SearchHostActionBridgeTests: XCTestCase {
 
     func testApprovedSearchHostActionCanEvaluateThroughNativeMacWire() throws {
         let host = NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
-        let requestData = try SearchHostActionBridge.nativeRequestData(
+        let requestBytes = try SearchHostActionBridge.nativeRequestBytes(
             from: Self.searchPlanJSON(dryRun: false, approved: true, commandAction: "execute"),
             host: host
         )
         let runner = RecordingMacActionRunner()
-        let evaluationData = try NativeMacActionWire.evaluateJSON(for: requestData, runner: runner)
+        let evaluationData = try NativeMacActionWire.evaluateJSON(for: requestBytes, runner: runner)
         let evaluation = try JSONDecoder().decode(NativeMacActionWireEvaluation.self, from: evaluationData)
 
         XCTAssertEqual(evaluation.decision, "allow")

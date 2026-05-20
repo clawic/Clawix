@@ -7,7 +7,7 @@ final class NativeSystemSearchActivationStoreTests: XCTestCase {
         let store = NativeSystemSearchActivationStore {
             NativeSystemSearchIndexResult(
                 ok: true,
-                data: NativeSystemSearchIndexResult.DataPayload(
+                data: NativeSystemSearchIndexResult.IndexRebuildPayload(
                     rebuilt: true,
                     reindexed: 2,
                     indexedBySource: ["native.system": 2],
@@ -26,7 +26,7 @@ final class NativeSystemSearchActivationStoreTests: XCTestCase {
         let store = NativeSystemSearchActivationStore {
             NativeSystemSearchIndexResult(
                 ok: true,
-                data: NativeSystemSearchIndexResult.DataPayload(
+                data: NativeSystemSearchIndexResult.IndexRebuildPayload(
                     rebuilt: true,
                     reindexed: 0,
                     indexedBySource: ["native.system": 0],
