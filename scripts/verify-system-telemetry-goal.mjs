@@ -341,7 +341,7 @@ function assertExternalValidationManifest() {
   assert(manifest.externalApprovalFixtures?.path === "docs/system-telemetry-external-approval.fixtures.json", "external validation manifest: wrong external approval fixtures path");
   assert(manifest.externalApprovalFixtures?.status === "synthetic_templates_not_approval", "external validation manifest: external approval fixtures must be marked synthetic");
   assert(manifest.externalApprovalFixtures?.validTemplateCount === 3, "external validation manifest: wrong external approval valid fixture count");
-  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 3, "external validation manifest: wrong external approval invalid fixture count");
+  assert(manifest.externalApprovalFixtures?.invalidTemplateCount === 4, "external validation manifest: wrong external approval invalid fixture count");
   assert(manifest.externalApprovalFixtures?.closureRole?.includes("without representing real approval"), "external validation manifest: external approval fixtures closure role must be explicit");
   assert(manifest.externalApprovalPacketValidator?.required === true, "external validation manifest: external approval validator link must be required");
   assert(manifest.externalApprovalPacketValidator?.artifactId === "clawix-system-telemetry-external-approval-validator", "external validation manifest: wrong external approval validator artifact");
@@ -509,10 +509,26 @@ function mutateApprovalTemplate(packet, mutation) {
     case "risk.appMenuValidationPlanRef=\"\"":
       mutated.risk.appMenuValidationPlanRef = "";
       break;
+    case "approval.expiresAt=beforeApprovedAt":
+      mutated.approval.expiresAt = "2026-05-19T23:59:59Z";
+      break;
     default:
       fail(`external approval fixtures: unknown mutation ${mutation}`);
   }
   return mutated;
+}
+
+function approvalTemplateErrors(packet, validate, ajv) {
+  const errors = [];
+  if (!validate(packet)) errors.push(ajv.errorsText(validate.errors));
+  const approvedAt = Date.parse(packet.approval?.approvedAt);
+  const expiresAt = Date.parse(packet.approval?.expiresAt);
+  if (!Number.isFinite(approvedAt)) errors.push("approval.approvedAt must be parseable");
+  if (!Number.isFinite(expiresAt)) errors.push("approval.expiresAt must be parseable");
+  if (Number.isFinite(approvedAt) && Number.isFinite(expiresAt) && expiresAt <= approvedAt) {
+    errors.push("approval.expiresAt must be after approval.approvedAt");
+  }
+  return errors;
 }
 
 function assertExternalApprovalSchema() {
@@ -583,12 +599,13 @@ function assertExternalApprovalFixtures() {
   assert(fixtures.schemaPath === "docs/system-telemetry-external-approval.schema.json", "external approval fixtures: wrong schema path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-approval.mjs", "external approval fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external approval fixtures: must contain 3 valid synthetic packets");
-  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 3, "external approval fixtures: must contain 3 invalid synthetic packets");
+  assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 4, "external approval fixtures: must contain 4 invalid synthetic packets");
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   const validate = ajv.compile(schema);
   const validByLaneId = new Map();
   for (const packet of fixtures.validSyntheticPackets) {
-    assert(validate(packet), `external approval fixtures: valid packet ${packet.laneId} must validate: ${ajv.errorsText(validate.errors)}`);
+    const errors = approvalTemplateErrors(packet, validate, ajv);
+    assert(errors.length === 0, `external approval fixtures: valid packet ${packet.laneId} must validate: ${errors.join("; ")}`);
     validByLaneId.set(packet.laneId, packet);
     assert(typeof packet.approval?.approvalId === "string" && packet.approval.approvalId.length > 0, `external approval fixtures: ${packet.laneId} must include approval id`);
     assert(packet.privacy?.containsSecrets === false, `external approval fixtures: ${packet.laneId} must not contain secrets`);
@@ -601,7 +618,7 @@ function assertExternalApprovalFixtures() {
   for (const fixture of fixtures.invalidSyntheticPackets) {
     const base = validByLaneId.get(fixture.packetRef);
     assert(base, `external approval fixtures: invalid packet ${fixture.id} references unknown lane ${fixture.packetRef}`);
-    assert(!validate(mutateApprovalTemplate(base, fixture.mutation)), `external approval fixtures: invalid packet ${fixture.id} must fail validation`);
+    assert(approvalTemplateErrors(mutateApprovalTemplate(base, fixture.mutation), validate, ajv).length > 0, `external approval fixtures: invalid packet ${fixture.id} must fail validation`);
   }
   assert(!JSON.stringify(fixtures).includes("/Users/"), "external approval fixtures: must not publish private filesystem paths");
 }
@@ -612,7 +629,7 @@ function assertExternalApprovalValidator() {
   assert(result.ok === true, "external approval validator: fixture validation must pass");
   assert(result.status === "synthetic_templates_not_approval", "external approval validator: fixtures must remain synthetic");
   assert(result.validSyntheticPackets === 3, "external approval validator: must accept 3 valid synthetic packets");
-  assert(result.invalidSyntheticPackets === 3, "external approval validator: must reject 3 invalid synthetic packets");
+  assert(result.invalidSyntheticPackets === 4, "external approval validator: must reject 4 invalid synthetic packets");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(result.accepted?.includes(rowId), `external approval validator: missing accepted fixture for ${rowId}`);
   }

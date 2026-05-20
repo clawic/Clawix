@@ -89,7 +89,7 @@
           "properties": {
             "status": { "const": "synthetic_templates_not_approval" },
             "validTemplateCount": { "const": 3 },
-            "invalidTemplateCount": { "const": 3 },
+            "invalidTemplateCount": { "const": 4 },
             "path": { "const": "docs/system-telemetry-external-approval.fixtures.json" }
           }
         }

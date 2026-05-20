@@ -161,6 +161,11 @@
       "id": "missing_app_menu_validation_plan",
       "mutation": "risk.appMenuValidationPlanRef=\"\"",
       "packetRef": "CLX-SYS-TEL-EXT-005"
+    },
+    {
+      "id": "approval_expiry_before_approval",
+      "mutation": "approval.expiresAt=beforeApprovedAt",
+      "packetRef": "CLX-SYS-TEL-EXT-004"
     }
   ]
 }

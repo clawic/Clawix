@@ -41,6 +41,29 @@ function assertPublicSafePacket(packet, label) {
   }
 }
 
+function approvalPacketErrors(packet, compiled) {
+  const errors = [];
+  const serialized = JSON.stringify(packet);
+  if (serialized.includes("/Users/")) {
+    errors.push("packet contains a private filesystem path");
+  }
+  if (!compiled.validate(packet)) {
+    errors.push(`schema: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
+  }
+  const approvedAt = Date.parse(packet.approval?.approvedAt);
+  const expiresAt = Date.parse(packet.approval?.expiresAt);
+  if (!Number.isFinite(approvedAt)) {
+    errors.push("approval.approvedAt must be a parseable timestamp");
+  }
+  if (!Number.isFinite(expiresAt)) {
+    errors.push("approval.expiresAt must be a parseable timestamp");
+  }
+  if (Number.isFinite(approvedAt) && Number.isFinite(expiresAt) && expiresAt <= approvedAt) {
+    errors.push("approval.expiresAt must be after approval.approvedAt");
+  }
+  return errors;
+}
+
 function mutateTemplate(packet, mutation) {
   const mutated = JSON.parse(JSON.stringify(packet));
   switch (mutation) {
@@ -53,6 +76,9 @@ function mutateTemplate(packet, mutation) {
     case "risk.appMenuValidationPlanRef=\"\"":
       mutated.risk.appMenuValidationPlanRef = "";
       break;
+    case "approval.expiresAt=beforeApprovedAt":
+      mutated.approval.expiresAt = "2026-05-19T23:59:59Z";
+      break;
     default:
       fail(`unknown approval fixture mutation ${mutation}`);
   }
@@ -60,11 +86,10 @@ function mutateTemplate(packet, mutation) {
 }
 
 function validatePacket(packet, label) {
-  assertPublicSafePacket(packet, label);
-  const { ajv, validate } = compileSchema();
-  const ok = validate(packet);
-  if (!ok) {
-    fail(`${label}: packet does not conform to Clawix system telemetry external approval schema`, ajv.errorsText(validate.errors));
+  const compiled = compileSchema();
+  const errors = approvalPacketErrors(packet, compiled);
+  if (errors.length > 0) {
+    fail(`${label}: packet does not conform to Clawix system telemetry external approval requirements`, errors.join("; "));
   }
   return { laneId: packet.laneId, repoScope: packet.repoScope };
 }
@@ -74,15 +99,15 @@ function validateFixtures() {
   if (fixtures.status !== "synthetic_templates_not_approval") {
     fail("fixtures must remain synthetic approval templates only");
   }
-  const { ajv, validate } = compileSchema();
+  const compiled = compileSchema();
   const validSyntheticPackets = fixtures.validSyntheticPackets ?? [];
   const invalidSyntheticPackets = fixtures.invalidSyntheticPackets ?? [];
   const validByLaneId = new Map();
   const accepted = [];
   for (const packet of validSyntheticPackets) {
-    assertPublicSafePacket(packet, `valid fixture ${packet.laneId}`);
-    if (!validate(packet)) {
-      fail(`valid fixture ${packet.laneId} did not validate`, ajv.errorsText(validate.errors));
+    const errors = approvalPacketErrors(packet, compiled);
+    if (errors.length > 0) {
+      fail(`valid fixture ${packet.laneId} did not validate`, errors.join("; "));
     }
     validByLaneId.set(packet.laneId, packet);
     accepted.push(packet.laneId);
@@ -93,8 +118,7 @@ function validateFixtures() {
       fail(`invalid fixture ${fixture.id} references unknown lane ${fixture.packetRef}`);
     }
     const mutated = mutateTemplate(base, fixture.mutation);
-    assertPublicSafePacket(mutated, `invalid fixture ${fixture.id}`);
-    if (validate(mutated)) {
+    if (approvalPacketErrors(mutated, compiled).length === 0) {
       fail(`invalid fixture ${fixture.id} unexpectedly validated`);
     }
   }
