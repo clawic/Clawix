@@ -1,87 +1,36 @@
 # Clawix
 
 Compact operating entrypoint for humans and coding agents in this repository.
-Use this file as a router. Keep detailed procedures in docs, playbooks, and
-`skills/<id>/SKILL.md`.
+Use this file as a router. Detailed operating rules live in
+`docs/agent-rules/index.md`; durable decisions live in `docs/decision-map.md`.
 
-## Canon
+## Authority
 
 - Highest authority: `CONSTITUTION.md`, shared with ClawJS. Read it fully for
   major architecture, product, data, agent, UX, security, or integration
   decisions.
 - Main router: `docs/decision-map.md`. It maps decision -> document ->
   validation and tells agents which canon/check applies.
+- Operating rules: `docs/agent-rules/index.md`. Keep always-loaded
+  instructions short; move procedures and catalogs there or into skills.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   sibling ClawJS ADR 0017, `docs/discoverability.md`, and
-  `docs/discoverability.registry.json`. New durable ADRs, skills, guardrails,
-  harnesses, docs routers, UI governance artifacts, and route work must be
-  reachable from `AGENTS.md`/`CLAUDE.md`, the relevant skill, and local/ClawJS
-  CLI discovery within two hops, or be recorded as expiring baseline debt.
-- Claude Code shim: `CLAUDE.md` points back here and must remain short.
+  `docs/discoverability.registry.json`.
+- `CLAUDE.md` is a shim. If it diverges from this file, this file wins.
 - Visual canon: `STYLE.md`. Read it before changing user-facing screens,
   chrome, visual components, design tokens, icons, spacing, motion, or
   microcopy.
 
-Read the relevant canonical docs before changing their surfaces:
-
-- Framework/host boundary: `docs/host-ownership.md`,
-  `docs/adr/0001-claw-framework-host-boundary.md`
-- Storage/data placement: `docs/data-storage-boundary.md`
-- Governance identity, scopes, workspaces, projects, and project folder
-  manifests: sibling ClawJS
-  `docs/adr/0027-governance-identity-scope-model.md`, sibling ClawJS
-  `docs/adr/0028-workspace-project-folder-manifest.md`,
-  `docs/data-storage-boundary.md`, and `docs/naming-style-guide.md`
-- Naming/stability: `docs/naming-style-guide.md`,
-  `docs/agentic-naming-guide.md`, `docs/vocabulary.md`,
-  `docs/adr/0002-naming-and-stability-surfaces.md`,
-  `docs/adr/0009-agentic-naming-and-code-structure.md`
-- Testing and validation: `docs/adr/0003-testing-architecture.md`,
-  `docs/adr/0005-integration-qa-lab.md`, `playbooks/testing.md`,
-  `playbooks/testing-matrix.md`
-- Legal/safety boundary: `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`,
-  `SAFETY.md`, `REGULATED_DOMAINS.md`, `EULA.md`, sibling ClawJS
-  `docs/regulated-domain-safety.md`, and sibling ClawJS ADR 0026.
-- Source file boundaries: `docs/adr/0004-source-file-boundaries.md`
-- Code hygiene and dead-code cleanup: `docs/adr/0016-code-hygiene-program.md`,
-  `docs/code-hygiene-decisions.json`
-- Human/programmatic parity: `docs/interface-matrix.md`,
-  `docs/adr/0007-dual-human-programmatic-surfaces.md`
-- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS
-  `docs/adr/0012-surface-route-graph.md`
-- Remote mesh, Gateway, Connector, Sync, Iroh, and node trust: sibling ClawJS
-  `docs/adr/0022-remote-gateway-sync-redesign.md`, sibling ClawJS
-  `docs/relay.md`, and local `docs/decision-map.md`
-- CLI guidance/resource assertions: `docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md`
-- Open standard, official trust, forks, and compatibility:
-  sibling ClawJS `docs/adr/0033-open-standard-official-trust.md`,
-  `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`,
-  `TRADEMARKS.md`, and `NOTICE`
-- Discoverability/meta-code routing:
-  `docs/adr/0017-discoverability-and-meta-code-routing.md`,
-  `docs/discoverability.md`, and `docs/discoverability.registry.json`
-- Platform procedures: `playbooks/README.md` and the relevant platform
-  playbook.
-
 ## Repository Shape
 
 Clawix is the native human interface and embedded signed host for ClawJS/Claw.
-It is not the canonical framework store. Framework contracts, schemas,
-fixtures, canonical storage, domain APIs, and the public `claw` CLI belong to
-ClawJS/Claw.
+Framework contracts, schemas, fixtures, canonical storage, domain APIs, SDK,
+and the public `claw` CLI belong to ClawJS/Claw.
 
-Top-level areas:
-
-- `macos/`: SwiftUI macOS app and embedded host integration.
-- `ios/`, `android/`, `linux/`, `windows/`, `web/`: platform clients.
-- `packages/`: shared Swift packages.
-- `cli/`: legacy/transitional Clawix host/install/diagnostic npm surface, not
-  the public framework CLI.
-- `docs/`: architecture docs, ADRs, registries, and generated manifests.
-- `playbooks/`: task and platform procedures.
-- `skills/`: projected just-in-time agent workflows from the ClawJS canonical
-  skill library.
-- `scripts/`: repository checks and automation.
+Use the decision map for routing before changing framework/host ownership,
+storage, data placement, naming, source boundaries, testing, interface
+surfaces, route graphs, remote mesh, safety, releases, open-standard trust, or
+platform launch behavior.
 
 ## Agent Discovery
 
@@ -101,102 +50,68 @@ claw db <collection> list|query --json
 Treat source files as evidence after the CLI/registry map. If `claw` is not
 available, say so and use direct docs/source reads.
 
-Before asking a technical question, check the relevant canon. If asking is
-still needed, explain the meaning, consequences, tradeoffs, and recommended
-default.
+## Critical Routes
 
-## Skills
+Read the relevant canon before changing its surface:
 
-Shared ClawJS/Clawix workflow skills are canonically authored in the ClawJS
-repository and projected here for agents that only open Clawix. Run:
+- Framework/host boundary: `docs/host-ownership.md`,
+  `docs/adr/0001-claw-framework-host-boundary.md`
+- Storage/data placement: `docs/data-storage-boundary.md`
+- Governance identity/workspaces/projects: sibling ClawJS
+  `docs/adr/0027-governance-identity-scope-model.md`,
+  `docs/adr/0028-workspace-project-folder-manifest.md`
+- Naming/stability/source shape: `docs/naming-style-guide.md`,
+  `docs/agentic-naming-guide.md`, `docs/vocabulary.md`,
+  `docs/adr/0002-naming-and-stability-surfaces.md`,
+  `docs/adr/0009-agentic-naming-and-code-structure.md`,
+  `docs/adr/0004-source-file-boundaries.md`
+- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS
+  `docs/adr/0012-surface-route-graph.md`
+- Open standard and official trust:
+  `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`,
+  `TRADEMARKS.md`
 
-```bash
-node scripts/check-clawjs-skills-sync.mjs
-```
-
-when adding or changing projected skills. If the sibling ClawJS checkout is not
-available, the check validates local presence/frontmatter and reports that the
-canonical comparison was skipped.
-
-Use the relevant skill instead of loading long instructions into context:
-
-- Architecture alignment: `constitution-drift-audit`,
-  `architecture-drift-repair`, `adr-to-guardrail`,
-  `decision-map-maintenance`
-- Stable surfaces: `naming-surface-audit`, `surface-registry-alignment`,
-  `surface-route-work`, `compatibility-evolution-work`,
-  `cli-agent-surface-work`,
-  `source-file-boundary-refactor`
-- Data/storage: `canonical-catalog-expansion`,
-  `data-storage-boundary-review`
-- Host/security/validation: `host-boundary-review`,
-  `secrets-boundary-review`, `integration-qa-lab`,
-  `host-dependent-validation`, `performance-investigation`
-- Collaboration hygiene: `public-hygiene-review`, `docs-alignment-update`,
-  `code-hygiene-audit`, `code-hygiene-cleanup`, `code-review-risk`,
-  `commit-hygiene-public`
-- Interface governance: `ui-canon-review`, `ui-implementation`,
-  `visual-regression`, `ui-performance-budget`
-
-## Invariants
+## Red Lines
 
 - `claw` is the single public framework CLI. Clawix CLI surfaces are host,
   install, bridge, and diagnostic helpers only.
-- ClawJS/Claw owns canonical framework contracts, schemas, fixtures, storage
-  resolution, domain APIs, SDK, and CLI.
-- Clawix owns native UI, visual state, host identity, review/approval surfaces,
-  and host-specific operational state.
 - MIT-licensed forks, commercial use, source builds, and compatible
   implementations are legitimate; `official Clawix` is reserved for upstream
-  app builds, channels, marks, and visual identity, while truthful compatible
-  claims must not imply endorsement.
+  app builds, channels, marks, and visual identity.
 - Clawix UI canon is governed by `docs/adr/0010-interface-governance.md` and
   `docs/ui/`. Non-authorized agents must not change visual/copy/layout
-  decisions; they report drift and leave conceptual proposals instead.
-- Framework global data belongs under `~/.claw`; workspace framework data
-  belongs under `.claw/`; Clawix host-operational state belongs under
-  `~/.clawix`; `.clawjs/` is a retired pre-public path.
+  decisions.
+- Framework data belongs under `~/.claw` and `.claw/`; Clawix host-operational
+  state belongs under `~/.clawix`; `.clawjs/` is a retired pre-public path.
 - Governance uses principals, entities, scopes, stewards, grants, authority
-  edges, and restrictions. Do not add generic `ownerId`, `ownerKind`, or
-  `tenantId` authority fields; `tenant` is technical isolation only and
-  `companyId` is business data only.
+  edges, and restrictions; avoid generic ownership-like authority fields.
 - Workspaces are isolated contexts. Projects are collaborable scopes with
-  stable ids and mutable folder locators. Full `.claw/` directories belong to
-  workspace roots; project primary folders carry `claw.project.json`, managed
-  `AGENTS.md`, and `CLAUDE.md` shims.
-- User-facing structured framework records belong in `core.sqlite`. Sidecars
-  require explicit technical reasons such as churn, blobs, search indexes,
-  sessions, logs, caches, or encrypted vault state.
+  stable ids and mutable folder locators; project primary folders carry
+  `claw.project.json`, managed `AGENTS.md`, and `CLAUDE.md` shims.
 - Plaintext secrets never live in `core.sqlite`, logs, fixtures, screenshots,
   generated artifacts, or public docs.
 - Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
   services, and native execution belong to the active signed host, not Node.
-- Regulated domains are assistive only. Clawix may organize, summarize, label,
-  search, and draft sensitive information, but it must not make final medical,
+- Regulated domains are assistive only; Clawix must not make final medical,
   mental health, legal, financial, insurance, employment, education,
   government, emergency, physical-safety, or other regulated decisions.
+- Do not send real prompts, touch production data, call paid APIs, mutate real
+  services, reveal secrets, push, publish, upload, or tag without explicit
+  approval in the current thread.
 - `~/.codex` is an external read-only source by default. Mirror or index it
   only; do not delete, move, overwrite, chmod broadly, or write into it without
   explicit reversible opt-in.
-- When background bridge daemon mode owns runtime, do not reintroduce a second
-  GUI-owned backend or bridge.
-- Capabilities are complete only when human and programmatic surfaces are
-  registered or their gaps are explicitly classified.
 - Runtime-critical bridge, companion, chat, host, and remote work starts from
   `claw inspect show|neighbors|routes|route` plus the Clawix manifest.
-- Stable evolution, migration, rollback, rescue, receipt, or repair work starts
-  from sibling ClawJS ADR 0030 and `claw evolution`. Clawix must preserve
-  launch, chat, and repair before non-critical subsystems after updates.
-- New hand-authored files at 1200+ lines need a split plan or baseline
-  rationale; new 2000+ line files are blocked unless explicitly exempted.
-  Emergency-debt files above 5000 lines must not grow except for extraction,
-  deletion, or compatibility-preserving split work.
-- Code hygiene is a recurring ClawJS + Clawix program. Clear mechanical dead
-  code is removed after calibrated checks; public/canonical surfaces, enum
-  states, Swift dynamic-use candidates, and duplicates are classified through
-  the code hygiene baseline and report workflow.
+- Evolution, migration, rollback, rescue, receipt, or repair work starts from
+  sibling ClawJS ADR 0030, `claw evolution`, and `compatibility-evolution-work`.
 
-## Validation
+## Skills And Validation
+
+Use `skills/<id>/SKILL.md` for task procedures instead of expanding this file.
+Clawix projected skill categories, including `ui-canon-review`,
+`ui-implementation`, `visual-regression`, and `ui-performance-budget`, live in
+`docs/agent-rules/index.md`.
 
 Use focused checks during iteration:
 
@@ -208,59 +123,13 @@ bash macos/scripts/public_hygiene_check.sh
 node scripts/check-clawjs-skills-sync.mjs
 ```
 
-Validation safety:
+## Public Hygiene And Commits
 
-- Hermetic tests are useful but not sufficient for host-dependent bugs.
-- Host-dependent paths include installed apps, signed helpers, localhost,
-  filesystem state under the user's home, auth, polling, native permissions,
-  and device/simulator state.
-- Do not send real prompts, touch production data, call paid APIs, mutate real
-  services, or reveal secrets without explicit approval in the current thread.
-- Real conversation validation against an installed app with existing history is
-  allowed only after explicit approval for that validation session. Existing
-  conversations are read-only: agents may open, navigate, inspect layout,
-  scroll, and measure performance, but must not send, edit, delete, archive,
-  unarchive, pin, unpin, rename, move, share, export, regenerate, react, attach
-  files, change model/settings, or otherwise alter state. Agents may create and
-  mutate only conversations they created for the validation, with minimal
-  harmless prompts and explicit turn/time limits; if authorship is uncertain,
-  do not clean it up and report the uncertainty.
-- Prefer fixtures, dry-run paths, interceptors, local backends, and mocks.
-- Mark missing physical/provider prerequisites as `EXTERNAL PENDING` and keep
-  them separate from defects.
-- Performance work starts with reproduction and instrumentation before
-  optimization.
+Public repositories must not contain maintainer-private paths, signing
+identities, bundle IDs, Team IDs, SKUs, release credentials, local launchers,
+private automation, private Q&A indexes, logs, caches, or screenshots. Run
+`bash macos/scripts/public_hygiene_check.sh` before publication or broad review.
 
-Public platform docs describe only safe launcher contracts. Maintainer-private
-launchers, signing identities, device names, app-mode toggles, and local
-preflight flows live outside the public repository.
-
-## Public Hygiene
-
-The public repo must not contain maintainer-private paths, signing identities,
-bundle IDs, Team IDs, SKUs, release credentials, local launchers, private
-automation, private Q&A indexes, logs, caches, or screenshots.
-
-Before publication or broad review, run:
-
-```bash
-bash macos/scripts/public_hygiene_check.sh
-```
-
-Classify hygiene findings as `safe_public`, `false_positive`,
-`needs_user_decision`, or `must_remove_before_publish`. Do not resolve
-uncertainty by publishing the private value.
-
-## Commits
-
-Public commit hygiene only:
-
-- Use Conventional Commits: `type(scope): description`.
-- Keep commits scoped by intention.
-- Do not sweep unrelated edits from a dirty tree.
-- Add changesets only when release metadata explicitly requires them.
-- Push, publish, upload, tagging, and release actions require explicit
-  approval.
-
-Maintainer-private commit automation, local history rewriting procedures,
-ledger workflows, and personal push policy do not belong in this public repo.
+Use Conventional Commits, keep commits scoped by intention, do not sweep
+unrelated edits, and never push, publish, upload, or tag without explicit
+approval.

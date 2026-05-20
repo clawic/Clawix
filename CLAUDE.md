@@ -5,25 +5,20 @@
 Read and follow:
 
 1. `AGENTS.md`
-2. `docs/host-ownership.md`
-3. `docs/data-storage-boundary.md`
-4. `docs/decision-map.md`
-5. `docs/naming-style-guide.md`
-6. `docs/agentic-naming-guide.md` and `docs/vocabulary.md` before adding or
-   renaming files, classes, functions, JSON/YAML, Markdown, or shared domain
-   terms
-7. `docs/adr/0001-claw-framework-host-boundary.md`
-8. `docs/adr/0002-naming-and-stability-surfaces.md`
-9. `docs/adr/0009-agentic-naming-and-code-structure.md`
-10. The task-specific docs, tests, and code in the area you are changing
-11. `docs/adr/0017-discoverability-and-meta-code-routing.md`,
-    `docs/discoverability.md`, and `docs/discoverability.registry.json` before
-    adding durable ADRs, skills, guardrails, harnesses, docs routers, UI
-    governance artifacts, or route work
-12. Sibling ClawJS `docs/adr/0027-governance-identity-scope-model.md` and
-    sibling ClawJS `docs/adr/0028-workspace-project-folder-manifest.md` before
-    changing principals, entities, scopes, stewards, grants, restrictions,
-    workspaces, projects, project folders, manifests, sharing, or
-    ownership-like fields
+2. `docs/agent-rules/index.md`
+3. `docs/decision-map.md`
+4. The task-specific docs, tests, and code in the area you are changing
+5. `docs/host-ownership.md`, `docs/data-storage-boundary.md`,
+   `docs/naming-style-guide.md`, `docs/agentic-naming-guide.md`, and
+   `docs/vocabulary.md` through the detailed rules router
+6. `docs/adr/0001-claw-framework-host-boundary.md`, sibling ClawJS
+   `docs/adr/0027-governance-identity-scope-model.md`, and sibling ClawJS
+   `docs/adr/0028-workspace-project-folder-manifest.md` before changing their
+   governed surfaces
+
+Before adding durable ADRs, skills, guardrails, harnesses, docs routers, UI
+governance artifacts, or route work, also read
+`docs/adr/0017-discoverability-and-meta-code-routing.md`,
+`docs/discoverability.md`, and `docs/discoverability.registry.json`.
 
 If `CLAUDE.md` and `AGENTS.md` ever diverge, `AGENTS.md` wins.
