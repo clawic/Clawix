@@ -18,7 +18,10 @@ always-loaded instructions prompt.
 - Clawix/ClawJS mirror parity:
   `scripts/clawjs_mirror_contradiction_check.mjs` checks that Clawix mirrors
   still route constitution, ownership, storage, naming, route graph, official
-  trust, remote, and version-governance decisions to sibling ClawJS canon.
+  trust, remote, and version-governance decisions to sibling ClawJS canon. The
+  default mode reports `PARTIAL` when the sibling checkout is absent; cross-repo
+  validation uses `--require-sibling` or `CLAWIX_REQUIRE_CLAWJS_MIRROR=1` to
+  fail closed.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.
 - Visual canon: `STYLE.md` before user-facing UI, chrome, tokens, layout,
@@ -113,6 +116,9 @@ Use relevant skills instead of pasting long procedures into context:
   logs, caches, or encrypted vault state.
 - Plaintext secrets never live in `core.sqlite`, logs, fixtures, screenshots,
   generated artifacts, or public docs.
+- MIT-licensed forks, commercial use, source builds, and compatible
+  implementations are legitimate; `official Clawix` is reserved for upstream
+  app builds, channels, marks, visual identity, and release artifacts.
 - Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
   services, and native execution belong to the active signed host, not Node.
 - Regulated domains are assistive only. Clawix may organize, summarize, label,
