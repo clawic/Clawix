@@ -58,7 +58,7 @@ function assertCompletionAudit() {
     "Clawix `window.clawix.capabilities` now mirrors the ClawJS SDK facade shape",
     "`list`, `get`, `riskMap`, and `source`",
     "complete resolved surface bindings across SDK, CLI, service API, MCP, Relay, and host bridge projections",
-    "no `pending` status, concrete refs for available surfaces",
+    "no `pending` status, no future-facade SDK refs, concrete refs for available surfaces",
     "`window.clawix.system.telemetry`",
     "`SystemTelemetryBridge.localStatusBridge`",
     "Clawix exposes `resources.list` as its own local-wide registered-resource catalog read",
@@ -613,8 +613,13 @@ function assertSiblingClawJSArtifacts() {
       "id: \"jobs.cancel\"",
       "@clawjs/claw:system.telemetry.snapshot",
       "@clawjs/claw:system.telemetry.history",
+      "@clawjs/claw:capabilities metadata + claw.search.query.v1 schema",
+      "@clawjs/claw:capabilities metadata + claw.db.query.v1 schema",
+      "@clawjs/claw:capabilities metadata + claw.actions.invoke.v1 schema",
+      "@clawjs/claw:capabilities metadata + claw.mac.actionRequest.v1 schema",
     ],
     "packages/clawjs-core/src/capability-catalog.test.ts": [
+      "available SDK surface bindings do not advertise future facades",
       "custom-app SDK inspection payload exposes dispatch availability and gaps",
       "custom-app SDK inspection payload exposes complete resolved surfaces",
       "assert.equal(Boolean(surface.ref), true",
@@ -690,6 +695,16 @@ function assertSiblingClawJSArtifacts() {
     ],
   })) {
     for (const snippet of snippets) requireSiblingSnippet(siblingRoot, relativePath, snippet);
+  }
+
+  const siblingCatalog = readFrom(siblingRoot, "packages/clawjs-core/src/capability-catalog.ts");
+  for (const snippet of [
+    "future search facade",
+    "future db facade",
+    "future actions facade",
+    "future mac facade",
+  ]) {
+    assert(!siblingCatalog.includes(snippet), `clawjs:packages/clawjs-core/src/capability-catalog.ts must not contain ${JSON.stringify(snippet)}`);
   }
 }
 
