@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
@@ -43,6 +44,8 @@ function assertCompletionAudit() {
     "private source-session verifier has re-read",
     "24 decision prompt ids",
     "three interrupted unanswered ids",
+    "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+    "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
     "The Clawix verifier inspects sibling ClawJS evidence when that checkout is present.",
     "The Network Control Plane now adds a typed executable route-family example",
     "Clawix `NetworkControlBridge` projection through `system/network`",
@@ -148,6 +151,53 @@ function assertPublicRouting() {
       "`mac.action.plan` is exposed to Web custom apps through",
       "`iot.device.action.invoke` is exposed to Web custom apps through",
       "`actions.invoke` and `secrets.broker` are exposed to Web custom apps through",
+      "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+    ],
+    "docs/governance/sdk-first-custom-surfaces/external-pending.md": [
+      "Status: `active_goal_not_complete`",
+      "Rows marked `EXTERNAL PENDING` are blockers",
+      "CLX-SDK-EXT-001",
+      "Signed-host/native high-risk execution from custom apps",
+      "CLX-SDK-EXT-002",
+      "Live IoT/provider action execution from custom apps",
+      "CLX-SDK-EXT-003",
+      "Approved signed-app performance baseline",
+      "CLX-SDK-EXT-004",
+      "Live marketplace trust validation",
+      "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+    ],
+    "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md": [
+      "Status: `active_goal_not_complete`",
+      "This runbook defines the only accepted way",
+      "CLX-SDK-EXT-001 signed-host/native execution",
+      "CLX-SDK-EXT-002 live IoT/provider action",
+      "CLX-SDK-EXT-003 approved performance baseline",
+      "CLX-SDK-EXT-004 live marketplace trust",
+      "Required Critical Performance Flows",
+      "installed_app_launch",
+      "sidebar_hover_click_expand",
+      "rescue_reachability",
+      "private source-session verifier",
+    ],
+    "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json": [
+      "\"title\": \"Clawix SDK-first custom surfaces external evidence packet\"",
+      "\"CLX-SDK-EXT-001\"",
+      "\"CLX-SDK-EXT-002\"",
+      "\"CLX-SDK-EXT-003\"",
+      "\"CLX-SDK-EXT-004\"",
+      "\"containsPrivatePaths\"",
+      "\"containsRawTrace\"",
+      "\"requiresFinalSourceReread\"",
+    ],
+    "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json": [
+      "\"status\": \"synthetic_templates_not_evidence\"",
+      "\"validSyntheticPackets\"",
+      "\"invalidSyntheticPackets\"",
+      "\"rejects missing signed-host native grant\"",
+      "\"rejects performance baseline missing required flow\"",
+      "\"rejects private paths in public packet\"",
+      "\"rejects marketplace trust without ficha receipt\"",
     ],
     "docs/sdk-first-custom-surfaces-installed-app-smoke.md": [
       "Bundle id: `com.clawix.app`",
@@ -214,16 +264,23 @@ function assertPublicRouting() {
     ],
     "docs/decision-map.md": [
       "docs/governance/sdk-first-custom-surfaces/completion.md",
+      "docs/governance/sdk-first-custom-surfaces/external-pending.md",
       "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
       "`window.clawix` host bridge",
     ],
     "docs/discoverability.registry.json": [
       "docs/governance/sdk-first-custom-surfaces/completion.md",
+      "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+      "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json",
       "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "custom app SDK executionBoundary",
     ],
     "docs/discoverability.md": [
       "sdk-first-custom-surfaces-completion-audit",
+      "sdk-first-custom-surfaces-external-pending",
+      "sdk-first-custom-surfaces-external-evidence-schema",
       "verify-sdk-first-custom-surfaces-goal",
     ],
   })) {
@@ -407,6 +464,16 @@ function assertRuntimeArtifacts() {
     ],
   })) {
     for (const snippet of snippets) requireSnippet(relativePath, snippet);
+  }
+}
+
+function assertExternalValidationArtifacts() {
+  const result = spawnSync(process.execPath, ["scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs", "--self-test"], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail(`scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs --self-test failed:\n${result.stderr || result.stdout}`);
   }
 }
 
@@ -616,6 +683,7 @@ function assertSiblingClawJSArtifacts() {
 
 assertCompletionAudit();
 assertPublicRouting();
+assertExternalValidationArtifacts();
 assertRuntimeArtifacts();
 assertTests();
 assertSiblingClawJSArtifacts();

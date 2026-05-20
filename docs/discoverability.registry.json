@@ -3357,6 +3357,106 @@
       "reviewDate": "2026-05-20"
     },
     {
+      "id": "clawix-sdk-first-custom-surfaces-external-pending",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/completion.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external pending validation",
+        "signed-host native IoT provider performance marketplace blockers",
+        "SDK-first external evidence lanes"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external pending validation",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-pending.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-evidence-schema",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external evidence schema",
+        "SDK-first external evidence packet",
+        "custom surface external closure schema"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external evidence schema",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json"
+        }
+      ],
+      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-evidence-fixtures",
+      "kind": "validation-manifest",
+      "owner": "clawix",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external evidence fixtures",
+        "SDK-first synthetic evidence packets",
+        "custom surface external validator negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external evidence fixtures",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json"
+        }
+      ],
+      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-validation-runbook",
+      "kind": "docs-page",
+      "owner": "clawix",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external validation runbook",
+        "SDK-first exact approval runbook",
+        "signed-host native IoT provider baseline marketplace evidence checklist"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external validation runbook",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20"
+    },
+    {
       "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
       "kind": "docs-page",
       "owner": "clawix",

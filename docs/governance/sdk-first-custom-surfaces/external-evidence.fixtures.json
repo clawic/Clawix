@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "sdk-first-custom-surfaces-external-evidence-fixtures",
+  "status": "synthetic_templates_not_evidence",
+  "conversationId": "019e403c-3837-7f02-9b78-532c43cdd997",
+  "schemaPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+  "validSyntheticPackets": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e403c-3837-7f02-9b78-532c43cdd997",
+      "goal": "sdk-first-custom-surfaces",
+      "laneId": "CLX-SDK-EXT-001",
+      "status": "accepted_external_evidence",
+      "runAuthorization": {
+        "approvalId": "approval_signed_host_template",
+        "approvedBy": "user",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-20T01:00:00Z",
+        "exactRunScope": "signed-host native action template only",
+        "approvedLaneIds": ["CLX-SDK-EXT-001"]
+      },
+      "preflight": {
+        "completedAt": "2026-05-20T00:01:00Z",
+        "failClosedBeforeApproval": true,
+        "checks": ["custom-app high-risk bridge remained plan-only before approval"],
+        "resultRefs": ["preflight_signed_host_template"]
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:02:00Z",
+        "completedAt": "2026-05-20T00:03:00Z",
+        "executor": "signed_host_native",
+        "receiptRefs": ["signed_host_receipt_template"],
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditRefs": ["audit_signed_host_template"],
+        "sameMachineEvidenceRefs": ["same_machine_signed_host_template"],
+        "nativeGrantRefs": ["native_grant_template"],
+        "providerOrDeviceRefs": [],
+        "performanceBaselineRefs": [],
+        "marketplaceTrustRefs": [],
+        "approvedCriticalFlows": [],
+        "rollbackOrContinuityRefs": []
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "containsRawCredentials": false,
+        "containsPrivatePaths": false,
+        "containsRawTrace": false,
+        "containsPreciseLocation": false,
+        "containsDeviceIdentifiers": false
+      },
+      "closureImpact": {
+        "publicRows": ["CLX-SDK-004", "CLJ-SDK-005"],
+        "docsToUpdate": ["docs/governance/sdk-first-custom-surfaces/completion.md"],
+        "verifiersToRerun": ["scripts/verify-sdk-first-custom-surfaces-goal.mjs"],
+        "requiresFinalSourceReread": true,
+        "requiresUserReviewDecision": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:04:00Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e403c-3837-7f02-9b78-532c43cdd997",
+      "goal": "sdk-first-custom-surfaces",
+      "laneId": "CLX-SDK-EXT-002",
+      "status": "accepted_external_evidence",
+      "runAuthorization": {
+        "approvalId": "approval_iot_provider_template",
+        "approvedBy": "user",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-20T01:00:00Z",
+        "exactRunScope": "live IoT provider action template only",
+        "approvedLaneIds": ["CLX-SDK-EXT-002"]
+      },
+      "preflight": {
+        "completedAt": "2026-05-20T00:01:00Z",
+        "failClosedBeforeApproval": true,
+        "checks": ["custom-app IoT bridge required declared capability and approval before dispatch"],
+        "resultRefs": ["preflight_iot_provider_template"]
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:02:00Z",
+        "completedAt": "2026-05-20T00:03:00Z",
+        "executor": "live_iot_provider",
+        "receiptRefs": ["iot_provider_receipt_template"],
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditRefs": ["audit_iot_provider_template"],
+        "sameMachineEvidenceRefs": ["same_machine_iot_provider_template"],
+        "nativeGrantRefs": [],
+        "providerOrDeviceRefs": ["provider_device_template"],
+        "performanceBaselineRefs": [],
+        "marketplaceTrustRefs": [],
+        "approvedCriticalFlows": [],
+        "rollbackOrContinuityRefs": ["rollback_iot_provider_template"]
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "containsRawCredentials": false,
+        "containsPrivatePaths": false,
+        "containsRawTrace": false,
+        "containsPreciseLocation": false,
+        "containsDeviceIdentifiers": false
+      },
+      "closureImpact": {
+        "publicRows": ["CLX-SDK-004", "CLJ-SDK-005"],
+        "docsToUpdate": ["docs/governance/sdk-first-custom-surfaces/completion.md"],
+        "verifiersToRerun": ["scripts/verify-sdk-first-custom-surfaces-goal.mjs"],
+        "requiresFinalSourceReread": true,
+        "requiresUserReviewDecision": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:04:00Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e403c-3837-7f02-9b78-532c43cdd997",
+      "goal": "sdk-first-custom-surfaces",
+      "laneId": "CLX-SDK-EXT-003",
+      "status": "accepted_external_evidence",
+      "runAuthorization": {
+        "approvalId": "approval_performance_baseline_template",
+        "approvedBy": "user",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-20T01:00:00Z",
+        "exactRunScope": "approved performance baseline template only",
+        "approvedLaneIds": ["CLX-SDK-EXT-003"]
+      },
+      "preflight": {
+        "completedAt": "2026-05-20T00:01:00Z",
+        "failClosedBeforeApproval": true,
+        "checks": ["raw traces remained private and redacted summary was current"],
+        "resultRefs": ["preflight_performance_template"]
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:02:00Z",
+        "completedAt": "2026-05-20T00:03:00Z",
+        "executor": "performance_baseline_review",
+        "receiptRefs": ["performance_review_decision_template"],
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditRefs": ["audit_performance_template"],
+        "sameMachineEvidenceRefs": ["same_machine_performance_template"],
+        "nativeGrantRefs": [],
+        "providerOrDeviceRefs": [],
+        "performanceBaselineRefs": ["baseline_bundle_template"],
+        "marketplaceTrustRefs": [],
+        "approvedCriticalFlows": [
+          "installed_app_launch",
+          "sidebar_hover_click_expand",
+          "chat_scroll",
+          "composer_typing",
+          "route_switching",
+          "web_custom_surface_load",
+          "swift_custom_surface_load",
+          "rescue_reachability"
+        ],
+        "rollbackOrContinuityRefs": []
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "containsRawCredentials": false,
+        "containsPrivatePaths": false,
+        "containsRawTrace": false,
+        "containsPreciseLocation": false,
+        "containsDeviceIdentifiers": false
+      },
+      "closureImpact": {
+        "publicRows": ["CLX-SDK-008", "CLJ-SDK-008"],
+        "docsToUpdate": ["docs/sdk-first-custom-surfaces-performance-closure-summary.md"],
+        "verifiersToRerun": ["scripts/verify-sdk-first-custom-surfaces-goal.mjs"],
+        "requiresFinalSourceReread": true,
+        "requiresUserReviewDecision": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:04:00Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "019e403c-3837-7f02-9b78-532c43cdd997",
+      "goal": "sdk-first-custom-surfaces",
+      "laneId": "CLX-SDK-EXT-004",
+      "status": "accepted_external_evidence",
+      "runAuthorization": {
+        "approvalId": "approval_marketplace_template",
+        "approvedBy": "user",
+        "approvedAt": "2026-05-20T00:00:00Z",
+        "expiresAt": "2026-05-20T01:00:00Z",
+        "exactRunScope": "live marketplace trust template only",
+        "approvedLaneIds": ["CLX-SDK-EXT-004"]
+      },
+      "preflight": {
+        "completedAt": "2026-05-20T00:01:00Z",
+        "failClosedBeforeApproval": true,
+        "checks": ["local package signature and activation ficha checks passed without live activation"],
+        "resultRefs": ["preflight_marketplace_template"]
+      },
+      "execution": {
+        "startedAt": "2026-05-20T00:02:00Z",
+        "completedAt": "2026-05-20T00:03:00Z",
+        "executor": "marketplace_trust_review",
+        "receiptRefs": ["marketplace_receipt_template"],
+        "failedApprovedRun": false
+      },
+      "evidence": {
+        "auditRefs": ["audit_marketplace_template"],
+        "sameMachineEvidenceRefs": ["same_machine_marketplace_template"],
+        "nativeGrantRefs": [],
+        "providerOrDeviceRefs": [],
+        "performanceBaselineRefs": [],
+        "marketplaceTrustRefs": ["signature_receipt_template", "activation_ficha_template"],
+        "approvedCriticalFlows": [],
+        "rollbackOrContinuityRefs": []
+      },
+      "redaction": {
+        "containsSecrets": false,
+        "containsRawCredentials": false,
+        "containsPrivatePaths": false,
+        "containsRawTrace": false,
+        "containsPreciseLocation": false,
+        "containsDeviceIdentifiers": false
+      },
+      "closureImpact": {
+        "publicRows": ["CLX-SDK-005"],
+        "docsToUpdate": ["docs/governance/sdk-first-custom-surfaces/completion.md"],
+        "verifiersToRerun": ["scripts/verify-sdk-first-custom-surfaces-goal.mjs"],
+        "requiresFinalSourceReread": true,
+        "requiresUserReviewDecision": true
+      },
+      "reviewer": {
+        "reviewedAt": "2026-05-20T00:04:00Z",
+        "reviewedBy": "user",
+        "decision": "accepted"
+      }
+    }
+  ],
+  "invalidSyntheticPackets": [
+    {
+      "name": "rejects missing signed-host native grant",
+      "patch": { "laneId": "CLX-SDK-EXT-001", "evidence": { "nativeGrantRefs": [] } }
+    },
+    {
+      "name": "rejects performance baseline missing required flow",
+      "patch": { "laneId": "CLX-SDK-EXT-003", "evidence": { "approvedCriticalFlows": ["installed_app_launch"] } }
+    },
+    {
+      "name": "rejects private paths in public packet",
+      "patch": { "laneId": "CLX-SDK-EXT-002", "redaction": { "containsPrivatePaths": true } }
+    },
+    {
+      "name": "rejects marketplace trust without ficha receipt",
+      "patch": { "laneId": "CLX-SDK-EXT-004", "evidence": { "marketplaceTrustRefs": ["signature_receipt_template"] } }
+    }
+  ]
+}

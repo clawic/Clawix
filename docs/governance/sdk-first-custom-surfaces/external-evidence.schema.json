@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clawix.dev/schemas/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+  "title": "Clawix SDK-first custom surfaces external evidence packet",
+  "description": "Public-safe evidence packet required before replacing an SDK-first custom surfaces EXTERNAL PENDING lane.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "conversationId",
+    "goal",
+    "laneId",
+    "status",
+    "runAuthorization",
+    "preflight",
+    "execution",
+    "evidence",
+    "redaction",
+    "closureImpact",
+    "reviewer"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "conversationId": { "const": "019e403c-3837-7f02-9b78-532c43cdd997" },
+    "goal": { "const": "sdk-first-custom-surfaces" },
+    "laneId": {
+      "enum": [
+        "CLX-SDK-EXT-001",
+        "CLX-SDK-EXT-002",
+        "CLX-SDK-EXT-003",
+        "CLX-SDK-EXT-004"
+      ]
+    },
+    "status": { "const": "accepted_external_evidence" },
+    "runAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvalId", "approvedBy", "approvedAt", "expiresAt", "exactRunScope", "approvedLaneIds"],
+      "properties": {
+        "approvalId": { "type": "string", "minLength": 1 },
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "exactRunScope": { "type": "string", "minLength": 1 },
+        "approvedLaneIds": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completedAt", "failClosedBeforeApproval", "checks", "resultRefs"],
+      "properties": {
+        "completedAt": { "type": "string", "format": "date-time" },
+        "failClosedBeforeApproval": { "const": true },
+        "checks": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "resultRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "completedAt", "executor", "receiptRefs", "failedApprovedRun"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "executor": {
+          "enum": ["signed_host_native", "live_iot_provider", "performance_baseline_review", "marketplace_trust_review"]
+        },
+        "receiptRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "failedApprovedRun": { "const": false }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auditRefs", "sameMachineEvidenceRefs", "nativeGrantRefs", "providerOrDeviceRefs", "performanceBaselineRefs", "marketplaceTrustRefs", "approvedCriticalFlows", "rollbackOrContinuityRefs"],
+      "properties": {
+        "auditRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "sameMachineEvidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "nativeGrantRefs": { "type": "array", "items": { "type": "string" } },
+        "providerOrDeviceRefs": { "type": "array", "items": { "type": "string" } },
+        "performanceBaselineRefs": { "type": "array", "items": { "type": "string" } },
+        "marketplaceTrustRefs": { "type": "array", "items": { "type": "string" } },
+        "approvedCriticalFlows": { "type": "array", "items": { "type": "string" } },
+        "rollbackOrContinuityRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["containsSecrets", "containsRawCredentials", "containsPrivatePaths", "containsRawTrace", "containsPreciseLocation", "containsDeviceIdentifiers"],
+      "properties": {
+        "containsSecrets": { "const": false },
+        "containsRawCredentials": { "const": false },
+        "containsPrivatePaths": { "const": false },
+        "containsRawTrace": { "const": false },
+        "containsPreciseLocation": { "const": false },
+        "containsDeviceIdentifiers": { "const": false }
+      }
+    },
+    "closureImpact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicRows", "docsToUpdate", "verifiersToRerun", "requiresFinalSourceReread", "requiresUserReviewDecision"],
+      "properties": {
+        "publicRows": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "docsToUpdate": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "verifiersToRerun": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "requiresFinalSourceReread": { "const": true },
+        "requiresUserReviewDecision": { "const": true }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewedAt", "reviewedBy", "decision"],
+      "properties": {
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedBy": { "type": "string", "minLength": 1 },
+        "decision": { "const": "accepted" }
+      }
+    }
+  }
+}

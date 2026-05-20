@@ -15,7 +15,10 @@ the shared custom-app SDK inspection payload, Runtime, MCP, Relay, and schema
 tests in that checkout. A private source-session verifier has re-read the
 source conversation and confirmed the 24 decision prompt ids, including the
 three interrupted unanswered ids; the verifier and private path are not
-published in this repo.
+published in this repo. External closure lanes are tracked in
+`docs/governance/sdk-first-custom-surfaces/external-pending.md` and must pass
+`scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs` before any
+external row can be replaced.
 
 ## Current Rows
 
@@ -41,6 +44,8 @@ The goal is not complete while any of these are true:
 - Signed-host native execution, live IoT/provider, or marketplace trust
   validation lacks explicit approval, receipts, audit, and same-machine
   evidence.
+- Any SDK-first external evidence packet fails
+  `scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs`.
 - The private source-session verifier has not been re-run against the current
   tree before a future closure attempt.
 - The Clawix verifier or sibling ClawJS validation referenced by this audit

@@ -101,6 +101,11 @@ the sibling ClawJS SDK-first custom surface contract.
   `window.clawix.actions.invoke()` and `window.clawix.secrets.broker()` as
   approval-gated host bridge calls that currently fail closed with explicit
   no-runner and no-plaintext-broker dispatch reasons.
+- External closure lanes for signed-host/native execution, live IoT/provider
+  actions, approved performance baselines, and live marketplace trust are
+  recorded in `docs/governance/sdk-first-custom-surfaces/external-pending.md`
+  and gated by
+  `scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs`.
 - High-risk actions require policy/approval.
 - Direct SQLite is not exposed as a custom-app action surface.
 - Sidebar navigation remains usable while a surface loads, fails, or times out.
