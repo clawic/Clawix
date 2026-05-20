@@ -2,6 +2,51 @@ import XCTest
 @testable import Clawix
 
 final class SurfaceRouteDescriptorTests: XCTestCase {
+    private static let reviewedCoreSurvivalRoutes: [SidebarRoute] = [
+        .home,
+        .search,
+        .project,
+        .chat(UUID(uuidString: "00000000-0000-0000-0000-000000000001")!),
+        .settings,
+        .rescue
+    ]
+
+    private static let reviewedCoreSurvivalRouteIds: Set<String> = [
+        "home",
+        "search",
+        "project",
+        "chat:00000000-0000-0000-0000-000000000001",
+        "settings",
+        "rescue"
+    ]
+
+    private static let reviewedHeavySurfaceDependencies: Set<SurfaceRouteDependency> = [
+        .languageModels,
+        .searchIndex,
+        .databaseBackfill,
+        .customApps,
+        .connectors,
+        .downloads,
+        .externalProviders
+    ]
+
+    func testCoreSurvivalRouteSetIsExactAndDependencyFree() {
+        let descriptors = Self.reviewedCoreSurvivalRoutes.map(\.surfaceDescriptor)
+
+        XCTAssertEqual(Set(descriptors.map(\.id)), Self.reviewedCoreSurvivalRouteIds)
+        XCTAssertEqual(Set(SurfaceRouteDependency.allCases), Self.reviewedHeavySurfaceDependencies)
+
+        for descriptor in descriptors {
+            XCTAssertEqual(descriptor.criticality, .core, descriptor.id)
+            XCTAssertNil(descriptor.routeTarget, descriptor.id)
+            XCTAssertFalse(descriptor.supportsVariantDefault, descriptor.id)
+            XCTAssertNil(descriptor.timeoutSeconds, descriptor.id)
+            XCTAssertFalse(descriptor.requiresIndependentDegradation, descriptor.id)
+            XCTAssertEqual(SurfaceShellIsolationPolicy.surfaceDependencies(for: descriptor), [], descriptor.id)
+            XCTAssertEqual(SurfaceShellIsolationPolicy.criticalShellDependencies(for: descriptor), [], descriptor.id)
+        }
+    }
+
     func testCoreSurvivalRoutesHaveNoSurfaceTimeout() {
         let routes: [SidebarRoute] = [
             .home,

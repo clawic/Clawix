@@ -94,6 +94,7 @@ function assertCompletionAudit() {
     "verified the signed bundled helper, valid stdout `render` output",
     "main Clawix PID unchanged",
     "| CLX-SDK-008 | Clawix shell remains modular and nonblocking",
+    "exact reviewed core survival route and heavy dependency sets",
     "docs/sdk-first-custom-surfaces-installed-performance-smoke.md",
     "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
     "launched `/Applications/Clawix.app` under Instruments",
@@ -583,6 +584,13 @@ function assertTests() {
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [
       "testCriticalShellStartFastPathStaysBoundedWithAllHeavyDependenciesUnavailable",
       "testExtensionSurfaceStartMeasurementRemainsRouteLocalUnderUnavailableDependencies",
+    ],
+    "macos/Tests/ClawixMeshTests/SurfaceRouteDescriptorTests.swift": [
+      "testCoreSurvivalRouteSetIsExactAndDependencyFree",
+      "reviewedCoreSurvivalRouteIds",
+      "chat:00000000-0000-0000-0000-000000000001",
+      "reviewedHeavySurfaceDependencies",
+      "SurfaceShellIsolationPolicy.criticalShellDependencies(for: descriptor)",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceRouteSupervisorTests.swift": [
       "SurfaceRouteSupervisor",
