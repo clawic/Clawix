@@ -252,6 +252,30 @@ enum AppCapabilityCatalog {
             destructive: false
         ),
         AppCapabilityDescriptor(
+            id: "jobs.start",
+            title: "Jobs start",
+            summary: "Blocked custom-app gap for starting jobs until a mutation contract, policy, audit, and host adapter exist.",
+            customAppAccess: .blocked,
+            riskTier: .high,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: false
+        ),
+        AppCapabilityDescriptor(
+            id: "jobs.cancel",
+            title: "Jobs cancel",
+            summary: "Blocked custom-app gap for cancelling jobs until a mutation contract, policy, audit, and host adapter exist.",
+            customAppAccess: .blocked,
+            riskTier: .high,
+            interruptiveApproval: false,
+            touchesSecrets: false,
+            touchesNativeHost: false,
+            touchesPhysicalWorld: false,
+            destructive: true
+        ),
+        AppCapabilityDescriptor(
             id: "actions.invoke",
             title: "Framework action invoke",
             summary: "Brokered framework actions that may write or affect external state.",

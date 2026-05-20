@@ -77,6 +77,9 @@ the sibling ClawJS SDK-first custom surface contract.
 - `jobs.stream` is present only as a blocked explicit gap in the capability
   map; it is not exposed through `window.clawix` or the host bridge until a
   true backend stream, policy, audit, and adapter exist.
+- `jobs.start` and `jobs.cancel` are present only as blocked explicit mutation
+  gaps in the capability map; they are not exposed through `window.clawix` or
+  the host bridge until mutation contracts, policy, audit, and adapters exist.
 - `mac.action.plan` is exposed to Web custom apps through
   `window.clawix.mac.planAction()` as an approval-gated, dry-run-only host
   bridge call; signed-host native execution remains out of scope until

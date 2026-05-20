@@ -100,6 +100,12 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.customAppAccess, .blocked)
         XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.inputSchemaRef)
         XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.stream")?.outputSchemaRef)
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.start")?.customAppAccess, .blocked)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.start")?.inputSchemaRef)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.start")?.outputSchemaRef)
+        XCTAssertEqual(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.customAppAccess, .blocked)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.inputSchemaRef)
+        XCTAssertNil(AppCapabilityCatalog.descriptor(id: "jobs.cancel")?.outputSchemaRef)
     }
 
     func testApprovalRequiredCapabilitiesAreInterruptiveHighRisk() {
@@ -1446,16 +1452,16 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         let record = AppRecord(
             slug: "blocked-stream-panel",
             name: "Blocked Stream Panel",
-            declaredCapabilities: ["jobs.stream"],
+            declaredCapabilities: ["jobs.stream", "jobs.start", "jobs.cancel"],
             originClass: .localUserAuthored,
             activationReview: AppActivationReview(approvedBy: "Test", riskMapSource: AppCapabilityCatalog.source)
         )
 
         let riskMap = AppCapabilityCatalog.riskMap(for: record)
 
-        XCTAssertEqual(riskMap.blocked, ["jobs.stream"])
+        XCTAssertEqual(riskMap.blocked, ["jobs.stream", "jobs.start", "jobs.cancel"])
         XCTAssertEqual(riskMap.ordinaryAccess, [])
-        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedCapabilities(["jobs.stream"]))
+        XCTAssertEqual(AppCapabilityCatalog.activationGate(for: record), .blockedCapabilities(["jobs.stream", "jobs.start", "jobs.cancel"]))
     }
 
     func testProtectedRoutesCannotBeReplacedWithoutVariantFallback() {
@@ -1566,6 +1572,18 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(blockedStreamDispatch["status"] as? String, "unavailable")
         XCTAssertEqual(blockedStreamDispatch["mode"] as? String, "blocked")
         XCTAssertEqual(blockedStreamDispatch["approvalRequired"] as? Bool, false)
+        let blockedStart = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.start" })
+        XCTAssertEqual(blockedStart["customAppAccess"] as? String, "blocked")
+        let blockedStartDispatch = try XCTUnwrap(blockedStart["dispatch"] as? [String: Any])
+        XCTAssertEqual(blockedStartDispatch["status"] as? String, "unavailable")
+        XCTAssertEqual(blockedStartDispatch["mode"] as? String, "blocked")
+        XCTAssertEqual(blockedStartDispatch["approvalRequired"] as? Bool, false)
+        let blockedCancel = try XCTUnwrap(capabilities.first { $0["id"] as? String == "jobs.cancel" })
+        XCTAssertEqual(blockedCancel["customAppAccess"] as? String, "blocked")
+        let blockedCancelDispatch = try XCTUnwrap(blockedCancel["dispatch"] as? [String: Any])
+        XCTAssertEqual(blockedCancelDispatch["status"] as? String, "unavailable")
+        XCTAssertEqual(blockedCancelDispatch["mode"] as? String, "blocked")
+        XCTAssertEqual(blockedCancelDispatch["approvalRequired"] as? Bool, false)
         let resourceList = try XCTUnwrap(capabilities.first { $0["id"] as? String == "resources.list" })
         XCTAssertEqual(resourceList["inputSchemaRef"] as? String, "claw.resources.list.v1")
         XCTAssertEqual(resourceList["outputSchemaRef"] as? String, "claw.resources.listResult.v1")
@@ -1614,6 +1632,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.get"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("jobs.events"))
         XCTAssertFalse(ClawixAppsSDKJS.contains("jobs.stream"))
+        XCTAssertFalse(ClawixAppsSDKJS.contains("jobs.start"))
+        XCTAssertFalse(ClawixAppsSDKJS.contains("jobs.cancel"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.snapshot"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("system.telemetry.history"))
         XCTAssertTrue(ClawixAppsSDKJS.contains("request.cancel"))
@@ -1636,6 +1656,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.get"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("jobs.events"))
         XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("jobs.stream"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("jobs.start"))
+        XCTAssertFalse(AppBridgeOperationPolicy.isAllowed("jobs.cancel"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.snapshot"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("system.telemetry.history"))
         XCTAssertTrue(AppBridgeOperationPolicy.isAllowed("actions.invoke"))
