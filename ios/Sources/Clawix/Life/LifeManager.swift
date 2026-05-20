@@ -17,7 +17,7 @@ final class LifeVerticalsStore: ObservableObject {
     @Published private(set) var hiddenVerticalIds: Set<String>
 
     private let urlSession: URLSession
-    private let portByVertical: [String: Int]
+    private let signalsPort: Int
     private let hostProvider: () -> String?
     private let tokenProvider: () -> String?
 
@@ -27,13 +27,7 @@ final class LifeVerticalsStore: ObservableObject {
         tokenProvider: @escaping () -> String? = LifeVerticalsStore.defaultToken
     ) {
         self.urlSession = urlSession
-        var ports: [String: Int] = [:]
-        for entry in LifeRegistry.entries {
-            if let port = entry.servicePort {
-                ports[entry.id] = port
-            }
-        }
-        self.portByVertical = ports
+        self.signalsPort = LifeRegistry.signalsServicePort
         self.hostProvider = hostProvider
         self.tokenProvider = tokenProvider
         self.enabledVerticalIds = LifeVerticalsStore.loadEnabledIds()
@@ -135,9 +129,9 @@ final class LifeVerticalsStore: ObservableObject {
     // MARK: - URL plumbing
 
     private func endpoint(for verticalId: String, path: String) -> URL? {
-        guard let port = portByVertical[verticalId] else { return nil }
+        guard LifeRegistry.entry(byId: verticalId, includeDevOnly: true) != nil else { return nil }
         guard let host = hostProvider() else { return nil }
-        return URL(string: "http://\(host):\(port)/v1/\(verticalId)/\(path)")
+        return URL(string: "http://\(host):\(signalsPort)/v1/\(verticalId)/\(path)")
     }
 
     private func get<T: Decodable>(_ url: URL) async throws -> T {

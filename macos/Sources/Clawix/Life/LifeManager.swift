@@ -14,7 +14,7 @@ final class LifeVerticalsStore: ObservableObject {
 
     private let urlSession: URLSession
     private let host: String
-    private let portByVertical: [String: Int]
+    private let signalsPort: Int
     private let tokenProvider: () -> String?
     private var catalogGenerations: [String: Int] = [:]
     private var observationsGenerations: [String: Int] = [:]
@@ -27,13 +27,7 @@ final class LifeVerticalsStore: ObservableObject {
     ) {
         self.urlSession = urlSession
         self.host = host
-        var ports: [String: Int] = [:]
-        for entry in LifeRegistry.entries {
-            if let port = entry.servicePort {
-                ports[entry.id] = port
-            }
-        }
-        self.portByVertical = ports
+        self.signalsPort = LifeRegistry.signalsServicePort
         self.tokenProvider = tokenProvider
     }
 
@@ -179,8 +173,8 @@ final class LifeVerticalsStore: ObservableObject {
     // MARK: - URL plumbing
 
     private func endpoint(for verticalId: String, path: String) -> URL? {
-        guard let port = portByVertical[verticalId] else { return nil }
-        return URL(string: "http://\(host):\(port)/v1/\(verticalId)/\(path)")
+        guard LifeRegistry.entry(byId: verticalId, includeDevOnly: true) != nil else { return nil }
+        return URL(string: "http://\(host):\(signalsPort)/v1/\(verticalId)/\(path)")
     }
 
     private func nextCatalogGeneration(for verticalId: String) -> Int {

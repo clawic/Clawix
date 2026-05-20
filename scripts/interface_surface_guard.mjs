@@ -61,6 +61,7 @@ requireSnippet("docs/decision-map.md", "pre_v1_mutable");
 requireSnippet("docs/decision-map.md", "ADR 0025: Pre-V1 version governance");
 
 const allowedStatuses = new Set(["stable", "dev-only", "removed"]);
+const allowedLifeRegistryStatuses = new Set(["stable", "dev_only", "removed"]);
 const requiredFeatureFlags = new Set([
   "voiceToText",
   "quickAsk",
@@ -185,14 +186,17 @@ for (const [id, requirement] of Object.entries(v1ClosureSurfaceRequirements)) {
 
 function validateLifeRegistryResource(relativePath) {
   const envelope = JSON.parse(read(relativePath));
-  const invalid = (envelope.entries ?? []).filter((entry) => !allowedStatuses.has(entry.status));
+  const invalid = (envelope.entries ?? []).filter((entry) => !allowedLifeRegistryStatuses.has(entry.status));
   if (invalid.length > 0) {
     fail(`${relativePath} has non-v1 life statuses: ${invalid.map((entry) => `${entry.id}:${entry.status}`).join(", ")}`);
   }
   const stable = (envelope.entries ?? []).filter((entry) => entry.status === "stable");
-  const devOnly = (envelope.entries ?? []).filter((entry) => entry.status === "dev-only");
+  const devOnly = (envelope.entries ?? []).filter((entry) => entry.status === "dev_only");
   if (stable.length === 0) fail(`${relativePath} must expose at least one stable life vertical`);
-  if (devOnly.length === 0) fail(`${relativePath} must classify non-v1 life verticals as dev-only instead of provisional`);
+  if (devOnly.length === 0) fail(`${relativePath} must classify non-v1 life verticals as dev_only instead of provisional`);
+  if (/packageName|servicePort|catalogPackage/.test(JSON.stringify(envelope))) {
+    fail(`${relativePath} must be a ClawJS projection without packageName, servicePort or catalogPackage`);
+  }
 }
 
 validateLifeRegistryResource("macos/Sources/Clawix/Resources/life-registry.json");

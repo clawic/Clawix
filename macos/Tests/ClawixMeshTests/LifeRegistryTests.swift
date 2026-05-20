@@ -24,6 +24,12 @@ final class LifeRegistryTests: XCTestCase {
         XCTAssertNotNil(LifeRegistry.entry(byId: "hydration", includeDevOnly: true))
     }
 
+    func testRegistryProjectionCarriesClawJSSourceAndSingleSignalsPort() {
+        XCTAssertEqual(LifeRegistry.projectionVersion, "signals-registry.v1")
+        XCTAssertTrue(LifeRegistry.sourceChecksum.hasPrefix("sha256:"))
+        XCTAssertEqual(LifeRegistry.signalsServicePort, 24110)
+    }
+
     func testSensitiveLifeVerticalsExposeLegalGuardMetadata() {
         let sensitiveEntries = LifeRegistry.entries(includeDevOnly: true).filter(\.sensitive)
 

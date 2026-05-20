@@ -2,8 +2,27 @@ import Foundation
 
 enum LifeVerticalStatus: String, Codable {
     case stable
-    case devOnly = "dev-only"
+    case devOnly = "dev_only"
     case removed
+
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        switch rawValue {
+        case "stable":
+            self = .stable
+        case "dev_only", "dev-only":
+            self = .devOnly
+        case "removed":
+            self = .removed
+        default:
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Unknown life vertical status: \(rawValue)"
+                )
+            )
+        }
+    }
 }
 
 enum LifeCategory: String, Codable, CaseIterable {
@@ -44,8 +63,6 @@ struct LifeRegistryEntry: Identifiable, Equatable, Codable {
     let healthkitMapping: Bool
     let sensitive: Bool
     let status: LifeVerticalStatus
-    let packageName: String
-    let servicePort: Int?
     let iconHint: String?
 
     var legalGuardLabel: String? {
@@ -59,42 +76,120 @@ struct LifeRegistryEntry: Identifiable, Equatable, Codable {
 
 private struct RegistryEnvelope: Decodable {
     let schemaVersion: Int
+    let projectionVersion: String
+    let source: RegistrySource
+    let service: RegistryService
     let entries: [LifeRegistryEntry]
 }
 
+private struct RegistrySource: Decodable {
+    let checksum: String
+}
+
+private struct RegistryService: Decodable {
+    let port: Int
+}
+
+private struct LifeRegistrySnapshot {
+    let entries: [LifeRegistryEntry]
+    let projectionVersion: String
+    let sourceChecksum: String
+    let signalsServicePort: Int
+}
+
+private struct LifeFallbackEntry {
+    let id: String
+    let label: String
+    let category: LifeCategory
+    let iconHint: String?
+    let sensitive: Bool
+}
+
 enum LifeRegistry {
-    private static let allEntries: [LifeRegistryEntry] = loadEntries()
+    private static let snapshot: LifeRegistrySnapshot = loadSnapshot()
 
     static var entries: [LifeRegistryEntry] {
         entries(includeDevOnly: false)
     }
 
+    static var projectionVersion: String {
+        snapshot.projectionVersion
+    }
+
+    static var sourceChecksum: String {
+        snapshot.sourceChecksum
+    }
+
+    static var signalsServicePort: Int {
+        snapshot.signalsServicePort
+    }
+
     static func entries(includeDevOnly: Bool) -> [LifeRegistryEntry] {
-        allEntries.filter { includeDevOnly || $0.status == .stable }
+        snapshot.entries.filter { includeDevOnly || $0.status == .stable }
     }
 
     static func entry(byId id: String) -> LifeRegistryEntry? {
-        allEntries.first { $0.id == id && $0.status == .stable }
+        snapshot.entries.first { $0.id == id && $0.status == .stable }
     }
 
     static func entry(byId id: String, includeDevOnly: Bool) -> LifeRegistryEntry? {
-        allEntries.first { entry in
+        snapshot.entries.first { entry in
             entry.id == id && (includeDevOnly || entry.status == .stable)
         }
     }
 
     static func entries(in category: LifeCategory, includeDevOnly: Bool = false) -> [LifeRegistryEntry] {
-        allEntries.filter { entry in
+        snapshot.entries.filter { entry in
             entry.category == category && (includeDevOnly || entry.status == .stable)
         }
     }
 
-    private static func loadEntries() -> [LifeRegistryEntry] {
+    private static func loadSnapshot() -> LifeRegistrySnapshot {
         if let url = Bundle.main.url(forResource: "life-registry", withExtension: "json"),
            let data = try? Data(contentsOf: url),
            let envelope = try? JSONDecoder().decode(RegistryEnvelope.self, from: data) {
-            return envelope.entries
+            return LifeRegistrySnapshot(
+                entries: envelope.entries,
+                projectionVersion: envelope.projectionVersion,
+                sourceChecksum: envelope.source.checksum,
+                signalsServicePort: envelope.service.port
+            )
         }
-        return []
+        return LifeRegistrySnapshot(
+            entries: generatedFallbackEntries.map { entry in
+                LifeRegistryEntry(
+                    id: entry.id,
+                    label: entry.label,
+                    category: entry.category,
+                    description: "",
+                    catalogSize: 0,
+                    hasSessions: false,
+                    healthkitMapping: false,
+                    sensitive: entry.sensitive,
+                    status: .stable,
+                    iconHint: entry.iconHint
+                )
+            },
+            projectionVersion: "signals-registry.v1",
+            sourceChecksum: generatedFallbackSourceChecksum,
+            signalsServicePort: generatedFallbackSignalsServicePort
+        )
     }
+
+    private static let generatedFallbackSourceChecksum = "sha256:6da2fbc25bb3bbad5b1765cd3006e56fe916f6da44d5daea10b9dce8b5bf2363"
+    private static let generatedFallbackSignalsServicePort = 24110
+    private static let generatedFallbackEntries: [LifeFallbackEntry] = [
+        // BEGIN GENERATED LIFE FALLBACK
+        LifeFallbackEntry(id: "health", label: "Health", category: .bodyHealth, iconHint: "heart", sensitive: true),
+        LifeFallbackEntry(id: "sleep", label: "Sleep", category: .bodyHealth, iconHint: "moon", sensitive: false),
+        LifeFallbackEntry(id: "nutrition", label: "Nutrition", category: .bodyHealth, iconHint: "apple", sensitive: false),
+        LifeFallbackEntry(id: "workouts", label: "Workouts", category: .bodyHealth, iconHint: "dumbbell", sensitive: false),
+        LifeFallbackEntry(id: "emotions", label: "Emotions", category: .mindEmotions, iconHint: "smile", sensitive: false),
+        LifeFallbackEntry(id: "journal", label: "Journal", category: .mindEmotions, iconHint: "book", sensitive: false),
+        LifeFallbackEntry(id: "habits", label: "Habits", category: .timeProductivity, iconHint: "check", sensitive: false),
+        LifeFallbackEntry(id: "time-tracking", label: "Time tracking", category: .timeProductivity, iconHint: "timer", sensitive: false),
+        LifeFallbackEntry(id: "finance", label: "Finance", category: .careerMoney, iconHint: "wallet", sensitive: true),
+        LifeFallbackEntry(id: "goals", label: "Goals", category: .metaReflection, iconHint: "flag", sensitive: false)
+        // END GENERATED LIFE FALLBACK
+    ]
 }

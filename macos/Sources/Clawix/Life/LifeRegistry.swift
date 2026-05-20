@@ -1,9 +1,9 @@
 import Foundation
 
-/// Status of a vertical in the ClawJS tracking registry.
+/// Status of a vertical in the ClawJS Signals registry projection.
 enum LifeVerticalStatus: String, Codable {
     case stable
-    case devOnly = "dev-only"
+    case devOnly = "dev_only"
     case removed
 
     init(from decoder: Decoder) throws {
@@ -11,7 +11,7 @@ enum LifeVerticalStatus: String, Codable {
         switch rawValue {
         case "stable":
             self = .stable
-        case "dev-only":
+        case "dev_only", "dev-only":
             self = .devOnly
         case "removed":
             self = .removed
@@ -24,16 +24,10 @@ enum LifeVerticalStatus: String, Codable {
             )
         }
     }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
 }
 
 /// One of the ten top-level groupings that the Life sidebar uses to lay
-/// out the 80 verticals. The raw value matches the `category` field in
-/// `tracking-registry.json`.
+/// out the 80 verticals. The raw value matches the ClawJS projection.
 enum LifeCategory: String, Codable, CaseIterable {
     case bodyHealth = "body-health"
     case mindEmotions = "mind-emotions"
@@ -62,8 +56,7 @@ enum LifeCategory: String, Codable, CaseIterable {
     }
 }
 
-/// One entry of the 80-vertical canonical registry. Fields mirror the
-/// `tracking-registry.json` schema shipped by the ClawJS daemon.
+/// One Clawix-renderable entry from the ClawJS Signals registry projection.
 struct LifeRegistryEntry: Identifiable, Equatable, Codable {
     let id: String
     let label: String
@@ -74,8 +67,6 @@ struct LifeRegistryEntry: Identifiable, Equatable, Codable {
     let healthkitMapping: Bool
     let sensitive: Bool
     let status: LifeVerticalStatus
-    let packageName: String
-    let servicePort: Int?
     let iconHint: String?
 
     var legalGuardLabel: String? {
@@ -89,102 +80,123 @@ struct LifeRegistryEntry: Identifiable, Equatable, Codable {
 
 private struct RegistryEnvelope: Decodable {
     let schemaVersion: Int
+    let projectionVersion: String
+    let source: RegistrySource
+    let service: RegistryService
     let entries: [LifeRegistryEntry]
 }
 
-/// Caches the parsed registry per launch. Reads from the bundle first
-/// (`life-registry.json`) and falls back to an embedded subset so the app
-/// is always usable even before the daemon has shipped its copy.
+private struct RegistrySource: Decodable {
+    let checksum: String
+}
+
+private struct RegistryService: Decodable {
+    let port: Int
+}
+
+private struct LifeRegistrySnapshot {
+    let entries: [LifeRegistryEntry]
+    let projectionVersion: String
+    let sourceChecksum: String
+    let signalsServicePort: Int
+}
+
+private struct LifeFallbackEntry {
+    let id: String
+    let label: String
+    let category: LifeCategory
+    let iconHint: String?
+    let sensitive: Bool
+}
+
+/// Caches the parsed generated projection per launch.
 enum LifeRegistry {
-    private static let allEntries: [LifeRegistryEntry] = loadEntries()
+    private static let snapshot: LifeRegistrySnapshot = loadSnapshot()
 
     static var entries: [LifeRegistryEntry] {
         entries(includeDevOnly: false)
     }
 
+    static var projectionVersion: String {
+        snapshot.projectionVersion
+    }
+
+    static var sourceChecksum: String {
+        snapshot.sourceChecksum
+    }
+
+    static var signalsServicePort: Int {
+        snapshot.signalsServicePort
+    }
+
     static func entries(includeDevOnly: Bool) -> [LifeRegistryEntry] {
-        allEntries.filter { includeDevOnly || $0.status == .stable }
+        snapshot.entries.filter { includeDevOnly || $0.status == .stable }
     }
 
     static func entry(byId id: String) -> LifeRegistryEntry? {
-        allEntries.first { $0.id == id && $0.status == .stable }
+        snapshot.entries.first { $0.id == id && $0.status == .stable }
     }
 
     static func entry(byId id: String, includeDevOnly: Bool) -> LifeRegistryEntry? {
-        allEntries.first { entry in
+        snapshot.entries.first { entry in
             entry.id == id && (includeDevOnly || entry.status == .stable)
         }
     }
 
     static func entries(in category: LifeCategory, includeDevOnly: Bool = false) -> [LifeRegistryEntry] {
-        allEntries.filter { entry in
+        snapshot.entries.filter { entry in
             entry.category == category && (includeDevOnly || entry.status == .stable)
         }
     }
 
-    private static func loadEntries() -> [LifeRegistryEntry] {
+    private static func loadSnapshot() -> LifeRegistrySnapshot {
         for bundle in [Bundle.module, Bundle.main] {
             if let url = bundle.url(forResource: "life-registry", withExtension: "json"),
                let data = try? Data(contentsOf: url),
                let envelope = try? JSONDecoder().decode(RegistryEnvelope.self, from: data) {
-                return envelope.entries
+                return LifeRegistrySnapshot(
+                    entries: envelope.entries,
+                    projectionVersion: envelope.projectionVersion,
+                    sourceChecksum: envelope.source.checksum,
+                    signalsServicePort: envelope.service.port
+                )
             }
         }
-        // Fallback embedded subset: every product-v1 vertical so the UI is
-        // never empty even when the bundled registry resource is missing.
-        return embeddedFallback
+        return LifeRegistrySnapshot(
+            entries: generatedFallbackEntries.map { entry in
+                LifeRegistryEntry(
+                    id: entry.id,
+                    label: entry.label,
+                    category: entry.category,
+                    description: "",
+                    catalogSize: 0,
+                    hasSessions: false,
+                    healthkitMapping: false,
+                    sensitive: entry.sensitive,
+                    status: .stable,
+                    iconHint: entry.iconHint
+                )
+            },
+            projectionVersion: "signals-registry.v1",
+            sourceChecksum: generatedFallbackSourceChecksum,
+            signalsServicePort: generatedFallbackSignalsServicePort
+        )
     }
 
-    private static let embeddedFallback: [LifeRegistryEntry] = [
-        LifeRegistryEntry(id: "health", label: "Health", category: .bodyHealth,
-                          description: "General HealthKit-style metrics",
-                          catalogSize: 120, hasSessions: false, healthkitMapping: true,
-                          sensitive: true, status: .stable,
-                          packageName: "@clawjs/health", servicePort: 4700, iconHint: "heart"),
-        LifeRegistryEntry(id: "sleep", label: "Sleep", category: .bodyHealth,
-                          description: "Sleep duration, stages, quality, naps",
-                          catalogSize: 10, hasSessions: true, healthkitMapping: true,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/sleep", servicePort: 4701, iconHint: "moon"),
-        LifeRegistryEntry(id: "workouts", label: "Workouts", category: .bodyHealth,
-                          description: "Workouts with parent sessions + child observations",
-                          catalogSize: 35, hasSessions: true, healthkitMapping: true,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/workouts", servicePort: 4713, iconHint: "dumbbell"),
-        LifeRegistryEntry(id: "emotions", label: "Emotions", category: .mindEmotions,
-                          description: "Mood, anxiety, energy, joy, stress",
-                          catalogSize: 12, hasSessions: false, healthkitMapping: false,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/emotions", servicePort: 4714, iconHint: "smile"),
-        LifeRegistryEntry(id: "journal", label: "Journal", category: .mindEmotions,
-                          description: "Long-form reflections with prompts",
-                          catalogSize: 6, hasSessions: true, healthkitMapping: false,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/journal", servicePort: 4715, iconHint: "book"),
-        LifeRegistryEntry(id: "habits", label: "Habits", category: .timeProductivity,
-                          description: "Daily habits, streaks and targets",
-                          catalogSize: 18, hasSessions: false, healthkitMapping: false,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/habits", servicePort: 4723, iconHint: "check"),
-        LifeRegistryEntry(id: "time-tracking", label: "Time tracking", category: .timeProductivity,
-                          description: "Manual pomodoros and focus sessions",
-                          catalogSize: 12, hasSessions: true, healthkitMapping: false,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/time-tracking", servicePort: 4724, iconHint: "timer"),
-        LifeRegistryEntry(id: "goals", label: "Goals", category: .metaReflection,
-                          description: "Long-term aspirations and milestones",
-                          catalogSize: 8, hasSessions: false, healthkitMapping: false,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/goals", servicePort: 4762, iconHint: "flag"),
-        LifeRegistryEntry(id: "finance", label: "Finance", category: .careerMoney,
-                          description: "Transactions, budgets, savings, accounts, net worth",
-                          catalogSize: 60, hasSessions: false, healthkitMapping: false,
-                          sensitive: true, status: .stable,
-                          packageName: "@clawjs/finance", servicePort: 4760, iconHint: "wallet"),
-        LifeRegistryEntry(id: "nutrition", label: "Nutrition", category: .bodyHealth,
-                          description: "Macros and foods consumed",
-                          catalogSize: 230, hasSessions: false, healthkitMapping: true,
-                          sensitive: false, status: .stable,
-                          packageName: "@clawjs/nutrition", servicePort: 4702, iconHint: "apple")
+    private static let generatedFallbackSourceChecksum = "sha256:6da2fbc25bb3bbad5b1765cd3006e56fe916f6da44d5daea10b9dce8b5bf2363"
+    private static let generatedFallbackSignalsServicePort = 24110
+    private static let generatedFallbackEntries: [LifeFallbackEntry] = [
+        // BEGIN GENERATED LIFE FALLBACK
+        LifeFallbackEntry(id: "health", label: "Health", category: .bodyHealth, iconHint: "heart", sensitive: true),
+        LifeFallbackEntry(id: "sleep", label: "Sleep", category: .bodyHealth, iconHint: "moon", sensitive: false),
+        LifeFallbackEntry(id: "nutrition", label: "Nutrition", category: .bodyHealth, iconHint: "apple", sensitive: false),
+        LifeFallbackEntry(id: "workouts", label: "Workouts", category: .bodyHealth, iconHint: "dumbbell", sensitive: false),
+        LifeFallbackEntry(id: "emotions", label: "Emotions", category: .mindEmotions, iconHint: "smile", sensitive: false),
+        LifeFallbackEntry(id: "journal", label: "Journal", category: .mindEmotions, iconHint: "book", sensitive: false),
+        LifeFallbackEntry(id: "habits", label: "Habits", category: .timeProductivity, iconHint: "check", sensitive: false),
+        LifeFallbackEntry(id: "time-tracking", label: "Time tracking", category: .timeProductivity, iconHint: "timer", sensitive: false),
+        LifeFallbackEntry(id: "finance", label: "Finance", category: .careerMoney, iconHint: "wallet", sensitive: true),
+        LifeFallbackEntry(id: "goals", label: "Goals", category: .metaReflection, iconHint: "flag", sensitive: false)
+        // END GENERATED LIFE FALLBACK
     ]
 }
