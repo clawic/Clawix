@@ -326,6 +326,7 @@ function assertDecisionMatrix() {
     "System telemetry, context widgets, Monitor-backed history, and menu-bar indicators",
     "docs/system-telemetry-decision-matrix.md",
     "docs/system-telemetry-external-pending-validation.md",
+    "docs/system-telemetry-external-validation.manifest.json",
     "node scripts/verify-system-telemetry-goal.mjs",
   ]) {
     assert(decisionMap.includes(snippet), `docs/decision-map.md: missing ${JSON.stringify(snippet)}`);
@@ -339,6 +340,9 @@ function assertDecisionMatrix() {
     "\"id\": \"clawix-system-telemetry-external-pending-ledger\"",
     "\"canonicalSource\": \"docs/system-telemetry-external-pending-validation.md\"",
     "\"query\": \"system telemetry external pending validation\"",
+    "\"id\": \"clawix-system-telemetry-external-validation-manifest\"",
+    "\"canonicalSource\": \"docs/system-telemetry-external-validation.manifest.json\"",
+    "\"query\": \"system telemetry external validation manifest\"",
   ]) {
     assert(registry.includes(snippet), `docs/discoverability.registry.json: missing ${JSON.stringify(snippet)}`);
   }
@@ -349,8 +353,18 @@ function assertDecisionMatrix() {
     "[docs/system-telemetry-decision-matrix.md](/system-telemetry-decision-matrix)",
     "`clawix-system-telemetry-external-pending-ledger`",
     "[docs/system-telemetry-external-pending-validation.md](/system-telemetry-external-pending-validation)",
+    "`clawix-system-telemetry-external-validation-manifest`",
+    "[docs/system-telemetry-external-validation.manifest.json](/system-telemetry-external-validation.manifest.json)",
   ]) {
     assert(router.includes(snippet), `docs/discoverability.md: missing ${JSON.stringify(snippet)}`);
+  }
+
+  for (const snippet of [
+    "requiresExactRunApprovalForExternalLanes",
+    "same_machine_evidence",
+    "physical_validation",
+  ]) {
+    requireSnippet("docs/system-telemetry-external-validation.manifest.json", snippet);
   }
 }
 
