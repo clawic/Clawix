@@ -59,6 +59,7 @@ struct AppSurfaceView: View {
                             record: record,
                             reloadToken: reloadToken,
                             appsStore: appsStore,
+                            databaseManager: databaseManager,
                             iotManager: iotManager
                         )
                         .id("\(record.slug)-swift-\(reloadToken)")
@@ -241,6 +242,7 @@ private struct AppSwiftSurfaceHostView: View {
     let record: AppRecord
     let reloadToken: Int
     let appsStore: AppsStore
+    let databaseManager: DatabaseManager
     let iotManager: IoTManager
 
     @Environment(\.surfaceRouteReporter) private var surfaceReporter
@@ -299,6 +301,7 @@ private struct AppSwiftSurfaceHostView: View {
             let bridge = AppSwiftSurfaceActionBridge(
                 app: record,
                 appsStore: appsStore,
+                databaseManager: databaseManager,
                 surfaceReporter: surfaceReporter,
                 highRiskActionDispatcher: AppFrameworkHighRiskActionDispatcher(iotManager: iotManager)
             )

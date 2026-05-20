@@ -699,7 +699,7 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
     }
 
     @MainActor
-    func testSwiftSurfaceReadActionReportsWithoutApproval() async throws {
+    func testSwiftSurfaceReadActionDoesNotRequestInterruptiveApproval() async throws {
         let app = AppRecord(
             slug: "swift-dashboard",
             name: "Swift Dashboard",
@@ -731,8 +731,8 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
             }
         ).handle(action)
 
-        XCTAssertEqual(result, .reportedRead("search.query"))
-        XCTAssertTrue(reports.contains(.partial(message: "Swift surface read action accepted: search.query")))
+        XCTAssertEqual(result, .failed("Swift surface search bridge is unavailable"))
+        XCTAssertTrue(reports.contains(.error(message: "Swift surface search bridge is unavailable")))
     }
 
     @MainActor
@@ -787,6 +787,126 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         XCTAssertEqual(result, .executedRead("resources.read", 1))
         XCTAssertTrue(reports.contains(.loading(message: "Reading Swift surface resource", progress: 0.2)))
         XCTAssertTrue(reports.contains(.partial(message: "Swift surface read resource: res_swift1")))
+    }
+
+    @MainActor
+    func testSwiftSurfaceDBQueryExecutesThroughDatabaseManager() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let appsStore = AppsStore(rootURL: root)
+        let client = AppCustomSurfaceFakeDatabaseClient()
+        client.onListRecords = { namespace, collection, filter, sort, limit, offset in
+            XCTAssertEqual(namespace, "clawix-local")
+            XCTAssertEqual(collection, "tasks")
+            XCTAssertEqual(filter?["status"] as? String, "todo")
+            XCTAssertEqual(sort, "-updatedAt")
+            XCTAssertEqual(limit, 10)
+            XCTAssertEqual(offset, 0)
+            return DBListResponse(total: 1, items: [
+                self.makeDBRecord(id: "task-1", title: "Launch", status: "todo")
+            ])
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [makeCollection("tasks")]
+        )
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["db.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:swift-dashboard") { report in
+            reports.append(report)
+        }
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkRead,
+                capabilityId: "db.query",
+                operation: "db.query",
+                arguments: [
+                    "collection": .string("tasks"),
+                    "filter": .object(["status": .string("todo")]),
+                    "sort": .string("-updatedAt"),
+                    "limit": .int(10)
+                ]
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            databaseManager: manager,
+            surfaceReporter: reporter,
+            highRiskActionDispatcher: AppUnavailableHighRiskActionDispatcher()
+        ).handle(action)
+
+        XCTAssertEqual(result, .executedRead("db.query", 1))
+        XCTAssertEqual(client.listRecordsCallCount, 1)
+        XCTAssertTrue(reports.contains(.partial(message: "Swift surface queried 1 database records")))
+    }
+
+    @MainActor
+    func testSwiftSurfaceSearchQueryExecutesThroughDatabaseManager() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let appsStore = AppsStore(rootURL: root)
+        let client = AppCustomSurfaceFakeDatabaseClient()
+        client.onListRecords = { _, collection, _, sort, limit, offset in
+            XCTAssertEqual(collection, "tasks")
+            XCTAssertEqual(sort, "-updatedAt")
+            XCTAssertEqual(limit, 100)
+            XCTAssertEqual(offset, 0)
+            return DBListResponse(total: nil, items: [
+                self.makeDBRecord(id: "task-1", title: "Launch agent", status: "todo"),
+                self.makeDBRecord(id: "task-2", title: "Ignore", status: "done")
+            ])
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [makeCollection("tasks")]
+        )
+        let app = AppRecord(
+            slug: "swift-dashboard",
+            name: "Swift Dashboard",
+            declaredCapabilities: ["search.query"],
+            surfaceKind: .swiftDeclarative
+        )
+        var reports: [SurfaceRouteReport] = []
+        let reporter = SurfaceRouteReporter(surfaceID: "app:swift-dashboard") { report in
+            reports.append(report)
+        }
+        let action = AppSwiftSurfaceRenderedAction(
+            action: AppSwiftSurfaceAction(
+                invocation: .sdkRead,
+                capabilityId: "search.query",
+                operation: "search.query",
+                arguments: [
+                    "query": .string("agent"),
+                    "collections": .array([.string("tasks")]),
+                    "limit": .int(5)
+                ]
+            )
+        )
+
+        let result = await AppSwiftSurfaceActionBridge(
+            app: app,
+            appsStore: appsStore,
+            databaseManager: manager,
+            surfaceReporter: reporter,
+            highRiskActionDispatcher: AppUnavailableHighRiskActionDispatcher()
+        ).handle(action)
+
+        XCTAssertEqual(result, .executedRead("search.query", 1))
+        XCTAssertEqual(client.listRecordsCallCount, 1)
+        XCTAssertTrue(reports.contains(.partial(message: "Swift surface found 1 search results")))
     }
 
     @MainActor
@@ -1809,6 +1929,36 @@ final class AppCustomSurfaceCapabilityTests: XCTestCase {
         try data.write(to: directory.appendingPathComponent(AppResourceRegistryStore.stateFileName))
     }
 
+    private func makeCollection(_ name: String) -> DBCollection {
+        DBCollection(
+            namespaceId: "clawix-local",
+            name: name,
+            displayName: name.capitalized,
+            fields: [
+                DBFieldDefinition(name: "title", type: .text, required: true, options: nil, relation: nil),
+                DBFieldDefinition(name: "status", type: .select, required: false, options: nil, relation: nil)
+            ],
+            indexes: [],
+            builtin: true,
+            protected: false,
+            coreFieldNames: ["title", "status"],
+            createdAt: "2026-05-20T00:00:00Z",
+            updatedAt: "2026-05-20T00:00:00Z"
+        )
+    }
+
+    private func makeDBRecord(id: String, title: String, status: String) -> DBRecord {
+        DBRecord(
+            id: id,
+            createdAt: "2026-05-20T00:00:00Z",
+            updatedAt: "2026-05-20T00:00:00Z",
+            data: [
+                "title": .string(title),
+                "status": .string(status)
+            ]
+        )
+    }
+
     private func makeSwiftRunnerLaunch(
         result: AppSwiftSurfaceRunnerResult
     ) throws -> (launch: AppSwiftSurfaceRunnerLaunch, result: AppSwiftSurfaceRunnerResult) {
@@ -1945,6 +2095,99 @@ private final class AppCustomSurfaceFakeIoTClient: IoTClienting, @unchecked Send
             targets: [],
             capabilityUpdates: [],
             approvalId: nil
+        )
+    }
+}
+
+private final class AppCustomSurfaceFakeDatabaseClient: DatabaseClienting {
+    var bearerToken: String? = "test-token"
+    let origin = URL(string: "http://127.0.0.1:1")!
+    var listRecordsCallCount = 0
+    var onListRecords: (
+        String,
+        String,
+        [String: Any]?,
+        String?,
+        Int?,
+        Int?
+    ) async throws -> DBListResponse<DBRecord> = { _, _, _, _, _, _ in
+        DBListResponse(total: 0, items: [])
+    }
+
+    func ensureNamespace(id: String, displayName: String?) async throws -> DBNamespace {
+        DBNamespace(
+            id: id,
+            displayName: displayName ?? id,
+            createdAt: "2026-05-20T00:00:00Z",
+            updatedAt: "2026-05-20T00:00:00Z"
+        )
+    }
+
+    func listCollections(namespaceId: String) async throws -> [DBCollection] { [] }
+
+    func updateCollection(
+        namespaceId: String,
+        name: String,
+        displayName: String,
+        fields: [DBFieldDefinition],
+        indexes: [DBIndexDefinition]
+    ) async throws -> DBCollection {
+        DBCollection(
+            namespaceId: namespaceId,
+            name: name,
+            displayName: displayName,
+            fields: fields,
+            indexes: indexes,
+            builtin: false,
+            protected: false,
+            coreFieldNames: [],
+            createdAt: "2026-05-20T00:00:00Z",
+            updatedAt: "2026-05-20T00:00:00Z"
+        )
+    }
+
+    func listRecords(
+        namespaceId: String,
+        collection: String,
+        filter: [String: Any]?,
+        sort: String?,
+        limit: Int?,
+        offset: Int?
+    ) async throws -> DBListResponse<DBRecord> {
+        listRecordsCallCount += 1
+        return try await onListRecords(namespaceId, collection, filter, sort, limit, offset)
+    }
+
+    func createRecord(namespaceId: String, collection: String, data: [String: DBJSON]) async throws -> DBRecord {
+        DBRecord(id: "created", createdAt: "2026-05-20T00:00:00Z", updatedAt: "2026-05-20T00:00:00Z", data: data)
+    }
+
+    func updateRecord(namespaceId: String, collection: String, id: String, data: [String: DBJSON]) async throws -> DBRecord {
+        DBRecord(id: id, createdAt: "2026-05-20T00:00:00Z", updatedAt: "2026-05-20T00:00:00Z", data: data)
+    }
+
+    func deleteRecord(namespaceId: String, collection: String, id: String) async throws -> Bool { true }
+
+    func downloadFile(fileId: String) async throws -> Data { Data() }
+
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        filename: String,
+        contentType: String,
+        data: Data
+    ) async throws -> DBFileAsset {
+        DBFileAsset(
+            id: "file-1",
+            namespaceId: namespaceId,
+            collectionName: collectionName,
+            recordId: recordId,
+            filename: filename,
+            contentType: contentType,
+            sizeBytes: Int64(data.count),
+            createdAt: "2026-05-20T00:00:00Z",
+            downloadPath: "/files/file-1"
         )
     }
 }

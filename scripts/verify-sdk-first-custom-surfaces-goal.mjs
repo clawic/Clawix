@@ -135,6 +135,10 @@ function assertRuntimeArtifacts() {
       "highRiskActionDispatcher.dispatch",
       "Swift surface read action accepted",
       "executeResourceRead",
+      "executeDBQuery",
+      "executeSearchQuery",
+      "AppBridgeQueryDSL.dbQuery",
+      "AppBridgeQueryDSL.searchQuery",
       "resources.read",
     ],
     "macos/Sources/Clawix/Apps/ClawixAppsSDK.swift": [
@@ -188,8 +192,10 @@ function assertTests() {
       "testSwiftSurfaceRenderPresentationBuildsDeclarativeTree",
       "testSwiftSurfaceRunnerRenderMessageOverridesHostManifestThroughIPC",
       "testSwiftSurfaceRunnerIPCRejectsCapabilitiesOutsideLaunchPlan",
-      "testSwiftSurfaceReadActionReportsWithoutApproval",
+      "testSwiftSurfaceReadActionDoesNotRequestInterruptiveApproval",
       "testSwiftSurfaceResourceReadExecutesThroughRegisteredResources",
+      "testSwiftSurfaceDBQueryExecutesThroughDatabaseManager",
+      "testSwiftSurfaceSearchQueryExecutesThroughDatabaseManager",
       "testSwiftSurfaceHighRiskActionUsesApprovalDispatcherAndAudit",
     ],
     "macos/Tests/ClawixMeshTests/SurfaceShellPerformanceTests.swift": [

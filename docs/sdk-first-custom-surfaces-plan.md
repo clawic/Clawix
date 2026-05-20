@@ -35,8 +35,9 @@ the sibling ClawJS SDK-first custom surface contract.
    runner target emits a versioned stdout `render` message, and rendered
    controls enter a host-owned action bridge for non-interruptive read events
    or approval-gated high-risk dispatch/audit. Swift controls can execute
-   registered-resource SDK reads through the host resource registry. Signed-app
-   bundling and Search/DB Swift SDK read execution remain closure gates.
+   registered-resource, Search, and DB SDK reads through host-owned registries
+   and the shared query DSL. Signed-app bundling and signed end-to-end
+   isolation/crash evidence remain closure gates.
 7. Validation: add focused unit/UI tests and mark native/physical/provider
    dependencies as `EXTERNAL PENDING` until host-real validation is performed.
 8. Performance validation: keep a repeatable shell-isolation measurement for

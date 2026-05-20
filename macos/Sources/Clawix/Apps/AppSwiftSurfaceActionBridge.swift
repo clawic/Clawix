@@ -18,6 +18,7 @@ struct AppSwiftSurfaceActionBridge {
 
     let app: AppRecord
     let appsStore: AppsStore
+    let databaseManager: DatabaseManager?
     let resourceRegistry: AppResourceRegistryStore
     let surfaceReporter: SurfaceRouteReporter
     let highRiskActionDispatcher: AppHighRiskActionDispatcher
@@ -26,6 +27,7 @@ struct AppSwiftSurfaceActionBridge {
     init(
         app: AppRecord,
         appsStore: AppsStore,
+        databaseManager: DatabaseManager? = nil,
         resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),
         surfaceReporter: SurfaceRouteReporter = .noop,
         highRiskActionDispatcher: AppHighRiskActionDispatcher,
@@ -33,6 +35,7 @@ struct AppSwiftSurfaceActionBridge {
     ) {
         self.app = app
         self.appsStore = appsStore
+        self.databaseManager = databaseManager
         self.resourceRegistry = resourceRegistry
         self.surfaceReporter = surfaceReporter
         self.highRiskActionDispatcher = highRiskActionDispatcher
@@ -66,10 +69,16 @@ struct AppSwiftSurfaceActionBridge {
             surfaceReporter.error(message)
             return .failed(message)
         }
-        guard app.effectiveDeclaredCapabilities.isEmpty || app.effectiveDeclaredCapabilities.contains(descriptor.id) else {
+        guard canUseDeclaredCapability(descriptor.id) else {
             let message = "App manifest does not declare capability: \(descriptor.id)"
             surfaceReporter.error(message)
             return .failed(message)
+        }
+        if action.capabilityId == "db.query" {
+            return await executeDBQuery(action)
+        }
+        if action.capabilityId == "search.query" {
+            return await executeSearchQuery(action)
         }
         if action.capabilityId == "resources.read" {
             return await executeResourceRead(action)
@@ -136,6 +145,93 @@ struct AppSwiftSurfaceActionBridge {
             }
             surfaceReporter.partial("Swift surface action dispatched: \(action.operation)")
             return .dispatched(result.receiptOutcome)
+        }
+    }
+
+    private func executeDBQuery(_ action: AppSwiftSurfaceRenderedAction) async -> AppSwiftSurfaceActionBridgeResult {
+        do {
+            guard let databaseManager else {
+                let message = "Swift surface database bridge is unavailable"
+                surfaceReporter.error(message)
+                return .failed(message)
+            }
+            guard case .ready = databaseManager.state else {
+                let message = "Swift surface database service is unavailable"
+                surfaceReporter.error(message)
+                return .failed(message)
+            }
+            let query = try AppBridgeQueryDSL.dbQuery(from: action.bridgeArguments)
+            surfaceReporter.loading("Querying Swift surface database", progress: 0.2)
+            let response = try await databaseManager.client.listRecords(
+                namespaceId: databaseManager.currentNamespace,
+                collection: query.collection,
+                filter: query.backendFilterJSON,
+                sort: query.sortString,
+                limit: query.limit,
+                offset: query.effectiveOffset
+            )
+            let filtered = query.postFilter(response.items)
+            surfaceReporter.partial("Swift surface queried \(filtered.count) database records")
+            return .executedRead(action.operation, filtered.count)
+        } catch is CancellationError {
+            surfaceReporter.partial("Swift surface database query cancelled")
+            return .failed("Request cancelled")
+        } catch {
+            surfaceReporter.error(error.localizedDescription)
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    private func executeSearchQuery(_ action: AppSwiftSurfaceRenderedAction) async -> AppSwiftSurfaceActionBridgeResult {
+        do {
+            guard let databaseManager else {
+                let message = "Swift surface search bridge is unavailable"
+                surfaceReporter.error(message)
+                return .failed(message)
+            }
+            guard case .ready = databaseManager.state else {
+                let message = "Swift surface search service is unavailable"
+                surfaceReporter.error(message)
+                return .failed(message)
+            }
+            let query = try AppBridgeQueryDSL.searchQuery(from: action.bridgeArguments)
+            let collections = query.collections.isEmpty ? databaseManager.collections.map(\.name) : query.collections
+            let needle = query.query.lowercased()
+            var matched = 0
+            var skipped = 0
+            surfaceReporter.loading("Searching Swift surface database", progress: 0.1)
+
+            for collection in collections {
+                try Task.checkCancellation()
+                guard matched < query.limit else { break }
+                let response = try await databaseManager.client.listRecords(
+                    namespaceId: databaseManager.currentNamespace,
+                    collection: collection,
+                    filter: nil,
+                    sort: "-updatedAt",
+                    limit: 100,
+                    offset: 0
+                )
+                for record in response.items {
+                    guard matched < query.limit else { break }
+                    let isMatch = record.titleString.lowercased().contains(needle)
+                        || record.data.values.contains { $0.stringValue?.lowercased().contains(needle) == true }
+                    guard isMatch else { continue }
+                    if skipped < query.effectiveOffset {
+                        skipped += 1
+                        continue
+                    }
+                    matched += 1
+                }
+            }
+            surfaceReporter.partial("Swift surface found \(matched) search results")
+            return .executedRead(action.operation, matched)
+        } catch is CancellationError {
+            surfaceReporter.partial("Swift surface search query cancelled")
+            return .failed("Request cancelled")
+        } catch {
+            surfaceReporter.error(error.localizedDescription)
+            return .failed(error.localizedDescription)
         }
     }
 
@@ -218,6 +314,14 @@ struct AppSwiftSurfaceActionBridge {
         } catch {
             surfaceReporter.error("Swift surface action audit write failed: \(error.localizedDescription)")
         }
+    }
+
+    private func canUseDeclaredCapability(_ capabilityId: String) -> Bool {
+        let declared = app.effectiveDeclaredCapabilities
+        guard declared.isEmpty else {
+            return declared.contains(capabilityId)
+        }
+        return app.effectiveOriginClass == .localUserAuthored || app.effectiveOriginClass == .system
     }
 
     private func string(_ value: Any?) -> String? {

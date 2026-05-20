@@ -109,11 +109,12 @@ plan and declared capabilities before it renders native nodes. Rendered controls
 enter `AppSwiftSurfaceActionBridge`: read actions report a route-local
 non-interruptive event, while high-risk `sdkAction` controls use the same
 approval, dispatcher, and `high-risk-action-audit.jsonl` receipt boundary as
-hosted Web apps. `resources.list` and `resources.read` controls execute through
-the host resource registry, so Swift surfaces can read only registered
-resources and cannot supply arbitrary filesystem paths. Signed app
-bundling/configuration and Search/DB Swift SDK read execution remain separate
-closure gates.
+hosted Web apps. `resources.list`, `resources.read`, `search.query`, and
+`db.query` controls execute through host-owned registries/`DatabaseManager`
+using the shared DSL guards and redaction boundary, so Swift surfaces can read
+only registered resources and cannot supply arbitrary filesystem paths or raw
+database escapes. Signed app bundling/configuration and signed end-to-end
+isolation/crash evidence remain separate closure gates.
 
 Imported and marketplace packages must not be treated as pre-approved. The host
 sets the requested origin (`imported` or `marketplace`) and clears any stale
