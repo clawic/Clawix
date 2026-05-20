@@ -26,3 +26,7 @@ SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
 // flipping to light when the device is in light mode while the
 // pairing UI is dark-first by design.
 UIUserInterfaceStyle = Dark
+
+// Private maintainer override. This file is git-ignored and may pin the
+// local Apple Team ID so direct Xcode opens do not auto-select another team.
+#include? "LocalSigning.xcconfig"

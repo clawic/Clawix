@@ -36,6 +36,7 @@ xcuserdata/
 .signing.env.local
 .signing.env.*
 !.signing.env.example
+ios/LocalSigning.xcconfig
 .release-notes.md
 
 # Generated web SPA bundle copied into the bridged helper's SwiftPM resources.
