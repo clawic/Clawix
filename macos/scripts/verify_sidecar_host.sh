@@ -3,9 +3,13 @@
 # process and do not expose bearer material through process environment.
 set -euo pipefail
 
-APP="${CLAWIX_APP_PATH:-/Applications/Clawix.app}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+APP="/Applications/Clawix.app"
 EXE="$APP/Contents/MacOS/Clawix"
 SECRETS_XPC="$APP/Contents/XPCServices/ClawixSecretsXPC.xpc"
+SIGNING_GUARD="$WORKSPACE_ROOT/scripts-dev/signing-guard.sh"
+LAUNCHER="$WORKSPACE_ROOT/scripts-dev/clawix-launcher.sh"
 
 required_services=(
   "secrets:24103"
@@ -25,6 +29,11 @@ fail() {
   exit 1
 }
 
+external_pending() {
+  echo "EXTERNAL PENDING: $*" >&2
+  exit 2
+}
+
 command_of() {
   ps -p "$1" -o command= 2>/dev/null || true
 }
@@ -33,18 +42,21 @@ ppid_of() {
   ps -p "$1" -o ppid= 2>/dev/null | tr -d '[:space:]'
 }
 
-[[ -d "$APP" ]] || fail "canonical app missing at $APP"
-codesign --verify --strict "$APP" >/dev/null 2>&1 || fail "codesign verification failed for $APP"
-[[ -d "$SECRETS_XPC" ]] || fail "Secrets XPC service missing at $SECRETS_XPC"
-codesign --verify --strict "$SECRETS_XPC" >/dev/null 2>&1 || fail "codesign verification failed for $SECRETS_XPC"
+if [[ -n "${CLAWIX_APP_PATH:-}" && "$CLAWIX_APP_PATH" != "$APP" ]]; then
+  fail "CLAWIX_APP_PATH points outside the canonical app; signed-host validation must use $APP"
+fi
 
-signature_detail="$(codesign -dv "$APP" 2>&1 || true)"
-if grep -q 'Signature=adhoc' <<< "$signature_detail"; then
-  fail "$APP is ad-hoc signed"
-fi
-if ! grep -q '^TeamIdentifier=' <<< "$signature_detail"; then
-  fail "$APP has no TeamIdentifier"
-fi
+[[ -d "$APP" ]] || fail "canonical app missing at $APP"
+[[ -d "$SECRETS_XPC" ]] || fail "Secrets XPC service missing at $SECRETS_XPC"
+[[ -f "$SIGNING_GUARD" ]] || external_pending "private signing guard is unavailable; signed-host validation is not real evidence"
+# shellcheck disable=SC1090
+source "$SIGNING_GUARD"
+declare -F clawix_assert_signed_app_identity >/dev/null || fail "signing guard cannot assert app identity"
+clawix_assert_signed_app_identity "$APP" BUNDLE_ID "canonical Clawix app" || fail "canonical app signing identity is invalid"
+clawix_assert_signed_artifact_team "$SECRETS_XPC" || fail "Secrets XPC signing identity is invalid"
+[[ -x "$LAUNCHER" ]] || external_pending "canonical private launcher is unavailable; signed-host validation is not real evidence"
+bash "$LAUNCHER" preflight-computer-use || fail "canonical launcher preflight failed"
+
 xpc_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$SECRETS_XPC/Contents/Info.plist" 2>/dev/null || true)"
 app_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist" 2>/dev/null || true)"
 [[ "$xpc_identifier" == "${app_identifier}.secrets-xpc" ]] || fail "Secrets XPC identifier $xpc_identifier does not match app identifier $app_identifier"

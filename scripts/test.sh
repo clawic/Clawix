@@ -201,10 +201,32 @@ run_external_command() {
   return "$status"
 }
 
+signed_host_preflight() {
+  local launcher="$ROOT_DIR/../scripts-dev/clawix-launcher.sh"
+  if [[ ! -x "$launcher" ]]; then
+    echo "EXTERNAL PENDING host lane: private launcher is unavailable for signed-host preflight" >&2
+    return 2
+  fi
+  run bash "$launcher" preflight-computer-use
+}
+
 host_tests() {
   local status=0
   if [[ -n "${CLAWIX_HOST_TEST_COMMAND:-}" ]]; then
-    run_external_command host "$CLAWIX_HOST_TEST_COMMAND" || status=$?
+    if signed_host_preflight; then
+      run_external_command host "$CLAWIX_HOST_TEST_COMMAND" || status=$?
+    else
+      local preflight_status=$?
+      if [[ "$preflight_status" -eq 2 ]]; then
+        if strict_external_pending; then
+          echo "FAIL: strict release host lane blocked without private signed-host preflight" >&2
+          status=1
+        fi
+      else
+        echo "FAIL: signed-host preflight failed before host validation" >&2
+        status=1
+      fi
+    fi
   else
     echo "EXTERNAL PENDING host lane: set CLAWIX_HOST_TEST_COMMAND for signed-host validation" >&2
     if strict_external_pending; then

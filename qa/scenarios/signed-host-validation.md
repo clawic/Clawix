@@ -15,7 +15,8 @@ app shell.
 ## Steps
 
 1. Build and launch the current workspace through the private Clawix launcher.
-2. Confirm the open app is the current `/Applications/Clawix.app` build.
+2. Confirm the open app is the current `/Applications/Clawix.app` build through
+   `scripts-dev/clawix-launcher.sh preflight-computer-use`.
 3. Confirm the app identity, signature state, process identity, and build
    metadata through the private signed-host check. Public evidence must redact
    private bundle ids, Team IDs, signing identities, local paths, and secrets.
@@ -31,9 +32,13 @@ app shell.
 
 ## Expected Result
 
-Host-dependent behavior is validated against the signed app identity. If the
-required physical permission, device, or external account is unavailable, the
-scenario is recorded as `EXTERNAL PENDING` with the missing prerequisite.
+Host-dependent behavior is validated against the signed app identity only when
+the signing guard proves a non-ad-hoc signature, authorized Team ID, expected
+bundle id, and canonical launcher/preflight path. Missing guard, identity, Team
+ID, expected bundle id, or canonical launcher evidence is not a pass. If the
+required physical permission, device, external account, or private launcher
+evidence is unavailable, the scenario is recorded as `EXTERNAL PENDING` with
+the missing prerequisite.
 Visible app bugs are not closed by unit, snapshot, fixture, or hermetic E2E
 checks alone; without real-app evidence, their closure status remains
 `PARTIAL` or `EXTERNAL PENDING`.
