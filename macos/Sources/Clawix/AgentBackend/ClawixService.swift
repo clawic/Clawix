@@ -325,7 +325,8 @@ final class ClawixService: ObservableObject {
         }
 
         do {
-            let threadId = try await ensureThread(for: chatId)
+            let activeSkills = await appState?.skillsActiveSnapshot(for: chatId)
+            let threadId = try await ensureThread(for: chatId, activeSkills: activeSkills)
             let modelSlug = appState?.clawixModelSlug
             let effort = appState?.clawixEffort
             let serviceTier = appState?.clawixServiceTier
@@ -346,7 +347,7 @@ final class ClawixService: ObservableObject {
                     model: modelSlug,
                     effort: effort,
                     serviceTier: serviceTier,
-                    activeSkills: nil,
+                    activeSkills: activeSkills,
                     collaborationMode: collab
                 ),
                 expecting: TurnStartResult.self
@@ -492,7 +493,7 @@ final class ClawixService: ObservableObject {
 
     // MARK: - Internal: thread bootstrap
 
-    private func ensureThread(for chatId: UUID) async throws -> String {
+    private func ensureThread(for chatId: UUID, activeSkills: [ActiveSkill]?) async throws -> String {
         if let id = threadByChat[chatId] { return id }
         let cwd = appState?.threadCwd ?? FileManager.default.homeDirectoryForCurrentUser.path
         let modelSlug = appState?.clawixModelSlug
@@ -507,7 +508,7 @@ final class ClawixService: ObservableObject {
                 sandbox: permissionMode.codexSandbox,
                 personalizationPreset: appState?.personality.rawValue,
                 serviceTier: serviceTier,
-                activeSkills: nil,
+                activeSkills: activeSkills,
                 collaborationMode: nil
             ),
             expecting: ThreadStartResult.self

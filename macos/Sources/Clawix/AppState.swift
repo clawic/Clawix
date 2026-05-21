@@ -195,6 +195,9 @@ final class AppState: ObservableObject {
     /// sync targets. `nil` until `bootstrap()` wires it up so views can
     /// fall back to a local instance during preview-mode rendering.
     @Published var skillsStore: SkillsStore? = nil
+    var makeSkillsStore: (_ seedBuiltins: Bool, _ loadMode: SkillsStore.LoadMode) -> SkillsStore = { seedBuiltins, loadMode in
+        SkillsStore(seedBuiltins: seedBuiltins, loadMode: loadMode)
+    }
     /// Global plan-mode toggle. When on, subsequent turns are sent with
     /// `collaborationMode = "plan"` so the agent surfaces
     /// `item/tool/requestUserInput` instead of acting directly. Toggled by
@@ -489,7 +492,6 @@ final class AppState: ObservableObject {
         if persistedRuntime == .opencode {
             self.selectedModel = AgentRuntimeChoice.persistedOpenCodeModel()
         }
-        self.skillsStore = SkillsStore()
 
         sampleChat = Chat(
             id: UUID(uuidString: "8B46DFE1-B932-48E6-94E7-C86E65F7F18D")!,

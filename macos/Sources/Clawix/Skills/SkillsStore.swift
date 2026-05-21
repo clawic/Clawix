@@ -10,6 +10,12 @@ import Combine
 final class SkillsStore: ObservableObject {
     typealias SyncOperation = @MainActor () async throws -> Date
 
+    enum LoadMode {
+        case none
+        case activeOnly
+        case fullCatalog
+    }
+
     // MARK: - Public state
 
     /// Full catalog: built-ins + user-created + imported, regardless of
@@ -43,25 +49,32 @@ final class SkillsStore: ObservableObject {
 
     private let frameworkClient: ClawJSFrameworkRecordsClient?
     private let syncOperation: SyncOperation
+    private let shouldSeedBuiltins: Bool
     private var syncTask: Task<Void, Never>?
     private var syncGeneration = 0
+    private var fullCatalogLoaded = false
+    private var activeStateLoaded = false
 
     init(
         seedBuiltins: Bool = true,
         frameworkClient: ClawJSFrameworkRecordsClient? = nil,
-        syncOperation: SyncOperation? = nil
+        syncOperation: SyncOperation? = nil,
+        loadMode: LoadMode = .fullCatalog
     ) {
         self.frameworkClient = frameworkClient ?? .shared
         self.syncOperation = syncOperation ?? {
             try await Task.sleep(nanoseconds: 200_000_000)
             return Date()
         }
-        if seedBuiltins {
-            installSeedCatalog()
-            installSeedSyncTargets()
+        self.shouldSeedBuiltins = seedBuiltins
+        switch loadMode {
+        case .none:
+            break
+        case .activeOnly:
+            loadActiveStateIfNeeded()
+        case .fullCatalog:
+            loadFullCatalogIfNeeded()
         }
-        loadUserCatalogFromFramework()
-        loadActiveFromFramework()
     }
 
     deinit {
@@ -91,6 +104,29 @@ final class SkillsStore: ObservableObject {
 
     func skill(slug: String) -> SkillSpec? {
         catalog.first { $0.slug == slug }
+    }
+
+    func loadFullCatalogIfNeeded() {
+        guard !fullCatalogLoaded else { return }
+        if shouldSeedBuiltins {
+            installSeedCatalog()
+            installSeedSyncTargets()
+        }
+        loadUserCatalogFromFramework()
+        loadActiveStateIfNeeded()
+        fullCatalogLoaded = true
+    }
+
+    func loadActiveStateIfNeeded() {
+        guard !activeStateLoaded else { return }
+        loadActiveFromFramework()
+        activeStateLoaded = true
+    }
+
+    func loadActiveStateIfNeededAsync() async {
+        guard !activeStateLoaded else { return }
+        await loadActiveFromFrameworkAsync()
+        activeStateLoaded = true
     }
 
     /// Returns every distinct tag in the catalog, sorted by frequency
@@ -338,7 +374,17 @@ final class SkillsStore: ObservableObject {
     }
 
     private func loadActiveFromFramework() {
-        guard let record = try? frameworkClient?.listSkillRecords(kind: Self.stateSkillKind).first(where: { $0.slug == Self.activeStateSlug }),
+        guard let record = try? frameworkClient?.getSkillRecord(slug: Self.activeStateSlug) else { return }
+        applyActiveState(record)
+    }
+
+    private func loadActiveFromFrameworkAsync() async {
+        guard let record = try? await frameworkClient?.getSkillRecordAsync(slug: Self.activeStateSlug) else { return }
+        applyActiveState(record)
+    }
+
+    private func applyActiveState(_ record: ClawJSFrameworkRecordsClient.SkillRecord) {
+        guard record.kind == Self.stateSkillKind,
               let data = record.body.data(using: .utf8),
               let decoded = try? JSONDecoder().decode([String: [ActiveSkillSnapshot]].self, from: data)
         else { return }

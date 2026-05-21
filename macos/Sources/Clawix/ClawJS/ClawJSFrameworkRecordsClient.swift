@@ -134,6 +134,11 @@ struct ClawJSFrameworkRecordsClient {
         return try Self.decoder.decode(Envelope<ListResponse<SkillRecord>>.self, from: data).data.items
     }
 
+    func getSkillRecord(slug: String) throws -> SkillRecord? {
+        let data = try runner.run(["skills", "get", slug, "--json"])
+        return try Self.decoder.decode(Envelope<SkillRecord?>.self, from: data).data
+    }
+
     func upsertSkillRecord(
         slug: String,
         name: String,
@@ -166,6 +171,11 @@ struct ClawJSFrameworkRecordsClient {
     func listAgentsAsync() async throws -> [Agent] {
         let data = try await asyncRunner.run(["agents", "list", "--for-host", "true", "--json"])
         return try Self.decoder.decode(Envelope<ListResponse<Agent>>.self, from: data).data.items
+    }
+
+    func getSkillRecordAsync(slug: String) async throws -> SkillRecord? {
+        let data = try await asyncRunner.run(["skills", "get", slug, "--json"])
+        return try Self.decoder.decode(Envelope<SkillRecord?>.self, from: data).data
     }
 
     func upsertAgent(_ agent: Agent) throws {

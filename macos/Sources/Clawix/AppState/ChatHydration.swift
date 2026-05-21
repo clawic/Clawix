@@ -45,14 +45,35 @@ extension AppState {
         }
     }
 
+    @discardableResult
+    func ensureSkillsStoreLoaded() -> SkillsStore {
+        if let store = skillsStore {
+            store.loadFullCatalogIfNeeded()
+            return store
+        }
+        let store = makeSkillsStore(true, .fullCatalog)
+        skillsStore = store
+        return store
+    }
+
+    @discardableResult
+    func ensureSkillsActiveStateLoaded() async -> SkillsStore {
+        if let store = skillsStore {
+            await store.loadActiveStateIfNeededAsync()
+            return store
+        }
+        let store = makeSkillsStore(false, .none)
+        skillsStore = store
+        await store.loadActiveStateIfNeededAsync()
+        return store
+    }
+
     /// Resolve the active skills set for a chat at the moment we're
-    /// about to dispatch a `thread/start` or `turn/start`. Walks the
-    /// global → project → chat hierarchy via `SkillsStore.resolveActive`
-    /// and converts the result to the wire shape (`ActiveSkill`). Nil
-    /// when the store hasn't been initialised yet (e.g. during preview
-    /// rendering or extremely early bootstrap).
-    func skillsActiveSnapshot(for chatId: UUID) -> [ActiveSkill]? {
-        guard let store = skillsStore else { return nil }
+    /// about to dispatch a `thread/start` or `turn/start`. This loads only
+    /// the compact active-state record unless the full Skills catalog has
+    /// already been opened.
+    func skillsActiveSnapshot(for chatId: UUID) async -> [ActiveSkill]? {
+        let store = await ensureSkillsActiveStateLoaded()
         let projectId = chat(byId: chatId)?.projectId?.uuidString
         let states = store.resolveActive(projectId: projectId, chatId: chatId)
         guard !states.isEmpty else { return nil }
