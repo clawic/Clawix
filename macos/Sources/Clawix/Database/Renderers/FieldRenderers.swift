@@ -517,6 +517,8 @@ private struct JSONForm: View {
 }
 
 private struct RelationForm: View {
+    private static let pickerRecordLimit = 100
+
     let field: DBFieldDefinition
     @Binding var value: DBJSON
     @EnvironmentObject private var manager: DatabaseManager
@@ -529,7 +531,7 @@ private struct RelationForm: View {
             set: { value = $0.isEmpty ? .null : .string($0) }
         )) {
             Text("—").tag("")
-            ForEach(records) { record in
+            ForEach(records.prefix(Self.pickerRecordLimit)) { record in
                 Text(record.titleString).tag(record.id)
             }
         }

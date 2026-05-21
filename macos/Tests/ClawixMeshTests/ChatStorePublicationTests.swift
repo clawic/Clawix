@@ -46,6 +46,38 @@ final class ChatStorePublicationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
+    func testAssistantDeltasCoalesceBeforeOneTranscriptPublication() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
+        state.chats = [
+            Chat(id: chatId, title: "Streaming", messages: [assistant], createdAt: Date())
+        ]
+
+        var chatsPublishes = 0
+        var messagePublishes = 0
+        state.$chats.dropFirst().sink { _ in
+            chatsPublishes += 1
+        }.store(in: &cancellables)
+        let messageStore = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)
+        messageStore!.objectWillChange.sink {
+            messagePublishes += 1
+        }.store(in: &cancellables)
+
+        for part in ["hel", "lo ", "world"] {
+            state.appendAssistantDelta(chatId: chatId, delta: part)
+        }
+
+        XCTAssertEqual(chatsPublishes, 0)
+        XCTAssertEqual(messagePublishes, 0)
+
+        state.flushPendingAssistantTextDeltas(chatId: chatId)
+
+        XCTAssertEqual(chatsPublishes, 0)
+        XCTAssertEqual(messagePublishes, 1)
+        XCTAssertEqual(messageStore?.message.content, "hello world")
+    }
+
     func testDaemonStreamingReplacementDoesNotPublishLegacyChatsUntilFinished() {
         let state = AppState()
         let chatId = UUID()

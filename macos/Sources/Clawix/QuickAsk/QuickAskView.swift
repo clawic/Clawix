@@ -1340,6 +1340,8 @@ struct QuickAskCompletionRow: Identifiable {
 }
 
 struct QuickAskCompletionPanel: View {
+    private static let visibleRowLimit = 8
+
     let title: String
     let rows: [QuickAskCompletionRow]
 
@@ -1355,7 +1357,7 @@ struct QuickAskCompletionPanel: View {
                     .padding(.horizontal, 10)
                     .padding(.top, 6)
                     .padding(.bottom, 4)
-                ForEach(rows) { row in
+                ForEach(rows.prefix(Self.visibleRowLimit)) { row in
                     QuickAskCompletionRowView(row: row)
                 }
             }

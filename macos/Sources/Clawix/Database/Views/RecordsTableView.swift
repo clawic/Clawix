@@ -5,6 +5,8 @@ import SwiftUI
 /// expansions). Inline edit on simple fields commits immediately via
 /// `DatabaseManager.updateRecord`.
 struct RecordsTableView: View {
+    private static let visibleRecordLimit = 500
+
     let collection: DBCollection
     let records: [DBRecord]
     @Binding var selectedIds: Set<String>
@@ -18,7 +20,7 @@ struct RecordsTableView: View {
                 header
                 Divider().background(Color.white.opacity(0.07))
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(records) { record in
+                    ForEach(records.prefix(Self.visibleRecordLimit)) { record in
                         rowView(for: record)
                         Divider().background(Color.white.opacity(0.04))
                     }

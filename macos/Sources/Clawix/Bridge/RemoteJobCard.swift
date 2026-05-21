@@ -8,6 +8,7 @@ import ClawixCore
 // banner reads the daemon's `workspaceDenied` error and turns it into
 // a clear next step (open Settings → Machines on the remote Mac).
 struct RemoteJobCard: View {
+    private static let visibleEventLimit = 50
 
     let state: RemoteJobUIState
     var onDismiss: () -> Void = {}
@@ -138,7 +139,7 @@ struct RemoteJobCard: View {
 
             if eventsExpanded {
                 VStack(alignment: .leading, spacing: 4) {
-                    ForEach(state.events, id: \.id) { event in
+                    ForEach(state.events.prefix(Self.visibleEventLimit), id: \.id) { event in
                         HStack(alignment: .top, spacing: 8) {
                             Text(event.type)
                                 .font(.system(size: 10, weight: .semibold, design: .monospaced))

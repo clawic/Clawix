@@ -5,6 +5,8 @@ import SwiftUI
 /// across the four curated collections plus `decisions` and
 /// `inbox_messages`. Selecting a result navigates to that collection.
 struct DatabaseSearchOverlay: View {
+    private static let visibleResultLimit = 100
+
     @Binding var isPresented: Bool
     @EnvironmentObject private var manager: DatabaseManager
     @EnvironmentObject private var appState: AppState
@@ -56,7 +58,7 @@ struct DatabaseSearchOverlay: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(results) { result in
+                        ForEach(results.prefix(Self.visibleResultLimit)) { result in
                             resultRow(result)
                         }
                     }

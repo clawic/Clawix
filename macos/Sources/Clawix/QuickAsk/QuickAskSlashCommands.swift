@@ -46,9 +46,11 @@ final class QuickAskSlashCommandsStore: ObservableObject {
         Self.builtIn + customCommands
     }
 
-    func suggestions(for fragment: String) -> [QuickAskSlashCommand] {
+    func suggestions(for fragment: String, limit: Int = 8) -> [QuickAskSlashCommand] {
         let q = fragment.lowercased()
-        return allCommands.filter { $0.trigger.lowercased().hasPrefix(q) }
+        return Array(allCommands
+            .filter { $0.trigger.lowercased().hasPrefix(q) }
+            .prefix(max(0, limit)))
     }
 
     func upsert(_ command: QuickAskSlashCommand) {

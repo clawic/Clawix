@@ -90,6 +90,8 @@ sidebar summaries, sidebar snapshots, search route maps, or unrelated chrome.
 
 ## Source Decision Audit
 
+Source alias: `2026-05-21-p0-ui-state-invalidation-boundary-request`.
+
 This ADR implements the public-safe decision from the 2026-05-21 P0 UI state
 invalidation boundary request. The implemented evidence is this ADR, the
 decision-map row, discoverability registration, `macos/PERF.md` scenario, unit
