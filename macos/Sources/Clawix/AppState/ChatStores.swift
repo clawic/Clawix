@@ -175,20 +175,26 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
     }
 
     func replace(id: UUID, with message: ChatMessage) {
+        let replacementStore: ChatMessageStore
         if let store = messagesById[id] {
             store.message = message
+            replacementStore = store
         } else {
-            messagesById[message.id] = ChatMessageStore(message)
+            replacementStore = ChatMessageStore(message)
         }
         if message.id != id {
             messagesById[id] = nil
+            messagesById[message.id] = replacementStore
             if let idx = messageIds.firstIndex(of: id) {
                 messageIds[idx] = message.id
             } else {
                 messageIds.append(message.id)
             }
-        } else if !messageIds.contains(id) {
-            messageIds.append(id)
+        } else {
+            messagesById[id] = replacementStore
+            if !messageIds.contains(id) {
+                messageIds.append(id)
+            }
         }
     }
 
