@@ -1419,7 +1419,15 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let historyReader = SystemTelemetryHistoryReader()");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "bridge: .localStatusBridge(historyReader: historyReader)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "func activateFromUserSurface()");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "ResourceSampler.startIfNeeded(reason: \"system-telemetry-menu-bar\")");
+  const telemetryStatusControllerText = read("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift");
+  assert(
+    !telemetryStatusControllerText.includes("ResourceSampler.startIfNeeded("),
+    "SystemTelemetryStatusItemController must not start ResourceSampler; resource sampling is explicit diagnostics only"
+  );
+  assert(
+    !telemetryStatusControllerText.includes("HangDetector.startFromDiagnosticsSurface()"),
+    "SystemTelemetryStatusItemController must not start HangDetector; hang sampling is explicit diagnostics only"
+  );
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "static func localStatusBridge(historyReader: SystemTelemetryHistoryReader? = nil)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let historyReader = historyReader ?? SystemTelemetryHistoryReader()");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "case (\"history\", \"get\")");

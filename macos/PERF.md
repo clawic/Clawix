@@ -12,6 +12,13 @@ idle behavior, caches, logs, indexes, and background work are bounded product
 budgets. The durable policy is mirrored in
 `../docs/governance/performance-governance.md`.
 
+Performance reports must separate hypotheses, static guard, compile/build,
+measurement taken, confirmed cause, probable cause, and discarded causes.
+Static inspection and passing builds can support the investigation, but only a
+cited trace, profile, runtime log, approved baseline, or equivalent capture can
+close work as performance validated. Without measurement, report partial
+validation, blocked, or `EXTERNAL PENDING`.
+
 This file is the single source of truth for: what to capture, how to
 read it, and which file to look at first per symptom. Update it when
 a new symptom shows up or when a hot-path moves to a different file.

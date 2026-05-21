@@ -17,6 +17,23 @@ Diagnose performance before changing code. Cover CPU, RAM, GPU/Neural Engine, di
 5. Correlate observed UI behavior with measurements.
 6. Classify causes as confirmed, probable, discarded, or not physically validated.
 
+## Required final report
+
+Report these states separately:
+
+- Hypotheses: the suspected causes before measurement.
+- Static guard: code reading, static checks, and guard results.
+- Compile/build: whether the affected code still builds or type-checks.
+- Measurement taken: the trace, profile, runtime log, approved baseline, or
+  equivalent capture used as evidence.
+- Confirmed cause: only causes proven by the cited measurement.
+- Probable cause: likely causes when evidence is incomplete.
+- Discarded causes: suspects checked and ruled out.
+
+No measurement, no performance validated. If no real measurement was taken and
+cited, close as partial validation, blocked, or `EXTERNAL PENDING`, not as
+performance validated.
+
 ## Constraints
 
 - Do not optimize from code inspection alone unless reproduction is impossible and the limitation is reported.

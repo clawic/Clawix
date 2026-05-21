@@ -22,7 +22,10 @@ domains are assistive only.
   network, battery, thermals, idle behavior, growth, resource contracts,
   streaming/backpressure, launch/idle, high-churn UI boundaries, the P1 Idle
   Quiescence Contract through `scripts/idle_quiescence_check.mjs`, and P1
-  hot-path checks through `scripts/hot_path_guard.mjs`.
+  hot-path checks through `scripts/hot_path_guard.mjs`. Performance reports
+  separate hypotheses, static guard, compile/build, measurement taken,
+  confirmed cause, probable cause, and discarded causes; no measurement means
+  no performance validated closure.
 - Problem-to-Guardrail loop: `docs/adr/0032-problem-to-guardrail-loop-mirror.md`
   and sibling ClawJS ADR 0046 require detected problems to close as
   `guard/test añadido`, `ADR/regla añadida`, or
@@ -180,6 +183,18 @@ Use relevant skills instead of pasting long procedures into context:
 - Host-dependent paths include installed apps, signed helpers, localhost,
   filesystem state under the user's home, auth, polling, native permissions,
   and device/simulator state.
+- Visible app bugs are host-dependent at closure. Unit, snapshot, fixture, or
+  hermetic E2E checks may support the fix, but they do not close a visible
+  Clawix app bug unless the validating agent also records evidence from the
+  project-approved real app path. That evidence must identify the launcher or
+  host-equivalent path used, the signed/canonical app identity where applicable,
+  build metadata, and the visible surface exercised. Without that real-app
+  evidence, report the closure as `PARTIAL` or `EXTERNAL PENDING`.
+- For conversational visible bugs, the real-app closure path includes opening
+  the visible chat navigation surfaces, creating a new validation conversation,
+  sending only an approved minimal prompt, observing a visible response, and
+  confirming no active generation remains. Existing conversations stay
+  read-only.
 - Prefer fixtures, dry-run paths, interceptors, local backends, and mocks.
 - Mark missing physical/provider prerequisites as `EXTERNAL PENDING` and keep
   them separate from defects.

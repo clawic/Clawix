@@ -12,6 +12,8 @@ struct WorkSummaryHeader: View {
     let summary: WorkSummary
     @Binding var expanded: Bool
     var onExpand: () -> Void = {}
+    @State private var tickDate = Date()
+    @State private var secondsLease: VisualClock.Lease?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -31,15 +33,19 @@ struct WorkSummaryHeader: View {
             if willExpand { onExpand() }
         } label: {
             if summary.isActive {
-                TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
-                    label(asOf: ctx.date)
-                }
+                label(asOf: tickDate)
+                    .onReceive(VisualClock.shared.secondsPublisher) { tickDate = $0 }
             } else {
                 label(asOf: summary.endedAt ?? Date())
             }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(verbatim: "Work summary"))
+        .onAppear { updateSecondsLease() }
+        .onDisappear { stopSecondsLease() }
+        .onChange(of: summary.isActive) { _, _ in
+            updateSecondsLease()
+        }
     }
 
     private func label(asOf date: Date) -> some View {
@@ -54,5 +60,21 @@ struct WorkSummaryHeader: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    private func updateSecondsLease() {
+        if summary.isActive {
+            tickDate = Date()
+            if secondsLease == nil {
+                secondsLease = VisualClock.shared.acquire(.seconds)
+            }
+        } else {
+            stopSecondsLease()
+        }
+    }
+
+    private func stopSecondsLease() {
+        secondsLease?.cancel()
+        secondsLease = nil
     }
 }

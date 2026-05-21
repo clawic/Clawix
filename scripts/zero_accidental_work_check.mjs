@@ -31,9 +31,15 @@ function requireSnippets(relativePath, snippets) {
 
 function appStateInitSlice(source) {
   const initMarker = "    init(\n";
-  const nextMarker = "    func loadThreadsFromRuntime()";
   const start = source.indexOf(initMarker);
-  const end = source.indexOf(nextMarker, start);
+  const endMarkers = [
+    "    func loadThreadsFromRuntime()",
+    "    enum ProjectRefreshIntent",
+  ];
+  const end = endMarkers
+    .map((marker) => source.indexOf(marker, start))
+    .filter((index) => index !== -1)
+    .sort((a, b) => a - b)[0] ?? -1;
   if (start === -1 || end === -1) {
     fail("AppState.init slice could not be located");
     return "";
@@ -42,7 +48,7 @@ function appStateInitSlice(source) {
 }
 
 function runChecks() {
-  requireSnippets("docs/adr/0026-zero-accidental-work-mirror.md", [
+  requireSnippets("docs/adr/0037-zero-accidental-work-mirror.md", [
     "Status: Accepted",
     "Zero Accidental Work",
     "AppState.init",
@@ -54,15 +60,15 @@ function runChecks() {
     "scripts/zero_accidental_work_check.mjs",
   ]);
   requireSnippets("docs/discoverability.md", [
-    "adr-docs-adr-0026-zero-accidental-work-mirror",
+    "adr-docs-adr-0037-zero-accidental-work-mirror",
     "guard-scripts-zero-accidental-work-check",
   ]);
   requireSnippets("docs/discoverability.registry.json", [
-    "adr-docs-adr-0026-zero-accidental-work-mirror",
+    "adr-docs-adr-0037-zero-accidental-work-mirror",
     "guard-scripts-zero-accidental-work-check",
   ]);
   requireSnippets("docs/adr-operational-coverage.manifest.json", [
-    "docs/adr/0026-zero-accidental-work-mirror.md",
+    "docs/adr/0037-zero-accidental-work-mirror.md",
     "scripts/zero_accidental_work_check.mjs",
   ]);
   requireSnippets("scripts/test.sh", [
@@ -70,10 +76,12 @@ function runChecks() {
   ]);
 
   const appState = requireSnippets("macos/Sources/Clawix/AppState.swift", [
+    "GUI-owned backend startup is demand-driven",
+    "Bridge transport is no longer opened on app launch",
+  ]);
+  requireSnippets("macos/Sources/Clawix/AppState/RuntimeSessions.swift", [
     "func startPostFirstFramePersistence()",
     "startPostFirstFrameFaviconCache()",
-    "GUI-owned backend startup is demand-driven",
-    "Bridge transport startup is allowed here without runtime",
   ]);
   const initBody = appStateInitSlice(appState);
   if (initBody.includes("FaviconCache.shared.primeDiskCache()")) {

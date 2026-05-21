@@ -13,6 +13,12 @@ static code reading. For macOS investigations, use
 [`macos/PERF.md`](macos/PERF.md); it defines the capture stack, symptom table,
 trace artifacts, and the rule that a trace precedes optimization.
 
+Performance reports must keep hypotheses, static guard, compile/build,
+measurement taken, confirmed cause, probable cause, and discarded causes
+separate. Static inspection and passing builds can support an investigation,
+but only a cited runtime measurement can close work as performance validated.
+Without measurement, report partial validation, blocked, or `EXTERNAL PENDING`.
+
 Interface performance budgets are governed cross-platform by
 [`docs/ui/performance-budgets.registry.json`](docs/ui/performance-budgets.registry.json).
 Those budgets are per critical flow and per governed platform. They become

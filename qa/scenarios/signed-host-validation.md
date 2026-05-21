@@ -8,18 +8,32 @@ Boundary: signed host, bridge, native permissions
 
 Verify behavior that cannot be proven by hermetic tests alone because macOS
 identity, TCC grants, app windows, or local helper ownership are involved.
+Visible Clawix app bugs use this scenario, or a narrower scenario that points
+back to it, for final closure when the user-facing behavior depends on the real
+app shell.
 
 ## Steps
 
 1. Build and launch the current workspace through the private Clawix launcher.
 2. Confirm the open app is the current `/Applications/Clawix.app` build.
-3. Run `bash scripts/test.sh host` with a private `CLAWIX_HOST_TEST_COMMAND`
+3. Confirm the app identity, signature state, process identity, and build
+   metadata through the private signed-host check. Public evidence must redact
+   private bundle ids, Team IDs, signing identities, local paths, and secrets.
+4. Run `bash scripts/test.sh host` with a private `CLAWIX_HOST_TEST_COMMAND`
    that uses the signed-host validation flow.
-4. Exercise the bridge and permission path being changed.
-5. Record `PASS`, `FAIL`, `PARTIAL`, or `EXTERNAL PENDING`.
+5. Exercise the bridge, permission path, or visible app surface being changed.
+6. For conversational visible bugs, navigate the visible chat surfaces, create a
+   new validation conversation, send only an approved minimal prompt, observe a
+   visible response, and confirm no active generation remains.
+7. Treat preexisting conversations as read-only. Mutate only conversations the
+   validating agent created for the approved validation session.
+8. Record `PASS`, `FAIL`, `PARTIAL`, or `EXTERNAL PENDING`.
 
 ## Expected Result
 
 Host-dependent behavior is validated against the signed app identity. If the
 required physical permission, device, or external account is unavailable, the
 scenario is recorded as `EXTERNAL PENDING` with the missing prerequisite.
+Visible app bugs are not closed by unit, snapshot, fixture, or hermetic E2E
+checks alone; without real-app evidence, their closure status remains
+`PARTIAL` or `EXTERNAL PENDING`.

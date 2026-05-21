@@ -14,13 +14,16 @@ struct ShimmerText: View {
     var peakOpacity: Double = 0.85
     var cycleDuration: Double = 3.0
     var radius: Double = 4.0
+    @State private var tickDate = Date()
+    @State private var shimmerLease: VisualClock.Lease?
 
     var body: some View {
-        TimelineView(.animation) { ctx in
-            Text(attributed(now: ctx.date))
-                .font(font)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        Text(attributed(now: tickDate))
+            .font(font)
+            .fixedSize(horizontal: false, vertical: true)
+            .onReceive(VisualClock.shared.shimmerPublisher) { tickDate = $0 }
+            .onAppear { startShimmerLease() }
+            .onDisappear { stopShimmerLease() }
     }
 
     private func attributed(now: Date) -> AttributedString {
@@ -41,5 +44,17 @@ struct ShimmerText: View {
             result.append(part)
         }
         return result
+    }
+
+    private func startShimmerLease() {
+        tickDate = Date()
+        if shimmerLease == nil {
+            shimmerLease = VisualClock.shared.acquire(.shimmer)
+        }
+    }
+
+    private func stopShimmerLease() {
+        shimmerLease?.cancel()
+        shimmerLease = nil
     }
 }

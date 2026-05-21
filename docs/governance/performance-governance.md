@@ -30,6 +30,25 @@ Classification names the affected resources, expected steady-state and peak
 behavior, boundedness rule, and measurement evidence needed before claiming a
 performance fix.
 
+## Required Report States
+
+Performance investigations and fixes must report these states separately:
+hypotheses, static guard, compile/build, measurement taken, confirmed cause,
+probable cause, and discarded causes.
+
+Static reading and static guard results can identify risk, but they do not
+prove runtime app, host, or framework performance behavior. Compile/build
+results prove code health, not performance validation. A confirmed cause
+requires cited measurement evidence from a trace, profile, runtime log,
+approved baseline, or equivalent capture. A probable cause is allowed when
+evidence points to a likely source but the measurement is incomplete.
+Discarded causes name the suspects checked and the evidence or reasoning that
+ruled them out.
+
+No measurement, no performance validated: without a real measurement taken and
+cited, the work closes only as partial validation, blocked, or
+`EXTERNAL PENDING`, never as performance validated.
+
 ## Default Design Rules
 
 - Start lazily and respect the current app mode. Do not launch native work,

@@ -20,6 +20,8 @@ struct LiveWorkingHeader: View {
     /// reasoning chunk is the only thing in the timeline we don't show
     /// seconds, the moment a second entry opens we start ticking.
     let timelineCount: Int
+    @State private var tickDate = Date()
+    @State private var secondsLease: VisualClock.Lease?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -30,6 +32,14 @@ struct LiveWorkingHeader: View {
                 .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear { updateSecondsLease() }
+        .onDisappear { stopSecondsLease() }
+        .onChange(of: summary.isActive) { _, _ in
+            updateSecondsLease()
+        }
+        .onChange(of: timelineCount) { _, _ in
+            updateSecondsLease()
+        }
     }
 
     @ViewBuilder
@@ -40,12 +50,31 @@ struct LiveWorkingHeader: View {
                 .foregroundColor(Color(white: 0.55))
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
-                Text(L10n.workingFor(seconds: summary.elapsedSeconds(asOf: ctx.date)))
-                    .font(BodyFont.system(size: 13.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(L10n.workingFor(seconds: summary.elapsedSeconds(asOf: tickDate)))
+                .font(BodyFont.system(size: 13.5, wght: 500))
+                .foregroundColor(Color(white: 0.55))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onReceive(VisualClock.shared.secondsPublisher) { tickDate = $0 }
         }
+    }
+
+    private var needsSecondsTicker: Bool {
+        summary.isActive && timelineCount > 1
+    }
+
+    private func updateSecondsLease() {
+        if needsSecondsTicker {
+            tickDate = Date()
+            if secondsLease == nil {
+                secondsLease = VisualClock.shared.acquire(.seconds)
+            }
+        } else {
+            stopSecondsLease()
+        }
+    }
+
+    private func stopSecondsLease() {
+        secondsLease?.cancel()
+        secondsLease = nil
     }
 }

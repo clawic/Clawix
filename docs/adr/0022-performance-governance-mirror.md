@@ -64,6 +64,14 @@ missing contracts are allowed only through
 `docs/surface-resource-contract-clawix-baseline.json` with steward, reason,
 expiry, and reentry condition.
 
+Performance investigations and fixes must separate report states: hypotheses,
+static guard, compile/build, measurement taken, confirmed cause, probable
+cause, and discarded causes. Static guards and code inspection identify risks;
+compile/build results prove code health; neither proves runtime performance
+validation. A confirmed cause requires cited measurement evidence. Without a
+real measurement taken and cited, the work can close only as partial
+validation, blocked, or `EXTERNAL PENDING`, never as performance validated.
+
 Performance governance does not grant visual authority. Layout, animation,
 visible timing, copy, style, or interaction changes still obey
 `docs/adr/0010-interface-governance.md`.

@@ -17,3 +17,25 @@ final class ResourceSamplerActivationPolicyTests: XCTestCase {
         XCTAssertFalse(ResourceSampler.shouldStartPeriodicSampler(environment: [:]))
     }
 }
+
+final class HangDetectorActivationPolicyTests: XCTestCase {
+    func testDefaultEnvironmentDoesNotStartHangDetector() {
+        XCTAssertFalse(HangDetector.shouldStartFromEnvironment(environment: [:]))
+    }
+
+    func testDiagnosticsSamplerEnvironmentStartsHangDetector() {
+        XCTAssertTrue(HangDetector.shouldStartFromEnvironment(
+            environment: [ClawixEnv.forceDiagnosticsSamplers: "1"]
+        ))
+    }
+
+    func testHangDetectorEnvironmentStartsHangDetector() {
+        XCTAssertTrue(HangDetector.shouldStartFromEnvironment(
+            environment: [ClawixEnv.forceHangDetector: "1"]
+        ))
+    }
+
+    func testDebugBuildDoesNotStartHangDetectorWithoutOptIn() {
+        XCTAssertFalse(HangDetector.shouldStartFromEnvironment(environment: [:]))
+    }
+}

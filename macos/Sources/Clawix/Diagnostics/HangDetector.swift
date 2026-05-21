@@ -3,7 +3,7 @@ import CoreFoundation
 import os
 import ClawixCore
 
-/// DEBUG-only main-thread hang detector.
+/// Diagnostics-gated main-thread hang detector.
 ///
 /// Listens to runloop activity transitions on `.commonModes` and
 /// records when the main thread enters a "processing" phase. A guard
@@ -44,9 +44,15 @@ enum HangDetector {
         category: "hang"
     )
 
+    static func shouldStartFromEnvironment(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers, in: environment)
+            || ClawixEnv.isEnabled(ClawixEnv.forceHangDetector, in: environment)
+    }
+
     static func startIfRequestedByEnvironment() {
-        guard ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers)
-                || ClawixEnv.isEnabled(ClawixEnv.forceHangDetector) else { return }
+        guard shouldStartFromEnvironment() else { return }
         start(force: true)
     }
 
@@ -55,12 +61,13 @@ enum HangDetector {
     }
 
     static func start() {
-        start(force: false)
+        startIfRequestedByEnvironment()
     }
 
     private static func start(force: Bool) {
         // Apple's recommendation is "investigate hangs in development";
         // normal launch should not pay the runloop observer cost.
+        guard force || shouldStartFromEnvironment() else { return }
         #if !DEBUG
         guard force || ClawixEnv.isEnabled(ClawixEnv.forceHangDetector) else { return }
         #endif
