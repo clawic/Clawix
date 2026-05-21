@@ -28,6 +28,7 @@ public enum ClawixEnv {
     public static let fileFixtureDir = "CLAWIX_FILE_FIXTURE_DIR"
     public static let fixtureSeeding = "CLAWIX_FIXTURE_SEEDING"
     public static let forceHangDetector = "CLAWIX_FORCE_HANG_DETECTOR"
+    public static let forceDiagnosticsSamplers = "CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS"
     public static let hangMs = "CLAWIX_HANG_MS"
     public static let imageFixtureDir = "CLAWIX_IMAGE_FIXTURE_DIR"
     public static let meshHome = "CLAWIX_MESH_HOME"
