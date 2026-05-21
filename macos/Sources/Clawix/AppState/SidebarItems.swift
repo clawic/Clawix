@@ -10,6 +10,7 @@ extension AppState {
     static let chatSidebarsKey = "ChatSidebars"
     static let globalSidebarKey = "GlobalSidebar"
     static let hostFaviconsKey = "HostFavicons"
+    static let visibleSidebarFaviconPrefetchLimit = 8
 
     /// UUID of the chat the user is currently viewing, if any. Returns nil
     /// for non-chat routes (home, settings, etc.) so write-time accessors
@@ -62,6 +63,43 @@ extension AppState {
             default: return true
             }
         }
+    }
+
+    static func visibleSidebarFaviconURLs(
+        from items: [SidebarItem],
+        limit: Int = visibleSidebarFaviconPrefetchLimit
+    ) -> [URL] {
+        guard limit > 0 else { return [] }
+        var seen = Set<URL>()
+        var urls: [URL] = []
+        for item in items {
+            guard case .web(let payload) = item,
+                  let faviconURL = payload.faviconURL,
+                  seen.insert(faviconURL).inserted else {
+                continue
+            }
+            urls.append(faviconURL)
+            if urls.count == limit { break }
+        }
+        return urls
+    }
+
+    var visibleSidebarFaviconPrefetchSignature: String {
+        Self.visibleSidebarFaviconURLs(from: sidebarItems)
+            .map(\.absoluteString)
+            .joined(separator: "\n")
+    }
+
+    func prefetchVisibleSidebarFavicons(
+        limit: Int = AppState.visibleSidebarFaviconPrefetchLimit
+    ) async {
+        let urls = Self.visibleSidebarFaviconURLs(from: sidebarItems, limit: limit)
+        guard !urls.isEmpty else { return }
+        await Task.detached(priority: .utility) {
+            for url in urls {
+                _ = await FaviconCache.shared.image(for: url)
+            }
+        }.value
     }
 
     var activeSidebarItemId: UUID? {
@@ -420,22 +458,12 @@ extension AppState {
             for (key, value) in saved {
                 guard let id = UUID(uuidString: key) else { continue }
                 rebuilt[id] = value
-                for item in value.items {
-                    if case .web(let p) = item, let favicon = p.faviconURL {
-                        FaviconCache.shared.prefetch(favicon)
-                    }
-                }
             }
             chatSidebars = rebuilt
         }
         if let data = defaults.data(forKey: AppState.globalSidebarKey),
            let saved = try? JSONDecoder().decode(ChatSidebarState.self, from: data) {
             globalSidebar = saved
-            for item in saved.items {
-                if case .web(let p) = item, let favicon = p.faviconURL {
-                    FaviconCache.shared.prefetch(favicon)
-                }
-            }
         }
     }
 
@@ -490,9 +518,6 @@ extension AppState {
               let saved = try? JSONDecoder().decode([String: URL].self, from: data)
         else { return }
         hostFavicons = saved
-        for url in saved.values {
-            FaviconCache.shared.prefetch(url, priority: .userInitiated)
-        }
     }
 
     private func persistHostFavicons() {

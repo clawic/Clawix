@@ -24,6 +24,7 @@ final class FaviconCache: @unchecked Sendable {
         initialState: [:]
     )
     private let primed = OSAllocatedUnfairLock<Bool>(initialState: false)
+    private let prefetchObserver = OSAllocatedUnfairLock<((URL, TaskPriority) -> Void)?>(initialState: nil)
 
     private let negativeTTL: TimeInterval = 60 * 60 * 24
     private let diskMaxAge: TimeInterval = 60 * 24 * 60 * 60
@@ -94,9 +95,18 @@ final class FaviconCache: @unchecked Sendable {
     /// `priority: .userInitiated` for foreground navigation; the
     /// default `.utility` is for background sweeps.
     func prefetch(_ url: URL, priority: TaskPriority = .utility) {
+        prefetchObserver.withLock { observer in
+            observer?(url, priority)
+        }
         if cachedImage(for: url) != nil { return }
         Task.detached(priority: priority) { [weak self] in
             _ = await self?.image(for: url)
+        }
+    }
+
+    func setPrefetchObserverForTesting(_ observer: ((URL, TaskPriority) -> Void)?) {
+        prefetchObserver.withLock { state in
+            state = observer
         }
     }
 

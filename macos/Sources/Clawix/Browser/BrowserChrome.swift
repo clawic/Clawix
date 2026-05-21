@@ -6,6 +6,7 @@ struct BrowserTabStrip: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject private var flags: FeatureFlags
     @State private var hoveredItemId: UUID?
+    @State private var faviconCacheRefreshToken = 0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -15,6 +16,7 @@ struct BrowserTabStrip: View {
                     isActive: appState.activeSidebarItemId == item.id,
                     isHovered: hoveredItemId == item.id,
                     isLoading: appState.browserTabsLoading.contains(item.id),
+                    faviconCacheRefreshToken: faviconCacheRefreshToken,
                     onSelect: { appState.activeSidebarItemId = item.id },
                     onClose:  { appState.closeSidebarItem(item.id) }
                 )
@@ -55,6 +57,10 @@ struct BrowserTabStrip: View {
         .padding(.vertical, 3)
         .frame(height: 40)
         .background(Color.black)
+        .task(id: appState.visibleSidebarFaviconPrefetchSignature) {
+            await appState.prefetchVisibleSidebarFavicons()
+            faviconCacheRefreshToken &+= 1
+        }
     }
 }
 
@@ -63,6 +69,7 @@ private struct SidebarItemPill: View {
     let isActive: Bool
     let isHovered: Bool
     let isLoading: Bool
+    let faviconCacheRefreshToken: Int
     let onSelect: () -> Void
     let onClose: () -> Void
     @EnvironmentObject private var appState: AppState
@@ -125,7 +132,12 @@ private struct SidebarItemPill: View {
         switch item {
         case .web(let p):
             ZStack {
-                FaviconView(url: p.faviconURL, size: 14)
+                FaviconView(
+                    url: p.faviconURL,
+                    size: 14,
+                    loadsRemote: false,
+                    cacheRefreshToken: faviconCacheRefreshToken
+                )
                     .opacity(isLoading ? 0 : 1)
                 if isLoading {
                     BrowserTabSpinner()
@@ -691,6 +703,8 @@ struct BrowserURLField: View {
 struct FaviconView: View {
     let url: URL?
     let size: CGFloat
+    var loadsRemote: Bool = true
+    var cacheRefreshToken: Int = 0
 
     @State private var image: NSImage?
 
@@ -708,7 +722,11 @@ struct FaviconView: View {
         .animation(.easeOut(duration: 0.18), value: image != nil)
         .onAppear { syncFromCache() }
         .onChange(of: url) { _, _ in syncFromCache() }
-        .task(id: url) { await load() }
+        .onChange(of: cacheRefreshToken) { _, _ in syncFromCache() }
+        .task(id: url) {
+            guard loadsRemote else { return }
+            await load()
+        }
     }
 
     /// Pull synchronously through the memory + disk tiers so any host
