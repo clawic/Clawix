@@ -82,6 +82,18 @@ enum ChatMarkdownPrewarmer {
     }
 }
 
+enum TimelineEntryWindow {
+    static func visibleEntries(
+        in timeline: [AssistantTimelineEntry],
+        isStreaming: Bool,
+        visibleLimit: Int
+    ) -> [AssistantTimelineEntry] {
+        guard visibleLimit > 0 else { return [] }
+        guard visibleLimit < timeline.count else { return timeline }
+        return Array(timeline.suffix(visibleLimit))
+    }
+}
+
 struct MessageRow: View, Equatable {
     let chatId: UUID
     let message: ChatMessage
@@ -195,12 +207,11 @@ struct MessageRow: View, Equatable {
                 //
                 // Crucial nuance: the collapse only happens when the
                 // turn ends, not when the final reply starts arriving.
-                // While streaming, every reasoning chunk and tool call
-                // stays visible and stacks below the header,
-                // accumulating like the expanded "N previous messages"
-                // disclosure used to show. The final answer streams in
-                // alongside them and only becomes the bubble's only
-                // visible content once streaming finishes.
+                // While streaming, a bounded live window of the freshest
+                // reasoning chunks and tool calls stays visible below
+                // the header. The full timeline remains recorded on the
+                // message and only becomes browsable through the
+                // disclosure once streaming finishes.
                 let isStreaming = !message.streamingFinished && !message.isError
                 if let summary = message.workSummary, !message.isError {
                     if isStreaming {
@@ -220,11 +231,11 @@ struct MessageRow: View, Equatable {
                     }
                 }
 
-                // Show every timeline entry inline while the turn is
-                // still running so the user watches the agent's work
-                // accumulate. After the turn ends, the entries collapse
-                // behind the chevron and only resurface when the user
-                // expands the disclosure.
+                // During streaming, keep the live timeline bounded to
+                // the freshest entries so each delta does not remount a
+                // long historical tool/reasoning stack. After the turn
+                // ends, the entries collapse behind the chevron and only
+                // resurface when the user expands the disclosure.
                 let showTimeline = isStreaming || timelineExpanded
                 if showTimeline {
                     let timelineEntries = visibleTimelineEntries(isStreaming: isStreaming)
@@ -356,10 +367,11 @@ struct MessageRow: View, Equatable {
     }
 
     private func visibleTimelineEntries(isStreaming: Bool) -> [AssistantTimelineEntry] {
-        if isStreaming || visibleTimelineEntryLimit >= message.timeline.count {
-            return message.timeline
-        }
-        return Array(message.timeline.suffix(visibleTimelineEntryLimit))
+        TimelineEntryWindow.visibleEntries(
+            in: message.timeline,
+            isStreaming: isStreaming,
+            visibleLimit: visibleTimelineEntryLimit
+        )
     }
 
     private func revealMoreTimelineEntriesIfNeeded() {
