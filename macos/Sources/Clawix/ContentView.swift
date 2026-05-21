@@ -222,7 +222,7 @@ struct ContentView: View {
                                     .accessibilityElement(children: .contain)
                                     .accessibilityLabel("Settings categories")
                             } else {
-                                SidebarView()
+                                SidebarView(appState: appState)
                                     .accessibilityElement(children: .contain)
                                     .accessibilityLabel("Sidebar")
                             }

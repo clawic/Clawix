@@ -141,9 +141,9 @@ enum SidebarPrefs {
 }
 
 struct SidebarView: View {
-    @EnvironmentObject var appState: AppState
-    @EnvironmentObject var vault: SecretsManager
+    let appState: AppState
     @EnvironmentObject var flags: FeatureFlags
+    @StateObject private var sidebarStore: SidebarStore
     @State private var settingsPopoverOpen: Bool = false
     @State private var projectEditor: ProjectEditorContext?
     @State private var projectRenameTarget: Project?
@@ -197,77 +197,17 @@ struct SidebarView: View {
     @State private var toolsFilterMenuOpen: Bool = false
     @State private var chronoLimit: Int = 100
 
+    init(appState: AppState) {
+        self.appState = appState
+        _sidebarStore = StateObject(wrappedValue: SidebarStore(appState: appState))
+    }
+
     private var viewMode: SidebarViewMode {
         SidebarViewMode(rawValue: viewModeRaw) ?? .grouped
     }
 
     private var projectSortMode: ProjectSortMode {
         ProjectSortMode(rawValue: projectSortModeRaw) ?? .recent
-    }
-
-    /// One-shot derivation of every list the sidebar needs from
-    /// `appState.chats`, computed in a single pass instead of three
-    /// separate filter+sort traversals (plus another pass per project).
-    /// With ~160 chats and dozens of projects the previous code did
-    /// O(N · M) work per render — this is O(N + M log M).
-    fileprivate struct SidebarSnapshot {
-        let pinned: [Chat]
-        /// Chats per project, sorted by recency and capped at 10 to
-        /// match the previous `projectChats(_:)` contract.
-        let byProject: [UUID: [Chat]]
-        /// Most-recent chat date per project, used to order projects in
-        /// `recentProjects` mode without re-scanning chats per project.
-        let recentDateByProject: [UUID: Date]
-        /// Chronological list (excludes pinned, sorted desc).
-        let chrono: [Chat]
-    }
-
-    private func makeSnapshot() -> SidebarSnapshot {
-        PerfSignpost.uiSidebar.interval("snapshot") {
-        RenderProbe.time("makeSnapshot") {
-            let order = appState.pinnedOrder
-            let pinIndex = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
-            var pinnedRaw: [Chat] = []
-            var byProjectRaw: [UUID: [Chat]] = [:]
-            var chronoRaw: [Chat] = []
-            for chat in appState.chats {
-                // Side chats live only inside their parent's right
-                // sidebar; never surface them in the main sidebar list
-                // (chrono, per-project, or pinned).
-                if chat.isSideChat { continue }
-                if chat.isPinned {
-                    pinnedRaw.append(chat)
-                    continue
-                }
-                if let pid = chat.projectId {
-                    byProjectRaw[pid, default: []].append(chat)
-                }
-                chronoRaw.append(chat)
-            }
-            pinnedRaw.sort { lhs, rhs in
-                let li = pinIndex[lhs.id] ?? Int.max
-                let ri = pinIndex[rhs.id] ?? Int.max
-                if li != ri { return li < ri }
-                return lhs.createdAt > rhs.createdAt
-            }
-            chronoRaw.sort { $0.createdAt > $1.createdAt }
-            var byProject: [UUID: [Chat]] = [:]
-            var recentDateByProject: [UUID: Date] = [:]
-            byProject.reserveCapacity(byProjectRaw.count)
-            recentDateByProject.reserveCapacity(byProjectRaw.count)
-            for (pid, list) in byProjectRaw {
-                let sortedList = list.sorted { $0.createdAt > $1.createdAt }
-                byProject[pid] = Array(sortedList.prefix(10))
-                recentDateByProject[pid] = sortedList.first?.createdAt
-            }
-            return SidebarSnapshot(
-                pinned: pinnedRaw,
-                byProject: byProject,
-                recentDateByProject: recentDateByProject,
-                chrono: chronoRaw
-            )
-        }
-        }
     }
 
     private func recentChatCallbacks(for chat: Chat, archived: Bool) -> RecentChatRowCallbacks {
@@ -339,38 +279,8 @@ struct SidebarView: View {
     }
 
     private var selectedChatId: UUID? {
-        if case let .chat(id) = appState.currentRoute { return id }
+        if case let .chat(id) = sidebarStore.snapshot.currentRoute { return id }
         return nil
-    }
-
-    private func sortedProjects(snapshot: SidebarSnapshot) -> [Project] {
-        switch projectSortMode {
-        case .recent:
-            return appState.projects.sorted { lhs, rhs in
-                let l = snapshot.recentDateByProject[lhs.id] ?? .distantPast
-                let r = snapshot.recentDateByProject[rhs.id] ?? .distantPast
-                return l > r
-            }
-        case .creation:
-            return appState.projects
-        case .name:
-            return appState.projects.sorted {
-                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-            }
-        case .custom:
-            let positionById: [UUID: Int] = Dictionary(
-                uniqueKeysWithValues: appState.manualProjectOrder.enumerated().map { ($1, $0) }
-            )
-            let naturalIdx: [UUID: Int] = Dictionary(
-                uniqueKeysWithValues: appState.projects.enumerated().map { ($1.id, $0) }
-            )
-            return appState.projects.sorted { lhs, rhs in
-                let l = positionById[lhs.id] ?? Int.max
-                let r = positionById[rhs.id] ?? Int.max
-                if l != r { return l < r }
-                return (naturalIdx[lhs.id] ?? 0) < (naturalIdx[rhs.id] ?? 0)
-            }
-        }
     }
 
     @ViewBuilder
@@ -393,8 +303,8 @@ struct SidebarView: View {
             }
 
             if !snapshot.pinned.isEmpty {
-                let pinnedSources = pinnedFilterSources(from: snapshot.pinned)
-                let visiblePinned = applyPinnedFilter(to: snapshot.pinned)
+                let pinnedSources = snapshot.pinnedFilterSources
+                let visiblePinned = applyPinnedFilter(to: snapshot.pinned, sources: pinnedSources)
                 let canFilterPinned = pinnedSources.count >= 2
                 BasicSectionHeader(
                     title: "Pinned",
@@ -445,11 +355,11 @@ struct SidebarView: View {
                     .padding(.top, 6)
                     .padding(.bottom, 4)
                     .sidebarHover { projectsHeaderHovered = $0 }
-                let visibleChrono = applyChronoFilter(to: snapshot.chrono)
+                let visibleChrono = applyChronoFilter(to: snapshot.chrono, sources: snapshot.chronoFilterSources)
                 let chronoCount = min(visibleChrono.count, chronoLimit)
                 let chronoFilterActive = !effectiveDisabledTokens(
                     chronoFilterDisabled,
-                    sources: chronoFilterSources(from: snapshot.chrono)
+                    sources: snapshot.chronoFilterSources
                 ).isEmpty
                 let showEmptyState = visibleChrono.isEmpty
                 SidebarAccordion(
@@ -489,7 +399,7 @@ struct SidebarView: View {
                     }
                 }
             } else {
-                let projectlessChats = snapshot.chrono.filter { $0.projectId == nil }
+                let projectlessChats = snapshot.projectless
                 if !projectlessChats.isEmpty {
                     sectionHeader(
                         "Chats",
@@ -537,7 +447,7 @@ struct SidebarView: View {
                 // arrives as 0 and never recovers.
                 if projectsExpanded {
                     let currentChatId = selectedChatId
-                    let projectsList = sortedProjects(snapshot: snapshot)
+                    let projectsList = snapshot.sortedProjects(for: projectSortMode)
                     // Same pattern as every other collapsible section: render
                     // `sectionEdgePadding` as a real `Color.clear` spacer at
                     // the end of the accordion's content. `SidebarAccordion`
@@ -635,7 +545,7 @@ struct SidebarView: View {
     /// Sentinel token used inside `pinnedFilterDisabledRaw` to represent
     /// pinned chats with no associated project. Distinct from any UUID
     /// string so it can coexist with project ids in the same set.
-    private static let pinnedFilterNoProjectToken = "__none__"
+    static let pinnedFilterNoProjectToken = "__none__"
 
     private var pinnedFilterDisabled: Set<String> {
         let parts = pinnedFilterDisabledRaw.split(separator: ",").map(String.init)
@@ -646,47 +556,13 @@ struct SidebarView: View {
         pinnedFilterDisabledRaw = next.sorted().joined(separator: ",")
     }
 
-    /// Distinct buckets present across the loaded pinned chats: each
-    /// project that has at least one pinned chat, plus a synthetic
-    /// "no project" entry when any chat has `projectId == nil`. Sorted
-    /// alphabetically so the popup is stable across renders.
-    private func pinnedFilterSources(from pinned: [Chat]) -> [PinnedFilterSource] {
-        var hasNoProject = false
-        var projectIds: Set<UUID> = []
-        for chat in pinned {
-            if let pid = chat.projectId {
-                projectIds.insert(pid)
-            } else {
-                hasNoProject = true
-            }
-        }
-        let projectsById = Dictionary(uniqueKeysWithValues: appState.projects.map { ($0.id, $0) })
-        var sources: [PinnedFilterSource] = projectIds.compactMap { id in
-            guard let p = projectsById[id] else { return nil }
-            return PinnedFilterSource(
-                token: id.uuidString,
-                label: p.name,
-                isNoProject: false
-            )
-        }
-        sources.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
-        if hasNoProject {
-            sources.append(PinnedFilterSource(
-                token: Self.pinnedFilterNoProjectToken,
-                label: String(localized: "Without project", bundle: AppLocale.packageBundle),
-                isNoProject: true
-            ))
-        }
-        return sources
-    }
-
     /// Drops chats whose source bucket is in the disabled set. Empty set
     /// short-circuits to the original list so the renderer's hot path
     /// stays cheap when no filter is active.
-    private func applyPinnedFilter(to pinned: [Chat]) -> [Chat] {
+    private func applyPinnedFilter(to pinned: [Chat], sources: [PinnedFilterSource]) -> [Chat] {
         let disabled = effectiveDisabledTokens(
             pinnedFilterDisabled,
-            sources: pinnedFilterSources(from: pinned)
+            sources: sources
         )
         guard !disabled.isEmpty else { return pinned }
         return pinned.filter { chat in
@@ -800,43 +676,10 @@ struct SidebarView: View {
         chronoFilterDisabledRaw = next.sorted().joined(separator: ",")
     }
 
-    /// Mirrors `pinnedFilterSources(from:)` for the chronological list:
-    /// distinct project buckets present plus an optional "no project"
-    /// entry, sorted alphabetically.
-    private func chronoFilterSources(from chrono: [Chat]) -> [PinnedFilterSource] {
-        var hasNoProject = false
-        var projectIds: Set<UUID> = []
-        for chat in chrono {
-            if let pid = chat.projectId {
-                projectIds.insert(pid)
-            } else {
-                hasNoProject = true
-            }
-        }
-        let projectsById = Dictionary(uniqueKeysWithValues: appState.projects.map { ($0.id, $0) })
-        var sources: [PinnedFilterSource] = projectIds.compactMap { id in
-            guard let p = projectsById[id] else { return nil }
-            return PinnedFilterSource(
-                token: id.uuidString,
-                label: p.name,
-                isNoProject: false
-            )
-        }
-        sources.sort { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending }
-        if hasNoProject {
-            sources.append(PinnedFilterSource(
-                token: Self.pinnedFilterNoProjectToken,
-                label: String(localized: "Without project", bundle: AppLocale.packageBundle),
-                isNoProject: true
-            ))
-        }
-        return sources
-    }
-
-    private func applyChronoFilter(to chrono: [Chat]) -> [Chat] {
+    private func applyChronoFilter(to chrono: [Chat], sources: [PinnedFilterSource]) -> [Chat] {
         let disabled = effectiveDisabledTokens(
             chronoFilterDisabled,
-            sources: chronoFilterSources(from: chrono)
+            sources: sources
         )
         guard !disabled.isEmpty else { return chrono }
         return chrono.filter { chat in
@@ -866,20 +709,20 @@ struct SidebarView: View {
         )
         SidebarAccordion(
             expanded: archivedExpanded,
-            targetHeight: appState.archivedChats.isEmpty
+            targetHeight: sidebarStore.snapshot.archived.isEmpty
                 ? 26
-                : SidebarRowMetrics.recentChats(count: appState.archivedChats.count)
+                : SidebarRowMetrics.recentChats(count: sidebarStore.snapshot.archived.count)
                     + SidebarRowMetrics.sectionEdgePadding
         ) {
                         VStack(alignment: .leading, spacing: 0) {
                             LazyVStack(alignment: .leading, spacing: 0) {
-                    if appState.archivedChats.isEmpty {
+                    if sidebarStore.snapshot.archived.isEmpty {
                         HStack(spacing: 6) {
-                            if appState.archivedLoading {
+                            if sidebarStore.snapshot.archivedLoading {
                                 SidebarChatRowSpinner()
                                     .frame(width: 9, height: 9)
                             }
-                            Text(appState.archivedLoading ? "Loading…" : "No archived chats")
+                            Text(sidebarStore.snapshot.archivedLoading ? "Loading…" : "No archived chats")
                                 .font(BodyFont.system(size: 13.5, wght: 500))
                                 .foregroundColor(Color(white: 0.40))
                         }
@@ -887,7 +730,7 @@ struct SidebarView: View {
                         .padding(.vertical, 4)
                     } else {
                         let currentChatId = selectedChatId
-                        ForEach(appState.archivedChats) { chat in
+                        ForEach(sidebarStore.snapshot.archived) { chat in
                             RecentChatRow(
                                 chat: chat,
                                 isSelected: currentChatId == chat.id,
@@ -900,7 +743,7 @@ struct SidebarView: View {
                     }
                 }
                 .padding(.leading, 8)
-                if !appState.archivedChats.isEmpty {
+                if !sidebarStore.snapshot.archived.isEmpty {
                     Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
                 }
             }
@@ -947,7 +790,7 @@ struct SidebarView: View {
         } else {
             ToolsReorderableList(
                 tools: visible,
-                selectedRoute: appState.currentRoute,
+                selectedRoute: sidebarStore.snapshot.currentRoute,
                 onSelect: { route in appState.navigate(to: route) },
                 onReorder: { toolId, beforeId in
                     reorderTools(toolId: toolId, beforeId: beforeId)
@@ -960,7 +803,7 @@ struct SidebarView: View {
     var body: some View {
         LaunchMilestones.mark(.firstSidebarPaint)
         RenderProbe.tick("SidebarView")
-        let sidebarSnapshot = makeSnapshot()
+        let sidebarSnapshot = sidebarStore.snapshot
         return ZStack(alignment: .bottomLeading) {
             VStack(spacing: 0) {
                 // Top nav: new chat, search.
@@ -1037,7 +880,7 @@ struct SidebarView: View {
             }
         }
         .animation(.easeOut(duration: 0.20), value: settingsPopoverOpen)
-        .onChange(of: appState.currentRoute) { _, _ in
+        .onChange(of: sidebarSnapshot.currentRoute) { _, _ in
             settingsPopoverOpen = false
         }
         .sheet(item: $projectEditor) { ctx in
@@ -1053,7 +896,7 @@ struct SidebarView: View {
                 if organizeMenuOpen, let anchor {
                     let buttonFrame = proxy[anchor]
                     let popupWidth: CGFloat = OrganizeMenuPopup.mainColumnWidth
-                    let chronoSources = chronoFilterSources(from: sidebarSnapshot.chrono)
+                    let chronoSources = sidebarSnapshot.chronoFilterSources
                     let chronoDisabled = effectiveDisabledTokens(chronoFilterDisabled, sources: chronoSources)
                     OrganizeMenuPopup(
                         isPresented: $organizeMenuOpen,
@@ -1118,7 +961,7 @@ struct SidebarView: View {
         .overlayPreferenceValue(ProjectMenuAnchorKey.self) { anchor in
             GeometryReader { proxy in
                 if let openId = projectMenuOpenId,
-                   let project = appState.projects.first(where: { $0.id == openId }),
+                   let project = sidebarSnapshot.project(id: openId),
                    let anchor {
                     let buttonFrame = proxy[anchor]
                     let popupWidth: CGFloat = 268
@@ -1168,7 +1011,7 @@ struct SidebarView: View {
                 if pinnedFilterMenuOpen, let anchor {
                     let buttonFrame = proxy[anchor]
                     let popupWidth: CGFloat = 244
-                    let sources = pinnedFilterSources(from: sidebarSnapshot.pinned)
+                    let sources = sidebarSnapshot.pinnedFilterSources
                     let disabled = effectiveDisabledTokens(pinnedFilterDisabled, sources: sources)
                     PinnedFilterPopup(
                         isPresented: $pinnedFilterMenuOpen,
@@ -1406,12 +1249,12 @@ struct SidebarView: View {
         withAnimation(.easeOut(duration: 0.28)) {
             if expandedProjects.isEmpty {
                 // Expand all
-                expandedProjects = Set(appState.projects.map { $0.id })
-                for project in appState.projects {
+                expandedProjects = Set(sidebarStore.snapshot.projects.map { $0.id })
+                for project in sidebarStore.snapshot.projects {
                     appState.requestExpandedProjectRefresh(project)
                 }
             } else {
-                for project in appState.projects where expandedProjects.contains(project.id) {
+                for project in sidebarStore.snapshot.projects where expandedProjects.contains(project.id) {
                     appState.cancelProjectRefresh(project)
                 }
                 expandedProjects.removeAll()
@@ -1595,37 +1438,40 @@ private struct RescueRepairSidebarButton: View {
 func makeRecentChatCallbacks(appState: AppState, chat: Chat, archived: Bool) -> RecentChatRowCallbacks {
     let chatId = chat.id
     let chatSnapshot = chat
+    let currentSnapshot: () -> Chat = {
+        appState.chat(byId: chatId) ?? chatSnapshot
+    }
     return RecentChatRowCallbacks(
         onSelect: { appState.navigate(to: .chat(chatId)) },
         onArchive: { appState.archiveChat(chatId: chatId) },
         onUnarchive: { appState.unarchiveChat(chatId: chatId) },
         onTogglePin: { appState.togglePin(chatId: chatId) },
-        onRename: { appState.pendingRenameChat = chatSnapshot },
+        onRename: { appState.pendingRenameChat = currentSnapshot() },
         onToggleUnread: { appState.toggleChatUnread(chatId: chatId) },
         onOpenInFinder: {
-            guard let cwd = chatSnapshot.cwd, !cwd.isEmpty else { return }
+            guard let cwd = currentSnapshot().cwd, !cwd.isEmpty else { return }
             let path = (cwd as NSString).expandingTildeInPath
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
         },
         onCopyWorkingDirectory: {
-            guard let cwd = chatSnapshot.cwd, !cwd.isEmpty else { return }
+            guard let cwd = currentSnapshot().cwd, !cwd.isEmpty else { return }
             copySidebarStringToPasteboard(cwd)
         },
         onCopySessionId: {
-            guard let id = chatSnapshot.clawixThreadId else { return }
+            guard let id = currentSnapshot().clawixThreadId else { return }
             copySidebarStringToPasteboard(id)
         },
         onCopyDeeplink: {
-            guard let id = chatSnapshot.clawixThreadId else { return }
+            guard let id = currentSnapshot().clawixThreadId else { return }
             copySidebarStringToPasteboard("clawix://session/\(id)")
         },
         onForkLocal: {
-            _ = appState.forkConversation(chatId: chatId, sourceSnapshot: chatSnapshot)
+            _ = appState.forkConversation(chatId: chatId, sourceSnapshot: currentSnapshot())
         },
         onContextMenu: { screenPoint in
             SidebarChatContextMenuPanel.present(
                 at: screenPoint,
-                chat: chatSnapshot,
+                chat: currentSnapshot(),
                 isArchived: archived,
                 appState: appState
             )

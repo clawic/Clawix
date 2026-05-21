@@ -1,0 +1,148 @@
+import XCTest
+@testable import Clawix
+
+@MainActor
+final class SidebarStoreTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        setenv("CLAWIX_DISABLE_BACKEND", "1", 1)
+        setenv("CLAWIX_BRIDGE_DISABLE", "1", 1)
+    }
+
+    override func tearDown() {
+        unsetenv("CLAWIX_DISABLE_BACKEND")
+        unsetenv("CLAWIX_BRIDGE_DISABLE")
+        super.tearDown()
+    }
+
+    func testAssistantContentDeltaDoesNotAdvanceSidebarRevision() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: chatId, title: "Streaming", messages: [assistant], createdAt: Date())
+        ]
+        let store = SidebarStore(appState: state)
+        let revision = store.revision
+
+        state.appendAssistantDelta(chatId: chatId, delta: "hello")
+        state.flushPendingAssistantTextDeltas(chatId: chatId)
+
+        XCTAssertEqual(store.revision, revision)
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), [chatId])
+    }
+
+    func testWorkSummaryAndReasoningDeltasDoNotAdvanceSidebarRevision() {
+        let state = AppState()
+        let chatId = UUID()
+        let messageId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Tools",
+                messages: [
+                    ChatMessage(id: messageId, role: .assistant, content: "", streamingFinished: false)
+                ],
+                createdAt: Date()
+            )
+        ]
+        let store = SidebarStore(appState: state)
+        let revision = store.revision
+
+        state.beginWorkSummary(chatId: chatId, messageId: messageId, startedAt: Date())
+        state.upsertWorkItem(
+            chatId: chatId,
+            messageId: messageId,
+            item: WorkItem(id: "tool-1", kind: .webSearch, status: .completed)
+        )
+        state.appendReasoningDelta(chatId: chatId, delta: "thinking")
+
+        XCTAssertEqual(store.revision, revision)
+    }
+
+    func testSummaryStatusChangesAdvanceSidebarRevision() {
+        let state = AppState()
+        let chatId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: chatId, title: "Status", messages: [], createdAt: Date())
+        ]
+        let store = SidebarStore(appState: state)
+        let initialRevision = store.revision
+
+        state.markChat(chatId: chatId, hasActiveTurn: true)
+
+        XCTAssertGreaterThan(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.chrono.first?.hasActiveTurn, true)
+        let activeRevision = store.revision
+
+        state.toggleChatUnread(chatId: chatId)
+
+        XCTAssertGreaterThan(store.revision, activeRevision)
+        XCTAssertEqual(store.snapshot.chrono.first?.hasUnreadCompletion, true)
+    }
+
+    func testPinMoveArchiveAndCustomProjectSortUpdateSnapshot() {
+        let state = AppState()
+        let projectA = Project(id: UUID(), name: "Alpha", path: "")
+        let projectB = Project(id: UUID(), name: "Beta", path: "")
+        let firstId = UUID()
+        let secondId = UUID()
+        let old = Date(timeIntervalSince1970: 100)
+        let fresh = Date(timeIntervalSince1970: 200)
+        state.projects = [projectA, projectB]
+        state.manualProjectOrder = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: firstId, title: "First", messages: [], createdAt: old, projectId: projectA.id),
+            Chat(id: secondId, title: "Second", messages: [], createdAt: fresh, projectId: nil)
+        ]
+        let store = SidebarStore(appState: state)
+
+        state.togglePin(chatId: secondId)
+
+        XCTAssertEqual(store.snapshot.pinned.map(\.id), [secondId])
+        XCTAssertFalse(store.snapshot.chrono.contains { $0.id == secondId })
+
+        state.moveChatToProject(chatId: secondId, projectId: projectB.id)
+
+        XCTAssertTrue(store.snapshot.pinned.isEmpty)
+        XCTAssertEqual(store.snapshot.byProject[projectB.id]?.map(\.id), [secondId])
+
+        state.reorderProject(projectId: projectB.id, beforeProjectId: projectA.id)
+
+        XCTAssertEqual(store.snapshot.projectsCustom.map(\.id), [projectB.id, projectA.id])
+
+        state.archiveChat(chatId: secondId)
+
+        XCTAssertFalse(store.snapshot.chrono.contains { $0.id == secondId })
+        XCTAssertEqual(store.snapshot.archived.map(\.id), [secondId])
+    }
+
+    func testSideChatsAreExcludedFromSidebarSnapshot() {
+        let state = AppState()
+        let regularId = UUID()
+        let sideId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: regularId, title: "Regular", messages: [], createdAt: Date()),
+            Chat(id: sideId, title: "Side", messages: [], createdAt: Date(), isSideChat: true)
+        ]
+        let store = SidebarStore(appState: state)
+
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), [regularId])
+        XCTAssertFalse(store.snapshot.chrono.contains { $0.id == sideId })
+        XCTAssertFalse(store.snapshot.byProject.values.flatMap { $0 }.contains { $0.id == sideId })
+    }
+}
