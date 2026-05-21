@@ -1600,6 +1600,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-constitution-sync-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/constitution-sync-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "constitution-sync-check",
+        "Constitution Sync Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution-sync-check",
+          "expectPath": "scripts/constitution-sync-check.mjs"
+        }
+      ],
+      "guard": "scripts/constitution-sync-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-debt-ledger-projection-check",
       "kind": "guardrail",
       "steward": "clawix",

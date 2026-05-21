@@ -152,7 +152,8 @@ for file in \
   "scripts/storage_boundary_guard.mjs" \
   "scripts/source_decision_audit_check.mjs" \
   "scripts/adr-operational-coverage-check.mjs" \
-  "scripts/constitution-assertions-check.mjs"
+  "scripts/constitution-assertions-check.mjs" \
+  "scripts/constitution-sync-check.mjs"
 do
   require_file "$file"
 done
@@ -191,6 +192,9 @@ require_snippet "docs/decision-map.md" "constitution.assertions.json"
 require_snippet "docs/constitution.assertions.json" "\"upstream\""
 require_snippet "docs/constitution.assertions.json" "\"sourceDigest\""
 require_snippet "scripts/test.sh" "scripts/constitution-assertions-check.mjs"
+require_snippet "scripts/test.sh" "scripts/constitution-sync-check.mjs"
+require_snippet "docs/decision-map.md" "scripts/constitution-sync-check.mjs"
+require_snippet "docs/constitution-map.md" "scripts/constitution-sync-check.mjs"
 require_snippet "docs/decision-map.md" "governance identity and scope model"
 require_snippet "docs/decision-map.md" "workspace, project, folder, and manifest boundary"
 require_snippet "docs/data-storage-boundary.md" "Governance bindings owned by ClawJS"

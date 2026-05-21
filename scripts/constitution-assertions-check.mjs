@@ -491,7 +491,7 @@ function runSelfTest() {
 if (selfTest) {
   runSelfTest();
 } else {
-  const { failures, digest } = validateEnvelope(rootDir, { allowExtraPrinciples: true });
+  const { failures, digest } = validateEnvelope(rootDir);
   if (failures.length > 0) {
     console.error("Constitution assertions check failed:");
     for (const failure of failures) console.error(`- ${failure}`);

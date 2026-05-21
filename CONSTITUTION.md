@@ -155,6 +155,15 @@ education, government, emergency, safety, or other regulated decisions.
 Sensitive outputs carry review labels and external sensitive actions require
 explicit human review.
 
+**I.9 Operational context is governed, not guessed.** Agents must not infer or
+freestyle external provider accounts, app identifiers, Team IDs, Bundle IDs,
+SKUs, package names, product identifiers, entitlements, API key versions,
+webhook targets, endpoints, environments, or signing identities. These values
+belong to governed context records with explicit state, policy, defaults,
+fallbacks, guidance, redaction, and secret references. Missing, paused,
+blocked, retired, wrong-environment, or unauthorized context fails closed before
+signing, publishing, spending, credential leasing, or external mutation.
+
 ### II. Sovereignty
 
 **II.1 Local-first by construction.** The user's data lives on the user's
@@ -688,6 +697,16 @@ layers (memory, skills, database, time, drive, vault, etc.) is progressive.
 The framework never forces a layer to function. Each layer must work in
 isolation and combine cleanly with the others.
 
+**VIII.2.1 Installation is zero-surprise.** Installing or invoking the base
+CLI must not open applications, start hosts or daemons, request native
+permissions, make network calls, download models or browsers, install heavy
+assets, activate niche domains, or expose large catalogs as if the user had
+chosen them. Cheap definitions may be present in the framework, and small
+local data state may be created when a command actually needs it, but
+surprising costs require explicit user action. Setup presets are reviewable
+templates, not opaque bundles: technical capabilities and human areas of use
+are configured separately, and "advanced" never means "activate every domain."
+
 **VIII.3 Modularity is the heart of openness.** Building blocks are
 independent, interchangeable, overridable. Anything connects to anything. A
 user using one runtime can add a skill from elsewhere, replace a sub-app,
@@ -862,6 +881,11 @@ until the host/Coordinator proves it. Clawix consumes the framework-owned
 `RemoteExternalPendingRegister`, `RemoteRouteContractCatalog`, and
 `claw inspect remote` view for status, gaps, contracts, and conformance; it
 does not create a second remote source of truth.
+
+External physical/provider validation is explicit and artifact-bound: raw evidence
+rows are report-only, and closure can clear only from a source-bound and
+approval-request-bound evidence artifact that proves an approved run, physical
+evidence, accepted criteria, and no plaintext material.
 
 **X.5 Meshes can collaborate.** Two users' meshes can share a resource (a
 document, an agent, a calendar, a memory) under explicit, revocable

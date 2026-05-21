@@ -64,6 +64,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-code-hygiene-check` | guardrail |  | `scripts/code-hygiene-check.mjs` | code-hygiene-check, Code Hygiene Check | `scripts/code-hygiene-check.mjs` |
 | `guard-scripts-conceptual-vocabulary-guard` | guardrail |  | `scripts/conceptual-vocabulary-guard.mjs` | conceptual-vocabulary-guard, Conceptual Vocabulary Guard | `scripts/conceptual-vocabulary-guard.mjs` |
 | `guard-scripts-constitution-assertions-check` | guardrail |  | `scripts/constitution-assertions-check.mjs` | constitution-assertions-check, Constitution Assertions Check | `scripts/constitution-assertions-check.mjs` |
+| `guard-scripts-constitution-sync-check` | guardrail |  | `scripts/constitution-sync-check.mjs` | constitution-sync-check, Constitution Sync Check | `scripts/constitution-sync-check.mjs` |
 | `guard-scripts-debt-ledger-projection-check` | guardrail |  | `scripts/debt-ledger-projection-check.mjs` | debt-ledger-projection-check, Debt Ledger Projection Check | `scripts/debt-ledger-projection-check.mjs` |
 | `guard-scripts-discoverability-check` | guardrail |  | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |
 | `guard-scripts-evolution-rescue-mirror-check` | guardrail |  | `scripts/evolution_rescue_mirror_check.mjs` | evolution_rescue_mirror_check, Evolution Rescue Mirror Check | `scripts/evolution_rescue_mirror_check.mjs` |

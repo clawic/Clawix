@@ -200,6 +200,8 @@ fast() {
   run node "$ROOT_DIR/scripts/agent-instructions-check.mjs"
   run node "$ROOT_DIR/scripts/constitution-assertions-check.mjs"
   run node "$ROOT_DIR/scripts/constitution-assertions-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/constitution-sync-check.mjs"
+  run node "$ROOT_DIR/scripts/constitution-sync-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
   run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"
