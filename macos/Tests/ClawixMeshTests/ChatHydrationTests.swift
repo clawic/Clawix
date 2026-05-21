@@ -1,4 +1,5 @@
 import XCTest
+import ClawixCore
 @testable import Clawix
 
 @MainActor

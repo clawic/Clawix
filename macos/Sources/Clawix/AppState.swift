@@ -448,9 +448,9 @@ final class AppState: ObservableObject {
     @Published var messagesPaginationByChat: [UUID: ChatPagination] = [:]
 
     /// Wire mirror of what the daemon (or the on-disk snapshot) last
-    /// delivered, kept in lock-step with `chats` / `chats[i].messages`
-    /// so we can persist the same `WireSession` / `WireMessage` shapes the
-    /// iPhone uses without round-tripping through `Chat`/`ChatMessage`.
+    /// delivered. This preserves the same `WireSession` / `WireMessage`
+    /// shapes the iPhone uses while `chats` remains a summary-only UI
+    /// compatibility adapter.
     /// Updated by every `applyDaemon*` and `appendDaemonMessage` path.
     /// Streaming partials are deliberately NOT mirrored here: the on-
     /// disk snapshot only holds settled messages, matching iOS.
@@ -1948,7 +1948,7 @@ final class AppState: ObservableObject {
             "projects": projects.map { ["name": $0.name, "path": $0.path] },
             "chats": chats.map { chat in
                 let messages = chatStore.transcript(for: chat.id)?.messages ?? []
-                [
+                return [
                     "threadId": chat.clawixThreadId ?? "",
                     "title": chat.title,
                     "projectPath": chat.projectId.flatMap { projectsById[$0]?.path } ?? "",
