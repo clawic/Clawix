@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "status": "active",
+  "policy": "Every Clawix visible surface and agent-generated UI surface must satisfy Constitution IX.8 accessibility axes or declare an explicit expiring gap. Accessibility governance does not grant visual, copy, layout, or motion authority.",
+  "platforms": ["macos", "ios", "android", "web"],
+  "constitutionPrinciple": "IX.8",
+  "standardsReferences": ["STANDARDS.md#3-accessibility", "STANDARDS.md#4-keyboard-and-focus"],
+  "requiredAxes": [
+    {
+      "id": "screen-reader",
+      "summary": "Interactive controls, groups, status, errors, and generated content expose coherent assistive-technology semantics.",
+      "publicEvidence": ["source semantics", "surface coverage"],
+      "privateEvidence": ["screen reader transcript", "signed host or device run"]
+    },
+    {
+      "id": "keyboard-navigation",
+      "summary": "Primary and recurring actions are reachable from keyboard alone.",
+      "publicEvidence": ["shortcut or focus route declaration", "surface coverage"],
+      "privateEvidence": ["keyboard traversal run"]
+    },
+    {
+      "id": "focus-order",
+      "summary": "Traversal order follows visual reading order and modal focus is restored safely.",
+      "publicEvidence": ["surface focus-order contract"],
+      "privateEvidence": ["screen reader or keyboard traversal run"]
+    },
+    {
+      "id": "visible-focus",
+      "summary": "The focused element remains visible and has a clear focus state.",
+      "publicEvidence": ["pattern state mapping"],
+      "privateEvidence": ["rendered focus capture"]
+    },
+    {
+      "id": "contrast",
+      "summary": "Text, controls, selected states, errors, and generated UI respect platform accessibility contrast settings.",
+      "publicEvidence": ["token or pattern mapping"],
+      "privateEvidence": ["contrast measurement capture"]
+    },
+    {
+      "id": "reduced-motion",
+      "summary": "Motion respects platform reduce-motion preferences and time-based effects have a non-motion path.",
+      "publicEvidence": ["motion detector coverage"],
+      "privateEvidence": ["platform reduced-motion run"]
+    },
+    {
+      "id": "text-scaling",
+      "summary": "Text can scale without clipping, overlap, inaccessible truncation, or loss of action reachability.",
+      "publicEvidence": ["surface scaling contract"],
+      "privateEvidence": ["large text rendered capture"]
+    },
+    {
+      "id": "semantic-labels",
+      "summary": "Images, icons, controls, generated media, and composite controls provide labels or are hidden when decorative.",
+      "publicEvidence": ["source label detector coverage"],
+      "privateEvidence": ["assistive technology output"]
+    },
+    {
+      "id": "time-alternatives",
+      "summary": "Timed interactions, transient states, auto-dismiss UI, and generated flows provide a non-timed alternative.",
+      "publicEvidence": ["surface timing contract"],
+      "privateEvidence": ["manual or host validation"]
+    },
+    {
+      "id": "agent-generated-ui",
+      "summary": "SDK, custom, generated, and agent-authored UI inherits the same accessibility contract before completion.",
+      "publicEvidence": ["agent-generated-ui manifest"],
+      "privateEvidence": ["generated UI review packet"]
+    }
+  ],
+  "publicChecks": [
+    "node scripts/accessibility_governance_guard.mjs",
+    "node scripts/ui_implementation_evidence_check.mjs",
+    "node scripts/ui_governance_guard.mjs"
+  ],
+  "privateDataPolicy": {
+    "publicRepoMayStore": ["manifest", "surface id", "axis id", "check name", "public-safe evidence alias", "hash", "EXTERNAL PENDING label"],
+    "publicRepoMustNotStore": ["raw screen reader transcript", "raw screenshot", "raw video", "local absolute path", "private approval artifact", "device identifier", "secret"]
+  }
+}

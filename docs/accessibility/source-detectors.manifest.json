@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "active",
+  "policy": "Accessibility-impacting source tokens classify changes for governance evidence. Detectors do not authorize visual, copy, layout, or motion edits.",
+  "sourceRoots": ["macos/Sources", "ios/Sources", "apps/macos/Sources", "apps/ios/Sources", "android/app/src/main", "web/src"],
+  "requiredAxes": [
+    "screen-reader",
+    "keyboard-navigation",
+    "focus-order",
+    "visible-focus",
+    "contrast",
+    "reduced-motion",
+    "text-scaling",
+    "semantic-labels",
+    "time-alternatives",
+    "agent-generated-ui"
+  ],
+  "detectors": [
+    { "id": "swiftui-accessibility-label", "platforms": ["macos", "ios"], "axis": "semantic-labels", "pattern": "\\b(accessibilityLabel|accessibilityElement|accessibilityHidden|accessibilityValue|AccessibilityText)\\b", "reason": "SwiftUI accessibility labels and grouping affect assistive-technology output." },
+    { "id": "swiftui-keyboard-focus", "platforms": ["macos", "ios"], "axis": "keyboard-navigation", "pattern": "\\b(keyboardShortcut|focused\\(|FocusState|onSubmit|commands\\b)\\b", "reason": "Keyboard shortcuts and focus state affect keyboard reachability." },
+    { "id": "swiftui-focus-order", "platforms": ["macos", "ios"], "axis": "focus-order", "pattern": "\\b(accessibilitySortPriority|focusSection|focusedSceneValue|defaultFocus)\\b", "reason": "Focus and sort priority affect traversal order." },
+    { "id": "swiftui-visible-focus", "platforms": ["macos", "ios"], "axis": "visible-focus", "pattern": "\\b(focusRing|focused|FocusState|overlay\\(|stroke\\()\\b", "reason": "Focus visuals affect visible focus evidence." },
+    { "id": "swiftui-contrast", "platforms": ["macos", "ios"], "axis": "contrast", "pattern": "\\b(Color|foregroundStyle|foregroundColor|background|opacity|contrast)\\b", "reason": "Color and opacity affect contrast." },
+    { "id": "swiftui-reduced-motion", "platforms": ["macos", "ios"], "axis": "reduced-motion", "pattern": "\\b(reduceMotion|accessibilityReduceMotion|animation|transition)\\b", "reason": "Motion tokens must respect reduced-motion settings." },
+    { "id": "swiftui-text-scaling", "platforms": ["macos", "ios"], "axis": "text-scaling", "pattern": "\\b(dynamicTypeSize|sizeCategory|lineLimit|minimumScaleFactor|fixedSize|font\\()\\b", "reason": "Text sizing and truncation affect scaling." },
+    { "id": "swiftui-time-alternative", "platforms": ["macos", "ios"], "axis": "time-alternatives", "pattern": "\\b(autoDismiss|dismissAfter|Timer|asyncAfter|timeout|deadline)\\b", "reason": "Timed UI needs a non-timed alternative." },
+    { "id": "compose-accessibility", "platforms": ["android"], "axis": "semantic-labels", "pattern": "\\b(contentDescription|semantics|clearAndSetSemantics|stateDescription)\\b", "reason": "Compose semantics affect assistive-technology output." },
+    { "id": "compose-keyboard-focus", "platforms": ["android"], "axis": "keyboard-navigation", "pattern": "\\b(focusable|focusRequester|onPreviewKeyEvent|keyboardActions|KeyboardActions)\\b", "reason": "Compose keyboard and focus APIs affect keyboard reachability." },
+    { "id": "compose-motion-contrast-text", "platforms": ["android"], "axis": "reduced-motion", "pattern": "\\b(animate|transition|MotionDurationScale|fontScale|LocalDensity|Color\\()\\b", "reason": "Compose motion, color, and scaling tokens need accessibility review." },
+    { "id": "web-aria", "platforms": ["web"], "axis": "screen-reader", "pattern": "\\b(aria-|role=|alt=|title=|ariaLabel)\\b", "reason": "ARIA, roles, and alt text affect screen reader output." },
+    { "id": "web-keyboard-focus", "platforms": ["web"], "axis": "keyboard-navigation", "pattern": "\\b(tabIndex|onKeyDown|onKeyUp|focus\\(|:focus|focus-visible)\\b", "reason": "Keyboard handlers and focus styles affect keyboard navigation." },
+    { "id": "web-motion-contrast-text", "platforms": ["web"], "axis": "reduced-motion", "pattern": "\\b(prefers-reduced-motion|animation|transition|contrast|font-size|line-height|clamp\\()\\b", "reason": "Web motion, contrast, and text scaling tokens need accessibility review." },
+    { "id": "cross-agent-generated-ui", "platforms": ["macos", "ios", "android", "web"], "axis": "agent-generated-ui", "pattern": "\\b(generated UI|custom surface|customSurface|dynamic card|agent-generated|SDK surface)\\b", "reason": "Generated or custom UI must declare an accessibility contract." }
+  ]
+}

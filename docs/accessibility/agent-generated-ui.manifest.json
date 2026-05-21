@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "status": "active",
+  "policy": "Agent-generated, SDK-provided, custom app, and dynamically composed UI inherits the same Constitution IX.8 accessibility baseline as hand-authored Clawix UI.",
+  "appliesTo": ["sdk-custom-surfaces", "agent-generated-ui", "generated-media-ui", "custom-app-ui", "dynamic-feed-cards"],
+  "requiredContractFields": [
+    "semanticName",
+    "role",
+    "keyboardReachability",
+    "focusHandoff",
+    "screenReaderSummary",
+    "contrastContract",
+    "reducedMotionBehavior",
+    "textScalingBehavior",
+    "timeAlternative",
+    "validationEvidence"
+  ],
+  "defaultPolicy": {
+    "missingContract": "incomplete",
+    "visualCopyLayoutChanges": "defer-to-docs-ui-governance",
+    "privateEvidence": "EXTERNAL PENDING until approved run exists"
+  },
+  "publicChecks": ["node scripts/accessibility_governance_guard.mjs"],
+  "externalPendingEvidence": [
+    {
+      "id": "generated-ui-screen-reader-review",
+      "status": "EXTERNAL PENDING",
+      "reason": "Real generated UI needs a private assistive-technology review packet before completion.",
+      "expires": "2026-08-18"
+    }
+  ]
+}
