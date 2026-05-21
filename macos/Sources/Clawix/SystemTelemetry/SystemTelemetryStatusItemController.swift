@@ -22,6 +22,7 @@ final class SystemTelemetryStatusItemController {
         var renderModel: (@MainActor (_ model: SystemTelemetryMenuBarModel) -> Void)?
         var activateDiagnostics: @MainActor () -> Void
 
+        @MainActor
         static func live() -> Dependencies {
             let monitorRecorder = SystemTelemetryMonitorRecorder()
             let historyReader = SystemTelemetryHistoryReader()
@@ -58,7 +59,11 @@ final class SystemTelemetryStatusItemController {
     private var timer: SystemTelemetryRefreshTimer?
     private var isActivated = false
 
-    init(dependencies: Dependencies = .live()) {
+    convenience init() {
+        self.init(dependencies: .live())
+    }
+
+    init(dependencies: Dependencies) {
         self.dependencies = dependencies
     }
 

@@ -1416,8 +1416,10 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addProviderItems(to menu: NSMenu, model: SystemTelemetryMenuBarModel)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addWidgetConfigurationItems(to menu: NSMenu, model: SystemTelemetryMenuBarModel) -> Bool");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private func addPanelItems(to menu: NSMenu, model: SystemTelemetryMenuBarModel, currentWidgetID: String)");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "private let historyReader = SystemTelemetryHistoryReader()");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let historyReader = SystemTelemetryHistoryReader()");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "bridge: .localStatusBridge(historyReader: historyReader)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "func activateFromUserSurface()");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "ResourceSampler.startIfNeeded(reason: \"system-telemetry-menu-bar\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "static func localStatusBridge(historyReader: SystemTelemetryHistoryReader? = nil)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "let historyReader = historyReader ?? SystemTelemetryHistoryReader()");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryBridge.swift", "case (\"history\", \"get\")");
@@ -1427,7 +1429,7 @@ function assertStatusItemAndRecorder() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "SystemTelemetryHistoryGraphView(history: history, title: widget.title)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "let refresh = NSMenuItem(title: \"Refresh\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "await refreshNow(forceHistory: true)");
-  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "monitorRecorder.recordIfDue(force: forceHistory)");
+  requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift", "dependencies.recordIfDue(forceHistory)");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "final class SystemTelemetryHistoryGraphView: NSView");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "setAccessibilityLabel(\"\\(title) history graph\")");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryGraphView.swift", "history.chart.points");

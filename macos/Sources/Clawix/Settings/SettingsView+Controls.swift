@@ -3,7 +3,7 @@ import SwiftUI
 @MainActor
 enum SettingsUtilities {
     static func revealDiagnosticsFolder() {
-        ResourceSampler.persistLastSample()
+        ResourceSampler.sampleNowAndPersist()
         do {
             _ = try RescueRepairContextExporter.writeCurrentRescueContext()
         } catch {
