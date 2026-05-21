@@ -7,22 +7,6 @@ import ClawixEngine
 
 private let daemonBridgePort: UInt16 = 24080
 
-func rolloutChatMessages(from result: RolloutReader.ReadResult) -> [ChatMessage] {
-    result.entries.map { e in
-        ChatMessage(
-            id: e.id,
-            role: e.role == .user ? .user : .assistant,
-            content: e.text,
-            reasoningText: "",
-            streamingFinished: true,
-            timestamp: e.timestamp,
-            workSummary: e.workSummary,
-            timeline: e.timeline,
-            attachments: e.attachments
-        )
-    }
-}
-
 // MARK: - AppState
 
 @MainActor
@@ -58,35 +42,6 @@ final class AppState: ObservableObject {
         }
     }
     @Published var driveQuickUploadRequestID: UUID? = nil
-
-    func navigate(to route: SidebarRoute) {
-        let visibleRoute = route.visibleRoute(isVisible: FeatureFlags.shared.isVisible)
-        guard currentRoute != visibleRoute else { return }
-        currentRoute = visibleRoute
-    }
-
-    func enforceCurrentRouteVisibility() {
-        navigate(to: currentRoute)
-        if !FeatureFlags.shared.isVisible(.browserUsage) {
-            removeWebTabsFromCurrentSidebar()
-        }
-        if !FeatureFlags.shared.isVisible(.remoteMesh), !selectedMeshTarget.isLocal {
-            selectedMeshTarget = .local
-        }
-        if !FeatureFlags.shared.isVisible(.localModels), selectedModel.hasPrefix("ollama:") {
-            selectedModel = "5.5"
-        }
-    }
-
-    func requestDriveQuickUpload() {
-        currentRoute = .driveAdmin
-        driveQuickUploadRequestID = UUID()
-    }
-
-    func consumeDriveQuickUploadRequest(_ id: UUID) {
-        guard driveQuickUploadRequestID == id else { return }
-        driveQuickUploadRequestID = nil
-    }
 
     @Published var searchQuery: String = ""
     @Published var searchResults: [String] = []
@@ -418,7 +373,7 @@ final class AppState: ObservableObject {
     /// are driving the threads list (CLAWIX_THREAD_FIXTURE) so tests
     /// stay deterministic and the snapshot table never sees fixture
     /// data.
-    private let snapshotEnabled: Bool = (AgentThreadStore.fixtureThreads() == nil
+    let snapshotEnabled: Bool = (AgentThreadStore.fixtureThreads() == nil
                                          && ProcessInfo.processInfo.environment["CLAWIX_DUMMY_MODE"] != "1")
     private var backendState: BackendState = .empty
 
@@ -477,11 +432,11 @@ final class AppState: ObservableObject {
     /// runs on a background priority Task so the main thread stays out
     /// of the file-system path entirely.
     var persistTask: Task<Void, Never>?
-    private var postFirstFramePersistenceStarted = false
-    private var postFirstFrameFaviconCacheStarted = false
+    var postFirstFramePersistenceStarted = false
+    var postFirstFrameFaviconCacheStarted = false
     var appStateCanonicalReconciliationTask: Task<Void, Never>?
     var sidebarSnapshotProjectIDBackfillTask: Task<Void, Never>?
-    private var loadedProjectSnapshotKeys: Set<String> = []
+    var loadedProjectSnapshotKeys: Set<String> = []
     /// Per-chat git probes. `git status` can block on large repos or
     /// filesystem state, so chat navigation must never wait on it.
     var gitInspectionTasks: [UUID: Task<Void, Never>] = [:]
@@ -786,354 +741,7 @@ final class AppState: ObservableObject {
         }
     }
 
-    func loadThreadsFromRuntime() async {
-        // When a thread fixture drives the sidebar (showcase / E2E /
-        // demo recordings), the runtime is intentionally empty and a
-        // runtime sweep here would call `applyThreads([])`, wiping the
-        // curated dataset. The fixture is the source of truth for the
-        // whole session.
-        if AgentThreadStore.fixtureThreads() != nil { return }
-        if await loadThreadsFromClawJSSessions() {
-            return
-        }
-        let pageLoader: (_ cursor: String?, _ limit: Int) async throws -> ClawixService.ThreadListPage
-        if let runtimeThreadPageLoader {
-            pageLoader = runtimeThreadPageLoader
-        } else {
-            guard let clawix, case .ready = clawix.status else { return }
-            pageLoader = { cursor, limit in
-                try await clawix.listThreadsPage(
-                    archived: false,
-                    cursor: cursor,
-                    limit: limit,
-                    useStateDbOnly: true
-                )
-            }
-        }
-        do {
-            let result = try await pageLoader(nil, Self.sidebarBootstrapRecentLimit)
-            applyThreads(result.threads)
-        } catch {
-            appendRuntimeStatusError(L10n.runtimeIndexReadFailed("\(error)"))
-        }
-    }
-
-    @discardableResult
-    func ensureAgentRuntimeReady(reason: AgentRuntimeDemandReason) async -> Bool {
-        let daemonBridgeEnabled = daemonBridgeClient != nil
-        if daemonBridgeEnabled { return true }
-        guard ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
-           !daemonBridgeEnabled else {
-            return false
-        }
-        if let agentRuntimeStartTask {
-            return await agentRuntimeStartTask.value
-        }
-
-        let task = Task { @MainActor [weak self] in
-            guard let self else { return false }
-            await ClawJSServiceManager.shared.start(
-                [.runtime, .sessions],
-                reason: .capability(reason.triggerDescription)
-            )
-            guard let clawix = self.clawix else { return false }
-            let ready = await clawix.startIfNeeded(reason: reason)
-            self.clawixBackendStatus = clawix.status
-            if ready {
-                await self.seedArchivesIfNeeded()
-                self.drainProjectRefreshQueue()
-            }
-            return ready
-        }
-        agentRuntimeStartTask = task
-        let ready = await task.value
-        agentRuntimeStartTask = nil
-        return ready
-    }
-
-    private func scheduleChatRuntimeDemandIfReady(chatId: UUID) {
-        guard postFirstFramePersistenceStarted else { return }
-        scheduleChatRuntimeDemand(chatId: chatId)
-    }
-
-    private func scheduleChatRuntimeDemand(chatId: UUID) {
-        chatRuntimeDemandTask?.cancel()
-        chatRuntimeDemandTask = Task { @MainActor [weak self] in
-            await Task.yield()
-            guard !Task.isCancelled,
-                  let self,
-                  case let .chat(currentChatId) = self.currentRoute,
-                  currentChatId == chatId
-            else { return }
-            guard await self.ensureAgentRuntimeReady(reason: .chatOpened) else { return }
-            guard let threadId = self.chat(byId: chatId)?.clawixThreadId,
-                  let clawix = self.clawix,
-                  case .ready = clawix.status
-            else { return }
-            await clawix.attach(chatId: chatId, threadId: threadId)
-        }
-    }
-
-    private func loadThreadsFromClawJSSessions() async -> Bool {
-        let client = clawJSSessionsClientFactory()
-        do {
-            _ = try await client.probeHealth()
-            async let pinnedRequest = client.listSessions(
-                pinned: true,
-                archived: false,
-                sidebarVisible: true,
-                limit: Self.startupPinnedSessionLimit
-            )
-            async let recentRequest = client.listSessions(
-                pinned: false,
-                archived: false,
-                sidebarVisible: true,
-                limit: Self.startupRecentSessionLimit
-            )
-            let pinned = try await pinnedRequest
-            let recent = try await recentRequest
-            let sessions = mergeClawJSSessions(pinned: pinned, recent: recent)
-            if sessions.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
-                clawJSSessionsCanonicalActive = false
-                return false
-            }
-            clawJSSessionsCanonicalActive = true
-            clawJSSessionsProjectsLoaded = false
-            applyThreads(
-                sessions.map(threadSummary(from:)),
-                extraPinnedThreadIds: pinned.map { $0.id }
-            )
-            return true
-        } catch {
-            clawJSSessionsCanonicalActive = false
-            clawJSSessionsProjectsLoaded = false
-            return false
-        }
-    }
-
-    func scheduleDeferredCodexImport() {
-        guard snapshotEnabled else { return }
-        guard deferredCodexImportTask == nil else { return }
-        deferredCodexImportTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 1_250_000_000)
-            guard !Task.isCancelled else { return }
-            await self?.runDeferredCodexImport()
-        }
-    }
-
-    func runDeferredCodexImport() async {
-        let client = clawJSSessionsClientFactory()
-        do {
-            let result = try await client.importCodex(
-                budgetMs: 400,
-                maxFiles: 64,
-                mode: .incremental
-            )
-            guard (result.changedFiles ?? 0) > 0 else { return }
-            await clawJSAppStateCacheRefresh()
-            await loadThreadsFromRuntime()
-        } catch {
-            // Best-effort only: first paint and explicit refreshes must not
-            // surface a startup warning just because the deferred mirror pass
-            // missed its idle window or the sessions service was unavailable.
-        }
-    }
-
-    func startPostFirstFramePersistence() {
-        guard !postFirstFramePersistenceStarted else { return }
-        postFirstFramePersistenceStarted = true
-        startPostFirstFrameFaviconCache()
-        if case let .chat(id) = currentRoute {
-            scheduleChatRuntimeDemand(chatId: id)
-        }
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            let provider = self.databaseProvider
-            let state = await Task.detached(priority: .utility) {
-                provider.openIfNeeded()
-            }.value
-            await self.handlePostFirstFrameDatabaseState(state)
-        }
-    }
-
-    private func startPostFirstFrameFaviconCache() {
-        guard !postFirstFrameFaviconCacheStarted else { return }
-        postFirstFrameFaviconCacheStarted = true
-        Task { @MainActor in
-            FaviconCache.shared.primeDiskCache()
-        }
-    }
-
-    private func handlePostFirstFrameDatabaseState(_ state: LazyDatabaseProviderState) async {
-        switch state {
-        case .ready:
-            manualProjectOrder = projectOrdersRepo.orderedIds()
-            titlesRepo.reload()
-            guard snapshotEnabled else { return }
-            applySnapshotForFirstPaint()
-            loadCachedSnapshot()
-        case .failed(let failure):
-            rescueDecision = RescueSurvivalPolicy.evaluate(
-                signals: [failure.signal],
-                availableRuntimeCount: 1
-            )
-            appendRuntimeStatusError("Local database unavailable: \(failure.error.localizedDescription)")
-        case .idle, .opening:
-            break
-        }
-    }
-
-    func scheduleIdleAppStateCanonicalReconciliation(delayNanos: UInt64 = 1_500_000_000) {
-        appStateCanonicalReconciliationTask?.cancel()
-        appStateCanonicalReconciliationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: delayNanos)
-            guard !Task.isCancelled, let self else { return }
-            await self.clawJSAppStateCacheRefresh()
-            guard !Task.isCancelled else { return }
-            self.applySnapshotForFirstPaint()
-            self.scheduleSidebarSnapshotProjectIDBackfill()
-            await self.loadThreadsFromRuntime()
-            if !Task.isCancelled {
-                self.appStateCanonicalReconciliationTask = nil
-            }
-        }
-    }
-
-    private func mergeClawJSSessions(
-        pinned: [ClawJSSessionsClient.SessionRecord],
-        recent: [ClawJSSessionsClient.SessionRecord]
-    ) -> [ClawJSSessionsClient.SessionRecord] {
-        var seen: Set<String> = []
-        var merged: [ClawJSSessionsClient.SessionRecord] = []
-        for session in pinned + recent where seen.insert(session.id).inserted {
-            merged.append(session)
-        }
-        return merged
-    }
-
-    func threadSummary(from session: ClawJSSessionsClient.SessionRecord) -> AgentThreadSummary {
-        AgentThreadSummary(
-            id: session.id,
-            cwd: session.cwd ?? session.projectPath,
-            name: session.title,
-            preview: "",
-            path: nil,
-            createdAt: session.createdAt / 1000,
-            updatedAt: (session.lastMessageAt ?? session.createdAt) / 1000,
-            archived: session.archived
-        )
-    }
-
-    func loadCanonicalProjectsIfNeeded(force: Bool = false) async {
-        if AgentThreadStore.fixtureThreads() != nil { return }
-        guard clawJSSessionsCanonicalActive || force else { return }
-        if clawJSSessionsProjectsLoading { return }
-        if clawJSSessionsProjectsLoaded && !force { return }
-        clawJSSessionsProjectsLoading = true
-        defer { clawJSSessionsProjectsLoading = false }
-        do {
-            let client = clawJSSessionsClientFactory()
-            let pageSize = 500
-            var offset = 0
-            var canonicalProjects: [ClawJSSessionsClient.Project] = []
-            while true {
-                let page = try await client.listProjects(
-                    hidden: false,
-                    archived: false,
-                    limit: pageSize,
-                    offset: offset
-                )
-                canonicalProjects.append(contentsOf: page)
-                if page.count < pageSize { break }
-                offset += pageSize
-            }
-            projects = canonicalProjects.map { project in
-                Project(
-                    id: project.resourceId.map(StableProjectID.uuid(forResourceId:))
-                        ?? UUID(uuidString: project.id)
-                        ?? StableProjectID.uuid(for: project.path),
-                    resourceId: project.resourceId,
-                    name: project.displayName,
-                    path: project.path
-                )
-            }
-            if let selectedProject,
-               let refreshed = projects.first(where: { $0.id == selectedProject.id }) {
-                self.selectedProject = refreshed
-            }
-            clawJSSessionsProjectsLoaded = true
-        } catch {
-            clawJSSessionsProjectsLoaded = false
-        }
-    }
-
-    func shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() -> Bool {
-        !chats.isEmpty || snapshotRepo.count() > 0 || pinsRepo.count() > 0 || projectsRepo.count() > 0
-    }
-
-    /// Legacy direct refresh used by older call sites. New sidebar
-    /// paths should go through `requestVisibleProjectRefresh` or
-    /// `requestExpandedProjectRefresh` so work is retained, deduped,
-    /// prioritised and cancelable.
-    func loadThreadsForProject(_ project: Project) async {
-        await performProjectRefresh(project, reportErrors: true)
-    }
-
-    /// Queue a quiet best-effort refresh for a project row that has
-    /// become visible in the sidebar. This only reads a tiny local
-    /// snapshot page; runtime refreshes are reserved for explicit
-    /// expansion so first paint never fans out across every project.
-    func requestVisibleProjectRefresh(_ project: Project) {
-        applyCachedProjectSnapshotIfNeeded(project)
-    }
-
-    /// Queue a user-initiated refresh for an expanded project. If a
-    /// lower-priority visible refresh is already queued or running for
-    /// the same project/path, replace it with this explicit request.
-    func requestExpandedProjectRefresh(_ project: Project) {
-        applyCachedProjectSnapshotIfNeeded(project)
-        requestProjectRefresh(project, intent: .expanded)
-    }
-
-    func cancelProjectRefresh(_ project: Project) {
-        guard let key = projectRefreshKey(for: project) else { return }
-        cancelProjectRefresh(key: key)
-    }
-
-    /// Fetches a generous slice of a project's threads — enough to
-    /// power the per-project "View all" popup — and merges them into
-    /// `chats[]` so navigation lands on a fully populated chat. The
-    /// sidebar accordion's per-project cap is intentionally tiny (10);
-    /// this routine bypasses that cap and the debounce because the
-    /// user explicitly asked to see everything in this folder.
-    /// `useStateDbOnly` keeps the call latency down to a SQLite read.
-    func loadAllThreadsForProject(_ project: Project) async {
-        // Fixture / dummy mode: `chats[]` is already pre-loaded from
-        // the seeded thread fixture, and the runtime backend that
-        // would otherwise serve `listThreads` is ephemeral. Skipping
-        // the round-trip avoids replacing the curated dataset with an
-        // empty result on the first popup open.
-        if AgentThreadStore.fixtureThreads() != nil { return }
-        guard await ensureAgentRuntimeReady(reason: .manualRefresh),
-              let clawix,
-              case .ready = clawix.status else { return }
-        do {
-            let threads = try await clawix.listThreads(
-                archived: false,
-                cwd: project.path,
-                limit: Self.popupFullProjectFetchLimit,
-                useStateDbOnly: true
-            )
-            withAnimation(.easeOut(duration: 0.20)) {
-                mergeThreads(threads)
-            }
-            persistProjectIndexFor(project)
-        } catch {
-            appendRuntimeStatusError("Could not load threads for project \(project.name): \(error)")
-        }
-    }
-
-    private enum ProjectRefreshIntent: Int {
+    enum ProjectRefreshIntent: Int {
         case visible
         case expanded
 
@@ -1149,326 +757,29 @@ final class AppState: ObservableObject {
         }
     }
 
-    private struct ProjectRefreshJob {
+    struct ProjectRefreshJob {
         var project: Project
         var intent: ProjectRefreshIntent
         var token: UUID?
         var task: Task<Void, Never>?
     }
 
-    private func applyCachedProjectSnapshotIfNeeded(_ project: Project) {
-        guard snapshotEnabled, snapshotRepo.isAvailable() else { return }
-        let key = projectSnapshotCacheKey(project)
-        guard !loadedProjectSnapshotKeys.contains(key) else { return }
-        loadedProjectSnapshotKeys.insert(key)
-
-        let rows = snapshotRepo.loadProjectIndexed(
-            projectId: project.id.uuidString,
-            projectPath: project.path,
-            limit: Self.snapshotPerProjectCap
-        )
-        applyCachedProjectSnapshotRows(rows, for: project)
-    }
-
-    private func projectSnapshotCacheKey(_ project: Project) -> String {
-        if !project.path.isEmpty { return project.path }
-        return project.id.uuidString
-    }
-
-    private func applyCachedProjectSnapshotRows(
-        _ rows: [SidebarSnapshotProjectRow],
-        for project: Project
-    ) {
-        guard !rows.isEmpty else { return }
-        let pinIds = pinsRepo.orderedThreadIds()
-        let pinnedSet = Set(pinIds)
-        var indexByThread: [String: Int] = [:]
-        var indexByChatId: [UUID: Int] = [:]
-        for (idx, chat) in chats.enumerated() {
-            if let threadId = chat.clawixThreadId {
-                indexByThread[threadId] = idx
-            }
-            indexByChatId[chat.id] = idx
-        }
-
-        var updated = chats
-        var changed = false
-        for row in rows {
-            guard row.archived == 0,
-                  let id = UUID(uuidString: row.chatUuid)
-            else { continue }
-            let updatedAt = Date(timeIntervalSince1970: TimeInterval(row.updatedAt))
-            let isPinned = pinnedSet.contains(row.threadId)
-            if let idx = indexByThread[row.threadId] ?? indexByChatId[id] {
-                var chat = updated[idx]
-                chat.title = row.title
-                chat.createdAt = updatedAt
-                chat.clawixThreadId = row.threadId
-                chat.projectId = project.id
-                chat.isArchived = false
-                chat.isPinned = isPinned
-                chat.cwd = row.cwd
-                updated[idx] = chat
-                changed = true
-            } else {
-                let chat = Chat(
-                    id: id,
-                    title: row.title,
-                    messages: [],
-                    createdAt: updatedAt,
-                    clawixThreadId: row.threadId,
-                    rolloutPath: nil,
-                    historyHydrated: false,
-                    hasActiveTurn: false,
-                    projectId: project.id,
-                    isArchived: false,
-                    isPinned: isPinned,
-                    hasUnreadCompletion: false,
-                    cwd: row.cwd,
-                    hasGitRepo: false,
-                    branch: nil,
-                    availableBranches: [],
-                    uncommittedFiles: nil
-                )
-                indexByThread[row.threadId] = updated.count
-                indexByChatId[id] = updated.count
-                updated.append(chat)
-                changed = true
-            }
-        }
-        guard changed else { return }
-        updated.sort { $0.createdAt > $1.createdAt }
-        chats = updated
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
-        pinnedOrder = pinIds.compactMap { threadToChat[$0] }
-        PerfSignpost.uiSidebar.event("project_snapshot.rows", rows.count)
-    }
-
-    private func requestProjectRefresh(_ project: Project, intent: ProjectRefreshIntent) {
-        if let key = projectRefreshKey(for: project) {
-            guard var job = projectRefreshJobs[key] else { return }
-            if job.intent.rawValue >= intent.rawValue {
-                return
-            }
-            job.intent = intent
-            job.project = project
-            if let task = job.task {
-                task.cancel()
-                job.task = nil
-                job.token = nil
-            } else {
-                projectRefreshQueue.removeAll { $0 == key }
-            }
-            projectRefreshJobs[key] = job
-            enqueueProjectRefresh(key, intent: intent)
-            drainProjectRefreshQueue()
-            return
-        }
-
-        guard !isProjectRefreshDebounced(project) else { return }
-        projectRefreshJobs[project.id] = ProjectRefreshJob(
-            project: project,
-            intent: intent,
-            token: nil,
-            task: nil
-        )
-        if !project.path.isEmpty {
-            projectRefreshIdsByPath[project.path] = project.id
-        }
-        enqueueProjectRefresh(project.id, intent: intent)
-        drainProjectRefreshQueue()
-    }
-
-    private func enqueueProjectRefresh(_ key: UUID, intent: ProjectRefreshIntent) {
-        projectRefreshQueue.removeAll { $0 == key }
-        switch intent {
-        case .visible:
-            projectRefreshQueue.append(key)
-        case .expanded:
-            projectRefreshQueue.insert(key, at: 0)
-        }
-    }
-
-    private func drainProjectRefreshQueue() {
-        var running = projectRefreshJobs.values.filter { $0.task != nil }.count
-        while running < Self.projectRefreshConcurrency,
-              let key = projectRefreshQueue.first {
-            projectRefreshQueue.removeFirst()
-            guard var job = projectRefreshJobs[key] else { continue }
-            if !canRefreshProjectsFromRuntime {
-                projectRefreshQueue.insert(key, at: 0)
-                return
-            }
-            if isProjectRefreshDebounced(job.project) {
-                removeProjectRefreshJob(key: key)
-                continue
-            }
-
-            let token = UUID()
-            let project = job.project
-            let intent = job.intent
-            job.token = token
-            job.task = Task<Void, Never>(priority: intent.priority) { @MainActor [weak self] in
-                guard let self else { return }
-                defer { self.finishProjectRefresh(key: key, token: token) }
-                await self.performProjectRefresh(project, reportErrors: intent.reportErrors)
-            }
-            projectRefreshJobs[key] = job
-            running += 1
-        }
-    }
-
-    private func performProjectRefresh(_ project: Project, reportErrors: Bool) async {
-        guard AgentThreadStore.fixtureThreads() == nil else { return }
-        guard canRefreshProjectsFromRuntime else { return }
-        guard !isProjectRefreshDebounced(project) else { return }
-        do {
-            let threads = try await fetchProjectThreads(project, limit: Self.snapshotPerProjectCap)
-            try Task.checkCancellation()
-            lastProjectRefreshAt[project.path] = Date()
-            withAnimation(.easeOut(duration: 0.20)) {
-                self.mergeThreads(threads)
-            }
-            self.persistProjectIndexFor(project)
-        } catch is CancellationError {
-            // Canceled visible/expanded refreshes are expected when a
-            // row disappears or an explicit expand supersedes a lazy
-            // visible request.
-        } catch {
-            if reportErrors {
-                appendRuntimeStatusError("Could not load threads for project \(project.name): \(error)")
-            }
-        }
-    }
-
-    private var canRefreshProjectsFromRuntime: Bool {
-        if projectThreadListLoader != nil { return true }
-        guard let clawix, case .ready = clawix.status else { return false }
-        return true
-    }
-
-    private func fetchProjectThreads(_ project: Project, limit: Int) async throws -> [AgentThreadSummary] {
-        if let projectThreadListLoader {
-            return try await projectThreadListLoader(project, limit)
-        }
-        guard let clawix, case .ready = clawix.status else { return [] }
-        return try await clawix.listThreads(
-            archived: false,
-            cwd: project.path,
-            limit: limit,
-            useStateDbOnly: true
-        )
-    }
-
-    private func isProjectRefreshDebounced(_ project: Project) -> Bool {
-        if let last = lastProjectRefreshAt[project.path],
-           Date().timeIntervalSince(last) < Self.projectRefreshDebounce {
-            return true
-        }
-        return false
-    }
-
-    private func projectRefreshKey(for project: Project) -> UUID? {
-        if projectRefreshJobs[project.id] != nil {
-            return project.id
-        }
-        if !project.path.isEmpty,
-           let key = projectRefreshIdsByPath[project.path],
-           projectRefreshJobs[key] != nil {
-            return key
-        }
-        return nil
-    }
-
-    private func finishProjectRefresh(key: UUID, token: UUID) {
-        guard let job = projectRefreshJobs[key], job.token == token else { return }
-        removeProjectRefreshJob(key: key)
-        drainProjectRefreshQueue()
-    }
-
-    private func cancelProjectRefresh(key: UUID) {
-        projectRefreshJobs[key]?.task?.cancel()
-        removeProjectRefreshJob(key: key)
-    }
-
-    private func removeProjectRefreshJob(key: UUID) {
-        guard let job = projectRefreshJobs.removeValue(forKey: key) else { return }
-        projectRefreshQueue.removeAll { $0 == key }
-        if !job.project.path.isEmpty, projectRefreshIdsByPath[job.project.path] == key {
-            projectRefreshIdsByPath.removeValue(forKey: job.project.path)
-        }
-    }
-
-    private func cancelAllProjectRefreshes() {
-        for job in projectRefreshJobs.values {
-            job.task?.cancel()
-        }
-        projectRefreshJobs.removeAll()
-        projectRefreshIdsByPath.removeAll()
-        projectRefreshQueue.removeAll()
-    }
-
-    /// Persists the in-memory chats for a single project to
-    /// `sidebar_snapshot_project`. Called after a per-project refresh
-    /// so the next cold start hydrates this project from the freshest
-    /// data we have seen, without rewriting every other project's rows.
-    private func persistProjectIndexFor(_ project: Project) {
-        guard snapshotEnabled else { return }
-        let now = Int64(Date().timeIntervalSince1970)
-        let cap = Self.snapshotPerProjectCap
-        var bucket: [SidebarSnapshotProjectRow] = []
-        for chat in chats where !chat.isArchived
-            && chat.projectId == project.id {
-            guard let threadId = chat.clawixThreadId else { continue }
-            bucket.append(SidebarSnapshotProjectRow(
-                threadId: threadId,
-                chatUuid: chat.id.uuidString,
-                title: chat.title,
-                cwd: chat.cwd,
-                projectId: project.id.uuidString,
-                projectPath: project.path,
-                updatedAt: Int64(chat.createdAt.timeIntervalSince1970),
-                archived: 0,
-                pinned: chat.isPinned ? 1 : 0,
-                capturedAt: now
-            ))
-        }
-        bucket.sort { $0.updatedAt > $1.updatedAt }
-        let trimmed = Array(bucket.prefix(cap))
-        let projectId = project.id.uuidString
-        let projectPath = project.path
-        let repo = snapshotRepo
-        Task.detached(priority: .background) {
-            repo.replaceProjectIndexFor(projectId: projectId, projectPath: projectPath, rows: trimmed)
-        }
-    }
-
     /// Tracks the last successful per-project refresh so accordion
     /// toggles or focus events don't fire a fresh RPC every time.
-    private var lastProjectRefreshAt: [String: Date] = [:]
-    private var projectRefreshJobs: [UUID: ProjectRefreshJob] = [:]
-    private var projectRefreshIdsByPath: [String: UUID] = [:]
-    private var projectRefreshQueue: [UUID] = []
+    var lastProjectRefreshAt: [String: Date] = [:]
+    var projectRefreshJobs: [UUID: ProjectRefreshJob] = [:]
+    var projectRefreshIdsByPath: [String: UUID] = [:]
+    var projectRefreshQueue: [UUID] = []
     /// Skip a per-project refresh if the previous one finished less
     /// than this many seconds ago. Tuned so a user toggling an
     /// accordion shut and back open feels instant without a redundant
     /// round-trip, while still picking up changes the daemon makes
     /// outside the bridge's notification path.
-    private static let projectRefreshDebounce: TimeInterval = 2.0
-    private func scheduleSidebarSnapshotProjectIDBackfill() {
-        let backfill = SidebarSnapshotProjectIDBackfill()
-        sidebarSnapshotProjectIDBackfillTask?.cancel()
-        sidebarSnapshotProjectIDBackfillTask = Task.detached(priority: .utility) {
-            await backfill.runUntilComplete()
-        }
-    }
-
+    static let projectRefreshDebounce: TimeInterval = 2.0
     /// Maximum simultaneous progressive project refreshes. Visible row
     /// requests can arrive in bursts, especially in custom sort mode
     /// where drag-and-drop keeps every project row materialised.
-    private static let projectRefreshConcurrency = 2
+    static let projectRefreshConcurrency = 2
 
     func mergedProjects() -> [Project] {
         let localPaths = Set(projectsRepo.all().map(\.path).filter { !$0.isEmpty })
@@ -1620,7 +931,7 @@ final class AppState: ObservableObject {
         pinnedOrder = payload.pinnedThreadIds.compactMap { threadToChat[$0] }
     }
 
-    private func applySnapshotForFirstPaint() {
+    func applySnapshotForFirstPaint() {
         guard snapshotEnabled else { return }
         // Populate projects unconditionally so the sidebar's project
         // sections are present from the very first paint, even on a
@@ -1784,7 +1095,7 @@ final class AppState: ObservableObject {
     /// surface through subsequent server-side searches.
     static let popupFullProjectFetchLimit = 500
 
-    private func applyThreads(_ threads: [AgentThreadSummary], extraPinnedThreadIds: [String] = []) {
+    func applyThreads(_ threads: [AgentThreadSummary], extraPinnedThreadIds: [String] = []) {
         if !clawJSSessionsCanonicalActive {
             projects = mergedProjects()
         }
@@ -1860,7 +1171,7 @@ final class AppState: ObservableObject {
     /// new payload and appends previously-unknown ones, instead of
     /// replacing the whole list. Used by per-project lazy loads so they
     /// don't wipe chats from other projects already in memory.
-    private func mergeThreads(_ threads: [AgentThreadSummary]) {
+    func mergeThreads(_ threads: [AgentThreadSummary]) {
         if !clawJSSessionsCanonicalActive {
             projects = mergedProjects()
         }

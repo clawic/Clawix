@@ -8,6 +8,37 @@ extension Notification.Name {
     static let clawixOpenURL = Notification.Name("clawix.openURL")
 }
 
+extension AppState {
+    func navigate(to route: SidebarRoute) {
+        let visibleRoute = route.visibleRoute(isVisible: FeatureFlags.shared.isVisible)
+        guard currentRoute != visibleRoute else { return }
+        currentRoute = visibleRoute
+    }
+
+    func enforceCurrentRouteVisibility() {
+        navigate(to: currentRoute)
+        if !FeatureFlags.shared.isVisible(.browserUsage) {
+            removeWebTabsFromCurrentSidebar()
+        }
+        if !FeatureFlags.shared.isVisible(.remoteMesh), !selectedMeshTarget.isLocal {
+            selectedMeshTarget = .local
+        }
+        if !FeatureFlags.shared.isVisible(.localModels), selectedModel.hasPrefix("ollama:") {
+            selectedModel = "5.5"
+        }
+    }
+
+    func requestDriveQuickUpload() {
+        currentRoute = .driveAdmin
+        driveQuickUploadRequestID = UUID()
+    }
+
+    func consumeDriveQuickUploadRequest(_ id: UUID) {
+        guard driveQuickUploadRequestID == id else { return }
+        driveQuickUploadRequestID = nil
+    }
+}
+
 enum ClawixDeepLink: Equatable {
     case session(String)
     case authCallback(provider: String)
