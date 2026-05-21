@@ -103,6 +103,27 @@ limited only by entry count when entry byte cost is unbounded, whole-payload
 `Buffer.concat` or `Data` retention for large uploads, full transcripts kept in
 UI state, and checkpoints that survive their active window without compaction.
 
+## Idle Quiescence Contract P1
+
+Every Clawix timer, poller, scheduler, watcher, health loop, reconnect loop,
+menu-bar refresh, render or hitch probe, telemetry loop, service-manager loop,
+and diagnostic sampler must declare why it exists and when it sleeps in
+`docs/idle-quiescence.manifest.json`.
+
+UI periodic work is visible-only: it starts when the surface is mounted,
+visible, recording, playing, or otherwise explicitly active, and clears when
+that state ends. Diagnostics are explicit opt-in and release behavior stays
+separate from debug behavior. Reconnects, pollers, health checks, menu-bar
+refreshes, and telemetry loops use adaptive backoff, tolerance, visibility
+gating, server-directed intervals, or bounded request leases instead of fixed
+forever loops. Dedicated timers need a protocol, request, service-supervision,
+diagnostics, or UI-lifecycle rationale. Idle shutdown is the default unless the
+loop is an active protocol heartbeat with a declared lease.
+
+New unregistered periodic work is a P1 release-check failure. Existing
+non-adaptive or dedicated loops may be carried only as expiring manifest debt
+with owner area, evidence, target sleep behavior, and release-blocking status.
+
 ## Resource Contract Closure
 
 Registered host, UI, storage, stream, cache, bridge, daemon, worker, WebView,

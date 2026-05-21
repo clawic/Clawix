@@ -11,7 +11,8 @@ plans, and companion validation manifests here.
 - [Decision Tension Rubric](decision-tension-rubric.md)
 - [Legal](legal/source-audit.md)
 - [No Irreversible Data Loss](no-irreversible-data-loss/README.md)
-- [Performance Governance](performance-governance.md)
+- [Performance Governance](performance-governance.md), including Boundedness
+  Guard P0, Hot Path Guard P1, and Idle Quiescence Contract P1
 - [Release Readiness](release-readiness.md)
 - [RFC Process Mirror](../adr/0025-rfc-process-mirror.md)
 - [SDK-First Custom Surfaces](sdk-first-custom-surfaces/plan.md)

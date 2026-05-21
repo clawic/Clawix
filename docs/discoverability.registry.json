@@ -2328,6 +2328,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-idle-quiescence-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/idle_quiescence_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "idle_quiescence_check",
+        "Idle Quiescence Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "idle_quiescence_check",
+          "expectPath": "scripts/idle_quiescence_check.mjs"
+        }
+      ],
+      "guard": "scripts/idle_quiescence_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-incident-response-check",
       "kind": "guardrail",
       "steward": "clawix",

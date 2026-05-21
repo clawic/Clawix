@@ -36,6 +36,8 @@ for (const [relativePath, snippets] of new Map([
     "Windowing/Pagination by Default",
     "Resource Contract is required for Clawix implementation closure",
     "docs/boundedness-baseline.json",
+    "Idle Quiescence Contract P1",
+    "docs/idle-quiescence.manifest.json",
     "docs/surface-resource-contract-clawix-baseline.json",
     "## Performance Impact",
     "adr:performance-governance",
@@ -63,6 +65,8 @@ for (const [relativePath, snippets] of new Map([
     "cursor/window/batch/limit",
     "## Hot Path Guard P1",
     "hot-path-ok",
+    "## Idle Quiescence Contract P1",
+    "docs/idle-quiescence.manifest.json",
     "## Resource Dimensions",
     "GPU / Neural Engine",
     "## Visual Boundary",
@@ -90,6 +94,7 @@ for (const [relativePath, snippets] of new Map([
     "scripts/performance_governance_check.mjs",
     "scripts/boundedness_guard.mjs",
     "scripts/hot_path_guard.mjs",
+    "scripts/idle_quiescence_check.mjs",
     "scripts/surface_resource_contract_guard.mjs",
   ]],
   ["docs/constitution-map.md", [
@@ -111,9 +116,18 @@ for (const [relativePath, snippets] of new Map([
     "\"program\": \"hot-path-guard\"",
     "\"entries\"",
   ]],
+  ["docs/idle-quiescence.manifest.json", [
+    "\"program\": \"idle-quiescence-check\"",
+    "\"severity\": \"P1\"",
+    "\"visibleOnly\"",
+  ]],
   ["scripts/hot_path_guard.mjs", [
     "Hot Path Guard P1",
     "hot-path-ok",
+  ]],
+  ["scripts/idle_quiescence_check.mjs", [
+    "Idle Quiescence Contract P1",
+    "diagnosticsOptIn",
   ]],
   ["scripts/boundedness_guard.mjs", [
     "Boundedness Guard P0",

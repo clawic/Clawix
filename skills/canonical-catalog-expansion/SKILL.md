@@ -10,12 +10,13 @@ Grow the canonical data catalog without degrading schema quality.
 
 ## Procedure
 
-1. Read `docs/canonical-data-catalog.md`, the catalog ADR, data-storage boundary, and naming guide.
+1. Read `docs/canonical-data-catalog.md`, the catalog ADR, `docs/governance/rfc-process.md`, data-storage boundary, and naming guide.
 2. Use `claw collections list`, `claw collections <collection> schema`, and `claw db <collection> list|query` when available.
 3. Decide whether the entity is built-in canonical or belongs in a custom database.
-4. Add purpose, evidence tags, sparse optional fields, semantic relation fields, aliases, and migration/debt notes.
-5. Keep user-facing structured records in the main database unless a sidecar reason is technical and explicit.
-6. Update docs, tests, generated catalog coverage, and CLI/schema discovery together.
+4. For promotion to canonical type or canonical user-profile attribute, require the RFC process record, public review link, and maintainer sign-off before treating the shape as accepted canon.
+5. Add purpose, evidence tags, sparse optional fields, semantic relation fields, aliases, and migration/debt notes.
+6. Keep user-facing structured records in the main database unless a sidecar reason is technical and explicit.
+7. Update docs, tests, generated catalog coverage, and CLI/schema discovery together.
 
 ## Constraints
 

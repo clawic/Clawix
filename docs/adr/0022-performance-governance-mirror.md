@@ -38,7 +38,12 @@ IPC, streaming, timers, background loops, WebViews, or long-running agents.
 Clawix defaults to lazy startup, bounded caches and host state, explicit
 retention, backpressure, cancellation, batching, pagination/windowing,
 incremental indexing, idle quiescence, and no unproven heavy work on main/UI hot
-paths.
+paths. The Idle Quiescence Contract P1 requires timers, pollers, schedulers,
+watchers, health loops, reconnect loops, menu-bar refreshes, telemetry loops,
+render or hitch probes, and diagnostic samplers to be registered in
+`docs/idle-quiescence.manifest.json` with visible-only UI behavior, opt-in
+diagnostics, backoff or leases, shared-timer rationale, and inactivity
+shutdown.
 
 Windowing/Pagination by Default makes broad reads a P0/P1 closure blocker. Any
 chat transcript, QuickAsk surface, sidebar, database-admin view, search result,
@@ -92,11 +97,12 @@ perceived app lightness.
   `docs/decision-map.md`, `docs/constitution-map.md`, and
   `docs/agent-rules/index.md`.
 - **Programmatic surface**: `scripts/performance_governance_check.mjs`,
-  `scripts/boundedness_guard.mjs`, docs alignment, discoverability checks, and
-  `claw search "performance governance" --json`.
+  `scripts/boundedness_guard.mjs`, `scripts/idle_quiescence_check.mjs`, docs
+  alignment, discoverability checks, and `claw search "performance governance"
+  --json`.
 - **Persistence**: this mirror ADR, the mirror doc, ADR template, decision map,
-  `docs/boundedness-baseline.json`, discoverability records, and guardrail
-  scripts carry the durable route.
+  `docs/boundedness-baseline.json`, `docs/idle-quiescence.manifest.json`,
+  discoverability records, and guardrail scripts carry the durable route.
 - **Gaps**: strict non-UI resource budgets are future progressive enforcement.
   Private visual/performance baselines remain external-pending until approved.
 - **Validation**: `bash scripts/doc_alignment_check.sh`,
