@@ -1098,11 +1098,18 @@
       "discoveryTerms": [
         "ADR 0039: ADR number reservation governance mirror",
         "0039-adr-number-reservation-governance-mirror",
-        "ADR 0039"
+        "ADR 0039",
+        "adr:adr-number-reservation-governance",
+        "ADR number reservation governance mirror",
+        "ADR reservation"
       ],
       "searchQueries": [
         {
-          "query": "ADR 0039: ADR number reservation governance mirror",
+          "query": "ADR number reservation governance mirror",
+          "expectPath": "docs/adr/0039-adr-number-reservation-governance-mirror.md"
+        },
+        {
+          "query": "adr:adr-number-reservation-governance",
           "expectPath": "docs/adr/0039-adr-number-reservation-governance-mirror.md"
         }
       ],

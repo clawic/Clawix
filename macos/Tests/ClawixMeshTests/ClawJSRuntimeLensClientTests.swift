@@ -24,7 +24,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
                   "diagnostics": {
                     "lastError": "hermes CLI not found",
                     "locations": {
-                      "homeDir": "/Users/test/.hermes",
+                      "homeDir": "/Users/tester/.hermes",
                       "workspacePath": "/tmp/workspace"
                     }
                   }
@@ -58,7 +58,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(requested, [.hermes])
         XCTAssertEqual(snapshot.runtimeId, "hermes")
         XCTAssertEqual(snapshot.status.cliAvailable, false)
-        XCTAssertEqual(snapshot.status.diagnostics?.locations?.homeDir, "/Users/test/.hermes")
+        XCTAssertEqual(snapshot.status.diagnostics?.locations?.homeDir, "/Users/tester/.hermes")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.count, 7)
     }
 }
