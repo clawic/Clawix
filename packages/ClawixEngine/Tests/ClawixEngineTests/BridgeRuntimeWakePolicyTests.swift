@@ -6,7 +6,6 @@ import XCTest
 final class BridgeRuntimeWakePolicyTests: XCTestCase {
     func testPassiveFramesDoNotWakeRuntime() {
         let passive: [BridgeBody] = [
-            .listSessions,
             .pairingStart,
             .requestRateLimits,
             .requestClawJSServiceStatuses,
@@ -22,8 +21,16 @@ final class BridgeRuntimeWakePolicyTests: XCTestCase {
         ]
 
         for body in passive {
-            XCTAssertNil(BridgeRuntimeWakePolicy.reason(for: body), "\(body) should stay passive")
+            XCTAssertNil(BridgeRuntimeWakePolicy.reason(for: body, clientKind: .desktop), "\(body) should stay passive")
         }
+    }
+
+    func testCompanionListSessionsDoesNotWakeRuntime() {
+        XCTAssertNil(BridgeRuntimeWakePolicy.reason(for: .listSessions, clientKind: .companion))
+    }
+
+    func testDesktopListSessionsWakesRuntime() {
+        XCTAssertEqual(BridgeRuntimeWakePolicy.reason(for: .listSessions, clientKind: .desktop), "listSessions")
     }
 
     func testRealChatFramesWakeRuntime() {
@@ -39,7 +46,7 @@ final class BridgeRuntimeWakePolicyTests: XCTestCase {
         ]
 
         for (body, reason) in real {
-            XCTAssertEqual(BridgeRuntimeWakePolicy.reason(for: body), reason)
+            XCTAssertEqual(BridgeRuntimeWakePolicy.reason(for: body, clientKind: .companion), reason)
         }
     }
 }

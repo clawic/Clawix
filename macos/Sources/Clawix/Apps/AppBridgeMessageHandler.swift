@@ -205,7 +205,13 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
                     reject(requestId: requestId, message: "App not found")
                     return
                 }
-                resolve(requestId: requestId, value: AppCapabilityCatalog.riskMap(for: record).bridgeValue)
+                resolve(
+                    requestId: requestId,
+                    value: AppCapabilityCatalog.riskMap(
+                        for: record,
+                        descriptors: visibleCapabilityDescriptors()
+                    ).bridgeValue
+                )
             case "db.query":
                 startTrackedRequest(requestId: requestId, label: "Database query") { [weak self] in
                     await self?.handleDBQuery(payload: payload, requestId: requestId)

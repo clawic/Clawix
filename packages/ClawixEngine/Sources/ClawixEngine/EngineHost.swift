@@ -112,8 +112,9 @@ public protocol EngineHost: AnyObject {
     var clawJSServiceStatusesPublisher: AnyPublisher<[WireClawJSServiceSnapshot], Never> { get }
 
     /// Start the backing agent runtime if this host owns one. Passive bridge
-    /// traffic such as auth, pairing, status, session listing, and rate-limit
-    /// snapshots must not call this; action-bearing requests do.
+    /// traffic such as auth, pairing, status, companion session listing, and
+    /// rate-limit snapshots must not call this; action-bearing requests and
+    /// desktop session listing do.
     func ensureRuntimeStarted(reason: String) async throws
 
     /// iPhone or daemon-backed desktop client opened a chat. Hosts
@@ -296,7 +297,8 @@ public extension EngineHost {
     /// Hosts that don't own a Codex backend (the in-process GUI server
     /// reads rate limits straight from `AppState`, no bridge involved)
     /// surface an empty payload here. The daemon overrides both with
-    /// a real CurrentValueSubject seeded from `account/rateLimits/read`.
+    /// a real CurrentValueSubject seeded from `account/rateLimits/read`
+    /// after the runtime starts.
     var bridgeRateLimitsCurrent: WireRateLimitsPayload { .empty }
     var bridgeRateLimitsPublisher: AnyPublisher<WireRateLimitsPayload, Never> {
         Just(WireRateLimitsPayload.empty).eraseToAnyPublisher()

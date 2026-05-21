@@ -13,22 +13,38 @@ public enum BridgeIntent {
         bus: BridgeBus,
         session: BridgeSession
     ) async {
-        if let reason = BridgeRuntimeWakePolicy.reason(for: body), let host {
+        await dispatch(
+            body: body,
+            host: host,
+            bus: bus,
+            clientKind: session.clientKind,
+            send: { [weak session] frame in session?.send(frame) }
+        )
+    }
+
+    static func dispatch(
+        body: BridgeBody,
+        host: EngineHost?,
+        bus: BridgeBus,
+        clientKind: ClientKind?,
+        send: @escaping @MainActor (BridgeFrame) -> Void
+    ) async {
+        if let reason = BridgeRuntimeWakePolicy.reason(for: body, clientKind: clientKind), let host {
             do {
                 try await host.ensureRuntimeStarted(reason: reason)
             } catch {
-                session.send(BridgeFrame(.errorEvent(code: "runtimeStart", message: "\(error)")))
+                send(BridgeFrame(.errorEvent(code: "runtimeStart", message: "\(error)")))
                 return
             }
         }
 
         switch body {
         case .listSessions:
-            session.send(BridgeFrame(.sessionsSnapshot(sessions: bus.currentSessions())))
+            send(BridgeFrame(.sessionsSnapshot(sessions: bus.currentSessions())))
 
         case .openSession(let sessionIdString, let limit):
             guard let uuid = UUID(uuidString: sessionIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             // Mirror what selecting a chat in the Mac UI does: pull
@@ -39,7 +55,7 @@ public enum BridgeIntent {
             let page = bus.subscribe(sessionId: sessionIdString, limit: limit)
             // `hasMore: nil` is the v1 whole-transcript response for
             // unpaged `openSession` calls.
-            session.send(BridgeFrame(.messagesSnapshot(
+            send(BridgeFrame(.messagesSnapshot(
                 sessionId: sessionIdString,
                 messages: page.messages,
                 hasMore: limit == nil ? nil : page.hasMore
@@ -47,11 +63,11 @@ public enum BridgeIntent {
 
         case .loadOlderMessages(let sessionIdString, let before, let limit):
             guard UUID(uuidString: sessionIdString) != nil else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             let page = bus.page(sessionId: sessionIdString, before: before, limit: limit)
-            session.send(BridgeFrame(.messagesPage(
+            send(BridgeFrame(.messagesPage(
                 sessionId: sessionIdString,
                 messages: page.messages,
                 hasMore: page.hasMore
@@ -59,14 +75,14 @@ public enum BridgeIntent {
 
         case .sendMessage(let sessionIdString, let text, let attachments):
             guard let uuid = UUID(uuidString: sessionIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             host?.handleSendMessage(sessionId: uuid, text: text, attachments: attachments)
 
         case .newSession(let sessionIdString, let text, let attachments):
             guard let uuid = UUID(uuidString: sessionIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             // Auto-subscribe so the bus pushes message-level deltas for
@@ -77,7 +93,7 @@ public enum BridgeIntent {
 
         case .interruptTurn(let sessionIdString):
             guard let uuid = UUID(uuidString: sessionIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             host?.handleInterruptTurn(sessionId: uuid)
@@ -85,7 +101,7 @@ public enum BridgeIntent {
         case .editPrompt(let sessionIdString, let messageIdString, let text):
             guard let chatUuid = UUID(uuidString: sessionIdString),
                   let msgUuid = UUID(uuidString: messageIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badId", message: sessionIdString)))
                 return
             }
             host?.handleEditPrompt(sessionId: chatUuid, messageId: msgUuid, text: text)
@@ -105,20 +121,20 @@ public enum BridgeIntent {
 
         case .renameSession(let sessionIdString, let title):
             guard let uuid = UUID(uuidString: sessionIdString) else {
-                session.send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
+                send(BridgeFrame(.errorEvent(code: "badSessionId", message: sessionIdString)))
                 return
             }
             host?.handleRenameSession(sessionId: uuid, title: title)
 
         case .pairingStart:
             if let payload = host?.handlePairingStart() {
-                session.send(BridgeFrame(.pairingPayload(
+                send(BridgeFrame(.pairingPayload(
                     qrJson: payload.qrJson,
                     token: payload.token,
                     shortCode: payload.shortCode
                 )))
             } else {
-                session.send(BridgeFrame(.errorEvent(
+                send(BridgeFrame(.errorEvent(
                     code: "notImplemented",
                     message: "host does not mint pairing tokens"
                 )))
@@ -126,10 +142,10 @@ public enum BridgeIntent {
 
         case .listProjects:
             let projects = host?.currentProjects() ?? []
-            session.send(BridgeFrame(.projectsSnapshot(projects: projects)))
+            send(BridgeFrame(.projectsSnapshot(projects: projects)))
 
         case .readFile(let path):
-            session.send(BridgeFrame(BridgeFileReader.read(path: path)))
+            send(BridgeFrame(BridgeFileReader.read(path: path)))
 
         case .transcribeAudio(let requestId, let audioBase64, let mimeType, let language):
             host?.handleTranscribeAudio(
@@ -137,8 +153,8 @@ public enum BridgeIntent {
                 audioBase64: audioBase64,
                 mimeType: mimeType,
                 language: language,
-                reply: { [weak session] text, errorMessage in
-                    session?.send(BridgeFrame(.transcriptionResult(
+                reply: { text, errorMessage in
+                    send(BridgeFrame(.transcriptionResult(
                         requestId: requestId,
                         text: text,
                         errorMessage: errorMessage
@@ -149,8 +165,8 @@ public enum BridgeIntent {
         case .requestAudio(let audioId):
             host?.handleRequestAudio(
                 audioId: audioId,
-                reply: { [weak session] audioBase64, mimeType, errorMessage in
-                    session?.send(BridgeFrame(.audioSnapshot(
+                reply: { audioBase64, mimeType, errorMessage in
+                    send(BridgeFrame(.audioSnapshot(
                         audioId: audioId,
                         audioBase64: audioBase64,
                         mimeType: mimeType,
@@ -162,8 +178,8 @@ public enum BridgeIntent {
         case .requestGeneratedImage(let path):
             host?.handleRequestGeneratedImage(
                 path: path,
-                reply: { [weak session] dataBase64, mimeType, errorMessage in
-                    session?.send(BridgeFrame(.generatedImageSnapshot(
+                reply: { dataBase64, mimeType, errorMessage in
+                    send(BridgeFrame(.generatedImageSnapshot(
                         path: path,
                         dataBase64: dataBase64,
                         mimeType: mimeType,
@@ -175,8 +191,8 @@ public enum BridgeIntent {
         case .requestRolloutAttachment(let attachmentId):
             host?.handleRequestRolloutAttachment(
                 attachmentId: attachmentId,
-                reply: { [weak session] dataBase64, mimeType, errorMessage in
-                    session?.send(BridgeFrame(.rolloutAttachmentSnapshot(
+                reply: { dataBase64, mimeType, errorMessage in
+                    send(BridgeFrame(.rolloutAttachmentSnapshot(
                         attachmentId: attachmentId,
                         dataBase64: dataBase64,
                         mimeType: mimeType,
@@ -191,10 +207,10 @@ public enum BridgeIntent {
             // The bus caches the daemon's most recent snapshot so the
             // reply is synchronous; subsequent pushes flow through
             // `rateLimitsUpdated` automatically.
-            session.send(bus.currentRateLimitsFrame())
+            send(bus.currentRateLimitsFrame())
 
         case .requestClawJSServiceStatuses:
-            session.send(bus.currentClawJSServiceStatusesFrame())
+            send(bus.currentClawJSServiceStatusesFrame())
 
         // Audio catalog. Routes through the host's `audioCatalogClient`
         // when configured; otherwise the default impl replies with a
@@ -204,8 +220,8 @@ public enum BridgeIntent {
             host?.handleAudioRegister(
                 requestId: requestId,
                 request: request,
-                reply: { [weak session] asset, errorMessage in
-                    session?.send(BridgeFrame(.audioRegisterResult(
+                reply: { asset, errorMessage in
+                    send(BridgeFrame(.audioRegisterResult(
                         requestId: requestId,
                         asset: asset,
                         errorMessage: errorMessage
@@ -217,8 +233,8 @@ public enum BridgeIntent {
                 requestId: requestId,
                 audioId: audioId,
                 input: input,
-                reply: { [weak session] transcript, errorMessage in
-                    session?.send(BridgeFrame(.audioAttachTranscriptResult(
+                reply: { transcript, errorMessage in
+                    send(BridgeFrame(.audioAttachTranscriptResult(
                         requestId: requestId,
                         transcript: transcript,
                         errorMessage: errorMessage
@@ -230,8 +246,8 @@ public enum BridgeIntent {
                 requestId: requestId,
                 audioId: audioId,
                 appId: appId,
-                reply: { [weak session] asset, errorMessage in
-                    session?.send(BridgeFrame(.audioGetResult(
+                reply: { asset, errorMessage in
+                    send(BridgeFrame(.audioGetResult(
                         requestId: requestId,
                         asset: asset,
                         errorMessage: errorMessage
@@ -243,8 +259,8 @@ public enum BridgeIntent {
                 requestId: requestId,
                 audioId: audioId,
                 appId: appId,
-                reply: { [weak session] audioBase64, mimeType, durationMs, errorMessage in
-                    session?.send(BridgeFrame(.audioBytesResult(
+                reply: { audioBase64, mimeType, durationMs, errorMessage in
+                    send(BridgeFrame(.audioBytesResult(
                         requestId: requestId,
                         audioBase64: audioBase64,
                         mimeType: mimeType,
@@ -257,8 +273,8 @@ public enum BridgeIntent {
             host?.handleAudioList(
                 requestId: requestId,
                 filter: filter,
-                reply: { [weak session] list, errorMessage in
-                    session?.send(BridgeFrame(.audioListResult(
+                reply: { list, errorMessage in
+                    send(BridgeFrame(.audioListResult(
                         requestId: requestId,
                         list: list,
                         errorMessage: errorMessage
@@ -270,8 +286,8 @@ public enum BridgeIntent {
                 requestId: requestId,
                 audioId: audioId,
                 appId: appId,
-                reply: { [weak session] deleted, errorMessage in
-                    session?.send(BridgeFrame(.audioDeleteResult(
+                reply: { deleted, errorMessage in
+                    send(BridgeFrame(.audioDeleteResult(
                         requestId: requestId,
                         deleted: deleted,
                         errorMessage: errorMessage

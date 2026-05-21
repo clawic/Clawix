@@ -322,8 +322,8 @@ final class DaemonEngineHost: EngineHost {
     private let stateSubject = CurrentValueSubject<BridgeRuntimeState, Never>(.idle)
     /// Mirrors what the GUI's `ClawixService.refreshRateLimits` puts on
     /// `appState.rateLimits` + `rateLimitsByLimitId` when no daemon is
-    /// involved. Seeded from `account/rateLimits/read` once at boot
-    /// and refreshed every time Codex emits `account/rateLimits/updated`.
+    /// involved. Seeded from `account/rateLimits/read` when the runtime
+    /// starts and refreshed every time Codex emits `account/rateLimits/updated`.
     /// Desktop sessions that connect mid-session pull the cached value
     /// via `requestRateLimits`; the bus also pushes a `rateLimitsUpdated`
     /// frame on each new payload for already-connected sessions.
@@ -386,7 +386,7 @@ final class DaemonEngineHost: EngineHost {
 
     private static func shouldLoadInitialThreads(for reason: String) -> Bool {
         switch reason {
-        case "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
+        case "listSessions", "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
             return true
         default:
             return false

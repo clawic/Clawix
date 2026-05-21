@@ -80,6 +80,10 @@ extension AppState {
                 if let daemonBridgeClient = self.daemonBridgeClient {
                     daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: self.wireAttachments(from: attachments))
                 } else if let clawix = self.clawix {
+                    guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                        self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                        return
+                    }
                     await clawix.sendUserMessage(chatId: chatId, text: combined)
                     self.clawixBackendStatus = clawix.status
                 }
@@ -101,6 +105,10 @@ extension AppState {
             )
         } else if let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.sendUserMessage(chatId: chatId, text: combined)
                 self.clawixBackendStatus = clawix.status
             }
@@ -433,6 +441,10 @@ extension AppState {
             daemonBridgeClient.sendMessage(chatId: resolvedId, text: combined)
         } else if let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: resolvedId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.sendUserMessage(chatId: resolvedId, text: combined)
                 self.clawixBackendStatus = clawix.status
             }
@@ -521,6 +533,10 @@ extension AppState {
                 scope: chatId.uuidString
             )
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.sendUserMessage(
                     chatId: chatId,
                     text: trimmed,
@@ -671,6 +687,10 @@ extension AppState {
                 scope: chatId.uuidString
             )
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.sendUserMessage(
                     chatId: chatId,
                     text: trimmed,

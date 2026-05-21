@@ -84,7 +84,7 @@ final class OpenCodeDaemonEngineHost: EngineHost {
 
     private static func shouldLoadInitialSessions(for reason: String) -> Bool {
         switch reason {
-        case "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
+        case "listSessions", "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
             return true
         default:
             return false

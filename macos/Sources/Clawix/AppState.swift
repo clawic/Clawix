@@ -37,6 +37,7 @@ final class AppState: ObservableObject {
             clearUnreadIfChatRoute()
             if case let .chat(id) = currentRoute {
                 daemonBridgeClient?.openSession(id)
+                scheduleChatRuntimeDemandIfReady(chatId: id)
             }
             persistLaunchRoute()
             // Scope only outlives the search popup itself; once the user
@@ -460,6 +461,8 @@ final class AppState: ObservableObject {
     var clawJSSessionsClientFactory: () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() }
     var clawJSAppStateCacheRefresh: () async -> Void = { await ClawJSAppStateCacheSync.refreshFromCanonicalStore() }
     var runtimeThreadPageLoader: ((_ cursor: String?, _ limit: Int) async throws -> ClawixService.ThreadListPage)?
+    var agentRuntimeStartTask: Task<Bool, Never>?
+    var chatRuntimeDemandTask: Task<Void, Never>?
     var deferredCodexImportTask: Task<Void, Never>?
     var codexRolloutLocator: @Sendable (String) -> URL? = { CodexRolloutLocator.find(threadId: $0) }
     var codexRolloutPathByThreadId: [String: URL] = [:]
@@ -631,7 +634,6 @@ final class AppState: ObservableObject {
             // ScrollView while the daemon's `messagesSnapshot` races
             // back. Idempotent / silent if the file is missing.
             loadCachedSnapshot()
-            scheduleDeferredCodexImport()
         }
         loadHostFavicons()
         loadChatSidebars()
@@ -711,19 +713,13 @@ final class AppState: ObservableObject {
         let fixtureActive = AgentThreadStore.fixtureThreads() != nil || dummyModeActive
         let daemonBridgeEnabled = !fixtureActive && BackgroundBridgeService.shared.isActive
         clawix?.appState = self
-        if let clawix,
-           ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
-           !daemonBridgeEnabled {
-            Task { @MainActor in
-                await clawix.bootstrap()
-                self.clawixBackendStatus = clawix.status
-                if let firstThreadId = self.chats.first(where: { $0.clawixThreadId != nil })?.clawixThreadId,
-                   case .ready = clawix.status {
-                    // No-op: threads are resumed lazily on user click.
-                    _ = firstThreadId
-                }
-                await self.seedArchivesIfNeeded()
-                self.drainProjectRefreshQueue()
+        if let clawix {
+            clawix.primeFromCache(appState: self)
+            if ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
+               !daemonBridgeEnabled {
+                // GUI-owned backend startup is demand-driven; keep the
+                // launch guard explicit so daemon-backed runs never start
+                // a second local runtime during app bootstrap.
             }
         }
 
@@ -824,6 +820,62 @@ final class AppState: ObservableObject {
         }
     }
 
+    @discardableResult
+    func ensureAgentRuntimeReady(reason: AgentRuntimeDemandReason) async -> Bool {
+        let daemonBridgeEnabled = daemonBridgeClient != nil
+        if daemonBridgeEnabled { return true }
+        guard ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
+           !daemonBridgeEnabled else {
+            return false
+        }
+        if let agentRuntimeStartTask {
+            return await agentRuntimeStartTask.value
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return false }
+            await ClawJSServiceManager.shared.start(
+                [.runtime, .sessions],
+                reason: .capability(reason.triggerDescription)
+            )
+            guard let clawix = self.clawix else { return false }
+            let ready = await clawix.startIfNeeded(reason: reason)
+            self.clawixBackendStatus = clawix.status
+            if ready {
+                await self.seedArchivesIfNeeded()
+                self.drainProjectRefreshQueue()
+            }
+            return ready
+        }
+        agentRuntimeStartTask = task
+        let ready = await task.value
+        agentRuntimeStartTask = nil
+        return ready
+    }
+
+    private func scheduleChatRuntimeDemandIfReady(chatId: UUID) {
+        guard postFirstFramePersistenceStarted else { return }
+        scheduleChatRuntimeDemand(chatId: chatId)
+    }
+
+    private func scheduleChatRuntimeDemand(chatId: UUID) {
+        chatRuntimeDemandTask?.cancel()
+        chatRuntimeDemandTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard !Task.isCancelled,
+                  let self,
+                  case let .chat(currentChatId) = self.currentRoute,
+                  currentChatId == chatId
+            else { return }
+            guard await self.ensureAgentRuntimeReady(reason: .chatOpened) else { return }
+            guard let threadId = self.chat(byId: chatId)?.clawixThreadId,
+                  let clawix = self.clawix,
+                  case .ready = clawix.status
+            else { return }
+            await clawix.attach(chatId: chatId, threadId: threadId)
+        }
+    }
+
     private func loadThreadsFromClawJSSessions() async -> Bool {
         let client = clawJSSessionsClientFactory()
         do {
@@ -892,6 +944,9 @@ final class AppState: ObservableObject {
     func startPostFirstFramePersistence() {
         guard !postFirstFramePersistenceStarted else { return }
         postFirstFramePersistenceStarted = true
+        if case let .chat(id) = currentRoute {
+            scheduleChatRuntimeDemand(chatId: id)
+        }
         Task { @MainActor [weak self] in
             guard let self else { return }
             let provider = self.databaseProvider
@@ -910,7 +965,6 @@ final class AppState: ObservableObject {
             guard snapshotEnabled else { return }
             applySnapshotForFirstPaint()
             loadCachedSnapshot()
-            scheduleIdleAppStateCanonicalReconciliation()
         case .failed(let failure):
             rescueDecision = RescueSurvivalPolicy.evaluate(
                 signals: [failure.signal],

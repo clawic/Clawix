@@ -43,7 +43,6 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         var diagnosticsActivations = 0
         var recordCalls: [Bool] = []
         var renderCount = 0
-        var timers: [TestRefreshTimer] = []
 
         func record(forceHistory: Bool) async -> SystemTelemetryMonitorRecordResult {
             recordCalls.append(forceHistory)
@@ -55,24 +54,6 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                 dbPath: nil,
                 reason: "test"
             )
-        }
-    }
-
-    @MainActor
-    private final class TestRefreshTimer: SystemTelemetryRefreshTimer {
-        let handler: @MainActor () -> Void
-        private(set) var invalidated = false
-
-        init(handler: @escaping @MainActor () -> Void) {
-            self.handler = handler
-        }
-
-        func invalidate() {
-            invalidated = true
-        }
-
-        func fire() {
-            handler()
         }
     }
 
@@ -134,13 +115,7 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         let controller = SystemTelemetryStatusItemController(dependencies: .init(
             makeModel: { SystemTelemetryMenuBarModel(bridge: bridge) },
             recordIfDue: { forceHistory in await probe.record(forceHistory: forceHistory) },
-            scheduleTimer: { _, handler in
-                let timer = TestRefreshTimer(handler: handler)
-                probe.timers.append(timer)
-                return timer
-            },
             renderModel: { _ in probe.renderCount += 1 },
-            activateDiagnostics: { probe.diagnosticsActivations += 1 },
             isCapabilityVisible: isCapabilityVisible
         ))
         return (controller, counter)
@@ -157,7 +132,6 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(probe.diagnosticsActivations, 0)
         XCTAssertEqual(probe.recordCalls, [])
         XCTAssertEqual(probe.renderCount, 0)
-        XCTAssertEqual(probe.timers.count, 0)
         XCTAssertEqual(counts.widgets, 0)
         XCTAssertEqual(counts.snapshots, 0)
     }
@@ -170,10 +144,9 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         await controller.activateFromUserSurfaceAndRefresh()
         let counts = await counter.counts()
 
-        XCTAssertEqual(probe.diagnosticsActivations, 1)
+        XCTAssertEqual(probe.diagnosticsActivations, 0)
         XCTAssertEqual(probe.recordCalls, [false])
         XCTAssertEqual(probe.renderCount, 1)
-        XCTAssertEqual(probe.timers.count, 1)
         XCTAssertEqual(counts.widgets, 1)
         XCTAssertEqual(counts.snapshots, 1)
     }
@@ -189,7 +162,6 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(probe.diagnosticsActivations, 0)
         XCTAssertEqual(probe.recordCalls, [])
         XCTAssertEqual(probe.renderCount, 0)
-        XCTAssertEqual(probe.timers.count, 0)
         XCTAssertEqual(counts.widgets, 0)
         XCTAssertEqual(counts.snapshots, 0)
     }
@@ -203,30 +175,24 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         await controller.activateFromUserSurfaceAndRefresh()
         let counts = await counter.counts()
 
-        XCTAssertEqual(probe.diagnosticsActivations, 1)
-        XCTAssertEqual(probe.recordCalls, [false])
-        XCTAssertEqual(probe.renderCount, 1)
-        XCTAssertEqual(probe.timers.count, 1)
-        XCTAssertEqual(counts.widgets, 1)
+        XCTAssertEqual(probe.diagnosticsActivations, 0)
+        XCTAssertEqual(probe.recordCalls, [false, false])
+        XCTAssertEqual(probe.renderCount, 2)
+        XCTAssertEqual(counts.widgets, 2)
         XCTAssertEqual(counts.snapshots, 1)
     }
 
     @MainActor
-    func testStatusControllerTimerRefreshesOnlyAfterActivation() async {
+    func testStatusControllerDoesNotScheduleTimerAfterActivation() async {
         let probe = StatusControllerProbe()
         let (controller, counter) = makeStatusController(probe: probe)
 
         await controller.activateFromUserSurfaceAndRefresh()
-        probe.timers[0].fire()
-        for _ in 0..<20 where probe.renderCount < 2 {
-            try? await Task.sleep(nanoseconds: 10_000_000)
-        }
         let counts = await counter.counts()
 
-        XCTAssertEqual(probe.recordCalls, [false, false])
-        XCTAssertEqual(probe.renderCount, 2)
-        XCTAssertEqual(probe.timers.count, 1)
-        XCTAssertEqual(counts.widgets, 2)
+        XCTAssertEqual(probe.recordCalls, [false])
+        XCTAssertEqual(probe.renderCount, 1)
+        XCTAssertEqual(counts.widgets, 1)
         XCTAssertEqual(counts.snapshots, 1)
     }
 

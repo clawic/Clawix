@@ -2,8 +2,10 @@ import Foundation
 import ClawixCore
 
 enum BridgeRuntimeWakePolicy {
-    static func reason(for body: BridgeBody) -> String? {
+    static func reason(for body: BridgeBody, clientKind: ClientKind? = nil) -> String? {
         switch body {
+        case .listSessions where clientKind == .desktop:
+            return "listSessions"
         case .openSession:
             return "openSession"
         case .sendMessage:

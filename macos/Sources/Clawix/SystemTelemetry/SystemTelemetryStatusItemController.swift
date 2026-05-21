@@ -4,23 +4,11 @@ import CommanderCore
 import Foundation
 
 @MainActor
-protocol SystemTelemetryRefreshTimer {
-    func invalidate()
-}
-
-extension Timer: SystemTelemetryRefreshTimer {}
-
-@MainActor
 final class SystemTelemetryStatusItemController {
     struct Dependencies {
         var makeModel: @MainActor () -> SystemTelemetryMenuBarModel
         var recordIfDue: @MainActor (_ forceHistory: Bool) async -> SystemTelemetryMonitorRecordResult
-        var scheduleTimer: @MainActor (
-            _ interval: TimeInterval,
-            _ handler: @escaping @MainActor () -> Void
-        ) -> SystemTelemetryRefreshTimer
         var renderModel: (@MainActor (_ model: SystemTelemetryMenuBarModel) -> Void)?
-        var activateDiagnostics: @MainActor () -> Void
         var isCapabilityVisible: @MainActor () -> Bool
 
         @MainActor
@@ -37,16 +25,7 @@ final class SystemTelemetryStatusItemController {
                 recordIfDue: { forceHistory in
                     await monitorRecorder.recordIfDue(force: forceHistory)
                 },
-                scheduleTimer: { interval, handler in
-                    Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
-                        Task { @MainActor in handler() }
-                    }
-                },
                 renderModel: nil,
-                activateDiagnostics: {
-                    ResourceSampler.startIfNeeded(reason: "system-telemetry-menu-bar")
-                    HangDetector.startFromDiagnosticsSurface()
-                },
                 isCapabilityVisible: {
                     FeatureFlags.shared.isCapabilityVisible(
                         capabilityID: "system.telemetry",
@@ -64,7 +43,6 @@ final class SystemTelemetryStatusItemController {
     private let dependencies: Dependencies
     private var model: SystemTelemetryMenuBarModel?
     private var items: [String: NSStatusItem] = [:]
-    private var timer: SystemTelemetryRefreshTimer?
     private var isActivated = false
 
     convenience init() {
@@ -82,33 +60,26 @@ final class SystemTelemetryStatusItemController {
     }
 
     func activateFromUserSurface() {
-        guard activateIfNeeded() else { return }
+        guard prepareUserSurfaceIfNeeded() else { return }
         Task { await refreshNow() }
     }
 
     func activateFromUserSurfaceAndRefresh() async {
-        guard activateIfNeeded() else { return }
+        guard prepareUserSurfaceIfNeeded() else { return }
         await refreshNow()
     }
 
     @discardableResult
-    private func activateIfNeeded() -> Bool {
+    private func prepareUserSurfaceIfNeeded() -> Bool {
         guard dependencies.isCapabilityVisible() else { return false }
-        guard !isActivated else { return false }
-        isActivated = true
-        dependencies.activateDiagnostics()
-        model = dependencies.makeModel()
-        timer = dependencies.scheduleTimer(3) { [weak self] in
-            Task { @MainActor [weak self] in
-                await self?.refreshNow()
-            }
+        if !isActivated {
+            isActivated = true
+            model = dependencies.makeModel()
         }
-        return true
+        return model != nil
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
         items.values.forEach { NSStatusBar.system.removeStatusItem($0) }
         items.removeAll()
         model = nil

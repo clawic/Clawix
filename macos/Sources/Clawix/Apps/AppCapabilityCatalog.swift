@@ -8,8 +8,8 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var outputSchemaRef: String? = nil
     var eventSchemaRefs: AppCapabilityEventSchemaRefs? = nil
     var customAppAccess: AppCapabilityAccess
-    var maturity: FeatureMaturity = .stable
-    var activationPolicy: FeatureActivationPolicy = .enabled
+    var maturity: FeatureMaturity
+    var activationPolicy: FeatureActivationPolicy
     var redactionPolicyRef: String? = nil
     var riskTier: AppCapabilityRiskTier
     var interruptiveApproval: Bool
@@ -17,6 +17,42 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var touchesNativeHost: Bool
     var touchesPhysicalWorld: Bool
     var destructive: Bool
+
+    init(
+        id: String,
+        title: String,
+        summary: String,
+        inputSchemaRef: String? = nil,
+        outputSchemaRef: String? = nil,
+        eventSchemaRefs: AppCapabilityEventSchemaRefs? = nil,
+        customAppAccess: AppCapabilityAccess,
+        maturity: FeatureMaturity = .stable,
+        activationPolicy: FeatureActivationPolicy = .enabled,
+        redactionPolicyRef: String? = nil,
+        riskTier: AppCapabilityRiskTier,
+        interruptiveApproval: Bool,
+        touchesSecrets: Bool,
+        touchesNativeHost: Bool,
+        touchesPhysicalWorld: Bool,
+        destructive: Bool
+    ) {
+        self.id = id
+        self.title = title
+        self.summary = summary
+        self.inputSchemaRef = inputSchemaRef
+        self.outputSchemaRef = outputSchemaRef
+        self.eventSchemaRefs = eventSchemaRefs
+        self.customAppAccess = customAppAccess
+        self.maturity = maturity
+        self.activationPolicy = activationPolicy
+        self.redactionPolicyRef = redactionPolicyRef
+        self.riskTier = riskTier
+        self.interruptiveApproval = interruptiveApproval
+        self.touchesSecrets = touchesSecrets
+        self.touchesNativeHost = touchesNativeHost
+        self.touchesPhysicalWorld = touchesPhysicalWorld
+        self.destructive = destructive
+    }
 }
 
 struct AppCapabilitySurfaceBinding: Codable, Equatable, Hashable {
@@ -125,6 +161,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: searchResultsSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -141,6 +179,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: dbRecordsSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -157,6 +197,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: resourcesListResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -173,6 +215,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: resourcesPayloadSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -225,6 +269,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsListResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -241,6 +287,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsDetailSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -257,6 +305,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsEventsResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -273,6 +323,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsStreamResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .localWide,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .low,
             interruptiveApproval: false,
@@ -289,6 +341,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsStartResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .high,
             interruptiveApproval: true,
@@ -305,6 +359,8 @@ enum AppCapabilityCatalog {
             outputSchemaRef: jobsCancelResultSchemaRef,
             eventSchemaRefs: readEventSchemaRefs,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             redactionPolicyRef: AppBridgeRedactionPolicy.policyId,
             riskTier: .high,
             interruptiveApproval: true,
@@ -320,6 +376,8 @@ enum AppCapabilityCatalog {
             inputSchemaRef: actionsInvokeSchemaRef,
             outputSchemaRef: actionsReceiptSchemaRef,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             riskTier: .high,
             interruptiveApproval: true,
             touchesSecrets: false,
@@ -334,6 +392,8 @@ enum AppCapabilityCatalog {
             inputSchemaRef: secretsBrokerSchemaRef,
             outputSchemaRef: secretsReceiptSchemaRef,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             riskTier: .critical,
             interruptiveApproval: true,
             touchesSecrets: true,
@@ -348,6 +408,8 @@ enum AppCapabilityCatalog {
             inputSchemaRef: macActionRequestSchemaRef,
             outputSchemaRef: macActionPlanSchemaRef,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             riskTier: .high,
             interruptiveApproval: true,
             touchesSecrets: false,
@@ -362,6 +424,8 @@ enum AppCapabilityCatalog {
             inputSchemaRef: iotActionSchemaRef,
             outputSchemaRef: iotActionResultSchemaRef,
             customAppAccess: .approvalRequired,
+            maturity: .stable,
+            activationPolicy: .enabled,
             riskTier: .high,
             interruptiveApproval: true,
             touchesSecrets: false,
