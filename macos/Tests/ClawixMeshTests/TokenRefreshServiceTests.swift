@@ -26,31 +26,31 @@ final class TokenRefreshServiceTests: XCTestCase {
     }
 
     func testDelayedStartDoesNotRunImmediateTick() async {
-        let notImmediate = expectation(description: "Token refresh tick is delayed")
-        notImmediate.isInverted = true
         let eventuallyStarted = expectation(description: "Token refresh tick eventually starts")
+        var tickCount = 0
         let service = TokenRefreshService(interval: 60) {
-            notImmediate.fulfill()
+            tickCount += 1
             eventuallyStarted.fulfill()
         }
 
         service.start(firstTickDelay: 0.2)
 
-        await fulfillment(of: [notImmediate], timeout: 0.05)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertEqual(tickCount, 0)
         await fulfillment(of: [eventuallyStarted], timeout: 1)
         service.stop()
     }
 
     func testStopCancelsPendingDelayedTokenRefreshTick() async {
-        let notStarted = expectation(description: "Delayed token refresh tick was cancelled before start")
-        notStarted.isInverted = true
+        var tickCount = 0
         let service = TokenRefreshService(interval: 60) {
-            notStarted.fulfill()
+            tickCount += 1
         }
 
         service.start(firstTickDelay: 0.5)
         service.stop()
 
-        await fulfillment(of: [notStarted], timeout: 0.7)
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        XCTAssertEqual(tickCount, 0)
     }
 }
