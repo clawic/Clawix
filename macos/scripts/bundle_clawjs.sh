@@ -356,6 +356,22 @@ EOF
         rm -rf "$CLAWJS_DEST/node_modules/@clawjs/signals"
         mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
         cp -R "$OVERLAY_SIGNALS" "$CLAWJS_DEST/node_modules/@clawjs/signals"
+        /usr/bin/python3 - "$CLAWJS_DEST/node_modules/@clawjs/signals/package.json" <<'PY'
+import json
+import sys
+
+package_json = sys.argv[1]
+with open(package_json, encoding="utf-8") as handle:
+    data = json.load(handle)
+deps = data.setdefault("dependencies", {})
+if deps.get("@clawjs/core"):
+    deps["@clawjs/core"] = "file:../core"
+if deps.get("@clawjs/signals-core"):
+    deps["@clawjs/signals-core"] = "file:../signals-core"
+with open(package_json, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
         (
             cd "$CLAWJS_DEST/node_modules/@clawjs/signals"
             npm_config_arch=arm64 \

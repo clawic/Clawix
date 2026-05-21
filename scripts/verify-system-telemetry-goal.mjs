@@ -1403,6 +1403,9 @@ function assertBridgeContracts() {
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "\"--range\"");
   requireSnippet("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryHistoryReader.swift", "CommanderCore.JSONValue.from(any: payload)");
   requireSnippet("macos/scripts/bundle_clawjs.sh", "packages/clawjs-search");
+  requireSnippet("macos/scripts/bundle_clawjs.sh", "packages/signals-core");
+  requireSnippet("macos/scripts/bundle_clawjs.sh", "packages/signals");
+  requireSnippet("macos/scripts/bundle_clawjs.sh", "deps[\"@clawjs/signals-core\"] = \"file:../signals-core\"");
   requireSnippet("macos/scripts/bundle_clawjs.sh", "FASTIFY_STAGE=\"$CACHE_ROOT/fastify-runtime\"");
 }
 
