@@ -336,6 +336,7 @@ case "$LANE" in
     live_tests
     ;;
   release)
+    run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
     integration "$@"
     e2e_tests
     device_tests

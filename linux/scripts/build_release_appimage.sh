@@ -39,6 +39,8 @@ echo "[release] legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 echo "[release] capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
+echo "[release] ClawJS mirror release preflight"
+node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-appimage" ]]; then
   echo "[release] ERROR: Linux AppImage release requires explicit approval for this exact action." >&2

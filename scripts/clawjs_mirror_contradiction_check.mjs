@@ -111,8 +111,12 @@ function requireLocalReference(localPaths, siblingPath, topic) {
   fail(`${topic} mirror must reference sibling ClawJS ${reference}`);
 }
 
+function isReleaseMode(inputArgs = args) {
+  return inputArgs.has("--release");
+}
+
 function isSiblingRequired(inputArgs = args, env = process.env) {
-  return inputArgs.has("--require-sibling") || env.CLAWIX_REQUIRE_CLAWJS_MIRROR === "1";
+  return isReleaseMode(inputArgs) || inputArgs.has("--require-sibling") || env.CLAWIX_REQUIRE_CLAWJS_MIRROR === "1";
 }
 
 function missingSiblingStatus(siblingDir, requireSibling) {
@@ -148,8 +152,11 @@ function runSelfTest() {
     );
   }
   assert.equal(isSiblingRequired(new Set(["--require-sibling"]), {}), true);
+  assert.equal(isSiblingRequired(new Set(["--release"]), {}), true);
   assert.equal(isSiblingRequired(new Set(), { CLAWIX_REQUIRE_CLAWJS_MIRROR: "1" }), true);
   assert.equal(isSiblingRequired(new Set(), {}), false);
+  assert.equal(isReleaseMode(new Set(["--release"])), true);
+  assert.equal(isReleaseMode(new Set()), false);
   assert.deepEqual(
     missingSiblingStatus("/tmp/missing-clawjs", false),
     {
@@ -362,8 +369,15 @@ for (const group of mirrorGroups) {
 
 for (const [relativePath, snippet] of [
   ["docs/decision-map.md", "node scripts/clawjs_mirror_contradiction_check.mjs"],
+  ["docs/decision-map.md", "node scripts/clawjs_mirror_contradiction_check.mjs --release"],
   ["docs/agent-rules/index.md", "scripts/clawjs_mirror_contradiction_check.mjs"],
+  ["docs/agent-rules/index.md", "--release"],
   ["scripts/test.sh", "scripts/clawjs_mirror_contradiction_check.mjs"],
+  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
+  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
+  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
+  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
+  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
 ]) {
   requireSnippet(rootDir, relativePath, snippet, "local guardrail routing");
 }

@@ -23,6 +23,8 @@ echo "==> Legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
 echo "==> Capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
+echo "==> ClawJS mirror release preflight"
+node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "macos-app" ]]; then
     echo "ERROR: macOS app release requires explicit approval for this exact action." >&2

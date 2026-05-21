@@ -16,7 +16,7 @@ require_file() {
 require_snippet() {
   local file="$1"
   local snippet="$2"
-  if ! grep -Fq "$snippet" "$ROOT_DIR/$file"; then
+  if ! grep -Fq -- "$snippet" "$ROOT_DIR/$file"; then
     fail "$file is missing required snippet: $snippet"
   fi
 }
@@ -206,9 +206,16 @@ require_snippet "docs/decision-map.md" "MacControlWire"
 require_snippet "scripts/test.sh" "scripts/native_permission_broker_check.mjs"
 require_snippet "scripts/test.sh" "scripts/native_action_broker_check.mjs"
 require_snippet "scripts/test.sh" "scripts/clawjs_mirror_contradiction_check.mjs"
+require_snippet "scripts/test.sh" 'scripts/clawjs_mirror_contradiction_check.mjs" --release'
 require_snippet "scripts/test.sh" "scripts/remote_canon_alignment_check.mjs"
 require_snippet "docs/decision-map.md" "node scripts/clawjs_mirror_contradiction_check.mjs"
+require_snippet "docs/decision-map.md" "node scripts/clawjs_mirror_contradiction_check.mjs --release"
 require_snippet "docs/agent-rules/index.md" "scripts/clawjs_mirror_contradiction_check.mjs"
+require_snippet "docs/agent-rules/index.md" "--release"
+require_snippet "macos/scripts/build_release_app.sh" 'scripts/clawjs_mirror_contradiction_check.mjs" --release'
+require_snippet "ios/scripts/build_release_app.sh" 'scripts/clawjs_mirror_contradiction_check.mjs" --release'
+require_snippet "linux/scripts/build_release_appimage.sh" 'scripts/clawjs_mirror_contradiction_check.mjs" --release'
+require_snippet "linux/scripts/build_release_deb.sh" 'scripts/clawjs_mirror_contradiction_check.mjs" --release'
 require_snippet "docs/decision-map.md" "claw inspect remote"
 require_snippet "docs/native-action-broker-allowlist.json" "MacControlActionBroker"
 require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"

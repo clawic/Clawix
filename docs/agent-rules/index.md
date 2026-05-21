@@ -24,9 +24,10 @@ domains are assistive only.
   `scripts/clawjs_mirror_contradiction_check.mjs` checks that Clawix mirrors
   still route constitution, ownership, storage, naming, route graph, official
   trust, remote, and version-governance decisions to sibling ClawJS canon. The
-  default mode reports `PARTIAL` when the sibling checkout is absent; cross-repo
-  validation uses `--require-sibling` or `CLAWIX_REQUIRE_CLAWJS_MIRROR=1` to
-  fail closed.
+  default mode reports `PARTIAL` when the sibling checkout is absent. Release
+  validation must use `--release` and fail closed without sibling ClawJS canon;
+  `--require-sibling` and `CLAWIX_REQUIRE_CLAWJS_MIRROR=1` remain valid strict
+  cross-repo modes.
 - Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.
 - Visual canon: `STYLE.md` before user-facing UI, chrome, tokens, layout,
