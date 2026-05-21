@@ -10,7 +10,7 @@ extension AppState {
     static let chatSidebarsKey = "ChatSidebars"
     static let globalSidebarKey = "GlobalSidebar"
     static let hostFaviconsKey = "HostFavicons"
-    static let visibleSidebarFaviconPrefetchLimit = 8
+    nonisolated static let visibleSidebarFaviconPrefetchLimit = 8
 
     /// UUID of the chat the user is currently viewing, if any. Returns nil
     /// for non-chat routes (home, settings, etc.) so write-time accessors
@@ -65,7 +65,7 @@ extension AppState {
         }
     }
 
-    static func visibleSidebarFaviconURLs(
+    nonisolated static func visibleSidebarFaviconURLs(
         from items: [SidebarItem],
         limit: Int = visibleSidebarFaviconPrefetchLimit
     ) -> [URL] {

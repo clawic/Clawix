@@ -30,6 +30,9 @@ struct SkillsSettingsPage: View {
             .padding(.bottom, 40)
             .frame(maxWidth: 720, alignment: .leading)
         }
+        .onAppear {
+            appState.ensureSkillsStoreLoaded()
+        }
     }
 
     private var header: some View {

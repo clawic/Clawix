@@ -28,7 +28,10 @@ struct SkillDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { hydrateDrafts() }
+        .onAppear {
+            appState.ensureSkillsStoreLoaded()
+            hydrateDrafts()
+        }
         .onChange(of: slug) { _, _ in hydrateDrafts() }
         .alert(item: $pendingDelete) { skill in
             Alert(

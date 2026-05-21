@@ -29,19 +29,24 @@ struct SkillsChipBar: View {
     }
 
     var body: some View {
-        if states.isEmpty {
-            EmptyView()
-        } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(states) { state in
-                        chip(for: state)
+        Group {
+            if states.isEmpty {
+                EmptyView()
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(states) { state in
+                            chip(for: state)
+                        }
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 5)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 5)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .task(id: chatId) {
+            await appState.ensureSkillsActiveStateLoaded()
         }
     }
 

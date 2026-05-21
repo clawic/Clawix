@@ -9,7 +9,7 @@ import SwiftUI
 /// card to open `SkillDetailView` in the same content column.
 struct SkillsView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var localStore: SkillsStore = SkillsStore()
+    @StateObject private var localStore: SkillsStore = SkillsStore(loadMode: .none)
 
     private var store: SkillsStore { appState.skillsStore ?? localStore }
 
@@ -48,10 +48,8 @@ struct SkillsView: View {
             storeRefreshToken &+= 1
         }
         .onAppear {
-            // Make sure the store seeded its catalog. If AppState owns
-            // the canonical store this is a no-op; if we created a
-            // local fallback the seed already ran in init.
-            _ = storeRefreshToken
+            appState.ensureSkillsStoreLoaded()
+            storeRefreshToken &+= 1
         }
         .onDisappear {
             store.cancelSurfaceWork()
