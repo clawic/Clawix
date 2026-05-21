@@ -64,6 +64,7 @@
         "macos/Sources/Clawix/MCP/**",
         "macos/Sources/Clawix/Marketplace/**",
         "macos/Sources/Clawix/Memory/**",
+        "macos/Sources/Clawix/NetworkControl/**",
         "macos/Sources/Clawix/P2PChat/**",
         "macos/Sources/Clawix/Pairing/**",
         "macos/Sources/Clawix/Profile/**",
@@ -71,6 +72,7 @@
         "macos/Sources/Clawix/Secrets/**",
         "macos/Sources/Clawix/SkillCollections/**",
         "macos/Sources/Clawix/Skills/**",
+        "macos/Sources/Clawix/SystemTelemetry/**",
         "macos/Sources/Clawix/Telegram/**",
         "macos/Sources/Clawix/Terminal/**"
       ],
