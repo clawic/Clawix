@@ -148,7 +148,12 @@ struct UserAudioBubble: View {
     /// Resolution order: framework audio catalog only. The host does not
     /// read sidecar audio files for message playback.
     private static func loadBytes(for audioId: String) async -> (data: Data, mimeType: String)? {
-        await ClawJSServiceManager.shared.start([.audio], reason: .capability("audio playback"))
+        let lease = await ClawJSServiceManager.shared.acquire(
+            services: [.audio],
+            reason: .capability("audio playback"),
+            consumer: "capability.audio.playback"
+        )
+        defer { Task { await ClawJSServiceManager.shared.release(lease) } }
         if let client = await MainActor.run(body: { AudioCatalogBootstrap.shared.currentClient }) {
             do {
                 let response = try await client.getBytes(audioId: audioId, appId: "clawix")

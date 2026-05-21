@@ -38,10 +38,16 @@ struct DatabaseScreen: View {
                 [.database],
                 isVisible: FeatureFlags.shared.isVisible
             )
-            await ClawJSServiceManager.shared.start(services, reason: .route("database"))
+            let lease = await ClawJSServiceManager.shared.acquire(
+                services: services,
+                reason: .route("database"),
+                consumer: "route.database"
+            )
+            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             if case .loading = manager.state {
                 await manager.bootstrap()
             }
+            await ClawJSServiceManager.holdDemandUntilCancelled()
         }
         .onDisappear {
             manager.cancelSurfaceWork()

@@ -13,7 +13,12 @@ enum DictationAudioCatalogRecorder {
         language: String?,
         enhancementProvider: String?
     ) async {
-        await ClawJSServiceManager.shared.start([.audio], reason: .capability("audio catalog"))
+        let lease = await ClawJSServiceManager.shared.acquire(
+            services: [.audio],
+            reason: .capability("audio catalog"),
+            consumer: "capability.audio.dictation"
+        )
+        defer { Task { await ClawJSServiceManager.shared.release(lease) } }
         guard let data = DictationAudioStorage.wavFileBytes(samples: samples),
               let client = AudioCatalogBootstrap.shared.currentClient
         else { return }

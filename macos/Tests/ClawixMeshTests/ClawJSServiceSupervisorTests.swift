@@ -28,10 +28,29 @@ final class ClawJSServiceSupervisorTests: XCTestCase {
     func testDaemonPushStatusSuppressesFallbackProbeWindow() throws {
         let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
 
-        XCTAssertTrue(supervisorSource.contains("applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot])"))
+        XCTAssertTrue(supervisorSource.contains("applyDaemonServiceStatuses("))
+        XCTAssertTrue(supervisorSource.contains("activeDemand: Set<ClawJSService>"))
         XCTAssertTrue(supervisorSource.contains("daemonPushFreshWindow"))
         XCTAssertTrue(supervisorSource.contains("monitor.daemon_push_fresh"))
         XCTAssertTrue(supervisorSource.contains("daemonFallbackProbeInterval"))
+    }
+
+    func testDaemonPushWithoutDemandDoesNotCreateFallbackMonitor() throws {
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+
+        XCTAssertTrue(supervisorSource.contains("guard hasActiveDemand else"))
+        XCTAssertTrue(supervisorSource.contains("serviceMonitors[service] = nil"))
+        XCTAssertTrue(supervisorSource.contains("return"))
+    }
+
+    func testStopCancelsServiceMonitorAndProcessOwnership() throws {
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+
+        XCTAssertTrue(supervisorSource.contains("func stop(_ services: Set<ClawJSService>) async"))
+        XCTAssertTrue(supervisorSource.contains("restartTasks[service]?.cancel()"))
+        XCTAssertTrue(supervisorSource.contains("serviceMonitors[service] = nil"))
+        XCTAssertTrue(supervisorSource.contains("_ = await stopTrackedProcess(for: service)"))
+        XCTAssertTrue(supervisorSource.contains("$0.state = Self.availableOnDemandState(for: service)"))
     }
 
     func testProcessInspectionDoesNotUseSynchronousWaits() throws {

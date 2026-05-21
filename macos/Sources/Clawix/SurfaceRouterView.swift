@@ -208,10 +208,21 @@ private struct SurfaceRouteHost<Content: View>: View {
     private func supervise() async {
         state = SurfaceRouteSupervisor.start(descriptor: descriptor)
         guard case .loading(_, _, _, _) = state else { return }
+        var serviceLease: ServiceDemandLease?
+        defer {
+            if let serviceLease {
+                Task { await serviceManager.release(serviceLease) }
+            }
+        }
         if !demandedServices.isEmpty {
-            await serviceManager.start(demandedServices, reason: .route(descriptor.id))
+            serviceLease = await serviceManager.acquire(
+                services: demandedServices,
+                reason: .route(descriptor.id),
+                consumer: "route.\(descriptor.id)"
+            )
             if let issue = serviceManager.startupIssue(for: demandedServices) {
                 state = .degraded(surfaceID: descriptor.id, reason: issue)
+                await holdLeaseUntilCancelled()
                 return
             }
         }
@@ -225,7 +236,10 @@ private struct SurfaceRouteHost<Content: View>: View {
             descriptor: descriptor,
             readinessMode: readinessMode
         )
-        guard case .loading(_, let currentTimeoutSeconds, _, _) = state else { return }
+        guard case .loading(_, let currentTimeoutSeconds, _, _) = state else {
+            await holdLeaseUntilCancelled()
+            return
+        }
 
         let nanoseconds = UInt64(max(0, currentTimeoutSeconds) * 1_000_000_000)
         try? await Task.sleep(nanoseconds: nanoseconds)
@@ -234,6 +248,17 @@ private struct SurfaceRouteHost<Content: View>: View {
             return
         }
         state = SurfaceRouteSupervisor.timeout(state: state, descriptor: descriptor)
+        await holdLeaseUntilCancelled()
+    }
+
+    private func holdLeaseUntilCancelled() async {
+        while !Task.isCancelled {
+            do {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+            } catch {
+                break
+            }
+        }
     }
 }
 

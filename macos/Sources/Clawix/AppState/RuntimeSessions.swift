@@ -49,10 +49,12 @@ extension AppState {
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return false }
-            await ClawJSServiceManager.shared.start(
-                [.runtime, .sessions],
-                reason: .capability(reason.triggerDescription)
+            let lease = await ClawJSServiceManager.shared.acquire(
+                services: [.runtime, .sessions],
+                reason: .capability(reason.triggerDescription),
+                consumer: "capability.runtime.\(reason.rawValue)"
             )
+            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             guard let clawix = self.clawix else { return false }
             let ready = await clawix.startIfNeeded(reason: reason)
             self.clawixBackendStatus = clawix.status

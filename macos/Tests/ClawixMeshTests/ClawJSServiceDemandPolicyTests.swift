@@ -126,11 +126,12 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
     func testAppStateInitDoesNotStartPostFirstFrameWork() throws {
         let source = try readSource("AppState.swift")
+        let runtimeSessionsSource = try readSource("AppState/RuntimeSessions.swift")
         guard let initStart = source.range(of: "    init(\n") else {
             XCTFail("AppState.init not found")
             return
         }
-        guard let nextMethodStart = source.range(of: "    func loadThreadsFromRuntime()") else {
+        guard let nextMethodStart = source.range(of: "    enum ProjectRefreshIntent") else {
             XCTFail("AppState.init end marker not found")
             return
         }
@@ -139,8 +140,9 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
         XCTAssertFalse(initBody.contains("FaviconCache.shared.primeDiskCache()"))
         XCTAssertFalse(initBody.contains("clawix.startIfNeeded("))
-        XCTAssertTrue(source.contains("startPostFirstFrameFaviconCache()"))
-        XCTAssertTrue(source.contains("Bridge transport startup is allowed here without runtime"))
+        XCTAssertTrue(runtimeSessionsSource.contains("startPostFirstFramePersistence()"))
+        XCTAssertTrue(runtimeSessionsSource.contains("startPostFirstFrameFaviconCache()"))
+        XCTAssertTrue(source.contains("Bridge transport is no longer opened on app launch"))
     }
 
     func testManagerStartAPIDelegatesOnlyRequestedServices() throws {
@@ -148,7 +150,10 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
 
         XCTAssertTrue(managerSource.contains("func start(_ services: Set<ClawJSService>, reason: ClawJSServiceStartReason) async"))
+        XCTAssertTrue(managerSource.contains("func acquire("))
+        XCTAssertTrue(managerSource.contains("func release(_ lease: ServiceDemandLease) async"))
         XCTAssertTrue(managerSource.contains("await supervisor.start("))
+        XCTAssertTrue(managerSource.contains("await supervisor.stop(result.servicesToStop)"))
         XCTAssertTrue(supervisorSource.contains("await startDaemonAwareServices(services)"))
         XCTAssertTrue(supervisorSource.contains("for service in orderedServices(from: services)"))
         XCTAssertFalse(supervisorSource.contains("for service in ClawJSService.allCases {\n            await launchLocal(service)"))
@@ -178,8 +183,77 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("ClawJSServiceDemandPolicy.services("))
         XCTAssertTrue(source.contains("for: route,"))
         XCTAssertTrue(source.contains("isVisible: FeatureFlags.shared.isVisible"))
-        XCTAssertTrue(source.contains("await serviceManager.start(demandedServices, reason: .route(descriptor.id))"))
+        XCTAssertTrue(source.contains("serviceLease = await serviceManager.acquire("))
+        XCTAssertTrue(source.contains("await serviceManager.release(serviceLease)"))
+        XCTAssertTrue(source.contains("await holdLeaseUntilCancelled()"))
         XCTAssertTrue(source.contains("serviceManager.startupIssue(for: demandedServices)"))
+    }
+
+    func testSettingsUsesManualServiceDemandLeases() throws {
+        let source = try readSource("Settings/ClawJSSettingsPage.swift")
+
+        XCTAssertTrue(source.contains("@State private var manualServiceLeases: [ClawJSService: ServiceDemandLease] = [:]"))
+        XCTAssertTrue(source.contains("manualServiceLeases[service] = await manager.acquire("))
+        XCTAssertTrue(source.contains("await manager.release(lease)"))
+        XCTAssertTrue(source.contains("await releaseManualServiceLeases()"))
+    }
+
+    func testDemandBrokerStartsOnlyNewlyDemandedServices() async {
+        let broker = ServiceDemandBroker()
+
+        let first = await broker.acquire(
+            services: [.memory],
+            reason: .route("memory"),
+            consumer: "route.memory"
+        )
+        XCTAssertEqual(first.servicesToStart, [.memory])
+        XCTAssertEqual(first.activeServices, [.memory])
+
+        let second = await broker.acquire(
+            services: [.memory],
+            reason: .capability("memory refresh"),
+            consumer: "capability.memory.refresh"
+        )
+        XCTAssertEqual(second.servicesToStart, [])
+        XCTAssertEqual(second.activeServices, [.memory])
+        let memoryConsumers = await broker.consumers(for: .memory)
+        XCTAssertEqual(memoryConsumers, ["route.memory", "capability.memory.refresh"])
+
+        let firstRelease = await broker.release(first.lease)
+        XCTAssertEqual(firstRelease.servicesToStop, [])
+        XCTAssertEqual(firstRelease.activeServices, [.memory])
+
+        let secondRelease = await broker.release(second.lease)
+        XCTAssertEqual(secondRelease.servicesToStop, [.memory])
+        XCTAssertEqual(secondRelease.activeServices, [])
+    }
+
+    func testDemandBrokerTracksMultiServiceConsumers() async {
+        let broker = ServiceDemandBroker()
+
+        let route = await broker.acquire(
+            services: [.runtime, .sessions],
+            reason: .route("chat"),
+            consumer: "route.chat"
+        )
+        XCTAssertEqual(route.servicesToStart, [.runtime, .sessions])
+        let activeServices = await broker.activeServices()
+        XCTAssertEqual(activeServices, [.runtime, .sessions])
+
+        let runtimeOnly = await broker.acquire(
+            services: [.runtime],
+            reason: .capability("runtime jobs"),
+            consumer: "capability.runtime.jobs"
+        )
+        XCTAssertEqual(runtimeOnly.servicesToStart, [])
+
+        let routeRelease = await broker.release(route.lease)
+        XCTAssertEqual(routeRelease.servicesToStop, [.sessions])
+        XCTAssertEqual(routeRelease.activeServices, [.runtime])
+
+        let finalRelease = await broker.release(runtimeOnly.lease)
+        XCTAssertEqual(finalRelease.servicesToStop, [.runtime])
+        XCTAssertEqual(finalRelease.activeServices, [])
     }
 
     private func readSource(_ relativePath: String) throws -> String {

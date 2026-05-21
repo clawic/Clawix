@@ -15,6 +15,7 @@ final class ClawJSServiceManager: ObservableObject {
     private let statePublisher: ClawJSServiceStatePublisher
     private let processRegistry: ClawJSProcessRegistry
     private let supervisor: ClawJSServiceSupervisor
+    private let demandBroker: ServiceDemandBroker
     private let bridgeServiceOverride: BackgroundBridgeService?
 
     private var sessionAdminTokens: [ClawJSService: String] = [:]
@@ -35,11 +36,16 @@ final class ClawJSServiceManager: ObservableObject {
             publisher: publisher,
             processRegistry: registry
         )
+        self.demandBroker = ServiceDemandBroker()
         publisher.manager = self
     }
 
     func startStartupCore() async {
-        await start(ClawJSServiceDemandPolicy.startupCoreServices, reason: .startupCore)
+        _ = await acquire(
+            services: ClawJSServiceDemandPolicy.startupCoreServices,
+            reason: .startupCore,
+            consumer: "startup.core"
+        )
     }
 
     func start(_ services: Set<ClawJSService>, reason: ClawJSServiceStartReason) async {
@@ -49,6 +55,55 @@ final class ClawJSServiceManager: ObservableObject {
             daemonReachable: activeBridgeService.isDaemonReachable
         )
         await refreshFromSupervisor()
+    }
+
+    func acquire(
+        services: Set<ClawJSService>,
+        reason: ClawJSServiceStartReason,
+        consumer: String
+    ) async -> ServiceDemandLease {
+        let result = await demandBroker.acquire(
+            services: services,
+            reason: reason,
+            consumer: consumer
+        )
+        await supervisor.markServicesAvailableOnDemand(excluding: result.activeServices)
+        await supervisor.start(
+            result.servicesToStart,
+            reason: reason,
+            daemonReachable: activeBridgeService.isDaemonReachable
+        )
+        await refreshFromSupervisor()
+        return result.lease
+    }
+
+    func release(_ lease: ServiceDemandLease) async {
+        let result = await demandBroker.release(lease)
+        await supervisor.stop(result.servicesToStop)
+        await supervisor.markServicesAvailableOnDemand(excluding: result.activeServices)
+        await refreshFromSupervisor()
+    }
+
+    func activeServices() async -> Set<ClawJSService> {
+        await demandBroker.activeServices()
+    }
+
+    func consumers(for service: ClawJSService) async -> Set<String> {
+        await demandBroker.consumers(for: service)
+    }
+
+    func demandDebugSnapshot() async -> ServiceDemandDebugSnapshot {
+        await demandBroker.debugSnapshot()
+    }
+
+    static func holdDemandUntilCancelled() async {
+        while !Task.isCancelled {
+            do {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+            } catch {
+                break
+            }
+        }
     }
 
     func markServicesAvailableOnDemand(excluding activeServices: Set<ClawJSService>) {
@@ -77,8 +132,9 @@ final class ClawJSServiceManager: ObservableObject {
     }
 
     func applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot]) {
-        Task { [supervisor] in
-            await supervisor.applyDaemonServiceStatuses(services)
+        Task { [supervisor, demandBroker] in
+            let activeServices = await demandBroker.activeServices()
+            await supervisor.applyDaemonServiceStatuses(services, activeDemand: activeServices)
             await refreshFromSupervisor()
         }
     }

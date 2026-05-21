@@ -1,6 +1,6 @@
 import Foundation
 
-enum ClawJSServiceStartReason: Equatable {
+enum ClawJSServiceStartReason: Equatable, Hashable, Sendable {
     case startupCore
     case tool(String)
     case route(String)
@@ -171,8 +171,15 @@ enum ClawixStartupCore {
         case .tool(let tool):
             reason = .tool(tool.rawValue)
         }
-        ClawJSServiceManager.shared.markServicesAvailableOnDemand(excluding: services)
-        await ClawJSServiceManager.shared.start(services, reason: reason)
+        if services.isEmpty {
+            ClawJSServiceManager.shared.markServicesAvailableOnDemand(excluding: [])
+        } else {
+            _ = await ClawJSServiceManager.shared.acquire(
+                services: services,
+                reason: reason,
+                consumer: "startup.core"
+            )
+        }
         LaunchMilestones.mark(.coreReady)
     }
 }

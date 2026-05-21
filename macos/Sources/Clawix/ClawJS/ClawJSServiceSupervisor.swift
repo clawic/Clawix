@@ -100,10 +100,17 @@ actor ClawJSServiceSupervisor {
         )
     }
 
-    func applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot]) {
+    func applyDaemonServiceStatuses(
+        _ services: [WireClawJSServiceSnapshot],
+        activeDemand: Set<ClawJSService>
+    ) {
         for wire in services {
             guard let service = ClawJSService(rawValue: wire.id) else { continue }
-            applyDaemonServiceStatus(wire, to: service)
+            applyDaemonServiceStatus(
+                wire,
+                to: service,
+                hasActiveDemand: activeDemand.contains(service)
+            )
         }
     }
 
@@ -348,6 +355,24 @@ actor ClawJSServiceSupervisor {
                 $0.state = .starting
             }
             monitorDaemonOwnedService(service, readyTimeout: 6)
+        }
+    }
+
+    func stop(_ services: Set<ClawJSService>) async {
+        for service in orderedServices(from: services) {
+            restartTasks[service]?.cancel()
+            restartTasks[service] = nil
+            serviceMonitors[service] = nil
+
+            _ = await stopTrackedProcess(for: service)
+            update(service) {
+                $0.lastError = nil
+                $0.state = Self.availableOnDemandState(for: service)
+            }
+        }
+        if serviceMonitors.isEmpty {
+            monitorTask?.cancel()
+            monitorTask = nil
         }
     }
 
@@ -1169,7 +1194,8 @@ actor ClawJSServiceSupervisor {
 
     private func applyDaemonServiceStatus(
         _ wire: WireClawJSServiceSnapshot,
-        to service: ClawJSService
+        to service: ClawJSService,
+        hasActiveDemand: Bool
     ) {
         let transitionDate = Date(timeIntervalSince1970: TimeInterval(wire.updatedAtMs) / 1_000)
         let mappedState = state(fromDaemonStatus: wire, service: service)
@@ -1178,6 +1204,11 @@ actor ClawJSServiceSupervisor {
             snap.restartCount = wire.restartCount
             snap.lastError = wire.lastError
             snap.lastTransitionAt = transitionDate
+        }
+
+        guard hasActiveDemand else {
+            serviceMonitors[service] = nil
+            return
         }
 
         var monitor = serviceMonitors[service] ?? ServiceMonitor(
@@ -1202,7 +1233,7 @@ actor ClawJSServiceSupervisor {
         case "idle":
             return .idle
         case "availableOnDemand":
-            return .availableOnDemand(trigger: ClawJSServiceDemandPolicy.onDemandTrigger(for: service) ?? service.rawValue)
+            return Self.availableOnDemandState(for: service)
         case "starting":
             return .starting
         case "ready", "readyFromDaemon", "running", "healthy":
@@ -1216,6 +1247,10 @@ actor ClawJSServiceSupervisor {
         default:
             return .daemonUnavailable(reason: wire.lastError ?? "\(service.displayName) is unavailable from the daemon.")
         }
+    }
+
+    private static func availableOnDemandState(for service: ClawJSService) -> ClawJSServiceState {
+        .availableOnDemand(trigger: ClawJSServiceDemandPolicy.onDemandTrigger(for: service) ?? service.rawValue)
     }
 
     private func update(

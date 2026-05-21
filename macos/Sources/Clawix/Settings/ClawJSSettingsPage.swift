@@ -10,6 +10,7 @@ struct ClawJSSettingsPage: View {
     @State private var advancedExpanded = false
     @State private var databaseProbe: DatabaseProbeResult?
     @State private var databaseProbeInFlight = false
+    @State private var manualServiceLeases: [ClawJSService: ServiceDemandLease] = [:]
 
     private enum DatabaseProbeResult: Equatable {
         case success(service: String, host: String, port: Int)
@@ -31,6 +32,9 @@ struct ClawJSSettingsPage: View {
             advancedSection
                 .padding(.top, 22)
                 .padding(.bottom, 8)
+        }
+        .onDisappear {
+            Task { await releaseManualServiceLeases() }
         }
     }
 
@@ -235,18 +239,23 @@ struct ClawJSSettingsPage: View {
     }
 
     private func serviceActionButton(service: ClawJSService, state: ClawJSServiceState) -> some View {
-        Button(state.isReady ? "Restart" : "Start") {
+        Button(serviceActionTitle(service: service, state: state)) {
             Task {
-                if state.isReady {
-                    if ClawJSServiceDemandPolicy.isServiceVisible(service, isVisible: FeatureFlags.shared.isVisible) {
-                        await manager.restart(service)
-                    }
+                if let lease = manualServiceLeases[service] {
+                    await manager.release(lease)
+                    manualServiceLeases[service] = nil
+                } else if state.isReady {
+                    await manager.restart(service)
                 } else {
                     let services = ClawJSServiceDemandPolicy.visibleServices(
                         [service],
                         isVisible: FeatureFlags.shared.isVisible
                     )
-                    await manager.start(services, reason: .manual(service.displayName))
+                    manualServiceLeases[service] = await manager.acquire(
+                        services: services,
+                        reason: .manual(service.displayName),
+                        consumer: "settings.manual.\(service.rawValue)"
+                    )
                 }
             }
         }
@@ -254,6 +263,20 @@ struct ClawJSSettingsPage: View {
         .font(BodyFont.system(size: 11.5, wght: 500))
         .foregroundColor(Palette.textSecondary)
         .disabled(isServiceActionDisabled(service, state: state))
+    }
+
+    private func serviceActionTitle(service: ClawJSService, state: ClawJSServiceState) -> String {
+        if manualServiceLeases[service] != nil { return "Stop" }
+        return state.isReady ? "Restart" : "Start"
+    }
+
+    @MainActor
+    private func releaseManualServiceLeases() async {
+        let leases = manualServiceLeases
+        manualServiceLeases.removeAll()
+        for lease in leases.values {
+            await manager.release(lease)
+        }
     }
 
     private func isServiceActionDisabled(_ service: ClawJSService, state: ClawJSServiceState) -> Bool {

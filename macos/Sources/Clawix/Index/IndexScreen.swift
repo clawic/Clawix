@@ -55,10 +55,16 @@ struct IndexScreen: View {
                 for: .indexHome,
                 isVisible: FeatureFlags.shared.isVisible
             )
-            await ClawJSServiceManager.shared.start(services, reason: .route("index"))
+            let lease = await ClawJSServiceManager.shared.acquire(
+                services: services,
+                reason: .route("index"),
+                consumer: "route.index"
+            )
+            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             if store.state == .idle {
                 store.requestRefresh()
             }
+            await ClawJSServiceManager.holdDemandUntilCancelled()
         }
         .onDisappear {
             store.cancelSurfaceWork()

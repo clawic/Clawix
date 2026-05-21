@@ -44,10 +44,16 @@ struct IoTScreen: View {
                 for: .iotHome,
                 isVisible: FeatureFlags.shared.isVisible
             )
-            await ClawJSServiceManager.shared.start(services, reason: .route("iot"))
+            let lease = await ClawJSServiceManager.shared.acquire(
+                services: services,
+                reason: .route("iot"),
+                consumer: "route.iot"
+            )
+            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             if case .ready = manager.state {
                 try? await manager.refreshAll()
             }
+            await ClawJSServiceManager.holdDemandUntilCancelled()
         }
         .onDisappear {
             manager.cancelSurfaceWork()

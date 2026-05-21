@@ -3,7 +3,7 @@ import Foundation
 /// ClawJS services supervised in-process or discovered from the daemon.
 /// Each service is a long-lived HTTP server bound to loopback. Ports are
 /// stable across launches so UI and feature consumers can share endpoints.
-enum ClawJSService: String, CaseIterable, Identifiable {
+enum ClawJSService: String, CaseIterable, Identifiable, Sendable {
     case runtime
     case database
     case memory
@@ -64,7 +64,7 @@ enum ClawJSService: String, CaseIterable, Identifiable {
 
 /// Lifecycle state the settings UI binds to. Keep this enum small and the
 /// transitions obvious; the manager is the only writer.
-enum ClawJSServiceState: Equatable {
+enum ClawJSServiceState: Equatable, Sendable {
     /// Manager has not attempted to launch this service yet (e.g.
     /// pre-`start()` or after a clean tearDown).
     case idle
@@ -101,7 +101,7 @@ enum ClawJSServiceState: Equatable {
 
 /// Per-service snapshot the manager publishes. UI reads only; mutation
 /// happens through the manager's `update(_:_:)` helper.
-struct ClawJSServiceSnapshot: Equatable, Identifiable {
+struct ClawJSServiceSnapshot: Equatable, Identifiable, Sendable {
     let service: ClawJSService
     var state: ClawJSServiceState
     var lastTransitionAt: Date

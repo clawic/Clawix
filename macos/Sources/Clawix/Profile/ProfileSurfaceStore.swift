@@ -96,7 +96,12 @@ final class ProfileSurfaceStore: ObservableObject {
             [.index],
             isVisible: FeatureFlags.shared.isVisible
         )
-        await ClawJSServiceManager.shared.start(services, reason: .capability("Profile search"))
+        let lease = await ClawJSServiceManager.shared.acquire(
+            services: services,
+            reason: .capability("Profile search"),
+            consumer: "capability.profile.search"
+        )
+        defer { Task { await ClawJSServiceManager.shared.release(lease) } }
         ensureToken()
         loadState = .loading
         do {

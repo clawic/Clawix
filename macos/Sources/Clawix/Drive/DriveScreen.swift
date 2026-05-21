@@ -44,8 +44,14 @@ struct DriveScreen: View {
             presentPendingQuickUploadIfReady()
         }
         .task {
-            await ClawJSServiceManager.shared.start([.drive], reason: .route("drive"))
+            let lease = await ClawJSServiceManager.shared.acquire(
+                services: [.drive],
+                reason: .route("drive"),
+                consumer: "route.drive"
+            )
+            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             store.boot()
+            await ClawJSServiceManager.holdDemandUntilCancelled()
         }
         .onDisappear {
             store.cancelSurfaceWork()
