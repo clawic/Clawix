@@ -20,7 +20,7 @@ function isClawixAppRunning() {
 function start() {
   const binary = resolveMenubar();
   if (!fs.existsSync(binary)) {
-    // Menubar binary is optional: postinstall ships it but a user
+    // Menubar binary is optional: `clawix setup` ships it but a user
     // could have removed it manually. The CLI still works without it.
     return { skipped: true, reason: 'menubar binary not present' };
   }

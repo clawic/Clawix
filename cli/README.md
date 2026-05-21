@@ -8,9 +8,14 @@ Use the [Codex CLI](https://github.com/openai/codex) remotely from your phone vi
 
 ```bash
 npm install -g clawix
+clawix setup
 ```
 
-`postinstall` downloads a pre-signed, pre-notarized macOS binary tarball from the matching GitHub release, verifies its SHA-256 against the manifest committed to this package, and verifies every binary with `codesign --strict`. Nothing is built on your machine.
+The npm install is zero-network: it installs only the JavaScript CLI wrapper and does not download or unpack native helpers.
+
+`clawix setup` downloads a pre-signed, pre-notarized native helper archive from the matching GitHub release, verifies its SHA-256 against the manifest committed to this package, and verifies macOS binaries with `codesign --strict`. Nothing is built on your machine. For CI or other noninteractive shells, run `clawix setup --yes`.
+
+For local release smoke tests, set `CLAWIX_LOCAL_TARBALL=/path/to/clawix-cli-darwin-universal.tar.gz clawix setup` to install from a local archive instead of GitHub.
 
 Requirements: macOS 14 (Sonoma) or later, on Apple Silicon or Intel. Linux and Windows are planned.
 
@@ -57,12 +62,14 @@ watching… press Ctrl+C to stop watching (the bridge keeps running).
 | `clawix doctor` | Run a battery of health checks (codex, port, firewall, signature, plist, heartbeat…) and tell you what's wrong if anything. |
 | `clawix logs [-f]` | Tail bridge logs. `-f` to follow. |
 | `clawix install-app` | Download Clawix.app from the latest release and install it into `/Applications`. |
+| `clawix setup [--yes]` | Download, verify, and install signed native bridge helpers into `~/.clawix/bin`. |
 | `clawix uninstall` | Bootout the launchd agents and remove `~/.clawix/bin`. Add `--purge` to also wipe the pairing token. |
 
 Flags supported across commands where it makes sense:
 
 - `--json` — machine-readable output (`status`, `pair`, `doctor`).
 - `--no-color` — disable ANSI colors. Honoured automatically when stdout is not a TTY or `NO_COLOR=1` is set.
+- `--yes` — allow `clawix setup` to run from a noninteractive shell.
 - `--version`, `-v` — print version.
 - `--help`, `-h` — print help.
 
@@ -97,6 +104,10 @@ For automation, add `--json`.
 If you also install the macOS app (`clawix install-app`), both surfaces register the same launchd agent label (`clawix.bridge`) and share the same `UserDefaults` suite for the pairing token. Whoever holds the agent slot serves; the other defers. You can install one, both, or neither and switch back and forth without re-pairing your phone.
 
 The CLI does not require the GUI, and the GUI does not require the CLI.
+
+## First-use setup
+
+Commands that need the native daemon (`clawix up`, `clawix start`, and `clawix restart`) check for `clawix-bridge` before starting. If it is missing in an interactive terminal, the CLI asks whether to run `clawix setup`. In noninteractive shells it fails closed and prints the setup command; it never downloads native helpers implicitly.
 
 ## Files this package manages
 

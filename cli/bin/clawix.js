@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-const platform = require('../lib/platform');
+const readline = require('node:readline');
 const pkg = require('../package.json');
 
 const COMMANDS = [
     'up', 'start', 'stop', 'status', 'pair', 'unpair', 'logs', 'doctor',
-    'install-app', 'restart', 'uninstall',
+    'install-app', 'restart', 'setup', 'uninstall',
 ];
 
 // Honour --no-color BEFORE require()ing ui.js: ui.js samples
@@ -35,11 +35,13 @@ ${ui.bold('commands')}
   doctor           run health checks across the whole environment
   logs [-f]        tail bridge logs
   install-app      install /Applications/Clawix.app from the latest release
+  setup            install signed native bridge helpers into ~/.clawix/bin
   uninstall        remove ~/.clawix/bin and unregister launchd agents
 
 ${ui.bold('flags')}
   --json           machine-readable output (status, pair, doctor)
   --no-color       disable ANSI colors (also honoured: NO_COLOR=1)
+  --yes            allow noninteractive native setup
   --version, -v    print cli version
   --help, -h       this message
 
@@ -49,12 +51,68 @@ ${ui.bold('examples')}
   clawix logs -f                    debug a bridge that won't connect
 
 ${ui.bold('paths')}
-  ~/.clawix/bin/                              ${ui.dim('binaries fetched by postinstall')}
+  ~/.clawix/bin/                              ${ui.dim('binaries installed by clawix setup')}
   ~/.clawix/state/bridge-status.json          ${ui.dim('daemon heartbeat')}
   ~/Library/LaunchAgents/clawix.bridge.plist  ${ui.dim('launchd registration')}
   ~/Library/Preferences/clawix.bridge.plist   ${ui.dim('pairing token + short code')}
   /tmp/clawix-bridge.{out,err}               ${ui.dim('daemon logs')}
 `);
+}
+
+function askYesNo(question) {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        rl.question(question, (answer) => {
+            rl.close();
+            resolve(/^(y|yes)$/i.test(String(answer).trim()));
+        });
+    });
+}
+
+async function runExplicitSetup({ yes = false, stdoutIsTTY = process.stdout.isTTY, setupModule = null, exit = process.exit } = {}) {
+    if (!stdoutIsTTY && !yes) {
+        ui.fail(
+            'native setup needs explicit confirmation in noninteractive shells.',
+            null,
+            'run `clawix setup --yes` to download and install signed bridge helpers.'
+        );
+        exit(1);
+        return;
+    }
+    const setup = setupModule || require('../lib/setup');
+    await setup.runSetup();
+}
+
+async function ensureBridgeAvailable({
+    setupModule = null,
+    stdoutIsTTY = process.stdout.isTTY,
+    ask = askYesNo,
+    exit = process.exit
+} = {}) {
+    const setup = setupModule || require('../lib/setup');
+    if (setup.hasNativeBinaries()) return;
+    if (!stdoutIsTTY) {
+        ui.fail(
+            'clawix-bridge is not installed.',
+            'npm install no longer downloads native helpers.',
+            'run `clawix setup` first.'
+        );
+        exit(1);
+        return;
+    }
+    const ok = await ask(
+        'clawix-bridge is not installed. Download and install signed native helpers now? [y/N] '
+    );
+    if (!ok) {
+        ui.fail('native setup was cancelled.', null, 'run `clawix setup` when you are ready.');
+        exit(1);
+        return;
+    }
+    await setup.runSetup();
+    if (!setup.hasNativeBinaries()) {
+        ui.fail('clawix-bridge is still not installed.', null, 'run `clawix setup` and then `clawix doctor`.');
+        exit(1);
+    }
 }
 
 async function main(argv) {
@@ -68,8 +126,6 @@ async function main(argv) {
         return;
     }
 
-    platform.ensureSupported();
-
     const cmd = args[0];
     if (!COMMANDS.includes(cmd)) {
         ui.fail(
@@ -82,13 +138,23 @@ async function main(argv) {
     const rest = args.slice(1);
     const flag = (name) => rest.includes(name);
 
+    if (cmd === 'setup') {
+        await runExplicitSetup({ yes: flag('--yes') });
+        return;
+    }
+
+    const platform = require('../lib/platform');
+    platform.ensureSupported();
+
     switch (cmd) {
         case 'up': {
+            await ensureBridgeAvailable();
             const up = require('../lib/up');
             await up.run({ noWatch: flag('--no-watch') });
             return;
         }
         case 'start': {
+            await ensureBridgeAvailable();
             const daemon = require('../lib/daemon');
             const r = daemon.start();
             console.log(r.reused ? 'bridge: already running' : `bridge: started (${r.binary})`);
@@ -103,6 +169,7 @@ async function main(argv) {
             return;
         }
         case 'restart': {
+            await ensureBridgeAvailable();
             const daemon = require('../lib/daemon');
             daemon.restart();
             console.log('bridge: restarted');
@@ -183,11 +250,15 @@ async function main(argv) {
     }
 }
 
-main(process.argv).catch((err) => {
-    ui.fail(
-        (err && err.message) || String(err),
-        null,
-        'if this looks wrong, run `clawix doctor` to diagnose the environment.'
-    );
-    process.exit(1);
-});
+if (require.main === module) {
+    main(process.argv).catch((err) => {
+        ui.fail(
+            (err && err.message) || String(err),
+            null,
+            'if this looks wrong, run `clawix doctor` to diagnose the environment.'
+        );
+        process.exit(1);
+    });
+}
+
+module.exports = { askYesNo, ensureBridgeAvailable, main, runExplicitSetup };

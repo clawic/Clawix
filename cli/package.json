@@ -23,7 +23,6 @@
     "clawix": "bin/clawix.js"
   },
   "scripts": {
-    "postinstall": "node lib/postinstall.js",
     "test": "node --test"
   },
   "engines": {
