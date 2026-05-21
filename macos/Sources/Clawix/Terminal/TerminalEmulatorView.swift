@@ -17,11 +17,12 @@ struct TerminalEmulatorView: NSViewRepresentable {
         var shouldFocus = false
         private var isKeyboardResponder = false
         private var lastUsableBounds: CGRect = .zero
+        private var attachPending = false
+        private var readyPending = false
         private let scrollIndicator = TerminalScrollIndicator()
         var emulator: LocalProcessTerminalView? {
             didSet {
-                oldValue?.removeFromSuperview()
-                attachEmulatorIfNeeded()
+                attachEmulatorIfNeeded(allowStructuralChanges: window == nil)
             }
         }
 
@@ -43,7 +44,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
         override func layout() {
             super.layout()
-            attachEmulatorIfNeeded()
+            attachEmulatorIfNeeded(allowStructuralChanges: false)
             syncEmulatorFrameIfUsable()
             positionScrollIndicator()
             startIfReady()
@@ -62,11 +63,6 @@ struct TerminalEmulatorView: NSViewRepresentable {
                 width: width,
                 height: bounds.height
             )
-            if scrollIndicator.superview === self,
-               let above = subviews.last,
-               above !== scrollIndicator {
-                addSubview(scrollIndicator, positioned: .above, relativeTo: nil)
-            }
         }
 
         override func mouseDown(with event: NSEvent) {
@@ -86,7 +82,9 @@ struct TerminalEmulatorView: NSViewRepresentable {
             let ok = super.becomeFirstResponder()
             if ok {
                 isKeyboardResponder = true
-                TerminalSessionStore.shared.setKeyboardFocused(true)
+                DispatchQueue.main.async {
+                    TerminalSessionStore.shared.setKeyboardFocused(true)
+                }
             }
             return ok
         }
@@ -95,7 +93,9 @@ struct TerminalEmulatorView: NSViewRepresentable {
             let ok = super.resignFirstResponder()
             if ok {
                 isKeyboardResponder = false
-                TerminalSessionStore.shared.setKeyboardFocused(false)
+                DispatchQueue.main.async {
+                    TerminalSessionStore.shared.setKeyboardFocused(false)
+                }
             }
             return ok
         }
@@ -104,20 +104,43 @@ struct TerminalEmulatorView: NSViewRepresentable {
             super.viewDidMoveToWindow()
             if window == nil, isKeyboardResponder {
                 isKeyboardResponder = false
-                TerminalSessionStore.shared.setKeyboardFocused(false)
+                DispatchQueue.main.async {
+                    TerminalSessionStore.shared.setKeyboardFocused(false)
+                }
             }
         }
 
-        private func startIfReady() {
+        func startIfReady() {
             guard bounds.width > 20, bounds.height > 20 else { return }
-            onReady?()
+            guard !readyPending else { return }
+            readyPending = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.readyPending = false
+                guard self.bounds.width > 20, self.bounds.height > 20 else { return }
+                self.onReady?()
+            }
         }
 
-        func attachEmulatorIfNeeded() {
+        func attachEmulatorIfNeeded(allowStructuralChanges: Bool = true) {
+            guard !needsEmulatorSubviewChange || allowStructuralChanges else {
+                scheduleEmulatorAttachment()
+                return
+            }
+
+            attachPending = false
+            detachStaleEmulators()
+
             guard let emulator else { return }
             if emulator.superview !== self {
                 emulator.removeFromSuperview()
-                addSubview(emulator)
+                emulator.translatesAutoresizingMaskIntoConstraints = true
+                emulator.autoresizingMask = []
+                if scrollIndicator.superview === self {
+                    addSubview(emulator, positioned: .below, relativeTo: scrollIndicator)
+                } else {
+                    addSubview(emulator)
+                }
             }
             emulator.translatesAutoresizingMaskIntoConstraints = true
             emulator.autoresizingMask = []
@@ -125,6 +148,33 @@ struct TerminalEmulatorView: NSViewRepresentable {
             hideEmbeddedScroller()
             emulator.needsDisplay = true
             startIfReady()
+        }
+
+        private var needsEmulatorSubviewChange: Bool {
+            guard let emulator else {
+                return subviews.contains { $0 is LocalProcessTerminalView }
+            }
+            if emulator.superview !== self { return true }
+            return subviews.contains { subview in
+                guard let terminalView = subview as? LocalProcessTerminalView else { return false }
+                return terminalView !== emulator
+            }
+        }
+
+        private func detachStaleEmulators() {
+            for subview in subviews {
+                guard let terminalView = subview as? LocalProcessTerminalView else { continue }
+                if let emulator, terminalView === emulator { continue }
+                terminalView.removeFromSuperview()
+            }
+        }
+
+        private func scheduleEmulatorAttachment() {
+            guard !attachPending else { return }
+            attachPending = true
+            DispatchQueue.main.async { [weak self] in
+                self?.attachEmulatorIfNeeded()
+            }
         }
 
         private func hideEmbeddedScroller() {
@@ -183,10 +233,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
             nsView.sessionId = session.id
             nsView.emulator = session.terminalView
         }
-        nsView.attachEmulatorIfNeeded()
-        if nsView.bounds.width > 20, nsView.bounds.height > 20 {
-            session.startIfNeeded()
-        }
+        nsView.attachEmulatorIfNeeded(allowStructuralChanges: false)
+        nsView.startIfReady()
         if isFocused {
             DispatchQueue.main.async { nsView.focusIfNeeded() }
         }

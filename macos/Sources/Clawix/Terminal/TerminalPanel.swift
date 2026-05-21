@@ -20,12 +20,10 @@ struct TerminalPanel: View {
         }
         .background(Color.black)
         .onAppear {
-            store.ensureLoaded(chatId: chatId)
-            ensureAtLeastOneTab()
+            scheduleTerminalBootstrap(chatId: chatId)
         }
         .onChange(of: chatId) { _, newChatId in
-            store.ensureLoaded(chatId: newChatId)
-            ensureAtLeastOneTab(chatId: newChatId)
+            scheduleTerminalBootstrap(chatId: newChatId)
         }
         .onChange(of: store.tabsByChat[chatId]?.count ?? 0) { _, newCount in
             if newCount == 0 { onLastTabClosed() }
@@ -53,6 +51,13 @@ struct TerminalPanel: View {
         if store.tabs(for: target).isEmpty {
             let cwd = appState.chat(byId: target)?.cwd ?? NSHomeDirectory()
             store.createTab(chatId: target, cwd: cwd)
+        }
+    }
+
+    private func scheduleTerminalBootstrap(chatId: UUID) {
+        DispatchQueue.main.async {
+            store.ensureLoaded(chatId: chatId)
+            ensureAtLeastOneTab(chatId: chatId)
         }
     }
 }
