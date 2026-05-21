@@ -27,7 +27,11 @@ Make an ADR operational.
    `docs/adr-operational-coverage-exceptions.json`.
 7. Update affected docs, registries, manifests, CLI inspection/search output, and tests so agents can discover and enforce the decision.
 8. Refactor implementation only as far as needed to make the ADR true for the intended batch.
-9. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
+9. Apply the Problem-to-Guardrail loop for any defect found while drafting or
+   implementing: record the puntual problem, general class, existing rule, and
+   close with `guard/test añadido`, `ADR/regla añadida`, or
+   `deuda explícita con expiry`.
+10. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
 
 ## Constraints
 
@@ -35,4 +39,6 @@ Make an ADR operational.
 - Do not accept "doc only" for a decision that changes stable behavior.
 - Do not mark an ADR accepted while `scripts/adr-operational-coverage-check.mjs`
   fails.
+- Do not close a detected problem with only "fixed"; leave a guard/test,
+  ADR/rule, or expiring debt.
 - Do not preserve accidental pre-public legacy unless an ADR explicitly grants a bounded exception.

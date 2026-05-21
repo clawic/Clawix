@@ -12,6 +12,17 @@ Describe the decision pressure, existing behavior, and constraints.
 
 State the decision in implementation-neutral terms.
 
+## Threat Model Impact
+
+For durable decisions that touch security, agents, plugins, marketplace, Relay,
+mesh, storage, connector/API execution, native permissions, updates, packages,
+supply chain, external execution, prompts, tools, approvals, audit logs, or
+host/network trust boundaries, state the threat-model impact. Reference sibling
+ClawJS `docs/security-threat-model.md` and
+`docs/security-threat-model.coverage.json`, name affected assets, adversaries,
+trust boundaries, STRIDE-style threat categories, controls, validation evidence,
+and owner/steward. If the change is not security-sensitive, say why.
+
 ## Performance Impact
 
 For durable decisions that touch UI, daemon, bridge, storage, search, sync,
@@ -20,6 +31,12 @@ workers, or long-running agents, classify whole-computer resource impact:
 speed, CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals, idle
 behavior, and growth over time. State the boundedness rule and measurement
 evidence, or explain why performance impact is not material.
+
+If the decision adds or changes a host, UI, storage, stream, cache, bridge,
+daemon, worker, WebView, or long-running-agent surface, name the
+`resourceContract` coverage: startup, idle, memory, streaming, storage, hot
+path, scale, and validation. If the contract cannot be completed now, record
+explicit debt with steward, reason, expiry, and reentry condition.
 
 ## Decision Tensions
 
@@ -35,6 +52,13 @@ formal rubric entry.
   acceptable.
 - **Debt or pending evidence**: what remains partial, blocked,
   external-pending, or scheduled for later validation.
+
+## Adoption And Canonicity
+
+If this ADR promotes or claims `stable`, `canonical`, "any human", PMF, broad
+adoption, or standard canonicity, name the adoption/canonicity packet from
+`docs/governance/adoption-canonicity.manifest.json`. If it does not make a
+promotion claim, state that explicitly.
 
 ## Source Decision Audit
 
@@ -83,3 +107,6 @@ Every accepted ADR that adds or changes durable meta-code must answer:
 ## Consequences
 
 List the practical tradeoffs, migration impact, and follow-up enforcement.
+For every problem found while making or reviewing this decision, close the
+general class with one durable output: `guard/test añadido`,
+`ADR/regla añadida`, or `deuda explícita con expiry`.

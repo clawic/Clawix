@@ -19,7 +19,13 @@ domains are assistive only.
 - Performance governance: `docs/governance/performance-governance.md` and
   sibling ClawJS `docs/governance/performance-governance.md` for
   whole-computer resource impact across CPU, RAM, GPU/Neural Engine, disk,
-  network, battery, thermals, idle behavior, and growth.
+  network, battery, thermals, idle behavior, growth, resource contracts,
+  streaming/backpressure, launch/idle, high-churn UI boundaries, and P1
+  hot-path checks through `scripts/hot_path_guard.mjs`.
+- Problem-to-Guardrail loop: `docs/adr/0032-problem-to-guardrail-loop-mirror.md`
+  and sibling ClawJS ADR 0046 require detected problems to close as
+  `guard/test añadido`, `ADR/regla añadida`, or
+  `deuda explícita con expiry`.
 - Clawix/ClawJS mirror parity:
   `scripts/clawjs_mirror_contradiction_check.mjs` checks that Clawix mirrors
   still route constitution, ownership, storage, naming, route graph, official
@@ -32,6 +38,10 @@ domains are assistive only.
   `docs/discoverability.md`, and `docs/discoverability.registry.json`.
 - Visual canon: `STYLE.md` before user-facing UI, chrome, tokens, layout,
   icons, spacing, motion, or microcopy.
+- Accessibility governance: `docs/adr/0029-accessibility-governance.md` and
+  `docs/accessibility/README.md` before screen reader, keyboard navigation,
+  focus order, contrast, reduced motion, text scaling, timed interaction, or
+  generated-UI accessibility work.
 - Platform procedures: `playbooks/README.md` and relevant platform playbooks.
 
 ## Required Reading By Surface
@@ -56,6 +66,9 @@ domains are assistive only.
   `docs/regulated-domain-safety.md`, sibling ClawJS ADR 0026.
 - Human/programmatic parity: `docs/interface-matrix.md`,
   `docs/adr/0007-dual-human-programmatic-surfaces.md`.
+- Adoption/canonicity governance: `docs/governance/adoption-canonicity.md`,
+  `docs/adr/0026-adoption-and-canonicity-governance-mirror.md`, and sibling
+  ClawJS `docs/governance/adoption-canonicity.md`.
 - Surface routes: `docs/adr/0011-surface-route-graph.md`, sibling ClawJS
   `docs/adr/0012-surface-route-graph.md`.
 - Remote mesh/Gateway/Connector/Sync/Iroh/node trust: sibling ClawJS
@@ -87,7 +100,7 @@ Use relevant skills instead of pasting long procedures into context:
 
 - Architecture alignment: `constitution-drift-audit`,
   `architecture-drift-repair`, `adr-to-guardrail`,
-  `decision-map-maintenance`.
+  `decision-map-maintenance`, `adoption-canonicity-review`.
 - Stable surfaces: `naming-surface-audit`, `surface-registry-alignment`,
   `surface-route-work`, `compatibility-evolution-work`,
   `cli-agent-surface-work`, `source-file-boundary-refactor`.
@@ -100,7 +113,8 @@ Use relevant skills instead of pasting long procedures into context:
   `code-hygiene-audit`, `code-hygiene-cleanup`, `code-review-risk`,
   `commit-hygiene-public`.
 - Interface governance: `ui-canon-review`, `ui-implementation`,
-  `visual-regression`, `ui-performance-budget`.
+  `visual-regression`, `ui-performance-budget`, `accessibility-governance`,
+  `adoption-canonicity-review`.
 
 ## Invariants
 
@@ -108,6 +122,9 @@ Use relevant skills instead of pasting long procedures into context:
   resolution, domain APIs, SDK, and the public `claw` CLI.
 - Clawix owns native UI, visual state, host identity, review/approval surfaces,
   and host-specific operational state.
+- Stable/canonical/any-human/PMF promotion claims require an
+  adoption/canonicity packet; experiments and beta work remain allowed without
+  promotion language.
 - Framework global data belongs under `~/.claw`; workspace framework data
   belongs under `.claw/`; Clawix host-operational state belongs under
   `~/.clawix`; `.clawjs/` is retired.
@@ -135,6 +152,13 @@ Use relevant skills instead of pasting long procedures into context:
 - New API, UI, CLI, schema, storage key, route, permission, and feature flag
   surfaces are incomplete without `surfaceNarrative` tying them to concept,
   authorizing decision, completing surface, and non-inference boundary.
+- New host, UI, storage, stream, cache, bridge, daemon, worker, WebView, and
+  long-running-agent surfaces are incomplete without `resourceContract` for
+  startup, idle, memory, streaming, storage, hot-path, scale, and validation
+  behavior, unless they are pre-existing expiring baseline debt.
+- Every Clawix problem detected by an agent or review closes with one durable
+  output: `guard/test añadido`, `ADR/regla añadida`, or
+  `deuda explícita con expiry`.
 - Performance-sensitive work classifies whole-computer resource impact before
   durable acceptance: speed, CPU, RAM, GPU/Neural Engine, disk, network,
   battery, thermals, idle behavior, and growth.
