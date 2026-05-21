@@ -6,7 +6,8 @@ struct ChatTranscriptScrollerView: View {
     let appState: AppState
     let chatId: UUID
     let chat: Chat
-    let visibleMessages: [ChatMessage]
+    @ObservedObject var transcript: ChatTranscriptStore
+    let visibleMessageStores: [ChatMessageStore]
     let hiddenLocalMessageCount: Int
     @Binding var visibleMessageLimit: Int
     @Binding var lastLocalRevealAt: Date
@@ -40,15 +41,16 @@ struct ChatTranscriptScrollerView: View {
                         .frame(height: 28)
                         .transition(.opacity)
                     }
-                    let lastUserMessageId = lastUserMessageId(in: chat.messages)
-                    let lastAssistantMessageId = lastCompletedAssistantMessageId(in: chat.messages)
+                    let messages = transcript.messages
+                    let lastUserMessageId = lastUserMessageId(in: messages)
+                    let lastAssistantMessageId = lastCompletedAssistantMessageId(in: messages)
                     let responseStreaming = isResponseStreaming(chat)
                     let activeFindQuery = appState.isFindBarOpen ? appState.findQuery : ""
-                    ForEach(visibleMessages) { (msg: ChatMessage) in
+                    ForEach(visibleMessageStores) { messageStore in
                         ChatMessageEntryView(
                             appState: appState,
                             chat: chat,
-                            message: msg,
+                            messageStore: messageStore,
                             lastUserMessageId: lastUserMessageId,
                             lastAssistantMessageId: lastAssistantMessageId,
                             responseStreaming: responseStreaming,
@@ -97,7 +99,7 @@ struct ChatTranscriptScrollerView: View {
             }
             .task(id: prewarmKey) {
                 await ChatMarkdownPrewarmer.prewarm(
-                    messages: visibleMessages,
+                    messages: visibleMessageStores.map(\.message),
                     timelineEntryLimit: MessageRow.initialTimelineEntryLimit
                 )
             }
@@ -107,10 +109,10 @@ struct ChatTranscriptScrollerView: View {
     private var prewarmKey: ChatMarkdownPrewarmKey {
         ChatMarkdownPrewarmKey(
             chatId: chat.id,
-            visibleMessageCount: visibleMessages.count,
-            firstMessageId: visibleMessages.first?.id,
-            lastMessageId: visibleMessages.last?.id,
-            lastTimelineCount: visibleMessages.last?.timeline.count ?? 0
+            visibleMessageCount: visibleMessageStores.count,
+            firstMessageId: visibleMessageStores.first?.id,
+            lastMessageId: visibleMessageStores.last?.id,
+            lastTimelineCount: visibleMessageStores.last?.message.timeline.count ?? 0
         )
     }
 
@@ -130,10 +132,10 @@ struct ChatTranscriptScrollerView: View {
                 return
             }
             lastLocalRevealAt = now
-            let anchorId = visibleMessages.first?.id
+            let anchorId = visibleMessageStores.first?.id
             bottomId = nil
             visibleMessageLimit = min(
-                chat.messages.count,
+                transcript.messageIds.count,
                 visibleMessageLimit + ChatView.visibleMessagePageSize
             )
             if let anchorId {
@@ -161,7 +163,7 @@ struct ChatTranscriptScrollerView: View {
     }
 
     private func isResponseStreaming(_ chat: Chat) -> Bool {
-        if let lastAssistant = chat.messages.last(where: { $0.role == .assistant }) {
+        if let lastAssistant = transcript.messages.last(where: { $0.role == .assistant }) {
             return !lastAssistant.streamingFinished
         }
         return chat.hasActiveTurn

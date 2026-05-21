@@ -98,6 +98,7 @@ extension AppState {
     /// route, so any view that resolves the current chat must accept ids
     /// from either bucket.
     func chat(byId id: UUID) -> Chat? {
+        if let chat = chatStore.snapshot(id: id) { return chat }
         if let chat = chats.first(where: { $0.id == id }) { return chat }
         return archivedChats.first(where: { $0.id == id })
     }
@@ -469,20 +470,28 @@ extension AppState {
             hasMore: hasMore ?? false,
             loadingOlder: false
         )
-        guard let idx = chats.firstIndex(where: { $0.id == id }) else { return }
+        guard let transcript = chatStore.transcript(for: id),
+              chatStore.summary(id: id) != nil
+        else { return }
         // Wholesale rehydrate from the daemon: drop any buffered text
         // delta that would otherwise pile on top of the canonical body.
         dropPendingAssistantText(chatId: id)
         if messages.isEmpty,
-           chats[idx].forkedFromChatId != nil,
-           !chats[idx].messages.isEmpty {
-            chats[idx].historyHydrated = true
+           chatStore.summary(id: id)?.forkedFromChatId != nil,
+           !transcript.messages.isEmpty {
+            chatStore.updateSummary(id: id) { summary in
+                summary.historyHydrated = true
+            }
+            syncLegacyChatFromStore(chatId: id)
             return
         }
         if messages.isEmpty,
-           !chats[idx].messages.isEmpty,
-           (chats[idx].rolloutPath != nil || chats[idx].clawixThreadId != nil) {
-            chats[idx].historyHydrated = true
+           !transcript.messages.isEmpty,
+           (chatStore.summary(id: id)?.rolloutPath != nil || chatStore.summary(id: id)?.clawixThreadId != nil) {
+            chatStore.updateSummary(id: id) { summary in
+                summary.historyHydrated = true
+            }
+            syncLegacyChatFromStore(chatId: id)
             return
         }
         // The daemon's `RolloutHistory` reader is intentionally minimal
@@ -492,12 +501,15 @@ extension AppState {
         // earlier `RolloutReader` pass on this Mac). Carry them forward
         // by id so the chat row's "Worked for Xs" header doesn't flash
         // and disappear when the daemon snapshot lands.
-        let oldById = Dictionary(uniqueKeysWithValues: chats[idx].messages.map { ($0.id, $0) })
-        chats[idx].messages = messages.compactMap { wire in
+        let oldById = Dictionary(uniqueKeysWithValues: transcript.messages.map { ($0.id, $0) })
+        chatStore.replaceMessages(chatId: id, messages.compactMap { wire in
             chatMessage(from: wire, fallbackingTo: UUID(uuidString: wire.id).flatMap { oldById[$0] })
-        }
+        })
         optimisticUserMessageIdsByChat[id] = nil
-        chats[idx].historyHydrated = true
+        chatStore.updateSummary(id: id) { summary in
+            summary.historyHydrated = true
+        }
+        syncLegacyChatFromStore(chatId: id)
     }
 
     func trackOptimisticUserMessage(chatId: UUID, messageId: UUID) {
@@ -515,33 +527,35 @@ extension AppState {
             cachedWireMessagesByChat[chatId, default: []].append(message)
         }
         guard let id = UUID(uuidString: chatId),
-              let idx = chats.firstIndex(where: { $0.id == id })
+              let transcript = chatStore.transcript(for: id)
         else { return }
         // Same fallback as `applyDaemonMessages`: preserve any local
         // `workSummary` / `timeline` the daemon's wire form drops on the
         // floor, keyed by message id.
         let existing = UUID(uuidString: message.id).flatMap { mid in
-            chats[idx].messages.first(where: { $0.id == mid })
+            transcript.messages.first(where: { $0.id == mid })
         }
         guard let msg = chatMessage(from: message, fallbackingTo: existing) else { return }
         // The daemon's wire message is authoritative; any locally
         // buffered delta would double-append on top of it.
         dropPendingAssistantText(chatId: id)
         if msg.role == .user,
-           let replacementIdx = optimisticUserReplacementIndex(chatId: id, remote: msg, messages: chats[idx].messages) {
-            let localId = chats[idx].messages[replacementIdx].id
-            chats[idx].messages[replacementIdx] = msg
+           let replacementIdx = optimisticUserReplacementIndex(chatId: id, remote: msg, messages: transcript.messages) {
+            let localId = transcript.messages[replacementIdx].id
+            transcript.replace(id: localId, with: msg)
             optimisticUserMessageIdsByChat[id]?.remove(localId)
             if optimisticUserMessageIdsByChat[id]?.isEmpty == true {
                 optimisticUserMessageIdsByChat[id] = nil
             }
+            syncLegacyChatFromStore(chatId: id)
             return
         }
-        if let existingIdx = chats[idx].messages.firstIndex(where: { $0.id == msg.id }) {
-            chats[idx].messages[existingIdx] = msg
+        if transcript.messageStore(id: msg.id) != nil {
+            transcript.replace(id: msg.id, with: msg)
         } else {
-            chats[idx].messages.append(msg)
+            chatStore.appendMessage(chatId: id, msg)
         }
+        syncLegacyChatFromStore(chatId: id)
     }
 
     private func optimisticUserReplacementIndex(
@@ -609,18 +623,20 @@ extension AppState {
     ) {
         guard let id = UUID(uuidString: chatId),
               let msgId = UUID(uuidString: messageId),
-              let cIdx = chats.firstIndex(where: { $0.id == id })
+              let transcript = chatStore.transcript(for: id)
         else { return }
         // Same reasoning as `appendDaemonMessage`: the daemon-supplied
         // content replaces ours wholesale, so any pending tick of
         // local deltas would double up on top of the canonical body.
         dropPendingAssistantText(chatId: id)
-        if let mIdx = chats[cIdx].messages.firstIndex(where: { $0.id == msgId }) {
-            chats[cIdx].messages[mIdx].content = content
-            chats[cIdx].messages[mIdx].reasoningText = reasoningText
-            chats[cIdx].messages[mIdx].streamingFinished = finished
+        if transcript.messageStore(id: msgId) != nil {
+            transcript.mutateMessage(id: msgId) { message in
+                message.content = content
+                message.reasoningText = reasoningText
+                message.streamingFinished = finished
+            }
         } else {
-            chats[cIdx].messages.append(ChatMessage(
+            chatStore.appendMessage(chatId: id, ChatMessage(
                 id: msgId,
                 role: .assistant,
                 content: content,
@@ -628,7 +644,12 @@ extension AppState {
                 streamingFinished: finished
             ))
         }
-        chats[cIdx].hasActiveTurn = !finished
+        chatStore.updateSummary(id: id) { summary in
+            summary.hasActiveTurn = !finished
+        }
+        if finished {
+            syncLegacyChatFromStore(chatId: id)
+        }
     }
 
     /// Apply a server-delivered page of older messages. Prepended to
@@ -647,13 +668,13 @@ extension AppState {
         let prependWire = messages.filter { !existingWireIds.contains($0.id) }
         guard !prependWire.isEmpty else { return }
         cachedWireMessagesByChat[chatId] = prependWire + existing
-        mutateChat(id: id) { c in
-            let existingChatIds = Set(c.messages.map(\.id))
-            let toInsert = prependWire.compactMap { chatMessage(from: $0) }
-                .filter { !existingChatIds.contains($0.id) }
-            guard !toInsert.isEmpty else { return }
-            c.messages.insert(contentsOf: toInsert, at: 0)
-        }
+        let transcript = chatStore.transcript(forCreating: id)
+        let existingChatIds = Set(transcript.messages.map(\.id))
+        let toInsert = prependWire.compactMap { chatMessage(from: $0) }
+            .filter { !existingChatIds.contains($0.id) }
+        guard !toInsert.isEmpty else { return }
+        transcript.prepend(toInsert)
+        syncLegacyChatFromStore(chatId: id)
         messagesPaginationByChat[id]?.oldestKnownId = cachedWireMessagesByChat[chatId]?.first?.id
     }
 

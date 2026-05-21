@@ -49,6 +49,10 @@ struct ChatView: View {
         appState.chat(byId: chatId)
     }
 
+    private var transcript: ChatTranscriptStore? {
+        appState.chatStore.transcript(for: chatId)
+    }
+
     /// Stable id for the trailing sentinel inside the chat's LazyVStack.
     /// Per-chat so switching chats reanchors at the new tail instead of
     /// keeping the old chat's sentinel reference and animating between
@@ -67,16 +71,17 @@ struct ChatView: View {
     var body: some View {
         RenderProbe.tick("ChatView")
         return Group {
-            if let chat {
-                let visibleMessages: [ChatMessage] = Array(chat.messages.suffix(visibleMessageLimit))
-                let hiddenLocalMessageCount = max(0, chat.messages.count - visibleMessages.count)
-                let _ = PerfSignpost.uiChat.event("messages.visible", visibleMessages.count)
+            if let chat, let transcript {
+                let visibleMessageStores: [ChatMessageStore] = Array(transcript.messageStores.suffix(visibleMessageLimit))
+                let hiddenLocalMessageCount = max(0, transcript.messageIds.count - visibleMessageStores.count)
+                let _ = PerfSignpost.uiChat.event("messages.visible", visibleMessageStores.count)
                 VStack(spacing: 0) {
                     ChatTranscriptScrollerView(
                         appState: appState,
                         chatId: chatId,
                         chat: chat,
-                        visibleMessages: visibleMessages,
+                        transcript: transcript,
+                        visibleMessageStores: visibleMessageStores,
                         hiddenLocalMessageCount: hiddenLocalMessageCount,
                         visibleMessageLimit: $visibleMessageLimit,
                         lastLocalRevealAt: $lastLocalRevealAt,

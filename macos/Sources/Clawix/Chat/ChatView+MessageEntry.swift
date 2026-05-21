@@ -5,7 +5,7 @@ import ClawixCore
 struct ChatMessageEntryView: View {
     let appState: AppState
     let chat: Chat
-    let message: ChatMessage
+    @ObservedObject var messageStore: ChatMessageStore
     let lastUserMessageId: UUID?
     let lastAssistantMessageId: UUID?
     let responseStreaming: Bool
@@ -14,6 +14,7 @@ struct ChatMessageEntryView: View {
     let proxy: ScrollViewProxy
 
     var body: some View {
+        let message = messageStore.message
         MessageRow(
             chatId: chat.id,
             message: message,

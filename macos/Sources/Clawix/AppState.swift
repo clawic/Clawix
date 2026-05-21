@@ -98,7 +98,14 @@ final class AppState: ObservableObject {
     @Published var currentFindIndex: Int = 0
     @Published var findChatId: UUID? = nil
     var findDebounce: DispatchWorkItem?
-    @Published var chats: [Chat] = []
+    @Published var chats: [Chat] = [] {
+        didSet {
+            guard !syncingLegacyChatsFromStore else { return }
+            chatStore.replaceActive(with: chats)
+        }
+    }
+    let chatStore = ChatStore()
+    var syncingLegacyChatsFromStore = false
     /// Manual ordering for pinned chats. Persisted via metadata as the
     /// order of `pinnedThreadIds`. The sidebar sorts pinned rows by the
     /// index a chat appears at here; chats not in this array fall to the
@@ -109,7 +116,12 @@ final class AppState: ObservableObject {
     /// `isArchived`. Populated lazily the first time the sidebar's
     /// archived section is expanded, plus optimistically appended when
     /// the user archives a chat from inside the app.
-    @Published var archivedChats: [Chat] = []
+    @Published var archivedChats: [Chat] = [] {
+        didSet {
+            guard !syncingLegacyChatsFromStore else { return }
+            chatStore.replaceArchived(with: archivedChats)
+        }
+    }
     /// True while a `listThreads(archived: true)` request is in flight.
     /// The sidebar shows a spinner inside the section while this is set.
     @Published var archivedLoading: Bool = false
@@ -616,6 +628,7 @@ final class AppState: ObservableObject {
         loadHostFavicons()
         loadChatSidebars()
         applyLaunchRoute()
+        syncChatStoreFromLegacySnapshots()
         // FaviconCache hits disk; defer it past the first paint so the
         // synchronous init returns as fast as possible and SwiftUI can
         // render the sidebar from the snapshot.
@@ -2046,14 +2059,18 @@ final class AppState: ObservableObject {
     }
 
     func appendAssistantPlaceholder(chatId: UUID) -> UUID? {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return nil }
+        guard chatStore.summary(id: chatId) != nil else { return nil }
         let msg = ChatMessage(
             role: .assistant,
             content: "",
             reasoningText: "",
             streamingFinished: false
         )
-        chats[idx].messages.append(msg)
+        chatStore.appendMessage(chatId: chatId, msg)
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = true
+        }
+        syncLegacyChatFromStore(chatId: chatId)
         return msg.id
     }
 
@@ -2085,26 +2102,37 @@ final class AppState: ObservableObject {
     /// through the Codex turn-completion machinery.
     func markAssistantFinished(chatId: UUID, messageId: UUID) {
         flushPendingAssistantTextDeltas(chatId: chatId)
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }),
-              let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].id == messageId
+        guard let transcript = chatStore.transcript(for: chatId),
+              transcript.lastMessage?.id == messageId
         else { return }
-        chats[idx].messages[last].streamingFinished = true
+        transcript.mutateMessage(id: messageId) { message in
+            message.streamingFinished = true
+        }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = false
+        }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Replace the in-flight assistant placeholder with an error message.
     func markAssistantFailed(chatId: UUID, messageId: UUID, error: String) {
         dropPendingAssistantText(chatId: chatId)
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }),
-              let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].id == messageId
+        guard let transcript = chatStore.transcript(for: chatId),
+              let last = transcript.lastMessage,
+              last.id == messageId
         else { return }
-        let display = chats[idx].messages[last].content.isEmpty
+        let display = last.content.isEmpty
             ? error
-            : "\(chats[idx].messages[last].content)\n\n[error: \(error)]"
-        chats[idx].messages[last].content = display
-        chats[idx].messages[last].isError = true
-        chats[idx].messages[last].streamingFinished = true
+            : "\(last.content)\n\n[error: \(error)]"
+        transcript.mutateMessage(id: messageId) { message in
+            message.content = display
+            message.isError = true
+            message.streamingFinished = true
+        }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = false
+        }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     private func scheduleAssistantTextFlush() {
@@ -2150,50 +2178,58 @@ final class AppState: ObservableObject {
     }
 
     private func applyAssistantTextDelta(chatId: UUID, delta: String) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }),
-              let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].role == .assistant
+        guard let transcript = chatStore.transcript(for: chatId),
+              let lastMessage = transcript.lastMessage,
+              lastMessage.role == .assistant
         else { return }
         let t0 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
-        chats[idx].messages[last].content += delta
-        // Mirror into the chronological timeline so message text
-        // interleaves with reasoning and tool groups in arrival order
-        // instead of always rendering after them as a separate block.
-        let timeline = chats[idx].messages[last].timeline
-        if let lastEntry = timeline.last,
-           case .message(let existingId, let existing) = lastEntry {
-            chats[idx].messages[last].timeline[timeline.count - 1] =
-                .message(id: existingId, text: existing + delta)
-        } else {
-            chats[idx].messages[last].timeline.append(
-                .message(id: UUID(), text: delta)
+        var totalLen = 0
+        var totalCps = 0
+        var pendingTailCount = 0
+        var checkpointDeltaCount = 0
+        var queueDepth: Double = 0
+        transcript.mutateMessage(id: lastMessage.id) { message in
+            message.content += delta
+            // Mirror into the chronological timeline so message text
+            // interleaves with reasoning and tool groups in arrival order
+            // instead of always rendering after them as a separate block.
+            let timeline = message.timeline
+            if let lastEntry = timeline.last,
+               case .message(let existingId, let existing) = lastEntry {
+                message.timeline[timeline.count - 1] =
+                    .message(id: existingId, text: existing + delta)
+            } else {
+                message.timeline.append(
+                    .message(id: UUID(), text: delta)
+                )
+            }
+            let cps = message.streamCheckpoints
+            let lastAt = cps.last?.addedAt ?? .distantPast
+            let result = StreamingFade.ingest(
+                delta: delta,
+                pendingTail: message.streamPendingTail,
+                scheduledLength: cps.last?.prefixCount ?? 0,
+                lastFadeStart: lastAt
             )
+            if !result.newCheckpoints.isEmpty {
+                message.streamCheckpoints.append(contentsOf: result.newCheckpoints)
+            }
+            message.streamPendingTail = result.pendingTail
+            totalLen = message.content.count
+            totalCps = message.streamCheckpoints.count
+            pendingTailCount = result.pendingTail.count
+            checkpointDeltaCount = result.newCheckpoints.count
+            queueDepth = max(0, lastAt.timeIntervalSinceNow * 1000)
         }
-        let cps = chats[idx].messages[last].streamCheckpoints
-        let lastAt = cps.last?.addedAt ?? .distantPast
-        let result = StreamingFade.ingest(
-            delta: delta,
-            pendingTail: chats[idx].messages[last].streamPendingTail,
-            scheduledLength: cps.last?.prefixCount ?? 0,
-            lastFadeStart: lastAt
-        )
-        if !result.newCheckpoints.isEmpty {
-            chats[idx].messages[last].streamCheckpoints
-                .append(contentsOf: result.newCheckpoints)
-        }
-        chats[idx].messages[last].streamPendingTail = result.pendingTail
         if streamingPerfLogEnabled {
             let t1 = CFAbsoluteTimeGetCurrent()
             let dt = lastDeltaArrivalTime > 0 ? (t0 - lastDeltaArrivalTime) * 1000 : 0
             lastDeltaArrivalTime = t0
-            let queueDepth = max(0, lastAt.timeIntervalSinceNow * 1000)
-            let totalLen = chats[idx].messages[last].content.count
-            let totalCps = chats[idx].messages[last].streamCheckpoints.count
             let line = String(
                 format: "delta dt=%.1fms size=%d totalLen=%d ingest=%.2fms +cps=%d totalCps=%d pendTail=%d queueAheadMs=%.1f",
                 dt, delta.count, totalLen, (t1 - t0) * 1000,
-                result.newCheckpoints.count, totalCps,
-                result.pendingTail.count, queueDepth
+                checkpointDeltaCount, totalCps,
+                pendingTailCount, queueDepth
             )
             streamingPerfLog.log("\(line, privacy: .public)")
         }
@@ -2209,115 +2245,123 @@ final class AppState: ObservableObject {
         // applied a runloop tick later would appear after reasoning that
         // arrived later in the stream.
         flushPendingAssistantTextDeltas(chatId: chatId)
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }),
-              let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].role == .assistant
+        guard let transcript = chatStore.transcript(for: chatId),
+              let lastMessage = transcript.lastMessage,
+              lastMessage.role == .assistant
         else { return }
-        chats[idx].messages[last].reasoningText += delta
-        // Extend the trailing reasoning chunk in the timeline, or open a
-        // new one if the last entry is a tools group (so the row order
-        // becomes text → tools → text → tools → …).
-        let timeline = chats[idx].messages[last].timeline
-        let entryId: UUID
-        let newText: String
-        if let lastEntry = timeline.last,
-           case .reasoning(let existingId, let existing) = lastEntry {
-            entryId = existingId
-            newText = existing + delta
-            chats[idx].messages[last].timeline[timeline.count - 1] =
-                .reasoning(id: entryId, text: newText)
-        } else {
-            entryId = UUID()
-            newText = delta
-            chats[idx].messages[last].timeline.append(
-                .reasoning(id: entryId, text: newText)
+        transcript.mutateMessage(id: lastMessage.id) { message in
+            message.reasoningText += delta
+            // Extend the trailing reasoning chunk in the timeline, or open a
+            // new one if the last entry is a tools group (so the row order
+            // becomes text → tools → text → tools → …).
+            let timeline = message.timeline
+            let entryId: UUID
+            let newText: String
+            if let lastEntry = timeline.last,
+               case .reasoning(let existingId, let existing) = lastEntry {
+                entryId = existingId
+                newText = existing + delta
+                message.timeline[timeline.count - 1] =
+                    .reasoning(id: entryId, text: newText)
+            } else {
+                entryId = UUID()
+                newText = delta
+                message.timeline.append(
+                    .reasoning(id: entryId, text: newText)
+                )
+            }
+            let bucket = message.reasoningCheckpoints[entryId, default: []]
+            let pending = message.reasoningPendingTails[entryId, default: ""]
+            let result = StreamingFade.ingest(
+                delta: delta,
+                pendingTail: pending,
+                scheduledLength: bucket.last?.prefixCount ?? 0,
+                lastFadeStart: bucket.last?.addedAt ?? .distantPast
             )
+            if !result.newCheckpoints.isEmpty {
+                message.reasoningCheckpoints[entryId, default: []]
+                    .append(contentsOf: result.newCheckpoints)
+            }
+            message.reasoningPendingTails[entryId] = result.pendingTail
         }
-        let bucket = chats[idx].messages[last].reasoningCheckpoints[entryId, default: []]
-        let pending = chats[idx].messages[last].reasoningPendingTails[entryId, default: ""]
-        let result = StreamingFade.ingest(
-            delta: delta,
-            pendingTail: pending,
-            scheduledLength: bucket.last?.prefixCount ?? 0,
-            lastFadeStart: bucket.last?.addedAt ?? .distantPast
-        )
-        if !result.newCheckpoints.isEmpty {
-            chats[idx].messages[last].reasoningCheckpoints[entryId, default: []]
-                .append(contentsOf: result.newCheckpoints)
-        }
-        chats[idx].messages[last].reasoningPendingTails[entryId] = result.pendingTail
     }
 
     func markAssistantCompleted(chatId: UUID, finalText: String?) {
         // Drain any text deltas still buffered for this chat before we
         // fold in the canonical body / mark the turn finished.
         flushPendingAssistantTextDeltas(chatId: chatId)
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }),
-              let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].role == .assistant
+        guard let transcript = chatStore.transcript(for: chatId),
+              let lastMessage = transcript.lastMessage,
+              lastMessage.role == .assistant
         else { return }
         // Fresh turn closed cleanly. Drop any "Interrupted" pill that
         // a previous hydration may have raised.
-        chats[idx].lastTurnInterrupted = false
-        if let text = finalText, !text.isEmpty {
-            // If the canonical final body differs from what we accumulated
-            // from deltas, the existing per-word checkpoints don't line up
-            // with the new characters. Replaying every word as a fresh
-            // fade-in would look like the answer animates twice. Instead,
-            // mark the entire replacement as already settled so the user
-            // sees the final body at full opacity without another ramp.
-            if text != chats[idx].messages[last].content {
-                chats[idx].messages[last].streamCheckpoints = [
-                    StreamCheckpoint(prefixCount: text.count, addedAt: .distantPast)
-                ]
-                chats[idx].messages[last].streamPendingTail = ""
+        transcript.mutateMessage(id: lastMessage.id) { message in
+            if let text = finalText, !text.isEmpty {
+                // If the canonical final body differs from what we accumulated
+                // from deltas, the existing per-word checkpoints don't line up
+                // with the new characters. Replaying every word as a fresh
+                // fade-in would look like the answer animates twice. Instead,
+                // mark the entire replacement as already settled so the user
+                // sees the final body at full opacity without another ramp.
+                if text != message.content {
+                    message.streamCheckpoints = [
+                        StreamCheckpoint(prefixCount: text.count, addedAt: .distantPast)
+                    ]
+                    message.streamPendingTail = ""
+                }
+                message.content = text
             }
-            chats[idx].messages[last].content = text
+            message.streamingFinished = true
+            // Flush any trailing partial word so its characters get a fade
+            // schedule and don't sit at opacity 0 forever.
+            let cps = message.streamCheckpoints
+            let pending = message.streamPendingTail
+            if !pending.isEmpty {
+                let flushed = StreamingFade.ingest(
+                    delta: "",
+                    pendingTail: pending,
+                    scheduledLength: cps.last?.prefixCount ?? 0,
+                    lastFadeStart: cps.last?.addedAt ?? .distantPast,
+                    flush: true
+                )
+                if !flushed.newCheckpoints.isEmpty {
+                    message.streamCheckpoints
+                        .append(contentsOf: flushed.newCheckpoints)
+                }
+                message.streamPendingTail = flushed.pendingTail
+            }
+            // Same for every reasoning chunk in the timeline.
+            for entry in message.timeline {
+                guard case .reasoning(let entryId, _) = entry else { continue }
+                let rcps = message.reasoningCheckpoints[entryId] ?? []
+                let rpending = message.reasoningPendingTails[entryId] ?? ""
+                guard !rpending.isEmpty else { continue }
+                let flushed = StreamingFade.ingest(
+                    delta: "",
+                    pendingTail: rpending,
+                    scheduledLength: rcps.last?.prefixCount ?? 0,
+                    lastFadeStart: rcps.last?.addedAt ?? .distantPast,
+                    flush: true
+                )
+                if !flushed.newCheckpoints.isEmpty {
+                    message.reasoningCheckpoints[entryId, default: []]
+                        .append(contentsOf: flushed.newCheckpoints)
+                }
+                message.reasoningPendingTails[entryId] = flushed.pendingTail
+            }
         }
-        chats[idx].messages[last].streamingFinished = true
-        // Flush any trailing partial word so its characters get a fade
-        // schedule and don't sit at opacity 0 forever.
-        let cps = chats[idx].messages[last].streamCheckpoints
-        let pending = chats[idx].messages[last].streamPendingTail
-        if !pending.isEmpty {
-            let flushed = StreamingFade.ingest(
-                delta: "",
-                pendingTail: pending,
-                scheduledLength: cps.last?.prefixCount ?? 0,
-                lastFadeStart: cps.last?.addedAt ?? .distantPast,
-                flush: true
-            )
-            if !flushed.newCheckpoints.isEmpty {
-                chats[idx].messages[last].streamCheckpoints
-                    .append(contentsOf: flushed.newCheckpoints)
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.lastTurnInterrupted = false
+            summary.hasActiveTurn = false
+            if !isCurrentRoute(chatId: chatId) {
+                summary.hasUnreadCompletion = true
             }
-            chats[idx].messages[last].streamPendingTail = flushed.pendingTail
-        }
-        // Same for every reasoning chunk in the timeline.
-        for entry in chats[idx].messages[last].timeline {
-            guard case .reasoning(let entryId, _) = entry else { continue }
-            let rcps = chats[idx].messages[last].reasoningCheckpoints[entryId] ?? []
-            let rpending = chats[idx].messages[last].reasoningPendingTails[entryId] ?? ""
-            guard !rpending.isEmpty else { continue }
-            let flushed = StreamingFade.ingest(
-                delta: "",
-                pendingTail: rpending,
-                scheduledLength: rcps.last?.prefixCount ?? 0,
-                lastFadeStart: rcps.last?.addedAt ?? .distantPast,
-                flush: true
-            )
-            if !flushed.newCheckpoints.isEmpty {
-                chats[idx].messages[last].reasoningCheckpoints[entryId, default: []]
-                    .append(contentsOf: flushed.newCheckpoints)
-            }
-            chats[idx].messages[last].reasoningPendingTails[entryId] = flushed.pendingTail
         }
         // If the user wasn't looking at this chat when the turn finished,
         // surface the soft-blue unread dot in the sidebar so they can spot
         // the freshly-arrived reply at a glance.
-        if !isCurrentRoute(chatId: chatId) {
-            chats[idx].hasUnreadCompletion = true
-        }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     private func isCurrentRoute(chatId: UUID) -> Bool {
@@ -2327,26 +2371,31 @@ final class AppState: ObservableObject {
 
     private func clearUnreadIfChatRoute() {
         guard case let .chat(id) = currentRoute,
-              let idx = chats.firstIndex(where: { $0.id == id }),
-              chats[idx].hasUnreadCompletion
+              chatStore.summary(id: id)?.hasUnreadCompletion == true
         else { return }
-        chats[idx].hasUnreadCompletion = false
+        chatStore.updateSummary(id: id) { summary in
+            summary.hasUnreadCompletion = false
+        }
+        syncLegacyChatFromStore(chatId: id)
     }
 
     func markChat(chatId: UUID, hasActiveTurn: Bool) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].hasActiveTurn = hasActiveTurn
+        guard chatStore.summary(id: chatId) != nil else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = hasActiveTurn
+        }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Flip the sidebar's blue "unread" dot on the row, regardless of
     /// whether the user is currently looking at the chat. Used by the
     /// row's right-click "Mark as unread" / "Mark as read" actions.
     func toggleChatUnread(chatId: UUID) {
-        if let idx = chats.firstIndex(where: { $0.id == chatId }) {
-            chats[idx].hasUnreadCompletion.toggle()
-        } else if let idx = archivedChats.firstIndex(where: { $0.id == chatId }) {
-            archivedChats[idx].hasUnreadCompletion.toggle()
+        guard chatStore.summary(id: chatId) != nil else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasUnreadCompletion.toggle()
         }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
 }

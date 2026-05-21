@@ -32,20 +32,24 @@ extension AppState {
     }
 
     func updateTokenUsage(chatId: UUID, usage: ThreadTokenUsage) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].contextUsage = ContextUsage(
+        guard chatStore.summary(id: chatId) != nil else { return }
+        let contextUsage = ContextUsage(
             usedTokens: usage.last.totalTokens,
             contextWindow: usage.modelContextWindow
         )
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.contextUsage = contextUsage
+        }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Context usage for whichever chat the user is currently looking at.
     /// nil when not in a chat route or before the first token-usage event.
     var currentContextUsage: ContextUsage? {
         guard case let .chat(id) = currentRoute,
-              let chat = chats.first(where: { $0.id == id })
+              let summary = chatStore.summary(id: id)
         else { return nil }
-        return chat.contextUsage
+        return summary.contextUsage
     }
 
     // MARK: - Work summary updates (per assistant message)
@@ -123,10 +127,7 @@ extension AppState {
     }
 
     private func mutateMessage(chatId: UUID, messageId: UUID, _ body: (inout ChatMessage) -> Void) {
-        guard let cIdx = chats.firstIndex(where: { $0.id == chatId }),
-              let mIdx = chats[cIdx].messages.firstIndex(where: { $0.id == messageId })
-        else { return }
-        body(&chats[cIdx].messages[mIdx])
+        chatStore.mutateMessage(chatId: chatId, messageId: messageId, body)
     }
 
     /// Edit a previous user message and restart the conversation from
@@ -137,15 +138,16 @@ extension AppState {
     func editUserMessage(chatId: UUID, messageId: UUID, newContent: String) {
         let trimmed = newContent.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard let cIdx = chats.firstIndex(where: { $0.id == chatId }),
-              let mIdx = chats[cIdx].messages.firstIndex(where: { $0.id == messageId }),
-              chats[cIdx].messages[mIdx].role == .user
+        guard let transcript = chatStore.transcript(for: chatId),
+              let mIdx = transcript.firstIndex(where: { $0.id == messageId }),
+              transcript.messages[mIdx].role == .user
         else { return }
 
         // A "turn" starts on each user message and runs until the next
         // user message. Number of turns to drop on the backend equals
         // the count of user messages from this index to the end.
-        let tail = chats[cIdx].messages[mIdx...]
+        let allMessages = transcript.messages
+        let tail = allMessages[mIdx...]
         let numTurns = tail.reduce(into: 0) { acc, msg in
             if msg.role == .user { acc += 1 }
         }
@@ -155,9 +157,10 @@ extension AppState {
         // deltas still buffered for this chat belong to the assistant
         // turn we're about to drop, so discard them.
         dropPendingAssistantText(chatId: chatId)
-        chats[cIdx].messages.removeSubrange(mIdx...)
+        transcript.removeAll(from: mIdx)
         let edited = ChatMessage(role: .user, content: trimmed, timestamp: Date())
-        chats[cIdx].messages.append(edited)
+        chatStore.appendMessage(chatId: chatId, edited)
+        syncLegacyChatFromStore(chatId: chatId)
 
         if let clawix {
             Task { @MainActor in

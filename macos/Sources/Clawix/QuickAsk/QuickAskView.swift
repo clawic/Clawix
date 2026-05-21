@@ -60,7 +60,12 @@ struct QuickAskView: View {
     /// `ChatMessage.content` mutates.
     private var currentChat: Chat? {
         guard let id = controller.activeChatId else { return nil }
-        return appState.chats.first(where: { $0.id == id })
+        return appState.chatStore.snapshot(id: id)
+    }
+
+    private var currentTranscript: ChatTranscriptStore? {
+        guard let id = controller.activeChatId else { return nil }
+        return appState.chatStore.transcript(for: id)
     }
 
     private var visibleSize: NSSize {
@@ -470,11 +475,14 @@ struct QuickAskView: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 14) {
-                    if let chat = currentChat {
-                        ForEach(chat.messages) { message in
-                            QuickAskMessageBubble(message: message, appState: appState)
-                                .id(message.id)
-                        }
+                    if let transcript = currentTranscript {
+                        QuickAskConversationMessages(
+                            transcript: transcript,
+                            appState: appState,
+                            onRequestScroll: {
+                                scrollToBottom(proxy: proxy)
+                            }
+                        )
                     }
                     // Anchor at the very bottom so we can always scroll
                     // past the trailing message's intrinsic height when
@@ -502,12 +510,6 @@ struct QuickAskView: View {
             // content fits because `drawKnob()` short-circuits at
             // `knobProportion >= 0.999`.
             .thinScrollers(style: .clawixAlwaysVisible)
-            .onChange(of: currentChat?.messages.last?.id) { _ in
-                scrollToBottom(proxy: proxy)
-            }
-            .onChange(of: currentChat?.messages.last?.content) { _ in
-                scrollToBottom(proxy: proxy)
-            }
             .onAppear { scrollToBottom(proxy: proxy, animated: false) }
             .onReceive(NotificationCenter.default.publisher(for: QuickAskController.didShowNotification)) { _ in
                 scrollToBottom(proxy: proxy, animated: false)
@@ -538,6 +540,39 @@ struct QuickAskView: View {
             }
         } else {
             proxy.scrollTo(QuickAskScrollAnchor.bottom, anchor: .bottom)
+        }
+    }
+
+    private struct QuickAskConversationMessages: View {
+        @ObservedObject var transcript: ChatTranscriptStore
+        let appState: AppState
+        let onRequestScroll: () -> Void
+
+        var body: some View {
+            ForEach(transcript.messageStores) { messageStore in
+                QuickAskObservedMessageBubble(
+                    messageStore: messageStore,
+                    appState: appState,
+                    onRequestScroll: onRequestScroll
+                )
+            }
+            .onChange(of: transcript.messageIds.last) { _ in
+                onRequestScroll()
+            }
+        }
+    }
+
+    private struct QuickAskObservedMessageBubble: View {
+        @ObservedObject var messageStore: ChatMessageStore
+        let appState: AppState
+        let onRequestScroll: () -> Void
+
+        var body: some View {
+            QuickAskMessageBubble(message: messageStore.message, appState: appState)
+                .id(messageStore.id)
+                .onChange(of: messageStore.message.content) { _ in
+                    onRequestScroll()
+                }
         }
     }
 
