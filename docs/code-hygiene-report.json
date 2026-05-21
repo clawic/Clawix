@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "program": "code-hygiene",
-  "generatedAt": "2026-05-19",
+  "generatedAt": "2026-05-21",
   "status": "active",
   "blockingFindings": 0,
   "reportOnlyFindings": 6,
   "baselinedFindings": 3,
   "lastAuditSummary": {
-    "scannedFiles": 2133,
+    "scannedFiles": 2247,
     "todoFindings": 0,
     "duplicateAssetGroups": 6,
     "duplicateAssetFiles": 12,
