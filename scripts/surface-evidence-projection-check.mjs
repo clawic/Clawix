@@ -121,12 +121,12 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
 
   for (const node of nodes) {
     if (!node.id) failures.push("manifest node is missing id");
-    if (!node.owner) failures.push(`${node.id || "<unknown node>"} is missing owner`);
+    if (!node.surfaceSteward) failures.push(`${node.id || "<unknown node>"} is missing surfaceSteward`);
     if (!node.kind) failures.push(`${node.id || "<unknown node>"} is missing kind`);
   }
 
   for (const edge of edges) {
-    for (const field of ["id", "fromId", "toId", "type", "owner", "contractId", "transport", "validation"]) {
+    for (const field of ["id", "fromId", "toId", "type", "surfaceSteward", "contractId", "transport", "validation"]) {
       if (!edge[field]) failures.push(`${edge.id || "<unknown edge>"} is missing ${field}`);
     }
     checkNodeRef(edge.fromId, `${edge.id} fromId`, nodeIds, externalNodeRefs, failures);
@@ -135,7 +135,7 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
   }
 
   for (const route of routes) {
-    for (const field of ["id", "fromId", "toId", "owner", "transport", "validation", "summary"]) {
+    for (const field of ["id", "fromId", "toId", "surfaceSteward", "transport", "validation", "summary"]) {
       if (!route[field]) failures.push(`${route.id || "<unknown route>"} is missing ${field}`);
     }
     checkNodeRef(route.fromId, `${route.id} fromId`, nodeIds, externalNodeRefs, failures);
@@ -148,7 +148,7 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
       if (!existingPath(evidencePath)) failures.push(`${route.id} evidence path does not exist: ${evidencePath}`);
     }
     for (const step of route.steps ?? []) {
-      for (const field of ["edgeId", "fromId", "toId", "edgeType", "contractId", "owner", "transport", "validation"]) {
+      for (const field of ["edgeId", "fromId", "toId", "edgeType", "contractId", "surfaceSteward", "transport", "validation"]) {
         if (!step[field]) failures.push(`${route.id} step is missing ${field}`);
       }
       if (step.edgeId && !edgeIds.has(step.edgeId)) failures.push(`${route.id} step edgeId ${step.edgeId} is not a registered edge`);
@@ -191,9 +191,9 @@ function runSelfTest() {
   };
   const manifest = {
     nodes: [
-      { id: "clawix.ui.chat", owner: "clawix", kind: "ui" },
-      { id: "clawix.bridge.local", owner: "clawix", kind: "bridge" },
-      { id: "clawix.protocol.bridge.v1", owner: "clawix", kind: "protocol" },
+      { id: "clawix.ui.chat", surfaceSteward: "clawix", kind: "ui" },
+      { id: "clawix.bridge.local", surfaceSteward: "clawix", kind: "bridge" },
+      { id: "clawix.protocol.bridge.v1", surfaceSteward: "clawix", kind: "protocol" },
     ],
     edges: [
       {
@@ -201,7 +201,7 @@ function runSelfTest() {
         fromId: "clawix.ui.chat",
         toId: "clawix.bridge.local",
         type: "consumes",
-        owner: "clawix",
+        surfaceSteward: "clawix",
         contractId: "clawix.protocol.bridge.v1",
         transport: "local",
         validation: "fixture",
@@ -212,7 +212,7 @@ function runSelfTest() {
         id: "route.one",
         fromId: "clawix.ui.chat",
         toId: "clawix.bridge.local",
-        owner: "clawix",
+        surfaceSteward: "clawix",
         transport: "local",
         validation: "fixture",
         summary: "test",
@@ -226,7 +226,7 @@ function runSelfTest() {
             toId: "clawix.bridge.local",
             edgeType: "consumes",
             contractId: "clawix.protocol.bridge.v1",
-            owner: "clawix",
+            surfaceSteward: "clawix",
             transport: "local",
             validation: "fixture",
           },
@@ -260,7 +260,7 @@ function runSelfTest() {
     throw new Error("negative fixture did not catch missing route edge reference");
   }
   const sourceDrift = checkManifest(
-    { ...manifest, nodes: [...manifest.nodes, { id: "clawix.new.node", owner: "clawix", kind: "preferenceKey" }] },
+    { ...manifest, nodes: [...manifest.nodes, { id: "clawix.new.node", surfaceSteward: "clawix", kind: "preferenceKey" }] },
     baseline,
   );
   if (!sourceDrift.some((failure) => failure.includes("added missing-source nodes: clawix.new.node"))) {

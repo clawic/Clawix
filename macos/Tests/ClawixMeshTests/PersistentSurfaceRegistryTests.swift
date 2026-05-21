@@ -30,13 +30,13 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.mac.microphone" && $0.value == "mac.permission.microphone" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.apple.cameraUsage" && $0.value == "NSCameraUsageDescription" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.android.camera" && $0.value == "android.permission.CAMERA" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.apps" && $0.owner == "claw" && $0.path == "~/.claw/apps" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.resources" && $0.owner == "claw" && $0.path == "~/.claw/resources" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.resources.state" && $0.owner == "claw" && $0.path == "~/.claw/resources/resources.json" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.design" && $0.owner == "claw" && $0.path == "~/.claw/design" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.audio" && $0.owner == "claw" && $0.path == "~/.claw/audio" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.snippets" && $0.owner == "claw" && $0.path == "~/.claw/core.sqlite#snippets" })
-        XCTAssertTrue(nodes.contains { $0.id == "claw.framework.providerRouting" && $0.owner == "claw" && $0.path == "~/.claw/core.sqlite#provider_routing,provider_settings" })
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.apps", surfaceSteward: "claw", path: "~/.claw/apps"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.resources", surfaceSteward: "claw", path: "~/.claw/resources"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.resources.state", surfaceSteward: "claw", path: "~/.claw/resources/resources.json"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.design", surfaceSteward: "claw", path: "~/.claw/design"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.audio", surfaceSteward: "claw", path: "~/.claw/audio"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.snippets", surfaceSteward: "claw", path: "~/.claw/core.sqlite#snippets"))
+        XCTAssertTrue(containsNode(nodes, id: "claw.framework.providerRouting", surfaceSteward: "claw", path: "~/.claw/core.sqlite#provider_routing,provider_settings"))
         XCTAssertTrue(nodes.contains { $0.id == "clawix.dictationAudioDebug" && $0.path == "~/.clawix/tmp/dictation-audio-debug" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.database.local" && $0.notes?.contains("UI/cache/snapshot") == true })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.embeddedRuntimeDistribution" && $0.name == "Embedded runtime distribution" && $0.storageClass == "hostOperational" && $0.notes?.contains("compatibility layout only") == true })
@@ -122,6 +122,19 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
             withIntermediateDirectories: true
         )
         try data.write(to: outputURL, options: .atomic)
+    }
+
+    private func containsNode(
+        _ nodes: [PersistentSurfaceNode],
+        id: String,
+        surfaceSteward: String,
+        path: String
+    ) -> Bool {
+        nodes.contains { node in
+            node.id == id &&
+            node.surfaceSteward == surfaceSteward &&
+            node.path == path
+        }
     }
 
     private static func repoRoot() -> URL {

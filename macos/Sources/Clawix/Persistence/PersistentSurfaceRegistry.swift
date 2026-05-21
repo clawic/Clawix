@@ -56,7 +56,7 @@ enum PersistentSurfaceKind: String, Codable {
 struct PersistentSurfaceNode: Codable, Equatable {
     var id: String
     var kind: PersistentSurfaceKind
-    var owner: String
+    var surfaceSteward: String
     var repo: String
     var project: String
     var language: String
@@ -189,7 +189,7 @@ enum ClawixPersistentSurface {
             parentId: parentId,
             project: "framework",
             notes: notes,
-            owner: "claw",
+            surfaceSteward: "claw",
             repo: "clawjs",
             language: "cross-platform"
         )
@@ -208,7 +208,7 @@ enum ClawixPersistentSurface {
             parentId: parentId,
             project: "framework",
             notes: notes,
-            owner: "claw",
+            surfaceSteward: "claw",
             repo: "clawjs",
             language: "cross-platform"
         )
@@ -324,14 +324,14 @@ enum ClawixPersistentSurface {
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
         notes: String? = nil,
         warnings: [String]? = nil,
-        owner: String = "clawix",
+        surfaceSteward: String = "clawix",
         repo: String = "Clawix",
         language: String = "swift"
     ) -> PersistentSurfaceNode {
         PersistentSurfaceNode(
             id: id,
             kind: kind,
-            owner: owner,
+            surfaceSteward: surfaceSteward,
             repo: repo,
             project: project,
             language: language,

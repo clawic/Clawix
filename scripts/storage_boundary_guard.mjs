@@ -159,7 +159,7 @@ for (const [id, expectedPath] of [
     fail(`persistent surface manifest is missing ${id}`);
     continue;
   }
-  if (node.owner !== "claw") fail(`${id} owner must be claw`);
+  if (node.surfaceSteward !== "claw") fail(`${id} surfaceSteward must be claw`);
   if (node.path !== expectedPath) fail(`${id} path must be ${expectedPath}`);
   if (node.storageClass !== "frameworkGlobal") fail(`${id} storageClass must be frameworkGlobal`);
   if (node.canonicality !== "frameworkCanonical") fail(`${id} canonicality must be frameworkCanonical`);
@@ -169,7 +169,7 @@ const hostActionAudit = nodes.get("clawix.hostActionAudit");
 if (!hostActionAudit) {
   fail("persistent surface manifest is missing clawix.hostActionAudit");
 } else {
-  if (hostActionAudit.owner !== "clawix") fail("clawix.hostActionAudit owner must be clawix");
+  if (hostActionAudit.surfaceSteward !== "clawix") fail("clawix.hostActionAudit surfaceSteward must be clawix");
   if (hostActionAudit.path !== "~/Library/Application Support/Clawix/host-action-audit.jsonl") {
     fail("clawix.hostActionAudit path must be ~/Library/Application Support/Clawix/host-action-audit.jsonl");
   }
@@ -186,7 +186,7 @@ for (const [id, expectedPath] of [
     fail(`persistent surface manifest is missing ${id}`);
     continue;
   }
-  if (node.owner !== "clawix") fail(`${id} owner must be clawix`);
+  if (node.surfaceSteward !== "clawix") fail(`${id} surfaceSteward must be clawix`);
   if (node.path !== expectedPath) fail(`${id} path must be ${expectedPath}`);
   if (node.storageClass !== "hostOperational") fail(`${id} storageClass must be hostOperational`);
   if (node.canonicality !== "hostOnly") fail(`${id} canonicality must be hostOnly`);
@@ -204,7 +204,7 @@ for (const [id, requiredNote] of [
     fail(`persistent surface manifest is missing ${id}`);
     continue;
   }
-  if (node.owner !== "clawix") fail(`${id} owner must be clawix`);
+  if (node.surfaceSteward !== "clawix") fail(`${id} surfaceSteward must be clawix`);
   if (node.canonicality !== "hostOnly") fail(`${id} canonicality must be hostOnly`);
   if (id !== "clawix.database.local" && node.storageClass !== "hostOperational") {
     fail(`${id} storageClass must be hostOperational`);

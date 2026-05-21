@@ -35,16 +35,24 @@ function normalizeContractId(contractId) {
   return contractId;
 }
 
+function normalizeSurfaceSteward(item) {
+  const { owner, ...rest } = item;
+  return {
+    ...rest,
+    surfaceSteward: item.surfaceSteward ?? owner,
+  };
+}
+
 const merged = {
   nodes: generated.nodes,
   edges: (routeGraphSource.edges ?? []).map((edge) => ({
-    ...edge,
+    ...normalizeSurfaceSteward(edge),
     contractId: normalizeContractId(edge.contractId),
   })),
   routes: (routeGraphSource.routes ?? []).map((route) => ({
-    ...route,
+    ...normalizeSurfaceSteward(route),
     steps: (route.steps ?? []).map((step) => ({
-      ...step,
+      ...normalizeSurfaceSteward(step),
       contractId: normalizeContractId(step.contractId),
     })),
   })),
