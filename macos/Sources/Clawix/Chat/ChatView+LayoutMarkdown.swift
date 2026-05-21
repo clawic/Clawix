@@ -83,6 +83,11 @@ enum AssistantMarkdown {
         let atoms: [Atom]
     }
 
+    struct BlockSlice {
+        let block: Block
+        let sourceRange: Range<Int>
+    }
+
     enum Atom: Equatable {
         case word(String)        // plain token + trailing whitespace
         case bold(String)        // **strong** token + trailing whitespace
@@ -95,12 +100,19 @@ enum AssistantMarkdown {
     /// contiguous lines into structural blocks. Inline parsing (links,
     /// code, bold, italic) runs once per produced line.
     static func parseBlocks(_ text: String) -> [Block] {
+        parseBlockSlices(text).map(\.block)
+    }
+
+    /// Block-level parser with source ranges in character offsets over the
+    /// normalized source. The renderer uses these ranges to preserve stable
+    /// blocks while a streaming tail is still changing.
+    static func parseBlockSlices(_ text: String) -> [BlockSlice] {
         let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
-        let lines = normalized.components(separatedBy: "\n")
-        var blocks: [Block] = []
+        let lines = lineSlices(in: normalized)
+        var blocks: [BlockSlice] = []
         var i = 0
         while i < lines.count {
-            let line = lines[i]
+            let line = lines[i].text
             let trimmed = line.trimmingCharacters(in: .whitespaces)
 
             if trimmed.isEmpty {
@@ -110,20 +122,25 @@ enum AssistantMarkdown {
 
             // Fenced code block: ``` [language]
             if trimmed.hasPrefix("```") {
+                let start = lines[i].start
                 let language = String(trimmed.dropFirst(3))
                     .trimmingCharacters(in: .whitespaces)
                 var collected: [String] = []
                 i += 1
                 while i < lines.count {
-                    if lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                    if lines[i].text.trimmingCharacters(in: .whitespaces).hasPrefix("```") {
                         i += 1
                         break
                     }
-                    collected.append(lines[i])
+                    collected.append(lines[i].text)
                     i += 1
                 }
-                blocks.append(.codeBlock(language: language,
-                                        code: collected.joined(separator: "\n")))
+                let end = i > 0 ? lines[i - 1].endIncludingNewline : normalized.count
+                blocks.append(BlockSlice(
+                    block: .codeBlock(language: language,
+                                      code: collected.joined(separator: "\n")),
+                    sourceRange: start..<end
+                ))
                 continue
             }
 
@@ -131,61 +148,80 @@ enum AssistantMarkdown {
             if let level = headingLevel(for: trimmed) {
                 let body = String(trimmed.dropFirst(level))
                     .trimmingCharacters(in: .whitespaces)
-                blocks.append(.heading(level: level,
-                                       Line(atoms: parseAtoms(in: body))))
+                blocks.append(BlockSlice(
+                    block: .heading(level: level,
+                                    Line(atoms: parseAtoms(in: body))),
+                    sourceRange: lines[i].start..<lines[i].endIncludingNewline
+                ))
                 i += 1
                 continue
             }
 
             // Pipe table: header row + alignment row + 0..N data rows
             if let (headers, rows, consumed) = parseTable(at: i, lines: lines) {
-                blocks.append(.table(headers: headers, rows: rows))
+                let start = lines[i].start
+                let end = lines[i + consumed - 1].endIncludingNewline
+                blocks.append(BlockSlice(
+                    block: .table(headers: headers, rows: rows),
+                    sourceRange: start..<end
+                ))
                 i += consumed
                 continue
             }
 
             // Bullet list (-, *, +)
             if isBulletPrefix(trimmed) {
+                let start = lines[i].start
                 var items: [Paragraph] = []
                 while i < lines.count {
-                    let raw = lines[i]
+                    let raw = lines[i].text
                     let t = raw.trimmingCharacters(in: .whitespaces)
                     guard isBulletPrefix(t) else { break }
                     let body = String(t.dropFirst(2))
                     items.append(Paragraph(lines: [Line(atoms: parseAtoms(in: body))]))
                     i += 1
                 }
-                blocks.append(.bulletList(items: items))
+                let end = i > 0 ? lines[i - 1].endIncludingNewline : start
+                blocks.append(BlockSlice(
+                    block: .bulletList(items: items),
+                    sourceRange: start..<end
+                ))
                 continue
             }
 
             // Numbered list
             if numberedRange(in: trimmed) != nil {
+                let start = lines[i].start
                 var items: [Paragraph] = []
                 while i < lines.count {
-                    let t = lines[i].trimmingCharacters(in: .whitespaces)
+                    let t = lines[i].text.trimmingCharacters(in: .whitespaces)
                     guard let r = numberedRange(in: t) else { break }
                     let body = String(t[r.upperBound...])
                     items.append(Paragraph(lines: [Line(atoms: parseAtoms(in: body))]))
                     i += 1
                 }
-                blocks.append(.numberedList(items: items))
+                let end = i > 0 ? lines[i - 1].endIncludingNewline : start
+                blocks.append(BlockSlice(
+                    block: .numberedList(items: items),
+                    sourceRange: start..<end
+                ))
                 continue
             }
 
             // Paragraph: gather contiguous non-blank lines until the next
             // structural break.
+            let start = lines[i].start
             var paragraphLines: [Line] = [Line(atoms: parseAtoms(in: line))]
             i += 1
             while i < lines.count {
-                let next = lines[i]
+                let next = lines[i].text
                 let nt = next.trimmingCharacters(in: .whitespaces)
                 if nt.isEmpty
                     || headingLevel(for: nt) != nil
                     || nt.hasPrefix("```")
                     || isBulletPrefix(nt)
                     || numberedRange(in: nt) != nil
-                    || isTableHeaderCandidate(nt, nextTrimmed: i + 1 < lines.count ? lines[i + 1].trimmingCharacters(in: .whitespaces) : nil) {
+                    || isTableHeaderCandidate(nt, nextTrimmed: i + 1 < lines.count ? lines[i + 1].text.trimmingCharacters(in: .whitespaces) : nil) {
                     break
                 }
                 paragraphLines.append(Line(atoms: parseAtoms(in: next)))
@@ -193,7 +229,11 @@ enum AssistantMarkdown {
             }
             let nonEmpty = paragraphLines.filter { !$0.atoms.isEmpty }
             if !nonEmpty.isEmpty {
-                blocks.append(.paragraph(Paragraph(lines: nonEmpty)))
+                let end = i > 0 ? lines[i - 1].endIncludingNewline : start
+                blocks.append(BlockSlice(
+                    block: .paragraph(Paragraph(lines: nonEmpty)),
+                    sourceRange: start..<end
+                ))
             }
         }
         return blocks
@@ -222,6 +262,32 @@ enum AssistantMarkdown {
         trimmed.range(of: #"^\d+[.)]\s"#, options: .regularExpression)
     }
 
+    private struct SourceLine {
+        let text: String
+        let start: Int
+        let end: Int
+        let endIncludingNewline: Int
+    }
+
+    private static func lineSlices(in source: String) -> [SourceLine] {
+        let parts = source.components(separatedBy: "\n")
+        var lines: [SourceLine] = []
+        lines.reserveCapacity(parts.count)
+        var offset = 0
+        for (idx, part) in parts.enumerated() {
+            let end = offset + part.count
+            let next = end + (idx < parts.count - 1 ? 1 : 0)
+            lines.append(SourceLine(
+                text: part,
+                start: offset,
+                end: end,
+                endIncludingNewline: next
+            ))
+            offset = next
+        }
+        return lines
+    }
+
     /// Quick check used while gathering paragraph lines so we don't
     /// swallow the start of a table into a preceding paragraph.
     private static func isTableHeaderCandidate(_ trimmed: String, nextTrimmed: String?) -> Bool {
@@ -232,10 +298,10 @@ enum AssistantMarkdown {
 
     /// Returns the parsed headers/rows of a pipe table starting at
     /// `start`, or `nil` if the lines at that position are not a table.
-    private static func parseTable(at start: Int, lines: [String]) -> (headers: [Line], rows: [[Line]], consumed: Int)? {
+    private static func parseTable(at start: Int, lines: [SourceLine]) -> (headers: [Line], rows: [[Line]], consumed: Int)? {
         guard start + 1 < lines.count else { return nil }
-        let header = lines[start].trimmingCharacters(in: .whitespaces)
-        let alignment = lines[start + 1].trimmingCharacters(in: .whitespaces)
+        let header = lines[start].text.trimmingCharacters(in: .whitespaces)
+        let alignment = lines[start + 1].text.trimmingCharacters(in: .whitespaces)
         guard header.contains("|"), isTableAlignmentRow(alignment) else { return nil }
         let headerCells = splitTableRow(header)
         guard !headerCells.isEmpty else { return nil }
@@ -243,7 +309,7 @@ enum AssistantMarkdown {
         var rows: [[Line]] = []
         var i = start + 2
         while i < lines.count {
-            let raw = lines[i].trimmingCharacters(in: .whitespaces)
+            let raw = lines[i].text.trimmingCharacters(in: .whitespaces)
             if raw.isEmpty || !raw.contains("|") { break }
             // Stop if we hit a non-pipe-leading line that is clearly another block.
             let cells = splitTableRow(raw)

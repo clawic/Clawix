@@ -58,38 +58,38 @@ enum AnnotatedBlock {
     case table(headers: [AnnotatedLine], rows: [[AnnotatedLine]])
 }
 
-func annotateBlocks(_ blocks: [AssistantMarkdown.Block], source: String) -> [AnnotatedBlock] {
+func annotateBlocks(_ blocks: [AssistantMarkdown.Block], source: String, baseOffset: Int = 0) -> [AnnotatedBlock] {
     var resolver = AtomOffsetResolver(source: source)
-    return blocks.map { annotate($0, with: &resolver) }
+    return blocks.map { annotate($0, with: &resolver, baseOffset: baseOffset) }
 }
 
-func annotate(_ block: AssistantMarkdown.Block, with resolver: inout AtomOffsetResolver) -> AnnotatedBlock {
+func annotate(_ block: AssistantMarkdown.Block, with resolver: inout AtomOffsetResolver, baseOffset: Int = 0) -> AnnotatedBlock {
     switch block {
     case .paragraph(let p):
-        return .paragraph(annotate(p, with: &resolver))
+        return .paragraph(annotate(p, with: &resolver, baseOffset: baseOffset))
     case .heading(let level, let line):
-        return .heading(level: level, line: annotate(line, with: &resolver))
+        return .heading(level: level, line: annotate(line, with: &resolver, baseOffset: baseOffset))
     case .bulletList(let items):
-        return .bulletList(items: items.map { annotate($0, with: &resolver) })
+        return .bulletList(items: items.map { annotate($0, with: &resolver, baseOffset: baseOffset) })
     case .numberedList(let items):
-        return .numberedList(items: items.map { annotate($0, with: &resolver) })
+        return .numberedList(items: items.map { annotate($0, with: &resolver, baseOffset: baseOffset) })
     case .codeBlock(let language, let code):
         // The fenced body is rendered as a static block; we still walk the
         // resolver past it so subsequent atoms keep their offsets aligned.
         _ = resolver.locate(code)
         return .codeBlock(language: language, code: code)
     case .table(let headers, let rows):
-        let hs = headers.map { annotate($0, with: &resolver) }
-        let rs = rows.map { row in row.map { annotate($0, with: &resolver) } }
+        let hs = headers.map { annotate($0, with: &resolver, baseOffset: baseOffset) }
+        let rs = rows.map { row in row.map { annotate($0, with: &resolver, baseOffset: baseOffset) } }
         return .table(headers: hs, rows: rs)
     }
 }
 
-func annotate(_ paragraph: AssistantMarkdown.Paragraph, with resolver: inout AtomOffsetResolver) -> AnnotatedParagraph {
-    AnnotatedParagraph(lines: paragraph.lines.map { annotate($0, with: &resolver) })
+func annotate(_ paragraph: AssistantMarkdown.Paragraph, with resolver: inout AtomOffsetResolver, baseOffset: Int = 0) -> AnnotatedParagraph {
+    AnnotatedParagraph(lines: paragraph.lines.map { annotate($0, with: &resolver, baseOffset: baseOffset) })
 }
 
-func annotate(_ line: AssistantMarkdown.Line, with resolver: inout AtomOffsetResolver) -> AnnotatedLine {
+func annotate(_ line: AssistantMarkdown.Line, with resolver: inout AtomOffsetResolver, baseOffset: Int = 0) -> AnnotatedLine {
     var atoms: [AnnotatedAtom] = []
     atoms.reserveCapacity(line.atoms.count)
     for atom in line.atoms {
@@ -101,13 +101,143 @@ func annotate(_ line: AssistantMarkdown.Line, with resolver: inout AtomOffsetRes
         case .code(let s):              needle = s
         case .link(let label, _, _):    needle = label
         }
-        let offset = resolver.locate(needle)
+        let offset = resolver.locate(needle) + baseOffset
         atoms.append(AnnotatedAtom(atom: atom, offset: offset))
     }
     return AnnotatedLine(atoms: atoms)
 }
 
 // MARK: - Parse cache
+
+struct AssistantMarkdownRenderKey: Hashable, Sendable {
+    enum Scope: Hashable, Sendable {
+        case message(UUID)
+        case timeline(UUID)
+        case custom(String)
+    }
+
+    let scope: Scope
+
+    static func message(_ id: UUID) -> AssistantMarkdownRenderKey {
+        AssistantMarkdownRenderKey(scope: .message(id))
+    }
+
+    static func timeline(_ id: UUID) -> AssistantMarkdownRenderKey {
+        AssistantMarkdownRenderKey(scope: .timeline(id))
+    }
+
+    static func custom(_ value: String) -> AssistantMarkdownRenderKey {
+        AssistantMarkdownRenderKey(scope: .custom(value))
+    }
+
+    var idPrefix: String {
+        switch scope {
+        case .message(let id): return "message:\(id.uuidString)"
+        case .timeline(let id): return "timeline:\(id.uuidString)"
+        case .custom(let value): return "custom:\(value)"
+        }
+    }
+}
+
+struct AssistantMarkdownDocument {
+    let text: String
+    let blocks: [IndexedAnnotatedBlock]
+    let cacheHit: Bool
+    let parseMs: Double
+    let annotateMs: Double
+    let reusedBlockCount: Int
+    let reparsedCharacterCount: Int
+
+    var blockCount: Int { blocks.count }
+
+    func markingCacheHit() -> AssistantMarkdownDocument {
+        AssistantMarkdownDocument(
+            text: text,
+            blocks: blocks,
+            cacheHit: true,
+            parseMs: 0,
+            annotateMs: 0,
+            reusedBlockCount: blocks.count,
+            reparsedCharacterCount: 0
+        )
+    }
+}
+
+final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
+    private struct Entry {
+        let document: AssistantMarkdownDocument
+    }
+
+    private let lock = NSLock()
+    private var values: [AssistantMarkdownRenderKey: Entry] = [:]
+    private var order: [AssistantMarkdownRenderKey] = []
+    private let countLimit: Int
+
+    init(countLimit: Int) {
+        self.countLimit = countLimit
+    }
+
+    func document(
+        for text: String,
+        key: AssistantMarkdownRenderKey,
+        buildFull: (String, String) -> AssistantMarkdownDocument,
+        buildTail: (String, String, Int, Int, Int, String, [IndexedAnnotatedBlock]) -> AssistantMarkdownDocument
+    ) -> AssistantMarkdownDocument {
+        lock.lock()
+        let prior = values[key]?.document
+        lock.unlock()
+
+        let document: AssistantMarkdownDocument
+        if let prior, prior.text == text {
+            return prior.markingCacheHit()
+        } else if let prior, text.hasPrefix(prior.text), !prior.blocks.isEmpty {
+            let stableBlocks = Self.stableBlocks(from: prior)
+            let stablePrefixEnd = stableBlocks.last?.sourceRange.upperBound ?? 0
+            let startingCodeOrdinal = stableBlocks.reduce(0) { total, item in
+                if case .codeBlock = item.block { return max(total, item.codeBlockOrdinal) }
+                return total
+            }
+            let tail = String(text.dropFirst(stablePrefixEnd))
+            document = buildTail(
+                text,
+                tail,
+                stablePrefixEnd,
+                stableBlocks.count,
+                startingCodeOrdinal,
+                key.idPrefix,
+                stableBlocks
+            )
+        } else {
+            document = buildFull(text, key.idPrefix)
+        }
+
+        lock.lock()
+        values[key] = Entry(document: document)
+        touch(key)
+        enforceLimit()
+        lock.unlock()
+        return document
+    }
+
+    private static func stableBlocks(from prior: AssistantMarkdownDocument) -> [IndexedAnnotatedBlock] {
+        guard prior.blocks.count > 1 else { return [] }
+        return Array(prior.blocks.dropLast())
+    }
+
+    private func touch(_ key: AssistantMarkdownRenderKey) {
+        order.removeAll { $0 == key }
+        order.append(key)
+    }
+
+    private func enforceLimit() {
+        guard order.count > countLimit else { return }
+        let overflow = order.count - countLimit
+        for key in order.prefix(overflow) {
+            values.removeValue(forKey: key)
+        }
+        order.removeFirst(overflow)
+    }
+}
 
 /// Process-wide cache for `parseBlocks` + `annotateBlocks`. Lives as a
 /// `static let` over the shared `MarkdownBlockCache` so closing and
@@ -128,13 +258,18 @@ func annotate(_ line: AssistantMarkdown.Line, with resolver: inout AtomOffsetRes
 /// dominant cost in the streaming pipeline is downstream rendering,
 /// not this parse.
 enum MarkdownParseCache {
-    fileprivate static let cache = MarkdownBlockCache<[AnnotatedBlock]>(countLimit: 512)
+    fileprivate static let cache = MarkdownBlockCache<AssistantMarkdownDocument>(countLimit: 512)
+    fileprivate static let incrementalCache = AssistantMarkdownIncrementalCache(countLimit: 128)
 
     struct Result {
-        let blocks: [AnnotatedBlock]
+        let document: AssistantMarkdownDocument
         let cacheHit: Bool
         let parseMs: Double
         let annotateMs: Double
+        let reusedBlockCount: Int
+        let reparsedCharacterCount: Int
+
+        var blocks: [IndexedAnnotatedBlock] { document.blocks }
     }
 
     /// Pre-warm hook for callers that want to pay the parse cost off
@@ -145,24 +280,147 @@ enum MarkdownParseCache {
         _ = parse(text)
     }
 
-    static func parse(_ text: String) -> Result {
+    static func parse(_ text: String, renderKey: AssistantMarkdownRenderKey? = nil) -> Result {
+        if let renderKey {
+            let document = incrementalCache.document(
+                for: text,
+                key: renderKey,
+                buildFull: { source, idPrefix in
+                    buildFullDocument(source, idPrefix: idPrefix)
+                },
+                buildTail: { fullText, tail, sourceOffset, blockOrdinal, codeOrdinal, idPrefix, stableBlocks in
+                    buildTailDocument(
+                        fullText,
+                        tail,
+                        sourceOffset: sourceOffset,
+                        startingBlockOrdinal: blockOrdinal,
+                        startingCodeBlockOrdinal: codeOrdinal,
+                        idPrefix: idPrefix,
+                        stableBlocks: stableBlocks
+                    )
+                }
+            )
+            if document.cacheHit {
+                PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+            } else if document.reusedBlockCount > 0 {
+                PerfSignpost.renderMarkdown.event("parse.incremental.reused_blocks", document.reusedBlockCount)
+                PerfSignpost.renderMarkdown.event("parse.incremental.tail_chars", document.reparsedCharacterCount)
+            }
+            return Result(
+                document: document,
+                cacheHit: document.cacheHit,
+                parseMs: document.parseMs,
+                annotateMs: document.annotateMs,
+                reusedBlockCount: document.reusedBlockCount,
+                reparsedCharacterCount: document.reparsedCharacterCount
+            )
+        }
+
         if let cached = cache.get(for: text) {
             PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
-            return Result(blocks: cached, cacheHit: true,
-                          parseMs: 0, annotateMs: 0)
+            let hit = cached.markingCacheHit()
+            return Result(
+                document: hit,
+                cacheHit: true,
+                parseMs: 0,
+                annotateMs: 0,
+                reusedBlockCount: hit.reusedBlockCount,
+                reparsedCharacterCount: 0
+            )
         }
+        PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
+        let document = buildFullDocument(text, idPrefix: "full")
+        cache.set(document, for: text)
+        return Result(
+            document: document,
+            cacheHit: false,
+            parseMs: document.parseMs,
+            annotateMs: document.annotateMs,
+            reusedBlockCount: 0,
+            reparsedCharacterCount: text.count
+        )
+    }
+
+    private static func buildFullDocument(_ text: String, idPrefix: String) -> AssistantMarkdownDocument {
+        buildDocument(
+            text: text,
+            sourceOffset: 0,
+            startingBlockOrdinal: 0,
+            startingCodeBlockOrdinal: 0,
+            idPrefix: idPrefix,
+            stableBlocks: []
+        )
+    }
+
+    private static func buildTailDocument(
+        _ fullText: String,
+        _ text: String,
+        sourceOffset: Int,
+        startingBlockOrdinal: Int,
+        startingCodeBlockOrdinal: Int,
+        idPrefix: String,
+        stableBlocks: [IndexedAnnotatedBlock]
+    ) -> AssistantMarkdownDocument {
+        buildDocument(
+            fullText: fullText,
+            text: text,
+            sourceOffset: sourceOffset,
+            startingBlockOrdinal: startingBlockOrdinal,
+            startingCodeBlockOrdinal: startingCodeBlockOrdinal,
+            idPrefix: idPrefix,
+            stableBlocks: stableBlocks
+        )
+    }
+
+    private static func buildDocument(
+        fullText: String? = nil,
+        text: String,
+        sourceOffset: Int,
+        startingBlockOrdinal: Int,
+        startingCodeBlockOrdinal: Int,
+        idPrefix: String,
+        stableBlocks: [IndexedAnnotatedBlock]
+    ) -> AssistantMarkdownDocument {
         PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
         return PerfSignpost.renderMarkdown.interval("parse") {
             let parseT0 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
-            let parsed = AssistantMarkdown.parseBlocks(text)
+            let slices = AssistantMarkdown.parseBlockSlices(text)
             let parseT1 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
-            let annotated = annotateBlocks(parsed, source: text)
+            let annotated = annotateBlocks(
+                slices.map(\.block),
+                source: text,
+                baseOffset: sourceOffset
+            )
             let parseT2 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
-            cache.set(annotated, for: text)
-            PerfSignpost.renderMarkdown.event("parse.blocks", annotated.count)
-            return Result(blocks: annotated, cacheHit: false,
-                          parseMs: (parseT1 - parseT0) * 1000,
-                          annotateMs: (parseT2 - parseT1) * 1000)
+            var codeBlockCount = startingCodeBlockOrdinal
+            var indexed: [IndexedAnnotatedBlock] = []
+            indexed.reserveCapacity(stableBlocks.count + annotated.count)
+            indexed.append(contentsOf: stableBlocks)
+            for (idx, pair) in zip(slices, annotated).enumerated() {
+                let slice = pair.0
+                let block = pair.1
+                if case .codeBlock = block {
+                    codeBlockCount += 1
+                }
+                let sourceRange = (slice.sourceRange.lowerBound + sourceOffset)..<(slice.sourceRange.upperBound + sourceOffset)
+                let blockOrdinal = startingBlockOrdinal + idx
+                indexed.append(IndexedAnnotatedBlock(
+                    id: "\(idPrefix):\(sourceRange.lowerBound):\(blockOrdinal)",
+                    block: block,
+                    sourceRange: sourceRange,
+                    codeBlockOrdinal: codeBlockCount
+                ))
+            }
+            PerfSignpost.renderMarkdown.event("parse.blocks", indexed.count)
+            return AssistantMarkdownDocument(
+                text: fullText ?? text,
+                blocks: indexed,
+                cacheHit: false,
+                parseMs: (parseT1 - parseT0) * 1000,
+                annotateMs: (parseT2 - parseT1) * 1000,
+                reusedBlockCount: stableBlocks.count,
+                reparsedCharacterCount: text.count
+            )
         }
     }
 }
@@ -177,12 +435,13 @@ enum MarkdownParseCache {
 /// underline tells the user it is interactive.
 ///
 /// While the body is still streaming (or just finished and the trailing
-/// fade hasn't completed yet) the renderer wraps in `TimelineView` and
-/// applies a per-character opacity ramp from `StreamingFade`, so newly
-/// arrived characters glide in from invisible while older ones stay
-/// settled at full opacity.
+/// fade hasn't completed yet) the renderer wraps only the active tail in
+/// `TimelineView` and applies a per-character opacity ramp from
+/// `StreamingFade`, so newly arrived characters glide in while older
+/// blocks stay settled outside the ticking subtree.
 struct AssistantMarkdownText: View {
     let text: String
+    var renderKey: AssistantMarkdownRenderKey? = nil
     let weight: Font.Weight
     let color: Color
     var checkpoints: [StreamCheckpoint] = []
@@ -201,13 +460,16 @@ struct AssistantMarkdownText: View {
     @State private var animationTick: Int = 0
 
     var body: some View {
-        let parsed = MarkdownParseCache.parse(text)
+        let parsed = MarkdownParseCache.parse(text, renderKey: renderKey)
         let blocks = parsed.blocks
         let _ = streamingPerfLogEnabled && !parsed.cacheHit
             && (!checkpoints.isEmpty || !streamingFinished)
             ? logBodyTiming(parseMs: parsed.parseMs,
                             annotateMs: parsed.annotateMs,
-                            len: text.count, blockCount: blocks.count)
+                            len: text.count,
+                            blockCount: blocks.count,
+                            reusedBlockCount: parsed.reusedBlockCount,
+                            reparsedCharacterCount: parsed.reparsedCharacterCount)
             : ()
         let now = Date()
         let animating = StreamingFade.isAnimating(
@@ -217,15 +479,7 @@ struct AssistantMarkdownText: View {
         )
 
         let renderCheckpoints = animating ? checkpoints : []
-        Group {
-            if animating {
-                TimelineView(.animation) { ctx in
-                    blocksView(blocks, checkpoints: renderCheckpoints, now: ctx.date)
-                }
-            } else {
-                blocksView(blocks, checkpoints: renderCheckpoints, now: now)
-            }
-        }
+        blocksView(blocks, checkpoints: renderCheckpoints, now: now)
         .task(id: TickKey(timestamp: checkpoints.last?.addedAt, finished: streamingFinished)) {
             await scheduleSettle()
         }
@@ -249,10 +503,17 @@ struct AssistantMarkdownText: View {
         animationTick &+= 1
     }
 
-    private func logBodyTiming(parseMs: Double, annotateMs: Double, len: Int, blockCount: Int) {
+    private func logBodyTiming(
+        parseMs: Double,
+        annotateMs: Double,
+        len: Int,
+        blockCount: Int,
+        reusedBlockCount: Int,
+        reparsedCharacterCount: Int
+    ) {
         let line = String(
-            format: "body parse=%.2fms annotate=%.2fms len=%d blocks=%d cps=%d finished=%d",
-            parseMs, annotateMs, len, blockCount, checkpoints.count, streamingFinished ? 1 : 0
+            format: "body parse=%.2fms annotate=%.2fms len=%d blocks=%d reused=%d reparsed=%d cps=%d finished=%d",
+            parseMs, annotateMs, len, blockCount, reusedBlockCount, reparsedCharacterCount, checkpoints.count, streamingFinished ? 1 : 0
         )
         streamingPerfLog.log("\(line, privacy: .public)")
     }
@@ -263,16 +524,44 @@ struct AssistantMarkdownText: View {
     }
 
     @ViewBuilder
-    private func blocksView(_ blocks: [AnnotatedBlock], checkpoints: [StreamCheckpoint], now: Date) -> some View {
+    private func blocksView(_ blocks: [IndexedAnnotatedBlock], checkpoints: [StreamCheckpoint], now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(indexedBlocks(from: blocks)) { item in
-                blockView(
-                    item.block,
-                    checkpoints: checkpoints,
-                    now: now,
-                    codeBlockOrdinal: item.codeBlockOrdinal
-                )
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if checkpoints.isEmpty {
+                ForEach(blocks) { item in
+                    blockView(
+                        item.block,
+                        checkpoints: checkpoints,
+                        now: now,
+                        codeBlockOrdinal: item.codeBlockOrdinal
+                    )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                let split = splitStableAndAnimatedBlocks(blocks, checkpoints: checkpoints, now: now)
+                ForEach(split.stable) { item in
+                    blockView(
+                        item.block,
+                        checkpoints: [],
+                        now: now,
+                        codeBlockOrdinal: item.codeBlockOrdinal
+                    )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if !split.animated.isEmpty {
+                    TimelineView(.animation) { ctx in
+                        VStack(alignment: .leading, spacing: 14) {
+                            ForEach(split.animated) { item in
+                                blockView(
+                                    item.block,
+                                    checkpoints: checkpoints,
+                                    now: ctx.date,
+                                    codeBlockOrdinal: item.codeBlockOrdinal
+                                )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -361,18 +650,35 @@ struct AssistantMarkdownText: View {
         }
     }
 
-    private func indexedBlocks(from blocks: [AnnotatedBlock]) -> [IndexedAnnotatedBlock] {
-        var codeBlockCount = 0
-        return blocks.enumerated().map { idx, block in
-            if case .codeBlock = block {
-                codeBlockCount += 1
-            }
-            return IndexedAnnotatedBlock(
-                id: idx,
-                block: block,
-                codeBlockOrdinal: codeBlockCount
-            )
+    private func splitStableAndAnimatedBlocks(
+        _ blocks: [IndexedAnnotatedBlock],
+        checkpoints: [StreamCheckpoint],
+        now: Date
+    ) -> (stable: [IndexedAnnotatedBlock], animated: [IndexedAnnotatedBlock]) {
+        guard let animatedLowerBound = animatedSourceLowerBound(checkpoints: checkpoints, now: now) else {
+            return (blocks, [])
         }
+        var stable: [IndexedAnnotatedBlock] = []
+        var animated: [IndexedAnnotatedBlock] = []
+        for block in blocks {
+            if block.sourceRange.upperBound <= animatedLowerBound {
+                stable.append(block)
+            } else {
+                animated.append(block)
+            }
+        }
+        return (stable, animated)
+    }
+
+    private func animatedSourceLowerBound(checkpoints: [StreamCheckpoint], now: Date) -> Int? {
+        guard !checkpoints.isEmpty else { return nil }
+        let activeIndex = checkpoints.firstIndex { checkpoint in
+            checkpoint.addedAt.addingTimeInterval(StreamingFade.duration) >= now
+        } ?? checkpoints.index(before: checkpoints.endIndex)
+        if activeIndex == checkpoints.startIndex {
+            return 0
+        }
+        return checkpoints[checkpoints.index(before: activeIndex)].prefixCount
     }
 
     private func headingFontSize(_ level: Int) -> CGFloat {
@@ -385,9 +691,10 @@ struct AssistantMarkdownText: View {
     }
 }
 
-private struct IndexedAnnotatedBlock: Identifiable {
-    let id: Int
+struct IndexedAnnotatedBlock: Identifiable {
+    let id: String
     let block: AnnotatedBlock
+    let sourceRange: Range<Int>
     let codeBlockOrdinal: Int
 }
 
@@ -410,9 +717,19 @@ struct AssistantTableView: View {
     private let dividerThickness: CGFloat = 0.75
     private let cellVPad: CGFloat = 7
     private let cellHPad: CGFloat = 32
+    static let largeTableRowThreshold = 80
 
     var body: some View {
         let columnCount = max(headers.count, rows.map { $0.count }.max() ?? 0)
+        if rows.count > Self.largeTableRowThreshold {
+            lazyTable(columnCount: columnCount)
+        } else {
+            gridTable(columnCount: columnCount)
+        }
+    }
+
+    @ViewBuilder
+    private func gridTable(columnCount: Int) -> some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 0, verticalSpacing: 0) {
             GridRow {
                 ForEach(Array(headers.enumerated()), id: \.offset) { idx, cell in
@@ -439,6 +756,36 @@ struct AssistantTableView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func lazyTable(columnCount: Int) -> some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
+            tableRow(headers, columnCount: columnCount, weight: .semibold)
+            Rectangle()
+                .fill(divider)
+                .frame(height: dividerThickness)
+
+            ForEach(Array(rows.enumerated()), id: \.offset) { rowIndex, row in
+                tableRow(row, columnCount: columnCount, weight: weight)
+                    .id("row\(rowIndex)")
+                Rectangle()
+                    .fill(divider)
+                    .frame(height: dividerThickness)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func tableRow(_ row: [AnnotatedLine], columnCount: Int, weight: Font.Weight) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: cellHPad) {
+            ForEach(0..<max(columnCount, 1), id: \.self) { idx in
+                cellView(idx < row.count ? row[idx] : AnnotatedLine(atoms: []), weight: weight)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.vertical, cellVPad)
     }
 
     @ViewBuilder

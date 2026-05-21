@@ -53,6 +53,7 @@ struct QuickAskMessageBubble: View {
         if message.isError {
             AssistantMarkdownText(
                 text: displayText,
+                renderKey: .message(message.id),
                 weight: .regular,
                 color: Color(red: 0.95, green: 0.45, blue: 0.45),
                 checkpoints: [],
@@ -71,6 +72,7 @@ struct QuickAskMessageBubble: View {
         } else {
             AssistantMarkdownText(
                 text: displayText,
+                renderKey: .message(message.id),
                 weight: .light,
                 color: Palette.textPrimary,
                 checkpoints: message.streamCheckpoints,

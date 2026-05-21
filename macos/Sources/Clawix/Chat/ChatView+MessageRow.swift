@@ -267,11 +267,12 @@ struct MessageRow: View, Equatable {
                         guard segments.count == 1, case .text = segments[0] else { return false }
                         return true
                     }()
-                    ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+                    ForEach(Array(segments.enumerated()), id: \.offset) { segmentIndex, segment in
                         switch segment {
                         case .text(let body):
                             AssistantMarkdownText(
                                 text: body,
+                                renderKey: .custom("message:\(message.id.uuidString):segment:\(segmentIndex)"),
                                 weight: message.isError ? .regular : .light,
                                 color: message.isError
                                     ? Color(red: 0.95, green: 0.45, blue: 0.45)
@@ -423,6 +424,7 @@ struct MessageRow: View, Equatable {
         case .reasoning(let entryId, let text):
             AssistantMarkdownText(
                 text: text,
+                renderKey: .timeline(entryId),
                 weight: .light,
                 color: Palette.textPrimary,
                 checkpoints: message.reasoningCheckpoints[entryId] ?? [],
@@ -467,11 +469,12 @@ struct MessageRow: View, Equatable {
         let useCheckpoints =
             isTrailingMessage && messageEntryCount == 1 && onlyTextSegment
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
+            ForEach(Array(segments.enumerated()), id: \.offset) { segmentIndex, segment in
                 switch segment {
                 case .text(let body):
                     AssistantMarkdownText(
                         text: body,
+                        renderKey: .custom("timeline:\(entryId.uuidString):segment:\(segmentIndex)"),
                         weight: message.isError ? .regular : .light,
                         color: message.isError
                             ? Color(red: 0.95, green: 0.45, blue: 0.45)
