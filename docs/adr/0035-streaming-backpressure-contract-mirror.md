@@ -1,4 +1,4 @@
-# ADR 0026: Streaming backpressure contract mirror
+# ADR 0035: Streaming backpressure contract mirror
 
 Status: Accepted
 

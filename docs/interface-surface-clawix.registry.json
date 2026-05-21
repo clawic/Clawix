@@ -123,7 +123,7 @@
         "concept": "Portable archive is a framework-owned backup/export/import/restore contract surfaced through Clawix Settings/Data with signed-host handling for secrets and human confirmation.",
         "authorizingDecision": {
           "ref": "ADR 0024 portable archive contract mirror",
-          "path": "docs/adr/0024-portable-archive-contract-mirror.md"
+          "path": "docs/adr/0034-portable-archive-contract-mirror.md"
         },
         "completingSurface": {
           "human": "Clawix Settings/Data portable archive export, verify, import preview, restore and restore report UI.",

@@ -1,4 +1,4 @@
-# ADR 0024: Portable archive contract mirror
+# ADR 0034: Portable archive contract mirror
 
 - Status: Accepted
 - Date: 2026-05-21

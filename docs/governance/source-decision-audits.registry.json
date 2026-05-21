@@ -139,7 +139,7 @@
     },
     {
       "id": "ui-state-invalidation-boundary-selective-backfill",
-      "artifactPath": "docs/adr/0026-ui-state-invalidation-boundary.md",
+      "artifactPath": "docs/adr/0036-ui-state-invalidation-boundary.md",
       "sourceConversationId": "2026-05-21-p0-ui-state-invalidation-boundary-request",
       "artifactKind": "markdown-adr-source-audit",
       "markdownRowPattern": "^## Source Decision Audit$",
@@ -148,10 +148,10 @@
       "historicalBackfill": true,
       "backfillTier": "P0",
       "backfillReason": "The ADR records the P0 UI state invalidation boundary decision outside the forward-only registry.",
-      "backfillArtifactRef": "docs/adr/0026-ui-state-invalidation-boundary.md#source-decision-audit",
+      "backfillArtifactRef": "docs/adr/0036-ui-state-invalidation-boundary.md#source-decision-audit",
       "normalizedStates": ["implemented"],
       "evidenceRefs": [
-        "docs/adr/0026-ui-state-invalidation-boundary.md",
+        "docs/adr/0036-ui-state-invalidation-boundary.md",
         "macos/PERF.md",
         "scripts/ui_state_invalidation_boundary_check.mjs"
       ]

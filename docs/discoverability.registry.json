@@ -627,10 +627,10 @@
       "canonicalName": "adr:no-irreversible-data-loss"
     },
     {
-      "id": "adr-docs-adr-0024-portable-archive-contract-mirror",
+      "id": "adr-docs-adr-0034-portable-archive-contract-mirror",
       "kind": "adr",
       "steward": "clawix",
-      "canonicalSource": "docs/adr/0024-portable-archive-contract-mirror.md",
+      "canonicalSource": "docs/adr/0034-portable-archive-contract-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -639,14 +639,14 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ADR 0024: Portable archive contract mirror",
-        "0024-portable-archive-contract-mirror",
+        "ADR 0034: Portable archive contract mirror",
+        "0034-portable-archive-contract-mirror",
         "ADR 0024"
       ],
       "searchQueries": [
         {
-          "query": "ADR 0024: Portable archive contract mirror",
-          "expectPath": "docs/adr/0024-portable-archive-contract-mirror.md"
+          "query": "ADR 0034: Portable archive contract mirror",
+          "expectPath": "docs/adr/0034-portable-archive-contract-mirror.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
@@ -720,10 +720,10 @@
       "canonicalName": "adr:adoption-canonicity-governance"
     },
     {
-      "id": "adr-docs-adr-0026-streaming-backpressure-contract-mirror",
+      "id": "adr-docs-adr-0035-streaming-backpressure-contract-mirror",
       "kind": "adr",
       "steward": "clawix",
-      "canonicalSource": "docs/adr/0026-streaming-backpressure-contract-mirror.md",
+      "canonicalSource": "docs/adr/0035-streaming-backpressure-contract-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -732,8 +732,8 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ADR 0026: Streaming backpressure contract mirror",
-        "0026-streaming-backpressure-contract-mirror",
+        "ADR 0035: Streaming backpressure contract mirror",
+        "0035-streaming-backpressure-contract-mirror",
         "ADR 0026",
         "streaming backpressure",
         "adr:streaming-backpressure-contract",
@@ -742,11 +742,11 @@
       "searchQueries": [
         {
           "query": "streaming backpressure",
-          "expectPath": "docs/adr/0026-streaming-backpressure-contract-mirror.md"
+          "expectPath": "docs/adr/0035-streaming-backpressure-contract-mirror.md"
         },
         {
           "query": "adr:streaming-backpressure-contract",
-          "expectPath": "docs/adr/0026-streaming-backpressure-contract-mirror.md"
+          "expectPath": "docs/adr/0035-streaming-backpressure-contract-mirror.md"
         }
       ],
       "guard": "scripts/discoverability-check.mjs",
@@ -755,10 +755,10 @@
       "canonicalName": "adr:streaming-backpressure-contract"
     },
     {
-      "id": "adr-docs-adr-0026-ui-state-invalidation-boundary",
+      "id": "adr-docs-adr-0036-ui-state-invalidation-boundary",
       "kind": "adr",
       "steward": "clawix",
-      "canonicalSource": "docs/adr/0026-ui-state-invalidation-boundary.md",
+      "canonicalSource": "docs/adr/0036-ui-state-invalidation-boundary.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -767,8 +767,8 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ADR 0026: UI state invalidation boundary",
-        "0026-ui-state-invalidation-boundary",
+        "ADR 0036: UI state invalidation boundary",
+        "0036-ui-state-invalidation-boundary",
         "ADR 0026",
         "ui state invalidation boundary",
         "high-churn streaming state",
@@ -776,12 +776,12 @@
       ],
       "searchQueries": [
         {
-          "query": "ADR 0026: UI state invalidation boundary",
-          "expectPath": "docs/adr/0026-ui-state-invalidation-boundary.md"
+          "query": "ADR 0036: UI state invalidation boundary",
+          "expectPath": "docs/adr/0036-ui-state-invalidation-boundary.md"
         },
         {
           "query": "adr:ui-state-invalidation-boundary",
-          "expectPath": "docs/adr/0026-ui-state-invalidation-boundary.md"
+          "expectPath": "docs/adr/0036-ui-state-invalidation-boundary.md"
         }
       ],
       "guard": "scripts/ui_state_invalidation_boundary_check.mjs",
@@ -790,10 +790,10 @@
       "canonicalName": "adr:ui-state-invalidation-boundary"
     },
     {
-      "id": "adr-docs-adr-0026-zero-accidental-work-mirror",
+      "id": "adr-docs-adr-0037-zero-accidental-work-mirror",
       "kind": "adr",
       "steward": "clawix",
-      "canonicalSource": "docs/adr/0026-zero-accidental-work-mirror.md",
+      "canonicalSource": "docs/adr/0037-zero-accidental-work-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -802,8 +802,8 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ADR 0026: Zero Accidental Work mirror",
-        "0026-zero-accidental-work-mirror",
+        "ADR 0037: Zero Accidental Work mirror",
+        "0037-zero-accidental-work-mirror",
         "ADR 0026",
         "zero accidental work",
         "AppState.init",
@@ -814,11 +814,11 @@
       "searchQueries": [
         {
           "query": "zero accidental work",
-          "expectPath": "docs/adr/0026-zero-accidental-work-mirror.md"
+          "expectPath": "docs/adr/0037-zero-accidental-work-mirror.md"
         },
         {
           "query": "adr:zero-accidental-work",
-          "expectPath": "docs/adr/0026-zero-accidental-work-mirror.md"
+          "expectPath": "docs/adr/0037-zero-accidental-work-mirror.md"
         }
       ],
       "guard": "scripts/zero_accidental_work_check.mjs",
@@ -932,10 +932,10 @@
       "canonicalName": "adr:accessibility-governance"
     },
     {
-      "id": "adr-docs-adr-0029-streaming-backpressure-bounded-queues-mirror",
+      "id": "adr-docs-adr-0038-streaming-backpressure-bounded-queues-mirror",
       "kind": "adr",
       "steward": "clawix",
-      "canonicalSource": "docs/adr/0029-streaming-backpressure-bounded-queues-mirror.md",
+      "canonicalSource": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -944,14 +944,14 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "ADR 0029: Streaming, backpressure, and bounded queues mirror",
-        "0029-streaming-backpressure-bounded-queues-mirror",
+        "ADR 0038: Streaming, backpressure, and bounded queues mirror",
+        "0038-streaming-backpressure-bounded-queues-mirror",
         "ADR 0029"
       ],
       "searchQueries": [
         {
           "query": "streaming backpressure bounded queues",
-          "expectPath": "docs/adr/0029-streaming-backpressure-bounded-queues-mirror.md"
+          "expectPath": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md"
         }
       ],
       "guard": "scripts/surface_resource_contract_guard.mjs",

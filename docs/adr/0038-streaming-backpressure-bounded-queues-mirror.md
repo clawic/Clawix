@@ -1,4 +1,4 @@
-# ADR 0029: Streaming, backpressure, and bounded queues mirror
+# ADR 0038: Streaming, backpressure, and bounded queues mirror
 
 Status: Accepted
 

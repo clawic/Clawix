@@ -80,7 +80,7 @@
       ]
     },
     {
-      "adr": "docs/adr/0026-ui-state-invalidation-boundary.md",
+      "adr": "docs/adr/0036-ui-state-invalidation-boundary.md",
       "decisionMap": "docs/decision-map.md",
       "guardrails": [
         "scripts/ui_state_invalidation_boundary_check.mjs",
@@ -107,7 +107,7 @@
       ]
     },
     {
-      "adr": "docs/adr/0026-zero-accidental-work-mirror.md",
+      "adr": "docs/adr/0037-zero-accidental-work-mirror.md",
       "decisionMap": "docs/decision-map.md",
       "guardrails": [
         "scripts/zero_accidental_work_check.mjs",
@@ -134,7 +134,7 @@
       ]
     },
     {
-      "adr": "docs/adr/0026-streaming-backpressure-contract-mirror.md",
+      "adr": "docs/adr/0035-streaming-backpressure-contract-mirror.md",
       "decisionMap": "docs/decision-map.md",
       "guardrails": [
         "scripts/discoverability-check.mjs",
@@ -142,7 +142,7 @@
       ],
       "humanSurface": [
         "docs/decision-map.md",
-        "docs/adr/0026-streaming-backpressure-contract-mirror.md"
+        "docs/adr/0035-streaming-backpressure-contract-mirror.md"
       ],
       "programmaticSurface": [
         "../clawjs/packages/clawjs-core/src/streaming-backpressure.ts",
@@ -189,7 +189,7 @@
       ]
     },
     {
-      "adr": "docs/adr/0029-streaming-backpressure-bounded-queues-mirror.md",
+      "adr": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md",
       "guardrails": [
         "scripts/boundedness_guard.mjs",
         "scripts/surface_resource_contract_guard.mjs",
@@ -280,7 +280,7 @@
       "humanSurface": [
         "docs/decision-map.md",
         "macos/PERF.md",
-        "docs/adr/0026-ui-state-invalidation-boundary.md"
+        "docs/adr/0036-ui-state-invalidation-boundary.md"
       ],
       "programmaticSurface": [
         "scripts/ui_state_invalidation_boundary_check.mjs",

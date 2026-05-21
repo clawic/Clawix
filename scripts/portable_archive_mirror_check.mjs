@@ -37,7 +37,7 @@ function flatten(value) {
   return JSON.stringify(value ?? {});
 }
 
-requireIncludes("docs/adr/0024-portable-archive-contract-mirror.md", [
+requireIncludes("docs/adr/0034-portable-archive-contract-mirror.md", [
   ".clawbackup",
   ".clawexport",
   ".clawsecrets",
@@ -76,7 +76,7 @@ const ii6 = assertions?.assertions?.find((entry) => entry.id === "II.6.backups-a
 if (!ii6) errors.push("II.6 assertion missing");
 else {
   for (const snippet of [
-    "docs/adr/0024-portable-archive-contract-mirror.md",
+    "docs/adr/0034-portable-archive-contract-mirror.md",
     "../../clawjs/docs/adr/0038-portable-archive-contract.md",
     "scripts/portable_archive_mirror_check.mjs",
   ]) {
@@ -89,13 +89,13 @@ if (!flatten(surfaces).includes("portableArchive")) errors.push("interface surfa
 
 const discovery = readJson("docs/discoverability.registry.json");
 for (const required of [
-  "docs/adr/0024-portable-archive-contract-mirror.md",
+  "docs/adr/0034-portable-archive-contract-mirror.md",
   "scripts/portable_archive_mirror_check.mjs",
 ]) {
   if (!flatten(discovery).includes(required)) errors.push(`discoverability registry missing ${required}`);
 }
 for (const query of ["portable archive", "backup", "export", "import", "restore", "requires_signed_host"]) {
-  if (!read("docs/adr/0024-portable-archive-contract-mirror.md").includes(query)) {
+  if (!read("docs/adr/0034-portable-archive-contract-mirror.md").includes(query)) {
     errors.push(`portable archive mirror docs missing ${query}`);
   }
 }

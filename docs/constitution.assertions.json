@@ -499,7 +499,7 @@
         "CONSTITUTION.md",
         "docs/data-storage-boundary.md",
         "docs/host-ownership.md",
-        "docs/adr/0024-portable-archive-contract-mirror.md",
+        "docs/adr/0034-portable-archive-contract-mirror.md",
         "../../clawjs/docs/adr/0038-portable-archive-contract.md",
         "../../clawjs/docs/portable-archive-contract.md",
         "docs/adr/0001-claw-framework-host-boundary.md",

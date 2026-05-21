@@ -9,7 +9,7 @@ Date: 2026-05-21
 The canonical framework decision is sibling ClawJS
 `docs/adr/0045-ui-state-invalidation-high-churn-data-boundary.md`. Clawix also
 has the first concrete macOS slice in
-`docs/adr/0026-ui-state-invalidation-boundary.md`.
+`docs/adr/0036-ui-state-invalidation-boundary.md`.
 
 ## Decision
 

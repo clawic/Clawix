@@ -1,4 +1,4 @@
-# ADR 0026: Zero Accidental Work mirror
+# ADR 0037: Zero Accidental Work mirror
 
 Status: Accepted
 
@@ -122,7 +122,7 @@ the Clawix guard script, and Swift wake/startup tests.
 - **CLI/check**: `node scripts/zero_accidental_work_check.mjs`; sibling
   ClawJS `claw search "zero accidental work" --json` when available.
 - **Registry**: `docs/discoverability.registry.json` entry
-  `adr-docs-adr-0026-zero-accidental-work-mirror`.
+  `adr-docs-adr-0037-zero-accidental-work-mirror`.
 - **Operational coverage**:
   `docs/adr-operational-coverage.manifest.json` records the guard and tests.
 

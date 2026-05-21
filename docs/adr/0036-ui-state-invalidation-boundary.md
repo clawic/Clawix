@@ -1,4 +1,4 @@
-# ADR 0026: UI state invalidation boundary
+# ADR 0036: UI state invalidation boundary
 
 Status: accepted
 
