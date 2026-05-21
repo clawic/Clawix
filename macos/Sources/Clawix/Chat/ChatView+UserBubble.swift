@@ -1,9 +1,10 @@
 import AppKit
+import ImageIO
 import SwiftUI
 import ClawixCore
 
 enum UserBubbleContent {
-    enum ImageSource: Identifiable, Equatable {
+    enum ImageSource: Identifiable, Equatable, Sendable {
         case file(URL)
         case attachment(WireAttachment)
 
@@ -225,22 +226,16 @@ struct UserImageThumbnail: View {
         .onHover { hovered = $0 }
         .help(helpText)
         .task(id: source.id) {
-            let loaded = await Task.detached(priority: .userInitiated) { () -> (image: NSImage?, bytes: Int) in
-                switch source {
-                case .file(let url):
-                    let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
-                    let size = (attrs?[.size] as? NSNumber)?.intValue ?? 0
-                    return (NSImage(contentsOf: url), size)
-                case .attachment(let attachment):
-                    guard let data = Data(base64Encoded: attachment.dataBase64) else { return (nil, 0) }
-                    return (NSImage(data: data), data.count)
-                }
-            }.value
-            PerfSignpost.imageLoad.event("thumbnail.bytes", loaded.bytes)
-            if loaded.image != nil {
-                PerfSignpost.imageLoad.event("thumbnail.loaded")
+            if let cached = UserImageThumbnailLoader.shared.cachedImage(for: source) {
+                image = cached
+                return
             }
-            self.image = loaded.image
+            image = nil
+            let loaded = await UserImageThumbnailLoader.shared.thumbnail(for: source)
+            guard !Task.isCancelled else { return }
+            if let loadedImage = loaded.image {
+                image = loadedImage
+            }
         }
     }
 
@@ -249,6 +244,240 @@ struct UserImageThumbnail: View {
         case .file(let url): return url.lastPathComponent
         case .attachment(let attachment): return attachment.filename ?? "Image"
         }
+    }
+}
+
+struct UserImageThumbnailLoadResult: @unchecked Sendable {
+    let image: NSImage?
+    let sourceBytes: Int
+    let cacheHit: Bool
+    let decodedPixels: Int
+    let costBytes: Int
+    let cacheKey: String?
+
+    static func failed(sourceBytes: Int = 0, cacheKey: String? = nil) -> UserImageThumbnailLoadResult {
+        UserImageThumbnailLoadResult(
+            image: nil,
+            sourceBytes: sourceBytes,
+            cacheHit: false,
+            decodedPixels: 0,
+            costBytes: 0,
+            cacheKey: cacheKey
+        )
+    }
+}
+
+final class UserImageThumbnailLoader: @unchecked Sendable {
+    static let shared = UserImageThumbnailLoader()
+    static let defaultMaxPixelSize = 256
+
+    private enum LoadError: Error {
+        case fileMetadataUnavailable
+        case invalidAttachmentData
+        case imageSourceUnavailable
+        case thumbnailDecodeFailed
+    }
+
+    private let cache = NSCache<NSString, NSImage>()
+
+    init() {
+        cache.countLimit = 256
+        cache.totalCostLimit = 32 * 1024 * 1024
+    }
+
+    func cachedImage(
+        for source: UserBubbleContent.ImageSource,
+        maxPixelSize: Int = defaultMaxPixelSize
+    ) -> NSImage? {
+        guard case .file(let url) = source,
+              let metadata = Self.fileMetadata(for: url) else {
+            return nil
+        }
+        return cache.object(forKey: fileCacheKey(url: url, metadata: metadata, maxPixelSize: maxPixelSize) as NSString)
+    }
+
+    func thumbnail(
+        for source: UserBubbleContent.ImageSource,
+        maxPixelSize: Int = defaultMaxPixelSize
+    ) async -> UserImageThumbnailLoadResult {
+        guard !Task.isCancelled else {
+            PerfSignpost.imageLoad.event("thumbnail.cancelled")
+            return .failed()
+        }
+        let worker = Task.detached(priority: .userInitiated) { [self] in
+            do {
+                try Task.checkCancellation()
+                return try autoreleasepool {
+                    try loadThumbnail(for: source, maxPixelSize: maxPixelSize)
+                }
+            } catch is CancellationError {
+                PerfSignpost.imageLoad.event("thumbnail.cancelled")
+                return .failed()
+            } catch {
+                PerfSignpost.imageLoad.event("thumbnail.failed")
+                return .failed()
+            }
+        }
+        return await withTaskCancellationHandler {
+            await worker.value
+        } onCancel: {
+            worker.cancel()
+        }
+    }
+
+    func resetForTests() {
+        cache.removeAllObjects()
+    }
+
+    private func loadThumbnail(
+        for source: UserBubbleContent.ImageSource,
+        maxPixelSize: Int
+    ) throws -> UserImageThumbnailLoadResult {
+        switch source {
+        case .file(let url):
+            let metadata = try Self.fileMetadata(for: url).unwrap(or: LoadError.fileMetadataUnavailable)
+            let cacheKey = fileCacheKey(url: url, metadata: metadata, maxPixelSize: maxPixelSize)
+            return try loadThumbnail(
+                cacheKey: cacheKey,
+                sourceBytes: metadata.size,
+                makeSource: {
+                    CGImageSourceCreateWithURL(
+                        url as CFURL,
+                        [kCGImageSourceShouldCache: false] as CFDictionary
+                    )
+                },
+                maxPixelSize: maxPixelSize
+            )
+        case .attachment(let attachment):
+            guard let data = Data(base64Encoded: attachment.dataBase64) else {
+                throw LoadError.invalidAttachmentData
+            }
+            try Task.checkCancellation()
+            let cacheKey = attachmentCacheKey(
+                attachment: attachment,
+                data: data,
+                maxPixelSize: maxPixelSize
+            )
+            return try loadThumbnail(
+                cacheKey: cacheKey,
+                sourceBytes: data.count,
+                makeSource: {
+                    CGImageSourceCreateWithData(
+                        data as CFData,
+                        [kCGImageSourceShouldCache: false] as CFDictionary
+                    )
+                },
+                maxPixelSize: maxPixelSize
+            )
+        }
+    }
+
+    private func loadThumbnail(
+        cacheKey: String,
+        sourceBytes: Int,
+        makeSource: () -> CGImageSource?,
+        maxPixelSize: Int
+    ) throws -> UserImageThumbnailLoadResult {
+        PerfSignpost.imageLoad.event("thumbnail.bytes", sourceBytes)
+        if let cached = cache.object(forKey: cacheKey as NSString) {
+            PerfSignpost.imageLoad.event("thumbnail.cache_hit")
+            return UserImageThumbnailLoadResult(
+                image: cached,
+                sourceBytes: sourceBytes,
+                cacheHit: true,
+                decodedPixels: 0,
+                costBytes: 0,
+                cacheKey: cacheKey
+            )
+        }
+
+        PerfSignpost.imageLoad.event("thumbnail.cache_miss")
+        try Task.checkCancellation()
+        let source = try makeSource().unwrap(or: LoadError.imageSourceUnavailable)
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        let cgImage = PerfSignpost.imageLoad.interval("thumbnail.decode") {
+            CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+        }
+        try Task.checkCancellation()
+        guard let cgImage else {
+            throw LoadError.thumbnailDecodeFailed
+        }
+
+        let cost = cgImage.bytesPerRow * cgImage.height
+        let decodedPixels = cgImage.width * cgImage.height
+        PerfSignpost.imageLoad.event("thumbnail.decoded_pixels", decodedPixels)
+        PerfSignpost.imageLoad.event("thumbnail.cost_bytes", cost)
+
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+        cache.setObject(image, forKey: cacheKey as NSString, cost: cost)
+        PerfSignpost.imageLoad.event("thumbnail.loaded")
+        return UserImageThumbnailLoadResult(
+            image: image,
+            sourceBytes: sourceBytes,
+            cacheHit: false,
+            decodedPixels: decodedPixels,
+            costBytes: cost,
+            cacheKey: cacheKey
+        )
+    }
+
+    private struct FileMetadata {
+        let size: Int
+        let modificationTime: TimeInterval
+    }
+
+    private static func fileMetadata(for url: URL) -> FileMetadata? {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = (attrs[.size] as? NSNumber)?.intValue else {
+            return nil
+        }
+        let modified = (attrs[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0
+        return FileMetadata(size: size, modificationTime: modified)
+    }
+
+    private func fileCacheKey(url: URL, metadata: FileMetadata, maxPixelSize: Int) -> String {
+        [
+            "file",
+            url.standardizedFileURL.path,
+            String(metadata.size),
+            String(metadata.modificationTime),
+            String(maxPixelSize)
+        ].joined(separator: "\u{1f}")
+    }
+
+    private func attachmentCacheKey(
+        attachment: WireAttachment,
+        data: Data,
+        maxPixelSize: Int
+    ) -> String {
+        [
+            "attachment",
+            attachment.id,
+            String(data.count),
+            Self.fnv1a64Hex(data),
+            String(maxPixelSize)
+        ].joined(separator: "\u{1f}")
+    }
+
+    private static func fnv1a64Hex(_ data: Data) -> String {
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in data {
+            hash ^= UInt64(byte)
+            hash &*= 0x100000001b3
+        }
+        return String(hash, radix: 16)
+    }
+}
+
+private extension Optional {
+    func unwrap<E: Error>(or error: E) throws -> Wrapped {
+        guard let value = self else { throw error }
+        return value
     }
 }
 
