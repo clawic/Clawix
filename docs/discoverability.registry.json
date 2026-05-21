@@ -2010,6 +2010,38 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-localization-surface-guard",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/localization_surface_guard.mjs",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/constitution-map.md",
+        "playbooks/testing.md"
+      ],
+      "discoveryTerms": [
+        "localization_surface_guard",
+        "Localization Surface Guard",
+        "day-one localization",
+        "Localizable.xcstrings completeness",
+        "macOS UI localization guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "macOS UI localization guard",
+          "expectPath": "scripts/localization_surface_guard.mjs"
+        },
+        {
+          "query": "day-one localization",
+          "expectPath": "scripts/localization_surface_guard.mjs"
+        }
+      ],
+      "guard": "scripts/localization_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-21"
+    },
+    {
       "id": "guard-scripts-persistent-surface-guard",
       "kind": "guardrail",
       "steward": "clawix",

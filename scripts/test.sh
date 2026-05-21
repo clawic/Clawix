@@ -67,6 +67,11 @@ for (const entry of quarantine.entries) {
     console.error(`testing policy failed: quarantine entry ${entry.id} expired on ${entry.expires}`);
     process.exit(1);
   }
+  const text = `${entry.id} ${entry.reason} ${entry.repair}`.toLowerCase();
+  if (text.includes("localization") && (text.includes("unregistered ui") || text.includes("visible ui") || text.includes("localizable.xcstrings"))) {
+    console.error(`testing policy failed: localization completeness cannot be quarantined (${entry.id})`);
+    process.exit(1);
+  }
 }
 console.error("testing policy passed");
 NODE
@@ -257,6 +262,9 @@ fast() {
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs"
   run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/localization_surface_guard.mjs" --self-test
+  run python3 "$ROOT_DIR/macos/scripts/compile_xcstrings.py"
+  run node "$ROOT_DIR/scripts/localization_surface_guard.mjs" macos
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" macos ios android windows web/src linux/app/src
   run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs" --self-test

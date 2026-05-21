@@ -25,7 +25,8 @@ bash scripts/test.sh changed
 - `release`: hygiene plus every non-live lane required before publishing.
 
 The runner also enforces the policy guard during `fast`: synced ADR, matrix,
-scenario files, ignored artifact paths, and non-expired quarantine entries.
+scenario files, ignored artifact paths, non-expired quarantine entries, and
+the macOS localization surface guard.
 
 ## Privacy
 
@@ -39,3 +40,22 @@ contract.
 
 Quarantines live in `qa/quarantine.json`. Each entry needs `id`, `owner`,
 `reason`, `repair`, and `expires`. Expired entries fail the public runner.
+Quarantines may not suppress constitutionally required localization
+completeness for visible UI strings; `scripts/localization_surface_guard.mjs`
+must fail instead.
+
+## Localization
+
+`CONSTITUTION.md` IX.5 requires localized UI surfaces from day one. For macOS,
+run:
+
+```bash
+node scripts/localization_surface_guard.mjs --self-test
+python3 macos/scripts/compile_xcstrings.py
+node scripts/localization_surface_guard.mjs macos
+```
+
+The guard verifies registered `Localizable.xcstrings` keys, supported-locale
+values, generated `.lproj` resources, and unregistered SwiftUI/user-facing
+literals. Use `Text(verbatim:)` or an explicit technical literal only for data,
+identifiers, paths, URLs, symbols, or other non-localizable content.
