@@ -230,6 +230,8 @@ for (const snippet of [
   "isVisible: (AppFeature) -> Bool",
   "guard let gatedFeature = route.gatedFeature else",
   "guard isVisible(gatedFeature) else",
+  "static func visibilityGate(for service: ClawJSService) -> ClawJSServiceVisibilityGate",
+  "static func visibleServices(",
 ]) {
   if (!serviceDemandPolicyText.includes(snippet)) {
     fail(`ClawJSServiceDemandPolicy is missing route maturity visibility guard snippet: ${snippet}`);
@@ -249,6 +251,23 @@ for (const relativePath of listFiles("macos/Sources/Clawix", ".swift")) {
     if (gatedRouteAssignmentPattern.test(line)) {
       fail(`${relativePath}:${index + 1} must open gated routes with appState.navigate(to:) so maturity visibility is enforced`);
     }
+  }
+}
+
+const governedServiceStartPattern = /start\(\s*\[\s*\.(database|secrets|telegram|iot|index|publishing)\s*\]/;
+for (const relativePath of listFiles("macos/Sources/Clawix", ".swift")) {
+  const source = read(relativePath);
+  if (!governedServiceStartPattern.test(source)) continue;
+  if (!source.includes("ClawJSServiceDemandPolicy.visibleServices(")
+      && !source.includes("ClawJSServiceDemandPolicy.services(")) {
+    fail(`${relativePath} starts governed ClawJS services without central maturity visibility filtering`);
+  }
+}
+for (const relativePath of listFiles("macos/Sources/Clawix/Publishing", ".swift")) {
+  const source = read(relativePath);
+  if (source.includes("restart(.publishing)")
+      && !source.includes("ClawJSServiceDemandPolicy.isServiceVisible(")) {
+    fail(`${relativePath} restarts publishing without central maturity visibility filtering`);
   }
 }
 
