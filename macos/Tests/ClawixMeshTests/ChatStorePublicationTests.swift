@@ -216,6 +216,43 @@ final class ChatStorePublicationTests: XCTestCase {
         )
     }
 
+    func testTranscriptDeltasUseDedicatedBridgePublisherWithoutChatStoreObjectWillChange() async {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
+        state.chats = [
+            Chat(id: chatId, title: "Bridge", messages: [assistant], createdAt: Date())
+        ]
+
+        var chatStorePublishes = 0
+        var bridgePublishes = 0
+        var lastBridgeContent = ""
+        let streamed = expectation(description: "bridge publisher receives coalesced transcript content")
+
+        state.chatStore.objectWillChange.sink {
+            chatStorePublishes += 1
+        }.store(in: &cancellables)
+        state.bridgeChatsPublisher.dropFirst().sink { snapshots in
+            bridgePublishes += 1
+            lastBridgeContent = snapshots.first?.messages.last?.content ?? ""
+            if lastBridgeContent == "hello world" {
+                streamed.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        for part in ["he", "ll", "o ", "wor", "ld"] {
+            state.appendAssistantDelta(chatId: chatId, delta: part)
+            state.flushPendingAssistantTextDeltas(chatId: chatId)
+        }
+
+        await fulfillment(of: [streamed], timeout: 1.0)
+
+        XCTAssertEqual(chatStorePublishes, 0)
+        XCTAssertLessThan(bridgePublishes, 5)
+        XCTAssertEqual(lastBridgeContent, "hello world")
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
+    }
+
     func testPendingReasoningFlushesBeforeToolTimelineEntry() {
         let state = AppState()
         let chatId = UUID()
@@ -391,7 +428,7 @@ final class ChatStorePublicationTests: XCTestCase {
                 return "message:\(text)"
             case .reasoning(_, let text):
                 return "reasoning:\(text)"
-            case .tools(_, let items):
+            case .tools(_, let items, _):
                 return "tools:\(items.count)"
             }
         }

@@ -270,6 +270,11 @@ final class ChatStore: ObservableObject {
     }
 
     private var transcripts: [UUID: ChatTranscriptStore] = [:]
+    private let transcriptChanges = PassthroughSubject<UUID, Never>()
+
+    var transcriptChangesPublisher: AnyPublisher<UUID, Never> {
+        transcriptChanges.eraseToAnyPublisher()
+    }
 
     var activeSnapshots: [Chat] {
         summaries.map { $0.summarySnapshot() }
@@ -331,7 +336,7 @@ final class ChatStore: ObservableObject {
     func transcript(forCreating id: UUID) -> ChatTranscriptStore {
         if let transcript = transcripts[id] { return transcript }
         let transcript = ChatTranscriptStore(chatId: id, onChange: { [weak self] in
-            self?.objectWillChange.send()
+            self?.transcriptChanges.send(id)
         })
         transcripts[id] = transcript
         return transcript

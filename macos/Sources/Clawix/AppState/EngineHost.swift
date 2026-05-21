@@ -11,13 +11,16 @@ extension AppState: EngineHost {
     }
 
     public var bridgeChatsPublisher: AnyPublisher<[BridgeChatSnapshot], Never> {
-        let legacy = $chats
+        let summaries = chatStore.$summaries
+            .map { [weak self] summaries in self?.bridgeSnapshots(summaries: summaries) ?? [] }
+            .eraseToAnyPublisher()
+
+        let transcripts = chatStore.transcriptChangesPublisher
+            .throttle(for: .milliseconds(16), scheduler: DispatchQueue.main, latest: true)
             .map { [weak self] _ in self?.bridgeSnapshots() ?? [] }
             .eraseToAnyPublisher()
-        let normalized = chatStore.objectWillChange
-            .map { [weak self] _ in self?.bridgeSnapshots() ?? [] }
-            .eraseToAnyPublisher()
-        return Publishers.Merge(legacy, normalized).eraseToAnyPublisher()
+
+        return Publishers.Merge(summaries, transcripts).eraseToAnyPublisher()
     }
 
     public func bridgeMessagesPage(
@@ -141,7 +144,11 @@ extension AppState: EngineHost {
     }
 
     private func bridgeSnapshots() -> [BridgeChatSnapshot] {
-        chatStore.summaries.map { summary in
+        bridgeSnapshots(summaries: chatStore.summaries)
+    }
+
+    private func bridgeSnapshots(summaries: [ChatSummary]) -> [BridgeChatSnapshot] {
+        summaries.map { summary in
             let chat = summary.summarySnapshot()
             let messages = chatStore.transcript(for: summary.id)?.messages ?? []
             return bridgeSnapshot(from: chat, messages: messages)

@@ -104,7 +104,7 @@ for (const arg of rawArgs) {
 }
 
 requireSnippet(
-  "docs/adr/0026-ui-state-invalidation-boundary.md",
+  "docs/adr/0036-ui-state-invalidation-boundary.md",
   "high-churn streaming data must not publish through global app state"
 );
 requireSnippet("docs/decision-map.md", "UI state invalidation boundary");
@@ -134,6 +134,15 @@ if (!chatSummaryMatch) {
     }
   }
 }
+if (!chatStores.includes("transcriptChangesPublisher")) {
+  fail("ChatStore must expose a dedicated transcriptChangesPublisher for high-churn transcript mutations");
+}
+if (!chatStores.includes("transcriptChanges.send(id)")) {
+  fail("ChatTranscriptStore changes must publish through transcriptChanges, not ChatStore.objectWillChange");
+}
+if (chatStores.includes("objectWillChange.send()")) {
+  fail("ChatStore must not forward transcript/message deltas through objectWillChange");
+}
 
 const sidebarStore = read("macos/Sources/Clawix/Sidebar/SidebarStore.swift");
 if (sidebarStore.includes("appState.$chats")) {
@@ -144,6 +153,17 @@ if (!sidebarStore.includes("appState.chatStore.$summaries")) {
 }
 if (!sidebarStore.includes("messages: []")) {
   fail("SidebarStore sidebar chats must be summary snapshots without transcript payloads");
+}
+
+const engineHost = read("macos/Sources/Clawix/AppState/EngineHost.swift");
+if (engineHost.includes("chatStore.objectWillChange")) {
+  fail("EngineHost bridge publisher must not subscribe to ChatStore.objectWillChange");
+}
+if (!engineHost.includes("chatStore.transcriptChangesPublisher")) {
+  fail("EngineHost bridge publisher must consume the dedicated transcriptChangesPublisher");
+}
+if (!engineHost.includes(".throttle(for: .milliseconds(16)")) {
+  fail("EngineHost transcript bridge snapshots must be coalesced to a frame before snapshot generation");
 }
 
 runRenderLogFixtures();
