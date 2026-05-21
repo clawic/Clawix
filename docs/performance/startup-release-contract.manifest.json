@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "status": "pending-approved-baseline-capture",
+  "policy": "The macOS release startup gate measures process start to first chat interactive. It enforces p50/p95 only after the first approved private baseline exists; before approval it reports EXTERNAL PENDING.",
+  "platformScope": {
+    "covered": ["macos"],
+    "future": ["ios", "android", "web"]
+  },
+  "flow": {
+    "id": "macos-startup-first-chat-interactive",
+    "platform": "macos",
+    "scope": "release",
+    "primaryDuration": "process_start->first_chat_interactive",
+    "supportingDurations": [
+      "process_start->first_window",
+      "process_start->first_sidebar_paint",
+      "process_start->core_ready"
+    ],
+    "launchModes": ["cold", "warm"],
+    "requiredMilestones": [
+      "process_start",
+      "app_init_start",
+      "app_init_end",
+      "first_window",
+      "first_sidebar_paint",
+      "first_chat_interactive",
+      "core_ready"
+    ],
+    "requiredMetrics": [
+      "cold.p50Ms",
+      "cold.p95Ms",
+      "warm.p50Ms",
+      "warm.p95Ms"
+    ],
+    "requiredEvidenceFields": [
+      "flowId",
+      "platform",
+      "privateBaselineReference",
+      "bundleIdentifier",
+      "bundleVersion",
+      "gitHead",
+      "appMode",
+      "environmentHash",
+      "measurementSamples",
+      "metrics",
+      "milestoneCompleteness",
+      "failures",
+      "timeouts",
+      "measuredAt",
+      "approvedByUserAt",
+      "approvedScope"
+    ]
+  },
+  "privateBaselineAlias": "private-codex-startup-baselines",
+  "privateBaselineReference": "private-codex-startup-baselines:macos/startup-first-chat-interactive",
+  "baselineFilename": "baseline.json",
+  "currentEvidenceEnv": "CLAWIX_STARTUP_CURRENT_EVIDENCE",
+  "privateRootEnv": "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT",
+  "verificationCommand": "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_STARTUP_CURRENT_EVIDENCE=<private-evidence-json> node scripts/startup_release_contract_check.mjs --require-approved",
+  "publicFallback": "EXTERNAL PENDING when the private root or approved baseline is unavailable"
+}

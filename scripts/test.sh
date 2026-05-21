@@ -206,6 +206,7 @@ fast() {
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/startup_release_contract_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"

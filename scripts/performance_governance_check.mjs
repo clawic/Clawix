@@ -42,6 +42,16 @@ for (const [relativePath, snippets] of new Map([
     "GPU / Neural Engine",
     "## Visual Boundary",
   ]],
+  ["docs/performance/startup-release-contract.md", [
+    "macos-startup-first-chat-interactive",
+    "process_start -> first_chat_interactive",
+    "EXTERNAL PENDING",
+  ]],
+  ["docs/performance/startup-release-contract.manifest.json", [
+    "macos-startup-first-chat-interactive",
+    "private-codex-startup-baselines",
+    "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT",
+  ]],
   ["docs/adr/TEMPLATE.md", [
     "## Performance Impact",
     "CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals",
@@ -73,6 +83,10 @@ for (const [relativePath, snippets] of new Map([
   ]],
   ["skills/ui-performance-budget/SKILL.md", [
     "CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals",
+  ]],
+  ["scripts/startup_release_contract_check.mjs", [
+    "macos-startup-first-chat-interactive",
+    "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT",
   ]],
 ])) {
   for (const snippet of snippets) requireSnippet(relativePath, snippet);

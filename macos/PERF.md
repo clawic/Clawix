@@ -67,6 +67,7 @@ that gap with static code-reading guesses.
 | `MetricKitObserver` | `Sources/Clawix/Diagnostics/MetricKitObserver.swift` | yes | Apple's own daily payloads (launch time, hitch ratio, hangs with backtraces, app exit reasons) |
 | `streamingPerfLog` | `Sources/Clawix/StreamingFade.swift` | yes (toggle in source) | Streaming pipeline per-message timings via `Logger("stream-perf")` |
 | `perf-workout.sh` phase markers | `scripts/perf-workout.sh` | manual | Repeatable phase boundaries in `/tmp/clawix-renders.log` for before/after comparisons |
+| `LaunchMilestones` | `Sources/Clawix/Diagnostics/LaunchMilestones.swift` | yes | One-shot startup release milestones for `process_start -> first_chat_interactive` |
 
 All of the above land in one place when you run `perf-capture.sh`:
 
@@ -86,6 +87,7 @@ All of the above land in one place when you run `perf-capture.sh`:
 | --- | --- | --- |
 | `ui.chat` | `ChatView.swift` `MessageRow` body | One `row.body` event per message body re-eval |
 | `ui.sidebar` | `SidebarView.swift:145` `makeSnapshot` | One `snapshot` interval per body invocation |
+| `launch` | app entry, root window, sidebar, composer, startup core | One-shot events: `process_start`, `app_init_start`, `app_init_end`, `first_window`, `first_sidebar_paint`, `first_chat_interactive`, `core_ready` |
 | `state.appstate` | `AppState.swift` `objectWillChange` ticks via `RenderProbe` | High-rate ticks correlated with publisher emissions |
 | `ipc.client` | `AgentBackend/ClawixClient.swift:241` `handleLine` | One `decode` interval per JSON-RPC frame |
 | `backend.metadata` | `AgentBackend/ClawixService.swift` metadata refresh/cache paths | Cache hit/stale/miss events and refresh duration for model/rate-limit metadata |
@@ -100,6 +102,25 @@ Add a new category by editing `Signposts.swift`, registering it in
 the table above, and only then emitting from a call site. The ad-hoc
 "add an os_signpost here" anti-pattern is what the taxonomy exists to
 prevent.
+
+## Startup release contract
+
+Release startup is a governed flow, not only an investigation template. The
+public contract lives at `../docs/performance/startup-release-contract.md` and
+`../docs/performance/startup-release-contract.manifest.json`.
+
+- Flow id: `macos-startup-first-chat-interactive`.
+- Primary duration: `process_start -> first_chat_interactive`.
+- Supporting durations: `process_start -> first_window`,
+  `process_start -> first_sidebar_paint`, and
+  `process_start -> core_ready`.
+- The private harness runs cold and warm launches through the canonical signed
+  launcher, parses the `launch` signposts, and writes p50/p95 evidence outside
+  the public repo.
+- `node scripts/startup_release_contract_check.mjs` validates the public
+  contract and reports `EXTERNAL PENDING` until approved private baseline
+  evidence exists. With approved evidence, the same checker enforces p50/p95
+  regressions for release validation.
 
 ## Evidence checklist
 

@@ -1917,6 +1917,36 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-startup-release-contract-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/startup_release_contract_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "startup_release_contract_check",
+        "cold warm startup release contract",
+        "macos-startup-first-chat-interactive"
+      ],
+      "searchQueries": [
+        {
+          "query": "startup_release_contract_check",
+          "expectPath": "scripts/startup_release_contract_check.mjs"
+        },
+        {
+          "query": "macos-startup-first-chat-interactive",
+          "expectPath": "docs/performance/startup-release-contract.md"
+        }
+      ],
+      "guard": "scripts/startup_release_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-persistent-surface-guard",
       "kind": "guardrail",
       "owner": "clawix",
