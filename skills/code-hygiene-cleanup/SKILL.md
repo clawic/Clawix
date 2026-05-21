@@ -16,11 +16,13 @@ Use this skill when the user explicitly asks to clean code hygiene findings or c
 4. Preserve public API, package entrypoints, CLI/router/registry/protocol surfaces, canonical docs, fixtures, stable registries, and compatibility names unless an explicit removal decision exists.
 5. Make the smallest cleanup that removes proven debt. Future intent must move to issue/backlog/ADR rather than dormant code.
 6. When retaining a finding, add or update a baseline entry with reason, owner area, reference, and expiry; never hide a real bug behind `EXTERNAL_PENDING`.
-7. Run the relevant checks for the batch before moving on. Record validation and baseline removals/additions in the ledger.
+7. For large generated/baseline refreshes, record generated provenance with `generator`, `command`, `source`, `upstreamHash`, `regenerationMode`, `deltaSummary`, `debtImpact`, and conditional `debtImpactReason`. The delta must explain what changed and the debt impact must say whether cleanup debt decreases, stays neutral, or increases.
+8. Run the relevant checks for the batch before moving on. Record validation and baseline removals/additions in the ledger.
 
 ## Constraints
 
 - Autofix is suggestion-only by default; do not run destructive fixes or remove files without explicit task scope.
 - Keep enum members, Swift dynamic-use findings, and duplicates report-only until reviewed.
+- Do not use `@generated`, a baseline filename, or `generatedPaths` alone to hide a large generated/baseline change.
 - Do not batch unrelated cleanup categories together.
 - Do not modify unrelated dirty work while cleaning; record it separately if it affects validation.

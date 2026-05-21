@@ -27,7 +27,7 @@ with concrete evidence.
 | `duplicate_severity` | Report-only al inicio | documented | ADR 0016 semantic report-only rule. |
 | `asset_policy` | Eliminar si no referenciado | validated | Unreferenced asset candidates are zero after excluding generated/public/platform surfaces from cleanup candidates; duplicate assets remain report-only. |
 | `test_code_policy` | Si, pero con fixtures protegidas | documented | Cleanup skill procedure. |
-| `generated_policy` | Manifest + marcadores | documented | ADR 0016 generated/vendor rule. |
+| `generated_policy` | Manifest + marcadores | implemented | ADR 0016 generated/vendor rule plus generated provenance for large generated/baseline refreshes: `generator`, `command`, `source`, `upstreamHash`, `regenerationMode`, `deltaSummary`, `debtImpact`, and conditional `debtImpactReason`. |
 | `docs_references` | Solo docs canonicas | documented | ADR 0016 public/canonical retention rule. |
 | `cleanup_batching` | Por categoria y repo | documented | Cleanup skill procedure. |
 | `ci_gate` | Changed + release | validated | ClawJS/Clawix changed lanes call hygiene checks, Clawix changed lane passed locally, and release lanes include hygiene with external-only requirements reported separately. |

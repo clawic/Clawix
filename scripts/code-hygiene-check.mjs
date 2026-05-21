@@ -17,6 +17,33 @@ function fail(message) {
   errors.push(message);
 }
 
+function validateGeneratedProvenance(value, label) {
+  const requiredStringFields = ["generator", "command", "source", "upstreamHash", "regenerationMode", "deltaSummary", "debtImpact"];
+  const regenerationModes = new Set(["deterministic", "snapshot-refresh", "manual-reviewed"]);
+  const debtImpacts = new Set(["decreases", "neutral", "increases"]);
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    fail(`${label} is missing generatedProvenance`);
+    return;
+  }
+  for (const field of requiredStringFields) {
+    if (typeof value[field] !== "string" || value[field].trim() === "") {
+      fail(`${label} generatedProvenance is missing ${field}`);
+    }
+  }
+  if (typeof value.upstreamHash === "string" && value.upstreamHash.trim() && !/^sha256:[a-f0-9]{64}$/.test(value.upstreamHash)) {
+    fail(`${label} generatedProvenance upstreamHash must use sha256:<64 hex>`);
+  }
+  if (typeof value.regenerationMode === "string" && value.regenerationMode.trim() && !regenerationModes.has(value.regenerationMode)) {
+    fail(`${label} generatedProvenance regenerationMode is invalid`);
+  }
+  if (typeof value.debtImpact === "string" && value.debtImpact.trim() && !debtImpacts.has(value.debtImpact)) {
+    fail(`${label} generatedProvenance debtImpact is invalid`);
+  }
+  if (value.debtImpact !== "decreases" && (typeof value.debtImpactReason !== "string" || value.debtImpactReason.trim() === "")) {
+    fail(`${label} generatedProvenance is missing debtImpactReason for neutral/increasing debt`);
+  }
+}
+
 const decisions = readJson("docs/code-hygiene-decisions.json");
 const baseline = readJson("docs/code-hygiene-baseline.json");
 const tools = readJson("docs/code-hygiene-tools.json");
@@ -26,9 +53,12 @@ const peripheryReport = readJson("docs/code-hygiene-periphery-report.json");
 const reportMarkdown = readText("docs/code-hygiene-report.md");
 const knipReportMarkdown = readText("docs/code-hygiene-knip-report.md");
 const peripheryReportMarkdown = readText("docs/code-hygiene-periphery-report.md");
+const codeHygieneAdr = readText("docs/adr/0016-code-hygiene-program.md");
 const ledger = readText("docs/code-hygiene-ledger.md");
 const decisionChecklist = readText("docs/code-hygiene-decision-checklist.md");
 const completionAudit = readText("docs/governance/code-hygiene/completion.md");
+const auditSkill = readText("skills/code-hygiene-audit/SKILL.md");
+const cleanupSkill = readText("skills/code-hygiene-cleanup/SKILL.md");
 const knipConfigPath = fs.existsSync(path.join(rootDir, "web", "knip.json")) ? "web/knip.json" : "knip.json";
 const auditResult = spawnSync("node", ["scripts/code-hygiene-audit.mjs", "--json"], {
   cwd: rootDir,
@@ -76,6 +106,25 @@ for (const entry of baseline.entries ?? []) {
     fail(`code hygiene baseline entry ${entry.id ?? "(unknown)"} is expired`);
   }
   if (entry.category && !baseline.categories.includes(entry.category)) fail(`code hygiene baseline entry ${entry.id ?? "(unknown)"} has unknown category`);
+  if (entry.category === "generated") {
+    validateGeneratedProvenance(entry.generatedProvenance, `code hygiene baseline entry ${entry.id ?? "(unknown)"}`);
+  }
+}
+
+const generatedProvenanceDocs = [
+  ["ADR 0016", codeHygieneAdr],
+  ["decision checklist", decisionChecklist],
+  ["code hygiene audit skill", auditSkill],
+  ["code hygiene cleanup skill", cleanupSkill],
+];
+for (const [label, text] of generatedProvenanceDocs) {
+  if (!text.includes("generated provenance")) fail(`${label} must document generated provenance for large generated/baseline refreshes`);
+  for (const field of ["generator", "command", "source", "upstreamHash", "regenerationMode", "deltaSummary", "debtImpact"]) {
+    if (!text.includes(field)) fail(`${label} must document generated provenance field ${field}`);
+  }
+  if (!/delta/i.test(text) || !/debt/i.test(text)) {
+    fail(`${label} must document baseline refresh delta and debt impact`);
+  }
 }
 
 if (tools.schemaVersion !== 1) fail("code hygiene tools schemaVersion must be 1");
