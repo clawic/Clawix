@@ -13,7 +13,7 @@ import UIKit
 ///    `generated_images/` folder).
 /// 2. Markdown image links the model wrote inline pointing into that
 ///    same folder, e.g.
-///    `![](/Users/.../codex/generated_images/<session>/ig_*.png)`.
+///    `![](<local-user-path>/codex/generated_images/<session>/ig_*.png)`.
 ///    Old conversations include this style because the model fell back
 ///    to writing the raw path after the user said the work-item-only
 ///    image hadn't shown up.

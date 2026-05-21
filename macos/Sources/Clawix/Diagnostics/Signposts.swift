@@ -37,7 +37,7 @@ enum PerfSignpost: String, CaseIterable {
     case hang = "hang"
     case resource = "resource"
 
-    private static let subsystem: String = Bundle.main.bundleIdentifier ?? "com.clawix.app"
+    private static let subsystem: String = Bundle.main.bundleIdentifier ?? "com.example.clawix"
 
     /// Master kill switch. Read once at process start; flipping it at
     /// runtime would require restarting the app.

@@ -265,7 +265,7 @@ struct AppCustomMacActionPlanRequest {
             ),
             host: NativeMacActionWireHost(
                 hostId: ProcessInfo.processInfo.hostName,
-                bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+                bundleId: Bundle.main.bundleIdentifier ?? "com.example.clawix",
                 signingIdentity: nil,
                 teamId: nil,
                 appVariant: Self.appVariant,

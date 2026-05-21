@@ -112,7 +112,7 @@ final class NativeMacActionBrokerTests: XCTestCase {
         XCTAssertEqual(plan.risk, "critical")
         XCTAssertEqual(plan.coverageState, "executable")
         XCTAssertEqual(plan.actor.kind, "agent")
-        XCTAssertEqual(plan.host.bundleId, "com.clawix.app")
+        XCTAssertEqual(plan.host.bundleId, "com.example.clawix")
         XCTAssertEqual(plan.requiredApprovals.first?.approverRoles, ["owner", "admin"])
         XCTAssertEqual(plan.rollback.level, "best_effort")
         XCTAssertEqual(plan.rollback.timerSeconds, 120)
@@ -178,7 +178,7 @@ final class NativeMacActionBrokerTests: XCTestCase {
             actor: NativeMacActionWireActor(kind: actorKind, id: "actor_test", role: "owner", assignmentId: nil, runId: nil),
             host: NativeMacActionWireHost(
                 hostId: "host_test",
-                bundleId: "com.clawix.app",
+                bundleId: "com.example.clawix",
                 signingIdentity: "PLACEHOLDER_SIGNING_IDENTITY",
                 teamId: "TEAMID",
                 appVariant: "debug",

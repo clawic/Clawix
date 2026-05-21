@@ -25,7 +25,7 @@ enum ResourceSampler {
     private static let sampleLimit = 7_200
 
     private static let log = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "com.example.clawix",
         category: "resource-sampler"
     )
 

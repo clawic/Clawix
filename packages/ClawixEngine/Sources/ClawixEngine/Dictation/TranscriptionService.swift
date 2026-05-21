@@ -270,7 +270,7 @@ public actor TranscriptionService {
             // install: wipe and surface the actionable
             // `modelIncomplete` error so the user gets a clean retry
             // path from Settings instead of a leaky CoreML message
-            // pointing at `file:///Users/.../coremldata.bin`.
+            // pointing at `file://<local-user-path>/coremldata.bin`.
             if !DictationModelStore.isCompleteVariantFolder(at: folder) {
                 DictationModelStore.wipeBrokenInstall(for: model)
                 throw TranscriptionError.modelIncomplete(model)

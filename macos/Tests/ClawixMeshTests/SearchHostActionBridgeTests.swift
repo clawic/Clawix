@@ -7,7 +7,7 @@ final class SearchHostActionBridgeTests: XCTestCase {
     func testSearchHostActionPlanMapsToNativeMacWireRequest() throws {
         let host = NativeMacActionWireHost(
             hostId: "host_test",
-            bundleId: "com.clawix.app",
+            bundleId: "com.example.clawix",
             signingIdentity: "PLACEHOLDER_SIGNING_IDENTITY",
             teamId: "TEAMID",
             appVariant: "debug",
@@ -26,7 +26,7 @@ final class SearchHostActionBridgeTests: XCTestCase {
         XCTAssertEqual(plan.capabilityId, "mac.shortcut.run")
         XCTAssertEqual(plan.actor.kind, "agent")
         XCTAssertEqual(plan.actor.id, "agent:codex")
-        XCTAssertEqual(plan.host.bundleId, "com.clawix.app")
+        XCTAssertEqual(plan.host.bundleId, "com.example.clawix")
         XCTAssertEqual(plan.resolvedTarget?.kind, "shortcut")
         XCTAssertEqual(plan.resolvedTarget?.name, "Daily Plan")
         XCTAssertEqual(plan.requiredApprovals.first?.reason, "Run native Shortcut from Search result")
@@ -34,7 +34,7 @@ final class SearchHostActionBridgeTests: XCTestCase {
     }
 
     func testApprovedSearchHostActionCanEvaluateThroughNativeMacWire() throws {
-        let host = NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
+        let host = NativeMacActionWireHost(hostId: "host_test", bundleId: "com.example.clawix")
         let requestBytes = try SearchHostActionBridge.nativeRequestBytes(
             from: Self.searchPlanJSON(dryRun: false, approved: true, commandAction: "execute"),
             host: host
@@ -55,7 +55,7 @@ final class SearchHostActionBridgeTests: XCTestCase {
         let data = #"{"id":"search-action:test","resultId":"native.system:test","actionId":"run"}"#.data(using: .utf8)!
         XCTAssertThrowsError(try SearchHostActionBridge.nativeRequest(
             from: data,
-            host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
+            host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.example.clawix")
         )) { error in
             XCTAssertEqual(error as? SearchHostActionBridgeError, .missingHostRequest)
         }

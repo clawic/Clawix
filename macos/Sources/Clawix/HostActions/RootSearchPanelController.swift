@@ -167,7 +167,7 @@ final class RootSearchPanelStore: ObservableObject {
     private static func hostIdentity() -> NativeMacActionWireHost {
         NativeMacActionWireHost(
             hostId: ProcessInfo.processInfo.hostName,
-            bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+            bundleId: Bundle.main.bundleIdentifier ?? "com.example.clawix",
             signingIdentity: nil,
             teamId: nil,
             appVariant: appVariant,

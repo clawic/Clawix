@@ -129,7 +129,7 @@ final class RootSearchQueryBridgeTests: XCTestCase {
         )
         let nativeRequest = try SearchHostActionBridge.nativeRequest(
             from: planBytes,
-            host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.clawix.app")
+            host: NativeMacActionWireHost(hostId: "host_test", bundleId: "com.example.clawix")
         )
 
         XCTAssertEqual(runner.calls, [[

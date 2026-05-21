@@ -331,7 +331,7 @@ final class MacControlCenter: ObservableObject {
             actor: NativeMacActionWireActor(kind: "user_ui", id: "clawix_settings", role: "owner"),
             host: NativeMacActionWireHost(
                 hostId: ProcessInfo.processInfo.hostName,
-                bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+                bundleId: Bundle.main.bundleIdentifier ?? "com.example.clawix",
                 signingIdentity: nil,
                 teamId: nil,
                 appVariant: appVariant,
@@ -416,7 +416,7 @@ final class MacControlCenter: ObservableObject {
         appendTimeline(
             kind: .error,
             hostId: ProcessInfo.processInfo.hostName,
-            bundleId: Bundle.main.bundleIdentifier ?? "com.clawix.app",
+            bundleId: Bundle.main.bundleIdentifier ?? "com.example.clawix",
             actorId: "clawix_settings",
             capabilityId: capabilityId,
             risk: "unknown",

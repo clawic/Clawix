@@ -41,7 +41,7 @@ scan() {
   shift 2
   local output
   set +e
-  output="$(rg -n "${COMMON_GLOBS[@]}" "$pattern" "$@" 2>/dev/null)"
+  output="$(rg --pcre2 -n "${COMMON_GLOBS[@]}" "$pattern" "$@" 2>/dev/null)"
   local status=$?
   set -e
   if [[ "$status" -eq 0 && -n "$output" ]]; then
@@ -86,10 +86,17 @@ if [[ -d "$ROOT_DIR/cli" ]]; then
 fi
 
 # Developer-machine absolute paths almost always come from a personal
-# checkout. The placeholder /Users/me/code/foo used in UI copy is allowed
-# because it is generic.
+# checkout. Synthetic user names used by tests and docs are allowed.
 scan "developer-machine paths" \
-  '/Users/(?!me/code/foo\b)[A-Za-z0-9._-]+/' \
+  '/Users/(?!example(?:/|$)|demo(?:/|$)|me(?:/|$)|tester(?:/|$)|alice(?:/|$)|person(?:/|$)|<redacted>)([A-Za-z0-9._-]+)(?=/|\b)' \
+  "${TARGETS[@]}"
+
+scan "private Codex paths" \
+  '(?:~|/[A-Za-z0-9._-]+|/Users/[A-Za-z0-9._-]+)/\.codex/(?:sessions|goals)\b' \
+  "${TARGETS[@]}"
+
+scan "private Codex session ids" \
+  '\brollout-\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}[-:]\d{2}(?:-\d{3})?-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jsonl\b' \
   "${TARGETS[@]}"
 
 scan "secret-looking literals" \
@@ -106,6 +113,18 @@ scan "hard-coded codesign identity" \
 
 scan "apple team ids beside codesign markers" \
   '(DEVELOPMENT_TEAM|TEAM_ID)[^A-Z0-9]*[A-Z0-9]{10}' \
+  "${TARGETS[@]}"
+
+scan "team ids in signing or release context" \
+  '\b(?:DEVELOPMENT_TEAM|TEAM_ID|team_id|teamId|Team ID|team identifier)\b[^\n]{0,60}\b[A-Z0-9]{10}\b' \
+  "${TARGETS[@]}"
+
+scan "real bundle ids in app/release context" \
+  '\b(?:bundle_id|bundleId|bundle identifier|withBundleIdentifier)\b[^\n]{0,80}\bcom\.(?:claw|clawix)(?:\.[A-Za-z0-9_-]+)+\b' \
+  "${TARGETS[@]}"
+
+scan "release output references" \
+  '(^|[/"'"'"'`\s])release-output([/"'"'"'`\s]|$)' \
   "${TARGETS[@]}"
 
 check_git_metadata() {

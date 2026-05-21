@@ -997,7 +997,7 @@ private struct MessageView: View {
         // merged inside `paths(from:)`: workitem-level paths and
         // markdown links the model wrote into the body. The body is
         // stripped of the latter so the user doesn't see the raw
-        // `![](file:/Users/.../*.png)` text on top of the rendered
+        // `![](file:<local-user-path>/*.png)` text on top of the rendered
         // tile. While the turn is still streaming, `strip` also hides
         // any unfinished `[…` / `![…` opener so the link materialises
         // in one go when the closing paren lands instead of being

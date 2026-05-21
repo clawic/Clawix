@@ -182,7 +182,7 @@ if [[ "$INSTALLED" != "$CLAWJS_VERSION" ]]; then
 fi
 
 # Dev overlay: when CLAWJS_DEV_OVERLAY points to a local clawjs monorepo
-# (e.g. /Users/.../clawjs), copy the launcher bin/ scripts and the
+# (e.g. <local-user-path>/clawjs), copy the launcher bin/ scripts and the
 # @clawjs/database source over the bundled ones. Lets a developer iterate
 # on launcher .mjs files (database-server-launcher.mjs,
 # secrets-server-launcher.mjs, …) and on the database package without

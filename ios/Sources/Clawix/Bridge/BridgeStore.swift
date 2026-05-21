@@ -111,7 +111,7 @@ final class BridgeStore {
     var fileSnapshots: [String: FileSnapshotState] = [:]
     /// Cache of generated images keyed by absolute path on the Mac.
     /// Painted by the assistant timeline (workitem-driven) and by the
-    /// inline markdown renderer (`![](file:...)` / `![](/Users/.../*.png)`)
+    /// inline markdown renderer (`![](file:...)` / `![](<local-user-path>/*.png)`)
     /// so the same path resolved from two angles only round-trips once.
     var generatedImagesByPath: [String: GeneratedImageState] = [:]
     #if canImport(UIKit)

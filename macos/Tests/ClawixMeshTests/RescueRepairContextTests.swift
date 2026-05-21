@@ -11,8 +11,8 @@ final class RescueRepairContextTests: XCTestCase {
             decision: decision,
             evolutionEnvelopeData: Self.fixtureRepairEnvelope,
             diagnosticFiles: [
-                URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/\(ResourceSampler.lastResourcesFileName)"),
-                URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/repair-receipt.json")
+                URL(fileURLWithPath: "/Users/example/Library/Application Support/com.example.clawix/Diagnostics/\(ResourceSampler.lastResourcesFileName)"),
+                URL(fileURLWithPath: "/Users/example/Library/Application Support/com.example.clawix/Diagnostics/repair-receipt.json")
             ],
             runtimeHealth: RescueRuntimeHealthSnapshot(
                 processCpuPercent: 28,
@@ -54,7 +54,7 @@ final class RescueRepairContextTests: XCTestCase {
         let package = RescueRepairContextBuilder.build(
             decision: decision,
             evolutionEnvelopeData: nil,
-            diagnosticFiles: [URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/app.log")]
+            diagnosticFiles: [URL(fileURLWithPath: "/Users/example/Library/Application Support/com.example.clawix/Diagnostics/app.log")]
         )
 
         XCTAssertEqual(package.mode, .diagnosticsOnly)
@@ -98,7 +98,7 @@ final class RescueRepairContextTests: XCTestCase {
         let export = try RescueRepairContextExporter.write(
             decision: decision,
             evolutionEnvelopeData: Self.fixtureRepairEnvelope,
-            diagnosticFiles: [URL(fileURLWithPath: "/Users/private/Library/Application Support/com.clawix.app/Diagnostics/\(ResourceSampler.lastResourcesFileName)")],
+            diagnosticFiles: [URL(fileURLWithPath: "/Users/example/Library/Application Support/com.example.clawix/Diagnostics/\(ResourceSampler.lastResourcesFileName)")],
             runtimeHealth: RescueRuntimeHealthSnapshot(
                 processCpuPercent: 95,
                 residentBytes: 1_024,
@@ -187,7 +187,7 @@ final class RescueRepairContextTests: XCTestCase {
             "format": "unified_diff",
             "status": "suggested",
             "redacted": true,
-            "diff": "diff --git a/docs/evolution/REPAIR_REPORT.md b/docs/evolution/REPAIR_REPORT.md\\n+prompt: fix /Users/private/app with sk-1234567890abcdef"
+            "diff": "diff --git a/docs/evolution/REPAIR_REPORT.md b/docs/evolution/REPAIR_REPORT.md\\n+prompt: fix /Users/example/app with sk-1234567890abcdef"
           },
           "receipt": {
             "receiptId": "evo_receipt_test",

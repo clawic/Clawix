@@ -3,8 +3,8 @@ import Foundation
 
 enum ClawJSActorAssertion {
     private static let keyId = "clawix-local-v1"
-    private static let issuer = "com.clawix.app"
-    private static let hostId = Bundle.main.bundleIdentifier ?? "com.clawix.app"
+    private static let issuer = "com.example.clawix"
+    private static let hostId = Bundle.main.bundleIdentifier ?? "com.example.clawix"
     private static let sessionId = UUID().uuidString
     private static let signingKey = Curve25519.Signing.PrivateKey()
 
