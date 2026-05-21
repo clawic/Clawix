@@ -10,7 +10,9 @@ Make an ADR operational.
 
 ## Procedure
 
-1. Read the ADR template and the closest accepted ADRs before drafting or changing a decision.
+1. Reserve the ADR number with `scripts/adr-reserve.mjs` before drafting a
+   new ADR. Read the ADR template and the closest accepted ADRs before changing
+   an existing decision.
 2. State the decision in implementation-neutral terms and fill Decision
    Tensions for durable architecture, governance, data, security, agent,
    interface, route, storage, public-surface, or validation-policy changes.
@@ -36,6 +38,8 @@ Make an ADR operational.
 ## Constraints
 
 - An ADR is incomplete if it is not linked from the relevant routing surface.
+- Do not invent ADR numbers manually; `docs/adr/reservations/NNNN.json` is the
+  durable reservation record.
 - Do not accept "doc only" for a decision that changes stable behavior.
 - Do not mark an ADR accepted while `scripts/adr-operational-coverage-check.mjs`
   fails.

@@ -4,6 +4,8 @@ Status: Proposed
 
 Date: YYYY-MM-DD
 
+Reservation: `docs/adr/reservations/NNNN.json`
+
 ## Context
 
 Describe the decision pressure, existing behavior, and constraints.

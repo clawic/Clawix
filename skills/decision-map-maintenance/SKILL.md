@@ -14,18 +14,20 @@ Maintain the decision map as an index, not a duplicate source of truth.
 2. For governance-heavy changes, run `claw governance doctor --json` first and
    use its `reads`, `checks`, `externalPending`, and `staleDocs` sections as
    the routing baseline.
-3. Update the canonical document first: Constitution, ADR, ownership doc, storage boundary, naming guide, catalog guide, or interface matrix.
+3. For a new ADR, reserve the number first with `scripts/adr-reserve.mjs`; do
+   not choose numbers by scanning filenames manually.
+4. Update the canonical document first: Constitution, ADR, ownership doc, storage boundary, naming guide, catalog guide, or interface matrix.
    Durable ADRs and governance changes must use the Decision Tension Rubric.
-4. Add or update the decision-map row with: decision, canonical document, and guardrail or validation.
-5. When the decision introduces durable meta-code, update
+5. Add or update the decision-map row with: decision, canonical document, and guardrail or validation.
+6. When the decision introduces durable meta-code, update
    `docs/discoverability.registry.json` so the canonical source is reachable
    from `AGENTS.md`/`CLAUDE.md`, this skill, docs routers, and CLI discovery
    within two hops.
-6. For accepted ADRs, keep the row aligned with
+7. For accepted ADRs, keep the row aligned with
    `docs/adr-operational-coverage.manifest.json`; a map row without a real
    guard/test or CLI search/inspect route is incomplete.
-7. Remove stale rows only when the canonical source has been retired or superseded.
-8. Run docs alignment checks or add a guard if the map should enforce a snippet.
+8. Remove stale rows only when the canonical source has been retired or superseded.
+9. Run docs alignment checks or add a guard if the map should enforce a snippet.
 
 ## Constraints
 

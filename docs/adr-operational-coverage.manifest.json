@@ -18,7 +18,8 @@
     ],
     "persistence": [
       "docs/discoverability.registry.json",
-      "docs/adr-operational-coverage.manifest.json"
+      "docs/adr-operational-coverage.manifest.json",
+      "docs/adr/reservations"
     ],
     "cliSearch": "docs/discoverability.registry.json searchQueries",
     "cliInspect": [
@@ -76,140 +77,6 @@
       "cliInspect": [
         {
           "command": "claw inspect why search --json"
-        }
-      ]
-    },
-    {
-      "adr": "docs/adr/0036-ui-state-invalidation-boundary.md",
-      "decisionMap": "docs/decision-map.md",
-      "guardrails": [
-        "scripts/ui_state_invalidation_boundary_check.mjs",
-        "scripts/test.sh"
-      ],
-      "humanSurface": [
-        "docs/decision-map.md",
-        "macos/PERF.md"
-      ],
-      "programmaticSurface": [
-        "scripts/ui_state_invalidation_boundary_check.mjs",
-        "macos/Tests/ClawixMeshTests/SidebarStoreTests.swift",
-        "macos/Tests/ClawixMeshTests/ChatStorePublicationTests.swift"
-      ],
-      "persistence": [
-        "docs/discoverability.registry.json",
-        "docs/adr-operational-coverage.manifest.json"
-      ],
-      "cliSearch": "docs/discoverability.registry.json searchQueries",
-      "cliInspect": [
-        {
-          "command": "claw inspect why search --json"
-        }
-      ]
-    },
-    {
-      "adr": "docs/adr/0037-zero-accidental-work-mirror.md",
-      "decisionMap": "docs/decision-map.md",
-      "guardrails": [
-        "scripts/zero_accidental_work_check.mjs",
-        "scripts/test.sh"
-      ],
-      "humanSurface": [
-        "docs/decision-map.md",
-        "docs/discoverability.md"
-      ],
-      "programmaticSurface": [
-        "scripts/zero_accidental_work_check.mjs",
-        "macos/Sources/Clawix/ClawJS/ClawJSServiceDemandPolicy.swift",
-        "packages/ClawixEngine/Sources/ClawixEngine/BridgeRuntimeWakePolicy.swift"
-      ],
-      "persistence": [
-        "docs/discoverability.registry.json",
-        "docs/adr-operational-coverage.manifest.json"
-      ],
-      "cliSearch": "docs/discoverability.registry.json searchQueries",
-      "cliInspect": [
-        {
-          "command": "claw search \"zero accidental work\" --json"
-        }
-      ]
-    },
-    {
-      "adr": "docs/adr/0035-streaming-backpressure-contract-mirror.md",
-      "decisionMap": "docs/decision-map.md",
-      "guardrails": [
-        "scripts/discoverability-check.mjs",
-        "../clawjs/scripts/streaming-backpressure-contract-check.mjs"
-      ],
-      "humanSurface": [
-        "docs/decision-map.md",
-        "docs/adr/0035-streaming-backpressure-contract-mirror.md"
-      ],
-      "programmaticSurface": [
-        "../clawjs/packages/clawjs-core/src/streaming-backpressure.ts",
-        "macos/Sources/Clawix/AppState.swift"
-      ],
-      "persistence": [
-        "docs/discoverability.registry.json",
-        "docs/adr-operational-coverage.manifest.json"
-      ],
-      "cliSearch": "docs/discoverability.registry.json searchQueries",
-      "cliInspect": [
-        {
-          "command": "claw search \"streaming backpressure\" --json"
-        }
-      ]
-    },
-    {
-      "adr": "docs/adr/0032-problem-to-guardrail-loop-mirror.md",
-      "decisionMap": "docs/decision-map.md",
-      "guardrails": [
-        "scripts/problem_to_guardrail_check.mjs",
-        "scripts/adr-operational-coverage-check.mjs",
-        "scripts/discoverability-check.mjs"
-      ],
-      "humanSurface": [
-        "docs/decision-map.md",
-        "docs/agent-rules/index.md",
-        "skills/adr-to-guardrail/SKILL.md",
-        "skills/code-review-risk/SKILL.md"
-      ],
-      "programmaticSurface": [
-        "scripts/problem_to_guardrail_check.mjs",
-        "scripts/adr-operational-coverage-check.mjs"
-      ],
-      "persistence": [
-        "docs/discoverability.registry.json",
-        "docs/adr-operational-coverage.manifest.json"
-      ],
-      "cliSearch": "docs/discoverability.registry.json searchQueries",
-      "cliInspect": [
-        {
-          "command": "claw inspect why search --json"
-        }
-      ]
-    },
-    {
-      "adr": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md",
-      "guardrails": [
-        "scripts/boundedness_guard.mjs",
-        "scripts/surface_resource_contract_guard.mjs",
-        "scripts/performance_governance_check.mjs"
-      ],
-      "humanSurface": [
-        "docs/decision-map.md",
-        "docs/governance/performance-governance.md"
-      ],
-      "programmaticSurface": [
-        "scripts/boundedness_guard.mjs",
-        "scripts/surface_resource_contract_guard.mjs"
-      ],
-      "persistence": [
-        "docs/surface-resource-contract-clawix-baseline.json",
-        "docs/discoverability.registry.json"
-      ],
-      "cliInspect": [
-        {
-          "command": "claw inspect routes --json"
         }
       ]
     },
@@ -297,6 +164,35 @@
       ]
     },
     {
+      "adr": "docs/adr/0032-problem-to-guardrail-loop-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/problem_to_guardrail_check.mjs",
+        "scripts/adr-operational-coverage-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/agent-rules/index.md",
+        "skills/adr-to-guardrail/SKILL.md",
+        "skills/code-review-risk/SKILL.md"
+      ],
+      "programmaticSurface": [
+        "scripts/problem_to_guardrail_check.mjs",
+        "scripts/adr-operational-coverage-check.mjs"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw inspect why search --json"
+        }
+      ]
+    },
+    {
       "adr": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
       "decisionMap": "docs/decision-map.md",
       "guardrails": [
@@ -321,6 +217,140 @@
       "cliInspect": [
         {
           "command": "claw search \"runtime ecosystem integration\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0035-streaming-backpressure-contract-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/discoverability-check.mjs",
+        "../clawjs/scripts/streaming-backpressure-contract-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/adr/0035-streaming-backpressure-contract-mirror.md"
+      ],
+      "programmaticSurface": [
+        "../clawjs/packages/clawjs-core/src/streaming-backpressure.ts",
+        "macos/Sources/Clawix/AppState.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"streaming backpressure\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0036-ui-state-invalidation-boundary.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/ui_state_invalidation_boundary_check.mjs",
+        "scripts/test.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "macos/PERF.md"
+      ],
+      "programmaticSurface": [
+        "scripts/ui_state_invalidation_boundary_check.mjs",
+        "macos/Tests/ClawixMeshTests/SidebarStoreTests.swift",
+        "macos/Tests/ClawixMeshTests/ChatStorePublicationTests.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw inspect why search --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0037-zero-accidental-work-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/zero_accidental_work_check.mjs",
+        "scripts/test.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/discoverability.md"
+      ],
+      "programmaticSurface": [
+        "scripts/zero_accidental_work_check.mjs",
+        "macos/Sources/Clawix/ClawJS/ClawJSServiceDemandPolicy.swift",
+        "packages/ClawixEngine/Sources/ClawixEngine/BridgeRuntimeWakePolicy.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"zero accidental work\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md",
+      "guardrails": [
+        "scripts/boundedness_guard.mjs",
+        "scripts/surface_resource_contract_guard.mjs",
+        "scripts/performance_governance_check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "programmaticSurface": [
+        "scripts/boundedness_guard.mjs",
+        "scripts/surface_resource_contract_guard.mjs"
+      ],
+      "persistence": [
+        "docs/surface-resource-contract-clawix-baseline.json",
+        "docs/discoverability.registry.json"
+      ],
+      "cliInspect": [
+        {
+          "command": "claw inspect routes --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0039-adr-number-reservation-governance-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/adr-reserve.mjs",
+        "scripts/adr-operational-coverage-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/adr/TEMPLATE.md",
+        "skills/adr-to-guardrail/SKILL.md",
+        "skills/decision-map-maintenance/SKILL.md"
+      ],
+      "programmaticSurface": [
+        "scripts/adr-reserve.mjs",
+        "scripts/adr-operational-coverage-check.mjs"
+      ],
+      "persistence": [
+        "docs/adr/reservations",
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"ADR number reservation governance mirror\" --json"
         }
       ]
     }
