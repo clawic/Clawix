@@ -77,6 +77,70 @@ final class ClawixIPCDecodeTests: XCTestCase {
         XCTAssertEqual(method, "unknown/event")
     }
 
+    func testEventCoalescerCombinesCompatibleDeltas() {
+        var coalescer = ClawixServerEventCoalescer()
+
+        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hel")))).isEmpty)
+        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("lo")))).isEmpty)
+
+        let emitted = coalescer.flush()
+        XCTAssertEqual(emitted.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "hello")
+    }
+
+    func testEventCoalescerFlushesBeforeNonDeltaEvent() {
+        var coalescer = ClawixServerEventCoalescer()
+        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hello")))).isEmpty)
+
+        let emitted = coalescer.ingest(.notification(.turnCompleted(TurnEnvelope(
+            threadId: "thread-1",
+            turn: TurnPayload(id: "turn-1", status: "completed", error: nil)
+        ))))
+
+        XCTAssertEqual(emitted.count, 2)
+        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "hello")
+        guard case .notification(.turnCompleted) = emitted[1] else {
+            return XCTFail("Expected turnCompleted after pending delta")
+        }
+    }
+
+    func testEventCoalescerDoesNotMixDifferentItems() {
+        var coalescer = ClawixServerEventCoalescer()
+        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("first", itemId: "item-1")))).isEmpty)
+
+        let emitted = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("second", itemId: "item-2"))))
+        XCTAssertEqual(emitted.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "first")
+
+        let tail = coalescer.flush()
+        XCTAssertEqual(tail.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(tail[0]), "second")
+    }
+
+    func testEventCoalescerDoesNotMixDifferentDeltaTypes() {
+        var coalescer = ClawixServerEventCoalescer()
+        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("answer")))).isEmpty)
+
+        let emitted = coalescer.ingest(.notification(.reasoningTextDelta(Self.reasoningDelta("thinking"))))
+        XCTAssertEqual(emitted.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "answer")
+
+        let tail = coalescer.flush()
+        XCTAssertEqual(tail.count, 1)
+        XCTAssertEqual(Self.reasoningDeltaText(tail[0]), "thinking")
+    }
+
+    func testEventCoalescerCapsCoalescedDeltaBytes() {
+        var coalescer = ClawixServerEventCoalescer(maxDeltaBytes: 5)
+        let emitted = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("abcdefghijkl"))))
+        let tail = coalescer.flush()
+        let chunks = (emitted + tail).compactMap(Self.agentDeltaText)
+
+        XCTAssertEqual(chunks.joined(), "abcdefghijkl")
+        XCTAssertFalse(chunks.isEmpty)
+        XCTAssertTrue(chunks.allSatisfy { $0.utf8.count <= 5 })
+    }
+
     func testCompleteOversizeFrameFailsSafely() {
         var framer = ClawixStdoutFramer()
         let frame = Data(repeating: 0x7b, count: ClawixFrameLimits.maxBytes + 1) + Data([0x0a])
@@ -102,5 +166,47 @@ final class ClawixIPCDecodeTests: XCTestCase {
             XCTAssertEqual(maxBytes, ClawixFrameLimits.maxBytes)
         }
         XCTAssertNoThrow(try framer.append(Data("{\"method\":\"ok\"}\n".utf8)))
+    }
+
+    private static func agentDelta(
+        _ delta: String,
+        itemId: String = "item-1",
+        threadId: String = "thread-1",
+        turnId: String = "turn-1"
+    ) -> AgentMessageDelta {
+        AgentMessageDelta(
+            delta: delta,
+            itemId: itemId,
+            threadId: threadId,
+            turnId: turnId
+        )
+    }
+
+    private static func reasoningDelta(
+        _ delta: String,
+        itemId: String = "item-1",
+        threadId: String = "thread-1",
+        turnId: String = "turn-1"
+    ) -> ReasoningTextDelta {
+        ReasoningTextDelta(
+            delta: delta,
+            itemId: itemId,
+            threadId: threadId,
+            turnId: turnId
+        )
+    }
+
+    private static func agentDeltaText(_ event: ClawixServerEvent) -> String? {
+        guard case let .notification(.agentMessageDelta(payload)) = event else {
+            return nil
+        }
+        return payload.delta
+    }
+
+    private static func reasoningDeltaText(_ event: ClawixServerEvent) -> String? {
+        guard case let .notification(.reasoningTextDelta(payload)) = event else {
+            return nil
+        }
+        return payload.delta
     }
 }

@@ -19,6 +19,7 @@ enum ClawixClientError: Error, CustomStringConvertible {
     case invalidResponse(String)
     case decodingError(String)
     case frameTooLarge(bytes: Int, maxBytes: Int)
+    case eventBufferOverflow(limit: Int)
 
     var description: String {
         switch self {
@@ -36,6 +37,8 @@ enum ClawixClientError: Error, CustomStringConvertible {
             return "Decoding error: \(s)"
         case .frameTooLarge(let bytes, let maxBytes):
             return "Backend JSON-RPC frame too large: \(bytes) bytes exceeds \(maxBytes) bytes."
+        case .eventBufferOverflow(let limit):
+            return "Backend JSON-RPC event stream overflowed its \(limit)-event buffer."
         }
     }
 }
@@ -57,6 +60,7 @@ actor ClawixClient {
     private var stderrPipe: Pipe?
     private var stdoutFramer = ClawixStdoutFramer()
     private let frameDecoder = ClawixFrameDecoder()
+    private var eventCoalescer = ClawixServerEventCoalescer()
     private var stderrLogHandle: FileHandle?
 
     private var nextRequestId: Int = 1
@@ -71,7 +75,9 @@ actor ClawixClient {
         self.binary = binary
         let box = ContinuationBox()
         var captured: AsyncStream<ClawixServerEvent>.Continuation!
-        let stream = AsyncStream<ClawixServerEvent> { continuation in
+        let stream = AsyncStream<ClawixServerEvent>(
+            bufferingPolicy: .bufferingNewest(ClawixEventStreamLimits.eventBufferCount)
+        ) { continuation in
             captured = continuation
             box.continuation = continuation
         }
@@ -139,6 +145,7 @@ actor ClawixClient {
         stdoutPipe = nil
         stderrPipe = nil
         stdoutFramer.reset()
+        eventCoalescer.reset()
         try? stderrLogHandle?.close()
         stderrLogHandle = nil
         // Fail any in-flight requests
@@ -152,6 +159,7 @@ actor ClawixClient {
             try? log.write(contentsOf: Data(line.utf8))
         }
         process = nil
+        eventCoalescer.reset()
         for response in pending.values { response.resume(throwing: ClawixClientError.notRunning) }
         pending.removeAll()
     }
@@ -246,6 +254,7 @@ actor ClawixClient {
         for frame in frames {
             await handleFrame(frame)
         }
+        flushPendingServerEvents()
     }
 
     private func handleFrame(_ data: Data) async {
@@ -291,7 +300,7 @@ actor ClawixClient {
         if let method = header.method {
             do {
                 let notification = try await frameDecoder.decodeNotification(method: method, data: data)
-                eventsContinuation?.yield(.notification(notification))
+                emitServerEvent(.notification(notification))
             } catch {
                 PerfSignpost.ipcClient.event("decode.failed")
             }
@@ -317,10 +326,12 @@ actor ClawixClient {
     private func handleServerRequest(_ request: ClawixServerRequest) {
         switch request {
         case .toolUserInput:
-            eventsContinuation?.yield(.request(request))
+            emitServerEvent(.request(request))
         case let .approval(id, _):
+            flushPendingServerEvents()
             try? resolveServerRequest(id: id, result: ApprovalDecisionResponse(decision: "decline"))
         case let .unknown(id, method):
+            flushPendingServerEvents()
             // For unknown server requests we send a JSON-RPC method-not-found
             // error so the server doesn't deadlock waiting for us.
             try? resolveServerRequestWithError(
@@ -341,8 +352,39 @@ actor ClawixClient {
         process?.terminate()
         process = nil
         stdoutFramer.reset()
+        eventCoalescer.reset()
         for response in pending.values { response.resume(throwing: error) }
         pending.removeAll()
+    }
+
+    private func emitServerEvent(_ event: ClawixServerEvent) {
+        emitServerEvents(eventCoalescer.ingest(event))
+    }
+
+    private func flushPendingServerEvents() {
+        emitServerEvents(eventCoalescer.flush())
+    }
+
+    private func emitServerEvents(_ events: [ClawixServerEvent]) {
+        guard let continuation = eventsContinuation else { return }
+        for event in events {
+            switch continuation.yield(event) {
+            case .enqueued(_):
+                continue
+            case .dropped(_):
+                PerfSignpost.ipcClient.event("event.buffer.dropped")
+                failBackend(ClawixClientError.eventBufferOverflow(limit: ClawixEventStreamLimits.eventBufferCount))
+                return
+            case .terminated:
+                PerfSignpost.ipcClient.event("event.buffer.dropped")
+                failBackend(ClawixClientError.eventBufferOverflow(limit: ClawixEventStreamLimits.eventBufferCount))
+                return
+            @unknown default:
+                PerfSignpost.ipcClient.event("event.buffer.dropped")
+                failBackend(ClawixClientError.eventBufferOverflow(limit: ClawixEventStreamLimits.eventBufferCount))
+                return
+            }
+        }
     }
 
     // MARK: - Stderr reader
@@ -385,6 +427,194 @@ actor ClawixClient {
 private final class WeakBox<T: AnyObject> {
     weak var value: T?
     init(_ value: T) { self.value = value }
+}
+
+enum ClawixEventStreamLimits {
+    static let eventBufferCount = 512
+    static let maxCoalescedDeltaBytes = 64 * 1024
+}
+
+struct ClawixServerEventCoalescer {
+    private let maxDeltaBytes: Int
+    private var pendingDelta: PendingServerDelta?
+
+    init(maxDeltaBytes: Int = ClawixEventStreamLimits.maxCoalescedDeltaBytes) {
+        self.maxDeltaBytes = max(1, maxDeltaBytes)
+    }
+
+    mutating func ingest(_ event: ClawixServerEvent) -> [ClawixServerEvent] {
+        guard let delta = PendingServerDelta(event: event) else {
+            var emitted = flush()
+            emitted.append(event)
+            return emitted
+        }
+
+        var emitted: [ClawixServerEvent] = []
+        for chunk in delta.chunks(maxBytes: maxDeltaBytes) {
+            PerfSignpost.ipcClient.event("event.delta.bytes", chunk.byteCount)
+            if let pendingDelta {
+                if pendingDelta.canCoalesce(with: chunk),
+                   pendingDelta.byteCount + chunk.byteCount <= maxDeltaBytes {
+                    self.pendingDelta = pendingDelta.appending(chunk)
+                    PerfSignpost.ipcClient.event("event.coalesced")
+                } else {
+                    emitted.append(pendingDelta.event)
+                    self.pendingDelta = chunk
+                }
+            } else {
+                self.pendingDelta = chunk
+            }
+        }
+        return emitted
+    }
+
+    mutating func flush() -> [ClawixServerEvent] {
+        guard let delta = pendingDelta else { return [] }
+        pendingDelta = nil
+        return [delta.event]
+    }
+
+    mutating func reset() {
+        pendingDelta = nil
+    }
+}
+
+private struct PendingServerDelta {
+    enum Kind {
+        case agentMessage
+        case reasoningText
+        case reasoningSummaryText
+    }
+
+    let kind: Kind
+    let delta: String
+    let itemId: String
+    let threadId: String
+    let turnId: String
+
+    init?(event: ClawixServerEvent) {
+        guard case let .notification(notification) = event else {
+            return nil
+        }
+        switch notification {
+        case let .agentMessageDelta(payload):
+            self.kind = .agentMessage
+            self.delta = payload.delta
+            self.itemId = payload.itemId
+            self.threadId = payload.threadId
+            self.turnId = payload.turnId
+        case let .reasoningTextDelta(payload):
+            self.kind = .reasoningText
+            self.delta = payload.delta
+            self.itemId = payload.itemId
+            self.threadId = payload.threadId
+            self.turnId = payload.turnId
+        case let .reasoningSummaryTextDelta(payload):
+            self.kind = .reasoningSummaryText
+            self.delta = payload.delta
+            self.itemId = payload.itemId
+            self.threadId = payload.threadId
+            self.turnId = payload.turnId
+        default:
+            return nil
+        }
+    }
+
+    private init(
+        kind: Kind,
+        delta: String,
+        itemId: String,
+        threadId: String,
+        turnId: String
+    ) {
+        self.kind = kind
+        self.delta = delta
+        self.itemId = itemId
+        self.threadId = threadId
+        self.turnId = turnId
+    }
+
+    var byteCount: Int {
+        delta.utf8.count
+    }
+
+    var event: ClawixServerEvent {
+        switch kind {
+        case .agentMessage:
+            return .notification(.agentMessageDelta(AgentMessageDelta(
+                delta: delta,
+                itemId: itemId,
+                threadId: threadId,
+                turnId: turnId
+            )))
+        case .reasoningText:
+            return .notification(.reasoningTextDelta(ReasoningTextDelta(
+                delta: delta,
+                itemId: itemId,
+                threadId: threadId,
+                turnId: turnId
+            )))
+        case .reasoningSummaryText:
+            return .notification(.reasoningSummaryTextDelta(ReasoningTextDelta(
+                delta: delta,
+                itemId: itemId,
+                threadId: threadId,
+                turnId: turnId
+            )))
+        }
+    }
+
+    func canCoalesce(with other: PendingServerDelta) -> Bool {
+        kind == other.kind
+            && itemId == other.itemId
+            && threadId == other.threadId
+            && turnId == other.turnId
+    }
+
+    func appending(_ other: PendingServerDelta) -> PendingServerDelta {
+        PendingServerDelta(
+            kind: kind,
+            delta: delta + other.delta,
+            itemId: itemId,
+            threadId: threadId,
+            turnId: turnId
+        )
+    }
+
+    func chunks(maxBytes: Int) -> [PendingServerDelta] {
+        guard byteCount > maxBytes else { return [self] }
+        var chunks: [PendingServerDelta] = []
+        var start = delta.startIndex
+        var index = start
+        var bytes = 0
+
+        while index < delta.endIndex {
+            let next = delta.index(after: index)
+            let charBytes = delta[index ..< next].utf8.count
+            if bytes > 0, bytes + charBytes > maxBytes {
+                chunks.append(copy(delta: String(delta[start ..< index])))
+                start = index
+                bytes = 0
+            }
+            bytes += charBytes
+            index = next
+        }
+
+        if start < delta.endIndex {
+            chunks.append(copy(delta: String(delta[start ..< delta.endIndex])))
+        }
+        return chunks
+    }
+
+    private func copy(delta: String) -> PendingServerDelta {
+        PendingServerDelta(
+            kind: kind,
+            delta: delta,
+            itemId: itemId,
+            threadId: threadId,
+            turnId: turnId
+        )
+    }
 }
 
 private struct PendingResponse {
