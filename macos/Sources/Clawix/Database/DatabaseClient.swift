@@ -25,6 +25,7 @@ protocol DatabaseClienting {
     func updateRecord(namespaceId: String, collection: String, id: String, data: [String: DBJSON]) async throws -> DBRecord
     func deleteRecord(namespaceId: String, collection: String, id: String) async throws -> Bool
     func downloadFile(fileId: String) async throws -> Data
+    @available(*, deprecated, message: "Use the fileURL upload overload so large files do not need to be held in memory.")
     func uploadFile(
         namespaceId: String,
         collectionName: String?,
@@ -32,6 +33,14 @@ protocol DatabaseClienting {
         filename: String,
         contentType: String,
         data: Data
+    ) async throws -> DBFileAsset
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        fileURL: URL,
+        filename: String,
+        contentType: String
     ) async throws -> DBFileAsset
 }
 
@@ -265,6 +274,7 @@ struct DatabaseClient {
         return env.items
     }
 
+    @available(*, deprecated, message: "Use the fileURL upload overload so large files do not need to be held in memory.")
     func uploadFile(
         namespaceId: String,
         collectionName: String?,
@@ -273,35 +283,130 @@ struct DatabaseClient {
         contentType: String,
         data: Data
     ) async throws -> DBFileAsset {
+        let tempSourceURL = try Self.writeTemporaryUploadSource(data: data)
+        defer { try? FileManager.default.removeItem(at: tempSourceURL) }
+        return try await uploadFile(
+            namespaceId: namespaceId,
+            collectionName: collectionName,
+            recordId: recordId,
+            fileURL: tempSourceURL,
+            filename: filename,
+            contentType: contentType
+        )
+    }
+
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        fileURL: URL,
+        filename: String,
+        contentType: String
+    ) async throws -> DBFileAsset {
         guard let token = bearerToken else { throw Error.missingToken }
         let url = URL(string: "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/files", relativeTo: origin)!.absoluteURL
-        let boundary = "----DatabaseClientBoundary\(UUID().uuidString)"
-        var body = Data()
-        func append(_ string: String) {
-            if let d = string.data(using: .utf8) { body.append(d) }
-        }
-        func appendField(_ name: String, _ value: String) {
-            append("--\(boundary)\r\n")
-            append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
-            append("\(value)\r\n")
-        }
-        appendField("namespaceId", namespaceId)
-        if let collectionName { appendField("collectionName", collectionName) }
-        if let recordId { appendField("recordId", recordId) }
-        append("--\(boundary)\r\n")
-        append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
-        append("Content-Type: \(contentType)\r\n\r\n")
-        body.append(data)
-        append("\r\n--\(boundary)--\r\n")
+        let multipart = try Self.makeMultipartUploadBody(
+            namespaceId: namespaceId,
+            collectionName: collectionName,
+            recordId: recordId,
+            sourceFileURL: fileURL,
+            filename: filename,
+            contentType: contentType
+        )
+        defer { try? FileManager.default.removeItem(at: multipart.fileURL) }
 
         var request = URLRequest(url: url)
+        request.timeoutInterval = 120
         request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("multipart/form-data; boundary=\(multipart.boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue(String(multipart.contentLength), forHTTPHeaderField: "Content-Length")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpBody = body
-        let (responseData, response) = try await dataTask(request)
+        let (responseData, response) = try await uploadTask(request, fromFile: multipart.fileURL)
         try Self.validate(response: response, body: responseData)
         return try Self.decoder.decode(DBFileAsset.self, from: responseData)
+    }
+
+    struct MultipartUploadBody {
+        let fileURL: URL
+        let boundary: String
+        let contentLength: Int64
+    }
+
+    static func makeMultipartUploadBody(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        sourceFileURL: URL,
+        filename: String,
+        contentType: String
+    ) throws -> MultipartUploadBody {
+        let boundary = "----DatabaseClientBoundary\(UUID().uuidString)"
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-database-upload-\(UUID().uuidString)", isDirectory: false)
+        FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+        let output = try FileHandle(forWritingTo: tempURL)
+        do {
+            try writeMultipartField(output, boundary: boundary, name: "namespaceId", value: namespaceId)
+            if let collectionName {
+                try writeMultipartField(output, boundary: boundary, name: "collectionName", value: collectionName)
+            }
+            if let recordId {
+                try writeMultipartField(output, boundary: boundary, name: "recordId", value: recordId)
+            }
+            try writeString("--\(boundary)\r\n", to: output)
+            try writeString("Content-Disposition: form-data; name=\"file\"; filename=\"\(escapeMultipartValue(filename))\"\r\n", to: output)
+            try writeString("Content-Type: \(contentType)\r\n\r\n", to: output)
+            try appendFile(sourceFileURL, to: output)
+            try writeString("\r\n--\(boundary)--\r\n", to: output)
+            try output.close()
+        } catch {
+            try? output.close()
+            try? FileManager.default.removeItem(at: tempURL)
+            throw error
+        }
+        let values = try tempURL.resourceValues(forKeys: [.fileSizeKey])
+        return MultipartUploadBody(
+            fileURL: tempURL,
+            boundary: boundary,
+            contentLength: Int64(values.fileSize ?? 0)
+        )
+    }
+
+    private static func writeTemporaryUploadSource(data: Data) throws -> URL {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-database-upload-source-\(UUID().uuidString)", isDirectory: false)
+        try data.write(to: tempURL, options: .atomic)
+        return tempURL
+    }
+
+    private static func writeMultipartField(_ handle: FileHandle, boundary: String, name: String, value: String) throws {
+        try writeString("--\(boundary)\r\n", to: handle)
+        try writeString("Content-Disposition: form-data; name=\"\(escapeMultipartValue(name))\"\r\n\r\n", to: handle)
+        try writeString("\(value)\r\n", to: handle)
+    }
+
+    private static func appendFile(_ fileURL: URL, to handle: FileHandle) throws {
+        let input = try FileHandle(forReadingFrom: fileURL)
+        defer { try? input.close() }
+        while true {
+            guard let chunk = try input.read(upToCount: 1024 * 1024), !chunk.isEmpty else { break }
+            try handle.write(contentsOf: chunk)
+        }
+    }
+
+    private static func writeString(_ string: String, to handle: FileHandle) throws {
+        if let data = string.data(using: .utf8) {
+            try handle.write(contentsOf: data)
+        }
+    }
+
+    private static func escapeMultipartValue(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\r", with: "_")
+            .replacingOccurrences(of: "\n", with: "_")
     }
 
     func downloadFile(fileId: String) async throws -> Data {
@@ -425,6 +530,14 @@ struct DatabaseClient {
     private func dataTask(_ request: URLRequest) async throws -> (Data, URLResponse) {
         do {
             return try await URLSession.shared.data(for: request)
+        } catch {
+            throw Error.transport(error)
+        }
+    }
+
+    private func uploadTask(_ request: URLRequest, fromFile fileURL: URL) async throws -> (Data, URLResponse) {
+        do {
+            return try await URLSession.shared.upload(for: request, fromFile: fileURL)
         } catch {
             throw Error.transport(error)
         }

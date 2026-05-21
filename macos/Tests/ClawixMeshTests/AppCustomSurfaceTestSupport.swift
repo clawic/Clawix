@@ -305,6 +305,28 @@ final class AppCustomSurfaceFakeDatabaseClient: DatabaseClienting {
             downloadPath: "/files/file-1"
         )
     }
+
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        fileURL: URL,
+        filename: String,
+        contentType: String
+    ) async throws -> DBFileAsset {
+        let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+        return DBFileAsset(
+            id: "file-1",
+            namespaceId: namespaceId,
+            collectionName: collectionName,
+            recordId: recordId,
+            filename: filename,
+            contentType: contentType,
+            sizeBytes: size,
+            createdAt: "2026-05-20T00:00:00Z",
+            downloadPath: "/files/file-1"
+        )
+    }
 }
 
 struct RecordingSwiftRunnerExecutor: AppSwiftSurfaceRunnerExecuting {

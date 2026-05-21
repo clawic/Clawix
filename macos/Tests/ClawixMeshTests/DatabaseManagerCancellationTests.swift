@@ -287,6 +287,33 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertNil(manager.lastError)
     }
 
+    func testMultipartUploadBodyStreamsSourceFileIntoTemporaryBody() throws {
+        let sourceURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("database-upload-source-\(UUID().uuidString).txt")
+        try Data("hello streamed upload".utf8).write(to: sourceURL)
+        defer { try? FileManager.default.removeItem(at: sourceURL) }
+
+        let body = try DatabaseClient.makeMultipartUploadBody(
+            namespaceId: "main",
+            collectionName: "notes",
+            recordId: "record-1",
+            sourceFileURL: sourceURL,
+            filename: "hello.txt",
+            contentType: "text/plain"
+        )
+        defer { try? FileManager.default.removeItem(at: body.fileURL) }
+
+        let bodyData = try Data(contentsOf: body.fileURL)
+        let bodyText = try XCTUnwrap(String(data: bodyData, encoding: .utf8))
+        XCTAssertEqual(Int64(bodyData.count), body.contentLength)
+        XCTAssertTrue(bodyText.contains("name=\"namespaceId\""))
+        XCTAssertTrue(bodyText.contains("main"))
+        XCTAssertTrue(bodyText.contains("filename=\"hello.txt\""))
+        XCTAssertTrue(bodyText.contains("Content-Type: text/plain"))
+        XCTAssertTrue(bodyText.contains("hello streamed upload"))
+        XCTAssertTrue(bodyText.contains("--\(body.boundary)--"))
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let suite = "DatabaseManagerCancellationTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -433,6 +460,28 @@ private final class FakeDatabaseClient: DatabaseClienting {
             filename: filename,
             contentType: contentType,
             sizeBytes: Int64(data.count),
+            createdAt: "2026-05-19T00:00:00Z",
+            downloadPath: "/files/file-1"
+        )
+    }
+
+    func uploadFile(
+        namespaceId: String,
+        collectionName: String?,
+        recordId: String?,
+        fileURL: URL,
+        filename: String,
+        contentType: String
+    ) async throws -> DBFileAsset {
+        let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+        return DBFileAsset(
+            id: "file-1",
+            namespaceId: namespaceId,
+            collectionName: collectionName,
+            recordId: recordId,
+            filename: filename,
+            contentType: contentType,
+            sizeBytes: size,
             createdAt: "2026-05-19T00:00:00Z",
             downloadPath: "/files/file-1"
         )

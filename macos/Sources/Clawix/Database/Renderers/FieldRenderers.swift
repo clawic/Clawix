@@ -607,14 +607,13 @@ private struct FileForm: View {
                 guard let url else { return }
                 Task { @MainActor in
                     do {
-                        let data = try Data(contentsOf: url)
                         let asset = try await manager.client.uploadFile(
                             namespaceId: manager.currentNamespace,
                             collectionName: nil,
                             recordId: record.id,
+                            fileURL: url,
                             filename: url.lastPathComponent,
-                            contentType: contentType(for: url),
-                            data: data
+                            contentType: contentType(for: url)
                         )
                         value = .string(asset.id)
                     } catch {
