@@ -84,9 +84,11 @@ final class SkillsStoreCancellationTests: XCTestCase {
 
     private static func emptyFrameworkClient() -> ClawJSFrameworkRecordsClient {
         ClawJSFrameworkRecordsClient(runner: .init { args in
-            if args == ["skills", "list", "--json", "--kind", "clawix_skill"] ||
-                args == ["skills", "list", "--json", "--kind", "clawix_state"] {
+            if args == ["skills", "list", "--json", "--kind", "clawix_skill"] {
                 return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+            }
+            if args == ["skills", "get", "clawix-active-skills", "--json"] {
+                return Data(#"{"ok":true,"data":null}"#.utf8)
             }
             return Data(#"{"ok":true,"data":{}}"#.utf8)
         })

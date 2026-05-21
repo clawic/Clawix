@@ -84,6 +84,35 @@ final class ClawJSFrameworkRecordsClientTests: XCTestCase {
         assertFrameworkRecordCommandsOnly(calls)
     }
 
+    func testGetSkillRecordUsesPointLookup() throws {
+        var calls: [[String]] = []
+        let client = ClawJSFrameworkRecordsClient(runner: .init { args in
+            calls.append(args)
+            if args == ["skills", "get", "review", "--json"] {
+                return Data("""
+                {
+                  "ok": true,
+                  "data": {
+                    "id": "skill-review",
+                    "slug": "review",
+                    "kind": "clawix_skill",
+                    "name": "Review",
+                    "body": "Review body",
+                    "metadata": { "surface": "skills" }
+                  }
+                }
+                """.utf8)
+            }
+            return Data(#"{"ok":true,"data":null}"#.utf8)
+        })
+
+        let record = try client.getSkillRecord(slug: "review")
+
+        XCTAssertEqual(record?.slug, "review")
+        XCTAssertEqual(record?.metadata?["surface"], .string("skills"))
+        XCTAssertEqual(calls, [["skills", "get", "review", "--json"]])
+    }
+
     private func assertFrameworkRecordCommandsOnly(_ calls: [[String]], file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertFalse(calls.isEmpty, file: file, line: line)
         for call in calls {
@@ -323,9 +352,11 @@ final class ClawJSFrameworkRecordsClientTests: XCTestCase {
         var calls: [[String]] = []
         let client = ClawJSFrameworkRecordsClient(runner: .init { args in
             calls.append(args)
-            if args == ["skills", "list", "--json", "--kind", "clawix_skill"] ||
-               args == ["skills", "list", "--json", "--kind", "clawix_state"] {
+            if args == ["skills", "list", "--json", "--kind", "clawix_skill"] {
                 return Data(#"{"ok":true,"data":{"items":[]}}"#.utf8)
+            }
+            if args == ["skills", "get", "clawix-active-skills", "--json"] {
+                return Data(#"{"ok":true,"data":null}"#.utf8)
             }
             return Data(#"{"ok":true,"data":{}}"#.utf8)
         })
@@ -346,5 +377,7 @@ final class ClawJSFrameworkRecordsClientTests: XCTestCase {
             call.starts(with: ["skills", "upsert", "clawix-active-skills"])
                 && call.contains("clawix_state")
         })
+        XCTAssertTrue(calls.contains(["skills", "get", "clawix-active-skills", "--json"]))
+        XCTAssertFalse(calls.contains(["skills", "list", "--json", "--kind", "clawix_state"]))
     }
 }
