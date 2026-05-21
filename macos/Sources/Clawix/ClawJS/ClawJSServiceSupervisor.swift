@@ -1033,7 +1033,7 @@ actor ClawJSServiceSupervisor {
 
     /// Per-session admin token for `service` if this manager spawned the
     /// daemon. `nil` for services without admin auth, or when the GUI is
-    /// not the daemon owner (e.g., background bridge mode).
+    /// not the daemon steward (e.g., background bridge mode).
     func adminTokenIfSpawned(for service: ClawJSService) -> String? {
         sessionAdminTokens[service]
     }
@@ -1082,9 +1082,9 @@ actor ClawJSServiceSupervisor {
         return key
     }
 
-    /// Filesystem token lookup only for services that explicitly own a
+    /// Filesystem token lookup only for services with an explicit
     /// token-file contract. Services in `adminTokenEnvVar` deliberately
-    /// have no disk lookup: same-user local processes can read owner files,
+    /// have no disk lookup: same-user local processes can read user files,
     /// so v1 host identity must stay in-memory/native.
     nonisolated static func adminTokenFromTokenFile(for service: ClawJSService) throws -> String {
         if adminTokenEnvVar[service] != nil {
@@ -1097,7 +1097,7 @@ actor ClawJSServiceSupervisor {
         if let mode = attrs[.posixPermissions] as? NSNumber,
            mode.intValue & 0o077 != 0 {
             throw NSError(domain: "ClawJSServiceManager", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: "Admin token at \(url.path) must be readable only by the owner."
+                NSLocalizedDescriptionKey: "Admin token at \(url.path) must be readable only by the current user."
             ])
         }
         let raw = try String(contentsOf: url, encoding: .utf8)
