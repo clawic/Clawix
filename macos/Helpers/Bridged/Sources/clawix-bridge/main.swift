@@ -11,6 +11,31 @@ import ClawixEngine
 import WhisperKit
 #endif
 
+private let clawStreamingMaxFrameBytes = 65_536
+
+private func splitStreamingDelta(_ delta: String, maxFrameBytes: Int = clawStreamingMaxFrameBytes) -> [String] {
+    guard !delta.isEmpty else { return [] }
+    guard delta.utf8.count > maxFrameBytes else { return [delta] }
+    var frames: [String] = []
+    var current = ""
+    var currentBytes = 0
+    for character in delta {
+        let piece = String(character)
+        let pieceBytes = piece.utf8.count
+        if !current.isEmpty && currentBytes + pieceBytes > maxFrameBytes {
+            frames.append(current)
+            current = ""
+            currentBytes = 0
+        }
+        current += piece
+        currentBytes += pieceBytes
+    }
+    if !current.isEmpty {
+        frames.append(current)
+    }
+    return frames
+}
+
 @main
 struct BridgeMain {
     static func main() {
@@ -1154,27 +1179,31 @@ final class DaemonEngineHost: EngineHost {
             guard let payload = try? params?.decode(AgentMessageDelta.self),
                   let chatId = chatByThread[payload.threadId]
             else { return }
-            if let jobId = remoteJobByThread[payload.threadId] {
-                if var job = meshStore.job(id: jobId) {
-                    job.resultText = (job.resultText ?? "") + payload.delta
-                    job.updatedAt = Date()
-                    meshStore.upsert(job: job)
-                }
-                meshStore.append(event: RemoteJobEvent(jobId: jobId, type: "delta", message: payload.delta))
-            }
             let assistantId = ensureAssistant(chatId: chatId, threadId: payload.threadId)
-            updateMessage(chatId: chatId, messageId: assistantId) { msg in
-                msg.content += payload.delta
-                msg.streamingFinished = false
+            for delta in splitStreamingDelta(payload.delta) {
+                if let jobId = remoteJobByThread[payload.threadId] {
+                    if var job = meshStore.job(id: jobId) {
+                        job.resultText = (job.resultText ?? "") + delta
+                        job.updatedAt = Date()
+                        meshStore.upsert(job: job)
+                    }
+                    meshStore.append(event: RemoteJobEvent(jobId: jobId, type: "delta", message: delta))
+                }
+                updateMessage(chatId: chatId, messageId: assistantId) { msg in
+                    msg.content += delta
+                    msg.streamingFinished = false
+                }
             }
         case "item/reasoning/textDelta", "item/reasoning/summaryTextDelta":
             guard let payload = try? params?.decode(ReasoningTextDelta.self),
                   let chatId = chatByThread[payload.threadId]
             else { return }
             let assistantId = ensureAssistant(chatId: chatId, threadId: payload.threadId)
-            updateMessage(chatId: chatId, messageId: assistantId) { msg in
-                msg.reasoningText += payload.delta
-                msg.streamingFinished = false
+            for delta in splitStreamingDelta(payload.delta) {
+                updateMessage(chatId: chatId, messageId: assistantId) { msg in
+                    msg.reasoningText += delta
+                    msg.streamingFinished = false
+                }
             }
         case "item/completed":
             guard let payload = try? params?.decode(ItemEnvelope.self),

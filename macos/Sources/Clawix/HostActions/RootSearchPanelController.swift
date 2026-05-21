@@ -185,6 +185,8 @@ final class RootSearchPanelStore: ObservableObject {
 }
 
 struct RootSearchPanel: View {
+    private static let visibleResultLimit = 100
+
     @StateObject private var store = RootSearchPanelStore()
     @FocusState private var searchFocused: Bool
 
@@ -272,7 +274,7 @@ struct RootSearchPanel: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(store.results) { result in
+                        ForEach(store.results.prefix(Self.visibleResultLimit)) { result in
                             RootSearchResultRow(
                                 result: result,
                                 actionState: { action in store.actionState(result: result, action: action) },
