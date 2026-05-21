@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "program": "core-ux-reliability",
+  "status": "approved-baseline-enforced",
+  "owner": "clawix-macos-real-app",
+  "lane": "core-ux",
+  "platforms": [
+    {
+      "id": "macos-real",
+      "p0": true,
+      "enforcement": "blocking-after-approved-baseline"
+    }
+  ],
+  "publicContract": "docs/governance/core-ux-reliability.md",
+  "privateCommandEnv": "CLAWIX_CORE_UX_GATE_COMMAND",
+  "privateEvidenceRootEnv": "CLAWIX_CORE_UX_PRIVATE_ROOT",
+  "visibleFlowCommandEnv": "CLAWIX_CORE_UX_VISIBLE_FLOW_COMMAND",
+  "visibleFlowEvidenceFileEnv": "CLAWIX_CORE_UX_VISIBLE_FLOW_EVIDENCE_FILE",
+  "metricsFileEnv": "CLAWIX_CORE_UX_METRICS_FILE",
+  "baselineFileEnv": "CLAWIX_CORE_UX_BASELINE_FILE",
+  "strictEnv": "CLAWIX_CORE_UX_STRICT",
+  "approvedBaselineRequiredForPass": true,
+  "strictReleaseBlocksExternalPending": true,
+  "snapshotGuard": {
+    "trackedFileChangeResult": "INVALID",
+    "captures": [
+      "branch",
+      "head",
+      "dirtyStatus",
+      "trackedFileMtimes",
+      "trackedFileSizes"
+    ]
+  },
+  "conversationGovernor": {
+    "lockRoot": ".dev-control/core-ux",
+    "maxNewConversationsPerRun": 1,
+    "maxNewConversationsPerDay": 3,
+    "minimalPrompt": "reply OK",
+    "mutatesOnlyGateAuthoredLedgerEntries": true,
+    "reuseRequiresNoActiveGeneration": true,
+    "archiveRequiresNoActiveGeneration": true
+  },
+  "requiredAppPreflight": [
+    "appModeReal",
+    "stableSignedBuild",
+    "canonicalAppIdentity",
+    "exactlyOneCanonicalPid",
+    "zeroNonCanonicalClawixProcesses"
+  ],
+  "criticalFlows": [
+    "allChats",
+    "pinned",
+    "projects",
+    "newConversation",
+    "minimalReplyOkPrompt",
+    "visibleResponse",
+    "noActiveGenerationAfterResponse"
+  ],
+  "metricFlows": [
+    "startup",
+    "sidebarHoverClick",
+    "chatScroll",
+    "composerTyping",
+    "dropdown",
+    "terminalSidebarSwitch",
+    "idle"
+  ],
+  "baselineMargins": {
+    "startupP95Ratio": 1.15,
+    "interactionP95Ratio": 1.2,
+    "frameP95Ratio": 1.15,
+    "memoryDeltaMegabytes": 25,
+    "hitchesAllowedIncreasePerFlow": 1,
+    "crashesAllowed": 0,
+    "hangsAllowed": 0
+  },
+  "computerUseWitness": {
+    "requiredForVisibleP0Closure": true,
+    "unavailableStatus": [
+      "PARTIAL",
+      "EXTERNAL_PENDING"
+    ],
+    "notRequiredForRoutineProgrammaticNightly": true
+  },
+  "allowedStatuses": [
+    "PASS",
+    "FAIL",
+    "INVALID",
+    "BLOCKED",
+    "PARTIAL",
+    "EXTERNAL_PENDING"
+  ],
+  "requiredEvidenceFields": [
+    "status",
+    "runId",
+    "startedAt",
+    "finishedAt",
+    "gitSnapshot",
+    "appPreflight",
+    "crashDelta",
+    "conversationGovernor",
+    "criticalFlows",
+    "metrics",
+    "baselineComparison",
+    "computerUseWitness"
+  ],
+  "retention": {
+    "keepLatestSuccessfulRuns": 10,
+    "keepAllNonPassUntilResolved": true
+  }
+}

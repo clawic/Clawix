@@ -8,6 +8,7 @@ plans, and companion validation manifests here.
 ## Programs
 
 - [Code Hygiene](code-hygiene/completion.md)
+- [Core UX Reliability](core-ux-reliability.md)
 - [Decision Tension Rubric](decision-tension-rubric.md)
 - [Legal](legal/source-audit.md)
 - [No Irreversible Data Loss](no-irreversible-data-loss/README.md)

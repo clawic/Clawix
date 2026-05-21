@@ -90,6 +90,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-discoverability-check` | guardrail |  | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |
 | `guard-scripts-evolution-rescue-mirror-check` | guardrail |  | `scripts/evolution_rescue_mirror_check.mjs` | evolution_rescue_mirror_check, Evolution Rescue Mirror Check | `scripts/evolution_rescue_mirror_check.mjs` |
 | `guard-scripts-goal-completion-gate-check` | guardrail |  | `scripts/goal_completion_gate_check.mjs` | goal_completion_gate_check, Goal Completion Gate Check | `scripts/goal_completion_gate_check.mjs` |
+| `guard-scripts-core-ux-reliability-check` | guardrail |  | `scripts/core_ux_reliability_check.mjs` | core_ux_reliability_check, Core UX Reliability Check, Core UX Reliability Gate, core-ux lane, macOS real-app P0 UX gate | `scripts/core_ux_reliability_check.mjs` |
 | `guard-scripts-hot-path-guard` | guardrail |  | `scripts/hot_path_guard.mjs` | hot_path_guard, Hot Path Guard | `scripts/hot_path_guard.mjs` |
 | `guard-scripts-idle-quiescence-check` | guardrail |  | `scripts/idle_quiescence_check.mjs` | idle_quiescence_check, Idle Quiescence Check | `scripts/idle_quiescence_check.mjs` |
 | `guard-scripts-incident-response-check` | guardrail |  | `scripts/incident_response_check.mjs` | incident_response_check, Incident Response Check | `scripts/incident_response_check.mjs` |

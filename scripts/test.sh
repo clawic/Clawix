@@ -246,6 +246,25 @@ host_tests() {
   return "$status"
 }
 
+core_ux_tests() {
+  local status=0
+  run node "$ROOT_DIR/scripts/core_ux_reliability_check.mjs" || status=$?
+  if [[ "${CLAWIX_CORE_UX_REQUIRE_APPROVED:-0}" == "1" ]]; then
+    run node "$ROOT_DIR/scripts/core_ux_reliability_check.mjs" --require-approved || status=$?
+  fi
+
+  if [[ -n "${CLAWIX_CORE_UX_GATE_COMMAND:-}" ]]; then
+    run_external_command core-ux "$CLAWIX_CORE_UX_GATE_COMMAND" || status=$?
+  else
+    echo "EXTERNAL PENDING core-ux lane: set CLAWIX_CORE_UX_GATE_COMMAND for approved macOS real-app Core UX validation" >&2
+    if strict_external_pending || [[ "${CLAWIX_CORE_UX_STRICT:-0}" == "1" ]]; then
+      echo "FAIL: strict core-ux lane blocked without Core UX gate command" >&2
+      status=1
+    fi
+  fi
+  return "$status"
+}
+
 device_tests() {
   android_unit_tests
   if [[ -n "${CLAWIX_DEVICE_TEST_COMMAND:-}" ]]; then
@@ -298,6 +317,8 @@ fast() {
   run node "$ROOT_DIR/scripts/incident_response_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/core_ux_reliability_check.mjs"
+  run node "$ROOT_DIR/scripts/core_ux_reliability_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs"
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
@@ -441,6 +462,9 @@ case "$LANE" in
   host)
     host_tests
     ;;
+  core-ux)
+    core_ux_tests
+    ;;
   device)
     device_tests
     ;;
@@ -457,6 +481,7 @@ case "$LANE" in
     e2e_tests
     CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 device_tests
     CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 host_tests
+    CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 CLAWIX_CORE_UX_REQUIRE_APPROVED=1 core_ux_tests
     ;;
   *)
     echo "Unknown test lane: $LANE" >&2

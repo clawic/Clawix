@@ -2378,6 +2378,38 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-core-ux-reliability-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/core_ux_reliability_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "core_ux_reliability_check",
+        "Core UX Reliability Check",
+        "Core UX Reliability Gate",
+        "core-ux lane",
+        "macOS real-app P0 UX gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "core_ux_reliability_check",
+          "expectPath": "scripts/core_ux_reliability_check.mjs"
+        },
+        {
+          "query": "Core UX Reliability Gate",
+          "expectPath": "docs/governance/core-ux-reliability.md"
+        }
+      ],
+      "guard": "scripts/core_ux_reliability_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-hot-path-guard",
       "kind": "guardrail",
       "steward": "clawix",
