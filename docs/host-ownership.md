@@ -142,5 +142,6 @@ A domain is done only when all of these are true:
 
 Public repositories contain only safe placeholders for bundle ids, signing,
 Team IDs, launch labels, Mach services, and host branding. Real signing
-identities, secrets, private paths, release credentials, and maintainer-specific
-configuration stay outside public repos.
+identities, secrets, private paths, source session or goal references, release
+credentials, release artifact directories, personal references, and
+maintainer-specific configuration stay outside public repos.

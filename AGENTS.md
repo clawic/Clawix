@@ -113,9 +113,10 @@ node scripts/check-clawjs-skills-sync.mjs
 
 ## Public Hygiene And Commits
 
-Public repositories must not contain maintainer-private paths, signing identities,
-bundle IDs, Team IDs, SKUs, release credentials, local launchers, private automation,
-private Q&A indexes, logs, caches, or screenshots. Run `bash macos/scripts/public_hygiene_check.sh`
+Public repositories must not contain maintainer-private paths, source session or
+goal references, signing identities, bundle IDs, Team IDs, SKUs, release
+credentials, release artifact directories, local launchers, private automation,
+private Q&A indexes, personal references, logs, caches, or screenshots. Run `bash macos/scripts/public_hygiene_check.sh`
 before publication or broad review.
 
 Use Conventional Commits, keep commits scoped by intention, do not sweep
