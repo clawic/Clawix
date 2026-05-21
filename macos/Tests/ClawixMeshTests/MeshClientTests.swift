@@ -242,10 +242,10 @@ final class MeshClientTests: XCTestCase {
 
     @MainActor
     func test_remoteMeshIsStableSurface() {
-        XCTAssertEqual(AppFeature.remoteMesh.tier, .stable)
+        XCTAssertEqual(AppFeature.remoteMesh.maturity, .stable)
 
         let categories = SettingsCategory.visibleCases { feature in
-            feature.tier == .stable
+            feature.maturity == .stable
         }
         XCTAssertTrue(categories.contains(.machines))
     }
