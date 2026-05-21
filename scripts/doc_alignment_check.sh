@@ -453,7 +453,7 @@ done
 
 for snippet in \
   "\"schemaVersion\": 1" \
-  "\"owner\": \"clawix\"" \
+  "\"steward\": \"clawix\"" \
   "\"preferredTerm\": \"session\"" \
   "\"preferredTerm\": \"clawix-bridge\""
 do

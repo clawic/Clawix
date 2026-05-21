@@ -1917,36 +1917,6 @@
       "reviewDate": "2026-08-18"
     },
     {
-      "id": "guard-scripts-startup-release-contract-check",
-      "kind": "guardrail",
-      "owner": "clawix",
-      "canonicalSource": "scripts/startup_release_contract_check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "startup_release_contract_check",
-        "cold warm startup release contract",
-        "macos-startup-first-chat-interactive"
-      ],
-      "searchQueries": [
-        {
-          "query": "startup_release_contract_check",
-          "expectPath": "scripts/startup_release_contract_check.mjs"
-        },
-        {
-          "query": "macos-startup-first-chat-interactive",
-          "expectPath": "docs/performance/startup-release-contract.md"
-        }
-      ],
-      "guard": "scripts/startup_release_contract_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
       "id": "guard-scripts-persistent-surface-guard",
       "kind": "guardrail",
       "owner": "clawix",
@@ -2074,6 +2044,37 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-startup-release-contract-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/startup_release_contract_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "startup_release_contract_check",
+        "Startup Release Contract Check",
+        "cold warm startup release contract",
+        "macos-startup-first-chat-interactive"
+      ],
+      "searchQueries": [
+        {
+          "query": "startup_release_contract_check",
+          "expectPath": "scripts/startup_release_contract_check.mjs"
+        },
+        {
+          "query": "macos-startup-first-chat-interactive",
+          "expectPath": "docs/performance/startup-release-contract.md"
+        }
+      ],
+      "guard": "scripts/startup_release_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-storage-boundary-guard",
       "kind": "guardrail",
       "owner": "clawix",
@@ -2095,31 +2096,6 @@
         }
       ],
       "guard": "scripts/storage_boundary_guard.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "guard-scripts-surface-evidence-projection-check",
-      "kind": "guardrail",
-      "owner": "clawix",
-      "canonicalSource": "scripts/surface-evidence-projection-check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "surface-evidence-projection-check",
-        "Surface Evidence Projection Check"
-      ],
-      "searchQueries": [
-        {
-          "query": "surface-evidence-projection-check",
-          "expectPath": "scripts/surface-evidence-projection-check.mjs"
-        }
-      ],
-      "guard": "scripts/surface-evidence-projection-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -2146,6 +2122,31 @@
         }
       ],
       "guard": "scripts/surface_narrative_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-surface-evidence-projection-check",
+      "kind": "guardrail",
+      "owner": "clawix",
+      "canonicalSource": "scripts/surface-evidence-projection-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "surface-evidence-projection-check",
+        "Surface Evidence Projection Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-evidence-projection-check",
+          "expectPath": "scripts/surface-evidence-projection-check.mjs"
+        }
+      ],
+      "guard": "scripts/surface-evidence-projection-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },

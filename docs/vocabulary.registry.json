@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "owner": "clawix",
+  "steward": "clawix",
   "imports": [
     {
-      "owner": "clawjs",
+      "steward": "clawjs",
       "source": "ClawJS docs/vocabulary.registry.json",
       "reason": "ClawJS owns shared framework vocabulary."
     }
@@ -227,6 +227,46 @@
       "examples": {
         "correct": ["host approval", "signed host"],
         "incorrect": ["Node-owned native permission grant"]
+      }
+    },
+    {
+      "preferredTerm": "steward",
+      "definition": "Technical maintenance responsibility for Clawix governance registries and durable meta-code; it never grants authority by itself.",
+      "scope": ["discoverability registry", "baseline registry", "guardrail metadata", "docs routing"],
+      "allowedSurfaces": ["docs/discoverability.registry.json", "docs/discoverability-baseline.json", "guardrail fixtures"],
+      "contextOnlySynonyms": [],
+      "forbiddenSynonyms": [
+        {
+          "term": "owner",
+          "severity": "critical",
+          "contexts": ["new governance registry metadata", "new guardrail baseline metadata"],
+          "reason": "Use steward for technical responsibility and explicit grants/scopes for authority."
+        }
+      ],
+      "externalExceptions": [],
+      "examples": {
+        "correct": ["steward: \"clawix\"", "steward: \"claw\""],
+        "incorrect": ["owner: \"clawix\" as governance authority metadata"]
+      }
+    },
+    {
+      "preferredTerm": "surfaceSteward",
+      "definition": "Technical responsibility for a registered Clawix surface node, edge, or route; it describes lifecycle maintenance, not authority.",
+      "scope": ["persistent surface manifests", "surface route graphs", "surface evidence fixtures"],
+      "allowedSurfaces": ["docs/persistent-surface-clawix.manifest.json", "surface route graph fixtures"],
+      "contextOnlySynonyms": [],
+      "forbiddenSynonyms": [
+        {
+          "term": "owner",
+          "severity": "critical",
+          "contexts": ["new surface manifest metadata", "new route graph metadata"],
+          "reason": "Use surfaceSteward for technical surface responsibility and explicit grants/scopes for authority."
+        }
+      ],
+      "externalExceptions": [],
+      "examples": {
+        "correct": ["surfaceSteward: \"clawix\"", "surfaceSteward: \"claw\""],
+        "incorrect": ["owner: \"clawix\" on a persistent surface node"]
       }
     }
   ]

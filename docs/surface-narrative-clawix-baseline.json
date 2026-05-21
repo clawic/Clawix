@@ -4,7 +4,7 @@
     {
       "id": "clawix.existing-surfaces-without-narrative",
       "classification": "lateral_debt",
-      "owner": "clawix",
+      "steward": "clawix",
       "reason": "Initial bounded baseline for Clawix manifest and interface surfaces that predate the surfaceNarrative contract.",
       "risk": "Existing host/UI surfaces remain registered, but their conceptual authorization is not yet machine-checkable.",
       "expires": "2026-08-18",
@@ -481,9 +481,12 @@
           ]
         },
         "routes": {
-          "count": 0,
-          "idsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ids": []
+          "count": 2,
+          "idsSha256": "15f477f10c09d58d78a95d5b4a18c58a7604366bb3338d7c49fa159d44e57a49",
+          "ids": [
+            "chat.companionBridge.clawixHost",
+            "chat.localDesktop.clawixHost"
+          ]
         },
         "interfaceSurfaces": {
           "count": 37,
