@@ -151,6 +151,28 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
         XCTAssertEqual(macDispatch["mode"] as? String, "approvalRequiredPlanOnly")
     }
 
+    func testHostBridgeContractPayloadCanHideMaturityBlockedCapabilities() throws {
+        let record = AppRecord(
+            slug: "dashboard",
+            name: "Dashboard",
+            declaredCapabilities: ["search.query", "system.telemetry.snapshot", "system.telemetry.history"]
+        )
+        let stableDescriptors = AppCapabilityCatalog.descriptors.filter { $0.maturity == .stable }
+        let payload = AppCapabilityCatalog.contractsBridgeValue(for: record, descriptors: stableDescriptors)
+        let capabilities = try XCTUnwrap(payload["capabilities"] as? [[String: Any]])
+        let ids = Set(capabilities.compactMap { $0["id"] as? String })
+        let riskMap = try XCTUnwrap(payload["riskMap"] as? [String: Any])
+        let ordinary = Set(riskMap["ordinaryAccess"] as? [String] ?? [])
+
+        XCTAssertTrue(ids.contains("search.query"))
+        XCTAssertFalse(ids.contains("system.telemetry.snapshot"))
+        XCTAssertFalse(ids.contains("system.telemetry.history"))
+        XCTAssertTrue(ordinary.contains("search.query"))
+        XCTAssertFalse(ordinary.contains("system.telemetry.snapshot"))
+        XCTAssertFalse(ordinary.contains("system.telemetry.history"))
+        XCTAssertEqual(riskMap["unknown"] as? [String], [])
+    }
+
     func testHostBridgeSurfaceBindingsAreCompleteAndResolvedWhenPublished() throws {
         let record = AppRecord(
             slug: "dashboard",

@@ -4,13 +4,27 @@ import XCTest
 @MainActor
 final class FeatureFlagsTests: XCTestCase {
     func test_currentProductSurfacesAreStable() {
-        let devOnly = AppFeature.allCases.filter { $0.tier == .devOnly }
-        XCTAssertEqual(devOnly, [.simulators])
-        XCTAssertEqual(AppFeature.openCode.tier, .stable)
-        XCTAssertEqual(AppFeature.screenTools.tier, .stable)
-        XCTAssertEqual(AppFeature.macUtilities.tier, .stable)
-        XCTAssertEqual(AppFeature.agents.tier, .stable)
-        XCTAssertEqual(AppFeature.skills.tier, .stable)
+        let incomplete = AppFeature.allCases.filter { $0.maturity == .incomplete }
+        XCTAssertEqual(incomplete, [.simulators])
+        XCTAssertEqual(AppFeature.openCode.maturity, .stable)
+        XCTAssertEqual(AppFeature.screenTools.maturity, .stable)
+        XCTAssertEqual(AppFeature.macUtilities.maturity, .stable)
+        XCTAssertEqual(AppFeature.macControl.maturity, .stable)
+        XCTAssertEqual(AppFeature.agents.maturity, .stable)
+        XCTAssertEqual(AppFeature.skills.maturity, .stable)
+    }
+
+    func test_featureCapabilityIDsAreExplicitAndStable() {
+        XCTAssertEqual(AppFeature.macControl.capabilityID, "clawix.feature.macControl")
+        XCTAssertEqual(AppFeature.simulators.capabilityID, "clawix.feature.simulators")
+    }
+
+    func test_maturityVisibilityBlocksNonStableWithoutOptIn() {
+        let flags = FeatureFlags.shared
+
+        XCTAssertTrue(flags.isCapabilityVisible(capabilityID: "clawix.feature.stable", maturity: .stable, activationPolicy: .enabled))
+        XCTAssertFalse(flags.isCapabilityVisible(capabilityID: "system.telemetry", maturity: .experimental, activationPolicy: .optIn))
+        XCTAssertFalse(flags.isCapabilityVisible(capabilityID: "clawix.feature.incomplete", maturity: .incomplete, activationPolicy: .devAllowlist))
     }
 
     func test_openCodeRuntimePersistsAsStableSurface() {

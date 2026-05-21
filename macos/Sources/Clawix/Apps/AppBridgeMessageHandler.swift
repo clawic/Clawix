@@ -184,19 +184,20 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             case "iot.device.action.invoke":
                 try gateToolCall(tool: "iot.device.action.invoke", arguments: payload, requestId: requestId)
             case "capabilities.list":
-                resolve(requestId: requestId, value: AppCapabilityCatalog.descriptors.map(\.bridgeValue))
+                resolve(requestId: requestId, value: visibleCapabilityDescriptors().map(\.bridgeValue))
             case "capabilities.get":
                 let id = (payload["id"] as? String) ?? ""
+                let capabilityID = id.trimmingCharacters(in: .whitespacesAndNewlines)
                 resolve(
                     requestId: requestId,
-                    value: AppCapabilityCatalog.descriptor(id: id.trimmingCharacters(in: .whitespacesAndNewlines))?.bridgeValue ?? NSNull()
+                    value: visibleCapabilityDescriptors().first { $0.id == capabilityID }?.bridgeValue ?? NSNull()
                 )
             case "capabilities.contracts":
                 guard let record = appsStore.record(forSlug: slug) else {
                     reject(requestId: requestId, message: "App not found")
                     return
                 }
-                resolve(requestId: requestId, value: AppCapabilityCatalog.contractsBridgeValue(for: record))
+                resolve(requestId: requestId, value: AppCapabilityCatalog.contractsBridgeValue(for: record, descriptors: visibleCapabilityDescriptors()))
             case "capabilities.source":
                 resolve(requestId: requestId, value: AppCapabilityCatalog.source)
             case "capabilities.riskMap":
@@ -936,6 +937,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private func handleSystemTelemetrySnapshot(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
+            try requireMaturityAllowed("system.telemetry.snapshot")
             try requireLocalWideCapability("system.telemetry.snapshot")
             guard let systemTelemetryBridge else {
                 reject(requestId: requestId, message: "System telemetry bridge is unavailable")
@@ -976,6 +978,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
     private func handleSystemTelemetryHistory(payload: [String: Any], requestId: String) async {
         do {
             try Task.checkCancellation()
+            try requireMaturityAllowed("system.telemetry.history")
             try requireLocalWideCapability("system.telemetry.history")
             guard let systemTelemetryBridge else {
                 reject(requestId: requestId, message: "System telemetry bridge is unavailable")
@@ -1290,11 +1293,31 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
             throw AppBridgeCapabilityError.capabilityNotDeclared(capabilityId)
         }
     }
+
+    private func visibleCapabilityDescriptors() -> [AppCapabilityDescriptor] {
+        AppCapabilityCatalog.descriptors.filter(isMaturityAllowed)
+    }
+
+    private func requireMaturityAllowed(_ capabilityId: String) throws {
+        guard let descriptor = AppCapabilityCatalog.descriptor(id: capabilityId),
+              isMaturityAllowed(descriptor) else {
+            throw AppBridgeCapabilityError.maturityBlocked(capabilityId)
+        }
+    }
+
+    private func isMaturityAllowed(_ descriptor: AppCapabilityDescriptor) -> Bool {
+        FeatureFlags.shared.isCapabilityVisible(
+            capabilityID: descriptor.id,
+            maturity: descriptor.maturity,
+            activationPolicy: descriptor.activationPolicy
+        )
+    }
 }
 
 private enum AppBridgeCapabilityError: LocalizedError {
     case appNotFound
     case activationRequired
+    case maturityBlocked(String)
     case capabilityNotAllowed(String)
     case capabilityNotDeclared(String)
 
@@ -1304,6 +1327,8 @@ private enum AppBridgeCapabilityError: LocalizedError {
             return "App not found"
         case .activationRequired:
             return "App activation review is required before using this capability"
+        case .maturityBlocked(let id):
+            return "maturity_blocked: \(id)"
         case .capabilityNotAllowed(let id):
             return "Capability is not available to custom apps: \(id)"
         case .capabilityNotDeclared(let id):

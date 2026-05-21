@@ -8,6 +8,8 @@ struct AppCapabilityDescriptor: Codable, Equatable, Hashable {
     var outputSchemaRef: String? = nil
     var eventSchemaRefs: AppCapabilityEventSchemaRefs? = nil
     var customAppAccess: AppCapabilityAccess
+    var maturity: FeatureMaturity = .stable
+    var activationPolicy: FeatureActivationPolicy = .enabled
     var redactionPolicyRef: String? = nil
     var riskTier: AppCapabilityRiskTier
     var interruptiveApproval: Bool
@@ -369,11 +371,13 @@ enum AppCapabilityCatalog {
         descriptors.first { $0.id == id }
     }
 
-    static func riskMap(for record: AppRecord) -> AppCapabilityRiskMap {
+    static func riskMap(for record: AppRecord, descriptors availableDescriptors: [AppCapabilityDescriptor] = descriptors) -> AppCapabilityRiskMap {
         let requested = record.effectiveDeclaredCapabilities
-        let selected = requested.isEmpty ? descriptors : requested.compactMap(descriptor)
+        let descriptorsById = Dictionary(uniqueKeysWithValues: availableDescriptors.map { ($0.id, $0) })
+        let knownDescriptorIds = Set(descriptors.map(\.id))
+        let selected = requested.isEmpty ? availableDescriptors : requested.compactMap { descriptorsById[$0] }
         let known = Set(selected.map(\.id))
-        let unknown = requested.filter { !known.contains($0) }.sorted()
+        let unknown = requested.filter { !known.contains($0) && !knownDescriptorIds.contains($0) }.sorted()
 
         return AppCapabilityRiskMap(
             authorityModel: "localWideReadsHighRiskApproval",
@@ -614,7 +618,7 @@ enum AppCapabilityCatalog {
         }
     }
 
-    static func contractsBridgeValue(for record: AppRecord) -> [String: Any] {
+    static func contractsBridgeValue(for record: AppRecord, descriptors availableDescriptors: [AppCapabilityDescriptor] = descriptors) -> [String: Any] {
         [
             "schemaVersion": 1,
             "source": source,
@@ -624,8 +628,8 @@ enum AppCapabilityCatalog {
             "schemaRefs": schemaRefs,
             "referencedSchemaRefs": referencedSchemaRefs,
             "missingSchemaRefs": missingSchemaRefs,
-            "riskMap": riskMap(for: record).bridgeValue,
-            "capabilities": descriptors.map(\.bridgeValue)
+            "riskMap": riskMap(for: record, descriptors: availableDescriptors).bridgeValue,
+            "capabilities": availableDescriptors.map(\.bridgeValue)
         ]
     }
 
@@ -707,6 +711,8 @@ extension AppCapabilityDescriptor {
             "title": title,
             "summary": summary,
             "customAppAccess": customAppAccess.rawValue,
+            "maturity": maturity.label,
+            "activationPolicy": activationPolicy.rawValue,
             "riskTier": riskTier.rawValue,
             "interruptiveApproval": interruptiveApproval,
             "touchesSecrets": touchesSecrets,

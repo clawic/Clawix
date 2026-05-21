@@ -202,6 +202,16 @@
       "validation": "Mac utility approval/audit tests"
     },
     {
+      "id": "macControl",
+      "featureFlag": "macControl",
+      "status": "stable",
+      "owner": "host",
+      "humanSurface": "Clawix Mac Control settings and approval policy UI",
+      "programmaticSurface": "HostActionPolicy mac control approval and audit configuration",
+      "storageOwner": "host-policy",
+      "validation": "Mac control settings page is feature-gated and persistent-surface guard tracks approval storage"
+    },
+    {
       "id": "git",
       "featureFlag": "git",
       "status": "stable",

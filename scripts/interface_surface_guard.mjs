@@ -82,6 +82,7 @@ const requiredFeatureFlags = new Set([
   "telegram",
   "screenTools",
   "macUtilities",
+  "macControl",
   "databaseWorkbench",
   "marketplace",
   "calendar",
@@ -130,6 +131,14 @@ for (const featureFlag of requiredFeatureFlags) {
   if (!seenFeatureFlags.has(featureFlag)) {
     fail(`interface registry is missing current AppFeature ${featureFlag}`);
   }
+}
+
+const featureFlagsText = read("macos/Sources/Clawix/FeatureFlags.swift");
+if (/default\s*:\s*return\s+\.stable/.test(featureFlagsText)) {
+  fail("FeatureFlags.swift must not default new AppFeature cases to stable; classify each feature explicitly");
+}
+if (featureFlagsText.includes("String(describing: self)")) {
+  fail("FeatureFlags.swift must use explicit capability ids instead of deriving them from enum spelling");
 }
 
 const v1ClosureSurfaceRequirements = {
@@ -541,8 +550,6 @@ const stalePatterns = [
   { pattern: "FeatureTier.experimental", reason: "v1 surfaces must be stable, dev-only, or removed" },
   { pattern: "experimental Mica", reason: "visible v1 settings must use stable/dev-only labels" },
   { pattern: "beta channel", reason: "visible v1 settings must use stable/dev-only labels" },
-  { pattern: "case beta", reason: "v1 surfaces must be stable, dev-only, or removed" },
-  { pattern: "case experimental", reason: "v1 surfaces must be stable, dev-only, or removed" },
   { pattern: "FeatureFlags.beta", reason: "use explicit stable/dev-only classification" },
   { pattern: "FeatureFlags.experimental", reason: "use explicit stable/dev-only classification" },
   { pattern: "experimental pages", reason: "visible v1 surfaces must use stable/dev-only labels" },

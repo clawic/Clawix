@@ -2539,6 +2539,7 @@
       "language" : "swift",
       "lifecycle" : "durable",
       "name" : "Life registry projection JSON",
+      "notes" : "Clawix cache/projection of the canonical ClawJS Signals registry; regenerate from ClawJS instead of editing manually.",
       "owner" : "clawix",
       "parentId" : "claw.contracts.formats",
       "privacy" : "public",
@@ -2548,8 +2549,7 @@
       "storageClass" : "external",
       "surfaceClass" : "format",
       "value" : "life-registry.json",
-      "version" : "1",
-      "notes" : "Clawix cache/projection of the canonical ClawJS Signals registry; regenerate from ClawJS instead of editing manually."
+      "version" : "1"
     },
     {
       "canonicality" : "hostOnly",
@@ -4064,6 +4064,20 @@
       "language" : "swift",
       "lifecycle" : "durable",
       "name" : "Developer-only surface flag",
+      "owner" : "clawix",
+      "privacy" : "userData",
+      "project" : "macos",
+      "repo" : "Clawix",
+      "storageClass" : "nativeAppData"
+    },
+    {
+      "canonicality" : "hostOnly",
+      "id" : "clawix.prefs.featureFlags.enabledCapabilityIDs",
+      "key" : "FeatureFlags.enabledCapabilityIDs",
+      "kind" : "preferenceKey",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "Feature maturity opt-in capability ids",
       "owner" : "clawix",
       "privacy" : "userData",
       "project" : "macos",
