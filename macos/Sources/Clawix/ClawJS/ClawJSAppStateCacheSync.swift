@@ -4,10 +4,10 @@ import GRDB
 @MainActor
 enum ClawJSAppStateCacheSync {
     static func refreshFromCanonicalStore() async {
-        await ClawJSAppStateSyncCoordinator.shared.flushPending()
+        await ClawJSAppStateSyncCoordinator.shared.flushPending(allowCLIFallback: false)
         let syncStatus = ClawJSAppStateSyncCoordinator.shared.status()
         guard syncStatus.pending == 0, syncStatus.failed == 0 else { return }
-        guard let snapshot = try? await ClawJSAppStateClient.snapshot() else { return }
+        guard let snapshot = try? await ClawJSAppStateClient.snapshot(allowCLIFallback: false) else { return }
         FirstPaintCache.save(snapshot: snapshot)
         if let db = LazyDatabaseProvider.shared.dbQueue {
             try? await db.write { database in

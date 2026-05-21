@@ -320,6 +320,33 @@ struct ClawJSSessionsClient {
         try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(sessionId)/interrupt", method: "POST", body: EmptyRequest())
     }
 
+    func appStateProjection(limit: Int = 200, receiptLimit: Int = 20) async throws -> ClawJSAppStateSnapshot {
+        try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/host/app-state/projection",
+            queryItems: [
+                URLQueryItem(name: "limit", value: String(limit)),
+                URLQueryItem(name: "receiptLimit", value: String(receiptLimit)),
+            ]
+        )
+    }
+
+    @discardableResult
+    func applyAppStateOperations(
+        _ operations: [ClawJSAppStateOperation],
+        requestId: String,
+        hostId: String = "clawix"
+    ) async throws -> ClawJSAppStateApplyResponse {
+        try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/host/app-state/apply",
+            method: "POST",
+            body: AppStateApplyRequest(
+                operations: operations,
+                requestId: requestId,
+                hostId: hostId
+            )
+        )
+    }
+
     private func request<T: Decodable>(
         _ path: String,
         queryItems: [URLQueryItem] = [],
@@ -369,6 +396,12 @@ struct ClawJSSessionsClient {
 
     private struct EmptyRequest: Encodable {}
     private struct EmptyResponse: Decodable {}
+
+    private struct AppStateApplyRequest: Encodable {
+        let operations: [ClawJSAppStateOperation]
+        let requestId: String
+        let hostId: String
+    }
 }
 
 private struct AnyEncodable: Encodable {

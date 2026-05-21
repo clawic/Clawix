@@ -173,9 +173,8 @@ enum ClawJSAppStateClient {
         ClawJSAppStateSyncCoordinator.shared.enqueue(ClawJSAppStateOperation(kind: "terminal.delete", id: id))
     }
 
-    static func snapshot() async throws -> ClawJSAppStateSnapshot {
-        guard ClawJSRuntime.isAvailable else { throw CocoaError(.executableNotLoadable) }
-        return try await ClawJSAppStateSyncCoordinator.shared.projection()
+    static func snapshot(allowCLIFallback: Bool = false) async throws -> ClawJSAppStateSnapshot {
+        try await ClawJSAppStateSyncCoordinator.shared.projection(allowCLIFallback: allowCLIFallback)
     }
 
     private static func runResourceBestEffort(_ args: [String]) {

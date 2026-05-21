@@ -80,11 +80,31 @@ struct ClawJSAppStateSyncStatus: Equatable, Sendable {
     var applied: Int
 }
 
+struct ClawJSAppStateApplyResponse: Decodable {
+    let receipt: ClawJSAppStateSyncReceipt
+}
+
+struct ClawJSAppStateSyncReceipt: Codable {
+    let receiptId: String
+    let requestId: String
+    let hostId: String
+    let status: String
+    let operationCount: Int
+    let appliedAt: String
+    let error: ClawJSAppStateReceiptError?
+}
+
+struct ClawJSAppStateReceiptError: Codable {
+    let code: String
+    let message: String
+}
+
 @MainActor
 final class ClawJSAppStateSyncCoordinator {
     static let shared = ClawJSAppStateSyncCoordinator()
 
     private let dbProvider: @Sendable () -> DatabaseQueue?
+    private let sessionsClientProvider: () -> ClawJSSessionsClient
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let autoFlush: Bool
@@ -92,12 +112,15 @@ final class ClawJSAppStateSyncCoordinator {
 
     init(db: DatabaseQueue, autoFlush: Bool = true) {
         self.dbProvider = { db }
+        self.sessionsClientProvider = { ClawJSSessionsClient.local() }
         self.autoFlush = autoFlush
     }
 
     init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue },
+         sessionsClientProvider: @escaping () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() },
          autoFlush: Bool = true) {
         self.dbProvider = dbProvider
+        self.sessionsClientProvider = sessionsClientProvider
         self.autoFlush = autoFlush
     }
 
@@ -136,7 +159,7 @@ final class ClawJSAppStateSyncCoordinator {
         }) ?? ClawJSAppStateSyncStatus(pending: 0, failed: 0, applied: 0)
     }
 
-    func flushPending(limit: Int = 50) async {
+    func flushPending(limit: Int = 50, allowCLIFallback: Bool = true) async {
         guard let db = dbProvider() else { return }
         let now = Int64(Date().timeIntervalSince1970)
         let rows = (try? await db.read { database in
@@ -147,10 +170,6 @@ final class ClawJSAppStateSyncCoordinator {
                 .fetchAll(database)
         }) ?? []
         guard !rows.isEmpty else { return }
-        guard ClawJSRuntime.isAvailable else {
-            markFailed(rows, message: "ClawJS runtime unavailable")
-            return
-        }
         let operations = rows.compactMap { row -> ClawJSAppStateOperation? in
             guard let data = row.operationJson.data(using: .utf8) else { return nil }
             return try? decoder.decode(ClawJSAppStateOperation.self, from: data)
@@ -160,7 +179,7 @@ final class ClawJSAppStateSyncCoordinator {
             return
         }
         do {
-            let response = try await apply(operations: operations)
+            let response = try await apply(operations: operations, allowCLIFallback: allowCLIFallback)
             try await db.write { database in
                 let receiptJson = String(data: try self.encoder.encode(response.receipt), encoding: .utf8) ?? "{}"
                 let recordedAt = Int64(Date().timeIntervalSince1970)
@@ -201,23 +220,38 @@ final class ClawJSAppStateSyncCoordinator {
         }
     }
 
-    private func apply(operations: [ClawJSAppStateOperation]) async throws -> ApplyResponse {
+    private func apply(operations: [ClawJSAppStateOperation], allowCLIFallback: Bool) async throws -> ClawJSAppStateApplyResponse {
+        let requestId = "clawix-\(UUID().uuidString)"
+        do {
+            return try await sessionsClientProvider().applyAppStateOperations(
+                operations,
+                requestId: requestId,
+                hostId: "clawix"
+            )
+        } catch {
+            guard allowCLIFallback, ClawJSRuntime.isAvailable else { throw error }
+        }
         let operationsData = try encoder.encode(operations)
         let operationsJson = String(data: operationsData, encoding: .utf8) ?? "[]"
         let data = try await runCLI([
             "host", "app-state", "apply",
             "--operations", operationsJson,
-            "--request-id", "clawix-\(UUID().uuidString)",
+            "--request-id", requestId,
             "--host-id", "clawix",
             "--json",
         ])
-        return try decoder.decode(CLIEnvelope<ApplyResponse>.self, from: data).data
+        return try decoder.decode(CLIEnvelope<ClawJSAppStateApplyResponse>.self, from: data).data
     }
 
-    func projection() async throws -> ClawJSAppStateSnapshot {
-        await flushPending()
-        let data = try await runCLI(["host", "app-state", "projection", "--json"])
-        return try decoder.decode(CLIEnvelope<ClawJSAppStateSnapshot>.self, from: data).data
+    func projection(allowCLIFallback: Bool = false) async throws -> ClawJSAppStateSnapshot {
+        await flushPending(allowCLIFallback: allowCLIFallback)
+        do {
+            return try await sessionsClientProvider().appStateProjection()
+        } catch {
+            guard allowCLIFallback, ClawJSRuntime.isAvailable else { throw error }
+            let data = try await runCLI(["host", "app-state", "projection", "--json"])
+            return try decoder.decode(CLIEnvelope<ClawJSAppStateSnapshot>.self, from: data).data
+        }
     }
 
     private func runCLI(_ args: [String]) async throws -> Data {
@@ -274,24 +308,5 @@ final class ClawJSAppStateSyncCoordinator {
 
     private struct CLIEnvelope<T: Decodable>: Decodable {
         let data: T
-    }
-
-    private struct ApplyResponse: Decodable {
-        let receipt: Receipt
-    }
-
-    private struct Receipt: Codable {
-        let receiptId: String
-        let requestId: String
-        let hostId: String
-        let status: String
-        let operationCount: Int
-        let appliedAt: String
-        let error: ReceiptError?
-    }
-
-    private struct ReceiptError: Codable {
-        let code: String
-        let message: String
     }
 }
