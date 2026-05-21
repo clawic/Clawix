@@ -164,6 +164,17 @@ fallbacks, guidance, redaction, and secret references. Missing, paused,
 blocked, retired, wrong-environment, or unauthorized context fails closed before
 signing, publishing, spending, credential leasing, or external mutation.
 
+**I.10 Runtime ecosystems are integrated by declared authority, not illusion.**
+External agent runtimes can include their own CLI, app, sessions, skills,
+memory, providers, channels, schedulers, permissions, plugins, gateways,
+storage, and diagnostics. Claw may make those runtimes feel first-class through
+a runtime lens, but it must never imply parity, synchronization, write-back, or
+production support that is not backed by an official surface snapshot, a
+declared field/action authority, a loss/conflict policy, and validation
+evidence. The default is reference, index, and portable shadow where safe;
+native writes use official runtime APIs or CLIs only, and local-only overlays
+must remain visibly local.
+
 ### II. Sovereignty
 
 **II.1 Local-first by construction.** The user's data lives on the user's

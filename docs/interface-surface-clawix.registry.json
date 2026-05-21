@@ -433,6 +433,37 @@
       "storageOwner": "host-dev-state",
       "validation": "Release visibility tests ensure not product v1",
       "steward": "host"
+    },
+    {
+      "id": "runtimeEcosystemLens",
+      "status": "dev-only",
+      "humanSurface": "Clawix runtime lens for OpenClaw/Codex/Hermes sessions, skills, memory, channels, providers, settings and diagnostics with semantic native parity; full UI implementation is pending evidence.",
+      "programmaticSurface": "Sibling ClawJS runtime ecosystem manifest and claw runtime <runtime-id> ... --json portal contract",
+      "storageOwner": "framework-manifest-plus-host-local-overlay",
+      "validation": "runtime_ecosystem_lens_check.mjs plus sibling ClawJS test:runtime-ecosystem; live runtimes/accounts are EXTERNAL PENDING",
+      "steward": "framework+host",
+      "surfaceNarrative": {
+        "concept": "Runtime ecosystem lens scopes Clawix to one native runtime while preserving provenance, freshness, field/action authority, and local-only overlays.",
+        "authorizingDecision": {
+          "ref": "ADR 0033 runtime ecosystem integration standard mirror",
+          "path": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md"
+        },
+        "completingSurface": {
+          "human": "Filtered runtime lens views for sessions, skills, memory, channels, providers, settings, and diagnostics.",
+          "programmatic": "ClawJS runtime ecosystem manifest and claw runtime <runtime-id> portal."
+        },
+        "nonInference": "This dev-only registry row does not claim full UI parity, live runtime validation, or write-back support."
+      },
+      "resourceContract": {
+        "startup": "No runtime ecosystem scan at Clawix launch.",
+        "idle": "No watcher or polling loop unless a runtime lens/sync contract is active.",
+        "memory": "Large native runtime lists stay windowed or summarized.",
+        "streaming": "Runtime events use bounded bridge streams.",
+        "storage": "Clawix stores host/UI state and explicit local overlays, not runtime truth.",
+        "hotPath": "Runtime filters use indexed metadata.",
+        "scale": "Session, memory, skill, log and diagnostic lists need limits or cursors.",
+        "validation": "scripts/runtime_ecosystem_lens_check.mjs"
+      }
     }
   ]
 }

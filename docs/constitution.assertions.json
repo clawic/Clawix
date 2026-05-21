@@ -6,10 +6,11 @@
     "repo": "clawjs",
     "root": "../../clawjs",
     "path": "docs/constitution.assertions.json",
-    "sourceDigest": "0cad787569277b4a4aab11f7356c71ac221d179d80bfde420159e34a77344700"
+    "sourceDigest": "c94cd2f547408bf1391a432eb0b2b395efec867318fe81af4e8ca570e8c01c71"
   },
   "explicitlyDocumentedLanes": [
     "bash scripts/test.sh fast",
+    "explicit protector lane: scripts/runtime_ecosystem_lens_check.mjs",
     "bash scripts/doc_alignment_check.sh",
     "node scripts/constitution-assertions-check.mjs",
     "node scripts/constitution-assertions-check.mjs --self-test",
@@ -3077,7 +3078,39 @@
       "evidenceMode": "fixture",
       "repoScope": "shared",
       "status": "enforced"
+    },
+    {
+      "id": "I.10.runtime-ecosystems-declared-authority-not-illusion",
+      "principle": "I.10",
+      "summary": "I.10 Runtime ecosystems are integrated by declared authority, official snapshots, matrices, and validation rather than false parity.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "runtime",
+        "cli",
+        "data",
+        "storage",
+        "permissions",
+        "audit",
+        "ui",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/runtime-ecosystem-lens.md",
+        "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
+        "docs/interface-surface-clawix.registry.json",
+        "docs/decision-map.md"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/runtime_ecosystem_lens_check.mjs",
+        "scripts/discoverability-check.mjs",
+        "scripts/interface_surface_guard.mjs"
+      ],
+      "evidenceMode": "fixture",
+      "repoScope": "shared",
+      "status": "enforced"
     }
   ],
-  "contractDigest": "065c131638793f8215288de448c70f7f014daaf051deabb311606071d32799e3"
+  "contractDigest": "5f3ffad465ba2af00f27f8034f06f156bd11f8728f75aad68e1fc314a5bd0dae"
 }

@@ -295,6 +295,34 @@
           "command": "claw inspect routes --json"
         }
       ]
+    },
+    {
+      "adr": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/runtime_ecosystem_lens_check.mjs",
+        "scripts/adr-operational-coverage-check.mjs",
+        "scripts/discoverability-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/runtime-ecosystem-lens.md",
+        "docs/interface-surface-clawix.registry.json"
+      ],
+      "programmaticSurface": [
+        "scripts/runtime_ecosystem_lens_check.mjs",
+        "../clawjs/docs/runtime-ecosystem-integration.manifest.json"
+      ],
+      "persistence": [
+        "docs/interface-surface-clawix.registry.json",
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"runtime ecosystem integration\" --json"
+        }
+      ]
     }
   ]
 }

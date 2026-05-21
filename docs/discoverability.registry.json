@@ -1044,6 +1044,41 @@
       "canonicalName": "adr:problem-to-guardrail-loop"
     },
     {
+      "id": "clawix-adr-0033-runtime-ecosystem-integration-standard-mirror",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0033: Runtime ecosystem integration standard mirror",
+        "0033-runtime-ecosystem-integration-standard-mirror",
+        "ADR 0033",
+        "ADR 0033 runtime ecosystem integration standard mirror",
+        "runtime ecosystem lens mirror",
+        "adr:runtime-ecosystem-integration-standard"
+      ],
+      "searchQueries": [
+        {
+          "query": "runtime ecosystem integration standard",
+          "expectPath": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md"
+        },
+        {
+          "query": "runtime ecosystem lens mirror",
+          "expectPath": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md"
+        }
+      ],
+      "guard": "scripts/runtime_ecosystem_lens_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "adr:runtime-ecosystem-integration-standard"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "steward": "clawix",
@@ -2890,6 +2925,36 @@
       "guard": "scripts/remote_canon_alignment_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-runtime-ecosystem-lens-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/runtime_ecosystem_lens_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/runtime-ecosystem-lens.md"
+      ],
+      "discoveryTerms": [
+        "runtime_ecosystem_lens_check",
+        "Runtime Ecosystem Lens Check",
+        "runtime ecosystem lens check",
+        "runtime lens guard",
+        "verify runtime ecosystem lens"
+      ],
+      "searchQueries": [
+        {
+          "query": "runtime ecosystem lens check",
+          "expectPath": "scripts/runtime_ecosystem_lens_check.mjs"
+        }
+      ],
+      "guard": "scripts/runtime_ecosystem_lens_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "runtime-ecosystem-lens-check"
     },
     {
       "id": "guard-scripts-security-threat-model-check",
@@ -4846,6 +4911,39 @@
       "status": "enforced",
       "reviewDate": "2026-05-21",
       "canonicalName": "clawix-incident-response"
+    },
+    {
+      "id": "clawix-runtime-ecosystem-lens",
+      "kind": "docs-page",
+      "steward": "clawix",
+      "canonicalSource": "docs/runtime-ecosystem-lens.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "runtime ecosystem lens",
+        "semantic native parity",
+        "runtime local overlays",
+        "OpenClaw Codex Hermes lens"
+      ],
+      "searchQueries": [
+        {
+          "query": "runtime ecosystem lens",
+          "expectPath": "docs/runtime-ecosystem-lens.md"
+        },
+        {
+          "query": "semantic native parity runtime",
+          "expectPath": "docs/runtime-ecosystem-lens.md"
+        }
+      ],
+      "guard": "scripts/runtime_ecosystem_lens_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "runtime-ecosystem-lens"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
