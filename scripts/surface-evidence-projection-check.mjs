@@ -16,6 +16,23 @@ function sha256Ids(ids) {
   return crypto.createHash("sha256").update([...ids].sort().join("\n")).digest("hex");
 }
 
+function sortedIds(ids) {
+  return [...ids].sort();
+}
+
+function hasText(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function diffIds(actualIds, expectedIds) {
+  const expected = new Set(expectedIds);
+  const actual = new Set(actualIds);
+  return {
+    added: actualIds.filter((id) => !expected.has(id)),
+    removed: expectedIds.filter((id) => !actual.has(id)),
+  };
+}
+
 function existingPath(relativePath) {
   return fs.existsSync(path.join(rootDir, relativePath));
 }
@@ -26,6 +43,24 @@ function requireArray(value, label, failures) {
     return [];
   }
   return value;
+}
+
+function checkIdSummary(summary, label, failures) {
+  if (!summary || typeof summary.count !== "number" || !hasText(summary.idsSha256)) {
+    failures.push(`${label} must include count, idsSha256, and ids`);
+    return;
+  }
+  if (!Array.isArray(summary.ids) || !summary.ids.every(hasText)) {
+    failures.push(`${label}.ids must be an array of non-empty strings`);
+    return;
+  }
+  const ids = sortedIds(summary.ids);
+  if (summary.ids.length !== summary.count) {
+    failures.push(`${label}.count must equal ids.length`);
+  }
+  if (sha256Ids(ids) !== summary.idsSha256) {
+    failures.push(`${label}.idsSha256 must match ids`);
+  }
 }
 
 function checkMissingSource(kind, items, baselineEntry, failures) {
@@ -40,9 +75,13 @@ function checkMissingSource(kind, items, baselineEntry, failures) {
 
   const actualHash = sha256Ids(missingIds);
   if (missingIds.length !== expected.count || actualHash !== expected.idsSha256) {
+    const expectedIds = Array.isArray(expected.ids) ? sortedIds(expected.ids) : [];
+    const { added, removed } = diffIds(sortedIds(missingIds), expectedIds);
     failures.push(
       `${kind} missing-source baseline drift: expected ${expected.count}/${expected.idsSha256}, got ${missingIds.length}/${actualHash}`,
     );
+    if (added.length > 0) failures.push(`added missing-source ${kind}: ${added.join(", ")}`);
+    if (removed.length > 0) failures.push(`removed missing-source ${kind}: ${removed.join(", ")}`);
   }
 }
 
@@ -74,6 +113,10 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
     if (baselineEntry.expires && baselineEntry.expires < today) {
       failures.push(`${baselineEntry.id} expired on ${baselineEntry.expires}`);
     }
+    for (const kind of ["nodes", "edges", "routes"]) {
+      checkIdSummary(baselineEntry.missingSource?.[kind], `${baselineEntry.id}.missingSource.${kind}`, failures);
+    }
+    checkIdSummary(baselineEntry.externalNodeRefs, `${baselineEntry.id}.externalNodeRefs`, failures);
   }
 
   for (const node of nodes) {
@@ -122,9 +165,14 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
     const expected = baselineEntry?.externalNodeRefs;
     const actualHash = sha256Ids(externalNodeRefs);
     if (!expected || externalNodeRefs.size !== expected.count || actualHash !== expected.idsSha256) {
+      const actualIds = sortedIds(externalNodeRefs);
+      const expectedIds = Array.isArray(expected?.ids) ? sortedIds(expected.ids) : [];
+      const { added, removed } = diffIds(actualIds, expectedIds);
       failures.push(
         `external node reference baseline drift: expected ${expected?.count ?? "<missing>"}/${expected?.idsSha256 ?? "<missing>"}, got ${externalNodeRefs.size}/${actualHash}`,
       );
+      if (added.length > 0) failures.push(`added external node refs: ${added.join(", ")}`);
+      if (removed.length > 0) failures.push(`removed external node refs: ${removed.join(", ")}`);
     }
     for (const failure of [...failures]) {
       if (failure.endsWith("is not a registered persistent node")) {
@@ -137,6 +185,10 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
 }
 
 function runSelfTest() {
+  const missingSourceSummary = (items) => {
+    const ids = sortedIds(items.map((item) => item.id));
+    return { count: ids.length, idsSha256: sha256Ids(ids), ids };
+  };
   const manifest = {
     nodes: [
       { id: "clawix.ui.chat", owner: "clawix", kind: "ui" },
@@ -188,10 +240,11 @@ function runSelfTest() {
         id: "clawix.generated-persistent-surface-source-locators",
         classification: "lateral_debt",
         missingSource: {
-          nodes: { count: 3, idsSha256: sha256Ids(manifest.nodes.map((node) => node.id)) },
-          edges: { count: 1, idsSha256: sha256Ids(manifest.edges.map((edge) => edge.id)) },
-          routes: { count: 1, idsSha256: sha256Ids(manifest.routes.map((route) => route.id)) },
+          nodes: missingSourceSummary(manifest.nodes),
+          edges: missingSourceSummary(manifest.edges),
+          routes: missingSourceSummary(manifest.routes),
         },
+        externalNodeRefs: { count: 0, idsSha256: sha256Ids([]), ids: [] },
       },
     ],
   };
@@ -205,6 +258,28 @@ function runSelfTest() {
   );
   if (!negative.some((failure) => failure.includes("missing.edge"))) {
     throw new Error("negative fixture did not catch missing route edge reference");
+  }
+  const sourceDrift = checkManifest(
+    { ...manifest, nodes: [...manifest.nodes, { id: "clawix.new.node", owner: "clawix", kind: "preferenceKey" }] },
+    baseline,
+  );
+  if (!sourceDrift.some((failure) => failure.includes("added missing-source nodes: clawix.new.node"))) {
+    throw new Error("negative fixture did not report actionable missing-source drift");
+  }
+  const malformedBaseline = checkManifest(manifest, {
+    ...baseline,
+    entries: [
+      {
+        ...baseline.entries[0],
+        missingSource: {
+          ...baseline.entries[0].missingSource,
+          nodes: { ...baseline.entries[0].missingSource.nodes, idsSha256: "wrong" },
+        },
+      },
+    ],
+  });
+  if (!malformedBaseline.some((failure) => failure.includes("idsSha256 must match ids"))) {
+    throw new Error("negative fixture did not catch malformed baseline summary");
   }
 }
 

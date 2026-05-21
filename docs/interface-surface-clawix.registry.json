@@ -239,7 +239,19 @@
       "humanSurface": "Clawix runtime adapter selector",
       "programmaticSurface": "Framework runtime adapter registry and host policy",
       "storageOwner": "framework-runtime",
-      "validation": "Runtime adapter registry tests"
+      "validation": "Runtime adapter registry tests",
+      "surfaceNarrative": {
+        "concept": "OpenCode is a framework-owned runtime adapter choice surfaced in Clawix only when the feature flag marks the adapter visible.",
+        "authorizingDecision": {
+          "ref": "Interface matrix runtime adapter parity",
+          "path": "docs/interface-matrix.md"
+        },
+        "completingSurface": {
+          "human": "Clawix runtime adapter selector and model display affordances",
+          "programmatic": "Framework runtime adapter registry and host policy consumed through Clawix feature visibility checks"
+        },
+        "nonInference": "This interface surface does not make Clawix the runtime adapter owner, bypass framework registry policy, or enable hidden adapters without the feature flag."
+      }
     },
     {
       "id": "localModels",
