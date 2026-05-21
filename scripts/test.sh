@@ -280,6 +280,8 @@ fast() {
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs"
+  run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/problem_to_guardrail_check.mjs"
   run node "$ROOT_DIR/scripts/problem_to_guardrail_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/no-irreversible-data-loss-check.mjs"
@@ -426,6 +428,7 @@ case "$LANE" in
   release)
     run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
     run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --release --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
+    run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs"
     run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     integration "$@"
     run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"

@@ -20,7 +20,8 @@ domains are assistive only.
   sibling ClawJS `docs/governance/performance-governance.md` for
   whole-computer resource impact across CPU, RAM, GPU/Neural Engine, disk,
   network, battery, thermals, idle behavior, growth, resource contracts,
-  streaming/backpressure, launch/idle, high-churn UI boundaries, and P1
+  streaming/backpressure, launch/idle, high-churn UI boundaries, the P1 Idle
+  Quiescence Contract through `scripts/idle_quiescence_check.mjs`, and P1
   hot-path checks through `scripts/hot_path_guard.mjs`.
 - Problem-to-Guardrail loop: `docs/adr/0032-problem-to-guardrail-loop-mirror.md`
   and sibling ClawJS ADR 0046 require detected problems to close as
@@ -156,6 +157,10 @@ Use relevant skills instead of pasting long procedures into context:
   long-running-agent surfaces are incomplete without `resourceContract` for
   startup, idle, memory, streaming, storage, hot-path, scale, and validation
   behavior, unless they are pre-existing expiring baseline debt.
+- Periodic work is incomplete without an Idle Quiescence Contract manifest
+  entry in `docs/idle-quiescence.manifest.json` covering activation, sleep,
+  visible-only UI behavior, adaptive backoff, shared timer rationale,
+  diagnostics opt-in, release/debug separation, and expiry for temporary debt.
 - Every Clawix problem detected by an agent or review closes with one durable
   output: `guard/test añadido`, `ADR/regla añadida`, or
   `deuda explícita con expiry`.

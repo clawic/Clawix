@@ -47,6 +47,8 @@ const excludedParts = new Set([
   "output",
   "test-results",
   "tests",
+  "Tests",
+  "web-dist",
 ]);
 
 const excludedBasenames = new Set([
