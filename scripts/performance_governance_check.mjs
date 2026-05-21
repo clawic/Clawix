@@ -43,6 +43,8 @@ for (const [relativePath, snippets] of new Map([
     "## Windowing/Pagination by Default",
     "load all -> filter/sort/render",
     "cursor/window/batch/limit",
+    "## Hot Path Guard P1",
+    "hot-path-ok",
     "## Resource Dimensions",
     "GPU / Neural Engine",
     "## Visual Boundary",
@@ -66,6 +68,7 @@ for (const [relativePath, snippets] of new Map([
     "docs/adr/0022-performance-governance-mirror.md",
     "scripts/performance_governance_check.mjs",
     "scripts/boundedness_guard.mjs",
+    "scripts/hot_path_guard.mjs",
   ]],
   ["docs/constitution-map.md", [
     "Performance Governance",
@@ -82,10 +85,18 @@ for (const [relativePath, snippets] of new Map([
     "\"program\": \"boundedness-guard\"",
     "\"entries\"",
   ]],
+  ["docs/hot-path-baseline.json", [
+    "\"program\": \"hot-path-guard\"",
+    "\"entries\"",
+  ]],
+  ["scripts/hot_path_guard.mjs", [
+    "Hot Path Guard P1",
+    "hot-path-ok",
+  ]],
   ["scripts/boundedness_guard.mjs", [
-    "Windowing/Pagination by Default",
-    "database-list-without-explicit-window",
-    "full-jsonl-read",
+    "Boundedness Guard P0",
+    "buffer-concat",
+    "eventbus",
   ]],
   ["PERF.md", [
     "whole-computer resource pressure",

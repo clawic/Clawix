@@ -68,6 +68,21 @@ byte size. Existing historical exceptions live in
 `docs/boundedness-baseline.json`; new or touched exceptions need the affected
 surface, risk kind, bound, cleanup policy, review reference, and expiry.
 
+## Hot Path Guard P1
+
+UI, main-thread, SwiftUI body, render, bridge receive/apply, and Node
+event-loop hot paths must not add synchronous heavy work without bounded-size
+proof. The static guard blocks `waitUntilExit`, image decode without
+downsampling proof, markdown parsing, JSON decode in sensitive render/realtime
+paths, `Buffer.concat`, whole-file read-and-split parsing, and large sorts in
+SwiftUI body unless the call has a nearby `hot-path-ok` marker with `maxBytes`,
+`maxItems`, or `maxPixels` and a reason.
+
+Existing reviewed hot-path debt lives in `docs/hot-path-baseline.json` with an
+expiry and replacement plan. New code should prefer incremental parsing,
+downsampled thumbnails, cached view-model data, async process termination,
+pagination, or worker isolation instead of adding exceptions.
+
 ## Boundedness Guard P0
 
 Any cache, queue, log, snapshot, checkpoint, timeline, upload buffer,

@@ -673,6 +673,10 @@ equivalent behavior with lower resource cost when evidence proves it. Powerful
 optional capabilities are welcome, but the base experience must keep feeling
 like the lightest possible local app and framework.
 
+A capability is incomplete if it cannot demonstrate boundedness, lazy startup,
+cancellation, backpressure, windowing, and idle quiescence through a resource
+contract, tests, an ADR or rule, or explicit expiring debt.
+
 Durable resource decisions name CPU, RAM, GPU/Neural Engine, disk, network,
 battery, thermals, idle behavior, and boundedness before claiming completion.
 The required resource list is CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals.
