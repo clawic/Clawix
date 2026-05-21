@@ -10,7 +10,7 @@ import PackageDescription
 //
 // On Apple platforms the daemon ships embedded inside `Clawix.app/Contents/Helpers/`
 // and survives Cmd+Q of the GUI. On Linux it ships at `/usr/lib/clawix/clawix-bridge`
-// (.deb), `~/.clawix/bin/clawix-bridge` (npm postinstall), or inside the
+// (.deb), `~/.clawix/bin/clawix-bridge` (`clawix setup`), or inside the
 // AppDir of the AppImage (`AppDir/usr/lib/clawix/clawix-bridge`).
 //
 // The daemon is a thin shell over `ClawixEngine`: it instantiates a
