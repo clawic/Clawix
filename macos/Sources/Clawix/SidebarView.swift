@@ -958,6 +958,7 @@ struct SidebarView: View {
     }
 
     var body: some View {
+        LaunchMilestones.mark(.firstSidebarPaint)
         RenderProbe.tick("SidebarView")
         let sidebarSnapshot = makeSnapshot()
         return ZStack(alignment: .bottomLeading) {

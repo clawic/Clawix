@@ -4,33 +4,92 @@ import CommanderCore
 import Foundation
 
 @MainActor
+protocol SystemTelemetryRefreshTimer {
+    func invalidate()
+}
+
+extension Timer: SystemTelemetryRefreshTimer {}
+
+@MainActor
 final class SystemTelemetryStatusItemController {
+    struct Dependencies {
+        var makeModel: @MainActor () -> SystemTelemetryMenuBarModel
+        var recordIfDue: @MainActor (_ forceHistory: Bool) async -> SystemTelemetryMonitorRecordResult
+        var scheduleTimer: @MainActor (
+            _ interval: TimeInterval,
+            _ handler: @escaping @MainActor () -> Void
+        ) -> SystemTelemetryRefreshTimer
+        var renderModel: (@MainActor (_ model: SystemTelemetryMenuBarModel) -> Void)?
+        var activateDiagnostics: @MainActor () -> Void
+
+        static func live() -> Dependencies {
+            let monitorRecorder = SystemTelemetryMonitorRecorder()
+            let historyReader = SystemTelemetryHistoryReader()
+            return Dependencies(
+                makeModel: {
+                    SystemTelemetryMenuBarModel(
+                        bridge: .localStatusBridge(historyReader: historyReader),
+                        configuration: { SystemTelemetryMenuBarConfiguration.load() }
+                    )
+                },
+                recordIfDue: { forceHistory in
+                    await monitorRecorder.recordIfDue(force: forceHistory)
+                },
+                scheduleTimer: { interval, handler in
+                    Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                        Task { @MainActor in handler() }
+                    }
+                },
+                renderModel: nil,
+                activateDiagnostics: {
+                    ResourceSampler.startIfNeeded(reason: "system-telemetry-menu-bar")
+                    HangDetector.startFromDiagnosticsSurface()
+                }
+            )
+        }
+    }
+
     static let shared = SystemTelemetryStatusItemController()
     private static let combinedPanelItemID = "system.telemetry.combined-panel"
 
+    private let dependencies: Dependencies
     private var model: SystemTelemetryMenuBarModel?
     private var items: [String: NSStatusItem] = [:]
-    private var timer: Timer?
-    private var isStarted = false
-    private let monitorRecorder = SystemTelemetryMonitorRecorder()
-    private let historyReader = SystemTelemetryHistoryReader()
+    private var timer: SystemTelemetryRefreshTimer?
+    private var isActivated = false
 
-    private init() {}
+    init(dependencies: Dependencies = .live()) {
+        self.dependencies = dependencies
+    }
 
     func start() {
-        guard !isStarted else { return }
-        isStarted = true
+        // Launch registration is intentionally side-effect free. The
+        // menu-bar telemetry surface activates only when the user opens
+        // the main Clawix menu.
+    }
 
-        model = SystemTelemetryMenuBarModel(
-            bridge: .localStatusBridge(historyReader: historyReader),
-            configuration: { SystemTelemetryMenuBarConfiguration.load() }
-        )
+    func activateFromUserSurface() {
+        guard activateIfNeeded() else { return }
         Task { await refreshNow() }
-        timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+    }
+
+    func activateFromUserSurfaceAndRefresh() async {
+        guard activateIfNeeded() else { return }
+        await refreshNow()
+    }
+
+    @discardableResult
+    private func activateIfNeeded() -> Bool {
+        guard !isActivated else { return false }
+        isActivated = true
+        dependencies.activateDiagnostics()
+        model = dependencies.makeModel()
+        timer = dependencies.scheduleTimer(3) { [weak self] in
             Task { @MainActor [weak self] in
                 await self?.refreshNow()
             }
         }
+        return true
     }
 
     func stop() {
@@ -39,14 +98,18 @@ final class SystemTelemetryStatusItemController {
         items.values.forEach { NSStatusBar.system.removeStatusItem($0) }
         items.removeAll()
         model = nil
-        isStarted = false
+        isActivated = false
     }
 
     private func refreshNow(forceHistory: Bool = false) async {
         guard let model else { return }
-        _ = await monitorRecorder.recordIfDue(force: forceHistory)
+        _ = await dependencies.recordIfDue(forceHistory)
         await model.refresh(forceHistory: forceHistory)
-        render(model: model)
+        if let renderModel = dependencies.renderModel {
+            renderModel(model)
+        } else {
+            render(model: model)
+        }
     }
 
     private func render(model: SystemTelemetryMenuBarModel) {

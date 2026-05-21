@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ClawixCore
 import ClawixEngine
 import KeyboardShortcuts
 
@@ -36,6 +37,7 @@ enum ClawixAppRole {
 @main
 enum ClawixAppEntry {
     static func main() {
+        LaunchMilestones.mark(.processStart)
         switch ClawixAppRole.current {
         case .main:    ClawixApp.main()
         case .tool:    ClawixToolApp.main()
@@ -98,6 +100,7 @@ struct ClawixApp: App {
     }
 
     init() {
+        LaunchMilestones.mark(.appInitStart)
         // Apply the user-chosen language process-wide BEFORE any view
         // renders. This sets AppleLanguages so the very first
         // String(localized:bundle:) call resolves against the right
@@ -148,6 +151,7 @@ struct ClawixApp: App {
         // App.init() before Input Monitoring is granted freezes event
         // delivery to the app on macOS 26 (Tahoe). The bootstrap path
         // gates the global monitor behind an explicit TCC check.
+        LaunchMilestones.mark(.appInitEnd)
     }
 
     var body: some Scene {
@@ -353,6 +357,9 @@ private struct MenuBarContent: View {
             Label("Open \(appDisplayName)", systemImage: "macwindow")
         }
         .keyboardShortcut("o")
+        .onAppear {
+            SystemTelemetryStatusItemController.shared.activateFromUserSurface()
+        }
 
         Divider()
 
@@ -793,14 +800,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.windows.forEach(self.configure)
         }
-        // Diagnostics bootstrap. ResourceSampler and MetricKitObserver
-        // are always-on (negligible runtime cost). HangDetector is
-        // gated to DEBUG by default; CLAWIX_FORCE_HANG_DETECTOR=1
-        // opts a release build in. Order is independent — see
-        // macos/PERF.md for the playbook.
-        ResourceSampler.start()
+        // Diagnostics bootstrap. MetricKit is subscribed at launch
+        // because payload delivery is system-driven. Periodic local
+        // samplers stay opt-in so first paint does not inherit a
+        // diagnostics loop unless a capture or diagnostics surface
+        // explicitly requests it.
         MetricKitObserver.shared.install()
-        HangDetector.start()
+        if ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers) {
+            ResourceSampler.startIfNeeded(reason: "environment")
+            HangDetector.startIfRequestedByEnvironment()
+        }
         // Start only the current role's required ClawJS services. The
         // main app keeps launch to runtime + sessions for chat/rescue;
         // sidebar tool mini-apps start only the service backing that tool.
@@ -832,7 +841,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // each other confuse users. The CLI agent is restored on
         // applicationWillTerminate if the bridge daemon is still alive.
         BridgeAgentControl.bootoutMenubarAgent()
-        SystemTelemetryStatusItemController.shared.start()
         // Register the system-wide QuickAsk hotkey. The default combo
         // (⌃Space) is set in `QuickAskHotkey.defaultValue`; the user
         // can change it from Settings → QuickAsk.

@@ -288,7 +288,7 @@ struct RescueEvolutionCommandClient {
 @MainActor
 enum RescueRepairContextExporter {
     static func writeCurrentRescueContext() throws -> RescueRepairContextExport {
-        ResourceSampler.persistLastSample()
+        ResourceSampler.sampleNowAndPersist()
         guard let destinationURL = ResourceSampler.diagnosticsFileURL(named: "rescue-context.json") else {
             throw NSError(domain: "RescueRepairContextExporter", code: 1, userInfo: [
                 NSLocalizedDescriptionKey: "Rescue diagnostics folder is unavailable."

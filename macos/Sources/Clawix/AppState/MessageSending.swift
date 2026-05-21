@@ -110,7 +110,7 @@ extension AppState {
     @discardableResult
     func handleRescueChatUnavailableIfNeeded(chatId: UUID) -> Bool {
         guard !rescueDecision.canChat else { return false }
-        ResourceSampler.persistLastSample()
+        ResourceSampler.sampleNowAndPersist()
         appendAssistantSystemMessage(
             to: chatId,
             text: "Diagnostics are available. The agent runtime is unavailable right now, so this message stayed local. Open Repair pending to diagnose and repair the runtime."

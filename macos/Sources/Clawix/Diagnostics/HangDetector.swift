@@ -21,9 +21,9 @@ import ClawixCore
 /// boundaries. `HangDetector` watches every runloop cycle on every
 /// common mode, including event tracking.
 ///
-/// Intentionally `#if DEBUG` by default. Override with
-/// `CLAWIX_FORCE_HANG_DETECTOR=1` if you need it in a release build
-/// for an in-the-wild repro.
+/// Intentionally activated only by explicit diagnostics surfaces or
+/// `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`. Override release gating with
+/// `CLAWIX_FORCE_HANG_DETECTOR=1` when a standalone repro needs it.
 enum HangDetector {
     nonisolated(unsafe) private static var observer: CFRunLoopObserver?
     nonisolated(unsafe) private static var enteredAt: CFAbsoluteTime = 0
@@ -44,13 +44,25 @@ enum HangDetector {
         category: "hang"
     )
 
+    static func startIfRequestedByEnvironment() {
+        guard ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers)
+                || ClawixEnv.isEnabled(ClawixEnv.forceHangDetector) else { return }
+        start(force: true)
+    }
+
+    static func startFromDiagnosticsSurface() {
+        start(force: true)
+    }
+
     static func start() {
+        start(force: false)
+    }
+
+    private static func start(force: Bool) {
         // Apple's recommendation is "investigate hangs in development";
-        // always-on detection in release means every customer device
-        // pays the runloop observer cost. Gate explicitly.
+        // normal launch should not pay the runloop observer cost.
         #if !DEBUG
-        let force = ClawixEnv.isEnabled(ClawixEnv.forceHangDetector)
-        guard force else { return }
+        guard force || ClawixEnv.isEnabled(ClawixEnv.forceHangDetector) else { return }
         #endif
 
         guard observer == nil else { return }

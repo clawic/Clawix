@@ -216,6 +216,9 @@ final class ComposerNSTextView: NSTextView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window != nil {
+            LaunchMilestones.mark(.firstChatInteractive)
+        }
+        if window != nil {
             ComposerCursorRectsBridge.shared.textView = self
             popupSwiftUIRects = ComposerCursorRectsBridge.shared.popupSwiftUIRects
         }

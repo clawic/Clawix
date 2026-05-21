@@ -115,5 +115,6 @@ enum ClawixStartupCore {
         }
         ClawJSServiceManager.shared.markServicesAvailableOnDemand(excluding: services)
         await ClawJSServiceManager.shared.start(services, reason: reason)
+        LaunchMilestones.mark(.coreReady)
     }
 }

@@ -2,16 +2,15 @@ import Foundation
 import Darwin
 import os
 
-/// Periodically samples process resident memory, physical footprint and
-/// CPU usage. Each tick is emitted as a signpost event in the `resource`
-/// category so traces correlate spikes against whatever else is running
-/// at the same wall-clock. The most recent sample is also persisted to
-/// `~/Library/Application Support/<bundleId>/Diagnostics/last-resources.json`
-/// when the app exits so a post-mortem investigation can read the final
-/// state without relaunching.
+/// Samples process resident memory, physical footprint and CPU usage
+/// when an explicit diagnostics surface asks for it. Periodic sampling
+/// is intentionally opt-in so normal launch does not add a background
+/// loop before first paint. Each tick is emitted as a signpost event
+/// in the `resource` category so traces correlate spikes against
+/// whatever else is running at the same wall-clock.
 ///
-/// Boot from `AppDelegate.applicationDidFinishLaunching`; persist on
-/// `applicationWillTerminate`. Always-on, ~10 µs per tick.
+/// Use `startIfNeeded(reason:)` for diagnostics sessions that need a
+/// periodic lane and `sampleNowAndPersist()` for one-shot rescue exports.
 enum ResourceSampler {
     static let lastResourcesFileName = "last-resources.json"
 
@@ -37,7 +36,7 @@ enum ResourceSampler {
         let buildNumber: String?
     }
 
-    static func start() {
+    static func startIfNeeded(reason: String) {
         queue.async {
             guard timer == nil else { return }
             let t = DispatchSource.makeTimerSource(queue: queue)
@@ -45,7 +44,12 @@ enum ResourceSampler {
             t.setEventHandler { tick() }
             t.resume()
             timer = t
+            log.info("ResourceSampler started for \(reason, privacy: .public)")
         }
+    }
+
+    static func start() {
+        startIfNeeded(reason: "legacy")
     }
 
     static func stop() {
@@ -55,21 +59,22 @@ enum ResourceSampler {
         }
     }
 
-    /// Persists the most recent sample to disk. Call from
-    /// `applicationWillTerminate` so a post-mortem read of "what did
-    /// the process look like before it shut down" is one `cat` away.
-    static func persistLastSample() {
-        // Capture the tail value off the sampler queue so we don't
-        // serialise on the main thread; small, atomic, fine to block
-        // for a few hundred microseconds at exit time.
+    /// Captures one sample immediately and persists it to disk. Use
+    /// for explicit rescue/diagnostics actions when the periodic
+    /// sampler has not been started.
+    static func sampleNowAndPersist() {
         queue.sync {
-            guard let sample = lastSample else { return }
-            guard let url = diagnosticsFileURL(named: lastResourcesFileName) else { return }
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            if let data = try? encoder.encode(sample) {
-                try? data.write(to: url, options: .atomic)
-            }
+            tick()
+            persistLastSampleOnQueue()
+        }
+    }
+
+    /// Persists the most recent sample to disk without starting the
+    /// sampler. Normal app launch may never have a sample, and that is
+    /// expected unless a diagnostics surface opted in.
+    static func persistLastSample() {
+        queue.sync {
+            persistLastSampleOnQueue()
         }
     }
 
@@ -136,24 +141,35 @@ enum ResourceSampler {
     }
 
     private static func tick() {
-        let resident = residentSize()
-        let footprintBytes = footprint()
-        let cpuPct = processCpuPercent()
-        let info = Bundle.main.infoDictionary
-        let sample = Sample(
-            timestamp: Date().timeIntervalSince1970,
-            residentBytes: resident,
-            footprintBytes: footprintBytes,
-            processCpuPercent: cpuPct,
-            appVersion: info?["CFBundleShortVersionString"] as? String,
-            buildNumber: info?["CFBundleVersion"] as? String
-        )
+        let sample = captureSample()
         lastSample = sample
         // Each metric is its own event so Instruments charts the values
         // straight from the trace, no log parsing required.
-        PerfSignpost.resource.event("rss_mb", Int(resident / 1024 / 1024))
-        PerfSignpost.resource.event("footprint_mb", Int(footprintBytes / 1024 / 1024))
-        PerfSignpost.resource.event("cpu_pct", cpuPct)
+        PerfSignpost.resource.event("rss_mb", Int(sample.residentBytes / 1024 / 1024))
+        PerfSignpost.resource.event("footprint_mb", Int(sample.footprintBytes / 1024 / 1024))
+        PerfSignpost.resource.event("cpu_pct", sample.processCpuPercent)
+    }
+
+    private static func captureSample() -> Sample {
+        let info = Bundle.main.infoDictionary
+        return Sample(
+            timestamp: Date().timeIntervalSince1970,
+            residentBytes: residentSize(),
+            footprintBytes: footprint(),
+            processCpuPercent: processCpuPercent(),
+            appVersion: info?["CFBundleShortVersionString"] as? String,
+            buildNumber: info?["CFBundleVersion"] as? String
+        )
+    }
+
+    private static func persistLastSampleOnQueue() {
+        guard let sample = lastSample else { return }
+        guard let url = diagnosticsFileURL(named: lastResourcesFileName) else { return }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let data = try? encoder.encode(sample) {
+            try? data.write(to: url, options: .atomic)
+        }
     }
 
     // MARK: - Mach calls

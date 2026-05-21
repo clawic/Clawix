@@ -22,6 +22,7 @@ import ClawixCore
 /// what it covers in `macos/PERF.md`, and only then start
 /// emitting from a call site.
 enum PerfSignpost: String, CaseIterable {
+    case launch = "launch"
     case uiChat = "ui.chat"
     case uiSidebar = "ui.sidebar"
     case stateAppState = "state.appstate"

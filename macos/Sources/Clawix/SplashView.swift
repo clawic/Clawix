@@ -83,6 +83,9 @@ struct AppRootView: View {
                 DatabaseSearchOverlay(isPresented: $dbSearchVisible)
             }
         }
+        .onAppear {
+            LaunchMilestones.mark(.firstWindow)
+        }
         .background(
             DatabaseHotkeyBridge(
                 quickAddVisible: $quickAddVisible,
