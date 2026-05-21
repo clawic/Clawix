@@ -118,7 +118,10 @@ struct GeneralPage: View {
                     detail: "Registers the LaunchAgent bridge so the daemon can stay alive after Clawix quits. Status: \(backgroundBridge.statusLabel)\(backgroundBridge.lastError.map { " — \($0)" } ?? "")",
                     isOn: Binding(
                         get: { backgroundBridge.isEnabled },
-                        set: { backgroundBridge.toggle($0) }
+                        set: {
+                            backgroundBridge.toggle($0)
+                            appState.reconcileBridgeTransport(reason: "background-setting")
+                        }
                     )
                 )
                 CardDivider()

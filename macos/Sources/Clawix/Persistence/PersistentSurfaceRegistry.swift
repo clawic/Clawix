@@ -713,6 +713,7 @@ enum ClawixPersistentSurfaceRegistry {
             "CLAWIX_BRIDGE_DEFAULTS_SUITE",
             "CLAWIX_BRIDGE_DISABLE",
             "CLAWIX_BRIDGE_DISABLE_BONJOUR",
+            "CLAWIX_BRIDGE_HELPER_PATH",
             "CLAWIX_BRIDGE_HOST",
             "CLAWIX_BRIDGE_HTTP_PORT",
             "CLAWIX_BRIDGE_INITIAL_TIMEOUT_SECONDS",
@@ -914,7 +915,7 @@ enum ClawixPersistentSurfaceRegistry {
         }
         let routeEndpointNodes = [
             ("clawix.ui.chat", "Chat UI route endpoint", "Clawix desktop chat UI node"),
-            ("clawix.bridge.local", "Local bridge route endpoint", "Clawix local bridge node"),
+            ("clawix.bridge.local", "Local bridge route endpoint", "Clawix demand-driven local bridge node"),
             ("clawix.companion.client", "Companion client route endpoint", "Clawix companion client node"),
         ].map { id, name, value in
             ClawixPersistentSurface.contract(

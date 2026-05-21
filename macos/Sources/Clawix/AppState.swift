@@ -204,7 +204,11 @@ final class AppState: ObservableObject {
     /// Currently-selected destination for outbound prompts. `.local`
     /// runs through the regular Codex/daemon path. `.peer(nodeId)`
     /// routes through `/v1/mesh/remote-jobs` instead.
-    @Published var selectedMeshTarget: MeshTarget = .local
+    @Published var selectedMeshTarget: MeshTarget = .local {
+        didSet {
+            reconcileRemoteTargetBridgeDemand()
+        }
+    }
     @Published var pinnedItems: [PinnedItem] = []
     @Published var isLeftSidebarOpen: Bool = AppState.sidebarDefaults.object(forKey: AppState.leftSidebarOpenKey) as? Bool ?? true
     @Published var isCommandPaletteOpen: Bool = false
@@ -343,11 +347,13 @@ final class AppState: ObservableObject {
     var lastAutoReloadAt: Date?
     var focusReloadObserver: NSObjectProtocol?
 
-    /// Local-network WS server that exposes this AppState to the iOS
-    /// companion. Lazily created so the property doesn't take a
-    /// reference to `self` before init finishes.
-    private var bridgeServer: BridgeServer?
     var daemonBridgeClient: DaemonBridgeClient?
+    private let localBridgeLauncher: any LocalBridgeHelperLaunching
+    private let backgroundBridgeIsActive: @MainActor () -> Bool
+    private let backgroundBridgeIsEnabled: @MainActor () -> Bool
+    private let makeDaemonBridgeClient: @MainActor (AppState, PairingService) -> DaemonBridgeClient?
+    private var bridgeDemandLeases: [UUID: LocalBridgeDemandReason] = [:]
+    private var selectedRemoteTargetLease: BridgeDemandLease?
 
     let databaseProvider: LazyDatabaseProvider
     let projectsRepo = ProjectsRepository()
@@ -446,14 +452,137 @@ final class AppState: ObservableObject {
             job.task?.cancel()
         }
         appStateCanonicalReconciliationTask?.cancel()
+        let launcher = localBridgeLauncher
+        let client = daemonBridgeClient
+        Task { @MainActor in
+            launcher.stop()
+            client?.disconnect()
+        }
+    }
+
+    @discardableResult
+    func acquireLocalBridge(reason: LocalBridgeDemandReason) -> BridgeDemandLease {
+        let lease = BridgeDemandLease(reason: reason, owner: self)
+        bridgeDemandLeases[lease.id] = reason
+        reconcileBridgeTransport(reason: "acquire:\(reason.rawValue)")
+        return lease
+    }
+
+    func releaseLocalBridge(_ lease: BridgeDemandLease) {
+        releaseLocalBridge(id: lease.id, reason: lease.reason)
+    }
+
+    func releaseLocalBridge(id: UUID, reason: LocalBridgeDemandReason) {
+        guard bridgeDemandLeases.removeValue(forKey: id) != nil else { return }
+        reconcileBridgeTransport(reason: "release:\(reason.rawValue)")
+    }
+
+    func reconcileBridgeTransport(reason: String) {
+        guard ProcessInfo.processInfo.environment["CLAWIX_BRIDGE_DISABLE"] != "1" else {
+            stopDemandBridge(reason: "\(reason):disabled")
+            disconnectDaemonBridgeClient()
+            return
+        }
+
+        let fixtureActive = AgentThreadStore.fixtureThreads() != nil || dummyModeActive
+        guard !fixtureActive else {
+            stopDemandBridge(reason: "\(reason):fixture")
+            disconnectDaemonBridgeClient()
+            return
+        }
+
+        let pairing = sharedBridgePairingService()
+        if backgroundBridgeIsEnabled() {
+            stopDemandBridge(reason: "\(reason):background-enabled")
+            if backgroundBridgeIsActive() {
+                connectDaemonBridgeIfNeeded(pairing: pairing)
+                Self.publishPairingForDevMenu(pairing)
+            } else {
+                disconnectDaemonBridgeClient()
+            }
+            return
+        }
+
+        if !localBridgeLauncher.isRunning, backgroundBridgeIsActive() {
+            connectDaemonBridgeIfNeeded(pairing: pairing)
+            Self.publishPairingForDevMenu(pairing)
+            return
+        }
+
+        disconnectDaemonBridgeClient()
+        if bridgeDemandLeases.isEmpty {
+            stopDemandBridge(reason: "\(reason):idle")
+            return
+        }
+
+        if localBridgeLauncher.start() {
+            Self.publishPairingForDevMenu(pairing)
+        }
+    }
+
+    func sharedBridgePairingService() -> PairingService {
+        PairingService(
+            defaults: UserDefaults(suiteName: ClawixPersistentSurfaceKeys.bridgeDefaultsSuite) ?? .standard,
+            port: daemonBridgePort
+        )
+    }
+
+    var activeLocalBridgeDemandReasonsForTests: Set<LocalBridgeDemandReason> {
+        Set(bridgeDemandLeases.values)
+    }
+
+    var isTemporaryLocalBridgeRunningForTests: Bool {
+        localBridgeLauncher.isRunning
+    }
+
+    private static func defaultDaemonBridgeClient(appState: AppState, pairing: PairingService) -> DaemonBridgeClient? {
+        let client = DaemonBridgeClient(appState: appState, pairing: pairing)
+        client.connect()
+        return client
+    }
+
+    private func connectDaemonBridgeIfNeeded(pairing: PairingService) {
+        guard daemonBridgeClient == nil else { return }
+        daemonBridgeClient = makeDaemonBridgeClient(self, pairing)
+    }
+
+    private func disconnectDaemonBridgeClient() {
+        daemonBridgeClient?.disconnect()
+        daemonBridgeClient = nil
+    }
+
+    private func stopDemandBridge(reason: String) {
+        guard localBridgeLauncher.isRunning else { return }
+        BridgeLog.write("demand-bridge-stop reason=\(reason)")
+        localBridgeLauncher.stop()
+    }
+
+    private func reconcileRemoteTargetBridgeDemand() {
+        if FeatureFlags.shared.isVisible(.remoteMesh),
+           case .peer = selectedMeshTarget {
+            if selectedRemoteTargetLease == nil {
+                selectedRemoteTargetLease = acquireLocalBridge(reason: .remoteTools)
+            }
+        } else {
+            selectedRemoteTargetLease?.release()
+            selectedRemoteTargetLease = nil
+        }
     }
 
     init(
         databaseProvider: LazyDatabaseProvider = .shared,
-        snapshotRepository: SnapshotRepository? = nil
+        snapshotRepository: SnapshotRepository? = nil,
+        localBridgeLauncher: (any LocalBridgeHelperLaunching)? = nil,
+        backgroundBridgeIsActive: @escaping @MainActor () -> Bool = { BackgroundBridgeService.shared.isActive },
+        backgroundBridgeIsEnabled: @escaping @MainActor () -> Bool = { BackgroundBridgeService.shared.isEnabled },
+        makeDaemonBridgeClient: @escaping @MainActor (AppState, PairingService) -> DaemonBridgeClient? = AppState.defaultDaemonBridgeClient
     ) {
         self.databaseProvider = databaseProvider
         self.snapshotRepo = snapshotRepository ?? SnapshotRepository()
+        self.localBridgeLauncher = localBridgeLauncher ?? ProcessLocalBridgeHelperLauncher()
+        self.backgroundBridgeIsActive = backgroundBridgeIsActive
+        self.backgroundBridgeIsEnabled = backgroundBridgeIsEnabled
+        self.makeDaemonBridgeClient = makeDaemonBridgeClient
         // Mesh store has to be wired before any other stored-property
         // assignment that uses `self`, because Swift's definite-init
         // analysis treats any read of `self.foo` as requiring every
@@ -521,6 +650,14 @@ final class AppState: ObservableObject {
 
         let computerUseStart = Date().addingTimeInterval(-90)
         let computerUseEnd = computerUseStart.addingTimeInterval(28)
+        let computerUseTimelineGroupID = UUID(uuidString: "C0A111CE-0000-4000-8000-C0A111CE0001")!
+        let computerUseTimelineItems = [
+            WorkItem(
+                id: "tool-computer-use-1",
+                kind: .mcpTool(server: "computer_use", tool: "get_app_state"),
+                status: .completed
+            )
+        ]
         computerUseSampleChat = Chat(
             id: UUID(uuidString: "A11CE000-CAFE-4BAB-9B0E-C001A11CE001")!,
             title: "Inspect the current Mac app",
@@ -537,24 +674,16 @@ final class AppState: ObservableObject {
                     workSummary: WorkSummary(
                         startedAt: computerUseStart,
                         endedAt: computerUseEnd,
-                        items: [
-                            WorkItem(
-                                id: "tool-computer-use-1",
-                                kind: .mcpTool(server: "computer_use", tool: "get_app_state"),
-                                status: .completed
-                            )
-                        ]
+                        items: computerUseTimelineItems
                     ),
                     timeline: [
                         .tools(
-                            id: UUID(uuidString: "C0A111CE-0000-4000-8000-C0A111CE0001")!,
-                            items: [
-                                WorkItem(
-                                    id: "tool-computer-use-1",
-                                    kind: .mcpTool(server: "computer_use", tool: "get_app_state"),
-                                    status: .completed
-                                )
-                            ]
+                            id: computerUseTimelineGroupID,
+                            items: computerUseTimelineItems,
+                            presentation: ToolTimelinePresentation.snapshot(
+                                groupID: computerUseTimelineGroupID,
+                                items: computerUseTimelineItems
+                            )
                         ),
                         .message(
                             id: UUID(uuidString: "C0A111CE-0000-4000-8000-C0A111CE0002")!,
@@ -663,7 +792,7 @@ final class AppState: ObservableObject {
                 // daemon's `sessionsSnapshot` overwrite the curated fixture chats
         // with live data and leak the user's real chats into a recording.
         let fixtureActive = AgentThreadStore.fixtureThreads() != nil || dummyModeActive
-        let daemonBridgeEnabled = !fixtureActive && BackgroundBridgeService.shared.isActive
+        let daemonBridgeEnabled = !fixtureActive && backgroundBridgeIsActive()
         clawix?.appState = self
         if let clawix {
             clawix.primeFromCache(appState: self)
@@ -675,29 +804,11 @@ final class AppState: ObservableObject {
             }
         }
 
-        // Bridge transport startup is allowed here without runtime
-        // startup. The BridgeRuntimeWakePolicy owns the separate
-        // runtime-wake contract for explicit chat/session intents.
-        // Disabled with CLAWIX_BRIDGE_DISABLE=1 for tests or
-        // multi-instance debugging.
-        if ProcessInfo.processInfo.environment["CLAWIX_BRIDGE_DISABLE"] != "1",
-           !daemonBridgeEnabled {
-            let server = BridgeServer(host: self, port: PairingService.shared.port)
-            server.start()
-            self.bridgeServer = server
-            Self.publishPairingForDevMenu(PairingService.shared)
-        } else if daemonBridgeEnabled {
-            // Bridge state (bearer token, paired peers) lives in the
-            // public `clawix.bridge` suite so the daemon (started with
-            // CLAWIX_BRIDGE_DEFAULTS_SUITE=clawix.bridge) and a future
-            // standalone CLI surface share the same bearer.
-            let pairing = PairingService(defaults: UserDefaults(suiteName: ClawixPersistentSurfaceKeys.bridgeDefaultsSuite) ?? .standard,
-                                         port: daemonBridgePort)
-            let client = DaemonBridgeClient(appState: self, pairing: pairing)
-            daemonBridgeClient = client
-            client.connect()
-            Self.publishPairingForDevMenu(pairing)
-        }
+        // Bridge transport is no longer opened on app launch. A
+        // user-enabled/reachable background bridge remains canonical, but
+        // otherwise port 24080/24081 stay closed until an explicit pairing,
+        // companion, or remote-tools surface acquires a demand lease.
+        reconcileBridgeTransport(reason: "startup")
 
         // Auto-reload threads when the app gains focus, debounced to avoid
         // hammering the runtime when the user alt-tabs rapidly. Gated by
@@ -1364,8 +1475,10 @@ final class AppState: ObservableObject {
     private func e2eToolRows(for messages: [ChatMessage]) -> [[String: String]] {
         messages.flatMap { message in
             message.timeline.flatMap { entry -> [[String: String]] in
-                guard case .tools(_, let items) = entry else { return [] }
-                return ToolTimelinePresentation.aggregateRows(for: items).map {
+                guard case .tools(_, let items, let presentation) = entry else { return [] }
+                let rows = presentation?.aggregateRows
+                    ?? ToolTimelinePresentation.aggregateRows(for: items)
+                return rows.map {
                     ["id": $0.id, "icon": $0.icon, "text": $0.text]
                 }
             }
@@ -1528,7 +1641,7 @@ final class AppState: ObservableObject {
     private var assistantTextFlushScheduled = false
     private var pendingReasoningBuffers: [UUID: String] = [:]
     private var reasoningFlushScheduled = false
-    private var streamingSettlementTasks: [UUID: Task<Void, Never>] = [:]
+    var streamingSettlementTasks: [UUID: Task<Void, Never>] = [:]
 
     func appendAssistantDelta(chatId: UUID, delta: String) {
         if delta.isEmpty { return }
@@ -1816,156 +1929,6 @@ final class AppState: ObservableObject {
         // the freshly-arrived reply at a glance.
         syncLegacyChatFromStore(chatId: chatId)
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: lastMessage.id)
-    }
-
-    func scheduleStreamingCheckpointSettlement(chatId: UUID, messageId: UUID) {
-        streamingSettlementTasks[messageId]?.cancel()
-
-        guard let message = chatStore.transcript(for: chatId)?.messageStore(id: messageId)?.message else {
-            streamingSettlementTasks[messageId] = nil
-            return
-        }
-        let delay = streamingSettlementDelay(for: message)
-        guard delay > 0 else {
-            settleStreamingCheckpoints(chatId: chatId, messageId: messageId)
-            return
-        }
-
-        streamingSettlementTasks[messageId] = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            await self?.settleStreamingCheckpoints(chatId: chatId, messageId: messageId)
-        }
-    }
-
-    private func streamingSettlementDelay(for message: ChatMessage) -> Double {
-        let textDelay = StreamingFade.settlementDelay(checkpoints: message.streamCheckpoints)
-        let reasoningDelay = message.reasoningCheckpoints.values
-            .map { StreamingFade.settlementDelay(checkpoints: $0) }
-            .max() ?? 0
-        return max(textDelay, reasoningDelay)
-    }
-
-    func settleStreamingCheckpoints(chatId: UUID, messageId: UUID) {
-        guard let transcript = chatStore.transcript(for: chatId),
-              transcript.messageStore(id: messageId) != nil
-        else {
-            streamingSettlementTasks[messageId] = nil
-            return
-        }
-
-        var beforeCount = 0
-        var afterCount = 0
-        var changed = false
-        transcript.mutateMessage(id: messageId) { message in
-            beforeCount = streamingCheckpointCount(message)
-            let beforePending = !message.streamPendingTail.isEmpty || !message.reasoningPendingTails.isEmpty
-            message.streamCheckpoints = StreamingFade.settled(checkpoints: message.streamCheckpoints)
-            message.streamPendingTail = ""
-            settleReasoningCheckpoints(&message)
-            afterCount = streamingCheckpointCount(message)
-            changed = beforeCount != afterCount || beforePending
-        }
-        streamingSettlementTasks[messageId] = nil
-
-        PerfSignpost.renderStreaming.event("settle.checkpoints.before", beforeCount)
-        PerfSignpost.renderStreaming.event("settle.checkpoints.after", afterCount)
-
-        if changed {
-            syncLegacyChatFromStore(chatId: chatId)
-        }
-    }
-
-    func flushStreamingCheckpointTails(_ message: inout ChatMessage) {
-        if !message.streamPendingTail.isEmpty {
-            let flushed = StreamingFade.ingest(
-                delta: "",
-                pendingTail: message.streamPendingTail,
-                scheduledLength: message.streamCheckpoints.last?.prefixCount ?? 0,
-                lastFadeStart: message.streamCheckpoints.last?.addedAt ?? .distantPast,
-                flush: true
-            )
-            message.streamCheckpoints.append(contentsOf: flushed.newCheckpoints)
-            message.streamCheckpoints = StreamingFade.compact(checkpoints: message.streamCheckpoints)
-            message.streamPendingTail = flushed.pendingTail
-        }
-
-        for entry in message.timeline {
-            guard case .reasoning(let entryId, _) = entry else { continue }
-            let pending = message.reasoningPendingTails[entryId] ?? ""
-            guard !pending.isEmpty else { continue }
-            let checkpoints = message.reasoningCheckpoints[entryId] ?? []
-            let flushed = StreamingFade.ingest(
-                delta: "",
-                pendingTail: pending,
-                scheduledLength: checkpoints.last?.prefixCount ?? 0,
-                lastFadeStart: checkpoints.last?.addedAt ?? .distantPast,
-                flush: true
-            )
-            message.reasoningCheckpoints[entryId, default: []].append(contentsOf: flushed.newCheckpoints)
-            message.reasoningCheckpoints[entryId] = StreamingFade.compact(
-                checkpoints: message.reasoningCheckpoints[entryId] ?? []
-            )
-            message.reasoningPendingTails[entryId] = flushed.pendingTail
-        }
-    }
-
-    func settleReasoningCheckpoints(_ message: inout ChatMessage) {
-        var settled: [UUID: [StreamCheckpoint]] = [:]
-        var validIds = Set<UUID>()
-        for entry in message.timeline {
-            guard case .reasoning(let entryId, _) = entry else { continue }
-            validIds.insert(entryId)
-            let checkpoints = StreamingFade.settled(
-                checkpoints: message.reasoningCheckpoints[entryId] ?? []
-            )
-            if !checkpoints.isEmpty {
-                settled[entryId] = checkpoints
-            }
-        }
-        message.reasoningCheckpoints = settled
-        message.reasoningPendingTails = message.reasoningPendingTails.filter { validIds.contains($0.key) }
-        if message.streamingFinished || message.isError {
-            message.reasoningPendingTails.removeAll(keepingCapacity: false)
-        }
-    }
-
-    private func streamingCheckpointCount(_ message: ChatMessage) -> Int {
-        message.streamCheckpoints.count + message.reasoningCheckpoints.values.reduce(0) { $0 + $1.count }
-    }
-
-    private func isCurrentRoute(chatId: UUID) -> Bool {
-        if case let .chat(id) = currentRoute, id == chatId { return true }
-        return false
-    }
-
-    private func clearUnreadIfChatRoute() {
-        guard case let .chat(id) = currentRoute,
-              chatStore.summary(id: id)?.hasUnreadCompletion == true
-        else { return }
-        chatStore.updateSummary(id: id) { summary in
-            summary.hasUnreadCompletion = false
-        }
-        syncLegacyChatFromStore(chatId: id)
-    }
-
-    func markChat(chatId: UUID, hasActiveTurn: Bool) {
-        guard chatStore.summary(id: chatId) != nil else { return }
-        chatStore.updateSummary(id: chatId) { summary in
-            summary.hasActiveTurn = hasActiveTurn
-        }
-        syncLegacyChatFromStore(chatId: chatId)
-    }
-
-    /// Flip the sidebar's blue "unread" dot on the row, regardless of
-    /// whether the user is currently looking at the chat. Used by the
-    /// row's right-click "Mark as unread" / "Mark as read" actions.
-    func toggleChatUnread(chatId: UUID) {
-        guard chatStore.summary(id: chatId) != nil else { return }
-        chatStore.updateSummary(id: chatId) { summary in
-            summary.hasUnreadCompletion.toggle()
-        }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
 }

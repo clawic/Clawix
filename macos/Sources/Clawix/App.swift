@@ -228,6 +228,7 @@ struct ClawixApp: App {
 
         WindowGroup("Pair iPhone", id: "clawix-pair") {
             PairWindowView()
+                .environmentObject(appState)
                 .preferredColorScheme(.dark)
         }
         .defaultSize(width: 360, height: 540)

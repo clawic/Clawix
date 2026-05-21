@@ -4,20 +4,16 @@ import CoreImage.CIFilterBuiltins
 import AppKit
 import ClawixEngine
 
-private let daemonBridgePort: UInt16 = 24080
-
 struct PairWindowView: View {
+    @EnvironmentObject private var appState: AppState
     @State private var payload: String = ""
     @State private var host: String = "..."
     @State private var token: String = ""
+    @State private var bridgeLease: BridgeDemandLease?
     @StateObject private var backgroundBridge: BackgroundBridgeService = .shared
 
     private var pairing: PairingService {
-        if backgroundBridge.isActive {
-            return PairingService(defaults: UserDefaults(suiteName: ClawixPersistentSurfaceKeys.bridgeDefaultsSuite) ?? .standard,
-                                  port: daemonBridgePort)
-        }
-        return PairingService.shared
+        appState.sharedBridgePairingService()
     }
 
     var body: some View {
@@ -73,7 +69,16 @@ struct PairWindowView: View {
         .padding(28)
         .frame(width: 360, height: 540)
         .background(Color(white: 0.06).ignoresSafeArea())
-        .onAppear(perform: refresh)
+        .onAppear {
+            if bridgeLease == nil {
+                bridgeLease = appState.acquireLocalBridge(reason: .pairing)
+            }
+            refresh()
+        }
+        .onDisappear {
+            bridgeLease?.release()
+            bridgeLease = nil
+        }
     }
 
     private var tokenPreview: String {

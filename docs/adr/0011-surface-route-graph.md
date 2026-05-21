@@ -28,6 +28,12 @@ Required host legs:
 - `chat.companionBridge.clawixHost`: companion clients consume the local
   bridge over the stable bridge protocol on port `24080`.
 
+The local bridge listener is demand-driven on macOS. If no background bridge
+daemon is enabled or already reachable, app launch must not open the local
+WebSocket/HTTP ports. Pairing, companion, and remote-tools surfaces may acquire
+a temporary bridge lease; the helper is stopped after the last lease is
+released.
+
 Relay remains a ClawJS/Claw critical surface. Clawix can show or configure
 remote access, but it does not become the canonical Relay API owner.
 Sibling ClawJS ADR 0022 expands that remote surface into Coordinator,

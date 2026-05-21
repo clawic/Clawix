@@ -11,6 +11,7 @@ struct HostsPage: View {
     @State private var searchText: String = ""
     @State private var editorItem: HostEditorItem? = nil
     @State private var detailItem: HostDetailItem? = nil
+    @State private var bridgeLease: BridgeDemandLease?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -33,10 +34,15 @@ struct HostsPage: View {
             workspacesCard
         }
         .task {
+            if bridgeLease == nil {
+                bridgeLease = appState.acquireLocalBridge(reason: .remoteTools)
+            }
             await store.refreshAll()
         }
         .onDisappear {
             store.cancelHostsSurfaceWork()
+            bridgeLease?.release()
+            bridgeLease = nil
         }
         .sheet(item: $editorItem) { _ in
             HostEditorSheet(

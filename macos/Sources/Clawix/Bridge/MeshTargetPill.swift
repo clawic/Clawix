@@ -45,7 +45,11 @@ struct MeshTargetPill: View {
         Button {
             // Refresh peers on open so a freshly paired Mac shows up
             // without forcing the user to round-trip through Settings.
-            Task { await store.refreshPeers() }
+            Task { @MainActor in
+                let lease = appState.acquireLocalBridge(reason: .remoteTools)
+                defer { lease.release() }
+                await store.refreshPeers()
+            }
             menuOpen.toggle()
         } label: {
             HStack(spacing: 6) {
