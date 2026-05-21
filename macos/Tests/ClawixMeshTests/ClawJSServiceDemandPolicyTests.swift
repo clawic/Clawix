@@ -2,11 +2,12 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSServiceDemandPolicyTests: XCTestCase {
-    func testMainStartupCoreDoesNotStartRuntimeServices() {
+    func testMainStartupCoreStartsSessionsButNotRuntime() {
         XCTAssertEqual(
             ClawJSServiceDemandPolicy.startupServices(for: .main),
-            []
+            [.sessions]
         )
+        XCTAssertFalse(ClawJSServiceDemandPolicy.startupServices(for: .main).contains(.runtime))
     }
 
     func testToolStartupServicesStayScopedToToolDomain() {
@@ -157,6 +158,15 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertTrue(supervisorSource.contains("await startDaemonAwareServices(services)"))
         XCTAssertTrue(supervisorSource.contains("for service in orderedServices(from: services)"))
         XCTAssertFalse(supervisorSource.contains("for service in ClawJSService.allCases {\n            await launchLocal(service)"))
+    }
+
+    func testCanonicalSessionsBootstrapUsesManagedLeaseBeforeHttpClient() throws {
+        let source = try readSource("AppState/RuntimeSessions.swift")
+
+        XCTAssertTrue(source.contains("await ensureClawJSSessionsCanonicalLease()"))
+        XCTAssertTrue(source.contains("services: [.sessions]"))
+        XCTAssertTrue(source.contains("consumer: \"clawjs.sessions.canonical\""))
+        XCTAssertTrue(source.contains("await releaseClawJSSessionsCanonicalLease()"))
     }
 
     func testPublishingIsNotStartedByHardCodedServiceArray() throws {

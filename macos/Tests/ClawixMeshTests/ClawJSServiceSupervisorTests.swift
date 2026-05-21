@@ -62,6 +62,14 @@ final class ClawJSServiceSupervisorTests: XCTestCase {
         XCTAssertTrue(supervisorSource.contains("actor ClawJSServiceSupervisor"))
     }
 
+    func testRuntimeStartsFromBundleDirectoryForModuleResolution() throws {
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+
+        XCTAssertTrue(supervisorSource.contains("process.currentDirectoryURL = Self.workingDirectoryURL(for: service)"))
+        XCTAssertTrue(supervisorSource.contains("if service == .runtime"))
+        XCTAssertTrue(supervisorSource.contains("return ClawJSRuntime.bundleRootURL"))
+    }
+
     func testAsyncProcessRunnerCapturesOutput() async throws {
         let result = try await ClawJSAsyncProcessRunner.run(
             executable: "/bin/echo",

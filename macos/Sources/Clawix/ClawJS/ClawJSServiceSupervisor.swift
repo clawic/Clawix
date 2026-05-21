@@ -575,7 +575,7 @@ actor ClawJSServiceSupervisor {
             let process = Process()
             process.executableURL = ClawJSRuntime.nodeBinaryURL
             process.arguments = extraArgs
-            process.currentDirectoryURL = Self.workspaceURL
+            process.currentDirectoryURL = Self.workingDirectoryURL(for: service)
             process.environment = Self.environment(
                 for: service,
                 adminToken: adminToken,
@@ -871,6 +871,13 @@ actor ClawJSServiceSupervisor {
         return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
             .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawjs, isDirectory: true)
+    }
+
+    nonisolated static func workingDirectoryURL(for service: ClawJSService) -> URL {
+        if service == .runtime {
+            return ClawJSRuntime.bundleRootURL
+        }
+        return workspaceURL
     }
 
     nonisolated static var mainDataDirectoryURL: URL {

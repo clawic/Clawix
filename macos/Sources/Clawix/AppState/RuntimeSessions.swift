@@ -37,7 +37,7 @@ extension AppState {
 
     @discardableResult
     func ensureAgentRuntimeReady(reason: AgentRuntimeDemandReason) async -> Bool {
-        let daemonBridgeEnabled = daemonBridgeClient != nil
+        let daemonBridgeEnabled = daemonBridgeClient?.isReadyForRequests == true
         if daemonBridgeEnabled { return true }
         guard ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
            !daemonBridgeEnabled else {
@@ -94,6 +94,7 @@ extension AppState {
     }
 
     private func loadThreadsFromClawJSSessions() async -> Bool {
+        await ensureClawJSSessionsCanonicalLease()
         let client = clawJSSessionsClientFactory()
         do {
             _ = try await client.probeHealth()
@@ -126,8 +127,24 @@ extension AppState {
         } catch {
             clawJSSessionsCanonicalActive = false
             clawJSSessionsProjectsLoaded = false
+            await releaseClawJSSessionsCanonicalLease()
             return false
         }
+    }
+
+    private func ensureClawJSSessionsCanonicalLease() async {
+        guard clawJSSessionsCanonicalLease == nil else { return }
+        clawJSSessionsCanonicalLease = await ClawJSServiceManager.shared.acquire(
+            services: [.sessions],
+            reason: .capability("sessions canonical bootstrap"),
+            consumer: "clawjs.sessions.canonical"
+        )
+    }
+
+    private func releaseClawJSSessionsCanonicalLease() async {
+        guard let lease = clawJSSessionsCanonicalLease else { return }
+        clawJSSessionsCanonicalLease = nil
+        await ClawJSServiceManager.shared.release(lease)
     }
 
     func scheduleDeferredCodexImport() {

@@ -366,6 +366,7 @@ final class AppState: ObservableObject {
     var clawJSSessionsCanonicalActive = false
     var clawJSSessionsProjectsLoaded = false
     var clawJSSessionsProjectsLoading = false
+    var clawJSSessionsCanonicalLease: ServiceDemandLease?
     /// Persistent cache of the sidebar's last applied state. Used to
     /// paint Pinned + recent chats instantly at launch from local SQLite,
     /// before the runtime bootstraps and paginates the real thread list.

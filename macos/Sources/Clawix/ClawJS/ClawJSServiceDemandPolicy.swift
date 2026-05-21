@@ -29,7 +29,7 @@ enum ClawJSServiceVisibilityGate: Equatable {
 }
 
 enum ClawJSServiceDemandPolicy {
-    static let startupCoreServices: Set<ClawJSService> = []
+    static let startupCoreServices: Set<ClawJSService> = [.sessions]
 
     static func startupServices(for role: ClawixAppRole) -> Set<ClawJSService> {
         switch role {
