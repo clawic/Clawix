@@ -40,7 +40,11 @@ struct IoTScreen: View {
         }
         .preferredColorScheme(.dark)
         .task {
-            await ClawJSServiceManager.shared.start([.iot], reason: .route("iot"))
+            let services = ClawJSServiceDemandPolicy.services(
+                for: .iotHome,
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            await ClawJSServiceManager.shared.start(services, reason: .route("iot"))
             if case .ready = manager.state {
                 try? await manager.refreshAll()
             }

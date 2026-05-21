@@ -291,6 +291,10 @@ struct PublishingCalendarView: View {
             if case .unavailable = store.state {
                 Button("Retry") {
                     Task { @MainActor in
+                        guard ClawJSServiceDemandPolicy.isServiceVisible(
+                            .publishing,
+                            isVisible: FeatureFlags.shared.isVisible
+                        ) else { return }
                         await ClawJSServiceManager.shared.restart(.publishing)
                     }
                 }

@@ -34,7 +34,11 @@ struct DatabaseScreen: View {
         }
         .background(Palette.background)
         .task {
-            await ClawJSServiceManager.shared.start([.database], reason: .route("database"))
+            let services = ClawJSServiceDemandPolicy.visibleServices(
+                [.database],
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            await ClawJSServiceManager.shared.start(services, reason: .route("database"))
             if case .loading = manager.state {
                 await manager.bootstrap()
             }

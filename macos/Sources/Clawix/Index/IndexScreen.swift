@@ -51,7 +51,11 @@ struct IndexScreen: View {
         }
         .background(Color.black.opacity(0.001))
         .task {
-            await ClawJSServiceManager.shared.start([.index], reason: .route("index"))
+            let services = ClawJSServiceDemandPolicy.services(
+                for: .indexHome,
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            await ClawJSServiceManager.shared.start(services, reason: .route("index"))
             if store.state == .idle {
                 store.requestRefresh()
             }

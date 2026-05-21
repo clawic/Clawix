@@ -231,19 +231,28 @@ struct ClawJSSettingsPage: View {
         Button(state.isReady ? "Restart" : "Start") {
             Task {
                 if state.isReady {
-                    await manager.restart(service)
+                    if ClawJSServiceDemandPolicy.isServiceVisible(service, isVisible: FeatureFlags.shared.isVisible) {
+                        await manager.restart(service)
+                    }
                 } else {
-                    await manager.start([service], reason: .manual(service.displayName))
+                    let services = ClawJSServiceDemandPolicy.visibleServices(
+                        [service],
+                        isVisible: FeatureFlags.shared.isVisible
+                    )
+                    await manager.start(services, reason: .manual(service.displayName))
                 }
             }
         }
         .buttonStyle(.borderless)
         .font(BodyFont.system(size: 11.5, wght: 500))
         .foregroundColor(Palette.textSecondary)
-        .disabled(isServiceActionDisabled(state))
+        .disabled(isServiceActionDisabled(service, state: state))
     }
 
-    private func isServiceActionDisabled(_ state: ClawJSServiceState) -> Bool {
+    private func isServiceActionDisabled(_ service: ClawJSService, state: ClawJSServiceState) -> Bool {
+        guard ClawJSServiceDemandPolicy.isServiceVisible(service, isVisible: FeatureFlags.shared.isVisible) else {
+            return true
+        }
         if case .starting = state { return true }
         return false
     }

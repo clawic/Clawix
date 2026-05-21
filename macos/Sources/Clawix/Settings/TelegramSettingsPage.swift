@@ -55,7 +55,11 @@ struct TelegramSettingsPage: View {
             updateRefreshLoop(for: serviceState)
         }
         .task {
-            await supervisor.start([.telegram], reason: .capability("Telegram settings"))
+            let services = ClawJSServiceDemandPolicy.visibleServices(
+                [.telegram],
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            await supervisor.start(services, reason: .capability("Telegram settings"))
         }
         .onChange(of: serviceState) { _, newState in
             updateRefreshLoop(for: newState)

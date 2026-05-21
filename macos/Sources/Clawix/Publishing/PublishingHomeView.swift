@@ -33,7 +33,11 @@ struct PublishingHomeView: View {
         }
         .background(Palette.background)
         .task {
-            await ClawJSServiceManager.shared.start([.publishing], reason: .route("publishing"))
+            let services = ClawJSServiceDemandPolicy.services(
+                for: .publishingHome,
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            await ClawJSServiceManager.shared.start(services, reason: .route("publishing"))
             if store.state == .idle { store.bootstrap() }
         }
         .onDisappear {
