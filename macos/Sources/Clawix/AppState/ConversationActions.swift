@@ -620,17 +620,26 @@ extension AppState {
         // `archivedChats` from the seeded JSON. Hitting the runtime here
         // would wipe that curated set with the (empty) real backend.
         if AgentThreadStore.fixtureThreads() != nil { return }
-        guard let clawix, case .ready = clawix.status else { return }
         if archivedLoading { return }
         if archivedLoaded && !force { return }
         archivedLoading = true
         defer { archivedLoading = false }
         do {
-            let threads = try await clawix.listThreads(
-                archived: true,
-                limit: Self.archivedSidebarLimit,
-                useStateDbOnly: true
-            )
+            let threads: [AgentThreadSummary]
+            if clawJSSessionsCanonicalActive {
+                let sessions = try await clawJSSessionsClientFactory().listSessions(
+                    archived: true,
+                    limit: Self.archivedSidebarLimit
+                )
+                threads = sessions.map(threadSummary(from:))
+            } else {
+                guard let clawix, case .ready = clawix.status else { return }
+                threads = try await clawix.listThreads(
+                    archived: true,
+                    limit: Self.archivedSidebarLimit,
+                    useStateDbOnly: true
+                )
+            }
             let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
             let oldByThread = Dictionary(uniqueKeysWithValues: archivedChats.compactMap { chat in
                 chat.clawixThreadId.map { ($0, chat) }

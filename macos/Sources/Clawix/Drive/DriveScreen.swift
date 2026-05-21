@@ -40,9 +40,12 @@ struct DriveScreen: View {
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             applyMode()
-            store.boot()
             DriveTools.bind(store)
             presentPendingQuickUploadIfReady()
+        }
+        .task {
+            await ClawJSServiceManager.shared.start([.drive], reason: .route("drive"))
+            store.boot()
         }
         .onDisappear {
             store.cancelSurfaceWork()

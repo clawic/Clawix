@@ -127,6 +127,11 @@ final class DatabaseManager: ObservableObject {
                 self.collections = []
                 self.recordsByCollection = [:]
                 self.state = .failed(snap.state.unavailableReason ?? "Database service is unavailable.")
+            case .availableOnDemand:
+                self.cancelSurfaceWork(disconnectRealtime: true)
+                self.collections = []
+                self.recordsByCollection = [:]
+                self.state = .loading
             case .starting:
                 if case .ready = self.state { self.realtime.disconnect() }
                 self.state = .bootstrapping

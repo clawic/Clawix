@@ -49,6 +49,9 @@ struct ProjectPickerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background)
+        .task {
+            await appState.loadCanonicalProjectsIfNeeded()
+        }
     }
 }
 

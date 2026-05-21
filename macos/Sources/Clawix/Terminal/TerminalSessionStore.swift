@@ -11,8 +11,8 @@ import AppKit
 ///   close, kill-all on app shutdown.
 ///
 /// The store is `@MainActor` because everything it touches
-/// (LocalProcessTerminalView is an NSView, GRDB DatabaseQueue is
-/// MainActor-bound via `Database.shared`) is.
+    /// (LocalProcessTerminalView is an NSView, terminal state publication)
+    /// is.
 @MainActor
 final class TerminalSessionStore: ObservableObject {
     /// Process-wide instance. `App.swift` wraps this in `@StateObject`;

@@ -131,8 +131,8 @@ struct SidebarSnapshotRow: Codable, FetchableRecord, PersistableRecord {
 }
 
 // Per-project mirror of `SidebarSnapshotRow`. `projectId` is the stable
-// identity; `projectPath` remains as a mutable locator/fallback. Rows live
-// in `sidebar_snapshot_project` only when a chat's project is resolved.
+// identity; `projectPath` remains as a mutable locator/fallback while older
+// snapshot rows are incrementally backfilled.
 // Feeds the per-project accordion's
 // first paint so opening any folder is instant.
 struct SidebarSnapshotProjectRow: Codable, FetchableRecord, PersistableRecord {
@@ -141,7 +141,7 @@ struct SidebarSnapshotProjectRow: Codable, FetchableRecord, PersistableRecord {
     var chatUuid: String
     var title: String
     var cwd: String?
-    var projectId: String
+    var projectId: String?
     var projectPath: String
     var updatedAt: Int64
     var archived: Int64

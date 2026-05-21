@@ -32,17 +32,24 @@ struct TerminalTabRecord: Codable, FetchableRecord, MutablePersistableRecord, Eq
 final class TerminalTabsRepository {
     static let shared = TerminalTabsRepository()
 
-    private let dbQueue: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
-    private init(dbQueue: DatabaseQueue = Database.shared.dbQueue) {
-        self.dbQueue = dbQueue
+    init(dbQueue: DatabaseQueue) {
+        self.dbProvider = { dbQueue }
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+    }
+
+    private init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
         self.encoder = JSONEncoder()
         self.decoder = JSONDecoder()
     }
 
     func loadTabs(chatId: UUID) -> [TerminalTab] {
+        guard let dbQueue = dbProvider() else { return [] }
         let chatKey = chatId.uuidString
         let records: [TerminalTabRecord]
         do {
@@ -75,6 +82,7 @@ final class TerminalTabsRepository {
     }
 
     func upsert(_ tab: TerminalTab) {
+        let dbQueue = dbProvider()
         guard let layoutData = try? encoder.encode(tab.layout),
               let layoutString = String(data: layoutData, encoding: .utf8) else {
             return
@@ -89,14 +97,16 @@ final class TerminalTabsRepository {
             position: tab.position,
             createdAt: Int64(tab.createdAt.timeIntervalSince1970)
         )
-        do {
-            try dbQueue.write { db in
-                var mutable = record
-                try mutable.save(db)
+        if let dbQueue {
+            do {
+                try dbQueue.write { db in
+                    var mutable = record
+                    try mutable.save(db)
+                }
+            } catch {
+                // Persistence failures are non-fatal: the live state is
+                // still in memory; the next save attempt may succeed.
             }
-        } catch {
-            // Persistence failures are non-fatal: the live state is
-            // still in memory; the next save attempt may succeed.
         }
         ClawJSAppStateClient.upsertTerminalTab(
             id: tab.id.uuidString,
@@ -113,25 +123,35 @@ final class TerminalTabsRepository {
 
     func delete(tabId: UUID) {
         let key = tabId.uuidString
-        try? dbQueue.write { db in
-            _ = try TerminalTabRecord.deleteOne(db, key: key)
+        if let dbQueue = dbProvider() {
+            try? dbQueue.write { db in
+                _ = try TerminalTabRecord.deleteOne(db, key: key)
+            }
         }
         ClawJSAppStateClient.deleteTerminalTab(id: key)
     }
 
     func deleteAllForChat(_ chatId: UUID) {
-        let tabIds = (try? dbQueue.read { db in
-            try String.fetchAll(
-                db,
-                sql: "SELECT id FROM terminal_tabs WHERE chat_id = ?",
-                arguments: [chatId.uuidString]
-            )
-        }) ?? []
+        let dbQueue = dbProvider()
+        let tabIds: [String]
+        if let dbQueue {
+            tabIds = (try? dbQueue.read { db in
+                try String.fetchAll(
+                    db,
+                    sql: "SELECT id FROM terminal_tabs WHERE chat_id = ?",
+                    arguments: [chatId.uuidString]
+                )
+            }) ?? []
+        } else {
+            tabIds = []
+        }
         let key = chatId.uuidString
-        try? dbQueue.write { db in
-            try TerminalTabRecord
-                .filter(Column("chat_id") == key)
-                .deleteAll(db)
+        if let dbQueue {
+            try? dbQueue.write { db in
+                try TerminalTabRecord
+                    .filter(Column("chat_id") == key)
+                    .deleteAll(db)
+            }
         }
         for tabId in tabIds {
             ClawJSAppStateClient.deleteTerminalTab(id: tabId)

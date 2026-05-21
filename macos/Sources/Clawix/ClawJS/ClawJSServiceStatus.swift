@@ -69,6 +69,10 @@ enum ClawJSServiceState: Equatable {
     /// pre-`start()` or after a clean tearDown).
     case idle
 
+    /// Service is intentionally not part of the app launch path. It will be
+    /// started when the user opens the route or capability named by `trigger`.
+    case availableOnDemand(trigger: String)
+
     /// The bundled CLI does not currently expose a way to launch this
     /// service. The reason explains which gap blocks us; the manager
     /// will retry the moment that gap closes (one method swap inside
@@ -123,6 +127,8 @@ extension ClawJSServiceState {
             return reason
         case .idle:
             return "The service has not started yet."
+        case .availableOnDemand:
+            return nil
         case .starting:
             return "The service is still starting."
         case .ready, .readyFromDaemon:

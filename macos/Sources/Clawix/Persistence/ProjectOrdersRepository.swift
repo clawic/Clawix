@@ -3,14 +3,19 @@ import GRDB
 
 @MainActor
 final class ProjectOrdersRepository {
-    private let db: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
     private static let orderGap: Int64 = 1000
 
-    init(db: DatabaseQueue = Database.shared.dbQueue) {
-        self.db = db
+    init(db: DatabaseQueue) {
+        self.dbProvider = { db }
+    }
+
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
     }
 
     func orderedIds() -> [UUID] {
+        guard let db = dbProvider() else { return [] }
         let rows = (try? db.read {
             try ProjectSortOrderRow.order(Column("sort_order")).fetchAll($0)
         }) ?? []
@@ -18,12 +23,14 @@ final class ProjectOrdersRepository {
     }
 
     func setOrder(_ projectIds: [UUID]) {
-        try? db.write { db in
-            try db.execute(sql: "DELETE FROM project_sort_order")
-            for (idx, id) in projectIds.enumerated() {
-                let row = ProjectSortOrderRow(projectId: id.uuidString,
-                                              sortOrder: Int64(idx + 1) * Self.orderGap)
-                try row.insert(db)
+        if let db = dbProvider() {
+            try? db.write { db in
+                try db.execute(sql: "DELETE FROM project_sort_order")
+                for (idx, id) in projectIds.enumerated() {
+                    let row = ProjectSortOrderRow(projectId: id.uuidString,
+                                                  sortOrder: Int64(idx + 1) * Self.orderGap)
+                    try row.insert(db)
+                }
             }
         }
         ClawJSAppStateClient.setProjectOrder(projectIds.map(\.uuidString))

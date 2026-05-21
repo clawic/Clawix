@@ -1,0 +1,118 @@
+import XCTest
+import GRDB
+@testable import Clawix
+
+@MainActor
+final class AppStateLazyDatabaseLaunchTests: XCTestCase {
+    private var cacheURL: URL!
+
+    override func setUp() {
+        super.setUp()
+        setenv("CLAWIX_DISABLE_BACKEND", "1", 1)
+        setenv("CLAWIX_BRIDGE_DISABLE", "1", 1)
+        cacheURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-first-paint-\(UUID().uuidString).json")
+        FirstPaintCache.fileURLOverride = cacheURL
+    }
+
+    override func tearDown() {
+        FirstPaintCache.fileURLOverride = nil
+        if let cacheURL {
+            try? FileManager.default.removeItem(at: cacheURL)
+        }
+        unsetenv("CLAWIX_DISABLE_BACKEND")
+        unsetenv("CLAWIX_BRIDGE_DISABLE")
+        super.tearDown()
+    }
+
+    func testAppStateInitDoesNotOpenDatabase() {
+        var openCount = 0
+        let provider = LazyDatabaseProvider(
+            opener: {
+                openCount += 1
+                return try DatabaseQueue()
+            },
+            migrator: { _ in }
+        )
+
+        _ = AppState(databaseProvider: provider)
+
+        XCTAssertEqual(openCount, 0)
+    }
+
+    func testFirstPaintCachePopulatesSidebarState() throws {
+        let projectID = UUID()
+        let chatID = UUID()
+        FirstPaintCache.save(FirstPaintCache.Payload(
+            version: 1,
+            projects: [
+                FirstPaintCache.ProjectItem(
+                    id: projectID.uuidString,
+                    resourceId: "res_project",
+                    name: "Project",
+                    path: "/tmp/clawix-project"
+                )
+            ],
+            chats: [
+                FirstPaintCache.ChatItem(
+                    threadId: "thread-1",
+                    chatUuid: chatID.uuidString,
+                    title: "Cached chat",
+                    cwd: "/tmp/clawix-project",
+                    projectId: projectID.uuidString,
+                    projectPath: "/tmp/clawix-project",
+                    updatedAt: 1_700_000_000,
+                    pinned: true
+                )
+            ],
+            pinnedThreadIds: ["thread-1"],
+            projectPathHints: ["/tmp/clawix-project"]
+        ))
+
+        let state = AppState()
+
+        XCTAssertEqual(state.projects.map(\.id), [projectID])
+        XCTAssertEqual(state.chats.map(\.id), [chatID])
+        XCTAssertEqual(state.chats.first?.title, "Cached chat")
+        XCTAssertEqual(state.chats.first?.clawixThreadId, "thread-1")
+        XCTAssertEqual(state.chats.first?.projectId, projectID)
+        XCTAssertEqual(state.pinnedOrder, [chatID])
+    }
+
+    func testCorruptFirstPaintCacheDoesNotPreventLaunch() throws {
+        try "not-json".data(using: .utf8)?.write(to: cacheURL)
+
+        _ = AppState()
+    }
+
+    func testMigrationFailureSetsRescueDecision() async {
+        let provider = LazyDatabaseProvider(
+            opener: { try DatabaseQueue() },
+            migrator: { _ in throw StubError.migrationFailed }
+        )
+        let state = AppState(databaseProvider: provider)
+
+        state.startPostFirstFramePersistence()
+        await waitUntil {
+            state.rescueDecision.pendingRepairSignals.contains(.migrationFailure)
+        }
+
+        XCTAssertEqual(state.rescueDecision.mode, .ephemeralChat)
+        XCTAssertTrue(state.rescueDecision.pendingRepairSignals.contains(.migrationFailure))
+    }
+
+    private func waitUntil(
+        timeout: TimeInterval = 2,
+        condition: @escaping @MainActor () -> Bool
+    ) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+    }
+
+    private enum StubError: Error {
+        case migrationFailed
+    }
+}

@@ -531,6 +531,10 @@ final class PublishingWorkspaceStore: ObservableObject {
                 if self.state != .idle {
                     self.reset(reason: "Publishing service has not started yet.")
                 }
+            case .availableOnDemand:
+                if self.state != .idle {
+                    self.state = .idle
+                }
             case .starting:
                 if case .ready = self.state {
                     // keep current state until the next ready flip

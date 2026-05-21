@@ -457,6 +457,11 @@ final class DriveStore: ObservableObject {
                 self.items = []
                 self.breadcrumbs = []
                 self.state = .error(snap.state.unavailableReason ?? "Drive service is unavailable.")
+            case .availableOnDemand:
+                self.cancelSurfaceWork()
+                self.items = []
+                self.breadcrumbs = []
+                self.state = .loading
             case .starting:
                 if self.state != .ready {
                     self.state = .loading

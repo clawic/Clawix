@@ -16,10 +16,12 @@ struct SurfaceRouterView: View {
             for: entry,
             hasActiveCustomVariant: resolution != nil
         )
+        let demandedServices = ClawJSServiceDemandPolicy.services(for: route)
         ZStack(alignment: .topTrailing) {
             SurfaceRouteHost(
                 descriptor: entry.descriptor,
                 readinessMode: readinessMode,
+                demandedServices: demandedServices,
                 state: $supervisionState
             ) {
                 if let resolution {
@@ -92,7 +94,9 @@ struct SurfaceRouterView: View {
 private struct SurfaceRouteHost<Content: View>: View {
     let descriptor: SurfaceRouteDescriptor
     let readinessMode: SurfaceRouteReadinessMode
+    let demandedServices: Set<ClawJSService>
     @Binding var state: SurfaceRouteSupervisionState
+    @ObservedObject private var serviceManager = ClawJSServiceManager.shared
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -197,9 +201,17 @@ private struct SurfaceRouteHost<Content: View>: View {
         .background(Palette.background.opacity(0.92))
     }
 
+    @MainActor
     private func supervise() async {
         state = SurfaceRouteSupervisor.start(descriptor: descriptor)
         guard case .loading(_, _, _, _) = state else { return }
+        if !demandedServices.isEmpty {
+            await serviceManager.start(demandedServices, reason: .route(descriptor.id))
+            if let issue = serviceManager.startupIssue(for: demandedServices) {
+                state = .degraded(surfaceID: descriptor.id, reason: issue)
+                return
+            }
+        }
         await Task.yield()
         guard !Task.isCancelled else {
             state = SurfaceRouteSupervisor.cancel(state: state, descriptor: descriptor)

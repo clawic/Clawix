@@ -45,6 +45,7 @@ struct MemoryScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
+            await ClawJSServiceManager.shared.start([.memory], reason: .route("memory"))
             if store.state == .idle { await store.refresh() }
         }
         .onDisappear {

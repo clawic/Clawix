@@ -22,12 +22,12 @@ final class TokenRefreshService: ObservableObject {
         self.tickOperation = tickOperation
     }
 
-    func start() {
+    func start(firstTickDelay: TimeInterval = 0) {
         guard timer == nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.scheduleTick() }
         }
-        scheduleTick()
+        scheduleTick(after: firstTickDelay)
     }
 
     func stop() {
@@ -37,10 +37,17 @@ final class TokenRefreshService: ObservableObject {
         tickTask = nil
     }
 
-    private func scheduleTick() {
+    private func scheduleTick(after delay: TimeInterval = 0) {
         tickTask?.cancel()
         tickTask = Task { @MainActor [weak self] in
             guard let self else { return }
+            if delay > 0 {
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                } catch {
+                    return
+                }
+            }
             await tick()
             if !Task.isCancelled {
                 tickTask = nil

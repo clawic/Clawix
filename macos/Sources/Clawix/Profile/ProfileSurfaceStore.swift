@@ -92,6 +92,7 @@ final class ProfileSurfaceStore: ObservableObject {
     }
 
     private func runBootstrap(generation: Int) async {
+        await ClawJSServiceManager.shared.start([.index], reason: .capability("Profile search"))
         ensureToken()
         loadState = .loading
         do {

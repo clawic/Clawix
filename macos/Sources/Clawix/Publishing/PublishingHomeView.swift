@@ -32,7 +32,8 @@ struct PublishingHomeView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Palette.background)
-        .onAppear {
+        .task {
+            await ClawJSServiceManager.shared.start([.publishing], reason: .route("publishing"))
             if store.state == .idle { store.bootstrap() }
         }
         .onDisappear {

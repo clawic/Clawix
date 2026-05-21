@@ -82,19 +82,53 @@ final class ClawJSServiceManager: ObservableObject {
 
     // MARK: - Public API
 
-    /// Boots all services. Idempotent: a service in `.starting` or
+    /// Boots the minimal launch core used by the main Clawix shell.
+    func startStartupCore() async {
+        await start(ClawJSServiceDemandPolicy.startupCoreServices, reason: .startupCore)
+    }
+
+    /// Boots the requested services. Idempotent: a service in `.starting` or
     /// `.ready` is left alone. When the bridge daemon is reachable the GUI
     /// probes daemon-owned loopback ports first, then falls back locally for
     /// surfaces the daemon does not provide.
-    func start() async {
+    func start(_ services: Set<ClawJSService>, reason: ClawJSServiceStartReason) async {
+        guard !services.isEmpty else { return }
         let bridgeService = activeBridgeService
         if bridgeService.isDaemonReachable {
-            await startDaemonAwareServices()
+            await startDaemonAwareServices(services)
             return
         }
-        for service in ClawJSService.allCases {
+        for service in orderedServices(from: services) {
             await launchLocal(service)
         }
+    }
+
+    func markServicesAvailableOnDemand(excluding activeServices: Set<ClawJSService>) {
+        for service in ClawJSService.allCases where !activeServices.contains(service) {
+            guard let trigger = ClawJSServiceDemandPolicy.onDemandTrigger(for: service) else { continue }
+            update(service) { snap in
+                switch snap.state {
+                case .idle, .availableOnDemand:
+                    snap.state = .availableOnDemand(trigger: trigger)
+                    snap.lastError = nil
+                case .starting, .ready, .readyFromDaemon, .blocked, .crashed, .daemonUnavailable:
+                    break
+                }
+            }
+        }
+    }
+
+    func startupIssue(for services: Set<ClawJSService>) -> String? {
+        for service in orderedServices(from: services) {
+            guard let state = snapshots[service]?.state else { continue }
+            switch state {
+            case .blocked(let reason), .crashed(let reason), .daemonUnavailable(let reason):
+                return "\(service.displayName): \(reason)"
+            case .idle, .availableOnDemand, .starting, .ready, .readyFromDaemon:
+                break
+            }
+        }
+        return nil
     }
 
     /// Forces a single service back through the launch pipeline. Resets
@@ -298,11 +332,14 @@ final class ClawJSServiceManager: ObservableObject {
         return true
     }
 
-    private func startDaemonOwnedProbes() {
-        for task in healthTasks.values { task.cancel() }
-        healthTasks.removeAll()
+    private func orderedServices(from services: Set<ClawJSService>) -> [ClawJSService] {
+        ClawJSService.allCases.filter { services.contains($0) }
+    }
 
-        for service in ClawJSService.allCases {
+    private func startDaemonOwnedProbes(_ services: Set<ClawJSService>) {
+        for service in orderedServices(from: services) {
+            healthTasks[service]?.cancel()
+            healthTasks[service] = nil
             update(service) {
                 $0.lastError = nil
                 $0.state = .starting
@@ -313,11 +350,10 @@ final class ClawJSServiceManager: ObservableObject {
         }
     }
 
-    private func startDaemonAwareServices() async {
-        for task in healthTasks.values { task.cancel() }
-        healthTasks.removeAll()
-
-        for service in ClawJSService.allCases {
+    private func startDaemonAwareServices(_ services: Set<ClawJSService>) async {
+        for service in orderedServices(from: services) {
+            healthTasks[service]?.cancel()
+            healthTasks[service] = nil
             let url = URL(string: "http://127.0.0.1:\(service.port)\(service.healthPath)")!
             if await ping(url: url) {
                 if await Self.reclaimOrphanedSidecarIfPossible(service) {

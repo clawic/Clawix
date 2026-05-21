@@ -141,11 +141,6 @@ struct ClawixApp: App {
         _remoteToolsRegistry = StateObject(wrappedValue: registry)
         if !Self.isToolRole {
             DictationE2ERunner.runIfRequested()
-            // Background refresher for OAuth provider accounts (Anthropic
-            // Claude.ai, GitHub Copilot). Pauses while the Secrets is locked;
-            // resumes implicitly because each tick checks the secrets state
-            // before calling refresh.
-            TokenRefreshService.shared.start()
         }
         // Dictation hotkey + overlay are wired from
         // `applicationDidFinishLaunching`, NOT here. Calling
@@ -179,6 +174,10 @@ struct ClawixApp: App {
                 .id(appState.preferredLanguage.rawValue)
                 .preferredColorScheme(.dark)
                 .frame(minWidth: mainWindowMinSize.width, minHeight: mainWindowMinSize.height)
+                .task {
+                    await Task.yield()
+                    appState.startPostFirstFramePersistence()
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unifiedCompact(showsTitle: false))
@@ -284,6 +283,10 @@ struct ClawixToolApp: App {
                 .id(appState.preferredLanguage.rawValue)
                 .preferredColorScheme(.dark)
                 .frame(minWidth: 720, minHeight: 480)
+                .task {
+                    await Task.yield()
+                    appState.startPostFirstFramePersistence()
+                }
         }
         .defaultSize(width: 1100, height: 720)
     }
@@ -798,17 +801,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ResourceSampler.start()
         MetricKitObserver.shared.install()
         HangDetector.start()
-        // The Tasks mini-app needs ClawJSServiceManager.shared.start()
-        // because DatabaseManager observes its snapshots and only
-        // bootstraps when the supervisor flips .database to .ready /
-        // .readyFromDaemon. The supervisor is idempotent: if Clawix.app
-        // already spawned the daemons, the second instance discovers
-        // them and publishes .readyFromDaemon without spawning a
-        // duplicate. If Clawix.app is not running at all, the mini-app
-        // will report the database as unavailable, which is the
-        // expected fallback.
+        // Start only the current role's required ClawJS services. The
+        // main app keeps launch to runtime + sessions for chat/rescue;
+        // sidebar tool mini-apps start only the service backing that tool.
+        // Everything else stays available on demand when its route opens.
         Task { @MainActor in
-            await ClawJSServiceManager.shared.start()
+            await ClawixStartupCore.run(role: ClawixAppRole.current)
         }
         // Wire the audio catalog client the first time the supervisor
         // publishes `.audio = .ready` or `.readyFromDaemon`.
@@ -820,6 +818,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ClawixApp.isToolRole {
             return
         }
+        // Background refresher for OAuth provider accounts (Anthropic
+        // Claude.ai, GitHub Copilot). Start after launch and delay the
+        // first tick so token work cannot compete with first paint.
+        TokenRefreshService.shared.start(firstTickDelay: 5)
         // If the previous launch was interrupted by a Sparkle update
         // mid-install, the LaunchAgent was unregistered to release
         // file handles. Restore it now so the user does not have to

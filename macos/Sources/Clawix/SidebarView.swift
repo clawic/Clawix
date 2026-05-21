@@ -303,13 +303,7 @@ struct SidebarView: View {
                         projectsShowingExtended.remove(project.id)
                     } else {
                         expandedProjects.insert(project.id)
-                        // Fire-and-forget refresh. The accordion already
-                        // has its rows from the SQLite snapshot; this
-                        // diff-merges any updates the daemon has beyond
-                        // what the pre-warm caught, animated.
-                        Task.detached(priority: .userInitiated) {
-                            await appState.loadThreadsForProject(project)
-                        }
+                        appState.requestExpandedProjectRefresh(project)
                     }
                 },
                 onMenuToggle: {
@@ -333,6 +327,14 @@ struct SidebarView: View {
                 chatCallbacks: { recentChatCallbacks(for: $0, archived: false) }
             )
             .equatable()
+            .onAppear {
+                appState.requestVisibleProjectRefresh(project)
+            }
+            .onDisappear {
+                if !expandedProjects.contains(project.id) {
+                    appState.cancelProjectRefresh(project)
+                }
+            }
         }
     }
 
@@ -616,7 +618,10 @@ struct SidebarView: View {
         .onChange(of: pinnedExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarPinnedExpanded) }
         .onChange(of: chronoExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarChronoExpanded) }
         .onChange(of: noProjectExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarNoProjectExpanded) }
-        .onChange(of: projectsExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarProjectsExpanded) }
+        .onChange(of: projectsExpanded) { _, v in
+            SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarProjectsExpanded)
+            if v { Task { await appState.loadCanonicalProjectsIfNeeded() } }
+        }
         .onChange(of: archivedExpanded) { _, v in
             SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarArchivedExpanded)
             if v { Task { await appState.loadArchivedChats() } }
@@ -1402,9 +1407,12 @@ struct SidebarView: View {
                 // Expand all
                 expandedProjects = Set(appState.projects.map { $0.id })
                 for project in appState.projects {
-                    Task { await appState.loadThreadsForProject(project) }
+                    appState.requestExpandedProjectRefresh(project)
                 }
             } else {
+                for project in appState.projects where expandedProjects.contains(project.id) {
+                    appState.cancelProjectRefresh(project)
+                }
                 expandedProjects.removeAll()
             }
         }

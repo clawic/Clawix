@@ -84,6 +84,7 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
 
     private func dispatchJobsStart(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
         do {
+            await ClawJSServiceManager.shared.start([.runtime], reason: .capability("runtime jobs"))
             let kind = ((request.arguments["kind"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !kind.isEmpty else {
                 return .failed("jobs.start requires a kind.")
@@ -104,6 +105,7 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
 
     private func dispatchJobsCancel(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
         do {
+            await ClawJSServiceManager.shared.start([.runtime], reason: .capability("runtime jobs"))
             let id = ((request.arguments["id"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             guard !id.isEmpty else {
                 return .failed("jobs.cancel requires an id.")

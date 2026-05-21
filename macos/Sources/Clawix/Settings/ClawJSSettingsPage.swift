@@ -90,6 +90,9 @@ struct ClawJSSettingsPage: View {
                 if case .daemonUnavailable(let reason) = state {
                     blockedReason(reason)
                 }
+                if case .availableOnDemand(let trigger) = state {
+                    blockedReason("Available when \(trigger).")
+                }
                 Divider().background(Color.white.opacity(0.07))
                 row(label: "Port") {
                     Text(verbatim: "127.0.0.1:\(service.port)")
@@ -99,6 +102,8 @@ struct ClawJSSettingsPage: View {
                 }
                 Divider().background(Color.white.opacity(0.07))
                 HStack(spacing: 12) {
+                    serviceActionButton(service: service, state: state)
+
                     Button("Open admin console") {
                         if let url = URL(string: "http://127.0.0.1:\(service.port)") {
                             NSWorkspace.shared.open(url)
@@ -193,17 +198,13 @@ struct ClawJSSettingsPage: View {
                     }
                     Divider().background(Color.white.opacity(0.07))
                     ForEach(ClawJSService.allCases) { service in
+                        let state = manager.snapshots[service]?.state ?? .idle
                         HStack(spacing: 12) {
                             Text(service.displayName)
                                 .font(BodyFont.system(size: 12.5))
                                 .foregroundColor(Palette.textPrimary)
                                 .frame(width: 90, alignment: .leading)
-                            Button("Restart") {
-                                Task { await manager.restart(service) }
-                            }
-                            .buttonStyle(.borderless)
-                            .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Palette.textSecondary)
+                            serviceActionButton(service: service, state: state)
                             Button("Status JSON") {
                                 if let json = statusJSON(for: service) {
                                     let pasteboard = NSPasteboard.general
@@ -224,6 +225,27 @@ struct ClawJSSettingsPage: View {
                 .font(BodyFont.system(size: 12, wght: 600))
                 .foregroundColor(Palette.textSecondary)
         }
+    }
+
+    private func serviceActionButton(service: ClawJSService, state: ClawJSServiceState) -> some View {
+        Button(state.isReady ? "Restart" : "Start") {
+            Task {
+                if state.isReady {
+                    await manager.restart(service)
+                } else {
+                    await manager.start([service], reason: .manual(service.displayName))
+                }
+            }
+        }
+        .buttonStyle(.borderless)
+        .font(BodyFont.system(size: 11.5, wght: 500))
+        .foregroundColor(Palette.textSecondary)
+        .disabled(isServiceActionDisabled(state))
+    }
+
+    private func isServiceActionDisabled(_ state: ClawJSServiceState) -> Bool {
+        if case .starting = state { return true }
+        return false
     }
 
     // MARK: - Row + pill helpers
@@ -262,6 +284,7 @@ struct ClawJSSettingsPage: View {
     private func stateLabel(_ state: ClawJSServiceState) -> String {
         switch state {
         case .idle:                return "Idle"
+        case .availableOnDemand:   return "Available on demand"
         case .blocked:             return "Blocked"
         case .starting:            return "Starting"
         case .ready:               return "Running"
@@ -274,6 +297,7 @@ struct ClawJSSettingsPage: View {
     private func stateColor(_ state: ClawJSServiceState) -> Color {
         switch state {
         case .idle:                return Color.white.opacity(0.4)
+        case .availableOnDemand:   return .blue
         case .blocked:             return .orange
         case .starting:            return .yellow
         case .ready:               return .green
@@ -292,6 +316,9 @@ struct ClawJSSettingsPage: View {
         ]
         switch snapshot.state {
         case .idle:                dict["state"] = "idle"
+        case .availableOnDemand(let trigger):
+            dict["state"] = "availableOnDemand"
+            dict["trigger"] = trigger
         case .blocked(let reason):
             dict["state"] = "blocked"
             dict["reason"] = reason

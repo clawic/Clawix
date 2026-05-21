@@ -253,6 +253,9 @@ final class MemoryStore: ObservableObject {
                 }
             case .blocked, .crashed, .daemonUnavailable, .idle:
                 self.reset(reason: snap.state.unavailableReason ?? "Memory service is unavailable.")
+            case .availableOnDemand:
+                self.cancelSurfaceWork()
+                self.state = .idle
             case .starting:
                 if self.state != .ready { self.state = .loading }
             }

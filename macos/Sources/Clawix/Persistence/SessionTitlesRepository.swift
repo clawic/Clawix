@@ -13,15 +13,24 @@ final class SessionTitlesRepository {
         let source: String
     }
 
-    private let db: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
     private var resolved: [String: Entry] = [:]
 
-    init(db: DatabaseQueue = Database.shared.dbQueue) {
-        self.db = db
+    init(db: DatabaseQueue) {
+        self.dbProvider = { db }
+        loadFromDB()
+    }
+
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
         loadFromDB()
     }
 
     private func loadFromDB() {
+        guard let db = dbProvider() else {
+            resolved = [:]
+            return
+        }
         let rows = (try? db.read { try SessionTitleRow.fetchAll($0) }) ?? []
         var fold: [String: Entry] = [:]
         for row in rows {
@@ -36,7 +45,8 @@ final class SessionTitlesRepository {
     }
 
     func count() -> Int {
-        (try? db.read { try SessionTitleRow.fetchCount($0) }) ?? 0
+        guard let db = dbProvider() else { return 0 }
+        return (try? db.read { try SessionTitleRow.fetchCount($0) }) ?? 0
     }
 
     func reload() {
@@ -67,7 +77,9 @@ final class SessionTitlesRepository {
                                   title: trimmed,
                                   updatedAt: Int64(now.timeIntervalSince1970),
                                   source: source)
-        try? db.write { try row.upsert($0) }
+        if let db = dbProvider() {
+            try? db.write { try row.upsert($0) }
+        }
         resolved[threadId] = Entry(threadId: threadId,
                                    title: trimmed,
                                    updatedAt: now,

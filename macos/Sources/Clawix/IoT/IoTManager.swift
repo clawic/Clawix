@@ -113,6 +113,16 @@ final class IoTManager: NSObject, ObservableObject {
                 self.approvals = []
                 self.pendingApprovalsCount = 0
                 self.state = .failed(snap.state.unavailableReason ?? "IoT service is unavailable.")
+            case .availableOnDemand:
+                self.cancelSurfaceWork()
+                self.disconnectSSE()
+                self.devices = []
+                self.areas = []
+                self.scenes = []
+                self.automations = []
+                self.approvals = []
+                self.pendingApprovalsCount = 0
+                self.state = .loading
             case .starting:
                 self.state = .bootstrapping
             }

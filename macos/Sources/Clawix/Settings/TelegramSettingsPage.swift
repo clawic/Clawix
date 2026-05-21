@@ -54,6 +54,9 @@ struct TelegramSettingsPage: View {
         .onAppear {
             updateRefreshLoop(for: serviceState)
         }
+        .task {
+            await supervisor.start([.telegram], reason: .capability("Telegram settings"))
+        }
         .onChange(of: serviceState) { _, newState in
             updateRefreshLoop(for: newState)
         }
@@ -100,6 +103,8 @@ struct TelegramSettingsPage: View {
             banner(text: "Telegram surface crashed: \(reason)", color: .red)
         case .daemonUnavailable(let reason):
             banner(text: reason, color: .red)
+        case .availableOnDemand(let trigger):
+            banner(text: "Telegram surface will start when \(trigger).", color: .blue)
         case .idle:
             banner(text: "Telegram surface is idle.", color: Color.white.opacity(0.4))
         }

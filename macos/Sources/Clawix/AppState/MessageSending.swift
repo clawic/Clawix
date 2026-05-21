@@ -544,6 +544,7 @@ extension AppState {
         let messageIdString = messageId.uuidString
         Task { [weak self] in
             do {
+                await ClawJSServiceManager.shared.start([.audio], reason: .capability("audio catalog"))
                 guard let client = await MainActor.run(body: { AudioCatalogBootstrap.shared.currentClient }) else {
                     throw ClawJSAudioClient.Error.serviceNotReady
                 }

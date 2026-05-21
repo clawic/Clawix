@@ -11,21 +11,27 @@ import GRDB
 // the main thread via GRDB's serialized queue, so the repository is
 // nonisolated and Sendable on purpose.
 final class SnapshotRepository: @unchecked Sendable {
-    private let db: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
+
+    init(db: DatabaseQueue) {
+        self.dbProvider = { db }
+    }
 
     @MainActor
-    init(db: DatabaseQueue = Database.shared.dbQueue) {
-        self.db = db
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
     }
 
     func count() -> Int {
-        (try? db.read { try SidebarSnapshotRow.fetchCount($0) }) ?? 0
+        guard let db = dbProvider() else { return 0 }
+        return (try? db.read { try SidebarSnapshotRow.fetchCount($0) }) ?? 0
     }
 
     /// Top N rows for the first paint, ordered so pinned chats land first
     /// and the rest follow by recency.
     func loadTop(limit: Int) -> [SidebarSnapshotRow] {
-        (try? db.read { db in
+        guard let db = dbProvider() else { return [] }
+        return (try? db.read { db in
             try SidebarSnapshotRow.fetchAll(db, sql: """
                 SELECT * FROM sidebar_snapshot
                 ORDER BY pinned DESC, updated_at DESC
@@ -35,7 +41,8 @@ final class SnapshotRepository: @unchecked Sendable {
     }
 
     func loadAll() -> [SidebarSnapshotRow] {
-        (try? db.read { db in
+        guard let db = dbProvider() else { return [] }
+        return (try? db.read { db in
             try SidebarSnapshotRow.fetchAll(db, sql: """
                 SELECT * FROM sidebar_snapshot
                 ORDER BY pinned DESC, updated_at DESC
@@ -44,7 +51,8 @@ final class SnapshotRepository: @unchecked Sendable {
     }
 
     func load(chatUuid: String) -> SidebarSnapshotRow? {
-        try? db.read { db in
+        guard let db = dbProvider() else { return nil }
+        return try? db.read { db in
             try SidebarSnapshotRow.fetchOne(
                 db,
                 sql: """
@@ -58,7 +66,8 @@ final class SnapshotRepository: @unchecked Sendable {
     }
 
     func load(threadId: String) -> SidebarSnapshotRow? {
-        try? db.read { db in
+        guard let db = dbProvider() else { return nil }
+        return try? db.read { db in
             try SidebarSnapshotRow.fetchOne(
                 db,
                 sql: """
@@ -75,10 +84,12 @@ final class SnapshotRepository: @unchecked Sendable {
     /// every successful applyThreads/mergeThreads with the canonical
     /// in-memory chats list.
     func replaceAll(_ rows: [SidebarSnapshotRow]) {
-        try? db.write { db in
-            try db.execute(sql: "DELETE FROM sidebar_snapshot")
-            for row in rows {
-                try row.insert(db)
+        if let db = dbProvider() {
+            try? db.write { db in
+                try db.execute(sql: "DELETE FROM sidebar_snapshot")
+                for row in rows {
+                    try row.insert(db)
+                }
             }
         }
         let snapshots = rows.map {
@@ -106,17 +117,20 @@ final class SnapshotRepository: @unchecked Sendable {
     /// so every accordion has content available before the runtime
     /// answers a single RPC.
     func loadAllProjectIndexed() -> [SidebarSnapshotProjectRow] {
-        (try? db.read { db in
+        guard let db = dbProvider() else { return [] }
+        return (try? db.read { db in
             try SidebarSnapshotProjectRow.fetchAll(db, sql: """
                 SELECT * FROM sidebar_snapshot_project
-                WHERE project_id IS NOT NULL AND project_id <> ''
-                ORDER BY project_id ASC, updated_at DESC
+                WHERE (project_id IS NOT NULL AND project_id <> '')
+                   OR (project_path IS NOT NULL AND project_path <> '')
+                ORDER BY COALESCE(NULLIF(project_id, ''), project_path) ASC, updated_at DESC
             """)
         }) ?? []
     }
 
     func projectPathHints() -> [String] {
-        (try? db.read { db in
+        guard let db = dbProvider() else { return [] }
+        return (try? db.read { db in
             try String.fetchAll(db, sql: """
                 SELECT DISTINCT project_path
                 FROM (
@@ -134,6 +148,7 @@ final class SnapshotRepository: @unchecked Sendable {
     /// after every applyThreads/mergeThreads with the in-memory chats
     /// already filtered to those that belong to a known project.
     func replaceProjectIndex(_ rows: [SidebarSnapshotProjectRow]) {
+        guard let db = dbProvider() else { return }
         try? db.write { db in
             try db.execute(sql: "DELETE FROM sidebar_snapshot_project")
             for row in rows {
@@ -145,11 +160,19 @@ final class SnapshotRepository: @unchecked Sendable {
     /// Replace the rows for a single project. Used by the per-project
     /// background refresh so a fresh fetch for one folder doesn't have
     /// to rewrite every other project's rows.
-    func replaceProjectIndexFor(projectId: String, rows: [SidebarSnapshotProjectRow]) {
+    func replaceProjectIndexFor(projectId: String, projectPath: String, rows: [SidebarSnapshotProjectRow]) {
+        guard let db = dbProvider() else { return }
         try? db.write { db in
             try db.execute(
-                sql: "DELETE FROM sidebar_snapshot_project WHERE project_id = ?",
-                arguments: [projectId]
+                sql: """
+                    DELETE FROM sidebar_snapshot_project
+                    WHERE project_id = ?
+                       OR (
+                           (project_id IS NULL OR project_id = '')
+                           AND project_path = ?
+                       )
+                """,
+                arguments: [projectId, projectPath]
             )
             for row in rows where row.projectId == projectId {
                 try row.insert(db)

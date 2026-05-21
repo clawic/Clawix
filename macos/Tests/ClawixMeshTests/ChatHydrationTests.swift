@@ -138,6 +138,271 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
     }
 
+    func testClawJSSessionsStartupUsesSidebarBootstrapOnly() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var requests: [URLRequest] = []
+        SessionsHistoryURLProtocol.handler = { request in
+            requests.append(request)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            switch request.url?.path {
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/health":
+                return (response, Data(#"{"ok":true,"service":"sessions","host":"127.0.0.1","port":1}"#.utf8))
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap":
+                let body = """
+                {
+                  "projects": [],
+                  "pinned": [
+                    \(Self.sessionRecordJSON(id: "pinned-thread", title: "Pinned", pinned: true, archived: false))
+                  ],
+                  "recent": [
+                    \(Self.sessionRecordJSON(id: "recent-thread", title: "Recent", pinned: false, archived: false))
+                  ],
+                  "totalActiveVisible": 2
+                }
+                """
+                return (response, Data(body.utf8))
+            default:
+                let notFound = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+                return (notFound, Data(#"{"error":"unexpected"}"#.utf8))
+            }
+        }
+
+        let state = AppState()
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        await state.loadThreadsFromRuntime()
+
+        let projectRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/projects" }
+        let sessionRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions" }
+        let bootstrapRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap" }
+        let importRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/import/codex" }
+        let archivedRequests = sessionRequests.filter { Self.queryItems(for: $0)["archived"] == "true" }
+        XCTAssertTrue(projectRequests.isEmpty)
+        XCTAssertTrue(importRequests.isEmpty)
+        XCTAssertEqual(bootstrapRequests.count, 1)
+        XCTAssertEqual(Self.queryItems(for: try XCTUnwrap(bootstrapRequests.first))["recentLimit"], "\(AppState.sidebarBootstrapRecentLimit)")
+        XCTAssertTrue(archivedRequests.isEmpty)
+        XCTAssertTrue(sessionRequests.isEmpty)
+        XCTAssertEqual(state.chats.map(\.clawixThreadId), ["pinned-thread", "recent-thread"])
+        XCTAssertEqual(state.pinnedOrder.compactMap { id in state.chats.first(where: { $0.id == id })?.clawixThreadId }, ["pinned-thread"])
+    }
+
+    func testDeferredCodexImportUsesBudgetAndRefreshesBoundedSessionsAfterChanges() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var requests: [URLRequest] = []
+        var importBodies: [String] = []
+        var cacheRefreshCount = 0
+        SessionsHistoryURLProtocol.handler = { request in
+            requests.append(request)
+            if request.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/import/codex" {
+                importBodies.append(Self.bodyString(from: request))
+            }
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            switch request.url?.path {
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/import/codex":
+                return (response, Data(#"{"scanned":2,"imported":[],"skipped":1,"budgetExhausted":false,"changedFiles":1}"#.utf8))
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/health":
+                return (response, Data(#"{"ok":true,"service":"sessions","host":"127.0.0.1","port":1}"#.utf8))
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap":
+                let body = """
+                {
+                  "projects": [],
+                  "pinned": [
+                    \(Self.sessionRecordJSON(id: "pinned-thread", title: "Pinned", pinned: true, archived: false))
+                  ],
+                  "recent": [
+                    \(Self.sessionRecordJSON(id: "recent-thread", title: "Recent", pinned: false, archived: false))
+                  ],
+                  "totalActiveVisible": 2
+                }
+                """
+                return (response, Data(body.utf8))
+            default:
+                let notFound = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+                return (notFound, Data(#"{"error":"unexpected"}"#.utf8))
+            }
+        }
+
+        let state = AppState()
+        state.chats = []
+        state.clawJSAppStateCacheRefresh = {
+            cacheRefreshCount += 1
+        }
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        await state.runDeferredCodexImport()
+
+        let importRequest = try XCTUnwrap(requests.first { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/import/codex" })
+        XCTAssertEqual(importRequest.httpMethod, "POST")
+        let importBody = try XCTUnwrap(importBodies.first)
+        XCTAssertTrue(importBody.contains(#""budgetMs":400"#))
+        XCTAssertTrue(importBody.contains(#""maxFiles":64"#))
+        XCTAssertTrue(importBody.contains(#""mode":"incremental""#))
+        XCTAssertEqual(cacheRefreshCount, 1)
+        XCTAssertEqual(requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap" }.count, 1)
+        let sessionRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions" }
+        XCTAssertTrue(sessionRequests.isEmpty)
+        XCTAssertEqual(state.chats.map(\.clawixThreadId), ["pinned-thread", "recent-thread"])
+    }
+
+    func testLegacyRuntimeFallbackLoadsOnlyOneRecentPage() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        SessionsHistoryURLProtocol.handler = { _ in
+            throw URLError(.cannotConnectToHost)
+        }
+
+        let state = AppState()
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+        var legacyRequests: [(cursor: String?, limit: Int)] = []
+        state.runtimeThreadPageLoader = { cursor, limit in
+            legacyRequests.append((cursor, limit))
+            return ClawixService.ThreadListPage(
+                threads: [
+                    AgentThreadSummary(
+                        id: "recent-thread",
+                        cwd: "/tmp",
+                        name: "Recent",
+                        preview: "",
+                        path: nil,
+                        createdAt: 1_710_000_000,
+                        updatedAt: 1_710_000_001,
+                        archived: false
+                    )
+                ],
+                nextCursor: "older"
+            )
+        }
+
+        await state.loadThreadsFromRuntime()
+
+        XCTAssertEqual(legacyRequests.count, 1)
+        XCTAssertNil(legacyRequests.first?.cursor)
+        XCTAssertEqual(legacyRequests.first?.limit, AppState.sidebarBootstrapRecentLimit)
+        XCTAssertEqual(state.chats.map(\.clawixThreadId), ["recent-thread"])
+    }
+
+    func testArchivedChatsLoadFromClawJSSessionsOnDemand() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var requests: [URLRequest] = []
+        SessionsHistoryURLProtocol.handler = { request in
+            requests.append(request)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body = """
+            {
+              "items": [
+                \(Self.sessionRecordJSON(id: "archived-thread", title: "Archived", pinned: false, archived: true))
+              ],
+              "total": 1
+            }
+            """
+            return (response, Data(body.utf8))
+        }
+
+        let state = AppState()
+        state.clawJSSessionsCanonicalActive = true
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        await state.loadArchivedChats()
+
+        let sessionRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions" }
+        XCTAssertEqual(sessionRequests.count, 1)
+        let archivedRequest = try XCTUnwrap(sessionRequests.first)
+        let query = Self.queryItems(for: archivedRequest)
+        XCTAssertEqual(query["archived"], "true")
+        XCTAssertEqual(query["limit"], "\(AppState.archivedSidebarLimit)")
+        XCTAssertEqual(state.archivedChats.map(\.clawixThreadId), ["archived-thread"])
+        XCTAssertTrue(state.archivedLoaded)
+    }
+
+    func testCanonicalProjectsLoadOnlyOnDemandWithPaginationParameters() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var requests: [URLRequest] = []
+        SessionsHistoryURLProtocol.handler = { request in
+            requests.append(request)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body = """
+            {
+              "items": [
+                {
+                  "id": "project-1",
+                  "resourceId": "res_project_1",
+                  "displayName": "Project One",
+                  "path": "/tmp/project-one",
+                  "hidden": false,
+                  "archived": false,
+                  "sortRank": 0,
+                  "createdAt": 1710000000000,
+                  "updatedAt": 1710000000000
+                }
+              ],
+              "total": 1
+            }
+            """
+            return (response, Data(body.utf8))
+        }
+
+        let state = AppState()
+        state.clawJSSessionsCanonicalActive = true
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        await state.loadCanonicalProjectsIfNeeded()
+
+        let projectRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/projects" }
+        XCTAssertEqual(projectRequests.count, 1)
+        let projectRequest = try XCTUnwrap(projectRequests.first)
+        let query = Self.queryItems(for: projectRequest)
+        XCTAssertEqual(query["hidden"], "false")
+        XCTAssertEqual(query["archived"], "false")
+        XCTAssertEqual(query["limit"], "500")
+        XCTAssertEqual(query["offset"], "0")
+        XCTAssertEqual(state.projects.map(\.name), ["Project One"])
+    }
+
     private func waitUntil(
         timeout: TimeInterval = 1,
         file: StaticString = #filePath,
@@ -149,6 +414,59 @@ final class ChatHydrationTests: XCTestCase {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         XCTAssertTrue(condition(), file: file, line: line)
+    }
+
+    nonisolated private static func queryItems(for request: URLRequest) -> [String: String] {
+        guard let url = request.url,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        else { return [:] }
+        return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+    }
+
+    nonisolated private static func sessionRecordJSON(id: String, title: String, pinned: Bool, archived: Bool) -> String {
+        """
+        {
+          "id": "\(id)",
+          "agent": "codex",
+          "runtime": null,
+          "machine": null,
+          "workspaceId": null,
+          "projectId": null,
+          "projectPath": "/tmp",
+          "runtimeAdapter": null,
+          "runtimeSessionId": null,
+          "title": "\(title)",
+          "createdAt": 1710000000000,
+          "lastMessageAt": 1710000001000,
+          "messageCount": 1,
+          "pinned": \(pinned ? "true" : "false"),
+          "archived": \(archived ? "true" : "false"),
+          "sidebarVisible": true,
+          "branch": null,
+          "cwd": "/tmp",
+          "status": "active",
+          "customMetadata": null
+        }
+        """
+    }
+
+    nonisolated private static func bodyString(from request: URLRequest) -> String {
+        if let body = request.httpBody {
+            return String(data: body, encoding: .utf8) ?? ""
+        }
+        guard let stream = request.httpBodyStream else { return "" }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            data.append(buffer, count: count)
+        }
+        return String(data: data, encoding: .utf8) ?? ""
     }
 }
 

@@ -41,6 +41,8 @@ struct ContextIndicatorAnchorKey: PreferenceKey {
 // MARK: - Project picker popup
 
 struct ProjectPickerPopup: View {
+    @EnvironmentObject var appState: AppState
+
     @Binding var isPresented: Bool
     let projects: [Project]
     let selectedId: UUID?
@@ -88,6 +90,9 @@ struct ProjectPickerPopup: View {
         }
         .frame(width: Self.popupWidth, alignment: .leading)
         .menuStandardBackground()
+        .task {
+            await appState.loadCanonicalProjectsIfNeeded()
+        }
         .background(MenuOutsideClickWatcher(isPresented: $isPresented))
         .onAppear {
             searchFocused = true

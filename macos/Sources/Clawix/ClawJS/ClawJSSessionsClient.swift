@@ -117,6 +117,13 @@ struct ClawJSSessionsClient {
         let total: Int
     }
 
+    struct SidebarBootstrapResponse: Decodable, Equatable {
+        let projects: [Project]
+        let pinned: [SessionRecord]
+        let recent: [SessionRecord]
+        let totalActiveVisible: Int
+    }
+
     struct MessagesResponse: Decodable {
         let items: [MessageRecord]
     }
@@ -148,6 +155,14 @@ struct ClawJSSessionsClient {
 
         let scanned: Int
         let imported: [Item]
+        let skipped: Int?
+        let budgetExhausted: Bool?
+        let changedFiles: Int?
+    }
+
+    enum CodexImportMode: String {
+        case incremental
+        case full
     }
 
     struct CreateProjectRequest: Encodable {
@@ -188,10 +203,17 @@ struct ClawJSSessionsClient {
         try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/health", method: "GET", authenticated: false)
     }
 
-    func listProjects(hidden: Bool? = nil, archived: Bool? = nil) async throws -> [Project] {
+    func listProjects(
+        hidden: Bool? = nil,
+        archived: Bool? = nil,
+        limit: Int? = nil,
+        offset: Int? = nil
+    ) async throws -> [Project] {
         var items: [URLQueryItem] = []
         if let hidden { items.append(URLQueryItem(name: "hidden", value: hidden ? "true" : "false")) }
         if let archived { items.append(URLQueryItem(name: "archived", value: archived ? "true" : "false")) }
+        if let limit { items.append(URLQueryItem(name: "limit", value: "\(limit)")) }
+        if let offset { items.append(URLQueryItem(name: "offset", value: "\(offset)")) }
         let response: ListProjectsResponse = try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/projects", queryItems: items)
         return response.items
     }
@@ -215,7 +237,9 @@ struct ClawJSSessionsClient {
         projectPath: String? = nil,
         pinned: Bool? = nil,
         archived: Bool? = nil,
-        sidebarVisible: Bool? = nil
+        sidebarVisible: Bool? = nil,
+        limit: Int? = nil,
+        offset: Int? = nil
     ) async throws -> [SessionRecord] {
         var items: [URLQueryItem] = []
         if let projectId { items.append(URLQueryItem(name: "projectId", value: projectId)) }
@@ -223,8 +247,18 @@ struct ClawJSSessionsClient {
         if let pinned { items.append(URLQueryItem(name: "pinned", value: pinned ? "true" : "false")) }
         if let archived { items.append(URLQueryItem(name: "archived", value: archived ? "true" : "false")) }
         if let sidebarVisible { items.append(URLQueryItem(name: "sidebarVisible", value: sidebarVisible ? "true" : "false")) }
+        if let limit { items.append(URLQueryItem(name: "limit", value: "\(limit)")) }
+        if let offset { items.append(URLQueryItem(name: "offset", value: "\(offset)")) }
         let response: ListSessionsResponse = try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions", queryItems: items)
         return response.items
+    }
+
+    func sidebarBootstrap(recentLimit: Int = 200) async throws -> SidebarBootstrapResponse {
+        let response: SidebarBootstrapResponse = try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap",
+            queryItems: [URLQueryItem(name: "recentLimit", value: "\(recentLimit)")]
+        )
+        return response
     }
 
     func getSession(id: String, includeMessages: Bool = false) async throws -> SessionWithMessages {
@@ -252,14 +286,27 @@ struct ClawJSSessionsClient {
     }
 
     @discardableResult
-    func importCodex(forceReimport: Bool = false) async throws -> ImportCodexResponse {
+    func importCodex(
+        forceReimport: Bool = false,
+        budgetMs: Int? = nil,
+        maxFiles: Int? = nil,
+        mode: CodexImportMode? = nil
+    ) async throws -> ImportCodexResponse {
         struct Body: Encodable {
             let forceReimport: Bool?
+            let budgetMs: Int?
+            let maxFiles: Int?
+            let mode: String?
         }
         return try await request(
             "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/import/codex",
             method: "POST",
-            body: Body(forceReimport: forceReimport ? true : nil)
+            body: Body(
+                forceReimport: forceReimport ? true : nil,
+                budgetMs: budgetMs,
+                maxFiles: maxFiles,
+                mode: mode?.rawValue
+            )
         )
     }
 

@@ -3,17 +3,23 @@ import GRDB
 
 @MainActor
 final class HiddenRootsRepository {
-    private let db: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
 
-    init(db: DatabaseQueue = Database.shared.dbQueue) {
-        self.db = db
+    init(db: DatabaseQueue) {
+        self.dbProvider = { db }
+    }
+
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
     }
 
     func isHidden(_ path: String) -> Bool {
-        (try? db.read { try HiddenRootRecord.fetchOne($0, key: path) }) != nil
+        guard let db = dbProvider() else { return false }
+        return (try? db.read { try HiddenRootRecord.fetchOne($0, key: path) }) != nil
     }
 
     func allHidden() -> [String] {
+        guard let db = dbProvider() else { return [] }
         let rows = (try? db.read {
             try HiddenRootRecord.order(Column("hidden_at").desc).fetchAll($0)
         }) ?? []
@@ -21,10 +27,12 @@ final class HiddenRootsRepository {
     }
 
     func count() -> Int {
-        (try? db.read { try HiddenRootRecord.fetchCount($0) }) ?? 0
+        guard let db = dbProvider() else { return 0 }
+        return (try? db.read { try HiddenRootRecord.fetchCount($0) }) ?? 0
     }
 
     func hide(_ path: String) {
+        guard let db = dbProvider() else { return }
         let now = Int64(Date().timeIntervalSince1970)
         try? db.write { db in
             if try HiddenRootRecord.fetchOne(db, key: path) != nil { return }
@@ -33,6 +41,7 @@ final class HiddenRootsRepository {
     }
 
     func show(_ path: String) {
+        guard let db = dbProvider() else { return }
         try? db.write { _ = try HiddenRootRecord.deleteOne($0, key: path) }
     }
 }

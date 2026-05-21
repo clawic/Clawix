@@ -82,16 +82,22 @@ struct ClawJSAppStateSyncStatus: Equatable, Sendable {
 
 @MainActor
 final class ClawJSAppStateSyncCoordinator {
-    static let shared = ClawJSAppStateSyncCoordinator(db: Database.shared.dbQueue)
+    static let shared = ClawJSAppStateSyncCoordinator()
 
-    private let db: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let autoFlush: Bool
     private var flushTask: Task<Void, Never>?
 
     init(db: DatabaseQueue, autoFlush: Bool = true) {
-        self.db = db
+        self.dbProvider = { db }
+        self.autoFlush = autoFlush
+    }
+
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue },
+         autoFlush: Bool = true) {
+        self.dbProvider = dbProvider
         self.autoFlush = autoFlush
     }
 
@@ -112,14 +118,17 @@ final class ClawJSAppStateSyncCoordinator {
             updatedAt: now,
             nextAttemptAt: now
         )
-        try? db.write { database in
-            try row.insert(database)
+        if let db = dbProvider() {
+            try? db.write { database in
+                try row.insert(database)
+            }
         }
         scheduleFlush()
     }
 
     func status() -> ClawJSAppStateSyncStatus {
-        (try? db.read { database in
+        guard let db = dbProvider() else { return ClawJSAppStateSyncStatus(pending: 0, failed: 0, applied: 0) }
+        return (try? db.read { database in
             let pending = try Int.fetchOne(database, sql: "SELECT COUNT(*) FROM app_state_outbox WHERE status = 'pending'") ?? 0
             let failed = try Int.fetchOne(database, sql: "SELECT COUNT(*) FROM app_state_outbox WHERE status = 'failed'") ?? 0
             let applied = try Int.fetchOne(database, sql: "SELECT COUNT(*) FROM app_state_outbox WHERE status = 'applied'") ?? 0
@@ -128,6 +137,7 @@ final class ClawJSAppStateSyncCoordinator {
     }
 
     func flushPending(limit: Int = 50) async {
+        guard let db = dbProvider() else { return }
         let now = Int64(Date().timeIntervalSince1970)
         let rows = (try? await db.read { database in
             try AppStateOutboxRow
@@ -244,6 +254,7 @@ final class ClawJSAppStateSyncCoordinator {
     }
 
     private func markFailed(_ rows: [AppStateOutboxRow], message: String) {
+        guard let db = dbProvider() else { return }
         let now = Int64(Date().timeIntervalSince1970)
         try? db.write { database in
             for row in rows {

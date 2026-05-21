@@ -82,20 +82,29 @@ final class TranscriptionsRepository: ObservableObject {
 
     static let shared = TranscriptionsRepository()
 
-    private let dbQueue: DatabaseQueue
+    private let dbProvider: @Sendable () -> DatabaseQueue?
 
     /// Cache so the SwiftUI history view re-renders without going to
     /// disk on every keystroke.
     @Published private(set) var recent: [TranscriptionRecord] = []
 
-    init(db: DatabaseQueue = Database.shared.dbQueue) {
-        self.dbQueue = db
+    init(db: DatabaseQueue) {
+        self.dbProvider = { db }
+        Task { @MainActor in await self.refreshCache() }
+    }
+
+    init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue }) {
+        self.dbProvider = dbProvider
         Task { @MainActor in await self.refreshCache() }
     }
 
     // MARK: - Reads
 
     func refreshCache(limit: Int = 200) async {
+        guard let dbQueue = dbProvider() else {
+            recent = []
+            return
+        }
         do {
             let rows: [TranscriptionRecord] = try await dbQueue.read { db in
                 try TranscriptionRecord
@@ -110,7 +119,8 @@ final class TranscriptionsRepository: ObservableObject {
     }
 
     func fetchPage(offset: Int, limit: Int) async throws -> [TranscriptionRecord] {
-        try await dbQueue.read { db in
+        guard let dbQueue = dbProvider() else { return [] }
+        return try await dbQueue.read { db in
             try TranscriptionRecord
                 .order(TranscriptionRecord.Columns.timestamp.desc)
                 .limit(limit, offset: offset)
@@ -119,6 +129,7 @@ final class TranscriptionsRepository: ObservableObject {
     }
 
     func search(_ needle: String, limit: Int = 200) async throws -> [TranscriptionRecord] {
+        guard let dbQueue = dbProvider() else { return [] }
         let pattern = "%" + needle.replacingOccurrences(of: "%", with: "\\%") + "%"
         return try await dbQueue.read { db in
             try TranscriptionRecord
@@ -135,6 +146,7 @@ final class TranscriptionsRepository: ObservableObject {
     // MARK: - Writes
 
     func record(_ entry: TranscriptionRecord) async {
+        guard let dbQueue = dbProvider() else { return }
         do {
             try await dbQueue.write { db in
                 try entry.insert(db)
@@ -146,6 +158,7 @@ final class TranscriptionsRepository: ObservableObject {
     }
 
     func delete(id: String) async {
+        guard let dbQueue = dbProvider() else { return }
         do {
             try await dbQueue.write { db in
                 try TranscriptionRecord
@@ -163,6 +176,7 @@ final class TranscriptionsRepository: ObservableObject {
     /// Delete every local history row older than `cutoff` and best-effort
     /// remove any obsolete host-side audio file if one is still referenced.
     func purgeRecords(olderThan cutoff: Date) async {
+        guard let dbQueue = dbProvider() else { return }
         do {
             let toDelete: [TranscriptionRecord] = try await dbQueue.read { db in
                 try TranscriptionRecord
@@ -187,6 +201,7 @@ final class TranscriptionsRepository: ObservableObject {
 
     /// Drop just the audio files older than cutoff; keep the text rows.
     func purgeAudioFiles(olderThan cutoff: Date) async {
+        guard let dbQueue = dbProvider() else { return }
         do {
             let candidates: [TranscriptionRecord] = try await dbQueue.read { db in
                 try TranscriptionRecord
@@ -223,7 +238,17 @@ final class TranscriptionsRepository: ObservableObject {
     }
 
     func aggregates() async throws -> Aggregates {
-        try await dbQueue.read { db in
+        guard let dbQueue = dbProvider() else {
+            return Aggregates(
+                totalCount: 0,
+                totalWords: 0,
+                totalDurationSeconds: 0,
+                totalCostUSD: 0,
+                averageTranscriptionMs: 0,
+                averageEnhancementMs: 0
+            )
+        }
+        return try await dbQueue.read { db in
             let total = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM dictation_transcript") ?? 0
             let words = try Int.fetchOne(db, sql: "SELECT COALESCE(SUM(word_count), 0) FROM dictation_transcript") ?? 0
             let dur = try Double.fetchOne(db, sql: "SELECT COALESCE(SUM(duration_seconds), 0) FROM dictation_transcript") ?? 0

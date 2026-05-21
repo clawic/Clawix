@@ -7,20 +7,21 @@ import GRDB
 //
 // Override path with CLAWIX_DATABASE_FILE for tests; ":memory:" creates
 // an in-memory queue.
-@MainActor
 final class Database {
-    static let shared = Database()
-
     let dbQueue: DatabaseQueue
 
-    private init() {
-        do {
-            let queue = try Self.makeQueue()
-            try Self.migrator.migrate(queue)
-            self.dbQueue = queue
-        } catch {
-            fatalError("Database initialization failed: \(error)")
-        }
+    init(dbQueue: DatabaseQueue) {
+        self.dbQueue = dbQueue
+    }
+
+    static func open() throws -> Database {
+        let queue = try makeQueue()
+        try migrate(queue)
+        return Database(dbQueue: queue)
+    }
+
+    static func migrate(_ queue: DatabaseQueue) throws {
+        try migrator.migrate(queue)
     }
 
     private static func makeQueue() throws -> DatabaseQueue {
@@ -41,6 +42,10 @@ final class Database {
         var config = Configuration()
         config.foreignKeysEnabled = true
         return try ClawixRegisteredDatabaseQueue.open(url: url, configuration: config)
+    }
+
+    static func makeQueueForProvider() throws -> DatabaseQueue {
+        try makeQueue()
     }
 
     struct LocalOverrideCounts {
@@ -299,36 +304,18 @@ final class Database {
             try db.execute(sql: "ALTER TABLE sidebar_snapshot ADD COLUMN project_id TEXT")
             try db.execute(sql: "ALTER TABLE sidebar_snapshot_project ADD COLUMN project_id TEXT")
             try db.execute(sql: """
-                UPDATE sidebar_snapshot
-                SET project_id = (
-                    SELECT projects.id
-                    FROM projects
-                    WHERE projects.path = sidebar_snapshot.project_path
-                    LIMIT 1
-                )
-                WHERE project_id IS NULL
-                  AND project_path IS NOT NULL
-                  AND project_path <> ''
-            """)
-            try db.execute(sql: """
-                UPDATE sidebar_snapshot_project
-                SET project_id = (
-                    SELECT projects.id
-                    FROM projects
-                    WHERE projects.path = sidebar_snapshot_project.project_path
-                    LIMIT 1
-                )
-                WHERE project_id IS NULL
-                  AND project_path IS NOT NULL
-                  AND project_path <> ''
-            """)
-            try db.execute(sql: """
                 CREATE INDEX sidebar_snapshot_project_id_idx
                     ON sidebar_snapshot(project_id, updated_at DESC)
+                    WHERE project_id IS NOT NULL AND project_id <> ''
             """)
             try db.execute(sql: """
                 CREATE INDEX sidebar_snapshot_project_project_id_idx
                     ON sidebar_snapshot_project(project_id, updated_at DESC)
+                    WHERE project_id IS NOT NULL AND project_id <> ''
+            """)
+            try db.execute(sql: """
+                INSERT OR REPLACE INTO meta(key, value)
+                VALUES ('sidebar_snapshot_project_id_backfill_status', 'pending')
             """)
         }
 
@@ -370,5 +357,91 @@ final class Database {
         }
 
         return migrator
+    }
+}
+
+struct LazyDatabaseProviderFailure {
+    let error: Error
+    let signal: RescueFailureSignal
+}
+
+enum LazyDatabaseProviderState {
+    case idle
+    case opening
+    case ready(DatabaseQueue)
+    case failed(LazyDatabaseProviderFailure)
+}
+
+final class LazyDatabaseProvider: @unchecked Sendable {
+    typealias QueueOpener = () throws -> DatabaseQueue
+    typealias Migrator = (DatabaseQueue) throws -> Void
+
+    static let shared = LazyDatabaseProvider()
+
+    private let lock = NSLock()
+    private let opener: QueueOpener
+    private let migrator: Migrator
+    private var storedState: LazyDatabaseProviderState = .idle
+
+    init(
+        opener: @escaping QueueOpener = { try Database.makeQueueForProvider() },
+        migrator: @escaping Migrator = { try Database.migrate($0) }
+    ) {
+        self.opener = opener
+        self.migrator = migrator
+    }
+
+    var state: LazyDatabaseProviderState {
+        lock.withLock { storedState }
+    }
+
+    var dbQueue: DatabaseQueue? {
+        if case .ready(let queue) = state { return queue }
+        return nil
+    }
+
+    @discardableResult
+    func openIfNeeded() -> LazyDatabaseProviderState {
+        lock.lock()
+        switch storedState {
+        case .ready, .failed, .opening:
+            let current = storedState
+            lock.unlock()
+            return current
+        case .idle:
+            storedState = .opening
+            lock.unlock()
+        }
+
+        do {
+            let queue = try opener()
+            do {
+                try migrator(queue)
+            } catch {
+                return fail(error: error, signal: .migrationFailure)
+            }
+            return lock.withLock {
+                storedState = .ready(queue)
+                return storedState
+            }
+        } catch {
+            return fail(error: error, signal: .storageUnavailable)
+        }
+    }
+
+    private func fail(error: Error, signal: RescueFailureSignal) -> LazyDatabaseProviderState {
+        let failure = LazyDatabaseProviderFailure(error: error, signal: signal)
+        return lock.withLock {
+            storedState = .failed(failure)
+            return storedState
+        }
+    }
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try body()
     }
 }

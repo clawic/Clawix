@@ -8,14 +8,16 @@ enum ClawJSAppStateCacheSync {
         let syncStatus = ClawJSAppStateSyncCoordinator.shared.status()
         guard syncStatus.pending == 0, syncStatus.failed == 0 else { return }
         guard let snapshot = try? await ClawJSAppStateClient.snapshot() else { return }
-        let db = Database.shared.dbQueue
-        try? await db.write { database in
-            try replaceProjects(snapshot.projects, in: database)
-            try replacePins(snapshot.pinnedThreads, in: database)
-            try replaceTitles(snapshot.titles, in: database)
-            try replaceArchives(snapshot.archives, in: database)
-            try replaceSidebar(snapshot.sidebar, in: database)
-            try replaceTerminalTabs(snapshot.terminalTabs, in: database)
+        FirstPaintCache.save(snapshot: snapshot)
+        if let db = LazyDatabaseProvider.shared.dbQueue {
+            try? await db.write { database in
+                try replaceProjects(snapshot.projects, in: database)
+                try replacePins(snapshot.pinnedThreads, in: database)
+                try replaceTitles(snapshot.titles, in: database)
+                try replaceArchives(snapshot.archives, in: database)
+                try replaceSidebar(snapshot.sidebar, in: database)
+                try replaceTerminalTabs(snapshot.terminalTabs, in: database)
+            }
         }
     }
 
