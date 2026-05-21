@@ -237,6 +237,9 @@ for (const snippet of [
     fail(`ClawJSServiceDemandPolicy is missing route maturity visibility guard snippet: ${snippet}`);
   }
 }
+if (!serviceDemandPolicyText.includes("static let startupCoreServices: Set<ClawJSService> = []")) {
+  fail("ClawJS startup core must stay empty; publishing and other heavy services are on-demand only");
+}
 const surfaceRouterViewText = read("macos/Sources/Clawix/SurfaceRouterView.swift");
 if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible")) {
   fail("SurfaceRouterView must compute route-demanded services through FeatureFlags visibility");

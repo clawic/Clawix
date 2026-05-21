@@ -67,6 +67,16 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         )
     }
 
+    func testPublishingStaysOnDemandOnly() {
+        XCTAssertFalse(ClawJSServiceDemandPolicy.startupCoreServices.contains(.publishing))
+        XCTAssertFalse(ClawJSServiceDemandPolicy.startupServices(for: .main).contains(.publishing))
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .publishingHome, isVisible: { $0 == .publishing }),
+            [.publishing]
+        )
+        XCTAssertEqual(ClawJSServiceDemandPolicy.onDemandTrigger(for: .publishing), "Publishing opens")
+    }
+
     func testEverySidecarServiceHasExplicitVisibilityGate() {
         let reviewed: [(ClawJSService, ClawJSServiceVisibilityGate)] = [
             (.runtime, .stableCore),
@@ -122,6 +132,16 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertTrue(supervisorSource.contains("await startDaemonAwareServices(services)"))
         XCTAssertTrue(supervisorSource.contains("for service in orderedServices(from: services)"))
         XCTAssertFalse(supervisorSource.contains("for service in ClawJSService.allCases {\n            await launchLocal(service)"))
+    }
+
+    func testPublishingIsNotStartedByHardCodedServiceArray() throws {
+        let routerSource = try readSource("SurfaceRouterView.swift")
+        let publishingHomeSource = try readSource("Publishing/PublishingHomeView.swift")
+
+        XCTAssertTrue(routerSource.contains("ClawJSServiceDemandPolicy.services("))
+        XCTAssertTrue(publishingHomeSource.contains("ClawJSServiceDemandPolicy.services("))
+        XCTAssertFalse(routerSource.contains("start([.publishing]"))
+        XCTAssertFalse(publishingHomeSource.contains("start([.publishing]"))
     }
 
     func testSettingsSerializesAvailableOnDemandStatus() throws {

@@ -19,6 +19,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case git
     case browserUsage
     case usage
+    case portableArchive
     case macUtilities
     case macControl
     case databaseWorkbench
@@ -49,6 +50,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .git:              return "Git"
         case .browserUsage:     return "Browser usage"
         case .usage:            return "Usage"
+        case .portableArchive:  return "Data"
         case .macUtilities:     return "Mac Utilities"
         case .macControl:       return "Mac Control"
         case .databaseWorkbench: return "Database Workbench"
@@ -79,6 +81,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .git:              return "arrow.triangle.branch"
         case .browserUsage:     return "cursor"
         case .usage:            return "chart.bar"
+        case .portableArchive:  return "archivebox"
         case .macUtilities:     return "bolt"
         case .macControl:       return "laptopcomputer"
         case .databaseWorkbench: return "cylinder.split.1x2"
@@ -288,6 +291,7 @@ struct SettingsContent: View {
                     case .git:             GitPage()
                     case .browserUsage:    BrowserUsagePage()
                     case .usage:           UsagePage()
+                    case .portableArchive: PortableArchiveSettingsPage()
                     case .macUtilities:    MacUtilitiesSettingsPage()
                     case .macControl:      MacControlSettingsPage()
                     case .databaseWorkbench: DatabaseWorkbenchSettingsPage()
