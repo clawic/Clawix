@@ -53,7 +53,7 @@
             "id": "tenant-as-product-scope",
             "pattern": "\\btenant(?:Id|_id)?\\b",
             "suggestion": "Tenant is technical isolation only. Use workspace, project, entity, scope, principal, or provider tenant.",
-            "allowedContextPhrases": ["technical tenant", "provider tenant", "hosted tenant", "remote tenant", "tenant isolation", "tenant semantics", "multi-tenant", "multitenant", "compatibility tenant"]
+            "allowedContextPhrases": ["technical tenant", "provider tenant", "hosted tenant", "remote tenant", "remote.tenantid", "tenant isolation", "tenant semantics", "multi-tenant", "multitenant", "compatibility tenant"]
           }
         ]
       },
