@@ -26,7 +26,8 @@ extension DaemonEngineHost {
         }
         var lastEntry: IngestedAudioAttachment?
         for attachment in attachments {
-            guard let data = Data(base64Encoded: attachment.dataBase64) else {
+            guard let dataBase64 = attachment.dataBase64,
+                  let data = Data(base64Encoded: dataBase64) else {
                 BridgeLog.write("audio attachment decode failed id=\(attachment.id)")
                 continue
             }
@@ -57,7 +58,9 @@ extension DaemonEngineHost {
         let defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
         let activeRaw = defaults.string(forKey: DictationModelStore.activeModelDefaultsKey) ?? ""
         let model = DictationModel(rawValue: activeRaw) ?? .default
-        guard let first = attachments.first, let data = Data(base64Encoded: first.dataBase64) else { return nil }
+        guard let first = attachments.first,
+              let dataBase64 = first.dataBase64,
+              let data = Data(base64Encoded: dataBase64) else { return nil }
 
         let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("clawix-attachments", isDirectory: true)
@@ -65,7 +68,7 @@ extension DaemonEngineHost {
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         let ext = AudioCatalogRegistration.fileExtension(for: first.mimeType)
         let tmpURL = tmpDir.appendingPathComponent("\(first.id).\(ext)")
-        try? data.write(to: tmpURL, options: .atomic)
+        try? data.write(to: tmpURL, options: Data.WritingOptions.atomic)
         defer { try? FileManager.default.removeItem(at: tmpURL) }
         return try? await TranscriptionService.shared.transcribe(
             fileURL: tmpURL,

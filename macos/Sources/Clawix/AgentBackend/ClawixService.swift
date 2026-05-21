@@ -25,6 +25,7 @@ final class ClawixService: ObservableObject {
 
     private let client: ClawixClient
     private let metadataCache: BackendMetadataCache
+    private var startTask: Task<Bool, Never>?
     private var metadataRefreshTask: Task<Void, Never>?
     private var metadataIdleTask: Task<Void, Never>?
     private var eventLoop: Task<Void, Never>?
@@ -70,8 +71,30 @@ final class ClawixService: ObservableObject {
 
     // MARK: - Lifecycle
 
-    func bootstrap() async {
-        guard status == .idle else { return }
+    func primeFromCache(appState: AppState) {
+        self.appState = appState
+        applyCachedBackendMetadata()
+    }
+
+    @discardableResult
+    func startIfNeeded(reason: AgentRuntimeDemandReason) async -> Bool {
+        if case .ready = status { return true }
+        if let startTask {
+            return await startTask.value
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return false }
+            return await self.performStart(reason: reason)
+        }
+        startTask = task
+        let result = await task.value
+        startTask = nil
+        return result
+    }
+
+    private func performStart(reason: AgentRuntimeDemandReason) async -> Bool {
+        if case .ready = status { return true }
         status = .starting
         do {
             try await client.start()
@@ -90,10 +113,11 @@ final class ClawixService: ObservableObject {
             try await client.notify(method: ClawixMethod.initialized, params: EmptyObject())
             status = .ready
             applyCachedBackendMetadata()
-            await appState?.loadThreadsFromRuntime()
-            scheduleStartupIdleMetadataRefresh()
+            PerfSignpost.backendMetadata.event("runtime.start.\(reason.rawValue)")
+            return true
         } catch {
             status = .error(String(describing: error))
+            return false
         }
     }
 

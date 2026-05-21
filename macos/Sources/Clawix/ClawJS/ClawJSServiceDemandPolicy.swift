@@ -24,7 +24,7 @@ enum ClawJSServiceStartReason: Equatable {
 }
 
 enum ClawJSServiceDemandPolicy {
-    static let startupCoreServices: Set<ClawJSService> = [.runtime, .sessions]
+    static let startupCoreServices: Set<ClawJSService> = []
 
     static func startupServices(for role: ClawixAppRole) -> Set<ClawJSService> {
         switch role {
@@ -64,8 +64,10 @@ enum ClawJSServiceDemandPolicy {
             return [.iot]
         case .publishingHome, .publishingComposer, .publishingChannels:
             return [.publishing]
+        case .chat:
+            return [.runtime, .sessions]
         case .home, .search, .plugins, .automations, .project, .app, .appsHome,
-             .chat, .settings, .rescue, .calendarHome, .contactsHome,
+             .settings, .rescue, .calendarHome, .contactsHome,
              .networkControl, .skills, .skillDetail, .designStylesHome,
              .designStyleDetail, .designTemplatesHome, .designTemplateDetail,
              .designReferencesHome, .designEditor, .agentsHome, .agentDetail,

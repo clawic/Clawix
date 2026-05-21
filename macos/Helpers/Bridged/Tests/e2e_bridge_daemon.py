@@ -214,9 +214,6 @@ def main():
             desktop = WebSocket(port)
             desktop.send_json(auth_frame(token, "E2E Mac", "desktop", "desktop"))
             desktop.recv_until(lambda f: f["type"] == "authOk")
-            desktop.send_json({"schemaVersion": 1, "type": "requestClawJSServiceStatuses"})
-            service_statuses = desktop.recv_until(lambda f: f["type"] == "clawJSServiceStatusesSnapshot")
-            assert isinstance(service_statuses["services"], list)
             desktop.send_json({"schemaVersion": 1, "type": "pairingStart"})
             pairing = desktop.recv_until(lambda f: f["type"] == "pairingPayload")
             qr = json.loads(pairing["qrJson"])
@@ -233,6 +230,9 @@ def main():
             desktop.close()
 
             snapshot = ws.recv_until(lambda f: f["type"] == "sessionsSnapshot" and f["sessions"])
+            ws.send_json({"schemaVersion": 1, "type": "requestClawJSServiceStatuses"})
+            service_statuses = ws.recv_until(lambda f: f["type"] == "clawJSServiceStatusesSnapshot")
+            assert isinstance(service_statuses["services"], list)
             chat_id = snapshot["sessions"][0]["id"]
 
             ws.send_json({"schemaVersion": 1, "type": "openSession", "sessionId": chat_id})
