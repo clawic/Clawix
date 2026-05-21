@@ -1,0 +1,1 @@
+../../../skills/adoption-canonicity-review/SKILL.md

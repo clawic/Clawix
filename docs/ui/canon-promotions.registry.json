@@ -22,7 +22,8 @@
     "copySnapshotHash",
     "geometryEvidenceReference",
     "geometryEvidenceHash",
-    "protectedSurfaceId"
+    "protectedSurfaceId",
+    "adoptionCanonicityPacketId"
   ],
   "promotions": []
 }

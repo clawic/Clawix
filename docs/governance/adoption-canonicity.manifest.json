@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "status": "active",
+  "canonicalSource": "../../clawjs/docs/governance/adoption-canonicity.manifest.json",
+  "policy": "Clawix mirrors ClawJS adoption/canonicity governance. UI canon promotions and stable/canonical/any-human claims require public-safe evidence packets; telemetry is disabled by default.",
+  "privateEvidenceAliases": ["private-codex-research", "private-codex-ui-review", "private-codex-feedback"],
+  "packets": [
+    {
+      "id": "clawix-ui-canon-promotion-gate-2026-05-21",
+      "targetType": "ui_promotion_gate",
+      "targetId": "docs/ui/canon-promotions.registry.json",
+      "claimType": "ui_canon_promotion",
+      "stage": "understandable",
+      "targetAudience": "Humans reviewing Clawix UI canon promotions and agents enforcing UI governance.",
+      "evidenceRefs": [
+        {
+          "kind": "public_doc",
+          "ref": "docs/adr/0026-adoption-and-canonicity-governance-mirror.md",
+          "summary": "Clawix mirror for adoption/canonicity governance."
+        },
+        {
+          "kind": "public_guard",
+          "ref": "scripts/ui_canon_promotion_check.mjs",
+          "summary": "UI canon promotion records require adoption/canonicity packet ids."
+        }
+      ],
+      "feedbackLoop": {
+        "mechanism": "UI canon promotion reviews collect explicit user approval and private review aliases before promotion.",
+        "cadence": "per_promotion_review",
+        "evidenceRefs": ["docs/governance/adoption-canonicity.md"]
+      },
+      "privacyMode": "hybrid_private",
+      "telemetryDefault": "disabled",
+      "promotionDecision": {
+        "state": "approved",
+        "decidedBy": "maintainer",
+        "decidedAt": "2026-05-21",
+        "refs": ["docs/adr/0026-adoption-and-canonicity-governance-mirror.md"]
+      },
+      "reviewCadence": "per_promotion_review",
+      "reviewedAt": "2026-05-21",
+      "expiresAt": "2026-08-21"
+    }
+  ]
+}
