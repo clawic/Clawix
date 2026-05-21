@@ -23,6 +23,11 @@ enum ClawJSServiceStartReason: Equatable {
     }
 }
 
+enum ClawJSServiceVisibilityGate: Equatable {
+    case stableCore
+    case appFeature(AppFeature)
+}
+
 enum ClawJSServiceDemandPolicy {
     static let startupCoreServices: Set<ClawJSService> = []
 
@@ -89,6 +94,44 @@ enum ClawJSServiceDemandPolicy {
             return []
         }
         return services(for: route)
+    }
+
+    static func visibilityGate(for service: ClawJSService) -> ClawJSServiceVisibilityGate {
+        switch service {
+        case .runtime, .sessions, .memory, .drive, .audio:
+            return .stableCore
+        case .database:
+            return .appFeature(.database)
+        case .secrets:
+            return .appFeature(.secrets)
+        case .telegram:
+            return .appFeature(.telegram)
+        case .iot:
+            return .appFeature(.iotHome)
+        case .index:
+            return .appFeature(.index)
+        case .publishing:
+            return .appFeature(.publishing)
+        }
+    }
+
+    static func isServiceVisible(
+        _ service: ClawJSService,
+        isVisible: (AppFeature) -> Bool
+    ) -> Bool {
+        switch visibilityGate(for: service) {
+        case .stableCore:
+            return true
+        case .appFeature(let feature):
+            return isVisible(feature)
+        }
+    }
+
+    static func visibleServices(
+        _ services: Set<ClawJSService>,
+        isVisible: (AppFeature) -> Bool
+    ) -> Set<ClawJSService> {
+        services.filter { isServiceVisible($0, isVisible: isVisible) }
     }
 
     static func onDemandTrigger(for service: ClawJSService) -> String? {

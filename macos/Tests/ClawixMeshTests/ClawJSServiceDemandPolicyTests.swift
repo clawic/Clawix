@@ -52,6 +52,53 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .publishingComposer(prefillBody: nil, prefillScheduleAt: nil)), [.publishing])
     }
 
+    func testHiddenGatedRoutesDoNotDemandServices() {
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .publishingHome, isVisible: { _ in false }),
+            []
+        )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .iotHome, isVisible: { _ in false }),
+            []
+        )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .home, isVisible: { _ in false }),
+            []
+        )
+    }
+
+    func testEverySidecarServiceHasExplicitVisibilityGate() {
+        let reviewed: [(ClawJSService, ClawJSServiceVisibilityGate)] = [
+            (.runtime, .stableCore),
+            (.sessions, .stableCore),
+            (.database, .appFeature(.database)),
+            (.memory, .stableCore),
+            (.drive, .stableCore),
+            (.secrets, .appFeature(.secrets)),
+            (.telegram, .appFeature(.telegram)),
+            (.audio, .stableCore),
+            (.iot, .appFeature(.iotHome)),
+            (.index, .appFeature(.index)),
+            (.publishing, .appFeature(.publishing)),
+        ]
+
+        XCTAssertEqual(Set(reviewed.map(\.0)), Set(ClawJSService.allCases))
+        for (service, gate) in reviewed {
+            XCTAssertEqual(ClawJSServiceDemandPolicy.visibilityGate(for: service), gate, service.rawValue)
+        }
+    }
+
+    func testVisibleServiceFilterBlocksFeatureGatedServices() {
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.visibleServices([.runtime, .publishing, .iot], isVisible: { _ in false }),
+            [.runtime]
+        )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.visibleServices([.publishing, .iot], isVisible: { $0 == .publishing }),
+            [.publishing]
+        )
+    }
+
     func testAvailableOnDemandIsNotReportedAsUnavailable() {
         let state = ClawJSServiceState.availableOnDemand(trigger: "Database opens")
 
