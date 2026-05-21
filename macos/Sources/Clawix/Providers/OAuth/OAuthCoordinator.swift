@@ -70,6 +70,7 @@ final class OAuthCoordinator: NSObject, ObservableObject {
         )
         let account = try store.createAccount(draft)
         AIAccountStoreObservable.shared.refresh()
+        TokenRefreshService.shared.accountInventoryChanged()
         return account
     }
 

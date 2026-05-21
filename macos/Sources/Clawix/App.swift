@@ -827,10 +827,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ClawixApp.isToolRole {
             return
         }
-        // Background refresher for OAuth provider accounts (Anthropic
-        // Claude.ai, GitHub Copilot). Start after launch and delay the
-        // first tick so token work cannot compete with first paint.
-        TokenRefreshService.shared.start(firstTickDelay: 5)
+        // Background refresher for OAuth provider accounts. It stays
+        // idle until Secrets is unlocked and an OAuth token has a real
+        // expiry to refresh against.
+        TokenRefreshService.shared.start()
         // If the previous launch was interrupted by a Sparkle update
         // mid-install, the LaunchAgent was unregistered to release
         // file handles. Restore it now so the user does not have to

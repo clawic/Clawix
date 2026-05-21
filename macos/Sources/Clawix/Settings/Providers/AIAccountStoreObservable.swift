@@ -81,6 +81,7 @@ final class AIAccountStoreObservable: ObservableObject {
         do {
             let account = try store.createAccount(draft)
             refresh()
+            TokenRefreshService.shared.accountInventoryChanged()
             return account
         } catch {
             lastError = humanize(error)
@@ -98,6 +99,7 @@ final class AIAccountStoreObservable: ObservableObject {
                 accountEmail: .none
             )
             refresh()
+            TokenRefreshService.shared.accountInventoryChanged()
         } catch {
             lastError = humanize(error)
         }
@@ -113,6 +115,7 @@ final class AIAccountStoreObservable: ObservableObject {
                 accountEmail: .none
             )
             refresh()
+            TokenRefreshService.shared.accountInventoryChanged()
         } catch {
             lastError = humanize(error)
         }
@@ -128,6 +131,7 @@ final class AIAccountStoreObservable: ObservableObject {
                 accountEmail: .none
             )
             refresh()
+            TokenRefreshService.shared.accountInventoryChanged()
         } catch {
             lastError = humanize(error)
         }
@@ -138,6 +142,7 @@ final class AIAccountStoreObservable: ObservableObject {
             try store.deleteAccount(id: id)
             FeatureRouting.clearSelections(forAccountId: id)
             refresh()
+            TokenRefreshService.shared.accountInventoryChanged()
         } catch {
             lastError = humanize(error)
         }
