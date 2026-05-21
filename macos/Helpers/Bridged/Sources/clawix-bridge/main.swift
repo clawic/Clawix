@@ -103,7 +103,8 @@ struct BridgeMain {
         _ = pairing.shortCode
         let publishBonjour = env["CLAWIX_BRIDGE_DISABLE_BONJOUR"] != "1"
         let box = HostBox()
-        BridgeHeartbeat.start(port: port, hostBox: box)
+        let statusController = BridgeStatusController.start(port: port, hostBox: box)
+        StatusControllerBox.shared.controller = statusController
 
         Task { @MainActor in
             let runtime = AgentRuntimeSelection.resolve(environment: env, defaults: defaults)
@@ -129,6 +130,7 @@ struct BridgeMain {
                 server.start()
                 box.host = host
                 box.server = server
+                statusController.attach(host: host)
                 BridgeLog.write("listening tcp/\(port) runtime=codex mode=lazy")
                 let webServer = WebStaticServer(httpPort: httpPort, wsPort: port, pairing: pairing, mesh: mesh)
                 webServer.start()
@@ -144,6 +146,7 @@ struct BridgeMain {
                 server.start()
                 box.host = host
                 box.server = server
+                statusController.attach(host: host)
                 BridgeLog.write("listening tcp/\(port) runtime=opencode")
                 let webServer = WebStaticServer(httpPort: httpPort, wsPort: port, pairing: pairing)
                 webServer.start()
@@ -192,68 +195,133 @@ final class HostBox: @unchecked Sendable {
     }
 }
 
-/// Periodic heartbeat to a tiny JSON file under
+/// Evented status writer for a tiny JSON file under
 /// `~/.clawix/state/bridge-status.json`. The npm CLI reads this file
 /// to drive `clawix status` and the live watch in `clawix up` without
 /// opening an authenticated websocket. Atomic write (`.tmp` + rename)
-/// so a reader never sees a half-flushed JSON. `peerCount` is read from
-/// `BridgeStats`, which the Apple and Linux bridge session lifecycles
-/// update after successful authentication and on close.
-enum BridgeHeartbeat {
-    private static let interval: TimeInterval = 2.0
+/// so a reader never sees a half-flushed JSON. Writes happen when the
+/// visible snapshot changes, plus a slow fallback heartbeat so external
+/// diagnostics can still detect wedged daemons.
+final class BridgeStatusController: @unchecked Sendable {
+    private let port: UInt16
+    private let hostBox: HostBox
+    private let boundAt: String
+    private let pid: Int
+    private let queue = DispatchQueue(label: "com.clawix.bridge.status", qos: .utility)
+    private var timer: DispatchSourceTimer?
+    private var peerObserver: NSObjectProtocol?
+    private var cancellables: Set<AnyCancellable> = []
+    @MainActor private var lastContent: StatusContent?
 
-    static func start(port: UInt16, hostBox: HostBox) {
-        let queue = DispatchQueue(label: "com.clawix.bridge.heartbeat", qos: .utility)
-        let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now(), repeating: interval, leeway: .milliseconds(200))
-        let boundAt = Self.iso8601(Date())
-        let pid = Int(getpid())
-        timer.setEventHandler {
-            write(pid: pid, port: port, boundAt: boundAt, hostBox: hostBox)
-        }
-        timer.resume()
-        // Keep a strong reference so the source is not deallocated.
-        TimerBox.shared.timer = timer
+    private struct StatusContent: Equatable {
+        let version: String
+        let pid: Int
+        let port: Int
+        let boundAt: String
+        let peerCount: Int
+        let state: String
+        let chatCount: Int
+        let lastSyncAt: String?
+        let lastErrorMessage: String?
     }
 
-    private static func write(pid: Int, port: UInt16, boundAt: String, hostBox: HostBox) {
+    private init(port: UInt16, hostBox: HostBox) {
+        self.port = port
+        self.hostBox = hostBox
+        self.boundAt = Self.iso8601(Date())
+        self.pid = Int(getpid())
+    }
+
+    static func start(port: UInt16, hostBox: HostBox) -> BridgeStatusController {
+        let controller = BridgeStatusController(port: port, hostBox: hostBox)
+        controller.start()
+        return controller
+    }
+
+    private func start() {
+        peerObserver = NotificationCenter.default.addObserver(
+            forName: BridgeStats.didChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            self?.requestWrite(reason: "peer-count")
+        }
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        let interval = ClawixBridgeStatusSurface.macOSFallbackHeartbeatIntervalSeconds
+        timer.schedule(deadline: .now() + interval, repeating: interval, leeway: .seconds(2))
+        timer.setEventHandler { [weak self] in self?.requestWrite(reason: "fallback-heartbeat", force: true) }
+        timer.resume()
+        self.timer = timer
+        requestWrite(reason: "startup", force: true)
+    }
+
+    @MainActor
+    func attach(host: any EngineHost) {
+        cancellables.removeAll()
+        host.bridgeStatePublisher
+            .sink { [weak self] _ in self?.requestWrite(reason: "state") }
+            .store(in: &cancellables)
+        host.bridgeChatsPublisher
+            .sink { [weak self] _ in self?.requestWrite(reason: "chats") }
+            .store(in: &cancellables)
+        requestWrite(reason: "host-attached")
+    }
+
+    private func requestWrite(reason: String, force: Bool = false) {
+        DispatchQueue.main.async { [weak self] in
+            self?.writeIfNeeded(force: force)
+        }
+    }
+
+    @MainActor
+    private func writeIfNeeded(force: Bool) {
+        let snap = hostBox.snapshot()
+        let content = StatusContent(
+            version: ClawixBridgeStatusSurface.statusVersion,
+            pid: pid,
+            port: Int(port),
+            boundAt: boundAt,
+            peerCount: BridgeStats.shared.activeSessionCount,
+            state: snap.state,
+            chatCount: snap.chatCount,
+            lastSyncAt: snap.lastSyncAt.map(Self.iso8601),
+            lastErrorMessage: snap.errorMessage
+        )
+        guard force || content != lastContent else { return }
+
         let stateDir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(ClawixPathSurface.bridgeStateDirectory, isDirectory: true)
         try? FileManager.default.createDirectory(at: stateDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let target = stateDir.appendingPathComponent(ClawixPathSurface.bridgeStatusFile)
         let tmp = stateDir.appendingPathComponent(ClawixPathSurface.bridgeStatusTempFile)
 
-        // Reading host state requires hopping to MainActor. Doing it
-        // inline from the timer's utility queue would deadlock if the
-        // main actor is busy, so we dispatch and let the next tick
-        // catch up if we miss this one.
-        DispatchQueue.main.async {
-            let snap = hostBox.snapshot()
-            var payload: [String: Any] = [
-                "version": "0.1.2",
-                "pid": pid,
-                "port": Int(port),
-                "boundAt": boundAt,
-                "lastHeartbeatAt": iso8601(Date()),
-                "peerCount": BridgeStats.shared.activeSessionCount,
-                "state": snap.state,
-                "chatCount": snap.chatCount,
-                "lastError": snap.errorMessage as Any? ?? NSNull(),
-                "lastErrorMessage": snap.errorMessage as Any? ?? NSNull()
-            ]
-            if let lastSync = snap.lastSyncAt {
-                payload["lastSyncAt"] = iso8601(lastSync)
-            } else {
-                payload["lastSyncAt"] = NSNull()
-            }
-            guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys, .prettyPrinted]) else { return }
-            do {
-                try data.write(to: tmp, options: .atomic)
-                try? FileManager.default.removeItem(at: target)
-                try FileManager.default.moveItem(at: tmp, to: target)
-            } catch {
-                BridgeLog.write("heartbeat write failed: \(error)")
-            }
+        let null = NSNull()
+        let payload: [String: Any] = [
+            "version": content.version,
+            "pid": content.pid,
+            "port": content.port,
+            "boundAt": content.boundAt,
+            "lastHeartbeatAt": Self.iso8601(Date()),
+            "peerCount": content.peerCount,
+            "state": content.state,
+            "chatCount": content.chatCount,
+            "lastError": content.lastErrorMessage as Any? ?? null,
+            "lastErrorMessage": content.lastErrorMessage as Any? ?? null,
+            "lastSyncAt": content.lastSyncAt as Any? ?? null
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys, .prettyPrinted]) else { return }
+        do {
+            try data.write(to: tmp, options: .atomic)
+            try? FileManager.default.removeItem(at: target)
+            try FileManager.default.moveItem(at: tmp, to: target)
+            lastContent = content
+            DistributedNotificationCenter.default().post(
+                name: Notification.Name(ClawixBridgeStatusSurface.didChangeNotificationName),
+                object: nil,
+                userInfo: nil
+            )
+        } catch {
+            BridgeLog.write("status write failed: \(error)")
         }
     }
 
@@ -264,11 +332,18 @@ enum BridgeHeartbeat {
     }()
 
     private static func iso8601(_ date: Date) -> String { isoFormatter.string(from: date) }
+
+    deinit {
+        timer?.cancel()
+        if let peerObserver {
+            NotificationCenter.default.removeObserver(peerObserver)
+        }
+    }
 }
 
-final class TimerBox: @unchecked Sendable {
-    static let shared = TimerBox()
-    var timer: DispatchSourceTimer?
+final class StatusControllerBox: @unchecked Sendable {
+    static let shared = StatusControllerBox()
+    var controller: BridgeStatusController?
 }
 
 enum BridgeLog {

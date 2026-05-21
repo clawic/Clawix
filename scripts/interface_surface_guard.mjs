@@ -1235,7 +1235,11 @@ for (const pattern of ["peerCount stays 0", "wiring it to `BridgeServer` lives i
     fail(`clawix-bridge heartbeat must not describe live peerCount as unresolved work: ${JSON.stringify(pattern)}`);
   }
 }
-if (!bridgeDaemonSource.includes("\"peerCount\": BridgeStats.shared.activeSessionCount")) {
+if (
+  !bridgeDaemonSource.includes("\"peerCount\": BridgeStats.shared.activeSessionCount") &&
+  !/"peerCount":\s*content\.peerCount/.test(bridgeDaemonSource) &&
+  !/peerCount:\s*BridgeStats\.shared\.activeSessionCount/.test(bridgeDaemonSource)
+) {
   fail("clawix-bridge heartbeat must publish peerCount from BridgeStats.shared.activeSessionCount");
 }
 
@@ -1245,20 +1249,48 @@ for (const pattern of ["legacyRouteKey", "CLAWIX_REPLICA_ROUTE", "legacy daemons
     fail(`AppState.swift contains clean-v1 incompatible launch/session compatibility wording ${JSON.stringify(pattern)}`);
   }
 }
-if (!appStateSource.includes("let daemonBridgeEnabled = !fixtureActive && BackgroundBridgeService.shared.isActive")) {
+const daemonBridgeDerivesDirect =
+  appStateSource.includes("let daemonBridgeEnabled = !fixtureActive && BackgroundBridgeService.shared.isActive");
+const daemonBridgeDerivesInjected =
+  appStateSource.includes("backgroundBridgeIsActive: @escaping @MainActor () -> Bool = { BackgroundBridgeService.shared.isActive }") &&
+  appStateSource.includes("let daemonBridgeEnabled = !fixtureActive && backgroundBridgeIsActive()");
+if (!daemonBridgeDerivesDirect && !daemonBridgeDerivesInjected) {
   fail("AppState.swift must derive daemonBridgeEnabled from BackgroundBridgeService.shared.isActive");
 }
-if (!appStateSource.includes("ProcessInfo.processInfo.environment[\"CLAWIX_DISABLE_BACKEND\"] != \"1\",\n           !daemonBridgeEnabled")) {
+if (!/ProcessInfo\.processInfo\.environment\["CLAWIX_DISABLE_BACKEND"\] != "1",\s*\n\s*!daemonBridgeEnabled/.test(appStateSource)) {
   fail("AppState.swift must gate GUI-owned backend bootstrap behind !daemonBridgeEnabled");
 }
-if (!appStateSource.includes("ProcessInfo.processInfo.environment[\"CLAWIX_BRIDGE_DISABLE\"] != \"1\",\n           !daemonBridgeEnabled")) {
+const bridgeBootstrapGated =
+  /ProcessInfo\.processInfo\.environment\["CLAWIX_BRIDGE_DISABLE"\] != "1",\s*\n\s*!daemonBridgeEnabled/.test(appStateSource) ||
+  (
+    appStateSource.includes('reconcileBridgeTransport(reason: "startup")') &&
+    appStateSource.includes('guard ProcessInfo.processInfo.environment["CLAWIX_BRIDGE_DISABLE"] != "1" else') &&
+    appStateSource.includes("if backgroundBridgeIsActive() {") &&
+    appStateSource.includes("if bridgeDemandLeases.isEmpty {") &&
+    appStateSource.includes("connectDaemonBridgeIfNeeded(pairing: pairing)")
+  );
+if (!bridgeBootstrapGated) {
   fail("AppState.swift must gate GUI-owned BridgeServer bootstrap behind !daemonBridgeEnabled");
 }
-if (!appStateSource.includes("} else if daemonBridgeEnabled {") || !appStateSource.includes("DaemonBridgeClient(appState: self, pairing: pairing)")) {
+const daemonBridgeConnects =
+  (
+    appStateSource.includes("} else if daemonBridgeEnabled {") &&
+    appStateSource.includes("DaemonBridgeClient(appState: self, pairing: pairing)")
+  ) ||
+  (
+    appStateSource.includes("if backgroundBridgeIsActive() {") &&
+    appStateSource.includes("connectDaemonBridgeIfNeeded(pairing: pairing)") &&
+    appStateSource.includes("private static func defaultDaemonBridgeClient(appState: AppState, pairing: PairingService) -> DaemonBridgeClient?")
+  );
+if (!daemonBridgeConnects) {
   fail("AppState.swift must connect to the background bridge daemon instead of starting a second bridge when daemonBridgeEnabled");
 }
-const daemonBranchStart = appStateSource.indexOf("} else if daemonBridgeEnabled {");
-const daemonBranchEnd = appStateSource.indexOf("// Auto-reload threads", daemonBranchStart);
+let daemonBranchStart = appStateSource.indexOf("} else if daemonBridgeEnabled {");
+let daemonBranchEnd = appStateSource.indexOf("// Auto-reload threads", daemonBranchStart);
+if (daemonBranchStart < 0) {
+  daemonBranchStart = appStateSource.indexOf("if backgroundBridgeIsActive() {");
+  daemonBranchEnd = appStateSource.indexOf("if localBridgeLauncher.isRunning", daemonBranchStart);
+}
 const daemonBranch = daemonBranchStart >= 0 && daemonBranchEnd >= 0 ? appStateSource.slice(daemonBranchStart, daemonBranchEnd) : "";
 if (daemonBranch.includes("BridgeServer(") || daemonBranch.includes("await clawix.bootstrap()")) {
   fail("daemonBridgeEnabled branch must not start a GUI-owned BridgeServer or backend");

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const net = require('node:net');
 const launchctl = require('./service');
 const { resolveBridged, isAppInstalled } = require('./binary');
-const { BRIDGE_LABEL, BRIDGE_PORT, BRIDGE_STATUS_FILE } = require('./platform');
+const { BRIDGE_HEARTBEAT_STALE_MS, BRIDGE_LABEL, BRIDGE_PORT, BRIDGE_STATUS_FILE } = require('./platform');
 
 function readHeartbeat() {
     try {
@@ -33,7 +33,7 @@ function start() {
   if (!fs.existsSync(binary)) {
     throw new Error(
       `clawix-bridge not found at ${binary}.\n` +
-      `Run \`clawix uninstall\` followed by \`npm install -g clawix\` to repair.`
+      'Run `clawix setup` to download and install signed bridge helpers.'
     );
   }
   if (launchctl.isLoaded(BRIDGE_LABEL)) {
@@ -83,7 +83,7 @@ async function status() {
     appInstalled: isAppInstalled(),
     peerCount: heartbeat ? (heartbeat.peerCount || 0) : null,
     heartbeatAgeMs,
-    heartbeatStale: heartbeatAgeMs !== null && heartbeatAgeMs > 10_000
+    heartbeatStale: heartbeatAgeMs !== null && heartbeatAgeMs > BRIDGE_HEARTBEAT_STALE_MS
   };
 }
 

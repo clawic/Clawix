@@ -7,7 +7,7 @@ const path = require('node:path');
 const ui = require('./ui');
 const diag = require('./diagnostics');
 const { resolveBridged, resolveMenubar } = require('./binary');
-const { BIN_DIR, LAUNCH_AGENTS_DIR, BRIDGE_LABEL, BRIDGE_PORT, APP_BUNDLE_PATH, BRIDGE_STATUS_FILE, Env } = require('./platform');
+const { BIN_DIR, LAUNCH_AGENTS_DIR, BRIDGE_HEARTBEAT_STALE_MS, BRIDGE_LABEL, BRIDGE_PORT, APP_BUNDLE_PATH, BRIDGE_STATUS_FILE, Env } = require('./platform');
 
 function check(name, level, message, fix) {
     return { name, level, message, fix: fix || null };
@@ -37,10 +37,10 @@ function run() {
                 const j = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
                 const last = Date.parse(j.lastHeartbeatAt || '');
                 const age = Number.isFinite(last) ? Date.now() - last : Infinity;
-                checks.push(check('heartbeat', age > 10_000 ? 'fail' : 'ok',
-                    age > 10_000 ? `last daemon heartbeat ${Math.round(age / 1000)}s ago.`
+                checks.push(check('heartbeat', age > BRIDGE_HEARTBEAT_STALE_MS ? 'fail' : 'ok',
+                    age > BRIDGE_HEARTBEAT_STALE_MS ? `last daemon heartbeat ${Math.round(age / 1000)}s ago.`
                                  : `heartbeat fresh (${Math.round(age / 1000)}s ago)`,
-                    age > 10_000 ? 'restart Clawix from the system tray, or `clawix restart`.' : null));
+                    age > BRIDGE_HEARTBEAT_STALE_MS ? 'restart Clawix from the system tray, or `clawix restart`.' : null));
             } catch (_) {
                 checks.push(check('heartbeat', 'fail', 'bridge-status.json is not valid JSON.', 'restart the daemon.'));
             }
@@ -81,11 +81,11 @@ function run() {
     if (!bridgedSig.exists) {
         checks.push(check('clawix-bridge-binary', 'fail',
             `clawix-bridge not found at ${bridgedPath}.`,
-            'reinstall with `npm install -g clawix --force` or rerun `bash scripts-dev/cli-link.sh` for dev.'));
+            'install signed bridge helpers with `clawix setup` or rerun `bash scripts-dev/cli-link.sh` for dev.'));
     } else if (!bridgedSig.valid) {
         checks.push(check('clawix-bridge-binary', 'fail',
             `clawix-bridge failed codesign --verify at ${bridgedPath}.`,
-            'reinstall to repair the signature.'));
+            'run `clawix setup` to repair the signature.'));
     } else {
         checks.push(check('clawix-bridge-binary', 'ok', `clawix-bridge signed (${bridgedPath})`, null));
     }
@@ -94,11 +94,11 @@ function run() {
     if (!menubarSig.exists) {
         checks.push(check('clawix-menubar-binary', 'warn',
             `clawix-menubar not found at ${menubarPath}.`,
-            'reinstall to get the menu bar helper. the bridge still works without it.'));
+            'run `clawix setup` to get the menu bar helper. the bridge still works without it.'));
     } else if (!menubarSig.valid) {
         checks.push(check('clawix-menubar-binary', 'fail',
             `clawix-menubar failed codesign --verify at ${menubarPath}.`,
-            'reinstall to repair the signature.'));
+            'run `clawix setup` to repair the signature.'));
     } else {
         checks.push(check('clawix-menubar-binary', 'ok', 'clawix-menubar signed', null));
     }
@@ -218,7 +218,7 @@ function run() {
             const j = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
             const last = Date.parse(j.lastHeartbeatAt || '');
             const age = Number.isFinite(last) ? Date.now() - last : Infinity;
-            if (age > 10_000) {
+            if (age > BRIDGE_HEARTBEAT_STALE_MS) {
                 checks.push(check('heartbeat', 'fail',
                     `last daemon heartbeat ${Math.round(age / 1000)}s ago.`,
                     'restart with `clawix restart` and check `clawix logs`.'));

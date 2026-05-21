@@ -65,16 +65,15 @@ final class BackgroundBridgeService: ObservableObject {
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let pid = obj["pid"] as? Int,
               let state = obj["state"] as? String,
-              ["booting", "syncing", "ready", "error"].contains(state)
+              ["booting", "idle", "syncing", "ready", "error"].contains(state)
         else { return false }
-        // Heartbeat freshness: the daemon writes every 2s but the
-        // write happens on a utility queue and the file's mtime can
-        // lag by a few seconds during GUI startup contention. 60s is
-        // generous enough to survive that race while still catching
-        // a daemon that has actually wedged or been kill -9'd. Real
-        // liveness is the PID check below; freshness is just a cheap
-        // sanity gate against a leftover heartbeat from a long-dead
-        // run whose PID happens to be reused.
+        // Heartbeat freshness: the daemon writes on state changes plus
+        // a slow fallback heartbeat, and the file's mtime can lag during
+        // GUI startup contention. 60s is generous enough to survive that
+        // race while still catching a daemon that has actually wedged or
+        // been kill -9'd. Real liveness is the PID check below; freshness
+        // is just a cheap sanity gate against a leftover heartbeat from a
+        // long-dead run whose PID happens to be reused.
         if let lastHeartbeatAt = obj["lastHeartbeatAt"] as? String,
            let date = Self.isoParser.date(from: lastHeartbeatAt) {
             if Date().timeIntervalSince(date) > 60 { return false }

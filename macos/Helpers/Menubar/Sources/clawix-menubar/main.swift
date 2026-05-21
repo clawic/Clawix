@@ -7,14 +7,14 @@ import ClawixCore
 import ClawixEngine
 
 // `clawix-menubar` is a tiny accessory app: it adds a status item to
-// the system menu bar, polls the bridge daemon over loopback, and
-// exposes a single window with the pairing QR. The CLI launches it
-// with `clawix up` and tears it down with `clawix stop`. Quitting the
-// menubar from its own menu does NOT stop the daemon; the daemon is a
-// separate launchd-managed process.
+// the system menu bar, follows the bridge status file, and exposes a
+// single window with the pairing QR. The CLI launches it with `clawix up`
+// and tears it down with `clawix stop`. Quitting the menubar from its
+// own menu does NOT stop the daemon; the daemon is a separate
+// launchd-managed process.
 
 @MainActor
-final class MenubarApp: NSObject, NSApplicationDelegate {
+final class MenubarApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private let port: UInt16 = 24080
     private let pairing = PairingService(
@@ -23,7 +23,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
     )
 
     private var statusItem: NSStatusItem!
-    private var pollTimer: Timer?
+    private var statusObserver: NSObjectProtocol?
     private var isDaemonUp: Bool = false
     private var qrWindow: NSWindow?
 
@@ -35,36 +35,65 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
             button.imagePosition = .imageOnly
         }
         rebuildMenu()
-        startPolling()
+        installStatusObserver()
+        refreshDaemonStatus()
     }
 
-    private func startPolling() {
-        pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor in self.refreshDaemonStatus() }
+    deinit {
+        if let statusObserver {
+            DistributedNotificationCenter.default().removeObserver(statusObserver)
         }
-        pollTimer?.tolerance = 0.5
-        Task { @MainActor in self.refreshDaemonStatus() }
+    }
+
+    private func installStatusObserver() {
+        statusObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name(ClawixBridgeStatusSurface.didChangeNotificationName),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.refreshDaemonStatus() }
+        }
     }
 
     private func refreshDaemonStatus() {
+        if let up = readDaemonStatusFile() {
+            applyDaemonStatus(up)
+            return
+        }
         probeDaemon { [weak self] up in
             Task { @MainActor in
-                guard let self else { return }
-                if self.isDaemonUp != up {
-                    self.isDaemonUp = up
-                    self.rebuildMenu()
-                }
+                self?.applyDaemonStatus(up)
             }
         }
     }
 
+    private func applyDaemonStatus(_ up: Bool) {
+        guard isDaemonUp != up else { return }
+        isDaemonUp = up
+        rebuildMenu()
+    }
+
+    private func readDaemonStatusFile() -> Bool? {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(ClawixPathSurface.bridgeStateDirectory, isDirectory: true)
+            .appendingPathComponent(ClawixPathSurface.bridgeStatusFile)
+        guard let data = try? Data(contentsOf: url),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let pid = obj["pid"] as? Int
+        else { return nil }
+
+        if let lastHeartbeatAt = obj["lastHeartbeatAt"] as? String,
+           let date = Self.isoParser.date(from: lastHeartbeatAt) {
+            let staleAfter = TimeInterval(ClawixBridgeStatusSurface.staleThresholdMilliseconds) / 1000
+            if Date().timeIntervalSince(date) > staleAfter { return false }
+        }
+        return kill(pid_t(pid), 0) == 0
+    }
+
     private func probeDaemon(_ completion: @escaping (Bool) -> Void) {
-        // Quick TCP connect to loopback. The daemon binds 127.0.0.1
-        // first (always available) and then advertises the LAN IP via
-        // bonjour, so loopback is a reliable up/down check independent
-        // of whether the user is on WiFi.
+        // Fallback only: normal status comes from bridge-status.json and
+        // distributed notifications. This covers the short startup window
+        // before the daemon has written its first status file.
         let host = NWEndpoint.Host("127.0.0.1")
         let nwPort = NWEndpoint.Port(rawValue: port)!
         let connection = NWConnection(host: host, port: nwPort, using: .tcp)
@@ -87,8 +116,13 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) { resolve(false) }
     }
 
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshDaemonStatus()
+    }
+
     private func rebuildMenu() {
         let menu = NSMenu()
+        menu.delegate = self
 
         let statusTitle = isDaemonUp
             ? "Bridge: running on port \(port)"
@@ -187,6 +221,12 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 
         statusItem.menu = menu
     }
+
+    private static let isoParser: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
 
     @objc private func showQR() {
         let payload = pairing.qrPayload()

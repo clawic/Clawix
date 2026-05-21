@@ -6,7 +6,7 @@ const ui = require('./ui');
 const daemon = require('./daemon');
 const menubar = require('./menubar');
 const pair = require('./pair');
-const { BRIDGE_PORT, BRIDGE_STATUS_FILE } = require('./platform');
+const { BRIDGE_HEARTBEAT_STALE_MS, BRIDGE_PORT, BRIDGE_STATUS_FILE } = require('./platform');
 const NO_PEER_TIP_AFTER_MS = 30_000;
 
 function readStatus() {
@@ -80,7 +80,7 @@ async function run({ noWatch = false } = {}) {
         }
         const last = Date.parse(status.lastHeartbeatAt || status.boundAt || '');
         const age = Number.isFinite(last) ? Date.now() - last : null;
-        const stale = age !== null && age > 10_000;
+        const stale = age !== null && age > BRIDGE_HEARTBEAT_STALE_MS;
         const peers = status.peerCount || 0;
         // `state` and `chatCount` are only emitted by daemons >= 0.1.2;
         // older heartbeats omit them and we treat that as "ready/unknown"

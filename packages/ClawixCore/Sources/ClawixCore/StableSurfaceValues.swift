@@ -108,3 +108,11 @@ public enum ClawixPathSurface {
     public static let clawWorkspace = ".claw"
     public static let audio = "audio"
 }
+
+// @persistent-surface-wrapper
+public enum ClawixBridgeStatusSurface {
+    public static let statusVersion = "0.1.2"
+    public static let didChangeNotificationName = "com.clawix.bridge.status.didChange"
+    public static let macOSFallbackHeartbeatIntervalSeconds: TimeInterval = 30
+    public static let staleThresholdMilliseconds = 90_000
+}
