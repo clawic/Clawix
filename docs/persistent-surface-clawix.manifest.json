@@ -922,6 +922,44 @@
     {
       "canonicality" : "hostOnly",
       "direction" : "bidirectional",
+      "id" : "clawix.protocol.bridge.v1.frame.requestRolloutAttachment",
+      "kind" : "protocolFrame",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "requestRolloutAttachment",
+      "owner" : "clawix",
+      "parentId" : "clawix.protocol.bridge.v1",
+      "privacy" : "public",
+      "project" : "core",
+      "repo" : "Clawix",
+      "schemaId" : "clawix-bridge-v1",
+      "stability" : "v1",
+      "storageClass" : "external",
+      "surfaceClass" : "protocol",
+      "value" : "requestRolloutAttachment"
+    },
+    {
+      "canonicality" : "hostOnly",
+      "direction" : "bidirectional",
+      "id" : "clawix.protocol.bridge.v1.frame.rolloutAttachmentSnapshot",
+      "kind" : "protocolFrame",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "rolloutAttachmentSnapshot",
+      "owner" : "clawix",
+      "parentId" : "clawix.protocol.bridge.v1",
+      "privacy" : "public",
+      "project" : "core",
+      "repo" : "Clawix",
+      "schemaId" : "clawix-bridge-v1",
+      "stability" : "v1",
+      "storageClass" : "external",
+      "surfaceClass" : "protocol",
+      "value" : "rolloutAttachmentSnapshot"
+    },
+    {
+      "canonicality" : "hostOnly",
+      "direction" : "bidirectional",
       "id" : "clawix.protocol.bridge.v1.frame.errorEvent",
       "kind" : "protocolFrame",
       "language" : "swift",
@@ -1782,6 +1820,24 @@
       "language" : "swift",
       "lifecycle" : "durable",
       "name" : "CLAWIX_PERSISTENT_SURFACE_MANIFEST_OUT",
+      "owner" : "clawix",
+      "parentId" : "claw.contracts.config",
+      "privacy" : "public",
+      "project" : "core",
+      "repo" : "Clawix",
+      "stability" : "v1",
+      "storageClass" : "external",
+      "surfaceClass" : "config"
+    },
+    {
+      "canonicality" : "hostOnly",
+      "direction" : "inbound",
+      "id" : "clawix.env.clawix_render_probe",
+      "key" : "CLAWIX_RENDER_PROBE",
+      "kind" : "envVar",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "CLAWIX_RENDER_PROBE",
       "owner" : "clawix",
       "parentId" : "claw.contracts.config",
       "privacy" : "public",
@@ -4072,20 +4128,6 @@
     },
     {
       "canonicality" : "hostOnly",
-      "id" : "clawix.prefs.featureFlags.enabledCapabilityIDs",
-      "key" : "FeatureFlags.enabledCapabilityIDs",
-      "kind" : "preferenceKey",
-      "language" : "swift",
-      "lifecycle" : "durable",
-      "name" : "Feature maturity opt-in capability ids",
-      "owner" : "clawix",
-      "privacy" : "userData",
-      "project" : "macos",
-      "repo" : "Clawix",
-      "storageClass" : "nativeAppData"
-    },
-    {
-      "canonicality" : "hostOnly",
       "id" : "clawix.prefs.life.enabledVerticals",
       "key" : "LifeEnabledVerticals",
       "kind" : "preferenceKey",
@@ -5693,6 +5735,33 @@
       "project" : "macos",
       "repo" : "Clawix",
       "storageClass" : "nativeAppData"
+    },
+    {
+      "canonicality" : "hostOnly",
+      "id" : "clawix.prefs.featureFlags.enabledCapabilityIDs",
+      "key" : "FeatureFlags.enabledCapabilityIDs",
+      "kind" : "preferenceKey",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "Feature maturity opt-in capability ids",
+      "owner" : "clawix",
+      "privacy" : "userData",
+      "project" : "macos",
+      "repo" : "Clawix",
+      "source" : "macos/Sources/Clawix/FeatureFlags.swift",
+      "storageClass" : "nativeAppData",
+      "surfaceNarrative" : {
+        "authorizingDecision" : {
+          "path" : "docs/adr/0011-surface-route-graph.md",
+          "ref" : "ADR 0011"
+        },
+        "completingSurface" : {
+          "human" : "Feature-gated Clawix settings and runtime selectors that expose opted-in capabilities only after the user enables them.",
+          "programmatic" : "FeatureFlags.setCapabilityOptIn(_:capabilityID:) stores sorted capability ids in UserDefaults under FeatureFlags.enabledCapabilityIDs."
+        },
+        "concept" : "Debug builds persist explicit opt-ins for beta or experimental capability ids so feature maturity gates remain user-controlled and stable surfaces stay visible by default.",
+        "nonInference" : "This key does not authorize production developer surfaces, bypass release-build feature gates, or make any incomplete capability stable."
+      }
     },
     {
       "canonicality" : "hostOnly",
@@ -7541,101 +7610,7 @@
       "storageClass" : "nativeAppData"
     }
   ],
-  "edges" : [
-    {
-      "contractId" : "clawix.protocol.bridge.v1",
-      "fromId" : "clawix.ui.chat",
-      "id" : "clawix.edge.chat.ui.consumes.bridge",
-      "notes" : "Host-side mirror of the canonical ClawJS chat.localDesktop route edge.",
-      "owner" : "clawix",
-      "toId" : "clawix.bridge.local",
-      "transport" : "local bridge RPC",
-      "type" : "consumes",
-      "validation" : "macOS bridge daemon E2E fixture",
-      "visibility" : "internal"
-    },
-    {
-      "contractId" : "clawix.protocol.bridge.v1",
-      "fromId" : "clawix.companion.client",
-      "id" : "clawix.edge.companion.consumes.bridge",
-      "owner" : "clawix",
-      "toId" : "clawix.bridge.local",
-      "transport" : "WebSocket localhost:24080",
-      "type" : "consumes",
-      "validation" : "Bridge frame round-trip tests across Swift, Android, Windows, Web",
-      "visibility" : "public"
-    }
-  ],
-  "routes" : [
-    {
-      "adrs" : [
-        "docs/adr/0011-surface-route-graph.md"
-      ],
-      "docs" : [
-        "docs/adr/0011-surface-route-graph.md",
-        "docs/host-ownership.md"
-      ],
-      "fromId" : "clawix.ui.chat",
-      "id" : "chat.localDesktop.clawixHost",
-      "name" : "Clawix host leg of local desktop chat",
-      "owner" : "clawix",
-      "steps" : [
-        {
-          "contractId" : "clawix.protocol.bridge.v1",
-          "edgeId" : "clawix.edge.chat.ui.consumes.bridge",
-          "edgeType" : "consumes",
-          "fromId" : "clawix.ui.chat",
-          "owner" : "clawix",
-          "toId" : "clawix.bridge.local",
-          "transport" : "local bridge RPC",
-          "validation" : "macOS bridge daemon E2E fixture",
-          "visibility" : "internal"
-        }
-      ],
-      "summary" : "Clawix UI enters the local bridge before the framework-owned daemon/runtime/session route continues in ClawJS.",
-      "tests" : [
-        "macos/Tests/ClawixMeshTests/ChatHydrationTests.swift",
-        "macos/Helpers/Bridged/Tests/e2e_bridge_daemon.py"
-      ],
-      "toId" : "clawix.bridge.local",
-      "transport" : "local bridge RPC",
-      "validation" : "macOS bridge daemon E2E fixture",
-      "visibility" : "internal"
-    },
-    {
-      "adrs" : [
-        "docs/adr/0011-surface-route-graph.md"
-      ],
-      "docs" : [
-        "docs/adr/0011-surface-route-graph.md",
-        "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.md"
-      ],
-      "fromId" : "clawix.companion.client",
-      "id" : "chat.companionBridge.clawixHost",
-      "name" : "Clawix host leg of companion chat",
-      "owner" : "clawix",
-      "steps" : [
-        {
-          "contractId" : "clawix.protocol.bridge.v1",
-          "edgeId" : "clawix.edge.companion.consumes.bridge",
-          "edgeType" : "consumes",
-          "fromId" : "clawix.companion.client",
-          "owner" : "clawix",
-          "toId" : "clawix.bridge.local",
-          "transport" : "WebSocket localhost:24080",
-          "validation" : "Cross-platform bridge frame round-trip tests",
-          "visibility" : "public"
-        }
-      ],
-      "summary" : "Companion clients enter the local bridge over the stable bridge protocol on port 24080 before framework routing continues.",
-      "tests" : [
-        "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift"
-      ],
-      "toId" : "clawix.bridge.local",
-      "transport" : "WebSocket localhost:24080",
-      "validation" : "Cross-platform bridge frame round-trip tests",
-      "visibility" : "public"
-    }
-  ],
+  "edges" : [],
+  "routes" : [],
   "version" : 1
 }

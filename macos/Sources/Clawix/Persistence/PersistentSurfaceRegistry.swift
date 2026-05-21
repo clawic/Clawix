@@ -85,6 +85,7 @@ struct PersistentSurfaceNode: Codable, Equatable {
     var introducedIn: String?
     var dataType: String?
     var nullable: Bool?
+    var source: String?
     var surfaceNarrative: PersistentSurfaceNarrative?
     var notes: String?
     var warnings: [String]?
@@ -213,8 +214,16 @@ enum ClawixPersistentSurface {
         )
     }
 
-    static func preference(id: String, name: String, key: String, kind: PersistentSurfaceKind = .preferenceKey, surfaceNarrative: PersistentSurfaceNarrative? = nil, notes: String? = nil) -> PersistentSurfaceNode {
-        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", surfaceNarrative: surfaceNarrative, notes: notes)
+    static func preference(
+        id: String,
+        name: String,
+        key: String,
+        kind: PersistentSurfaceKind = .preferenceKey,
+        source: String? = nil,
+        surfaceNarrative: PersistentSurfaceNarrative? = nil,
+        notes: String? = nil
+    ) -> PersistentSurfaceNode {
+        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", source: source, surfaceNarrative: surfaceNarrative, notes: notes)
     }
 
     static func file(
@@ -311,6 +320,7 @@ enum ClawixPersistentSurface {
         introducedIn: String? = nil,
         dataType: String? = nil,
         nullable: Bool? = nil,
+        source: String? = nil,
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
         notes: String? = nil,
         warnings: [String]? = nil,
@@ -350,6 +360,7 @@ enum ClawixPersistentSurface {
             introducedIn: introducedIn,
             dataType: dataType,
             nullable: nullable,
+            source: source,
             surfaceNarrative: surfaceNarrative,
             notes: notes,
             warnings: warnings
@@ -715,6 +726,7 @@ enum ClawixPersistentSurfaceRegistry {
             "CLAWIX_OPENCODE_PORT",
             "CLAWIX_PERMISSION_MODE",
             "CLAWIX_PERSISTENT_SURFACE_MANIFEST_OUT",
+            "CLAWIX_RENDER_PROBE",
             "CLAWIX_SECRETS_DISABLE",
             "CLAWIX_SECRETS_FIXTURE",
             "CLAWIX_SECRETS_PROXY_PATH",
@@ -1002,7 +1014,6 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.publishing.workspace", "Publishing workspace", PublishingWorkspaceStore.workspaceKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.git.commitInstructions", "Git commit instructions", ClawixPersistentSurfaceKeys.gitCommitInstructions, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.featureFlags.developerSurfaces", "Developer-only surface flag", ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces, PersistentSurfaceKind.preferenceKey),
-            ("clawix.prefs.featureFlags.enabledCapabilityIDs", "Feature maturity opt-in capability ids", ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.enabledVerticals", "Life enabled verticals", ClawixPersistentSurfaceKeys.lifeEnabledVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.hiddenVerticals", "Life hidden verticals", ClawixPersistentSurfaceKeys.lifeHiddenVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.relay.refresh", "Relay refresh token pattern", ClawixPersistentSurfaceKeys.relayRefreshPattern, PersistentSurfaceKind.preferenceKey),
@@ -1120,7 +1131,27 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.databaseWorkbench.completeKey", "Database workbench completion key", "clawix.databaseWorkbench.completeKey", PersistentSurfaceKind.preferenceKey),
         ].map { id, name, key, kind in
             ClawixPersistentSurface.preference(id: id, name: name, key: key, kind: kind)
-        }
+        } + [
+            ClawixPersistentSurface.preference(
+                id: "clawix.prefs.featureFlags.enabledCapabilityIDs",
+                name: "Feature maturity opt-in capability ids",
+                key: ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs,
+                kind: .preferenceKey,
+                source: "macos/Sources/Clawix/FeatureFlags.swift",
+                surfaceNarrative: PersistentSurfaceNarrative(
+                    concept: "Debug builds persist explicit opt-ins for beta or experimental capability ids so feature maturity gates remain user-controlled and stable surfaces stay visible by default.",
+                    authorizingDecision: PersistentSurfaceNarrativeDecision(
+                        ref: "ADR 0011",
+                        path: "docs/adr/0011-surface-route-graph.md"
+                    ),
+                    completingSurface: PersistentSurfaceNarrativeCompletion(
+                        human: "Feature-gated Clawix settings and runtime selectors that expose opted-in capabilities only after the user enables them.",
+                        programmatic: "FeatureFlags.setCapabilityOptIn(_:capabilityID:) stores sorted capability ids in UserDefaults under FeatureFlags.enabledCapabilityIDs."
+                    ),
+                    nonInference: "This key does not authorize production developer surfaces, bypass release-build feature gates, or make any incomplete capability stable."
+                )
+            )
+        ]
     }
 
     private static var databaseSurfaceNodes: [PersistentSurfaceNode] {

@@ -26,6 +26,7 @@ final class PersistentSurfaceRegistryTests: XCTestCase {
         XCTAssertTrue(nodes.contains { $0.id == "clawix.event.remoteJob.completed" && $0.value == "completed" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.web.storage.currentRoute" && $0.key == "ui.route" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.env.clawix_swift_surface_runner" && $0.key == "CLAWIX_SWIFT_SURFACE_RUNNER" })
+        XCTAssertTrue(nodes.contains { $0.id == "clawix.env.clawix_render_probe" && $0.key == "CLAWIX_RENDER_PROBE" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.mac.microphone" && $0.value == "mac.permission.microphone" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.apple.cameraUsage" && $0.value == "NSCameraUsageDescription" })
         XCTAssertTrue(nodes.contains { $0.id == "clawix.native.permission.android.camera" && $0.value == "android.permission.CAMERA" })

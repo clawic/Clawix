@@ -658,46 +658,48 @@ final class AppState: ObservableObject {
             .sink { [weak self] in
                 self?.objectWillChange.send()
             }
-        willChangeProbe = objectWillChange.sink { _ in
-            RenderProbe.tick("AppState.willChange")
+        if RenderProbe.isEnabled {
+            willChangeProbe = objectWillChange.sink { _ in
+                RenderProbe.tick("AppState.willChange")
+            }
+            // Per-property publish probes. `$prop` for an `@Published var prop`
+            // emits each time the value is set, so each tick on `AppState.<x>`
+            // tells us what slice of state mutated immediately before a
+            // matching `AppState.willChange` tick. The `dropFirst()` skips the
+            // synchronous initial value emission.
+            publishProbes = [
+                $chats.dropFirst().sink { _ in RenderProbe.tick("AppState.chats") },
+                $pinnedOrder.dropFirst().sink { _ in RenderProbe.tick("AppState.pinnedOrder") },
+                $archivedChats.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedChats") },
+                $archivedLoading.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedLoading") },
+                $availableModels.dropFirst().sink { _ in RenderProbe.tick("AppState.availableModels") },
+                $otherModels.dropFirst().sink { _ in RenderProbe.tick("AppState.otherModels") },
+                $projects.dropFirst().sink { _ in RenderProbe.tick("AppState.projects") },
+                $selectedProject.dropFirst().sink { _ in RenderProbe.tick("AppState.selectedProject") },
+                $currentRoute.dropFirst().sink { _ in RenderProbe.tick("AppState.currentRoute") },
+                $pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingPlanQuestions") },
+                $clawixBackendStatus.dropFirst().sink { _ in RenderProbe.tick("AppState.clawixBackendStatus") },
+                $rateLimits.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimits") },
+                $rateLimitsByLimitId.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimitsByLimitId") },
+                $hostFavicons.dropFirst().sink { _ in RenderProbe.tick("AppState.hostFavicons") },
+                $browserPageBackgroundColors.dropFirst().sink { _ in RenderProbe.tick("AppState.browserPageBackgroundColors") },
+                $chatSidebars.dropFirst().sink { _ in RenderProbe.tick("AppState.chatSidebars") },
+                $pendingReloadTabId.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingReloadTabId") },
+                $richViewDisabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.richViewDisabledPaths") },
+                $wordWrapEnabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.wordWrapEnabledPaths") },
+                $isLeftSidebarOpen.dropFirst().sink { open in
+                    AppState.sidebarDefaults.set(open, forKey: AppState.leftSidebarOpenKey)
+                    RenderProbe.tick("AppState.isLeftSidebarOpen")
+                },
+                $isRightSidebarMaximized.dropFirst().sink { _ in RenderProbe.tick("AppState.isRightSidebarMaximized") },
+                $isCommandPaletteOpen.dropFirst().sink { _ in RenderProbe.tick("AppState.isCommandPaletteOpen") },
+                $imagePreviewURL.dropFirst().sink { _ in RenderProbe.tick("AppState.imagePreviewURL") },
+                $pendingRenameChat.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingRenameChat") },
+                $pendingConfirmation.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingConfirmation") },
+                $searchQuery.dropFirst().sink { _ in RenderProbe.tick("AppState.searchQuery") },
+                $searchResults.dropFirst().sink { _ in RenderProbe.tick("AppState.searchResults") },
+            ]
         }
-        // Per-property publish probes. `$prop` for an `@Published var prop`
-        // emits each time the value is set, so each tick on `AppState.<x>`
-        // tells us what slice of state mutated immediately before a
-        // matching `AppState.willChange` tick. The `dropFirst()` skips the
-        // synchronous initial value emission.
-        publishProbes = [
-            $chats.dropFirst().sink { _ in RenderProbe.tick("AppState.chats") },
-            $pinnedOrder.dropFirst().sink { _ in RenderProbe.tick("AppState.pinnedOrder") },
-            $archivedChats.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedChats") },
-            $archivedLoading.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedLoading") },
-            $availableModels.dropFirst().sink { _ in RenderProbe.tick("AppState.availableModels") },
-            $otherModels.dropFirst().sink { _ in RenderProbe.tick("AppState.otherModels") },
-            $projects.dropFirst().sink { _ in RenderProbe.tick("AppState.projects") },
-            $selectedProject.dropFirst().sink { _ in RenderProbe.tick("AppState.selectedProject") },
-            $currentRoute.dropFirst().sink { _ in RenderProbe.tick("AppState.currentRoute") },
-            $pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingPlanQuestions") },
-            $clawixBackendStatus.dropFirst().sink { _ in RenderProbe.tick("AppState.clawixBackendStatus") },
-            $rateLimits.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimits") },
-            $rateLimitsByLimitId.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimitsByLimitId") },
-            $hostFavicons.dropFirst().sink { _ in RenderProbe.tick("AppState.hostFavicons") },
-            $browserPageBackgroundColors.dropFirst().sink { _ in RenderProbe.tick("AppState.browserPageBackgroundColors") },
-            $chatSidebars.dropFirst().sink { _ in RenderProbe.tick("AppState.chatSidebars") },
-            $pendingReloadTabId.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingReloadTabId") },
-            $richViewDisabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.richViewDisabledPaths") },
-            $wordWrapEnabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.wordWrapEnabledPaths") },
-            $isLeftSidebarOpen.dropFirst().sink { open in
-                AppState.sidebarDefaults.set(open, forKey: AppState.leftSidebarOpenKey)
-                RenderProbe.tick("AppState.isLeftSidebarOpen")
-            },
-            $isRightSidebarMaximized.dropFirst().sink { _ in RenderProbe.tick("AppState.isRightSidebarMaximized") },
-            $isCommandPaletteOpen.dropFirst().sink { _ in RenderProbe.tick("AppState.isCommandPaletteOpen") },
-            $imagePreviewURL.dropFirst().sink { _ in RenderProbe.tick("AppState.imagePreviewURL") },
-            $pendingRenameChat.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingRenameChat") },
-            $pendingConfirmation.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingConfirmation") },
-            $searchQuery.dropFirst().sink { _ in RenderProbe.tick("AppState.searchQuery") },
-            $searchResults.dropFirst().sink { _ in RenderProbe.tick("AppState.searchResults") },
-        ]
 
         // `isActive`, not `isEnabled`: SMAppService.status is bundle-
         // relative, so a daemon registered by the npm CLI doesn't show

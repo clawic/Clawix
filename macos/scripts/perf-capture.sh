@@ -159,6 +159,7 @@ git -C "$REPO_DIR" status --short > "$OUT_DIR/git-status.txt" 2>/dev/null || tru
     printf 'git_head=%q\n' "${GIT_HEAD:-}"
     printf 'git_branch=%q\n' "${GIT_BRANCH:-}"
     printf 'CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=%q\n' "1"
+    printf 'CLAWIX_RENDER_PROBE=%q\n' "1"
 } > "$OUT_DIR/capture-metadata.env"
 
 cat > "$OUT_DIR/reproduction-workout.txt" <<EOF
@@ -210,6 +211,7 @@ echo ""
 # Forward Ctrl-C to xctrace so it flushes the trace cleanly.
 trap 'echo "==> Stopping trace…"; kill -INT %1 2>/dev/null || true' INT TERM
 export CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1
+export CLAWIX_RENDER_PROBE=1
 xcrun xctrace "${XCTRACE_ARGS[@]}" || true
 trap - INT TERM
 

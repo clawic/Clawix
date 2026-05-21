@@ -40,6 +40,7 @@ public enum ClawixEnv {
     public static let openCodePort = "CLAWIX_OPENCODE_PORT"
     public static let permissionMode = "CLAWIX_PERMISSION_MODE"
     public static let persistentSurfaceManifestOut = "CLAWIX_PERSISTENT_SURFACE_MANIFEST_OUT"
+    public static let renderProbe = "CLAWIX_RENDER_PROBE"
     public static let secretsFixture = "CLAWIX_SECRETS_FIXTURE"
     public static let secretsDisable = "CLAWIX_SECRETS_DISABLE"
     public static let secretsProxyPath = "CLAWIX_SECRETS_PROXY_PATH"

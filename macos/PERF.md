@@ -60,7 +60,7 @@ that gap with static code-reading guesses.
 
 | Layer | Lives at | Always on? | What it gives |
 | --- | --- | --- | --- |
-| `RenderProbe` + `HitchProbe` | `Sources/Clawix/RenderProbe.swift` | yes | Per-window body re-eval counters and hitch buckets in `/tmp/clawix-renders.log` |
+| `RenderProbe` + `HitchProbe` | `Sources/Clawix/RenderProbe.swift` | DEBUG default; release opt-in via `CLAWIX_RENDER_PROBE=1` | Per-window body re-eval counters and hitch buckets in `/tmp/clawix-renders.log` |
 | `PerfSignpost` taxonomy | `Sources/Clawix/Diagnostics/Signposts.swift` | yes (suppressible via `CLAWIX_DISABLE_SIGNPOSTS=1`) | Categorised intervals/events visible in Instruments `os_signpost` track |
 | `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | explicit diagnostics only | RSS, footprint, %CPU once per second after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, system telemetry menu activation, or a rescue/diagnostics one-shot |
 | `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | explicit diagnostics only | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, telemetry menu activation, or `CLAWIX_FORCE_HANG_DETECTOR=1` |
@@ -71,8 +71,9 @@ that gap with static code-reading guesses.
 
 Normal app launch keeps only minimal signposts and MetricKit registration
 active before first paint. `perf-capture.sh` opts the launched app into
-periodic diagnostics with `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1` so traces still
-include resource and hang lanes when a performance investigation requests them.
+periodic diagnostics with `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1` and render
+diagnostics with `CLAWIX_RENDER_PROBE=1`, so traces still include resource,
+hang, render, and hitch lanes when a performance investigation requests them.
 
 All capture artifacts land in one place when you run `perf-capture.sh`:
 
@@ -311,8 +312,9 @@ in the listed file:line, and check the indicated lane / artifact.
   capture script copies any directory there matching `*lawix*` so a
   release vs dev launch don't get mixed.
 - **`/tmp/clawix-renders.log` is the only file diagnostic that
-  predates this system.** Left as-is so existing readers keep
-  working; the capture script copies it into the trace directory.
+  predates this system.** It is active by default in DEBUG and opt-in
+  in release with `CLAWIX_RENDER_PROBE=1`; the capture script enables
+  it and copies it into the trace directory.
 
 ## Updating this file
 

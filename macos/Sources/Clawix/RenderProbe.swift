@@ -1,4 +1,5 @@
 import Foundation
+import ClawixCore
 
 // Diagnostic only. Tracks SwiftUI body re-evaluations and (optionally) the
 // CPU cost of expensive functions. Aggregates both into a single line per
@@ -24,6 +25,7 @@ enum RenderProbe {
     nonisolated(unsafe) private static var totalMs: [String: Double] = [:]
     nonisolated(unsafe) private static var maxMs: [String: Double] = [:]
     nonisolated(unsafe) private static var didStart = false
+    nonisolated(unsafe) private static var flushTimer: Timer?
     nonisolated(unsafe) private static var windowStart = CFAbsoluteTimeGetCurrent()
     nonisolated(unsafe) private static var lastActivityAt: CFAbsoluteTime?
     private static let path: String = {
@@ -38,7 +40,16 @@ enum RenderProbe {
     private static let flushInterval: TimeInterval = 0.5
     private static let hitchActivityWindow: TimeInterval = 3.0
 
+    static var isEnabled: Bool {
+        isEnabled(environment: ProcessInfo.processInfo.environment)
+    }
+
+    static func isEnabled(environment: [String: String], isDebugBuild: Bool = defaultIsDebugBuild) -> Bool {
+        isDebugBuild || ClawixEnv.isEnabled(ClawixEnv.renderProbe, in: environment)
+    }
+
     static func tick(_ name: String) {
+        guard isEnabled else { return }
         queue.async {
             recordActivityIfNeeded(name)
             counts[name, default: 0] += 1
@@ -49,6 +60,7 @@ enum RenderProbe {
     @discardableResult
     @inline(__always)
     static func time<T>(_ name: String, _ block: () -> T) -> T {
+        guard isEnabled else { return block() }
         let start = CFAbsoluteTimeGetCurrent()
         let result = block()
         let elapsed = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
@@ -63,6 +75,7 @@ enum RenderProbe {
     }
 
     static func recordHitch(_ name: String, at now: CFAbsoluteTime) {
+        guard isEnabled else { return }
         queue.async {
             guard let lastActivityAt,
                   now - lastActivityAt <= hitchActivityWindow,
@@ -79,14 +92,15 @@ enum RenderProbe {
     }
 
     private static func startIfNeeded() {
-        guard !didStart else { return }
+        guard isEnabled, !didStart else { return }
         didStart = true
+        windowStart = CFAbsoluteTimeGetCurrent()
         try? "".write(toFile: path, atomically: true, encoding: .utf8)
         // Timer.scheduledTimer needs a real run loop. The probe queue is
         // a serial DispatchQueue with no run loop attached, so schedule
         // the periodic flush on the main run loop instead.
         DispatchQueue.main.async {
-            Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: true) { _ in
+            flushTimer = Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: true) { _ in
                 queue.async { flush() }
             }
             HitchProbe.start()
@@ -94,8 +108,11 @@ enum RenderProbe {
     }
 
     private static func flush() {
-        guard !counts.isEmpty else { return }
         let now = CFAbsoluteTimeGetCurrent()
+        guard !counts.isEmpty else {
+            stopIfIdle(now: now)
+            return
+        }
         let window = max(0.001, now - windowStart)
         windowStart = now
 
@@ -104,6 +121,7 @@ enum RenderProbe {
             counts.removeAll(keepingCapacity: true)
             totalMs.removeAll(keepingCapacity: true)
             maxMs.removeAll(keepingCapacity: true)
+            stopIfIdle(now: now)
             return
         }
 
@@ -126,10 +144,36 @@ enum RenderProbe {
         counts.removeAll(keepingCapacity: true)
         totalMs.removeAll(keepingCapacity: true)
         maxMs.removeAll(keepingCapacity: true)
+        stopIfIdle(now: now)
+    }
+
+    private static func stopIfIdle(now: CFAbsoluteTime) {
+        guard let lastActivityAt,
+              now - lastActivityAt >= hitchActivityWindow
+        else { return }
+        didStart = false
+        windowStart = now
+        Self.lastActivityAt = nil
+        counts.removeAll(keepingCapacity: true)
+        totalMs.removeAll(keepingCapacity: true)
+        maxMs.removeAll(keepingCapacity: true)
+        DispatchQueue.main.async {
+            flushTimer?.invalidate()
+            flushTimer = nil
+            HitchProbe.stop()
+        }
     }
 
     private static func fmt(_ value: Double) -> String {
         String(format: value < 10 ? "%.2f" : "%.1f", value)
+    }
+
+    private static var defaultIsDebugBuild: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
     }
 }
 
@@ -141,6 +185,7 @@ enum RenderProbe {
 enum HitchProbe {
     nonisolated(unsafe) private static var lastTick: CFAbsoluteTime = 0
     nonisolated(unsafe) private static var didStart = false
+    nonisolated(unsafe) private static var timer: Timer?
 
     static func start() {
         guard !didStart else { return }
@@ -158,6 +203,14 @@ enum HitchProbe {
             if deltaMs > 250 { RenderProbe.recordHitch("hitch>250ms", at: now) }
             if deltaMs > 1000 { RenderProbe.recordHitch("hitch>1000ms", at: now) }
         }
+        Self.timer = timer
         RunLoop.main.add(timer, forMode: .common)
+    }
+
+    static func stop() {
+        timer?.invalidate()
+        timer = nil
+        didStart = false
+        lastTick = 0
     }
 }

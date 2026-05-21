@@ -61,6 +61,8 @@ Environment switches the diagnostic stack honours:
 
 - `CLAWIX_DISABLE_SIGNPOSTS=1` — suppress all `PerfSignpost` traffic
   (release-build escape hatch).
+- `CLAWIX_RENDER_PROBE=1` — enable `RenderProbe`/`HitchProbe` in a
+  release build. DEBUG builds enable them by default.
 - `CLAWIX_FORCE_HANG_DETECTOR=1` — enable `HangDetector` in a release
   build (DEBUG-only by default).
 - `CLAWIX_HANG_MS=<ms>` — override the hang threshold (default 250).
