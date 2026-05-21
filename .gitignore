@@ -11,6 +11,8 @@
 .build/
 ios/.build/
 ios/.build-test/
+ios/.build-*/
+ios/build/
 macos/.build/
 macos/build/
 macos/artifacts/
@@ -22,6 +24,7 @@ coverage/
 .tmp-*/
 docs/codebase-manifest.json
 packages/*/.build/
+packages/*/build/
 *.xcodeproj/
 DerivedData/
 .swiftpm/
