@@ -114,7 +114,7 @@ for (const surface of registry.surfaces ?? []) {
     fail(`${surface.id} has invalid status ${JSON.stringify(surface.status)}`);
   }
   if (surface.status === "stable") {
-    for (const field of ["owner", "humanSurface", "programmaticSurface", "storageOwner", "validation"]) {
+    for (const field of ["steward", "humanSurface", "programmaticSurface", "storageOwner", "validation"]) {
       if (!surface[field]) fail(`${surface.id} stable surface is missing ${field}`);
     }
   }
