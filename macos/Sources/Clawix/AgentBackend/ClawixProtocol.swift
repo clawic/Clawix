@@ -582,19 +582,19 @@ struct ToolRequestUserInputAnswer: Encodable {
 
 // model/list
 
-struct ModelListEntry: Decodable {
+struct ModelListEntry: Codable {
     let slug: String?
     let displayName: String?
     let id: String?
 }
 
-struct ModelListResult: Decodable {
+struct ModelListResult: Codable {
     let data: [ModelListEntry]?
 }
 
 // MARK: - account/rateLimits
 
-struct RateLimitWindow: Decodable, Equatable {
+struct RateLimitWindow: Codable, Equatable {
     let usedPercent: Int
     let resetsAt: Int64?
     let windowDurationMins: Int64?
@@ -613,7 +613,7 @@ struct RateLimitWindow: Decodable, Equatable {
     }
 }
 
-struct CreditsSnapshot: Decodable, Equatable {
+struct CreditsSnapshot: Codable, Equatable {
     let hasCredits: Bool
     let unlimited: Bool
     let balance: String?
@@ -632,7 +632,7 @@ struct CreditsSnapshot: Decodable, Equatable {
     }
 }
 
-struct RateLimitSnapshot: Decodable, Equatable {
+struct RateLimitSnapshot: Codable, Equatable {
     let primary: RateLimitWindow?
     let secondary: RateLimitWindow?
     let credits: CreditsSnapshot?
@@ -663,7 +663,7 @@ struct RateLimitSnapshot: Decodable, Equatable {
     }
 }
 
-struct GetAccountRateLimitsResponse: Decodable {
+struct GetAccountRateLimitsResponse: Codable {
     let rateLimits: RateLimitSnapshot
     /// Per-bucket view keyed by metered `limit_id` (e.g. "codex",
     /// "codex_<model>"). Optional because older daemons only emit the
@@ -680,7 +680,7 @@ struct GetAccountRateLimitsResponse: Decodable {
     }
 }
 
-struct AccountRateLimitsUpdatedNotification: Decodable {
+struct AccountRateLimitsUpdatedNotification: Codable {
     let rateLimits: RateLimitSnapshot
     let rateLimitsByLimitId: [String: RateLimitSnapshot]?
 

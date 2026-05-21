@@ -848,7 +848,12 @@ struct ComposerView: View {
             if isOpen { closeComposerPopups(except: .permissions) }
         }
         .onChange(of: modelMenuOpen) { _, isOpen in
-            if isOpen { closeComposerPopups(except: .model) }
+            if isOpen {
+                closeComposerPopups(except: .model)
+                Task { @MainActor in
+                    await appState.clawix?.refreshBackendMetadata(reason: .modelPicker)
+                }
+            }
         }
         .onChange(of: projectMenuOpen) { _, isOpen in
             if isOpen { closeComposerPopups(except: .project) }

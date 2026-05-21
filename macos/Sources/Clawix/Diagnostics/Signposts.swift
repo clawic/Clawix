@@ -26,6 +26,7 @@ enum PerfSignpost: String, CaseIterable {
     case uiSidebar = "ui.sidebar"
     case stateAppState = "state.appstate"
     case ipcClient = "ipc.client"
+    case backendMetadata = "backend.metadata"
     case renderMarkdown = "render.markdown"
     case renderStreaming = "render.streaming"
     case imageLoad = "image.load"

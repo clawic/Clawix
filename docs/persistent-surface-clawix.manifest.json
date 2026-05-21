@@ -320,6 +320,20 @@
     },
     {
       "canonicality" : "cache",
+      "id" : "clawix.backendMetadataCache",
+      "kind" : "cache",
+      "language" : "swift",
+      "lifecycle" : "rebuildable",
+      "name" : "Backend metadata cache",
+      "owner" : "clawix",
+      "path" : "~/Library/Caches/Clawix/BackendMetadata",
+      "privacy" : "userData",
+      "project" : "macos",
+      "repo" : "Clawix",
+      "storageClass" : "cache"
+    },
+    {
+      "canonicality" : "cache",
       "id" : "clawix.localModelsCache",
       "kind" : "cache",
       "language" : "swift",

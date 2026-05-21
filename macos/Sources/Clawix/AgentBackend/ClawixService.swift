@@ -24,6 +24,9 @@ final class ClawixService: ObservableObject {
     weak var appState: AppState?
 
     private let client: ClawixClient
+    private let metadataCache: BackendMetadataCache
+    private var metadataRefreshTask: Task<Void, Never>?
+    private var metadataIdleTask: Task<Void, Never>?
     private var eventLoop: Task<Void, Never>?
     private var threadByChat: [UUID: String] = [:]
     private var chatByThread: [String: UUID] = [:]
@@ -36,9 +39,22 @@ final class ClawixService: ObservableObject {
     /// just cleared. An entry is removed when its turn/completed arrives.
     private var interruptedTurnIds: Set<String> = []
 
-    struct ModelEntry: Equatable {
+    enum BackendMetadataRefreshReason {
+        case startupIdle
+        case modelPicker
+        case firstChatSend
+        case usageSurface
+    }
+
+    struct ModelEntry: Codable, Equatable {
         let slug: String           // e.g. "gpt-5.5"
         let display: String        // "GPT-5.5"
+    }
+
+    private enum MetadataFreshness {
+        static let models: TimeInterval = 24 * 60 * 60
+        static let rateLimits: TimeInterval = 5 * 60
+        static let startupIdleDelayNanoseconds: UInt64 = 2_000_000_000
     }
 
     private struct ActiveTurn {
@@ -49,6 +65,7 @@ final class ClawixService: ObservableObject {
 
     init(binary: ClawixBinaryResolution) {
         self.client = ClawixClient(binary: binary)
+        self.metadataCache = BackendMetadataCache()
     }
 
     // MARK: - Lifecycle
@@ -71,15 +88,121 @@ final class ClawixService: ObservableObject {
             )
             try await client.notify(method: ClawixMethod.initialized, params: EmptyObject())
             status = .ready
-            await refreshModelList()
-            await refreshRateLimits()
+            applyCachedBackendMetadata()
             await appState?.loadThreadsFromRuntime()
+            scheduleStartupIdleMetadataRefresh()
         } catch {
             status = .error(String(describing: error))
         }
     }
 
-    private func refreshModelList() async {
+    func refreshBackendMetadata(reason: BackendMetadataRefreshReason) async {
+        guard status == .ready else { return }
+        if reason != .startupIdle {
+            metadataIdleTask?.cancel()
+            metadataIdleTask = nil
+        }
+        if let metadataRefreshTask {
+            await metadataRefreshTask.value
+            return
+        }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performBackendMetadataRefresh(reason: reason)
+        }
+        metadataRefreshTask = task
+        await task.value
+        metadataRefreshTask = nil
+    }
+
+    private func scheduleStartupIdleMetadataRefresh() {
+        metadataIdleTask?.cancel()
+        metadataIdleTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: MetadataFreshness.startupIdleDelayNanoseconds)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            await self?.refreshBackendMetadata(reason: .startupIdle)
+        }
+    }
+
+    private func applyCachedBackendMetadata() {
+        guard let snapshot = metadataCache.load() else {
+            PerfSignpost.backendMetadata.event("cache.miss")
+            return
+        }
+        var applied = false
+        if metadataCache.isFresh(snapshot, maxAge: MetadataFreshness.models),
+           !snapshot.models.isEmpty {
+            availableModels = snapshot.models
+            appState?.applyBackendModels(snapshot.models)
+            applied = true
+        }
+        if metadataCache.isFresh(snapshot, maxAge: MetadataFreshness.rateLimits),
+           let rateLimits = snapshot.rateLimits {
+            appState?.rateLimits = rateLimits
+            appState?.rateLimitsByLimitId = snapshot.rateLimitsByLimitId
+            applied = true
+        }
+        PerfSignpost.backendMetadata.event(applied ? "cache.hit" : "cache.stale")
+    }
+
+    private func performBackendMetadataRefresh(reason: BackendMetadataRefreshReason) async {
+        guard status == .ready else { return }
+        PerfSignpost.backendMetadata.event(reason.signpostName)
+        let started = Date()
+        defer {
+            PerfSignpost.backendMetadata.event(
+                "refresh.ms",
+                Int(Date().timeIntervalSince(started) * 1000)
+            )
+        }
+
+        let cached = metadataCache.load()
+        let shouldRefreshModels = cached.map {
+            $0.models.isEmpty || !metadataCache.isFresh($0, maxAge: MetadataFreshness.models)
+        } ?? true
+        let shouldRefreshRateLimits = cached.map {
+            $0.rateLimits == nil || !metadataCache.isFresh($0, maxAge: MetadataFreshness.rateLimits)
+        } ?? true
+
+        if !shouldRefreshModels && !shouldRefreshRateLimits {
+            applyCachedBackendMetadata()
+            return
+        }
+
+        var models = cached?.models ?? []
+        var rateLimits = cached?.rateLimits
+        var rateLimitsByLimitId = cached?.rateLimitsByLimitId ?? [:]
+
+        if shouldRefreshModels {
+            if let refreshedModels = await refreshModelList() {
+                models = refreshedModels
+            } else {
+                models = []
+            }
+        }
+        if shouldRefreshRateLimits {
+            if let refreshedRateLimits = await refreshRateLimits() {
+                rateLimits = refreshedRateLimits.rateLimits
+                rateLimitsByLimitId = refreshedRateLimits.rateLimitsByLimitId ?? [:]
+            } else {
+                rateLimits = nil
+                rateLimitsByLimitId = [:]
+            }
+        }
+
+        metadataCache.write(BackendMetadataCache.Snapshot(
+            updatedAt: Date(),
+            models: models,
+            rateLimits: rateLimits,
+            rateLimitsByLimitId: rateLimitsByLimitId
+        ))
+    }
+
+    private func refreshModelList() async -> [ModelEntry]? {
         do {
             let result = try await client.send(
                 method: ClawixMethod.modelList,
@@ -94,13 +217,16 @@ final class ClawixService: ObservableObject {
             }
             if !entries.isEmpty {
                 self.availableModels = entries
+                appState?.applyBackendModels(entries)
+                return entries
             }
         } catch {
             // Non-fatal; AppState keeps its hardcoded fallback.
         }
+        return nil
     }
 
-    private func refreshRateLimits() async {
+    private func refreshRateLimits() async -> GetAccountRateLimitsResponse? {
         do {
             let response = try await client.send(
                 method: ClawixMethod.accountRateLimitsRead,
@@ -109,10 +235,11 @@ final class ClawixService: ObservableObject {
             )
             appState?.rateLimits = response.rateLimits
             appState?.rateLimitsByLimitId = response.rateLimitsByLimitId ?? [:]
+            return response
         } catch {
-            appState?.rateLimits = nil
-            appState?.rateLimitsByLimitId = [:]
+            // Non-fatal; keep the latest cached or pushed snapshot visible.
         }
+        return nil
     }
 
     // MARK: - User intents
@@ -193,6 +320,9 @@ final class ClawixService: ObservableObject {
     /// only images (empty `text`) is supported.
     func sendUserMessage(chatId: UUID, text: String, imagePaths: [String] = []) async {
         guard status == .ready else { return }
+        Task { @MainActor [weak self] in
+            await self?.refreshBackendMetadata(reason: .firstChatSend)
+        }
 
         do {
             let threadId = try await ensureThread(for: chatId)
@@ -645,6 +775,17 @@ final class ClawixService: ObservableObject {
         if activeTurnByChat[chatId]?.assistantMessageId == nil {
             let id = appState?.appendAssistantPlaceholder(chatId: chatId)
             activeTurnByChat[chatId]?.assistantMessageId = id
+        }
+    }
+}
+
+private extension ClawixService.BackendMetadataRefreshReason {
+    var signpostName: StaticString {
+        switch self {
+        case .startupIdle: return "refresh.startup_idle"
+        case .modelPicker: return "refresh.model_picker"
+        case .firstChatSend: return "refresh.first_chat_send"
+        case .usageSurface: return "refresh.usage_surface"
         }
     }
 }

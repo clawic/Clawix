@@ -88,6 +88,7 @@ All of the above land in one place when you run `perf-capture.sh`:
 | `ui.sidebar` | `SidebarView.swift:145` `makeSnapshot` | One `snapshot` interval per body invocation |
 | `state.appstate` | `AppState.swift` `objectWillChange` ticks via `RenderProbe` | High-rate ticks correlated with publisher emissions |
 | `ipc.client` | `AgentBackend/ClawixClient.swift:241` `handleLine` | One `decode` interval per JSON-RPC frame |
+| `backend.metadata` | `AgentBackend/ClawixService.swift` metadata refresh/cache paths | Cache hit/stale/miss events and refresh duration for model/rate-limit metadata |
 | `render.markdown` | `AgentBackend/AssistantMarkdownText.swift:148` `MarkdownParseCache.parse` | One `parse` interval per cache miss |
 | `render.streaming` | `StreamingFade.swift` `ingest` | One `ingest` event per delta, value = delta length |
 | `image.load` | (reserved for image decoding work) | (call sites added when needed) |

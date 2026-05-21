@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PlaceholderPage: View {
+    @EnvironmentObject var appState: AppState
+
     let category: SettingsCategory
 
     var body: some View {
@@ -19,6 +21,9 @@ struct PlaceholderPage: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 22)
             }
+        }
+        .task {
+            await appState.clawix?.refreshBackendMetadata(reason: .usageSurface)
         }
     }
 }

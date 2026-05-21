@@ -512,6 +512,11 @@ enum ClawixPersistentSurfaceRegistry {
                 path: "~/Library/Caches/Clawix/Favicons"
             ),
             ClawixPersistentSurface.cache(
+                id: "clawix.backendMetadataCache",
+                name: "Backend metadata cache",
+                path: "~/Library/Caches/Clawix/BackendMetadata"
+            ),
+            ClawixPersistentSurface.cache(
                 id: "clawix.localModelsCache",
                 name: "Local models cache",
                 path: "~/Library/Caches/Clawix/local-models"
