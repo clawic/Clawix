@@ -1108,7 +1108,8 @@
       ],
       "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:adr-number-reservation-governance"
     },
     {
       "id": "clawix-surface-route-graph",
