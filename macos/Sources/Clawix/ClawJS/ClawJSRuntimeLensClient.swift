@@ -73,6 +73,8 @@ struct ClawJSRuntimeLensClient {
         let data: ClawJSRuntimeLensSnapshot
     }
 
+    private static let maxRuntimeLensEnvelopeBytes = 1_048_576
+
     private let runner: CommandRunner
 
     init(runner: CommandRunner? = nil) {
@@ -89,6 +91,12 @@ struct ClawJSRuntimeLensClient {
                 NSLocalizedDescriptionKey: message.trimmingCharacters(in: .whitespacesAndNewlines)
             ])
         }
+        guard result.data.count <= Self.maxRuntimeLensEnvelopeBytes else {
+            throw NSError(domain: "ClawJSRuntimeLensClient", code: 413, userInfo: [
+                NSLocalizedDescriptionKey: "runtime lens envelope exceeded the bounded decode budget"
+            ])
+        }
+        // hot-path-ok maxBytes=1048576 reason=runtime lens command returns one bounded domains envelope
         return try JSONDecoder().decode(Envelope.self, from: result.data).data
     }
 

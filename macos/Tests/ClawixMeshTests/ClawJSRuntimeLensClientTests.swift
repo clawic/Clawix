@@ -2,6 +2,21 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSRuntimeLensClientTests: XCTestCase {
+    func testRuntimeLensRejectsOversizedEnvelopeBeforeDecode() async throws {
+        let oversized = Data(repeating: UInt8(ascii: "x"), count: 1_048_577)
+        let client = ClawJSRuntimeLensClient(runner: .init { _ in
+            .init(data: oversized, exitCode: 0)
+        })
+
+        do {
+            _ = try await client.load(runtime: .hermes)
+            XCTFail("Expected oversized runtime lens payload to fail")
+        } catch let error as NSError {
+            XCTAssertEqual(error.domain, "ClawJSRuntimeLensClient")
+            XCTAssertEqual(error.code, 413)
+        }
+    }
+
     func testRuntimeLensAcceptsDegradedRuntimePortalEnvelope() async throws {
         var requested: [ClawJSRuntimeLensID] = []
         let client = ClawJSRuntimeLensClient(runner: .init { runtime in
