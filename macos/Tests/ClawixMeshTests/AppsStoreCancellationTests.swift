@@ -68,7 +68,9 @@ final class AppsStoreCancellationTests: XCTestCase {
     }
 
     func testUpdateRemainsImmediatelyVisibleWhileReloadIsAsync() throws {
+        var loadCalls = 0
         let store = makeStore { _, _ in
+            loadCalls += 1
             try? await Task.sleep(nanoseconds: 100_000_000)
             return Self.snapshot(slug: "disk")
         }
@@ -77,7 +79,105 @@ final class AppsStoreCancellationTests: XCTestCase {
         try store.update(app)
 
         XCTAssertEqual(store.apps.map(\.slug), ["instant"])
+        XCTAssertEqual(loadCalls, 0)
         store.cancelSurfaceWork()
+    }
+
+    func testFullRefreshLoadsAppsFromDisk() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha"), root: root, slug: "alpha")
+        try writeManagedManifest(AppRecord(slug: "beta", name: "Beta"), root: root, slug: "beta")
+
+        await store.refresh()
+
+        XCTAssertEqual(store.apps.map(\.slug).sorted(), ["alpha", "beta"])
+    }
+
+    func testIncrementalManifestChangeReloadsOnlyChangedApp() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha"), root: root, slug: "alpha")
+        try writeManagedManifest(AppRecord(slug: "beta", name: "Beta"), root: root, slug: "beta")
+        await store.refresh()
+
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha Updated"), root: root, slug: "alpha")
+        await store.reconcileFilesystemChanges(changedSlugs: ["alpha"], needsIndexScan: false)
+
+        XCTAssertEqual(store.record(forSlug: "alpha")?.name, "Alpha Updated")
+        XCTAssertEqual(store.record(forSlug: "beta")?.name, "Beta")
+        XCTAssertEqual(store.apps.map(\.slug).sorted(), ["alpha", "beta"])
+    }
+
+    func testIncrementalManifestDeleteRemovesOnlyThatApp() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha"), root: root, slug: "alpha")
+        try writeManagedManifest(AppRecord(slug: "beta", name: "Beta"), root: root, slug: "beta")
+        await store.refresh()
+
+        try FileManager.default.removeItem(
+            at: root.appendingPathComponent("alpha", isDirectory: true).appendingPathComponent("manifest.json")
+        )
+        await store.reconcileFilesystemChanges(changedSlugs: ["alpha"], needsIndexScan: false)
+
+        XCTAssertEqual(store.apps.map(\.slug), ["beta"])
+    }
+
+    func testMalformedManifestRemovesOnlyThatApp() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha"), root: root, slug: "alpha")
+        try writeManagedManifest(AppRecord(slug: "beta", name: "Beta"), root: root, slug: "beta")
+        await store.refresh()
+
+        try "{".data(using: .utf8)?.write(
+            to: root.appendingPathComponent("alpha", isDirectory: true).appendingPathComponent("manifest.json"),
+            options: .atomic
+        )
+        await store.reconcileFilesystemChanges(changedSlugs: ["alpha"], needsIndexScan: false)
+
+        XCTAssertEqual(store.apps.map(\.slug), ["beta"])
+    }
+
+    func testIndexScanFindsCreatedDeletedAndRenamedFolders() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        try writeManagedManifest(AppRecord(slug: "alpha", name: "Alpha"), root: root, slug: "alpha")
+        await store.refresh()
+
+        try writeManagedManifest(AppRecord(slug: "beta", name: "Beta"), root: root, slug: "beta")
+        await store.reconcileFilesystemChanges(changedSlugs: [], needsIndexScan: true)
+        XCTAssertEqual(store.apps.map(\.slug).sorted(), ["alpha", "beta"])
+
+        try FileManager.default.removeItem(at: root.appendingPathComponent("alpha", isDirectory: true))
+        let betaURL = root.appendingPathComponent("beta", isDirectory: true)
+        let gammaURL = root.appendingPathComponent("gamma", isDirectory: true)
+        try FileManager.default.moveItem(at: betaURL, to: gammaURL)
+        try writeManagedManifest(AppRecord(slug: "gamma", name: "Gamma"), root: root, slug: "gamma")
+
+        await store.reconcileFilesystemChanges(changedSlugs: [], needsIndexScan: true)
+
+        XCTAssertEqual(store.apps.map(\.slug), ["gamma"])
+        XCTAssertEqual(store.record(forSlug: "gamma")?.name, "Gamma")
+    }
+
+    func testStartPollingFalseDoesNotTriggerInjectedReloadAfterLocalCreate() throws {
+        var loadCalls = 0
+        let store = makeStore { _, _ in
+            loadCalls += 1
+            return Self.snapshot(slug: "disk")
+        }
+
+        _ = try store.create(name: "Local", slug: "local")
+
+        XCTAssertEqual(store.apps.map(\.slug), ["local"])
+        XCTAssertEqual(loadCalls, 0)
     }
 
     func testCreatePersistsCodeManifestVariantMetadata() throws {
@@ -426,6 +526,12 @@ final class AppsStoreCancellationTests: XCTestCase {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(record)
         try data.write(to: directory.appendingPathComponent("manifest.json"), options: .atomic)
+    }
+
+    private func writeManagedManifest(_ record: AppRecord, root: URL, slug: String) throws {
+        let directory = root.appendingPathComponent(slug, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try writeManifest(record, to: directory)
     }
 
     private func writeSignature(

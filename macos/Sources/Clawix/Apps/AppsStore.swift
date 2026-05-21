@@ -1,16 +1,17 @@
 import AppKit
 import Combine
+import CoreServices
 import CryptoKit
 import Foundation
 
 /// Single source of truth for the user's installed Apps. Persists each
 /// app as a framework-owned folder under `~/.claw/apps/<slug>/`
 /// with a `manifest.json` next to the actual web files (`index.html`,
-/// `app.js`, `style.css`, ...). The store watches the parent dir on a
-/// timer and reloads the index when the agent writes new files from a
-/// different process; this keeps the contract between the agent (which
-/// can be any process that writes files there) and the GUI minimal:
-/// "write a manifest + files; the sidebar will pick it up".
+/// `app.js`, `style.css`, ...). The store watches the parent directory
+/// with filesystem events and incrementally reloads changed manifests
+/// when an agent writes new files from a different process; this keeps
+/// the contract between the agent and the GUI minimal: "write a manifest
+/// + files; the sidebar will pick it up".
 @MainActor
 final class AppsStore: ObservableObject {
     typealias LoadOperation = @MainActor (_ rootURL: URL, _ manifestName: String) async throws -> AppsSnapshot
@@ -36,11 +37,14 @@ final class AppsStore: ObservableObject {
     private let manifestName = "manifest.json"
     private let loadOperation: LoadOperation
     private let packageTrustPolicy: AppPackageTrustPolicy
-    private var pollingTimer: Timer?
+    private var eventStream: FSEventStreamRef?
+    private var rescueTimer: Timer?
+    private var fallbackPollingTimer: Timer?
+    private var debounceTask: Task<Void, Never>?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     /// Last-known mtime per slug; used to detect agent-side file changes
-    /// without diffing every file's bytes on each poll.
+    /// without diffing every file's bytes on each filesystem event.
     private var lastSeenMtime: [String: Date] = [:]
 
     init(
@@ -65,12 +69,18 @@ final class AppsStore: ObservableObject {
             reloadFromDisk()
         }
         if startPolling {
-            startPollingTimer()
+            startDiskMonitoring()
         }
     }
 
     deinit {
-        pollingTimer?.invalidate()
+        if let stream = eventStream {
+            FSEventStreamStop(stream)
+            FSEventStreamInvalidate(stream)
+        }
+        rescueTimer?.invalidate()
+        fallbackPollingTimer?.invalidate()
+        debounceTask?.cancel()
         reloadTask?.cancel()
     }
 
@@ -80,9 +90,9 @@ final class AppsStore: ObservableObject {
         ClawixPersistentSurfacePaths.frameworkGlobalChild("apps", isDirectory: true)
     }
 
-    /// Bring `apps` in sync with whatever currently lives on disk. Cheap
-    /// enough to call on every poll because we short-circuit per-slug
-    /// when the manifest mtime hasn't moved.
+    /// Bring `apps` in sync with whatever currently lives on disk. This
+    /// is a full reconciliation used for explicit refreshes and slow
+    /// rescue scans; normal external edits flow through filesystem events.
     func reloadFromDisk() {
         ensureRootExists()
         _ = startReload()
@@ -94,6 +104,8 @@ final class AppsStore: ObservableObject {
 
     func cancelSurfaceWork() {
         reloadGeneration += 1
+        debounceTask?.cancel()
+        debounceTask = nil
         reloadTask?.cancel()
         reloadTask = nil
         isLoading = false
@@ -103,6 +115,7 @@ final class AppsStore: ObservableObject {
     private func startReload() -> Task<Void, Never> {
         reloadGeneration += 1
         let generation = reloadGeneration
+        debounceTask?.cancel()
         reloadTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -142,6 +155,63 @@ final class AppsStore: ObservableObject {
             apps = sortedFound
         }
         lastSeenMtime = snapshot.mtimes
+    }
+
+    func reconcileFilesystemChanges(changedSlugs: Set<String>, needsIndexScan: Bool) async {
+        await startIncrementalReload(changedSlugs: changedSlugs, needsIndexScan: needsIndexScan).value
+    }
+
+    @discardableResult
+    private func startIncrementalReload(
+        changedSlugs: Set<String>,
+        needsIndexScan: Bool
+    ) -> Task<Void, Never> {
+        reloadGeneration += 1
+        let generation = reloadGeneration
+        reloadTask?.cancel()
+        let currentApps = apps
+        let currentMtimes = lastSeenMtime
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.runIncrementalReload(
+                generation: generation,
+                currentApps: currentApps,
+                currentMtimes: currentMtimes,
+                changedSlugs: changedSlugs,
+                needsIndexScan: needsIndexScan
+            )
+        }
+        reloadTask = task
+        return task
+    }
+
+    private func runIncrementalReload(
+        generation: Int,
+        currentApps: [AppRecord],
+        currentMtimes: [String: Date],
+        changedSlugs: Set<String>,
+        needsIndexScan: Bool
+    ) async {
+        guard generation == reloadGeneration else { return }
+        isLoading = true
+        do {
+            let snapshot = try await AppsStore.loadIncrementalSnapshot(
+                rootURL: rootURL,
+                manifestName: manifestName,
+                currentApps: currentApps,
+                currentMtimes: currentMtimes,
+                changedSlugs: changedSlugs,
+                needsIndexScan: needsIndexScan
+            )
+            try Task.checkCancellation()
+            guard generation == reloadGeneration else { return }
+            apply(snapshot)
+            finishReloadIfCurrent(generation)
+        } catch is CancellationError {
+            finishReloadIfCurrent(generation)
+        } catch {
+            finishReloadIfCurrent(generation)
+        }
     }
 
     // MARK: - CRUD
@@ -204,19 +274,17 @@ final class AppsStore: ObservableObject {
             try? placeholder.data(using: .utf8)?.write(to: indexURL, options: .atomic)
         }
         upsertInMemory(record)
-        reloadFromDisk()
         return record
     }
 
     /// Persist any AppRecord change (rename, pin, permissions, ...). The
-    /// manifest is the truth-of-record on disk; reloadFromDisk is what
-    /// surfaces it back into `@Published apps`.
+    /// manifest is the truth-of-record on disk; memory is updated
+    /// immediately so the UI does not wait on filesystem monitoring.
     func update(_ record: AppRecord) throws {
         var updated = record
         updated.updatedAt = Date()
         try writeManifest(updated)
         upsertInMemory(updated)
-        reloadFromDisk()
     }
 
     /// Remove an app entirely (folder + manifest + files). Irreversible
@@ -227,7 +295,6 @@ final class AppsStore: ObservableObject {
             try fileManager.removeItem(at: dir)
         }
         removeInMemory(record)
-        reloadFromDisk()
     }
 
     /// Stamp `lastOpenedAt = now` so the app floats to the top of the
@@ -237,7 +304,6 @@ final class AppsStore: ObservableObject {
         updated.lastOpenedAt = Date()
         try? writeManifest(updated)
         upsertInMemory(updated)
-        reloadFromDisk()
     }
 
     func togglePinned(_ record: AppRecord) {
@@ -313,7 +379,6 @@ final class AppsStore: ObservableObject {
             reason: record.packageProvenance?.reviewReason ?? "Imported package requires local review before activation."
         )
         upsertInMemory(record)
-        reloadFromDisk()
         return record
     }
 
@@ -396,6 +461,7 @@ final class AppsStore: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(record)
         try data.write(to: manifestURL, options: .atomic)
+        lastSeenMtime[record.slug] = AppsStore.manifestMtime(at: manifestURL) ?? Date()
     }
 
     private func appendTrustAudit(
@@ -479,53 +545,266 @@ final class AppsStore: ObservableObject {
         return lhs.createdAt > rhs.createdAt
     }
 
-    private func startPollingTimer() {
-        // 4s is fast enough that the agent writing a new manifest is
-        // visible "in the next breath" without burning CPU.
-        let timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
+    private func startDiskMonitoring() {
+        ensureRootExists()
+        if startEventStream() {
+            startRescueTimer()
+        } else {
+            startFallbackPollingTimer()
+        }
+    }
+
+    private func startEventStream() -> Bool {
+        guard eventStream == nil else { return true }
+        var context = FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passUnretained(self).toOpaque(),
+            retain: nil,
+            release: nil,
+            copyDescription: nil
+        )
+        let callback: FSEventStreamCallback = { _, info, eventCount, eventPathsPointer, eventFlagsPointer, _ in
+            guard let info else { return }
+            let store = Unmanaged<AppsStore>.fromOpaque(info).takeUnretainedValue()
+            let paths = unsafeBitCast(eventPathsPointer, to: NSArray.self) as? [String] ?? []
+            let flags = Array(UnsafeBufferPointer(start: eventFlagsPointer, count: eventCount))
+            Task { @MainActor [weak store] in
+                store?.handleFilesystemEvents(paths: paths, flags: flags)
+            }
+        }
+        let flags = FSEventStreamCreateFlags(
+            kFSEventStreamCreateFlagFileEvents |
+            kFSEventStreamCreateFlagNoDefer |
+            kFSEventStreamCreateFlagUseCFTypes
+        )
+        guard let stream = FSEventStreamCreate(
+            kCFAllocatorDefault,
+            callback,
+            &context,
+            [rootURL.path] as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            0.3,
+            flags
+        ) else {
+            return false
+        }
+        FSEventStreamSetDispatchQueue(stream, DispatchQueue.global(qos: .utility))
+        guard FSEventStreamStart(stream) else {
+            FSEventStreamInvalidate(stream)
+            return false
+        }
+        eventStream = stream
+        return true
+    }
+
+    private func startRescueTimer() {
+        let timer = Timer.scheduledTimer(withTimeInterval: 5 * 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.reloadFromDisk()
             }
         }
-        timer.tolerance = 1.0
+        timer.tolerance = 60
         RunLoop.main.add(timer, forMode: .common)
-        pollingTimer = timer
+        rescueTimer = timer
     }
 
-    private static func loadSnapshot(rootURL: URL, manifestName: String) async throws -> AppsSnapshot {
-        try await Task.detached(priority: .utility) {
-            guard let entries = try? FileManager.default.contentsOfDirectory(
-                at: rootURL,
-                includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
-                options: [.skipsHiddenFiles]
-            ) else {
-                return AppsSnapshot(apps: [], mtimes: [:])
+    private func startFallbackPollingTimer() {
+        let timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.reloadFromDisk()
             }
+        }
+        timer.tolerance = 5
+        RunLoop.main.add(timer, forMode: .common)
+        fallbackPollingTimer = timer
+    }
 
-            var found: [AppRecord] = []
-            var newMtimes: [String: Date] = [:]
+    private func handleFilesystemEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
+        PerfSignpost.appsStore.event("events_received", paths.count)
+        var changedSlugs = Set<String>()
+        var needsIndexScan = false
+        for (path, flag) in zip(paths, flags) {
+            let classification = classifyFilesystemEvent(path: path, flags: flag)
+            changedSlugs.formUnion(classification.changedSlugs)
+            needsIndexScan = needsIndexScan || classification.needsIndexScan
+        }
+        guard needsIndexScan || !changedSlugs.isEmpty else { return }
+        PerfSignpost.appsStore.event("changed_slugs", changedSlugs.count)
+        debounceTask?.cancel()
+        debounceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.startIncrementalReload(
+                changedSlugs: changedSlugs,
+                needsIndexScan: needsIndexScan
+            ).value
+        }
+    }
+
+    private func classifyFilesystemEvent(
+        path: String,
+        flags: FSEventStreamEventFlags
+    ) -> (changedSlugs: Set<String>, needsIndexScan: Bool) {
+        if flagsRequiresIndexScan(flags) {
+            return ([], true)
+        }
+        let rootPath = rootURL.standardizedFileURL.path
+        let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
+        guard standardized != rootPath else {
+            return ([], true)
+        }
+        guard standardized.hasPrefix(rootPath + "/") else {
+            return ([], false)
+        }
+        let relativePath = String(standardized.dropFirst(rootPath.count + 1))
+        let components = relativePath.split(separator: "/").map(String.init)
+        guard let slug = components.first, !slug.isEmpty else {
+            return ([], true)
+        }
+        if components.count == 1 {
+            return ([], true)
+        }
+        if components.count >= 2, components[1] == manifestName {
+            return ([slug], false)
+        }
+        return ([], false)
+    }
+
+    private func flagsRequiresIndexScan(_ flags: FSEventStreamEventFlags) -> Bool {
+        let mask = FSEventStreamEventFlags(
+            kFSEventStreamEventFlagMustScanSubDirs |
+            kFSEventStreamEventFlagUserDropped |
+            kFSEventStreamEventFlagKernelDropped |
+            kFSEventStreamEventFlagRootChanged |
+            kFSEventStreamEventFlagMount |
+            kFSEventStreamEventFlagUnmount
+        )
+        return flags & mask != 0
+    }
+
+    nonisolated private static func loadSnapshot(rootURL: URL, manifestName: String) async throws -> AppsSnapshot {
+        try await Task.detached(priority: .utility) {
+            try PerfSignpost.appsStore.interval("full_scan") {
+                guard let entries = try? FileManager.default.contentsOfDirectory(
+                    at: rootURL,
+                    includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
+                    options: [.skipsHiddenFiles]
+                ) else {
+                    return AppsSnapshot(apps: [], mtimes: [:])
+                }
+
+                var found: [AppRecord] = []
+                var newMtimes: [String: Date] = [:]
+                for entry in entries {
+                    try Task.checkCancellation()
+                    var isDir: ObjCBool = false
+                    guard FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
+                    let manifestURL = entry.appendingPathComponent(manifestName)
+                    guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }
+                    guard let manifest = readManifest(at: manifestURL) else { continue }
+                    found.append(manifest.record)
+                    newMtimes[manifest.record.slug] = manifest.mtime
+                }
+                return AppsSnapshot(apps: found, mtimes: newMtimes)
+            }
+        }.value
+    }
+
+    nonisolated private static func loadIncrementalSnapshot(
+        rootURL: URL,
+        manifestName: String,
+        currentApps: [AppRecord],
+        currentMtimes: [String: Date],
+        changedSlugs: Set<String>,
+        needsIndexScan: Bool
+    ) async throws -> AppsSnapshot {
+        try await Task.detached(priority: .utility) {
+            try PerfSignpost.appsStore.interval("incremental_scan") {
+                var recordsBySlug = Dictionary(uniqueKeysWithValues: currentApps.map { ($0.slug, $0) })
+                var mtimes = currentMtimes
+                var slugsToInspect = changedSlugs
+                if needsIndexScan {
+                    let diskSlugs = existingAppFolderSlugs(rootURL: rootURL)
+                    slugsToInspect.formUnion(diskSlugs)
+                    for slug in Array(recordsBySlug.keys) where !diskSlugs.contains(slug) {
+                        recordsBySlug[slug] = nil
+                        mtimes[slug] = nil
+                    }
+                }
+
+                for slug in slugsToInspect {
+                    try Task.checkCancellation()
+                    let manifestURL = rootURL
+                        .appendingPathComponent(slug, isDirectory: true)
+                        .appendingPathComponent(manifestName, isDirectory: false)
+                    guard FileManager.default.fileExists(atPath: manifestURL.path) else {
+                        recordsBySlug[slug] = nil
+                        mtimes[slug] = nil
+                        continue
+                    }
+                    guard let mtime = manifestMtime(at: manifestURL) else {
+                        recordsBySlug[slug] = nil
+                        mtimes[slug] = nil
+                        continue
+                    }
+                    if mtimes[slug] == mtime, recordsBySlug[slug] != nil {
+                        continue
+                    }
+                    guard let manifest = readManifest(at: manifestURL) else {
+                        recordsBySlug[slug] = nil
+                        mtimes[slug] = nil
+                        continue
+                    }
+                    if manifest.record.slug != slug {
+                        recordsBySlug[slug] = nil
+                        mtimes[slug] = nil
+                    }
+                    recordsBySlug[manifest.record.slug] = manifest.record
+                    mtimes[manifest.record.slug] = manifest.mtime
+                }
+
+                return AppsSnapshot(apps: Array(recordsBySlug.values), mtimes: mtimes)
+            }
+        }.value
+    }
+
+    nonisolated private static func existingAppFolderSlugs(rootURL: URL) -> Set<String> {
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: rootURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+        var slugs = Set<String>()
+        for entry in entries {
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue {
+                slugs.insert(entry.lastPathComponent)
+            }
+        }
+        return slugs
+    }
+
+    nonisolated private static func readManifest(at manifestURL: URL) -> (record: AppRecord, mtime: Date)? {
+        do {
+            let mtime = manifestMtime(at: manifestURL) ?? .distantPast
+            let data = try PerfSignpost.appsStore.interval("manifest_read") {
+                try Data(contentsOf: manifestURL)
+            }
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            for entry in entries {
-                try Task.checkCancellation()
-                var isDir: ObjCBool = false
-                guard FileManager.default.fileExists(atPath: entry.path, isDirectory: &isDir), isDir.boolValue else { continue }
-                let manifestURL = entry.appendingPathComponent(manifestName)
-                guard FileManager.default.fileExists(atPath: manifestURL.path) else { continue }
-                do {
-                    let mtime = (try manifestURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-                    let data = try Data(contentsOf: manifestURL)
-                    let record = try decoder.decode(AppRecord.self, from: data)
-                    found.append(record)
-                    newMtimes[record.slug] = mtime
-                } catch {
-                    // Keep malformed manifests local to their app folder so
-                    // one broken custom surface cannot break the Apps shell.
-                    continue
-                }
-            }
-            return AppsSnapshot(apps: found, mtimes: newMtimes)
-        }.value
+            let record = try decoder.decode(AppRecord.self, from: data)
+            return (record, mtime)
+        } catch {
+            // Keep malformed manifests local to their app folder so one
+            // broken custom surface cannot break the Apps shell.
+            return nil
+        }
+    }
+
+    nonisolated private static func manifestMtime(at manifestURL: URL) -> Date? {
+        try? manifestURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
     static func guessMimeType(forPath path: String) -> String {

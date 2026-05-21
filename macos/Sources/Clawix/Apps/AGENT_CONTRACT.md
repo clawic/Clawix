@@ -22,7 +22,8 @@ All apps live under:
 ```
 
 `<slug>` is URL-safe (lowercase a-z, 0-9, hyphens) and unique. The
-macOS app reloads the index every ~4s, so changes appear without a
+macOS app watches this folder with filesystem events; changes normally appear
+after a short debounce, and a slow rescue scan catches missed events without a
 restart.
 
 ## manifest.json schema
@@ -84,7 +85,8 @@ cat > "$ROOT/index.html" <<'HTML'
 HTML
 ```
 
-That's it. The app shows up in the sidebar in <5s.
+That's it. The app normally shows up in the sidebar after the filesystem event
+debounce; the slow rescue scan catches missed events.
 
 ## Importing an existing package
 
