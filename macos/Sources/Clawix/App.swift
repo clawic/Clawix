@@ -806,7 +806,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // diagnostics loop unless a capture or diagnostics surface
         // explicitly requests it.
         MetricKitObserver.shared.install()
-        if ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers) {
+        if ResourceSampler.shouldStartPeriodicSampler() {
             ResourceSampler.startIfNeeded(reason: "environment")
             HangDetector.startIfRequestedByEnvironment()
         }

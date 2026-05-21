@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import ClawixCore
 import os
 
 /// Samples process resident memory, physical footprint and CPU usage
@@ -37,6 +38,12 @@ enum ResourceSampler {
         let processCpuPercent: Double
         let appVersion: String?
         let buildNumber: String?
+    }
+
+    static func shouldStartPeriodicSampler(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        ClawixEnv.isEnabled(ClawixEnv.forceDiagnosticsSamplers, in: environment)
     }
 
     static func startIfNeeded(reason: String) {

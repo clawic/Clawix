@@ -62,8 +62,8 @@ that gap with static code-reading guesses.
 | --- | --- | --- | --- |
 | `RenderProbe` + `HitchProbe` | `Sources/Clawix/RenderProbe.swift` | DEBUG default; release opt-in via `CLAWIX_RENDER_PROBE=1` | Per-window body re-eval counters and hitch buckets in `/tmp/clawix-renders.log` |
 | `PerfSignpost` taxonomy | `Sources/Clawix/Diagnostics/Signposts.swift` | yes (suppressible via `CLAWIX_DISABLE_SIGNPOSTS=1`) | Categorised intervals/events visible in Instruments `os_signpost` track |
-| `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | explicit diagnostics only | RSS, footprint, %CPU once per second after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, system telemetry menu activation, or a rescue/diagnostics one-shot |
-| `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | explicit diagnostics only | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, telemetry menu activation, or `CLAWIX_FORCE_HANG_DETECTOR=1` |
+| `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | explicit diagnostics only | RSS, footprint, %CPU once per second after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, or one-shot rescue/diagnostics exports |
+| `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | explicit diagnostics only | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1` or `CLAWIX_FORCE_HANG_DETECTOR=1` |
 | `MetricKitObserver` | `Sources/Clawix/Diagnostics/MetricKitObserver.swift` | yes | Apple's own daily payloads (launch time, hitch ratio, hangs with backtraces, app exit reasons) |
 | `streamingPerfLog` | `Sources/Clawix/StreamingFade.swift` | yes (toggle in source) | Streaming pipeline per-message timings via `Logger("stream-perf")` |
 | `perf-workout.sh` phase markers | `scripts/perf-workout.sh` | manual | Repeatable phase boundaries in `/tmp/clawix-renders.log` for before/after comparisons |
