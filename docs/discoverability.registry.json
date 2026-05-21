@@ -6,7 +6,7 @@
     {
       "id": "adr-docs-adr-0001-claw-framework-host-boundary",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0001-claw-framework-host-boundary.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -39,7 +39,7 @@
     {
       "id": "adr-docs-adr-0002-naming-and-stability-surfaces",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0002-naming-and-stability-surfaces.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -72,7 +72,7 @@
     {
       "id": "adr-docs-adr-0003-testing-architecture",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0003-testing-architecture.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -105,7 +105,7 @@
     {
       "id": "adr-docs-adr-0004-source-file-boundaries",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0004-source-file-boundaries.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -138,7 +138,7 @@
     {
       "id": "adr-docs-adr-0005-integration-qa-lab",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0005-integration-qa-lab.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -171,7 +171,7 @@
     {
       "id": "adr-docs-adr-0006-cli-agent-interface",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0006-cli-agent-interface.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -204,7 +204,7 @@
     {
       "id": "adr-docs-adr-0007-dual-human-programmatic-surfaces",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0007-dual-human-programmatic-surfaces.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -237,7 +237,7 @@
     {
       "id": "adr-docs-adr-0008-cli-jit-guidance-actor-assertions-resource-registry",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -270,7 +270,7 @@
     {
       "id": "adr-docs-adr-0009-agentic-naming-and-code-structure",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0009-agentic-naming-and-code-structure.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -303,7 +303,7 @@
     {
       "id": "adr-docs-adr-0016-code-hygiene-program",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0016-code-hygiene-program.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -336,7 +336,7 @@
     {
       "id": "clawix-discoverability-projection",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0017-discoverability-and-meta-code-routing.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -379,7 +379,7 @@
     {
       "id": "adr-docs-adr-0018-evolution-rescue-backbone-mirror",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0018-evolution-rescue-backbone-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -412,7 +412,7 @@
     {
       "id": "adr-docs-adr-0019-sdk-first-custom-surfaces-and-nonblocking-shell",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -452,7 +452,7 @@
     {
       "id": "adr-docs-adr-0020-open-standard-official-trust-mirror",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0020-open-standard-official-trust-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -487,7 +487,7 @@
     {
       "id": "adr-docs-adr-0021-decision-tension-rubric-mirror",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0021-decision-tension-rubric-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -522,7 +522,7 @@
     {
       "id": "adr-docs-adr-0022-performance-governance-mirror",
       "kind": "adr",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0022-performance-governance-mirror.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -557,7 +557,7 @@
     {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0011-surface-route-graph.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -594,7 +594,7 @@
     {
       "id": "skill-skills-adr-to-guardrail",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/adr-to-guardrail/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -618,7 +618,7 @@
     {
       "id": "skill-skills-architecture-drift-repair",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/architecture-drift-repair/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -642,7 +642,7 @@
     {
       "id": "skill-skills-brand-guidelines",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/brand-guidelines/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -666,7 +666,7 @@
     {
       "id": "skill-skills-canonical-catalog-expansion",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/canonical-catalog-expansion/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -690,7 +690,7 @@
     {
       "id": "skill-skills-canvas-design",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/canvas-design/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -714,7 +714,7 @@
     {
       "id": "skill-skills-cli-agent-surface-work",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/cli-agent-surface-work/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -738,7 +738,7 @@
     {
       "id": "skill-skills-code-hygiene-audit",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/code-hygiene-audit/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -762,7 +762,7 @@
     {
       "id": "skill-skills-code-hygiene-cleanup",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/code-hygiene-cleanup/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -786,7 +786,7 @@
     {
       "id": "skill-skills-code-review-risk",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/code-review-risk/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -810,7 +810,7 @@
     {
       "id": "skill-skills-commit-hygiene-public",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/commit-hygiene-public/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -834,7 +834,7 @@
     {
       "id": "skill-skills-compatibility-evolution-work",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/compatibility-evolution-work/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -858,7 +858,7 @@
     {
       "id": "skill-skills-constitution-drift-audit",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/constitution-drift-audit/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -882,7 +882,7 @@
     {
       "id": "skill-skills-data-storage-boundary-review",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/data-storage-boundary-review/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -906,7 +906,7 @@
     {
       "id": "skill-skills-decision-map-maintenance",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/decision-map-maintenance/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -930,7 +930,7 @@
     {
       "id": "skill-skills-docs-alignment-update",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/docs-alignment-update/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -954,7 +954,7 @@
     {
       "id": "skill-skills-host-boundary-review",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/host-boundary-review/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -978,7 +978,7 @@
     {
       "id": "skill-skills-host-dependent-validation",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/host-dependent-validation/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1003,7 +1003,7 @@
     {
       "id": "skill-skills-integration-qa-lab",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/integration-qa-lab/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1027,7 +1027,7 @@
     {
       "id": "skill-skills-naming-surface-audit",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/naming-surface-audit/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1051,7 +1051,7 @@
     {
       "id": "skill-skills-performance-investigation",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/performance-investigation/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1075,7 +1075,7 @@
     {
       "id": "skill-skills-public-hygiene-review",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/public-hygiene-review/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1099,7 +1099,7 @@
     {
       "id": "skill-skills-secrets-boundary-review",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/secrets-boundary-review/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1123,7 +1123,7 @@
     {
       "id": "skill-skills-source-file-boundary-refactor",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/source-file-boundary-refactor/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1147,7 +1147,7 @@
     {
       "id": "skill-skills-style-apply",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/style-apply/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1171,7 +1171,7 @@
     {
       "id": "skill-skills-style-extract",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/style-extract/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1195,7 +1195,7 @@
     {
       "id": "skill-skills-surface-registry-alignment",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/surface-registry-alignment/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1219,7 +1219,7 @@
     {
       "id": "skill-skills-surface-route-work",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/surface-route-work/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1243,7 +1243,7 @@
     {
       "id": "skill-skills-template-render",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/template-render/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1267,7 +1267,7 @@
     {
       "id": "skill-skills-theme-factory",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/theme-factory/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1291,7 +1291,7 @@
     {
       "id": "skill-skills-ui-canon-review",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/ui-canon-review/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1315,7 +1315,7 @@
     {
       "id": "clawix-ui-implementation-skill",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/ui-implementation/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1343,7 +1343,7 @@
     {
       "id": "skill-skills-ui-performance-budget",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/ui-performance-budget/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1367,7 +1367,7 @@
     {
       "id": "skill-skills-visual-regression",
       "kind": "skill",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "skills/visual-regression/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1391,7 +1391,7 @@
     {
       "id": "guard-scripts-adr-operational-coverage-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/adr-operational-coverage-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1417,7 +1417,7 @@
     {
       "id": "guard-scripts-agent-instructions-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/agent-instructions-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1442,7 +1442,7 @@
     {
       "id": "guard-scripts-check-clawjs-skills-sync",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/check-clawjs-skills-sync.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1467,7 +1467,7 @@
     {
       "id": "guard-scripts-clawjs-mirror-contradiction-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/clawjs_mirror_contradiction_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1492,7 +1492,7 @@
     {
       "id": "guard-scripts-code-hygiene-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/code-hygiene-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1517,7 +1517,7 @@
     {
       "id": "guard-scripts-conceptual-vocabulary-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/conceptual-vocabulary-guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1542,7 +1542,7 @@
     {
       "id": "guard-scripts-constitution-assertions-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/constitution-assertions-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1567,7 +1567,7 @@
     {
       "id": "guard-scripts-debt-ledger-projection-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/debt-ledger-projection-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1592,7 +1592,7 @@
     {
       "id": "guard-scripts-discoverability-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/discoverability-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1617,7 +1617,7 @@
     {
       "id": "guard-scripts-evolution-rescue-mirror-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/evolution_rescue_mirror_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1642,7 +1642,7 @@
     {
       "id": "guard-scripts-goal-completion-gate-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/goal_completion_gate_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1667,7 +1667,7 @@
     {
       "id": "guard-scripts-index-type-projection-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/index_type_projection_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1692,7 +1692,7 @@
     {
       "id": "guard-scripts-interface-surface-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/interface_surface_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1717,7 +1717,7 @@
     {
       "id": "guard-scripts-legal-safety-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/legal_safety_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1742,7 +1742,7 @@
     {
       "id": "guard-scripts-life-registry-projection-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/life_registry_projection_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1767,7 +1767,7 @@
     {
       "id": "guard-scripts-naming-shape-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/naming-shape-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1792,7 +1792,7 @@
     {
       "id": "guard-scripts-native-action-broker-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/native_action_broker_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1817,7 +1817,7 @@
     {
       "id": "guard-scripts-native-permission-broker-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/native_permission_broker_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1842,7 +1842,7 @@
     {
       "id": "guard-scripts-open-source-canonicity-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/open_source_canonicity_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1869,7 +1869,7 @@
     {
       "id": "guard-scripts-package-surface-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/package_surface_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1894,7 +1894,7 @@
     {
       "id": "guard-scripts-performance-governance-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/performance_governance_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1919,7 +1919,7 @@
     {
       "id": "guard-scripts-persistent-surface-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/persistent-surface-guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1946,7 +1946,7 @@
     {
       "id": "guard-scripts-productivity-projection-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/productivity_projection_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1971,7 +1971,7 @@
     {
       "id": "guard-scripts-remote-canon-alignment-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/remote_canon_alignment_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -1996,7 +1996,7 @@
     {
       "id": "guard-scripts-source-decision-audit-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/source_decision_audit_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2021,7 +2021,7 @@
     {
       "id": "guard-scripts-source-size-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/source-size-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2046,7 +2046,7 @@
     {
       "id": "guard-scripts-startup-release-contract-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/startup_release_contract_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2077,7 +2077,7 @@
     {
       "id": "guard-scripts-storage-boundary-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/storage_boundary_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2102,7 +2102,7 @@
     {
       "id": "guard-scripts-surface-narrative-guard",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/surface_narrative_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2128,7 +2128,7 @@
     {
       "id": "guard-scripts-surface-evidence-projection-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/surface-evidence-projection-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2153,7 +2153,7 @@
     {
       "id": "guard-scripts-tracked-ignored-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/tracked-ignored-check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2178,7 +2178,7 @@
     {
       "id": "guard-scripts-v1-surface-closure-audit-check",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/v1_surface_closure_audit_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2203,7 +2203,7 @@
     {
       "id": "guard-scripts-verify-sdk-first-custom-surfaces-goal",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2228,7 +2228,7 @@
     {
       "id": "guard-scripts-verify-system-telemetry-goal",
       "kind": "guardrail",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/verify-system-telemetry-goal.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2253,7 +2253,7 @@
     {
       "id": "adr-docs-adr-0010-interface-governance",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "docs/adr/0010-interface-governance.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2286,7 +2286,6 @@
     {
       "id": "clawix-ui-governance-discoverability",
       "kind": "ui-governance",
-      "owner": "clawix",
       "canonicalSource": "docs/ui/README.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2306,12 +2305,13 @@
       ],
       "guard": "scripts/ui_governance_guard.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17"
+      "reviewDate": "2026-08-17",
+      "steward": "clawix"
     },
     {
       "id": "guard-scripts-ui-approval-authority-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_approval_authority_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2336,7 +2336,7 @@
     {
       "id": "guard-scripts-ui-canon-docs-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_canon_docs_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2361,7 +2361,7 @@
     {
       "id": "guard-scripts-ui-canon-promotion-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_canon_promotion_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2386,7 +2386,7 @@
     {
       "id": "guard-scripts-ui-canon-unit-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_canon_unit_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2411,7 +2411,7 @@
     {
       "id": "guard-scripts-ui-completion-audit-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_completion_audit_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2436,7 +2436,7 @@
     {
       "id": "guard-scripts-ui-completion-gate-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_completion_gate_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2461,7 +2461,7 @@
     {
       "id": "guard-scripts-ui-completion-source-manifest-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_completion_source_manifest_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2486,7 +2486,7 @@
     {
       "id": "guard-scripts-ui-component-extraction-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_component_extraction_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2511,7 +2511,7 @@
     {
       "id": "guard-scripts-ui-copy-governance-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_copy_governance_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2536,7 +2536,7 @@
     {
       "id": "guard-scripts-ui-critical-cleanup-queue-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_critical_cleanup_queue_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2561,7 +2561,7 @@
     {
       "id": "guard-scripts-ui-debt-audit-manifest-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_debt_audit_manifest_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2586,7 +2586,7 @@
     {
       "id": "guard-scripts-ui-debt-report-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_debt_report_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2611,7 +2611,7 @@
     {
       "id": "guard-scripts-ui-decision-verification-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_decision_verification_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2636,7 +2636,7 @@
     {
       "id": "guard-scripts-ui-exception-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_exception_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2661,7 +2661,7 @@
     {
       "id": "guard-scripts-ui-geometry-contract-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_geometry_contract_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2686,7 +2686,7 @@
     {
       "id": "guard-scripts-ui-governance-guard",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_governance_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2711,7 +2711,7 @@
     {
       "id": "guard-scripts-ui-implementation-evidence-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_implementation_evidence_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2736,7 +2736,7 @@
     {
       "id": "guard-scripts-ui-implementation-phase-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_implementation_phase_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2761,7 +2761,7 @@
     {
       "id": "guard-scripts-ui-inspiration-reference-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_inspiration_reference_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2786,7 +2786,7 @@
     {
       "id": "guard-scripts-ui-mechanical-equivalence-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_mechanical_equivalence_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2811,7 +2811,7 @@
     {
       "id": "guard-scripts-ui-pattern-mutation-guard",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_pattern_mutation_guard.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2836,7 +2836,7 @@
     {
       "id": "guard-scripts-ui-pattern-performance-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_pattern_performance_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2861,7 +2861,7 @@
     {
       "id": "guard-scripts-ui-performance-budget-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_performance_budget_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2886,7 +2886,7 @@
     {
       "id": "guard-scripts-ui-private-artifact-boundary-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_artifact_boundary_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2911,7 +2911,7 @@
     {
       "id": "guard-scripts-ui-private-baseline-manifest-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_baseline_manifest_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2936,7 +2936,7 @@
     {
       "id": "guard-scripts-ui-private-capture-runner-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_capture_runner_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2961,7 +2961,7 @@
     {
       "id": "guard-scripts-ui-private-evidence-plan-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_evidence_plan_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -2986,7 +2986,7 @@
     {
       "id": "guard-scripts-ui-private-review-bundle-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_review_bundle_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3011,7 +3011,7 @@
     {
       "id": "guard-scripts-ui-private-visual-validation-manifest-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_private_visual_validation_manifest_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3036,7 +3036,7 @@
     {
       "id": "guard-scripts-ui-protected-surface-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_protected_surface_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3061,7 +3061,7 @@
     {
       "id": "guard-scripts-ui-release-gate-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_release_gate_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3086,7 +3086,7 @@
     {
       "id": "guard-scripts-ui-rendered-drift-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_rendered_drift_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3111,7 +3111,7 @@
     {
       "id": "guard-scripts-ui-rendered-geometry-manifest-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_rendered_geometry_manifest_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3136,7 +3136,7 @@
     {
       "id": "guard-scripts-ui-skill-contract-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_skill_contract_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3161,7 +3161,7 @@
     {
       "id": "guard-scripts-ui-state-coverage-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_state_coverage_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3186,7 +3186,7 @@
     {
       "id": "guard-scripts-ui-surface-baseline-coverage-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_surface_baseline_coverage_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3211,7 +3211,7 @@
     {
       "id": "guard-scripts-ui-surface-inventory-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_surface_inventory_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3236,7 +3236,7 @@
     {
       "id": "guard-scripts-ui-surface-reference-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_surface_reference_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3261,7 +3261,7 @@
     {
       "id": "guard-scripts-ui-visual-detector-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_visual_detector_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3286,7 +3286,7 @@
     {
       "id": "guard-scripts-ui-visual-guard-failure-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_visual_guard_failure_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3311,7 +3311,7 @@
     {
       "id": "guard-scripts-ui-visual-model-allowlist-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_visual_model_allowlist_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3336,7 +3336,7 @@
     {
       "id": "guard-scripts-ui-visual-proposal-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_visual_proposal_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3361,7 +3361,7 @@
     {
       "id": "guard-scripts-ui-visual-scope-check",
       "kind": "ui-governance",
-      "owner": "clawix",
+      "steward": "clawix",
       "canonicalSource": "scripts/ui_visual_scope_check.mjs",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3386,7 +3386,6 @@
     {
       "id": "clawix-agent-rules-index",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/agent-rules/index.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3411,12 +3410,12 @@
       ],
       "guard": "scripts/agent-instructions-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-constitution-operational-map",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/constitution-map.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3445,12 +3444,12 @@
       ],
       "guard": "scripts/doc_alignment_check.sh",
       "status": "enforced",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-constitution-assertions-projection",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/constitution.assertions.json",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3480,12 +3479,12 @@
       "guard": "scripts/constitution-assertions-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18",
-      "canonicalName": "clawix-constitution-assertions"
+      "canonicalName": "clawix-constitution-assertions",
+      "steward": "clawix"
     },
     {
       "id": "clawix-debt-ledger-projection",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/debt-ledger-projection.manifest.json",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3513,12 +3512,12 @@
       ],
       "guard": "scripts/debt-ledger-projection-check.mjs",
       "status": "baseline",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-decision-tension-rubric-mirror",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/decision-tension-rubric.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3547,12 +3546,12 @@
       ],
       "guard": "scripts/doc_alignment_check.sh",
       "status": "enforced",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-completion-audit",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/sdk-first-custom-surfaces/completion.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3572,12 +3571,12 @@
       ],
       "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-external-pending",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-pending.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3597,12 +3596,12 @@
       ],
       "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-external-validation-runbook",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3622,12 +3621,12 @@
       ],
       "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-source-decision-audit-governance",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/source-decision-audits.md",
       "requiredEntrypoints": [
         "AGENTS.md",
@@ -3651,12 +3650,12 @@
       ],
       "guard": "scripts/source_decision_audit_check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-completion-audit",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/completion.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3676,12 +3675,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-decision-matrix",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/decision-matrix.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3700,12 +3699,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-pending-ledger",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-pending.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3724,12 +3723,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-validation-runbook",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-validation-runbook.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3750,12 +3749,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
       "kind": "docs-page",
-      "owner": "clawix",
       "canonicalSource": "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3775,12 +3774,12 @@
       ],
       "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-external-evidence-fixtures",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3800,12 +3799,12 @@
       ],
       "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-sdk-first-custom-surfaces-external-evidence-schema",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3825,12 +3824,12 @@
       ],
       "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-source-decision-audit-registry",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/source-decision-audits.registry.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3850,12 +3849,12 @@
       ],
       "guard": "scripts/source_decision_audit_check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-approval-fixtures",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-approval.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3878,12 +3877,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-approval-schema",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-approval.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3906,12 +3905,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-closure-fixtures",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-closure.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3933,12 +3932,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-evidence-fixtures",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-evidence.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3960,12 +3959,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-evidence-schema",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-evidence.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -3988,12 +3987,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-validation-manifest-fixtures",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -4016,12 +4015,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-validation-manifest",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -4040,12 +4039,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-validation-manifest-schema",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -4067,12 +4066,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-source-qa-review",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "docs/governance/system-telemetry/source-review.json",
       "requiredEntrypoints": [
         "docs/decision-map.md",
@@ -4092,12 +4091,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-20"
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-approval-validator",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "scripts/validate-system-telemetry-external-approval.mjs",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -4121,12 +4120,12 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-closure-validator",
       "kind": "validation-manifest",
-      "owner": "clawix",
       "canonicalSource": "scripts/validate-system-telemetry-external-closure.mjs",
       "requiredEntrypoints": [
         "docs/discoverability.md",
@@ -4149,7 +4148,8 @@
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
-      "reviewDate": "2026-05-20"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
     }
   ]
 }

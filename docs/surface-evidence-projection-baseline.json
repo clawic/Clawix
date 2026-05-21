@@ -480,14 +480,20 @@
           ]
         },
         "edges": {
-          "count": 0,
-          "idsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ids": []
+          "count": 2,
+          "idsSha256": "25978ec841cea3b22ade6dd88d9b3cf34a6ce35b09d5ec8469565ff7f88621c7",
+          "ids": [
+            "clawix.edge.chat.ui.consumes.bridge",
+            "clawix.edge.companion.consumes.bridge"
+          ]
         },
         "routes": {
-          "count": 0,
-          "idsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ids": []
+          "count": 2,
+          "idsSha256": "15f477f10c09d58d78a95d5b4a18c58a7604366bb3338d7c49fa159d44e57a49",
+          "ids": [
+            "chat.companionBridge.clawixHost",
+            "chat.localDesktop.clawixHost"
+          ]
         }
       },
       "externalNodeRefs": {
