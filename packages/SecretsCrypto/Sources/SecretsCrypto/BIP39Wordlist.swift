@@ -1,3 +1,4 @@
+// @generated static BIP39 English wordlist data.
 // BIP39 English wordlist (public domain, from
 // https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt). 2048 words,
 // each between 3 and 8 characters, alphabetically sorted, prefix-unique to 4
