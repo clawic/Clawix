@@ -12,7 +12,16 @@ public enum BridgeIntent {
         host: EngineHost?,
         bus: BridgeBus,
         session: BridgeSession
-    ) {
+    ) async {
+        if let reason = BridgeRuntimeWakePolicy.reason(for: body), let host {
+            do {
+                try await host.ensureRuntimeStarted(reason: reason)
+            } catch {
+                session.send(BridgeFrame(.errorEvent(code: "runtimeStart", message: "\(error)")))
+                return
+            }
+        }
+
         switch body {
         case .listSessions:
             session.send(BridgeFrame(.sessionsSnapshot(sessions: bus.currentSessions())))

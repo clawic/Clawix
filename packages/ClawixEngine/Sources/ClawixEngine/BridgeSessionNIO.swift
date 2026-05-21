@@ -73,7 +73,9 @@ public final class BridgeSession: Identifiable {
             }
             return
         }
-        BridgeIntent.dispatch(body: frame.body, host: host, bus: bus, session: self)
+        Task { @MainActor in
+            await BridgeIntent.dispatch(body: frame.body, host: host, bus: bus, session: self)
+        }
     }
 
     private func handleAuth(

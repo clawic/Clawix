@@ -93,6 +93,11 @@ public protocol EngineHost: AnyObject {
     /// payload so the bus's `.sink` is well-formed without spamming.
     var bridgeRateLimitsPublisher: AnyPublisher<WireRateLimitsPayload, Never> { get }
 
+    /// Start the backing agent runtime if this host owns one. Passive bridge
+    /// traffic such as auth, pairing, status, session listing, and rate-limit
+    /// snapshots must not call this; action-bearing requests do.
+    func ensureRuntimeStarted(reason: String) async throws
+
     /// iPhone or daemon-backed desktop client opened a chat. Hosts
     /// that read rollouts lazily should hydrate the history off disk
     /// here so subsequent `bridgeChatsCurrent` lookups already carry
@@ -239,6 +244,7 @@ public extension EngineHost {
     func currentProjects() -> [WireProject] { [] }
     func handleNewSession(sessionId: UUID, text: String, attachments: [WireAttachment]) {}
     func handleInterruptTurn(sessionId: UUID) {}
+    func ensureRuntimeStarted(reason: String) async throws {}
 
     /// In-process hosts come up instantly: nothing to bootstrap, the
     /// chat store is already populated from disk before the bridge

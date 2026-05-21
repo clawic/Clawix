@@ -65,13 +65,13 @@ public final class BridgeSession: Identifiable {
                 return
             }
             if let data, !data.isEmpty {
-                Task { @MainActor in self.handleFrame(data: data) }
+                Task { @MainActor in await self.handleFrame(data: data) }
             }
             self.receiveLoop()
         }
     }
 
-    private func handleFrame(data: Data) {
+    private func handleFrame(data: Data) async {
         let frame: BridgeFrame
         do {
             frame = try BridgeCoder.decode(data)
@@ -102,7 +102,7 @@ public final class BridgeSession: Identifiable {
             }
             return
         }
-        BridgeIntent.dispatch(body: frame.body, host: host, bus: bus, session: self)
+        await BridgeIntent.dispatch(body: frame.body, host: host, bus: bus, session: self)
     }
 
     private func handleAuth(

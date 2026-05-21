@@ -201,6 +201,11 @@ final class BridgeFrameRoundTripTests: XCTestCase {
         try roundTrip(.errorEvent(code: "internal", message: "boom"))
     }
 
+    func testBridgeStateIdleRoundTrip() throws {
+        XCTAssertEqual(BridgeRuntimeState.idle.wireTag, "idle")
+        try roundTrip(.bridgeState(state: "idle", chatCount: 0, message: nil))
+    }
+
     func testTranscribeAudio() throws {
         try roundTrip(.transcribeAudio(
             requestId: "req-1",

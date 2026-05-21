@@ -84,11 +84,7 @@ struct BridgeMain {
             let runtime = AgentRuntimeSelection.resolve(environment: env, defaults: defaults)
             switch runtime {
             case .codex:
-                guard let binary = BackendBinary.resolve(environment: env) else {
-                    BridgeLog.write("backend binary not found")
-                    exit(78)
-                }
-                let host = DaemonEngineHost(binary: binary, pairing: pairing)
+                let host = DaemonEngineHost(pairing: pairing, environment: env)
                 let meshStore = RemoteMeshStore()
                 let meshIdentity = RemoteMeshIdentity(root: meshStore.root)
                 let mesh = RemoteMeshHTTPController(
@@ -108,13 +104,10 @@ struct BridgeMain {
                 server.start()
                 box.host = host
                 box.server = server
-                BridgeLog.write("listening tcp/\(port) runtime=codex backend=\(binary.path.path)")
+                BridgeLog.write("listening tcp/\(port) runtime=codex mode=lazy")
                 let webServer = WebStaticServer(httpPort: httpPort, wsPort: port, pairing: pairing, mesh: mesh)
                 webServer.start()
                 box.webServer = webServer
-                Task { @MainActor in
-                    await host.bootstrap()
-                }
             case .opencode:
                 let host = OpenCodeDaemonEngineHost(pairing: pairing, defaults: defaults, environment: env)
                 let server = BridgeServer(
@@ -130,9 +123,6 @@ struct BridgeMain {
                 let webServer = WebStaticServer(httpPort: httpPort, wsPort: port, pairing: pairing)
                 webServer.start()
                 box.webServer = webServer
-                Task { @MainActor in
-                    await host.bootstrap()
-                }
             }
         }
 
@@ -157,7 +147,7 @@ final class HostBox: @unchecked Sendable {
     }
 
     func snapshot() -> Snapshot {
-        guard let host = host as? DaemonEngineHost else {
+        guard let host = host as? any EngineHost else {
             return Snapshot(state: "booting", chatCount: 0, lastSyncAt: nil, errorMessage: nil)
         }
         // The heartbeat timer is `nonisolated` for performance, so we
@@ -169,7 +159,8 @@ final class HostBox: @unchecked Sendable {
             Snapshot(
                 state: host.bridgeStateCurrent.wireTag,
                 chatCount: host.bridgeChatsCurrent.count,
-                lastSyncAt: host.lastChatsPublishedAt,
+                lastSyncAt: (host as? DaemonEngineHost)?.lastChatsPublishedAt
+                    ?? (host as? OpenCodeDaemonEngineHost)?.lastChatsPublishedAt,
                 errorMessage: host.bridgeStateCurrent.errorMessage
             )
         }
@@ -311,12 +302,24 @@ struct BackendBinary {
     }
 }
 
+enum BridgeDaemonError: Error, CustomStringConvertible {
+    case backendBinaryNotFound
+
+    var description: String {
+        switch self {
+        case .backendBinaryNotFound:
+            return "backend binary not found"
+        }
+    }
+}
+
 @MainActor
 final class DaemonEngineHost: EngineHost {
-    private let backend: BackendClient
+    private var backend: BackendClient?
     private let pairing: PairingService
+    private let environment: [String: String]
     private let chatsSubject = CurrentValueSubject<[BridgeChatSnapshot], Never>([])
-    private let stateSubject = CurrentValueSubject<BridgeRuntimeState, Never>(.booting)
+    private let stateSubject = CurrentValueSubject<BridgeRuntimeState, Never>(.idle)
     /// Mirrors what the GUI's `ClawixService.refreshRateLimits` puts on
     /// `appState.rateLimits` + `rateLimitsByLimitId` when no daemon is
     /// involved. Seeded from `account/rateLimits/read` once at boot
@@ -338,10 +341,13 @@ final class DaemonEngineHost: EngineHost {
     private var activeTurnByThread: [String: String] = [:]
     private let meshStore = RemoteMeshStore()
     private var remoteJobByThread: [String: String] = [:]
+    private let runtimeStartGate = BridgeRuntimeStartGate()
+    private var didLoadInitialThreads = false
+    private var initialThreadListTask: Task<Void, Never>?
 
-    init(binary: BackendBinary, pairing: PairingService) {
-        self.backend = BackendClient(binary: binary)
+    init(pairing: PairingService, environment: [String: String]) {
         self.pairing = pairing
+        self.environment = environment
         let env = ProcessInfo.processInfo.environment
         self.initialRequestTimeoutSeconds = Self.timeout(from: env["CLAWIX_BRIDGE_INITIAL_TIMEOUT_SECONDS"], default: 12)
         self.threadListTimeoutSeconds = Self.timeout(from: env["CLAWIX_BRIDGE_THREAD_LIST_TIMEOUT_SECONDS"], default: 10)
@@ -368,12 +374,36 @@ final class DaemonEngineHost: EngineHost {
         rateLimitsSubject.eraseToAnyPublisher()
     }
 
-    func bootstrap() async {
-        BridgeLog.write("bootstrap-start")
+    func ensureRuntimeStarted(reason: String) async throws {
+        try await runtimeStartGate.ensureStarted(reason: reason) { [weak self] reason in
+            guard let self else { return }
+            try await self.startRuntime(reason: reason)
+        }
+        if Self.shouldLoadInitialThreads(for: reason) {
+            await ensureInitialThreadListLoaded()
+        }
+    }
+
+    private static func shouldLoadInitialThreads(for reason: String) -> Bool {
+        switch reason {
+        case "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func startRuntime(reason: String) async throws {
+        BridgeLog.write("runtime-start reason=\(reason)")
         stateSubject.send(.syncing)
         do {
+            guard let binary = BackendBinary.resolve(environment: environment) else {
+                throw BridgeDaemonError.backendBinaryNotFound
+            }
+            let backend = BackendClient(binary: binary)
+            self.backend = backend
             try await backend.start()
-            startEvents()
+            startEvents(backend: backend)
             _ = try await backend.send(
                 method: "initialize",
                 params: InitializeParams(
@@ -384,15 +414,31 @@ final class DaemonEngineHost: EngineHost {
             )
             try await backend.notify(method: "initialized", params: EmptyObject())
             BridgeLog.write("backend-initialized")
-            let didLoadThreads = await reloadThreads()
             await refreshRateLimits()
-            if didLoadThreads {
-                stateSubject.send(.ready)
-            }
+            stateSubject.send(.ready)
         } catch {
-            BridgeLog.write("bootstrap failed \(error)")
+            BridgeLog.write("runtime-start failed \(error)")
+            backend = nil
             stateSubject.send(.error(shortReason(error)))
+            throw error
         }
+    }
+
+    private func ensureInitialThreadListLoaded() async {
+        guard !didLoadInitialThreads else { return }
+        if let task = initialThreadListTask {
+            await task.value
+            return
+        }
+        let task = Task { @MainActor in
+            let didLoadThreads = await reloadThreads()
+            if didLoadThreads {
+                didLoadInitialThreads = true
+            }
+            initialThreadListTask = nil
+        }
+        initialThreadListTask = task
+        await task.value
     }
 
     /// One-shot pull of `account/rateLimits/read` after the backend
@@ -403,6 +449,7 @@ final class DaemonEngineHost: EngineHost {
     /// Failures are non-fatal: we leave the subject empty so the GUI
     /// just hides the widget instead of showing stale data.
     private func refreshRateLimits() async {
+        guard let backend else { return }
         do {
             let response = try await backend.send(
                 method: "account/rateLimits/read",
@@ -477,6 +524,7 @@ final class DaemonEngineHost: EngineHost {
         let audioAttachments = attachments.filter { $0.kind == .audio }
         Task { @MainActor in
             do {
+                try await ensureRuntimeStarted(reason: "sendMessage")
                 let threadId = try await ensureThread(chatId: chatIdString, firstPrompt: text)
                 let imagePaths = AttachmentSpooler.write(
                     attachments: imageAttachments,
@@ -531,6 +579,7 @@ final class DaemonEngineHost: EngineHost {
                 if !promptText.isEmpty { input.append(.text(promptText)) }
                 for path in imagePaths { input.append(.localImage(path: path)) }
                 if input.isEmpty { input.append(.text(promptText)) }
+                guard let backend else { throw BackendError.notRunning }
                 let result = try await backend.send(
                     method: "turn/start",
                     params: TurnStartParams(
@@ -718,6 +767,8 @@ final class DaemonEngineHost: EngineHost {
         }
         Task { @MainActor in
             do {
+                try await ensureRuntimeStarted(reason: "interruptTurn")
+                guard let backend else { return }
                 _ = try await backend.send(
                     method: "turn/interrupt",
                     params: TurnInterruptParams(threadId: threadId, turnId: turnId),
@@ -734,6 +785,8 @@ final class DaemonEngineHost: EngineHost {
         guard let threadId = threadByChat[chatIdString] else { return }
         Task { @MainActor in
             do {
+                try await ensureRuntimeStarted(reason: "archiveSession")
+                guard let backend else { return }
                 if archived {
                     _ = try await backend.send(
                         method: "thread/archive",
@@ -771,6 +824,8 @@ final class DaemonEngineHost: EngineHost {
         }
         Task { @MainActor in
             do {
+                try await ensureRuntimeStarted(reason: "renameSession")
+                guard let backend else { return }
                 _ = try await backend.send(
                     method: "thread/name/set",
                     params: ThreadSetNameParams(threadId: threadId, name: trimmed),
@@ -792,6 +847,8 @@ final class DaemonEngineHost: EngineHost {
         workspacePath: String,
         prompt: String
     ) async throws -> RemoteJob {
+        try await ensureRuntimeStarted(reason: "remoteJob")
+        guard let backend else { throw BackendError.notRunning }
         let workspace = URL(fileURLWithPath: workspacePath).standardizedFileURL.path
         guard meshStore.allowsWorkspace(workspace) else {
             throw RemoteMeshError.workspaceDenied
@@ -878,6 +935,8 @@ final class DaemonEngineHost: EngineHost {
            let turnId = activeTurnByThread[threadId] {
             activeTurnByThread[threadId] = nil
             do {
+                try await ensureRuntimeStarted(reason: "remoteJobCancel")
+                guard let backend else { return }
                 _ = try await backend.send(
                     method: "turn/interrupt",
                     params: TurnInterruptParams(threadId: threadId, turnId: turnId),
@@ -898,6 +957,7 @@ final class DaemonEngineHost: EngineHost {
     }
 
     private func reloadThreads() async -> Bool {
+        guard let backend else { return false }
         do {
             let pageSize = 160
             let maxPages = 10
@@ -991,6 +1051,7 @@ final class DaemonEngineHost: EngineHost {
         if let threadId = threadByChat[chatId] {
             return threadId
         }
+        guard let backend else { throw BackendError.notRunning }
         let result = try await backend.send(
             method: "thread/start",
             params: ThreadStartParams(
@@ -1047,7 +1108,7 @@ final class DaemonEngineHost: EngineHost {
         _ = chatId
     }
 
-    private func startEvents() {
+    private func startEvents(backend: BackendClient) {
         let stream = backend.events
         Task { @MainActor in
             for await event in stream {
@@ -1060,7 +1121,7 @@ final class DaemonEngineHost: EngineHost {
         switch event {
         case let .request(id, method, _):
             if method == "item/tool/requestUserInput" {
-                try? backend.resolve(id: id, result: ToolRequestUserInputResponse(answers: [:]))
+                try? backend?.resolve(id: id, result: ToolRequestUserInputResponse(answers: [:]))
             }
         case let .notification(method, params):
             handleNotification(method: method, params: params)

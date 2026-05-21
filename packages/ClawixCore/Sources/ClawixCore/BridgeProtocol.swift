@@ -221,12 +221,14 @@ public enum BridgeBody: Equatable, Sendable {
     /// `errorMessage` is a short reason for display.
     case generatedImageSnapshot(path: String, dataBase64: String?, mimeType: String?, errorMessage: String?)
 
-    /// Host-side bootstrap state. `state` is one of `booting`,
-    /// `syncing`, `ready`, `error`. `chatCount` is the size of the
-    /// sessions list as the host currently knows it (useful while in
-    /// `ready` to confirm the snapshot is non-empty by design, not by
-    /// race). `message` carries a short reason when state is `error`,
-    /// or a hint for `syncing` (e.g. "loading rollouts"); nil otherwise.
+    /// Host-side runtime state. `state` is one of `booting`, `idle`,
+    /// `syncing`, `ready`, `error`. `idle` means the bridge is healthy
+    /// and paired but the agent runtime has not been launched yet.
+    /// `chatCount` is the size of the sessions list as the host currently
+    /// knows it (useful while in `ready` to confirm the snapshot is
+    /// non-empty by design, not by race). `message` carries a short reason
+    /// when state is `error`, or a hint for `syncing` (e.g. "loading
+    /// rollouts"); nil otherwise.
     /// Sent immediately after `authOk` and again whenever the host
     /// transitions, so a peer that connected during boot sees the
     /// `syncing → ready` flip without polling.
@@ -847,15 +849,18 @@ public enum BridgeDecodingError: Error, Equatable {
     case unknownType(String)
 }
 
-/// Bootstrap state of the host that drives a `BridgeServer`. The
-/// daemon flips through `booting → syncing → ready` while it spawns
-/// the Codex backend, runs `initialize`, and pulls the first
-/// `thread/list`. The in-process GUI server sits permanently at
-/// `.ready` because it shares process state with the chat owner.
+/// Runtime state of the host that drives a `BridgeServer`. The daemon starts
+/// at `.idle` after pairing and health surfaces are available, then flips
+/// through `idle → syncing → ready` only after a real agent request wakes the
+/// backend. The in-process GUI server sits permanently at `.ready` because it
+/// shares process state with the chat owner.
 public enum BridgeRuntimeState: Equatable, Sendable {
     /// Daemon process started, host wired up, but the Codex backend
     /// subprocess hasn't been launched yet.
     case booting
+    /// Bridge pairing, health and transport are available, but no agent
+    /// runtime has been launched yet.
+    case idle
     /// Codex backend running and `initialize` succeeded; we're now
     /// pulling the chat list / hydrating any cached state.
     case syncing
@@ -872,6 +877,7 @@ public enum BridgeRuntimeState: Equatable, Sendable {
     public var wireTag: String {
         switch self {
         case .booting: return "booting"
+        case .idle:    return "idle"
         case .syncing: return "syncing"
         case .ready:   return "ready"
         case .error:   return "error"

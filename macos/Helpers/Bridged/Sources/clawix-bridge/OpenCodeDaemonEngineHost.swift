@@ -38,7 +38,7 @@ final class OpenCodeDaemonEngineHost: EngineHost {
     private let defaults: UserDefaults
     private let environment: [String: String]
     private let chatsSubject = CurrentValueSubject<[BridgeChatSnapshot], Never>([])
-    private let stateSubject = CurrentValueSubject<BridgeRuntimeState, Never>(.booting)
+    private let stateSubject = CurrentValueSubject<BridgeRuntimeState, Never>(.idle)
     private let rateLimitsSubject = CurrentValueSubject<WireRateLimitsPayload, Never>(.empty)
     private var client: OpenCodeClient?
     private var chatBySession: [String: String] = [:]
@@ -47,6 +47,9 @@ final class OpenCodeDaemonEngineHost: EngineHost {
     private var activePartTextById: [String: String] = [:]
     private var eventTask: Task<Void, Never>?
     private(set) var lastChatsPublishedAt: Date?
+    private let runtimeStartGate = BridgeRuntimeStartGate()
+    private var didLoadInitialSessions = false
+    private var initialSessionListTask: Task<Void, Never>?
 
     init(pairing: PairingService, defaults: UserDefaults, environment: [String: String]) {
         self.pairing = pairing
@@ -69,21 +72,57 @@ final class OpenCodeDaemonEngineHost: EngineHost {
         rateLimitsSubject.eraseToAnyPublisher()
     }
 
-    func bootstrap() async {
-        BridgeLog.write("opencode bootstrap-start")
+    func ensureRuntimeStarted(reason: String) async throws {
+        try await runtimeStartGate.ensureStarted(reason: reason) { [weak self] reason in
+            guard let self else { return }
+            try await self.startRuntime(reason: reason)
+        }
+        if Self.shouldLoadInitialSessions(for: reason) {
+            await ensureInitialSessionListLoaded()
+        }
+    }
+
+    private static func shouldLoadInitialSessions(for reason: String) -> Bool {
+        switch reason {
+        case "openSession", "sendMessage", "interruptTurn", "archiveSession", "renameSession":
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func startRuntime(reason: String) async throws {
+        BridgeLog.write("opencode runtime-start reason=\(reason)")
         stateSubject.send(.syncing)
         do {
             let client = try await OpenCodeClient.start(defaults: defaults, environment: environment)
             self.client = client
             startEvents(client: client)
-            await reloadSessions()
             publishProviderStatus()
             stateSubject.send(.ready)
         } catch {
             let message = OpenCodeClient.shortReason(error)
-            BridgeLog.write("opencode bootstrap failed \(message)")
+            BridgeLog.write("opencode runtime-start failed \(message)")
             stateSubject.send(.error(message))
+            throw error
         }
+    }
+
+    private func ensureInitialSessionListLoaded() async {
+        guard !didLoadInitialSessions else { return }
+        if let task = initialSessionListTask {
+            await task.value
+            return
+        }
+        let task = Task { @MainActor in
+            let didLoadSessions = await reloadSessions()
+            if didLoadSessions {
+                didLoadInitialSessions = true
+            }
+            initialSessionListTask = nil
+        }
+        initialSessionListTask = task
+        await task.value
     }
 
     func handleHydrateHistory(sessionId: UUID) {
@@ -116,6 +155,7 @@ final class OpenCodeDaemonEngineHost: EngineHost {
         BridgeLog.write("opencode send chat=\(chatIdString) textChars=\(text.count) attachments=\(attachments.count)")
         Task { @MainActor in
             do {
+                try await ensureRuntimeStarted(reason: "sendMessage")
                 guard let client else { throw OpenCodeError.notRunning }
                 let sessionID = try await self.ensureSession(chatId: chatIdString, firstPrompt: text)
                 let userMessageId = UUID().uuidString
@@ -231,16 +271,18 @@ final class OpenCodeDaemonEngineHost: EngineHost {
         }
     }
 
-    private func reloadSessions() async {
-        guard let client else { return }
+    private func reloadSessions() async -> Bool {
+        guard let client else { return false }
         do {
             let sessions = try await client.sessions()
             let snapshots = sessions.map(snapshot(from:))
             chatsSubject.send(snapshots)
             lastChatsPublishedAt = Date()
             BridgeLog.write("opencode session-list ok count=\(sessions.count)")
+            return true
         } catch {
             stateSubject.send(.error("Couldn't load OpenCode chats: \(OpenCodeClient.shortReason(error))"))
+            return false
         }
     }
 
