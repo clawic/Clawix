@@ -648,6 +648,8 @@ final class AppState: ObservableObject {
             $pinnedOrder.dropFirst().sink { _ in RenderProbe.tick("AppState.pinnedOrder") },
             $archivedChats.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedChats") },
             $archivedLoading.dropFirst().sink { _ in RenderProbe.tick("AppState.archivedLoading") },
+            $availableModels.dropFirst().sink { _ in RenderProbe.tick("AppState.availableModels") },
+            $otherModels.dropFirst().sink { _ in RenderProbe.tick("AppState.otherModels") },
             $projects.dropFirst().sink { _ in RenderProbe.tick("AppState.projects") },
             $selectedProject.dropFirst().sink { _ in RenderProbe.tick("AppState.selectedProject") },
             $currentRoute.dropFirst().sink { _ in RenderProbe.tick("AppState.currentRoute") },
