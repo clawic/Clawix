@@ -11,7 +11,8 @@
     "visibleSurfaces",
     "requiredInteractiveStates",
     "publicChecks",
-    "visualCopyLayoutAuthorization"
+    "visualCopyLayoutAuthorization",
+    "accessibilityGovernanceEvidence"
   ],
   "mappingKinds": ["pattern", "debt", "protected", "exception"],
   "allowedMutationClasses": ["functional-ui", "visual-ui", "copy-ui", "mechanical-equivalent-refactor"],
@@ -29,7 +30,8 @@
     "node scripts/ui_governance_guard.mjs",
     "node scripts/ui_surface_inventory_check.mjs",
     "node scripts/ui_visual_scope_check.mjs",
-    "node scripts/ui_visual_model_allowlist_check.mjs"
+    "node scripts/ui_visual_model_allowlist_check.mjs",
+    "node scripts/accessibility_governance_guard.mjs"
   ],
   "prTemplateRequiredSnippets": [
     "## UI governance evidence",
@@ -41,6 +43,14 @@
     "Public UI checks:",
     "Visual/copy/layout authorization:",
     "Conceptual proposal:"
+    ,"## Accessibility governance evidence",
+    "Accessibility impact:",
+    "Affected accessibility axes:",
+    "Accessibility surface mapping:",
+    "Keyboard/screen-reader/focus/contrast/reduce-motion/text-scaling status:",
+    "Generated UI status:",
+    "Accessibility public checks:",
+    "Private/manual accessibility evidence:"
   ],
   "privateDataPolicy": {
     "publicRepoMayStore": ["manifest", "template", "check names", "public-safe evidence labels"],

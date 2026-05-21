@@ -2,6 +2,8 @@
 
 This directory is the machine-readable interface governance layer for Clawix.
 It complements `STYLE.md`, `STANDARDS.md`, and `macos/PERF.md`.
+Accessibility-specific governance lives in `docs/accessibility/` and remains
+parallel to this visual/copy/layout authority boundary.
 It is also registered in `docs/discoverability.registry.json` under the
 discoverability contract in
 `docs/adr/0017-discoverability-and-meta-code-routing.md`; new durable UI

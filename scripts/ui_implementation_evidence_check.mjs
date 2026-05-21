@@ -202,6 +202,7 @@ const requiredEvidenceFields = [
   "requiredInteractiveStates",
   "publicChecks",
   "visualCopyLayoutAuthorization",
+  "accessibilityGovernanceEvidence",
 ];
 requireExactStringSet(
   requireArray(manifest, manifestPath, "requiredEvidenceFields"),
@@ -231,6 +232,7 @@ requireIncludes(
     "node scripts/ui_surface_inventory_check.mjs",
     "node scripts/ui_visual_scope_check.mjs",
     "node scripts/ui_visual_model_allowlist_check.mjs",
+    "node scripts/accessibility_governance_guard.mjs",
   ],
 );
 requireUniqueStrings(requireArray(manifest, manifestPath, "requiredPublicChecks"), `${manifestPath}.requiredPublicChecks`);
