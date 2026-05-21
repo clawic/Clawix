@@ -9,6 +9,7 @@ import ClawixCore
 
 struct RolloutHistoryEntry {
     enum Role { case user, assistant }
+    let id: UUID
     let role: Role
     /// Final visible body for this entry. For assistants it mirrors what
     /// the live streaming pipeline writes to `ChatMessage.content` after
@@ -19,12 +20,11 @@ struct RolloutHistoryEntry {
     let text: String
     let timestamp: Date
     let timeline: [AssistantTimelineEntry]
-    /// Image attachments referenced by this entry. Populated for user
-    /// messages whose JSONL event carries an optional
-    /// `images: [{filename, mimeType}]` array — each filename is read
-    /// from `CLAWIX_IMAGE_FIXTURE_DIR` and base64-encoded so the daemon
-    /// can ship the bytes inline on the wire. Empty for typed messages
-    /// and for assistant entries.
+    /// Image attachments referenced by this entry. Rollout hydration keeps
+    /// these as metadata-only `WireAttachment` refs: id, kind, filename,
+    /// mime, and byte size. Bytes are loaded through
+    /// `RolloutAttachmentRegistry` only when a client asks for a thumbnail
+    /// or preview.
     let attachments: [WireAttachment]
     /// Synthesized work summary for assistant entries. `startedAt` is
     /// the first timestamp seen for the turn and `endedAt` is the last
@@ -37,6 +37,7 @@ struct RolloutHistoryEntry {
     let workSummary: WorkSummary?
 
     init(
+        id: UUID,
         role: Role,
         text: String,
         timestamp: Date,
@@ -44,6 +45,7 @@ struct RolloutHistoryEntry {
         attachments: [WireAttachment],
         workSummary: WorkSummary? = nil
     ) {
+        self.id = id
         self.role = role
         self.text = text
         self.timestamp = timestamp
@@ -54,6 +56,10 @@ struct RolloutHistoryEntry {
 }
 
 enum RolloutReader {
+    private struct ParseSlice {
+        let data: Data
+        let baseOffset: UInt64
+    }
 
     /// Combined output: the parsed history + whether the last
     /// assistant turn looks interrupted (the agent started a turn the
@@ -63,6 +69,7 @@ enum RolloutReader {
     struct ReadResult {
         var entries: [RolloutHistoryEntry]
         var lastTurnInterrupted: Bool
+        var hasMoreBefore: Bool = false
     }
 
     /// Anything older than this without a closing event is treated as
@@ -85,22 +92,21 @@ enum RolloutReader {
     /// the very first record, so a small probe is enough.
     static let tailHeadProbeBytes: Int = 64 * 1024
 
-    static func read(path: URL) -> [RolloutHistoryEntry] {
+    static func readFullForDiagnostics(path: URL) -> [RolloutHistoryEntry] {
         guard let data = try? Data(contentsOf: path) else { return [] }
-        return parse(data: data, now: Date()).entries
+        return parse(slices: [ParseSlice(data: data, baseOffset: 0)], now: Date()).entries
     }
 
-    /// Like `read(path:)` but also reports whether the last turn was
-    /// interrupted. Use this on hydration after a daemon respawn so
-    /// the chat row can surface a "Interrupted, retry?" pill.
-    static func readWithStatus(path: URL, now: Date = Date()) -> ReadResult {
+    /// Full-file parser kept for diagnostics and focused tests only. UI
+    /// hydration must use `readTailWithStatus` or `readWindowBefore`.
+    static func readFullWithStatusForDiagnostics(path: URL, now: Date = Date()) -> ReadResult {
         guard let data = try? Data(contentsOf: path) else {
             return ReadResult(entries: [], lastTurnInterrupted: false)
         }
-        return parse(data: data, now: now)
+        return parse(slices: [ParseSlice(data: data, baseOffset: 0)], now: now)
     }
 
-    /// Tail-only variant of `readWithStatus`. Reads the trailing
+    /// Tail-only hydration reader. Reads the trailing
     /// `maxBytes` of the rollout instead of the whole file, aligns to
     /// the first newline so we never start mid-line, and prepends the
     /// head `session_meta` line so the parser can still resolve cwd /
@@ -112,8 +118,8 @@ enum RolloutReader {
     /// latest turn, the user almost never scrolls hundreds of turns
     /// up immediately, and capping the parse to a fixed window keeps
     /// "click chat → first paint" sub-second even on multi-hundred-MB
-    /// rollouts. Older history can be loaded on demand by callers
-    /// that want it via `readWithStatus`.
+    /// rollouts. Older history can be loaded on demand with
+    /// `readWindowBefore`.
     static func readTailWithStatus(
         path: URL,
         maxBytes: Int = defaultTailBytes,
@@ -128,11 +134,7 @@ enum RolloutReader {
         if totalSize == 0 {
             return ReadResult(entries: [], lastTurnInterrupted: false)
         }
-        if totalSize <= UInt64(maxBytes) {
-            try? handle.seek(toOffset: 0)
-            let data = (try? handle.readToEnd()) ?? Data()
-            return parse(data: data, now: now)
-        }
+        let boundedBytes = min(totalSize, UInt64(maxBytes))
 
         // Step 1: head probe to recover session_meta.
         try? handle.seek(toOffset: 0)
@@ -141,28 +143,81 @@ enum RolloutReader {
         let sessionMetaLine = extractSessionMetaLine(headData)
 
         // Step 2: tail bytes from the file.
-        let tailOffset = totalSize - UInt64(maxBytes)
+        let tailOffset = totalSize - boundedBytes
         try? handle.seek(toOffset: tailOffset)
         var tailData = (try? handle.readToEnd()) ?? Data()
+        var alignedOffset = tailOffset
 
         // Step 3: drop the leading partial line so parse never sees
-        // a half-record. tailOffset > 0 here by construction (we
-        // returned early when totalSize <= maxBytes), so there's
-        // always at least one full line ahead of the first newline.
-        if let firstNL = tailData.firstIndex(of: 0x0a) {
+        // a half-record.
+        if tailOffset > 0, let firstNL = tailData.firstIndex(of: 0x0a) {
             let alignStart = tailData.index(after: firstNL)
+            alignedOffset += UInt64(alignStart)
             tailData = alignStart < tailData.endIndex
                 ? tailData.subdata(in: alignStart..<tailData.endIndex)
                 : Data()
         }
 
-        var combined = Data(capacity: tailData.count + 4096)
+        var slices: [ParseSlice] = []
         if let sessionMetaLine {
-            combined.append(sessionMetaLine)
-            combined.append(0x0a)
+            slices.append(ParseSlice(data: sessionMetaLine, baseOffset: 0))
         }
-        combined.append(tailData)
-        return parse(data: combined, now: now)
+        slices.append(ParseSlice(data: tailData, baseOffset: alignedOffset))
+        var result = parse(slices: slices, now: now)
+        result.hasMoreBefore = alignedOffset > 0
+        return result
+    }
+
+    static func readWindowBefore(
+        path: URL,
+        beforeMessageId: String,
+        limit: Int = bridgeOlderPageLimit,
+        maxBytes: Int = defaultTailBytes,
+        now: Date = Date()
+    ) -> ReadResult {
+        guard let beforeOffset = RolloutCursorRegistry.shared.offset(for: beforeMessageId),
+              let handle = try? FileHandle(forReadingFrom: path) else {
+            return ReadResult(entries: [], lastTurnInterrupted: false)
+        }
+        defer { try? handle.close() }
+
+        let totalSize: UInt64 = (try? handle.seekToEnd()) ?? 0
+        guard totalSize > 0, beforeOffset > 0 else {
+            return ReadResult(entries: [], lastTurnInterrupted: false)
+        }
+
+        let endOffset = min(beforeOffset, totalSize)
+        let readBytes = min(UInt64(maxBytes), endOffset)
+        let rawOffset = endOffset - readBytes
+
+        try? handle.seek(toOffset: 0)
+        let probeSize = min(UInt64(tailHeadProbeBytes), totalSize)
+        let headData = (try? handle.read(upToCount: Int(probeSize))) ?? Data()
+        let sessionMetaLine = extractSessionMetaLine(headData)
+
+        try? handle.seek(toOffset: rawOffset)
+        var data = (try? handle.read(upToCount: Int(readBytes))) ?? Data()
+        var alignedOffset = rawOffset
+        if rawOffset > 0, let firstNL = data.firstIndex(of: 0x0a) {
+            let alignStart = data.index(after: firstNL)
+            alignedOffset += UInt64(alignStart)
+            data = alignStart < data.endIndex ? data.subdata(in: alignStart..<data.endIndex) : Data()
+        }
+
+        var slices: [ParseSlice] = []
+        if let sessionMetaLine {
+            slices.append(ParseSlice(data: sessionMetaLine, baseOffset: 0))
+        }
+        slices.append(ParseSlice(data: data, baseOffset: alignedOffset))
+        var result = parse(slices: slices, now: now)
+        if result.entries.count > limit {
+            result.entries = Array(result.entries.suffix(limit))
+            result.hasMoreBefore = true
+        } else {
+            result.hasMoreBefore = alignedOffset > 0
+        }
+        result.lastTurnInterrupted = false
+        return result
     }
 
     /// Walk the head probe for the first `session_meta` JSONL line.
@@ -187,7 +242,7 @@ enum RolloutReader {
         return nil
     }
 
-    private static func parse(data: Data, now: Date) -> ReadResult {
+    private static func parse(slices: [ParseSlice], now: Date) -> ReadResult {
         var out: [RolloutHistoryEntry] = []
 
         // Builder for the assistant turn currently being assembled. nil
@@ -231,11 +286,13 @@ enum RolloutReader {
         var sawClose = false
         var sawAnyAssistantWork = false
 
-        var start = data.startIndex
-        while start < data.endIndex {
-            let nl = data[start...].firstIndex(of: 0x0a) ?? data.endIndex
-            let line = data[start..<nl]
-            start = nl < data.endIndex ? data.index(after: nl) : data.endIndex
+        for slice in slices {
+            var start = slice.data.startIndex
+            while start < slice.data.endIndex {
+            let lineOffset = slice.baseOffset + UInt64(start)
+            let nl = slice.data[start...].firstIndex(of: 0x0a) ?? slice.data.endIndex
+            let line = slice.data[start..<nl]
+            start = nl < slice.data.endIndex ? slice.data.index(after: nl) : slice.data.endIndex
             if line.isEmpty { continue }
             guard let obj = (try? JSONSerialization.jsonObject(with: line, options: [])) as? [String: Any] else {
                 continue
@@ -316,9 +373,10 @@ enum RolloutReader {
                         localImages: payload["local_images"]
                     )
                     if !trimmed.isEmpty,
-                       !trimmed.hasPrefix("<turn_aborted>"),
+                        !trimmed.hasPrefix("<turn_aborted>"),
                        !containsRequestMarker(trimmed) {
                         out.append(RolloutHistoryEntry(
+                            id: stableMessageId(offset: lineOffset),
                             role: .user,
                             text: trimmed,
                             timestamp: timestamp,
@@ -328,6 +386,7 @@ enum RolloutReader {
                     } else if containsRequestMarker(trimmed),
                               let extracted = extractRequestFromBrowserWrapper(trimmed) {
                         out.append(RolloutHistoryEntry(
+                            id: stableMessageId(offset: lineOffset),
                             role: .user,
                             text: extracted,
                             timestamp: timestamp,
@@ -338,6 +397,7 @@ enum RolloutReader {
                         // Attachment-only user message: no text body, but
                         // the bubble still needs to render the thumbnails.
                         out.append(RolloutHistoryEntry(
+                            id: stableMessageId(offset: lineOffset),
                             role: .user,
                             text: "",
                             timestamp: timestamp,
@@ -354,7 +414,7 @@ enum RolloutReader {
                 let trimmed = msg.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendText(trimmed, isFinal: phase == "final_answer")
 
@@ -372,7 +432,7 @@ enum RolloutReader {
                 let actions = parseCommandActions(payload["parsed_cmd"])
                 let cmdText = (payload["command"] as? [String])?.last
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 if seenCallIds.contains(callId) {
                     // function_call already emitted a placeholder for this
@@ -392,7 +452,7 @@ enum RolloutReader {
                 case "exec_command":
                     if seenCallIds.contains(callId) { continue }
                     if pending == nil {
-                        pending = PendingAssistant(timestamp: timestamp)
+                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     }
                     pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
@@ -423,7 +483,7 @@ enum RolloutReader {
                 let paths = Self.parsePatchApplyPaths(stdout)
                 if paths.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(
@@ -451,7 +511,7 @@ enum RolloutReader {
                 let paths = raw.map { Self.resolveAgainstCwd($0, cwd: sessionCwd) }
                 if paths.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(
@@ -465,7 +525,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(id: callId, kind: .webSearch, status: .completed)
@@ -475,7 +535,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 let imagePath: String? = sessionId.map { sid in
                     FileManager.default.homeDirectoryForCurrentUser
@@ -498,7 +558,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(id: callId, kind: .imageView, status: .completed)
@@ -511,7 +571,7 @@ enum RolloutReader {
                 let server = (invocation?["server"] as? String) ?? ""
                 let tool = (invocation?["tool"] as? String) ?? ""
                 if pending == nil {
-                    pending = PendingAssistant(timestamp: timestamp)
+                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 // The browser-use plugin runs every call (including
                 // js_reset) through the synthetic `node_repl` MCP server.
@@ -553,6 +613,7 @@ enum RolloutReader {
             default:
                 continue
             }
+        }
         }
 
         if let p = pending {
@@ -781,14 +842,9 @@ enum RolloutReader {
         requestMarkers.contains { text.contains($0) }
     }
 
-    /// Resolve the optional `images: [{filename, mimeType}]` array from a
-    /// `user_message` payload into inline-base64 `WireAttachment`s so the
-    /// daemon can ship them on the wire when the iPhone hydrates the
-    /// chat. Files are read from `CLAWIX_IMAGE_FIXTURE_DIR` (set by
-    /// `dummy.sh` to `<workspace>/dummy/images/`); missing or empty
-    /// entries are dropped silently so a typo in a fixture doesn't break
-    /// the whole chat hydrate. nil / non-array `images` returns [], so
-    /// real Codex rollouts (which never carry this field) are no-ops.
+    /// Resolve rollout image fields into metadata-only attachment refs.
+    /// Bytes stay on disk and are registered under opaque ids for lazy
+    /// thumbnail/preview fetches.
     fileprivate static func loadImageAttachments(from raw: Any?, localImages: Any? = nil) -> [WireAttachment] {
         var out: [WireAttachment] = []
         var seenPaths: Set<String> = []
@@ -797,15 +853,13 @@ enum RolloutReader {
                 let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { continue }
                 let fileURL = URL(fileURLWithPath: trimmed)
-                guard seenPaths.insert(fileURL.standardizedFileURL.path).inserted,
-                      let data = try? Data(contentsOf: fileURL),
-                      !data.isEmpty else { continue }
-                out.append(WireAttachment(
-                    id: UUID().uuidString,
+                guard seenPaths.insert(fileURL.standardizedFileURL.path).inserted else { continue }
+                out.append(Self.attachmentRef(
+                    id: Self.attachmentId(for: fileURL.standardizedFileURL.path),
                     kind: .image,
                     mimeType: Self.guessMimeType(forFilename: fileURL.lastPathComponent),
                     filename: fileURL.lastPathComponent,
-                    dataBase64: data.base64EncodedString()
+                    fileURL: fileURL
                 ))
             }
         }
@@ -825,23 +879,84 @@ enum RolloutReader {
             // always rooted at CLAWIX_IMAGE_FIXTURE_DIR.
             let base = (filename as NSString).lastPathComponent
             let fileURL = dir.appendingPathComponent(base)
-            guard seenPaths.insert(fileURL.standardizedFileURL.path).inserted,
-                  let data = try? Data(contentsOf: fileURL),
-                  !data.isEmpty else { continue }
+            guard seenPaths.insert(fileURL.standardizedFileURL.path).inserted else { continue }
             let mime = (entry["mimeType"] as? String).flatMap { $0.isEmpty ? nil : $0 }
                 ?? Self.guessMimeType(forFilename: base)
-            let id = (entry["id"] as? String) ?? UUID().uuidString
+            let id = (entry["id"] as? String) ?? Self.attachmentId(for: fileURL.standardizedFileURL.path)
             let kindRaw = (entry["kind"] as? String) ?? "image"
             let kind: WireAttachmentKind = (kindRaw == "audio") ? .audio : .image
-            out.append(WireAttachment(
+            out.append(Self.attachmentRef(
                 id: id,
                 kind: kind,
                 mimeType: mime,
                 filename: base,
-                dataBase64: data.base64EncodedString()
+                fileURL: fileURL
             ))
         }
         return out
+    }
+
+    private static func attachmentRef(
+        id: String,
+        kind: WireAttachmentKind,
+        mimeType: String,
+        filename: String?,
+        fileURL: URL
+    ) -> WireAttachment {
+        let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let size = (attrs?[.size] as? NSNumber)?.intValue ?? 0
+        RolloutAttachmentRegistry.shared.register(id: id, url: fileURL, mimeType: mimeType)
+        return WireAttachment(
+            id: id,
+            kind: kind,
+            mimeType: mimeType,
+            filename: filename,
+            dataBase64: nil,
+            byteSize: size
+        )
+    }
+
+    private static func attachmentId(for path: String) -> String {
+        "rollout-att-\(fnv1a64Hex(path))"
+    }
+
+    private static func stableMessageId(offset: UInt64) -> UUID {
+        let a = fnv1a64("rollout-message:\(offset)")
+        let b = fnv1a64("rollout-message-alt:\(offset)")
+        let bytes: uuid_t = (
+            UInt8((a >> 56) & 0xff),
+            UInt8((a >> 48) & 0xff),
+            UInt8((a >> 40) & 0xff),
+            UInt8((a >> 32) & 0xff),
+            UInt8((a >> 24) & 0xff),
+            UInt8((a >> 16) & 0xff),
+            UInt8((a >> 8) & 0xff),
+            UInt8(a & 0xff),
+            UInt8((b >> 56) & 0xff),
+            UInt8((b >> 48) & 0xff),
+            UInt8((b >> 40) & 0xff),
+            UInt8((b >> 32) & 0xff),
+            UInt8((b >> 24) & 0xff),
+            UInt8((b >> 16) & 0xff),
+            UInt8((b >> 8) & 0xff),
+            UInt8(b & 0xff)
+        )
+        let id = UUID(uuid: bytes)
+        RolloutCursorRegistry.shared.register(messageId: id.uuidString, offset: offset)
+        return id
+    }
+
+    private static func fnv1a64Hex(_ value: String) -> String {
+        String(fnv1a64(value), radix: 16)
+    }
+
+    private static func fnv1a64(_ value: String) -> UInt64 {
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 0x100000001b3
+        }
+        return hash
     }
 
     private static func guessMimeType(forFilename name: String) -> String {
@@ -862,6 +977,8 @@ enum RolloutReader {
 /// invocations so the final ChatMessage matches what the live streaming
 /// pipeline produces.
 private struct PendingAssistant {
+    var id: UUID
+    var startOffset: UInt64
     var timestamp: Date
     /// Last parsed timestamp seen while this turn was being assembled.
     /// Bumped from the parser loop on every line that belongs to the
@@ -871,7 +988,9 @@ private struct PendingAssistant {
     var timeline: [AssistantTimelineEntry] = []
     var finalText: String = ""
 
-    init(timestamp: Date) {
+    init(id: UUID, startOffset: UInt64, timestamp: Date) {
+        self.id = id
+        self.startOffset = startOffset
         self.timestamp = timestamp
         self.endedAt = timestamp
     }
@@ -981,6 +1100,7 @@ private struct PendingAssistant {
             body = fallback
         }
         return RolloutHistoryEntry(
+            id: id,
             role: .assistant,
             text: body,
             timestamp: timestamp,

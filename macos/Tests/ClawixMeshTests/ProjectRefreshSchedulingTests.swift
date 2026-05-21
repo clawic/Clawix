@@ -32,7 +32,7 @@ final class ProjectRefreshSchedulingTests: XCTestCase {
         XCTAssertEqual(starts, 0)
     }
 
-    func testVisibleRefreshesDeduplicateByPath() async throws {
+    func testExpandedRefreshesDeduplicateByPath() async throws {
         let state = AppState()
         let first = makeProject("Shared")
         let second = Project(name: "Shared Again", path: first.path)
@@ -43,15 +43,15 @@ final class ProjectRefreshSchedulingTests: XCTestCase {
             return []
         }
 
-        state.requestVisibleProjectRefresh(first)
-        state.requestVisibleProjectRefresh(second)
+        state.requestExpandedProjectRefresh(first)
+        state.requestExpandedProjectRefresh(second)
 
         try await waitUntil { starts == 1 }
         XCTAssertEqual(starts, 1)
         state.cancelProjectRefresh(first)
     }
 
-    func testVisibleRefreshRespectsDebounceAfterSuccess() async throws {
+    func testExpandedRefreshRespectsDebounceAfterSuccess() async throws {
         let state = AppState()
         let project = makeProject("Debounced")
         var starts = 0
@@ -60,36 +60,27 @@ final class ProjectRefreshSchedulingTests: XCTestCase {
             return []
         }
 
-        state.requestVisibleProjectRefresh(project)
+        state.requestExpandedProjectRefresh(project)
         try await waitUntil { starts == 1 }
-        state.requestVisibleProjectRefresh(project)
+        state.requestExpandedProjectRefresh(project)
         try await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(starts, 1)
     }
 
-    func testExpandedRefreshReplacesRunningVisibleRefresh() async throws {
+    func testVisibleRefreshDoesNotStartRuntimeLoader() async throws {
         let state = AppState()
-        let project = makeProject("Expanded")
+        let project = makeProject("Visible")
         var starts = 0
-        var cancellations = 0
         state.projectThreadListLoader = { _, _ in
             starts += 1
-            do {
-                try await Task.sleep(nanoseconds: 5_000_000_000)
-            } catch is CancellationError {
-                cancellations += 1
-                throw CancellationError()
-            }
             return []
         }
 
         state.requestVisibleProjectRefresh(project)
-        try await waitUntil { starts == 1 }
-        state.requestExpandedProjectRefresh(project)
+        try await Task.sleep(nanoseconds: 50_000_000)
 
-        try await waitUntil { starts == 2 && cancellations == 1 }
-        state.cancelProjectRefresh(project)
+        XCTAssertEqual(starts, 0)
     }
 
     func testCancelProjectRefreshCancelsRetainedTask() async throws {
@@ -108,7 +99,7 @@ final class ProjectRefreshSchedulingTests: XCTestCase {
             return []
         }
 
-        state.requestVisibleProjectRefresh(project)
+        state.requestExpandedProjectRefresh(project)
         try await waitUntil { starts == 1 }
         state.cancelProjectRefresh(project)
 

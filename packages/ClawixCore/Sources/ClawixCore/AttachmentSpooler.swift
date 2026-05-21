@@ -36,7 +36,8 @@ public enum AttachmentSpooler {
         }
         var paths: [String] = []
         for attachment in attachments {
-            guard let data = Data(base64Encoded: attachment.dataBase64) else {
+            guard let dataBase64 = attachment.dataBase64,
+                  let data = Data(base64Encoded: dataBase64) else {
                 log?("attachment decode failed id=\(attachment.id)")
                 continue
             }

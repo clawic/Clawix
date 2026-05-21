@@ -134,6 +134,28 @@ for (const featureFlag of requiredFeatureFlags) {
 }
 
 const featureFlagsText = read("macos/Sources/Clawix/FeatureFlags.swift");
+const appFeatureEnum = featureFlagsText.match(/enum AppFeature:[\s\S]*?\n}\n\n@MainActor/);
+if (!appFeatureEnum) {
+  fail("FeatureFlags.swift must expose AppFeature before FeatureFlags");
+} else {
+  const appFeatureCases = new Set();
+  for (const match of appFeatureEnum[0].matchAll(/^\s+case\s+([A-Za-z0-9_, ]+)/gm)) {
+    for (const feature of match[1].split(",")) {
+      const trimmed = feature.trim();
+      if (trimmed) appFeatureCases.add(trimmed);
+    }
+  }
+  for (const featureFlag of appFeatureCases) {
+    if (!seenFeatureFlags.has(featureFlag)) {
+      fail(`interface registry is missing AppFeature ${featureFlag}`);
+    }
+  }
+  for (const featureFlag of seenFeatureFlags) {
+    if (!appFeatureCases.has(featureFlag)) {
+      fail(`interface registry references unknown AppFeature ${featureFlag}`);
+    }
+  }
+}
 if (/default\s*:\s*return\s+\.stable/.test(featureFlagsText)) {
   fail("FeatureFlags.swift must not default new AppFeature cases to stable; classify each feature explicitly");
 }

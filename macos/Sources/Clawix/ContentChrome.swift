@@ -234,7 +234,7 @@ struct ContentTopChrome: View {
                         isPinned: chat.isPinned,
                         canCopyWorkingDirectory: !(chat.cwd ?? "").isEmpty,
                         canCopySessionID: !(chat.clawixThreadId ?? "").isEmpty,
-                        canCopyMarkdown: !chat.messages.isEmpty,
+                        canCopyMarkdown: !(appState.chatStore.transcript(for: chat.id)?.messageIds.isEmpty ?? true),
                         onTogglePin: { appState.togglePin(chatId: chat.id) },
                         onRename: { appState.pendingRenameChat = chat },
                         onArchive: { appState.archiveChat(chatId: chat.id) },
@@ -252,7 +252,10 @@ struct ContentTopChrome: View {
                             setChatActionsPasteboard("clawix://session/\(chat.clawixThreadId ?? chat.id.uuidString)")
                         },
                         onCopyMarkdown: {
-                            setChatActionsPasteboard(markdownTranscript(for: chat))
+                            setChatActionsPasteboard(markdownTranscript(
+                                for: chat,
+                                messages: appState.chatStore.transcript(for: chat.id)?.messages ?? []
+                            ))
                         },
                         onForkConversation: {
                             appState.forkConversation(chatId: chat.id, sourceSnapshot: chat)
@@ -795,9 +798,9 @@ private func setChatActionsPasteboard(_ value: String) {
     pasteboard.setString(value, forType: .string)
 }
 
-private func markdownTranscript(for chat: Chat) -> String {
+private func markdownTranscript(for chat: Chat, messages: [ChatMessage]) -> String {
     var lines: [String] = ["# \(chat.title)", ""]
-    for message in chat.messages {
+    for message in messages {
         let role = message.role == .user ? "User" : "Assistant"
         let body = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else { continue }

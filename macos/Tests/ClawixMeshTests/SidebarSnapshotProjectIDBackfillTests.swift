@@ -130,6 +130,81 @@ final class SidebarSnapshotProjectIDBackfillTests: XCTestCase {
         XCTAssertEqual(rows[0].projectPath, projectPath)
     }
 
+    func testLoadProjectIndexedPagesRowsByProjectIdInRecencyOrder() throws {
+        let queue = try migratedQueue()
+        let projectId = UUID().uuidString
+        let otherProjectId = UUID().uuidString
+        let projectPath = "/tmp/clawix-project-indexed-page"
+        try queue.write { db in
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "project-old",
+                projectId: projectId,
+                projectPath: projectPath,
+                updatedAt: 10,
+                in: db
+            )
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "project-fresh",
+                projectId: projectId,
+                projectPath: projectPath,
+                updatedAt: 30,
+                in: db
+            )
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "project-middle",
+                projectId: projectId,
+                projectPath: projectPath,
+                updatedAt: 20,
+                in: db
+            )
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "other-project",
+                projectId: otherProjectId,
+                projectPath: "/tmp/other",
+                updatedAt: 40,
+                in: db
+            )
+        }
+
+        let rows = SnapshotRepository(db: queue).loadProjectIndexed(
+            projectId: projectId,
+            projectPath: projectPath,
+            limit: 2,
+            offset: 1
+        )
+
+        XCTAssertEqual(rows.map(\.threadId), ["project-middle", "project-old"])
+    }
+
+    func testLoadProjectIndexedFallsBackToLegacyProjectPathRows() throws {
+        let queue = try migratedQueue()
+        let projectId = UUID().uuidString
+        let projectPath = "/tmp/clawix-project-indexed-legacy"
+        try queue.write { db in
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "stable-id-row",
+                projectId: projectId,
+                projectPath: projectPath,
+                updatedAt: 20,
+                in: db
+            )
+            try insertCurrentSidebarSnapshotProject(
+                threadId: "legacy-path-row",
+                projectPath: projectPath,
+                in: db
+            )
+        }
+
+        let rows = SnapshotRepository(db: queue).loadProjectIndexed(
+            projectId: projectId,
+            projectPath: projectPath,
+            limit: 10
+        )
+
+        XCTAssertEqual(rows.map(\.threadId), ["stable-id-row", "legacy-path-row"])
+        XCTAssertNil(rows.first { $0.threadId == "legacy-path-row" }?.projectId)
+    }
+
     func testSnapshotProjectResolutionFallsBackToProjectPath() {
         let project = Project(id: UUID(), name: "Fallback", path: "/tmp/clawix-project-path-fallback")
         let row = SidebarSnapshotProjectRow(
@@ -197,6 +272,20 @@ final class SidebarSnapshotProjectIDBackfillTests: XCTestCase {
                 thread_id, chat_uuid, title, cwd, project_id, project_path, updated_at, archived, pinned, captured_at
             ) VALUES (?, ?, 'Thread', NULL, NULL, ?, 10, 0, 0, 10)
         """, arguments: [threadId, UUID().uuidString, projectPath])
+    }
+
+    private func insertCurrentSidebarSnapshotProject(
+        threadId: String,
+        projectId: String,
+        projectPath: String,
+        updatedAt: Int64,
+        in db: GRDB.Database
+    ) throws {
+        try db.execute(sql: """
+            INSERT INTO sidebar_snapshot_project(
+                thread_id, chat_uuid, title, cwd, project_id, project_path, updated_at, archived, pinned, captured_at
+            ) VALUES (?, ?, 'Thread', NULL, ?, ?, ?, 0, 0, 10)
+        """, arguments: [threadId, UUID().uuidString, projectId, projectPath, updatedAt])
     }
 
     private func filledCount(in queue: DatabaseQueue, table: String) throws -> Int {

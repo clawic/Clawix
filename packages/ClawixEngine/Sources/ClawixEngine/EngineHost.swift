@@ -63,6 +63,15 @@ public protocol EngineHost: AnyObject {
     /// `listSessions` / `openSession` before the publisher emits a new tick.
     var bridgeChatsCurrent: [BridgeChatSnapshot] { get }
 
+    /// Return a bounded page before `beforeMessageId`. Hosts that hydrate
+    /// historical rollout windows lazily can override this instead of forcing
+    /// `bridgeChatsCurrent` to contain the whole transcript.
+    func bridgeMessagesPage(
+        sessionId: String,
+        before beforeMessageId: String,
+        limit: Int
+    ) -> (messages: [WireMessage], hasMore: Bool)
+
     /// Stream of chat snapshots. The bus throttles + diffs internally,
     /// so the host can republish freely (every keystroke that touches
     /// chats is fine; the bus collapses to ~16ms ticks on loopback).
@@ -92,6 +101,15 @@ public protocol EngineHost: AnyObject {
     /// time a fresh value lands. Default impl emits a single empty
     /// payload so the bus's `.sink` is well-formed without spamming.
     var bridgeRateLimitsPublisher: AnyPublisher<WireRateLimitsPayload, Never> { get }
+
+    /// Current ClawJS sidecar service states known by the host. Daemon hosts
+    /// can expose this so desktop clients do not need one health poller per
+    /// adopted service.
+    var clawJSServiceStatusesCurrent: [WireClawJSServiceSnapshot] { get }
+
+    /// Stream of service-status snapshots. The bus diffs these and emits
+    /// one `clawJSServiceStatusUpdated` frame per changed service.
+    var clawJSServiceStatusesPublisher: AnyPublisher<[WireClawJSServiceSnapshot], Never> { get }
 
     /// Start the backing agent runtime if this host owns one. Passive bridge
     /// traffic such as auth, pairing, status, session listing, and rate-limit
@@ -187,6 +205,15 @@ public protocol EngineHost: AnyObject {
         reply: @MainActor @escaping (_ dataBase64: String?, _ mimeType: String?, _ errorMessage: String?) -> Void
     )
 
+    /// Inbound `requestRolloutAttachment` from a client. The host looks up a
+    /// previously registered rollout attachment id and returns the bytes only
+    /// when the id is known. This keeps historical media lazy without turning
+    /// the bridge into a path-based file reader.
+    func handleRequestRolloutAttachment(
+        attachmentId: String,
+        reply: @MainActor @escaping (_ dataBase64: String?, _ mimeType: String?, _ errorMessage: String?) -> Void
+    )
+
     // MARK: - audio catalog hooks
 
     /// Configured client for the `@clawjs/audio` service. Nil while the
@@ -245,6 +272,19 @@ public extension EngineHost {
     func handleNewSession(sessionId: UUID, text: String, attachments: [WireAttachment]) {}
     func handleInterruptTurn(sessionId: UUID) {}
     func ensureRuntimeStarted(reason: String) async throws {}
+    func bridgeMessagesPage(
+        sessionId: String,
+        before beforeMessageId: String,
+        limit: Int
+    ) -> (messages: [WireMessage], hasMore: Bool) {
+        guard limit > 0 else { return ([], false) }
+        let all = bridgeChatsCurrent.first(where: { $0.id == sessionId })?.messages ?? []
+        guard let cursorIdx = all.firstIndex(where: { $0.id == beforeMessageId }) else {
+            return ([], false)
+        }
+        let lower = max(0, cursorIdx - limit)
+        return (Array(all[lower..<cursorIdx]), lower > 0)
+    }
 
     /// In-process hosts come up instantly: nothing to bootstrap, the
     /// chat store is already populated from disk before the bridge
@@ -260,6 +300,10 @@ public extension EngineHost {
     var bridgeRateLimitsCurrent: WireRateLimitsPayload { .empty }
     var bridgeRateLimitsPublisher: AnyPublisher<WireRateLimitsPayload, Never> {
         Just(WireRateLimitsPayload.empty).eraseToAnyPublisher()
+    }
+    var clawJSServiceStatusesCurrent: [WireClawJSServiceSnapshot] { [] }
+    var clawJSServiceStatusesPublisher: AnyPublisher<[WireClawJSServiceSnapshot], Never> {
+        Just([WireClawJSServiceSnapshot]()).eraseToAnyPublisher()
     }
     func handleTranscribeAudio(
         requestId: String,
@@ -282,6 +326,12 @@ public extension EngineHost {
     ) {
         let result = GeneratedImageReader.read(path: path)
         reply(result.dataBase64, result.mimeType, result.errorMessage)
+    }
+    func handleRequestRolloutAttachment(
+        attachmentId: String,
+        reply: @MainActor @escaping (String?, String?, String?) -> Void
+    ) {
+        reply(nil, nil, "Rollout attachment is not available on this host")
     }
 
     // MARK: - audio catalog defaults

@@ -38,9 +38,11 @@ final class DaemonMessageReconciliationTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(state.chats.first?.messages.count, 1)
-        XCTAssertEqual(state.chats.first?.messages.first?.id, remoteId)
-        XCTAssertEqual(state.chats.first?.messages.first?.content, "Hello")
+        let messages = state.chatStore.transcript(for: chatId)?.messages
+        XCTAssertEqual(messages?.count, 1)
+        XCTAssertEqual(messages?.first?.id, remoteId)
+        XCTAssertEqual(messages?.first?.content, "Hello")
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func test_untrackedDaemonUserMessageStillAppends() {
@@ -63,8 +65,10 @@ final class DaemonMessageReconciliationTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(state.chats.first?.messages.count, 2)
-        XCTAssertEqual(state.chats.first?.messages.last?.id, remoteId)
+        let messages = state.chatStore.transcript(for: chatId)?.messages
+        XCTAssertEqual(messages?.count, 2)
+        XCTAssertEqual(messages?.last?.id, remoteId)
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func test_emptyDaemonSnapshotDoesNotWipeHydratedThreadMessages() {
@@ -84,7 +88,8 @@ final class DaemonMessageReconciliationTests: XCTestCase {
 
         state.applyDaemonMessages(chatId: chatId.uuidString, messages: [], hasMore: false)
 
-        XCTAssertEqual(state.chats.first?.messages.map(\.content), ["Recovered history"])
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.map(\.content), ["Recovered history"])
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
         XCTAssertEqual(state.chats.first?.historyHydrated, true)
     }
 }

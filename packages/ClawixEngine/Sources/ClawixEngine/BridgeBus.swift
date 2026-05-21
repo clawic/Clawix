@@ -38,6 +38,10 @@ public final class BridgeBus {
     /// recent value the host published, not whatever empty seed the
     /// bus started with.
     private(set) var lastRateLimits: WireRateLimitsPayload = .empty
+    /// Last ClawJS sidecar-service snapshot keyed by service id. Used for
+    /// synchronous replies and to collapse host republishes into changed
+    /// service pushes.
+    private var lastClawJSServiceStatuses: [String: WireClawJSServiceSnapshot] = [:]
 
     /// Diff key: derived fields that, when changed, warrant a frame.
     /// Equality on this struct is what gates "did anything observable
@@ -88,6 +92,9 @@ public final class BridgeBus {
             // state even if the publisher hasn't ticked yet.
             lastState = host.bridgeStateCurrent
             lastRateLimits = host.bridgeRateLimitsCurrent
+            lastClawJSServiceStatuses = Dictionary(
+                uniqueKeysWithValues: host.clawJSServiceStatusesCurrent.map { ($0.id, $0) }
+            )
         }
         host?.bridgeStatePublisher
             .removeDuplicates()
@@ -101,6 +108,12 @@ public final class BridgeBus {
                 self?.applyRateLimits(payload)
             }
             .store(in: &cancellables)
+        host?.clawJSServiceStatusesPublisher
+            .removeDuplicates()
+            .sink { [weak self] services in
+                self?.applyClawJSServiceStatuses(services)
+            }
+            .store(in: &cancellables)
     }
 
     public func stop() {
@@ -111,6 +124,7 @@ public final class BridgeBus {
         emit = nil
         lastState = .booting
         lastRateLimits = .empty
+        lastClawJSServiceStatuses.removeAll()
     }
 
     /// Build the current `bridgeState` frame for a peer that just
@@ -162,6 +176,24 @@ public final class BridgeBus {
         )))
     }
 
+    /// Build the current service-status snapshot for a desktop peer that
+    /// explicitly requests it after authentication.
+    public func currentClawJSServiceStatusesFrame() -> BridgeFrame {
+        let services = host?.clawJSServiceStatusesCurrent
+            ?? lastClawJSServiceStatuses.values.sorted { $0.id < $1.id }
+        return BridgeFrame(.clawJSServiceStatusesSnapshot(services: services))
+    }
+
+    private func applyClawJSServiceStatuses(_ services: [WireClawJSServiceSnapshot]) {
+        let next = Dictionary(uniqueKeysWithValues: services.map { ($0.id, $0) })
+        let changed = services.filter { lastClawJSServiceStatuses[$0.id] != $0 }
+        lastClawJSServiceStatuses = next
+        guard let emit else { return }
+        for service in changed {
+            emit(BridgeFrame(.clawJSServiceStatusUpdated(service: service)))
+        }
+    }
+
     /// Client called `openSession`. Returns the current snapshot of
     /// messages so the session can reply with `messagesSnapshot`.
     /// When `limit` is set, only the trailing N messages are returned
@@ -186,14 +218,7 @@ public final class BridgeBus {
     /// client treats it as "nothing older".
     public func page(sessionId: String, before beforeMessageId: String, limit: Int) -> (messages: [WireMessage], hasMore: Bool) {
         guard limit > 0 else { return ([], false) }
-        let all = host?.bridgeChatsCurrent.first(where: { $0.id == sessionId })?.messages ?? []
-        guard let cursorIdx = all.firstIndex(where: { $0.id == beforeMessageId }) else {
-            return ([], false)
-        }
-        let lower = max(0, cursorIdx - limit)
-        let slice = Array(all[lower..<cursorIdx])
-        let hasMore = lower > 0
-        return (slice, hasMore)
+        return host?.bridgeMessagesPage(sessionId: sessionId, before: beforeMessageId, limit: limit) ?? ([], false)
     }
 
     public func unsubscribe(sessionId: String) {

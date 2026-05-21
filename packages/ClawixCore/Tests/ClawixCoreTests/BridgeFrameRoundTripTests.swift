@@ -128,7 +128,22 @@ final class BridgeFrameRoundTripTests: XCTestCase {
 
     func testMessagesSnapshot() throws {
         let msgs = [
-            WireMessage(id: "m1", role: .user, content: "hi", timestamp: .init(timeIntervalSince1970: 1_700_000_010)),
+            WireMessage(
+                id: "m1",
+                role: .user,
+                content: "hi",
+                timestamp: .init(timeIntervalSince1970: 1_700_000_010),
+                attachments: [
+                    WireAttachment(
+                        id: "rollout-att",
+                        kind: .image,
+                        mimeType: "image/png",
+                        filename: "screenshot.png",
+                        dataBase64: nil,
+                        byteSize: 1234
+                    )
+                ]
+            ),
             WireMessage(
                 id: "m2",
                 role: .assistant,
@@ -206,6 +221,22 @@ final class BridgeFrameRoundTripTests: XCTestCase {
         try roundTrip(.bridgeState(state: "idle", chatCount: 0, message: nil))
     }
 
+    func testClawJSServiceStatusFramesRoundTrip() throws {
+        let service = WireClawJSServiceSnapshot(
+            id: "database",
+            state: "readyFromDaemon",
+            port: 24_102,
+            pid: 12_345,
+            restartCount: 1,
+            lastError: nil,
+            updatedAtMs: 1_777_000_000_000,
+            source: "daemon"
+        )
+        try roundTrip(.requestClawJSServiceStatuses)
+        try roundTrip(.clawJSServiceStatusesSnapshot(services: [service]))
+        try roundTrip(.clawJSServiceStatusUpdated(service: service))
+    }
+
     func testTranscribeAudio() throws {
         try roundTrip(.transcribeAudio(
             requestId: "req-1",
@@ -250,6 +281,22 @@ final class BridgeFrameRoundTripTests: XCTestCase {
             audioBase64: nil,
             mimeType: nil,
             errorMessage: "Audio no longer available"
+        ))
+    }
+
+    func testRolloutAttachmentSnapshot() throws {
+        try roundTrip(.requestRolloutAttachment(attachmentId: "rollout-att"))
+        try roundTrip(.rolloutAttachmentSnapshot(
+            attachmentId: "rollout-att",
+            dataBase64: "ZmFrZUltYWdl",
+            mimeType: "image/png",
+            errorMessage: nil
+        ))
+        try roundTrip(.rolloutAttachmentSnapshot(
+            attachmentId: "missing-att",
+            dataBase64: nil,
+            mimeType: nil,
+            errorMessage: "Attachment no longer available"
         ))
     }
 

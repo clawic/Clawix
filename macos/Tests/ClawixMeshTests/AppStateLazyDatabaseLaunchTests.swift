@@ -130,6 +130,63 @@ final class AppStateLazyDatabaseLaunchTests: XCTestCase {
         _ = AppState()
     }
 
+    func testPostFirstFrameSnapshotDoesNotHydrateProjectIndexGlobally() async throws {
+        let queue = try migratedQueue()
+        let projectPath = "/tmp/clawix-post-first-frame-project"
+        try await queue.write { db in
+            try Self.insertSidebarSnapshot(
+                threadId: "global-top",
+                projectPath: projectPath,
+                updatedAt: 1_000,
+                in: db
+            )
+            for index in 0..<1_000 {
+                try Self.insertProjectSnapshot(
+                    threadId: "project-\(index)",
+                    projectId: nil,
+                    projectPath: projectPath,
+                    updatedAt: Int64(index),
+                    in: db
+                )
+            }
+        }
+        let provider = LazyDatabaseProvider(opener: { queue }, migrator: { _ in })
+        let state = AppState(
+            databaseProvider: provider,
+            snapshotRepository: SnapshotRepository(db: queue)
+        )
+
+        state.startPostFirstFramePersistence()
+        await waitUntil { state.chats.map(\.clawixThreadId).contains("global-top") }
+
+        XCTAssertEqual(state.chats.map(\.clawixThreadId), ["global-top"])
+    }
+
+    func testVisibleProjectLoadsOnlyOneCachedProjectPage() throws {
+        let queue = try migratedQueue()
+        let project = Project(id: UUID(), name: "Project", path: "/tmp/clawix-demand-project")
+        try queue.write { db in
+            for index in 0..<25 {
+                try Self.insertProjectSnapshot(
+                    threadId: "project-\(index)",
+                    projectId: project.id.uuidString,
+                    projectPath: project.path,
+                    updatedAt: Int64(index),
+                    in: db
+                )
+            }
+        }
+        let state = AppState(snapshotRepository: SnapshotRepository(db: queue))
+
+        state.requestVisibleProjectRefresh(project)
+
+        XCTAssertEqual(state.chats.count, AppState.snapshotPerProjectCap)
+        XCTAssertEqual(
+            state.chats.compactMap(\.clawixThreadId),
+            (15..<25).reversed().map { "project-\($0)" }
+        )
+    }
+
     func testMigrationFailureSetsRescueDecision() async {
         let provider = LazyDatabaseProvider(
             opener: { try DatabaseQueue() },
@@ -159,5 +216,38 @@ final class AppStateLazyDatabaseLaunchTests: XCTestCase {
 
     private enum StubError: Error {
         case migrationFailed
+    }
+
+    private func migratedQueue() throws -> DatabaseQueue {
+        let queue = try DatabaseQueue()
+        try Database.migrator.migrate(queue)
+        return queue
+    }
+
+    nonisolated private static func insertSidebarSnapshot(
+        threadId: String,
+        projectPath: String,
+        updatedAt: Int64,
+        in db: GRDB.Database
+    ) throws {
+        try db.execute(sql: """
+            INSERT INTO sidebar_snapshot(
+                thread_id, chat_uuid, title, cwd, project_id, project_path, updated_at, archived, pinned, captured_at
+            ) VALUES (?, ?, 'Thread', NULL, NULL, ?, ?, 0, 0, 10)
+        """, arguments: [threadId, UUID().uuidString, projectPath, updatedAt])
+    }
+
+    nonisolated private static func insertProjectSnapshot(
+        threadId: String,
+        projectId: String?,
+        projectPath: String,
+        updatedAt: Int64,
+        in db: GRDB.Database
+    ) throws {
+        try db.execute(sql: """
+            INSERT INTO sidebar_snapshot_project(
+                thread_id, chat_uuid, title, cwd, project_id, project_path, updated_at, archived, pinned, captured_at
+            ) VALUES (?, ?, 'Thread', NULL, ?, ?, ?, 0, 0, 10)
+        """, arguments: [threadId, UUID().uuidString, projectId, projectPath, updatedAt])
     }
 }

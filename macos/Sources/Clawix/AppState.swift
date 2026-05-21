@@ -10,6 +10,7 @@ private let daemonBridgePort: UInt16 = 24080
 func rolloutChatMessages(from result: RolloutReader.ReadResult) -> [ChatMessage] {
     result.entries.map { e in
         ChatMessage(
+            id: e.id,
             role: e.role == .user ? .user : .assistant,
             content: e.text,
             reasoningText: "",
@@ -102,6 +103,7 @@ final class AppState: ObservableObject {
         didSet {
             guard !syncingLegacyChatsFromStore else { return }
             chatStore.replaceActive(with: chats)
+            stripLegacyTranscriptPayloadsIfNeeded()
         }
     }
     let chatStore = ChatStore()
@@ -120,6 +122,7 @@ final class AppState: ObservableObject {
         didSet {
             guard !syncingLegacyChatsFromStore else { return }
             chatStore.replaceArchived(with: archivedChats)
+            stripLegacyTranscriptPayloadsIfNeeded()
         }
     }
     /// True while a `listThreads(archived: true)` request is in flight.
@@ -402,10 +405,10 @@ final class AppState: ObservableObject {
     var clawJSSessionsProjectsLoaded = false
     var clawJSSessionsProjectsLoading = false
     /// Persistent cache of the sidebar's last applied state. Used to
-    /// paint Pinned + chat list instantly at launch from local SQLite,
+    /// paint Pinned + recent chats instantly at launch from local SQLite,
     /// before the runtime bootstraps and paginates the real thread list.
     /// Rewritten at the end of every applyThreads / mergeThreads.
-    let snapshotRepo = SnapshotRepository()
+    let snapshotRepo: SnapshotRepository
     private static let launchRouteKindKey = "LaunchRouteKind"
     private static let launchRouteChatUuidKey = "LaunchRouteChatUuid"
     private static let launchRouteThreadIdKey = "LaunchRouteThreadId"
@@ -474,6 +477,7 @@ final class AppState: ObservableObject {
     private var postFirstFramePersistenceStarted = false
     var appStateCanonicalReconciliationTask: Task<Void, Never>?
     var sidebarSnapshotProjectIDBackfillTask: Task<Void, Never>?
+    private var loadedProjectSnapshotKeys: Set<String> = []
     /// Per-chat git probes. `git status` can block on large repos or
     /// filesystem state, so chat navigation must never wait on it.
     var gitInspectionTasks: [UUID: Task<Void, Never>] = [:]
@@ -485,8 +489,12 @@ final class AppState: ObservableObject {
         appStateCanonicalReconciliationTask?.cancel()
     }
 
-    init(databaseProvider: LazyDatabaseProvider = .shared) {
+    init(
+        databaseProvider: LazyDatabaseProvider = .shared,
+        snapshotRepository: SnapshotRepository? = nil
+    ) {
         self.databaseProvider = databaseProvider
+        self.snapshotRepo = snapshotRepository ?? SnapshotRepository()
         // Mesh store has to be wired before any other stored-property
         // assignment that uses `self`, because Swift's definite-init
         // analysis treats any read of `self.foo` as requiring every
@@ -1011,17 +1019,18 @@ final class AppState: ObservableObject {
     }
 
     /// Queue a quiet best-effort refresh for a project row that has
-    /// become visible in the sidebar. This keeps cold start focused on
-    /// first paint; project details refresh progressively as the user
-    /// reaches them.
+    /// become visible in the sidebar. This only reads a tiny local
+    /// snapshot page; runtime refreshes are reserved for explicit
+    /// expansion so first paint never fans out across every project.
     func requestVisibleProjectRefresh(_ project: Project) {
-        requestProjectRefresh(project, intent: .visible)
+        applyCachedProjectSnapshotIfNeeded(project)
     }
 
     /// Queue a user-initiated refresh for an expanded project. If a
     /// lower-priority visible refresh is already queued or running for
     /// the same project/path, replace it with this explicit request.
     func requestExpandedProjectRefresh(_ project: Project) {
+        applyCachedProjectSnapshotIfNeeded(project)
         requestProjectRefresh(project, intent: .expanded)
     }
 
@@ -1082,6 +1091,96 @@ final class AppState: ObservableObject {
         var intent: ProjectRefreshIntent
         var token: UUID?
         var task: Task<Void, Never>?
+    }
+
+    private func applyCachedProjectSnapshotIfNeeded(_ project: Project) {
+        guard snapshotEnabled, snapshotRepo.isAvailable() else { return }
+        let key = projectSnapshotCacheKey(project)
+        guard !loadedProjectSnapshotKeys.contains(key) else { return }
+        loadedProjectSnapshotKeys.insert(key)
+
+        let rows = snapshotRepo.loadProjectIndexed(
+            projectId: project.id.uuidString,
+            projectPath: project.path,
+            limit: Self.snapshotPerProjectCap
+        )
+        applyCachedProjectSnapshotRows(rows, for: project)
+    }
+
+    private func projectSnapshotCacheKey(_ project: Project) -> String {
+        if !project.path.isEmpty { return project.path }
+        return project.id.uuidString
+    }
+
+    private func applyCachedProjectSnapshotRows(
+        _ rows: [SidebarSnapshotProjectRow],
+        for project: Project
+    ) {
+        guard !rows.isEmpty else { return }
+        let pinIds = pinsRepo.orderedThreadIds()
+        let pinnedSet = Set(pinIds)
+        var indexByThread: [String: Int] = [:]
+        var indexByChatId: [UUID: Int] = [:]
+        for (idx, chat) in chats.enumerated() {
+            if let threadId = chat.clawixThreadId {
+                indexByThread[threadId] = idx
+            }
+            indexByChatId[chat.id] = idx
+        }
+
+        var updated = chats
+        var changed = false
+        for row in rows {
+            guard row.archived == 0,
+                  let id = UUID(uuidString: row.chatUuid)
+            else { continue }
+            let updatedAt = Date(timeIntervalSince1970: TimeInterval(row.updatedAt))
+            let isPinned = pinnedSet.contains(row.threadId)
+            if let idx = indexByThread[row.threadId] ?? indexByChatId[id] {
+                var chat = updated[idx]
+                chat.title = row.title
+                chat.createdAt = updatedAt
+                chat.clawixThreadId = row.threadId
+                chat.projectId = project.id
+                chat.isArchived = false
+                chat.isPinned = isPinned
+                chat.cwd = row.cwd
+                updated[idx] = chat
+                changed = true
+            } else {
+                let chat = Chat(
+                    id: id,
+                    title: row.title,
+                    messages: [],
+                    createdAt: updatedAt,
+                    clawixThreadId: row.threadId,
+                    rolloutPath: nil,
+                    historyHydrated: false,
+                    hasActiveTurn: false,
+                    projectId: project.id,
+                    isArchived: false,
+                    isPinned: isPinned,
+                    hasUnreadCompletion: false,
+                    cwd: row.cwd,
+                    hasGitRepo: false,
+                    branch: nil,
+                    availableBranches: [],
+                    uncommittedFiles: nil
+                )
+                indexByThread[row.threadId] = updated.count
+                indexByChatId[id] = updated.count
+                updated.append(chat)
+                changed = true
+            }
+        }
+        guard changed else { return }
+        updated.sort { $0.createdAt > $1.createdAt }
+        chats = updated
+        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
+            chat.clawixThreadId.map { ($0, chat.id) }
+        })
+        pinnedOrder = pinIds.compactMap { threadToChat[$0] }
+        PerfSignpost.uiSidebar.event("project_snapshot.rows", rows.count)
     }
 
     private func requestProjectRefresh(_ project: Project, intent: ProjectRefreshIntent) {
@@ -1403,14 +1502,10 @@ final class AppState: ObservableObject {
     }
 
     /// First-paint pre-population of `chats[]` and `pinnedOrder` from
-    /// the SQLite snapshots of the last applied state. Two layers:
-    /// 1. `sidebar_snapshot` (top-N globally-recent) gives Pinned +
-    ///    Chronological an immediate, high-fidelity first paint.
-    /// 2. `sidebar_snapshot_project` adds every other chat we know
-    ///    about per project, deduplicated against (1). The result is
-    ///    that every accordion in the sidebar already has its rows in
-    ///    memory before any RPC fires, so expanding a folder is
-    ///    instant on cold start.
+    /// the compact JSON snapshot of the last applied state. This keeps
+    /// launch away from SQLite; the post-first-frame SQLite pass only
+    /// hydrates the globally recent rows, while project accordions load
+    /// their own small pages on demand.
     /// No-op when both snapshots are empty (fresh install).
     private func applyFirstPaintCacheForLaunch() {
         guard snapshotEnabled, let payload = FirstPaintCache.load() else { return }
@@ -1471,8 +1566,6 @@ final class AppState: ObservableObject {
         let projectById = Dictionary(uniqueKeysWithValues: projects.map { ($0.id.uuidString, $0) })
 
         var restored: [Chat] = []
-        var seenThreadIds = Set<String>()
-
         // Drive `isPinned` from the live local repo (which already
         // mirrors Codex on boot) rather than the snapshot's `pinned`
         // column, so a pin added in Codex CLI shows up on first paint
@@ -1506,41 +1599,6 @@ final class AppState: ObservableObject {
                 availableBranches: [],
                 uncommittedFiles: nil
             ))
-            seenThreadIds.insert(row.threadId)
-        }
-
-        // Per-project rows. Skip anything already restored from the
-        // global snapshot; the goal is to fill in chats that were
-        // outside the top-N global cut but are still the freshest in
-        // their project. `project_id` is the stable identity; path is
-        // only a recovery locator for older snapshots or moved folders.
-        // Drop rows whose project is no longer known (the user hid the
-        // workspace root or removed the local project).
-        let projectRows = snapshotRepo.loadAllProjectIndexed()
-        for row in projectRows where !seenThreadIds.contains(row.threadId) {
-            guard let id = UUID(uuidString: row.chatUuid) else { continue }
-            guard let project = Self.resolveSnapshotProject(row, projectById: projectById, projectByPath: projectByPath) else { continue }
-            let archived = row.archived != 0
-            restored.append(Chat(
-                id: id,
-                title: row.title,
-                messages: [],
-                createdAt: Date(timeIntervalSince1970: TimeInterval(row.updatedAt)),
-                clawixThreadId: row.threadId,
-                rolloutPath: nil,
-                historyHydrated: false,
-                hasActiveTurn: false,
-                projectId: project.id,
-                isArchived: archived,
-                isPinned: !archived && pinnedSet.contains(row.threadId),
-                hasUnreadCompletion: false,
-                cwd: row.cwd,
-                hasGitRepo: false,
-                branch: nil,
-                availableBranches: [],
-                uncommittedFiles: nil
-            ))
-            seenThreadIds.insert(row.threadId)
         }
 
         guard !restored.isEmpty else { return }
@@ -1571,11 +1629,10 @@ final class AppState: ObservableObject {
     ///
     /// Two snapshots:
     ///  - `sidebar_snapshot`: every chat (Pinned + Chrono first paint).
-    ///  - `sidebar_snapshot_project`: capped per-project so the next
-    ///    cold start can hydrate every accordion's contents before any
-    ///    RPC fires. Cap aligns with the per-project `listThreads`
-    ///    limit so the persisted set is never larger than what a
-    ///    refresh would replace.
+    ///  - `sidebar_snapshot_project`: capped per-project for demand
+    ///    loading when a project row becomes visible or expanded. Cap
+    ///    aligns with the per-project `listThreads` limit so the
+    ///    persisted set is never larger than what a refresh would replace.
     private func persistSidebarSnapshot() {
         guard snapshotEnabled else { return }
         let projectsById = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0) })
@@ -1787,7 +1844,7 @@ final class AppState: ObservableObject {
         return Chat(
             id: old?.id ?? UUID(),
             title: resolveTitle(for: thread),
-            messages: old?.messages ?? [],
+            messages: [],
             createdAt: thread.updatedDate,
             clawixThreadId: thread.id,
             rolloutPath: thread.path.map { URL(fileURLWithPath: $0) } ?? old?.rolloutPath,
@@ -1890,13 +1947,14 @@ final class AppState: ObservableObject {
         let payload: [String: Any] = [
             "projects": projects.map { ["name": $0.name, "path": $0.path] },
             "chats": chats.map { chat in
+                let messages = chatStore.transcript(for: chat.id)?.messages ?? []
                 [
                     "threadId": chat.clawixThreadId ?? "",
                     "title": chat.title,
                     "projectPath": chat.projectId.flatMap { projectsById[$0]?.path } ?? "",
                     "isPinned": chat.isPinned,
                     "isArchived": chat.isArchived,
-                    "messages": chat.messages.map { message in
+                    "messages": messages.map { message in
                         let renderedUser = message.role == .user
                             ? UserBubbleContent.parse(message.content, attachments: message.attachments)
                             : nil
@@ -1909,7 +1967,7 @@ final class AppState: ObservableObject {
                             "workElapsedSeconds": message.workSummary.map { $0.elapsedSeconds(asOf: Date()) } ?? NSNull()
                         ] as [String: Any]
                     },
-                    "toolRows": e2eToolRows(for: chat)
+                    "toolRows": e2eToolRows(for: messages)
                 ] as [String: Any]
             },
             "pinnedCount": chats.filter { $0.isPinned }.count,
@@ -1928,8 +1986,8 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func e2eToolRows(for chat: Chat) -> [[String: String]] {
-        chat.messages.flatMap { message in
+    private func e2eToolRows(for messages: [ChatMessage]) -> [[String: String]] {
+        messages.flatMap { message in
             message.timeline.flatMap { entry -> [[String: String]] in
                 guard case .tools(_, let items) = entry else { return [] }
                 return ToolTimelinePresentation.aggregateRows(for: items).map {
@@ -2042,13 +2100,15 @@ final class AppState: ObservableObject {
     // MARK: - ClawixService callbacks
 
     func attachThreadId(_ threadId: String, to chatId: UUID) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].clawixThreadId = threadId
-        chats[idx].historyHydrated = true
+        guard let existing = chatStore.summary(id: chatId) else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.clawixThreadId = threadId
+            summary.historyHydrated = true
+        }
         // Reflect any pre-attach state onto the freshly-known thread id:
         // a chat created already pinned, or with a project selected,
         // must persist now that we have an id to key by.
-        let chat = chats[idx]
+        let chat = existing
         if chat.isPinned {
             pinsRepo.setPinned(threadId, atEnd: true)
         }
@@ -2056,6 +2116,7 @@ final class AppState: ObservableObject {
            let project = projects.first(where: { $0.id == pid }), !project.path.isEmpty {
             chatProjectsRepo.setOverride(threadId: threadId, projectPath: project.path)
         }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     func appendAssistantPlaceholder(chatId: UUID) -> UUID? {
@@ -2092,6 +2153,7 @@ final class AppState: ObservableObject {
     private var assistantTextFlushScheduled = false
     private var pendingReasoningBuffers: [UUID: String] = [:]
     private var reasoningFlushScheduled = false
+    private var streamingSettlementTasks: [UUID: Task<Void, Never>] = [:]
 
     func appendAssistantDelta(chatId: UUID, delta: String) {
         if delta.isEmpty { return }
@@ -2110,12 +2172,14 @@ final class AppState: ObservableObject {
               transcript.lastMessage?.id == messageId
         else { return }
         transcript.mutateMessage(id: messageId) { message in
+            flushStreamingCheckpointTails(&message)
             message.streamingFinished = true
         }
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
         syncLegacyChatFromStore(chatId: chatId)
+        scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: messageId)
     }
 
     /// Replace the in-flight assistant placeholder with an error message.
@@ -2133,11 +2197,15 @@ final class AppState: ObservableObject {
             message.content = display
             message.isError = true
             message.streamingFinished = true
+            message.streamCheckpoints = StreamingFade.settledSentinel(prefixCount: display.count)
+            message.streamPendingTail = ""
+            settleReasoningCheckpoints(&message)
         }
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
         syncLegacyChatFromStore(chatId: chatId)
+        scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: messageId)
     }
 
     private func scheduleAssistantTextFlush() {
@@ -2359,49 +2427,7 @@ final class AppState: ObservableObject {
                 message.content = text
             }
             message.streamingFinished = true
-            // Flush any trailing partial word so its characters get a fade
-            // schedule and don't sit at opacity 0 forever.
-            let cps = message.streamCheckpoints
-            let pending = message.streamPendingTail
-            if !pending.isEmpty {
-                let flushed = StreamingFade.ingest(
-                    delta: "",
-                    pendingTail: pending,
-                    scheduledLength: cps.last?.prefixCount ?? 0,
-                    lastFadeStart: cps.last?.addedAt ?? .distantPast,
-                    flush: true
-                )
-                if !flushed.newCheckpoints.isEmpty {
-                    message.streamCheckpoints
-                        .append(contentsOf: flushed.newCheckpoints)
-                }
-                message.streamCheckpoints = StreamingFade.compact(
-                    checkpoints: message.streamCheckpoints
-                )
-                message.streamPendingTail = flushed.pendingTail
-            }
-            // Same for every reasoning chunk in the timeline.
-            for entry in message.timeline {
-                guard case .reasoning(let entryId, _) = entry else { continue }
-                let rcps = message.reasoningCheckpoints[entryId] ?? []
-                let rpending = message.reasoningPendingTails[entryId] ?? ""
-                guard !rpending.isEmpty else { continue }
-                let flushed = StreamingFade.ingest(
-                    delta: "",
-                    pendingTail: rpending,
-                    scheduledLength: rcps.last?.prefixCount ?? 0,
-                    lastFadeStart: rcps.last?.addedAt ?? .distantPast,
-                    flush: true
-                )
-                if !flushed.newCheckpoints.isEmpty {
-                    message.reasoningCheckpoints[entryId, default: []]
-                        .append(contentsOf: flushed.newCheckpoints)
-                }
-                message.reasoningCheckpoints[entryId] = StreamingFade.compact(
-                    checkpoints: message.reasoningCheckpoints[entryId] ?? []
-                )
-                message.reasoningPendingTails[entryId] = flushed.pendingTail
-            }
+            flushStreamingCheckpointTails(&message)
         }
         chatStore.updateSummary(id: chatId) { summary in
             summary.lastTurnInterrupted = false
@@ -2414,6 +2440,123 @@ final class AppState: ObservableObject {
         // surface the soft-blue unread dot in the sidebar so they can spot
         // the freshly-arrived reply at a glance.
         syncLegacyChatFromStore(chatId: chatId)
+        scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: lastMessage.id)
+    }
+
+    func scheduleStreamingCheckpointSettlement(chatId: UUID, messageId: UUID) {
+        streamingSettlementTasks[messageId]?.cancel()
+
+        guard let message = chatStore.transcript(for: chatId)?.messageStore(id: messageId)?.message else {
+            streamingSettlementTasks[messageId] = nil
+            return
+        }
+        let delay = streamingSettlementDelay(for: message)
+        guard delay > 0 else {
+            settleStreamingCheckpoints(chatId: chatId, messageId: messageId)
+            return
+        }
+
+        streamingSettlementTasks[messageId] = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await self?.settleStreamingCheckpoints(chatId: chatId, messageId: messageId)
+        }
+    }
+
+    private func streamingSettlementDelay(for message: ChatMessage) -> Double {
+        let textDelay = StreamingFade.settlementDelay(checkpoints: message.streamCheckpoints)
+        let reasoningDelay = message.reasoningCheckpoints.values
+            .map { StreamingFade.settlementDelay(checkpoints: $0) }
+            .max() ?? 0
+        return max(textDelay, reasoningDelay)
+    }
+
+    func settleStreamingCheckpoints(chatId: UUID, messageId: UUID) {
+        guard let transcript = chatStore.transcript(for: chatId),
+              transcript.messageStore(id: messageId) != nil
+        else {
+            streamingSettlementTasks[messageId] = nil
+            return
+        }
+
+        var beforeCount = 0
+        var afterCount = 0
+        var changed = false
+        transcript.mutateMessage(id: messageId) { message in
+            beforeCount = streamingCheckpointCount(message)
+            let beforePending = !message.streamPendingTail.isEmpty || !message.reasoningPendingTails.isEmpty
+            message.streamCheckpoints = StreamingFade.settled(checkpoints: message.streamCheckpoints)
+            message.streamPendingTail = ""
+            settleReasoningCheckpoints(&message)
+            afterCount = streamingCheckpointCount(message)
+            changed = beforeCount != afterCount || beforePending
+        }
+        streamingSettlementTasks[messageId] = nil
+
+        PerfSignpost.renderStreaming.event("settle.checkpoints.before", beforeCount)
+        PerfSignpost.renderStreaming.event("settle.checkpoints.after", afterCount)
+
+        if changed {
+            syncLegacyChatFromStore(chatId: chatId)
+        }
+    }
+
+    func flushStreamingCheckpointTails(_ message: inout ChatMessage) {
+        if !message.streamPendingTail.isEmpty {
+            let flushed = StreamingFade.ingest(
+                delta: "",
+                pendingTail: message.streamPendingTail,
+                scheduledLength: message.streamCheckpoints.last?.prefixCount ?? 0,
+                lastFadeStart: message.streamCheckpoints.last?.addedAt ?? .distantPast,
+                flush: true
+            )
+            message.streamCheckpoints.append(contentsOf: flushed.newCheckpoints)
+            message.streamCheckpoints = StreamingFade.compact(checkpoints: message.streamCheckpoints)
+            message.streamPendingTail = flushed.pendingTail
+        }
+
+        for entry in message.timeline {
+            guard case .reasoning(let entryId, _) = entry else { continue }
+            let pending = message.reasoningPendingTails[entryId] ?? ""
+            guard !pending.isEmpty else { continue }
+            let checkpoints = message.reasoningCheckpoints[entryId] ?? []
+            let flushed = StreamingFade.ingest(
+                delta: "",
+                pendingTail: pending,
+                scheduledLength: checkpoints.last?.prefixCount ?? 0,
+                lastFadeStart: checkpoints.last?.addedAt ?? .distantPast,
+                flush: true
+            )
+            message.reasoningCheckpoints[entryId, default: []].append(contentsOf: flushed.newCheckpoints)
+            message.reasoningCheckpoints[entryId] = StreamingFade.compact(
+                checkpoints: message.reasoningCheckpoints[entryId] ?? []
+            )
+            message.reasoningPendingTails[entryId] = flushed.pendingTail
+        }
+    }
+
+    func settleReasoningCheckpoints(_ message: inout ChatMessage) {
+        var settled: [UUID: [StreamCheckpoint]] = [:]
+        var validIds = Set<UUID>()
+        for entry in message.timeline {
+            guard case .reasoning(let entryId, _) = entry else { continue }
+            validIds.insert(entryId)
+            let checkpoints = StreamingFade.settled(
+                checkpoints: message.reasoningCheckpoints[entryId] ?? []
+            )
+            if !checkpoints.isEmpty {
+                settled[entryId] = checkpoints
+            }
+        }
+        message.reasoningCheckpoints = settled
+        message.reasoningPendingTails = message.reasoningPendingTails.filter { validIds.contains($0.key) }
+        if message.streamingFinished || message.isError {
+            message.reasoningPendingTails.removeAll(keepingCapacity: false)
+        }
+    }
+
+    private func streamingCheckpointCount(_ message: ChatMessage) -> Int {
+        message.streamCheckpoints.count + message.reasoningCheckpoints.values.reduce(0) { $0 + $1.count }
     }
 
     private func isCurrentRoute(chatId: UUID) -> Bool {

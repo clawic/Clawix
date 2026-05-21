@@ -107,7 +107,8 @@ enum UserBubbleContent {
                 attachment.id,
                 attachment.kind.rawValue,
                 attachment.filename ?? "",
-                String(attachment.dataBase64.count)
+                String(attachment.dataBase64?.count ?? 0),
+                String(attachment.byteSize ?? 0)
             ].joined(separator: "\u{1f}")
         }.joined(separator: "\u{1e}")
         return raw + "\u{1d}" + attachmentKey
@@ -349,7 +350,13 @@ final class UserImageThumbnailLoader: @unchecked Sendable {
                 maxPixelSize: maxPixelSize
             )
         case .attachment(let attachment):
-            guard let data = Data(base64Encoded: attachment.dataBase64) else {
+            let data: Data
+            if let dataBase64 = attachment.dataBase64,
+               let inline = Data(base64Encoded: dataBase64) {
+                data = inline
+            } else if let lazy = RolloutAttachmentRegistry.shared.bytes(for: attachment.id)?.data {
+                data = lazy
+            } else {
                 throw LoadError.invalidAttachmentData
             }
             try Task.checkCancellation()
@@ -360,7 +367,7 @@ final class UserImageThumbnailLoader: @unchecked Sendable {
             )
             return try loadThumbnail(
                 cacheKey: cacheKey,
-                sourceBytes: data.count,
+                sourceBytes: attachment.byteSize ?? data.count,
                 makeSource: {
                     CGImageSourceCreateWithData(
                         data as CFData,

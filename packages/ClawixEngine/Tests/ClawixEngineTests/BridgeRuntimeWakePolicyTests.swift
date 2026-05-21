@@ -9,6 +9,7 @@ final class BridgeRuntimeWakePolicyTests: XCTestCase {
             .listSessions,
             .pairingStart,
             .requestRateLimits,
+            .requestClawJSServiceStatuses,
             .listProjects,
             .auth(
                 token: "token",

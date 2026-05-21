@@ -146,6 +146,7 @@ final class DaemonBridgeClient {
             // Ask the daemon for the current snapshot; subsequent
             // changes flow back as `rateLimitsUpdated` pushes.
             send(.requestRateLimits)
+            send(.requestClawJSServiceStatuses)
         case .sessionsSnapshot(let chats):
             if chats.isEmpty,
                bridgeState != "ready",
@@ -185,6 +186,10 @@ final class DaemonBridgeClient {
         case .rateLimitsSnapshot(let snapshot, let byLimitId),
              .rateLimitsUpdated(let snapshot, let byLimitId):
             appState?.applyDaemonRateLimits(snapshot: snapshot, byLimitId: byLimitId)
+        case .clawJSServiceStatusesSnapshot(let services):
+            ClawJSServiceManager.shared.applyDaemonServiceStatuses(services)
+        case .clawJSServiceStatusUpdated(let service):
+            ClawJSServiceManager.shared.applyDaemonServiceStatuses([service])
         case .bridgeState(let state, _, _):
             bridgeState = state
         case .authFailed, .versionMismatch:

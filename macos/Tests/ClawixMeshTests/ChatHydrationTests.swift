@@ -77,8 +77,9 @@ final class ChatHydrationTests: XCTestCase {
             state.chats.first?.historyHydrated == true
         }
 
-        XCTAssertEqual(attempts, 3)
-        XCTAssertEqual(state.chats.first?.messages.map(\.content), ["Recovered history"])
+        XCTAssertEqual(attempts, 4)
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.map(\.content), ["Recovered history"])
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func testEmptyClawJSSessionHistoryFallsBackToCodexRollout() async throws {
@@ -134,8 +135,104 @@ final class ChatHydrationTests: XCTestCase {
             state.chats.first?.historyHydrated == true
         }
 
-        XCTAssertEqual(state.chats.first?.messages.map(\.content), ["Original prompt", "Fallback history"])
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.map(\.content), ["Original prompt", "Fallback history"])
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
         XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
+    }
+
+    func testClawJSSessionHydrationLoadsOnlyTailWindowAndKeepsLegacyChatsSummaryOnly() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var messageRequests: [URLRequest] = []
+        SessionsHistoryURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            switch request.url?.path {
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail":
+                return (response, Data("""
+                {
+                  "session": {
+                    "id": "thread-tail",
+                    "agent": "codex",
+                    "runtime": null,
+                    "machine": null,
+                    "workspaceId": null,
+                    "projectId": null,
+                    "projectPath": "/tmp",
+                    "runtimeAdapter": null,
+                    "runtimeSessionId": null,
+                    "title": "Tail",
+                    "createdAt": 1710000000000,
+                    "lastMessageAt": 1710000100000,
+                    "messageCount": 100,
+                    "pinned": false,
+                    "archived": false,
+                    "sidebarVisible": true,
+                    "branch": null,
+                    "cwd": "/tmp",
+                    "status": "active",
+                    "customMetadata": null
+                  },
+                  "messages": []
+                }
+                """.utf8))
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail/messages":
+                messageRequests.append(request)
+                let items = (0..<bridgeInitialPageLimit).map { idx in
+                    """
+                    {
+                      "id": "msg-\(idx)",
+                      "sessionId": "thread-tail",
+                      "role": "\(idx % 2 == 0 ? "user" : "assistant")",
+                      "contentText": "tail \(idx)",
+                      "timestamp": \(1710000000000 + idx),
+                      "streamingState": "complete"
+                    }
+                    """
+                }.joined(separator: ",")
+                return (response, Data("{\"items\":[\(items)]}".utf8))
+            default:
+                let notFound = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+                return (notFound, Data(#"{"error":"unexpected"}"#.utf8))
+            }
+        }
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .chat(chatId)
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Tail",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-tail",
+                historyHydrated: false
+            )
+        ]
+        state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        state.hydrateHistoryIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messageIds.count == bridgeInitialPageLimit
+        }
+
+        let request = try XCTUnwrap(messageRequests.first)
+        let query = Self.queryItems(for: request)
+        XCTAssertEqual(query["limit"], "\(bridgeInitialPageLimit)")
+        XCTAssertEqual(query["offset"], "\(100 - bridgeInitialPageLimit)")
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, true)
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func testClawJSSessionsStartupLoadsOnlyBoundedPinnedAndRecentSessions() async throws {

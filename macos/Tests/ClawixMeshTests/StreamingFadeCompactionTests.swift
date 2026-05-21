@@ -49,4 +49,45 @@ final class StreamingFadeCompactionTests: XCTestCase {
             active
         ])
     }
+
+    func testSettledSentinelUsesLastPrefix() {
+        let now = Date()
+        let checkpoints = [
+            StreamCheckpoint(prefixCount: 4, addedAt: now),
+            StreamCheckpoint(prefixCount: 12, addedAt: now.addingTimeInterval(StreamingFade.stagger))
+        ]
+
+        XCTAssertEqual(StreamingFade.settled(checkpoints: checkpoints), [
+            StreamCheckpoint(prefixCount: 12, addedAt: .distantPast)
+        ])
+    }
+
+    func testSettlementDelayForPastCurrentAndFutureCheckpoints() {
+        let now = Date()
+
+        XCTAssertEqual(
+            StreamingFade.settlementDelay(
+                checkpoints: [StreamCheckpoint(prefixCount: 5, addedAt: now.addingTimeInterval(-StreamingFade.duration - 1))],
+                now: now
+            ),
+            0,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            StreamingFade.settlementDelay(
+                checkpoints: [StreamCheckpoint(prefixCount: 5, addedAt: now.addingTimeInterval(-StreamingFade.duration / 2))],
+                now: now
+            ),
+            StreamingFade.duration / 2,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            StreamingFade.settlementDelay(
+                checkpoints: [StreamCheckpoint(prefixCount: 5, addedAt: now.addingTimeInterval(0.1))],
+                now: now
+            ),
+            StreamingFade.duration + 0.1,
+            accuracy: 0.001
+        )
+    }
 }

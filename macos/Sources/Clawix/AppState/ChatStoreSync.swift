@@ -4,10 +4,26 @@ extension AppState {
     func syncChatStoreFromLegacySnapshots() {
         chatStore.replaceActive(with: chats)
         chatStore.replaceArchived(with: archivedChats)
+        stripLegacyTranscriptPayloadsIfNeeded()
+    }
+
+    func stripLegacyTranscriptPayloadsIfNeeded() {
+        guard !syncingLegacyChatsFromStore else { return }
+        let activeNeedsStrip = chats.contains { !$0.messages.isEmpty }
+        let archivedNeedsStrip = archivedChats.contains { !$0.messages.isEmpty }
+        guard activeNeedsStrip || archivedNeedsStrip else { return }
+        syncingLegacyChatsFromStore = true
+        if activeNeedsStrip {
+            chats = chats.map(\.summarySnapshot)
+        }
+        if archivedNeedsStrip {
+            archivedChats = archivedChats.map(\.summarySnapshot)
+        }
+        syncingLegacyChatsFromStore = false
     }
 
     func syncLegacyChatFromStore(chatId: UUID) {
-        guard let snapshot = chatStore.snapshot(id: chatId) else { return }
+        guard let snapshot = chatStore.summarySnapshot(id: chatId) else { return }
         syncingLegacyChatsFromStore = true
         if snapshot.isArchived {
             if let idx = archivedChats.firstIndex(where: { $0.id == chatId }) {

@@ -43,7 +43,7 @@ final class ChatStorePublicationTests: XCTestCase {
         XCTAssertEqual(chatsPublishes, 0)
         XCTAssertEqual(messagePublishes, 1)
         XCTAssertEqual(messageStore?.message.content, "hello")
-        XCTAssertEqual(state.chats.first?.messages.first?.content, "")
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func testDaemonStreamingReplacementDoesNotPublishLegacyChatsUntilFinished() {
@@ -72,7 +72,7 @@ final class ChatStorePublicationTests: XCTestCase {
             state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message.content,
             "partial"
         )
-        XCTAssertEqual(state.chats.first?.messages.first?.content, "")
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
 
         state.applyDaemonStreaming(
             chatId: chatId.uuidString,
@@ -83,7 +83,7 @@ final class ChatStorePublicationTests: XCTestCase {
         )
 
         XCTAssertEqual(chatsPublishes, 1)
-        XCTAssertEqual(state.chats.first?.messages.first?.content, "final")
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
     func testReasoningDeltasCoalesceWithoutPublishingLegacyChats() {
@@ -162,6 +162,144 @@ final class ChatStorePublicationTests: XCTestCase {
         ])
     }
 
+    func testCompletedAssistantSettlesTextCheckpointsAfterFadeWindow() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = assistantWithCheckpoints(content: "hello world ")
+        state.chats = [
+            Chat(id: chatId, title: "Complete", messages: [assistant], createdAt: Date())
+        ]
+
+        state.markAssistantCompleted(chatId: chatId, finalText: "hello world ")
+
+        let message = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message
+        XCTAssertEqual(message?.streamingFinished, true)
+        XCTAssertEqual(message?.streamCheckpoints, [
+            StreamCheckpoint(prefixCount: 12, addedAt: .distantPast)
+        ])
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
+    }
+
+    func testCanonicalReplacementIsAlreadySettled() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = assistantWithCheckpoints(content: "partial ")
+        state.chats = [
+            Chat(id: chatId, title: "Replacement", messages: [assistant], createdAt: Date())
+        ]
+
+        state.markAssistantCompleted(chatId: chatId, finalText: "final answer")
+
+        let message = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message
+        XCTAssertEqual(message?.content, "final answer")
+        XCTAssertEqual(message?.streamCheckpoints, [
+            StreamCheckpoint(prefixCount: "final answer".count, addedAt: .distantPast)
+        ])
+    }
+
+    func testCompletedAssistantSettlesReasoningBucketsAndDropsOrphans() {
+        let state = AppState()
+        let chatId = UUID()
+        let firstReasoningId = UUID()
+        let secondReasoningId = UUID()
+        let orphanId = UUID()
+        let now = Date()
+        let assistant = ChatMessage(
+            role: .assistant,
+            content: "answer ",
+            reasoningText: "first second",
+            streamingFinished: false,
+            timeline: [
+                .reasoning(id: firstReasoningId, text: "first "),
+                .tools(id: UUID(), items: []),
+                .reasoning(id: secondReasoningId, text: "second ")
+            ],
+            streamCheckpoints: [],
+            reasoningCheckpoints: [
+                firstReasoningId: [
+                    StreamCheckpoint(prefixCount: 3, addedAt: now.addingTimeInterval(-2)),
+                    StreamCheckpoint(prefixCount: 6, addedAt: now.addingTimeInterval(-1))
+                ],
+                secondReasoningId: [
+                    StreamCheckpoint(prefixCount: 4, addedAt: now.addingTimeInterval(-2)),
+                    StreamCheckpoint(prefixCount: 7, addedAt: now.addingTimeInterval(-1))
+                ],
+                orphanId: [
+                    StreamCheckpoint(prefixCount: 99, addedAt: now.addingTimeInterval(-1))
+                ]
+            ],
+            reasoningPendingTails: [
+                orphanId: "orphan"
+            ]
+        )
+        state.chats = [
+            Chat(id: chatId, title: "Reasoning complete", messages: [assistant], createdAt: Date())
+        ]
+
+        state.markAssistantCompleted(chatId: chatId, finalText: nil)
+
+        let message = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message
+        XCTAssertEqual(message.map { Set($0.reasoningCheckpoints.keys) } ?? Set<UUID>(), [firstReasoningId, secondReasoningId])
+        XCTAssertEqual(message?.reasoningCheckpoints[firstReasoningId], [
+            StreamCheckpoint(prefixCount: 6, addedAt: .distantPast)
+        ])
+        XCTAssertEqual(message?.reasoningCheckpoints[secondReasoningId], [
+            StreamCheckpoint(prefixCount: 7, addedAt: .distantPast)
+        ])
+        XCTAssertEqual(message?.reasoningPendingTails ?? [:], [:])
+    }
+
+    func testFailedAssistantDoesNotRetainPerWordCheckpoints() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = assistantWithCheckpoints(content: "partial ")
+        state.chats = [
+            Chat(id: chatId, title: "Failed", messages: [assistant], createdAt: Date())
+        ]
+
+        state.markAssistantFailed(chatId: chatId, messageId: assistant.id, error: "network failed")
+
+        let message = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message
+        XCTAssertEqual(message?.isError, true)
+        XCTAssertEqual(message?.streamCheckpoints.count, 1)
+        XCTAssertEqual(message?.streamCheckpoints.first?.addedAt, .distantPast)
+    }
+
+    func testLocalAssistantFinishDoesNotRetainPerWordCheckpoints() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = assistantWithCheckpoints(content: "local answer ")
+        state.chats = [
+            Chat(id: chatId, title: "Local", messages: [assistant], createdAt: Date())
+        ]
+
+        state.markAssistantFinished(chatId: chatId, messageId: assistant.id)
+
+        let message = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)?.message
+        XCTAssertEqual(message?.streamingFinished, true)
+        XCTAssertEqual(message?.streamCheckpoints, [
+            StreamCheckpoint(prefixCount: "local answer ".count, addedAt: .distantPast)
+        ])
+    }
+
+    func testForkedHistoryDoesNotCopyPerWordCheckpoints() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = assistantWithCheckpoints(content: "forked answer ")
+        state.chats = [
+            Chat(id: chatId, title: "Fork source", messages: [assistant], createdAt: Date())
+        ]
+
+        let forkId = state.forkConversation(chatId: chatId)
+        let forkedMessage = forkId.flatMap { state.chatStore.transcript(for: $0)?.messages.first }
+
+        XCTAssertNotEqual(forkedMessage?.id, assistant.id)
+        XCTAssertEqual(forkedMessage?.streamingFinished, true)
+        XCTAssertEqual(forkedMessage?.streamCheckpoints, [
+            StreamCheckpoint(prefixCount: "forked answer ".count, addedAt: .distantPast)
+        ])
+    }
+
     private func reasoningTexts(in timeline: [AssistantTimelineEntry]) -> [String] {
         timeline.compactMap { entry in
             guard case .reasoning(_, let text) = entry else { return nil }
@@ -180,5 +318,19 @@ final class ChatStorePublicationTests: XCTestCase {
                 return "tools:\(items.count)"
             }
         }
+    }
+
+    private func assistantWithCheckpoints(content: String) -> ChatMessage {
+        let now = Date()
+        return ChatMessage(
+            role: .assistant,
+            content: content,
+            streamingFinished: false,
+            timeline: [.message(id: UUID(), text: content)],
+            streamCheckpoints: [
+                StreamCheckpoint(prefixCount: max(1, content.count / 2), addedAt: now.addingTimeInterval(-2)),
+                StreamCheckpoint(prefixCount: content.count, addedAt: now.addingTimeInterval(-1))
+            ]
+        )
     }
 }

@@ -9,12 +9,15 @@ extension AppState {
     /// the chrome.
     func switchBranch(chatId: UUID, to branch: String) {
         guard FeatureFlags.shared.isVisible(.git) else { return }
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].branch = branch
-        if !chats[idx].availableBranches.contains(branch) {
-            chats[idx].availableBranches.insert(branch, at: 0)
+        guard chatStore.summary(id: chatId) != nil else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.branch = branch
+            if !summary.availableBranches.contains(branch) {
+                summary.availableBranches.insert(branch, at: 0)
+            }
+            summary.uncommittedFiles = nil
         }
-        chats[idx].uncommittedFiles = nil
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Append a new branch to the chat's known list and switch to it.
@@ -22,13 +25,15 @@ extension AppState {
     func createBranch(chatId: UUID, name: String) {
         guard FeatureFlags.shared.isVisible(.git) else { return }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty,
-              let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        if !chats[idx].availableBranches.contains(trimmed) {
-            chats[idx].availableBranches.insert(trimmed, at: 0)
+        guard !trimmed.isEmpty, chatStore.summary(id: chatId) != nil else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            if !summary.availableBranches.contains(trimmed) {
+                summary.availableBranches.insert(trimmed, at: 0)
+            }
+            summary.branch = trimmed
+            summary.uncommittedFiles = nil
         }
-        chats[idx].branch = trimmed
-        chats[idx].uncommittedFiles = nil
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     func updateTokenUsage(chatId: UUID, usage: ThreadTokenUsage) {
@@ -191,8 +196,7 @@ extension AppState {
         atMessageId anchorMessageId: UUID? = nil,
         sourceSnapshot: Chat? = nil
     ) -> UUID? {
-        guard let srcIdx = chats.firstIndex(where: { $0.id == chatId }) else { return nil }
-        var source = chats[srcIdx]
+        guard var source = chatStore.snapshot(id: chatId) else { return nil }
         let snapshotMessages = sourceSnapshot.flatMap { $0.id == chatId ? $0.messages : nil } ?? []
         if source.messages.isEmpty, !snapshotMessages.isEmpty {
             source.messages = snapshotMessages
@@ -217,25 +221,7 @@ extension AppState {
         // the forked chat is decoupled from the parent. Streaming state
         // is reset because the copied turns are by definition completed
         // history at fork time.
-        let copied: [ChatMessage] = sourceMessages[0...cutIndex].map { msg in
-            ChatMessage(
-                id: UUID(),
-                role: msg.role,
-                content: msg.content,
-                reasoningText: msg.reasoningText,
-                streamingFinished: true,
-                isError: msg.isError,
-                timestamp: msg.timestamp,
-                workSummary: msg.workSummary,
-                timeline: msg.timeline,
-                streamCheckpoints: msg.streamCheckpoints,
-                streamPendingTail: "",
-                reasoningCheckpoints: msg.reasoningCheckpoints,
-                reasoningPendingTails: [:],
-                audioRef: msg.audioRef,
-                attachments: msg.attachments
-            )
-        }
+        let copied: [ChatMessage] = sourceMessages[0...cutIndex].map(historySettledCopy)
         guard let bannerAfterId = copied.last?.id else { return nil }
 
         let newChat = Chat(
@@ -309,6 +295,34 @@ extension AppState {
         return []
     }
 
+    private func historySettledCopy(from msg: ChatMessage) -> ChatMessage {
+        var reasoningCheckpoints: [UUID: [StreamCheckpoint]] = [:]
+        for entry in msg.timeline {
+            guard case .reasoning(let entryId, _) = entry else { continue }
+            let settled = StreamingFade.settled(checkpoints: msg.reasoningCheckpoints[entryId] ?? [])
+            if !settled.isEmpty {
+                reasoningCheckpoints[entryId] = settled
+            }
+        }
+        return ChatMessage(
+            id: UUID(),
+            role: msg.role,
+            content: msg.content,
+            reasoningText: msg.reasoningText,
+            streamingFinished: true,
+            isError: msg.isError,
+            timestamp: msg.timestamp,
+            workSummary: msg.workSummary,
+            timeline: msg.timeline,
+            streamCheckpoints: StreamingFade.settled(checkpoints: msg.streamCheckpoints),
+            streamPendingTail: "",
+            reasoningCheckpoints: reasoningCheckpoints,
+            reasoningPendingTails: [:],
+            audioRef: msg.audioRef,
+            attachments: msg.attachments
+        )
+    }
+
     /// Silent variant of `forkConversation` that powers "Open in side
     /// chat". Spawns a sibling conversation that inherits the parent's
     /// full context server-side (via `clawix.forkThread`), but starts
@@ -319,8 +333,7 @@ extension AppState {
     /// Returns the new chat's id.
     @discardableResult
     func openInSideChat(parentChatId: UUID) -> UUID? {
-        guard let srcIdx = chats.firstIndex(where: { $0.id == parentChatId }) else { return nil }
-        let source = chats[srcIdx]
+        guard let source = chatStore.snapshot(id: parentChatId) else { return nil }
 
         let newChat = Chat(
             id: UUID(),
@@ -403,19 +416,25 @@ extension AppState {
         }
 
         let userMsg = ChatMessage(role: .user, content: combined, timestamp: Date())
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].messages.append(userMsg)
-        chats[idx].lastTurnInterrupted = false
+        guard var summary = chatStore.summary(id: chatId) else { return }
+        chatStore.appendMessage(chatId: chatId, userMsg)
+        chatStore.updateSummary(id: chatId) { item in
+            item.lastTurnInterrupted = false
+        }
         // Side chats start with an empty title so the tab pill reads
         // "Side chat" until the user types. On the first message we
         // promote the prompt to the title — same convention as the
         // home-route new-chat branch in `sendMessage()`.
-        if chats[idx].title.isEmpty {
+        if summary.title.isEmpty {
             let titleSeed = trimmed.isEmpty
                 ? (attachments.first?.filename ?? "Side chat")
                 : trimmed
-            chats[idx].title = String(titleSeed.prefix(40))
+            summary.title = String(titleSeed.prefix(40))
+            chatStore.updateSummary(id: chatId) { item in
+                item.title = summary.title
+            }
         }
+        syncLegacyChatFromStore(chatId: chatId)
 
         composer.text = ""
         composer.attachments = []
@@ -444,14 +463,15 @@ extension AppState {
     }
 
     func appendErrorBubble(chatId: UUID, message: String) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
+        guard chatStore.summary(id: chatId) != nil else { return }
         let bubble = ChatMessage(
             role: .assistant,
             content: "Error: \(message)",
             isError: true,
             timestamp: Date()
         )
-        chats[idx].messages.append(bubble)
+        chatStore.appendMessage(chatId: chatId, bubble)
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     // MARK: - Titles
@@ -488,11 +508,12 @@ extension AppState {
     func renameChat(chatId: UUID, newTitle: String) {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
-              let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        guard let threadId = chats[idx].clawixThreadId else {
-            var copy = chats
-            copy[idx].title = trimmed
-            chats = copy
+              let summary = chatStore.summary(id: chatId) else { return }
+        guard let threadId = summary.clawixThreadId else {
+            chatStore.updateSummary(id: chatId) { item in
+                item.title = trimmed
+            }
+            syncLegacyChatFromStore(chatId: chatId)
             return
         }
         guard let clawix,
@@ -500,9 +521,10 @@ extension AppState {
             appendErrorBubble(chatId: chatId, message: "Renaming requires the runtime to be available.")
             return
         }
-        var copy = chats
-        copy[idx].title = trimmed
-        chats = copy
+        chatStore.updateSummary(id: chatId) { item in
+            item.title = trimmed
+        }
+        syncLegacyChatFromStore(chatId: chatId)
         titlesRepo.upsertManual(threadId: threadId, title: trimmed)
 
         guard SyncSettings.syncRenamesWithCodex else { return }
@@ -516,12 +538,13 @@ extension AppState {
     }
 
     func applyRuntimeTitle(threadId: String, title: String) {
-        guard let idx = chats.firstIndex(where: { $0.clawixThreadId == threadId }) else { return }
+        guard let summary = (chatStore.summaries + chatStore.archivedSummaries).first(where: { $0.clawixThreadId == threadId }) else { return }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        var copy = chats
-        copy[idx].title = trimmed
-        chats = copy
+        chatStore.updateSummary(id: summary.id) { item in
+            item.title = trimmed
+        }
+        syncLegacyChatFromStore(chatId: summary.id)
     }
 
     func archiveChat(chatId: UUID) {

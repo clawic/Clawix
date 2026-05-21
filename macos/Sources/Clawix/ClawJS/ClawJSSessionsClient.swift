@@ -128,6 +128,17 @@ struct ClawJSSessionsClient {
         let items: [MessageRecord]
     }
 
+    struct SearchResponse: Decodable {
+        let items: [SearchHit]
+    }
+
+    struct SearchHit: Decodable, Equatable {
+        let session: SessionRecord
+        let message: MessageRecord
+        let snippet: String
+        let rank: Double
+    }
+
     struct SessionWithMessages: Decodable {
         let session: SessionRecord
         let messages: [MessageRecord]
@@ -280,8 +291,33 @@ struct ClawJSSessionsClient {
         try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(id)", method: "PATCH", body: patch)
     }
 
-    func listMessages(sessionId: String) async throws -> [MessageRecord] {
-        let response: MessagesResponse = try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(sessionId)/messages")
+    func listMessages(sessionId: String, limit: Int? = nil, offset: Int? = nil) async throws -> [MessageRecord] {
+        var items: [URLQueryItem] = []
+        if let limit { items.append(URLQueryItem(name: "limit", value: "\(limit)")) }
+        if let offset { items.append(URLQueryItem(name: "offset", value: "\(offset)")) }
+        let response: MessagesResponse = try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(sessionId)/messages",
+            queryItems: items
+        )
+        return response.items
+    }
+
+    func searchMessages(
+        query: String,
+        projectId: String? = nil,
+        projectPath: String? = nil,
+        limit: Int = 50
+    ) async throws -> [SearchHit] {
+        var items = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "limit", value: "\(limit)")
+        ]
+        if let projectId { items.append(URLQueryItem(name: "projectId", value: projectId)) }
+        if let projectPath { items.append(URLQueryItem(name: "projectPath", value: projectPath)) }
+        let response: SearchResponse = try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/search",
+            queryItems: items
+        )
         return response.items
     }
 

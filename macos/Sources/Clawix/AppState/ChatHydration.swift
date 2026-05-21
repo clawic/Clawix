@@ -9,7 +9,7 @@ extension AppState {
     /// refuses to start. Order: current chat's project > selectedProject > $HOME.
     var threadCwd: String {
         if case let .chat(id) = currentRoute,
-           let chat = chats.first(where: { $0.id == id }),
+           let chat = chat(byId: id),
            let pid = chat.projectId,
            let proj = projects.first(where: { $0.id == pid }) {
             let expanded = (proj.path as NSString).expandingTildeInPath
@@ -90,7 +90,8 @@ extension AppState {
 
     private func shouldHydrateHistory(_ chat: Chat) -> Bool {
         if !chat.historyHydrated { return true }
-        return chat.messages.isEmpty && (chat.rolloutPath != nil || chat.clawixThreadId != nil)
+        let transcriptIsEmpty = chatStore.transcript(for: chat.id)?.messageIds.isEmpty ?? true
+        return transcriptIsEmpty && (chat.rolloutPath != nil || chat.clawixThreadId != nil)
     }
 
     /// Find a chat by id across both the active and archived lists. The
@@ -107,11 +108,10 @@ extension AppState {
     /// if the id is unknown. Used by hydration paths that need to write
     /// back into the chat regardless of its archived state.
     private func mutateChat(id: UUID, _ mutate: (inout Chat) -> Void) {
-        if let idx = chats.firstIndex(where: { $0.id == id }) {
-            mutate(&chats[idx])
-        } else if let idx = archivedChats.firstIndex(where: { $0.id == id }) {
-            mutate(&archivedChats[idx])
-        }
+        guard var snapshot = chat(byId: id) else { return }
+        mutate(&snapshot)
+        chatStore.upsert(snapshot, archived: snapshot.isArchived)
+        syncLegacyChatFromStore(chatId: id)
     }
 
     func hydrateHistoryIfNeeded(chatId: UUID, blocking: Bool = false) {
@@ -133,12 +133,11 @@ extension AppState {
             // scrolls hundreds of turns up immediately, and the
             // snapshot has already painted the sidebar; capping the
             // parse cost keeps "click chat → first paint" sub-second
-            // regardless of total file size. iOS-bridge path
-            // (`blocking == true`): the bridge composes its response
-            // inline and needs the full history before it returns,
-            // so keep the synchronous full read.
+            // regardless of total file size. The bridge path is still
+            // synchronous, but it also uses the bounded tail page; older
+            // rows are loaded through `loadOlderMessages`.
             if blocking {
-                applyRolloutResult(RolloutReader.readWithStatus(path: path), chatId: chatId)
+                applyRolloutResult(RolloutReader.readTailWithStatus(path: path), chatId: chatId)
             } else {
                 Task.detached(priority: .userInitiated) { [weak self] in
                     let result = RolloutReader.readTailWithStatus(path: path)
@@ -183,11 +182,23 @@ extension AppState {
     }
 
     private func applyRolloutResult(_ result: RolloutReader.ReadResult, chatId: UUID) {
+        messagesPaginationByChat[chatId] = ChatPagination(
+            oldestKnownId: result.entries.first?.id.uuidString,
+            hasMore: result.hasMoreBefore,
+            loadingOlder: false
+        )
         applyRolloutMessages(
             rolloutChatMessages(from: result),
             lastTurnInterrupted: result.lastTurnInterrupted,
             chatId: chatId
         )
+    }
+
+    private func activeStreamingMessageIds(chatId: UUID) -> Set<UUID> {
+        guard let transcript = chatStore.transcript(for: chatId) else { return [] }
+        return Set(transcript.messages.compactMap { message in
+            message.role == .assistant && !message.streamingFinished ? message.id : nil
+        })
     }
 
     private func hydrateHistoryFromClawJSSessions(threadId: String, chatId: UUID, blocking: Bool) {
@@ -203,10 +214,16 @@ extension AppState {
             guard let self else { return }
             defer { self.sessionHistoryHydrationTasks[chatId] = nil }
             do {
-                let records = try await self.loadClawJSSessionMessages(sessionId: threadId)
+                let page = try await self.loadClawJSSessionMessageTail(sessionId: threadId)
+                let records = page.records
                 if records.isEmpty, await self.hydrateFromCodexRolloutFallback(threadId: threadId, chatId: chatId) {
                     return
                 }
+                self.messagesPaginationByChat[chatId] = ChatPagination(
+                    oldestKnownId: records.first?.id,
+                    hasMore: page.hasMore,
+                    loadingOlder: false
+                )
                 let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
                 self.applyRolloutMessages(
                     messages,
@@ -254,13 +271,27 @@ extension AppState {
         return found
     }
 
-    private func loadClawJSSessionMessages(sessionId: String) async throws -> [ClawJSSessionsClient.MessageRecord] {
+    private func loadClawJSSessionMessageTail(sessionId: String) async throws -> (records: [ClawJSSessionsClient.MessageRecord], hasMore: Bool) {
         var delay = sessionHistoryHydrationInitialDelayNanos
         let attempts = max(1, sessionHistoryHydrationAttempts)
         var lastError: Error?
         for attempt in 1...attempts {
             do {
-                return try await clawJSSessionsClientFactory().listMessages(sessionId: sessionId)
+                let client = clawJSSessionsClientFactory()
+                do {
+                    let session = try await client.getSession(id: sessionId, includeMessages: false).session
+                    let limit = bridgeInitialPageLimit
+                    let offset = max(0, session.messageCount - limit)
+                    return (
+                        try await client.listMessages(sessionId: sessionId, limit: limit, offset: offset),
+                        offset > 0
+                    )
+                } catch {
+                    return (
+                        try await client.listMessages(sessionId: sessionId, limit: bridgeInitialPageLimit, offset: 0),
+                        false
+                    )
+                }
             } catch {
                 lastError = error
                 guard attempt < attempts, Self.shouldRetryClawJSSessionHistory(error) else {
@@ -308,11 +339,18 @@ extension AppState {
         lastTurnInterrupted: Bool,
         chatId: UUID
     ) {
-        mutateChat(id: chatId) { c in
-            c.messages = messages
-            c.lastTurnInterrupted = lastTurnInterrupted
-            c.historyHydrated = true
+        chatStore.replaceMessageTail(
+            chatId: chatId,
+            messages,
+            limit: bridgeInitialPageLimit,
+            keeping: activeStreamingMessageIds(chatId: chatId)
+        )
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.lastTurnInterrupted = lastTurnInterrupted
+            summary.historyHydrated = true
+            summary.lastMessageAt = messages.last?.timestamp ?? summary.lastMessageAt
         }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
 
@@ -637,6 +675,11 @@ extension AppState {
                 message.content = content
                 message.reasoningText = reasoningText
                 message.streamingFinished = finished
+                if finished {
+                    message.streamCheckpoints = StreamingFade.settledSentinel(prefixCount: content.count)
+                    message.streamPendingTail = ""
+                    settleReasoningCheckpoints(&message)
+                }
             }
         } else {
             chatStore.appendMessage(chatId: id, ChatMessage(
@@ -652,6 +695,7 @@ extension AppState {
         }
         if finished {
             syncLegacyChatFromStore(chatId: id)
+            scheduleStreamingCheckpointSettlement(chatId: id, messageId: msgId)
         }
     }
 
@@ -695,8 +739,51 @@ extension AppState {
         guard let client = daemonBridgeClient,
               client.loadOlderMessages(chatId: chatId, beforeMessageId: cursor)
         else {
-            // No daemon attached: clear the flag so a future sentinel
-            // firing can retry once the bridge connects.
+            if let threadId = chat(byId: chatId)?.clawixThreadId {
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    do {
+                        let client = self.clawJSSessionsClientFactory()
+                        let session = try await client.getSession(id: threadId, includeMessages: false).session
+                        let loaded = self.chatStore.transcript(for: chatId)?.messageIds.count ?? 0
+                        let endOffset = max(0, session.messageCount - loaded)
+                        let offset = max(0, endOffset - bridgeOlderPageLimit)
+                        let limit = max(0, endOffset - offset)
+                        guard limit > 0 else {
+                            self.messagesPaginationByChat[chatId]?.loadingOlder = false
+                            self.messagesPaginationByChat[chatId]?.hasMore = false
+                            return
+                        }
+                        let records = try await client.listMessages(sessionId: threadId, limit: limit, offset: offset)
+                        let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
+                        let transcript = self.chatStore.transcript(forCreating: chatId)
+                        let existing = Set(transcript.messageIds)
+                        transcript.prepend(messages.filter { !existing.contains($0.id) })
+                        self.messagesPaginationByChat[chatId] = ChatPagination(
+                            oldestKnownId: records.first?.id ?? cursor,
+                            hasMore: offset > 0,
+                            loadingOlder: false
+                        )
+                    } catch {
+                        self.messagesPaginationByChat[chatId]?.loadingOlder = false
+                    }
+                }
+                return
+            }
+            if let path = chat(byId: chatId)?.rolloutPath {
+                Task { @MainActor [weak self] in
+                    let result = await Task.detached(priority: .userInitiated) {
+                        RolloutReader.readWindowBefore(path: path, beforeMessageId: cursor)
+                    }.value
+                    let messages = rolloutChatMessages(from: result).map { $0.toWire() }
+                    self?.applyDaemonMessagesPage(
+                        chatId: chatId.uuidString,
+                        messages: messages,
+                        hasMore: result.hasMoreBefore
+                    )
+                }
+                return
+            }
             messagesPaginationByChat[chatId]?.loadingOlder = false
             return
         }
@@ -811,7 +898,7 @@ extension AppState {
         return Chat(
             id: old?.id ?? UUID(uuidString: wire.id) ?? UUID(),
             title: wire.title,
-            messages: old?.messages ?? [],
+            messages: [],
             createdAt: wire.lastMessageAt ?? wire.createdAt,
             clawixThreadId: threadId,
             rolloutPath: old?.rolloutPath,

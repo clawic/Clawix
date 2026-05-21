@@ -87,18 +87,35 @@ struct ChatSummary: Identifiable, Equatable {
         chat.contextUsage = contextUsage
         return chat
     }
+
+    func summarySnapshot() -> Chat {
+        snapshot(messages: [])
+    }
+}
+
+extension Chat {
+    var summarySnapshot: Chat {
+        var copy = self
+        copy.messages = []
+        return copy
+    }
 }
 
 @MainActor
 final class ChatMessageStore: ObservableObject, Identifiable {
     let id: UUID
     @Published var message: ChatMessage {
-        didSet { RenderProbe.tick("ChatMessageStore.message") }
+        didSet {
+            RenderProbe.tick("ChatMessageStore.message")
+            onChange()
+        }
     }
+    private let onChange: () -> Void
 
-    init(_ message: ChatMessage) {
+    init(_ message: ChatMessage, onChange: @escaping () -> Void = {}) {
         id = message.id
         self.message = message
+        self.onChange = onChange
     }
 }
 
@@ -106,12 +123,17 @@ final class ChatMessageStore: ObservableObject, Identifiable {
 final class ChatTranscriptStore: ObservableObject, Identifiable {
     let id: UUID
     @Published private(set) var messageIds: [UUID] = [] {
-        didSet { RenderProbe.tick("ChatTranscriptStore.messageIds") }
+        didSet {
+            RenderProbe.tick("ChatTranscriptStore.messageIds")
+            onChange()
+        }
     }
     private var messagesById: [UUID: ChatMessageStore] = [:]
+    private let onChange: () -> Void
 
-    init(chatId: UUID, messages: [ChatMessage] = []) {
+    init(chatId: UUID, messages: [ChatMessage] = [], onChange: @escaping () -> Void = {}) {
         id = chatId
+        self.onChange = onChange
         replaceMessages(messages)
     }
 
@@ -140,24 +162,43 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
                 existing.message = message
                 nextById[message.id] = existing
             } else {
-                nextById[message.id] = ChatMessageStore(message)
+                nextById[message.id] = ChatMessageStore(message, onChange: onChange)
             }
         }
         messagesById = nextById
         messageIds = messages.map(\.id)
     }
 
+    func replaceWithTail(_ messages: [ChatMessage], limit: Int, keeping keepIds: Set<UUID> = []) {
+        let boundedLimit = max(0, limit)
+        let keepMessages = messages.filter { keepIds.contains($0.id) }
+        var tail = Array(messages.suffix(boundedLimit))
+        let tailIds = Set(tail.map(\.id))
+        let missingKeep = keepMessages.filter { !tailIds.contains($0.id) }
+        replaceMessages(missingKeep + tail)
+    }
+
     func append(_ message: ChatMessage) {
-        messagesById[message.id] = ChatMessageStore(message)
+        messagesById[message.id] = ChatMessageStore(message, onChange: onChange)
         messageIds.append(message.id)
     }
 
     func prepend(_ messages: [ChatMessage]) {
         guard !messages.isEmpty else { return }
         for message in messages {
-            messagesById[message.id] = ChatMessageStore(message)
+            messagesById[message.id] = ChatMessageStore(message, onChange: onChange)
         }
         messageIds = messages.map(\.id) + messageIds
+    }
+
+    func trimToRecentWindow(maxMessages: Int, keeping keepIds: Set<UUID> = []) {
+        guard maxMessages >= 0, messageIds.count > maxMessages else { return }
+        let tailIds = Set(messageIds.suffix(maxMessages))
+        let retain = Set(messageIds.filter { keepIds.contains($0) }).union(tailIds)
+        for id in Array(messagesById.keys) where !retain.contains(id) {
+            messagesById[id] = nil
+        }
+        messageIds = messageIds.filter { retain.contains($0) }
     }
 
     func removeAll(from index: Int) {
@@ -180,7 +221,7 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
             store.message = message
             replacementStore = store
         } else {
-            replacementStore = ChatMessageStore(message)
+            replacementStore = ChatMessageStore(message, onChange: onChange)
         }
         if message.id != id {
             messagesById[id] = nil
@@ -227,11 +268,11 @@ final class ChatStore: ObservableObject {
     private var transcripts: [UUID: ChatTranscriptStore] = [:]
 
     var activeSnapshots: [Chat] {
-        summaries.map { snapshot(for: $0) }
+        summaries.map { $0.summarySnapshot() }
     }
 
     var archivedSnapshots: [Chat] {
-        archivedSummaries.map { snapshot(for: $0) }
+        archivedSummaries.map { $0.summarySnapshot() }
     }
 
     func replaceActive(with chats: [Chat]) {
@@ -254,7 +295,11 @@ final class ChatStore: ObservableObject {
             summaries = upserted(summary, in: summaries, at: index)
             archivedSummaries.removeAll { $0.id == chat.id }
         }
-        transcript(forCreating: chat.id).replaceMessages(chat.messages)
+        if !chat.messages.isEmpty {
+            transcript(forCreating: chat.id).replaceMessages(chat.messages)
+        } else if transcripts[chat.id] == nil {
+            transcripts[chat.id] = ChatTranscriptStore(chatId: chat.id)
+        }
     }
 
     func remove(chatId: UUID) {
@@ -281,7 +326,9 @@ final class ChatStore: ObservableObject {
 
     func transcript(forCreating id: UUID) -> ChatTranscriptStore {
         if let transcript = transcripts[id] { return transcript }
-        let transcript = ChatTranscriptStore(chatId: id)
+        let transcript = ChatTranscriptStore(chatId: id, onChange: { [weak self] in
+            self?.objectWillChange.send()
+        })
         transcripts[id] = transcript
         return transcript
     }
@@ -289,6 +336,10 @@ final class ChatStore: ObservableObject {
     func snapshot(id: UUID) -> Chat? {
         guard let summary = summary(id: id) else { return nil }
         return summary.snapshot(messages: transcripts[id]?.messages ?? [])
+    }
+
+    func summarySnapshot(id: UUID) -> Chat? {
+        summary(id: id)?.summarySnapshot()
     }
 
     func appendMessage(chatId: UUID, _ message: ChatMessage) {
@@ -303,6 +354,10 @@ final class ChatStore: ObservableObject {
         transcript(forCreating: chatId).replaceMessages(messages)
     }
 
+    func replaceMessageTail(chatId: UUID, _ messages: [ChatMessage], limit: Int, keeping keepIds: Set<UUID> = []) {
+        transcript(forCreating: chatId).replaceWithTail(messages, limit: limit, keeping: keepIds)
+    }
+
     func mutateMessage(chatId: UUID, messageId: UUID, _ body: (inout ChatMessage) -> Void) {
         transcript(for: chatId)?.mutateMessage(id: messageId, body)
     }
@@ -314,7 +369,11 @@ final class ChatStore: ObservableObject {
     private func reconcileTranscripts(with chats: [Chat]) {
         let ids = Set(chats.map(\.id))
         for chat in chats {
-            transcript(forCreating: chat.id).replaceMessages(chat.messages)
+            if !chat.messages.isEmpty {
+                transcript(forCreating: chat.id).replaceMessages(chat.messages)
+            } else if transcripts[chat.id] == nil {
+                transcripts[chat.id] = ChatTranscriptStore(chatId: chat.id)
+            }
         }
         let knownSummaryIds = Set(summaries.map(\.id)).union(archivedSummaries.map(\.id))
         for id in Array(transcripts.keys) where !ids.contains(id) && !knownSummaryIds.contains(id) {

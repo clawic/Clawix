@@ -637,6 +637,8 @@ enum ClawixPersistentSurfaceRegistry {
             "messagesPage",
             "messageAppended",
             "messageStreaming",
+            "requestRolloutAttachment",
+            "rolloutAttachmentSnapshot",
             "errorEvent",
             "pairingStart",
             "pairingPayload",
@@ -1000,6 +1002,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.publishing.workspace", "Publishing workspace", PublishingWorkspaceStore.workspaceKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.git.commitInstructions", "Git commit instructions", ClawixPersistentSurfaceKeys.gitCommitInstructions, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.featureFlags.developerSurfaces", "Developer-only surface flag", ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.featureFlags.enabledCapabilityIDs", "Feature maturity opt-in capability ids", ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.enabledVerticals", "Life enabled verticals", ClawixPersistentSurfaceKeys.lifeEnabledVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.hiddenVerticals", "Life hidden verticals", ClawixPersistentSurfaceKeys.lifeHiddenVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.relay.refresh", "Relay refresh token pattern", ClawixPersistentSurfaceKeys.relayRefreshPattern, PersistentSurfaceKind.preferenceKey),
@@ -1192,6 +1195,7 @@ enum ClawixPersistentSurfaceKeys {
     static let feedDisplayMode = "clawix.feed.displayMode"
     static let gitCommitInstructions = "clawix.git.commitInstructions"
     static let featureFlagsDeveloperSurfaces = "FeatureFlags.developerSurfaces"
+    static let featureFlagsEnabledCapabilityIDs = "FeatureFlags.enabledCapabilityIDs"
     static let lifeEnabledVerticals = "LifeEnabledVerticals"
     static let lifeHiddenVerticals = "LifeHiddenVerticals"
     static let relayRefreshPrefix = "clawix.relay.refresh"

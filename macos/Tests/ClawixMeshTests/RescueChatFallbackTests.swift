@@ -30,11 +30,13 @@ final class RescueChatFallbackTests: XCTestCase {
         state.sendMessage()
 
         let chat = try! XCTUnwrap(state.chats.first)
-        XCTAssertEqual(chat.messages.count, 2)
-        XCTAssertEqual(chat.messages[0].role, .user)
-        XCTAssertEqual(chat.messages[0].content, "Can you repair this?")
-        XCTAssertEqual(chat.messages[1].role, .assistant)
-        XCTAssertTrue(chat.messages[1].content.contains("Diagnostics are available"))
+        let messages = try! XCTUnwrap(state.chatStore.transcript(for: chat.id)?.messages)
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertEqual(messages[0].role, .user)
+        XCTAssertEqual(messages[0].content, "Can you repair this?")
+        XCTAssertEqual(messages[1].role, .assistant)
+        XCTAssertTrue(messages[1].content.contains("Diagnostics are available"))
+        XCTAssertEqual(chat.messages.count, 0)
         XCTAssertFalse(chat.hasActiveTurn)
         XCTAssertEqual(state.composer.text, "")
     }

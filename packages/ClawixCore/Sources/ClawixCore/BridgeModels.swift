@@ -17,11 +17,12 @@ public enum WireAttachmentKind: String, Codable, Equatable, Sendable {
     case audio
 }
 
-/// One attachment piggy-backing on a `sendMessage` / `newSession` frame. The
-/// payload rides inline as base64 because the bridge speaks JSON over
-/// WebSocket (no multipart). The daemon's behaviour depends on `kind`:
-/// images are forwarded to Codex as `localImage`; audio is transcribed
-/// (the transcript becomes the prompt text) and stored for replay.
+/// One attachment piggy-backing on a `sendMessage` / `newSession` frame, or a
+/// rollout-hydrated media reference on a historical user message. Live input
+/// still carries `dataBase64` inline because the bridge speaks JSON over
+/// WebSocket (no multipart). Rollout history omits `dataBase64` and carries
+/// `byteSize` so clients can fetch bytes only when a thumbnail or preview is
+/// actually needed.
 ///
 /// `filename` is advisory: the daemon uses its extension when picking
 /// the on-disk suffix, defaulting to `.jpg` for images and `.m4a` for
@@ -32,20 +33,23 @@ public struct WireAttachment: Codable, Equatable, Sendable {
     public let kind: WireAttachmentKind
     public let mimeType: String
     public let filename: String?
-    public let dataBase64: String
+    public let dataBase64: String?
+    public let byteSize: Int?
 
     public init(
         id: String,
         kind: WireAttachmentKind = .image,
         mimeType: String,
         filename: String?,
-        dataBase64: String
+        dataBase64: String?,
+        byteSize: Int? = nil
     ) {
         self.id = id
         self.kind = kind
         self.mimeType = mimeType
         self.filename = filename
         self.dataBase64 = dataBase64
+        self.byteSize = byteSize
     }
 
 }
@@ -79,6 +83,40 @@ public struct WireProject: Codable, Equatable, Sendable {
         self.hasGitRepo = hasGitRepo
         self.branch = branch
         self.lastUsedAt = lastUsedAt
+    }
+}
+
+/// Lifecycle snapshot for a ClawJS sidecar service as reported over the
+/// desktop bridge. `state` and `source` are strings so pre-v1 hosts can add
+/// finer-grained states without forcing another schema-version bump.
+public struct WireClawJSServiceSnapshot: Codable, Equatable, Sendable, Identifiable {
+    public let id: String
+    public var state: String
+    public var port: Int
+    public var pid: Int?
+    public var restartCount: Int
+    public var lastError: String?
+    public var updatedAtMs: Int64
+    public var source: String
+
+    public init(
+        id: String,
+        state: String,
+        port: Int,
+        pid: Int? = nil,
+        restartCount: Int = 0,
+        lastError: String? = nil,
+        updatedAtMs: Int64,
+        source: String
+    ) {
+        self.id = id
+        self.state = state
+        self.port = port
+        self.pid = pid
+        self.restartCount = restartCount
+        self.lastError = lastError
+        self.updatedAtMs = updatedAtMs
+        self.source = source
     }
 }
 
@@ -345,12 +383,9 @@ public struct WireMessage: Codable, Equatable, Sendable {
     /// tap via the `requestAudio` frame. nil for typed prompts and for
     /// every assistant message.
     public var audioRef: WireAudioRef?
-    /// Inline image (or audio) attachments belonging to this message.
-    /// Empty for live-streamed assistant messages and for typed user
-    /// messages without media. Populated when hydrating history from
-    /// a rollout that referenced images on disk: the daemon reads the
-    /// bytes, base64-encodes them, and ships them so the client can
-    /// render the same `[image]` thumbnails the user originally saw.
+    /// Image (or audio) attachments belonging to this message. Live user
+    /// input uses inline `WireAttachment.dataBase64`; rollout hydration uses
+    /// metadata-only refs and clients request bytes on demand.
     public var attachments: [WireAttachment]
 
     public init(

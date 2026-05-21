@@ -172,11 +172,29 @@ public enum BridgeIntent {
                 }
             )
 
+        case .requestRolloutAttachment(let attachmentId):
+            host?.handleRequestRolloutAttachment(
+                attachmentId: attachmentId,
+                reply: { [weak session] dataBase64, mimeType, errorMessage in
+                    session?.send(BridgeFrame(.rolloutAttachmentSnapshot(
+                        attachmentId: attachmentId,
+                        dataBase64: dataBase64,
+                        mimeType: mimeType,
+                        errorMessage: errorMessage
+                    )))
+                }
+            )
+        case .rolloutAttachmentSnapshot:
+            break
+
         case .requestRateLimits:
             // The bus caches the daemon's most recent snapshot so the
             // reply is synchronous; subsequent pushes flow through
             // `rateLimitsUpdated` automatically.
             session.send(bus.currentRateLimitsFrame())
+
+        case .requestClawJSServiceStatuses:
+            session.send(bus.currentClawJSServiceStatusesFrame())
 
         // Audio catalog. Routes through the host's `audioCatalogClient`
         // when configured; otherwise the default impl replies with a
@@ -269,6 +287,7 @@ public enum BridgeIntent {
              .transcriptionResult, .audioSnapshot,
              .generatedImageSnapshot, .bridgeState,
              .rateLimitsSnapshot, .rateLimitsUpdated,
+             .clawJSServiceStatusesSnapshot, .clawJSServiceStatusUpdated,
              .audioRegisterResult, .audioAttachTranscriptResult,
              .audioGetResult, .audioBytesResult,
              .audioListResult, .audioDeleteResult:

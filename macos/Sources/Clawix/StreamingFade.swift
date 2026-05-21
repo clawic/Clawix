@@ -78,6 +78,42 @@ enum StreamingFade {
         return now.timeIntervalSince(last.addedAt) < duration
     }
 
+    /// Seconds until every scheduled checkpoint is fully opaque. Future
+    /// scheduled words include both their queued delay and fade duration.
+    static func settlementDelay(
+        checkpoints: [StreamCheckpoint],
+        now: Date = Date()
+    ) -> Double {
+        guard let last = checkpoints.last else { return 0 }
+        return max(0, last.addedAt.addingTimeInterval(duration).timeIntervalSince(now))
+    }
+
+    /// A single distant-past sentinel that means "everything through
+    /// this prefix is already fully opaque". Keeping one marker avoids
+    /// losing the scheduled-text boundary without retaining per-word
+    /// history after the fade window.
+    static func settledSentinel(prefixCount: Int) -> [StreamCheckpoint] {
+        guard prefixCount > 0 else { return [] }
+        return [StreamCheckpoint(prefixCount: prefixCount, addedAt: .distantPast)]
+    }
+
+    static func settledSentinel(checkpoints: [StreamCheckpoint]) -> [StreamCheckpoint] {
+        guard let last = checkpoints.last else { return [] }
+        return settledSentinel(prefixCount: last.prefixCount)
+    }
+
+    /// Final-state normalisation used after a stream is closed and the
+    /// renderer no longer needs the active fade tail.
+    static func settled(
+        checkpoints: [StreamCheckpoint],
+        fallbackPrefixCount: Int = 0
+    ) -> [StreamCheckpoint] {
+        if let last = checkpoints.last {
+            return settledSentinel(prefixCount: last.prefixCount)
+        }
+        return settledSentinel(prefixCount: fallbackPrefixCount)
+    }
+
     /// Bounds checkpoint history while preserving the active fade tail.
     /// Fully-settled prefixes collapse to one distant-past sentinel so
     /// opacity lookups still know where the scheduled text ends.

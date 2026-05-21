@@ -21,9 +21,9 @@ extension AppState {
         let userMsg = ChatMessage(role: .user, content: combined, timestamp: Date())
         let chatId: UUID
         if case .chat(let id) = currentRoute,
-           let idx = chats.firstIndex(where: { $0.id == id }) {
-            chats[idx].messages.append(userMsg)
-            chats[idx].lastMessageAt = userMsg.timestamp
+           chatStore.summary(id: id) != nil {
+            chatStore.appendMessage(chatId: id, userMsg)
+            syncLegacyChatFromStore(chatId: id)
             chatId = id
         } else {
             // Create a new chat from home screen — inherits the project
@@ -50,7 +50,7 @@ extension AppState {
         }
 
         if let localModel = localModelName(forSelected: selectedModel) {
-            let history = chats.first(where: { $0.id == chatId })?.messages ?? []
+            let history = chatStore.transcript(for: chatId)?.messages ?? []
             LocalModelChat.shared.send(
                 chatId: chatId,
                 model: localModel,
@@ -115,8 +115,11 @@ extension AppState {
             to: chatId,
             text: "Diagnostics are available. The agent runtime is unavailable right now, so this message stayed local. Open Repair pending to diagnose and repair the runtime."
         )
-        if let idx = chats.firstIndex(where: { $0.id == chatId }) {
-            chats[idx].hasActiveTurn = false
+        if chatStore.summary(id: chatId) != nil {
+            chatStore.updateSummary(id: chatId) { summary in
+                summary.hasActiveTurn = false
+            }
+            syncLegacyChatFromStore(chatId: chatId)
         }
         return true
     }
@@ -126,10 +129,10 @@ extension AppState {
         text: String,
         attachments: [ComposerAttachment]
     ) async -> Bool {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return false }
+        guard let summary = chatStore.summary(id: chatId) else { return false }
         let client = ClawJSSessionsClient.local()
-        let sessionId = chats[idx].clawixThreadId ?? chatId.uuidString
-        let project = chats[idx].projectId.flatMap { projectId in
+        let sessionId = summary.clawixThreadId ?? chatId.uuidString
+        let project = summary.projectId.flatMap { projectId in
             projects.first(where: { $0.id == projectId })
         }
         let projectPath = project.map(\.path)
@@ -142,7 +145,7 @@ extension AppState {
                     projectId: sessionProjectId,
                     projectPath: projectPath,
                     cwd: projectPath,
-                    title: chats[idx].title,
+                    title: summary.title,
                     attachments: attachments.map { attachment in
                         .object([
                             "id": .string(attachment.id.uuidString),
@@ -154,9 +157,11 @@ extension AppState {
                     fixtureReply: nil
                 )
             )
-            guard let currentIdx = chats.firstIndex(where: { $0.id == chatId }) else { return true }
-            chats[currentIdx].clawixThreadId = response.session?.id ?? sessionId
-            chats[currentIdx].hasActiveTurn = false
+            guard chatStore.summary(id: chatId) != nil else { return true }
+            chatStore.updateSummary(id: chatId) { summary in
+                summary.clawixThreadId = response.session?.id ?? sessionId
+                summary.hasActiveTurn = false
+            }
             if let assistant = response.assistantMessage, !assistant.contentText.isEmpty {
                 let now = Date()
                 let summary = WorkSummary(
@@ -170,7 +175,7 @@ extension AppState {
                         )
                     ]
                 )
-                chats[currentIdx].messages.append(ChatMessage(
+                chatStore.appendMessage(chatId: chatId, ChatMessage(
                     role: .assistant,
                     content: assistant.contentText,
                     timestamp: now,
@@ -180,8 +185,8 @@ extension AppState {
                         .message(id: UUID(), text: assistant.contentText)
                     ]
                 ))
-                chats[currentIdx].lastMessageAt = now
             }
+            syncLegacyChatFromStore(chatId: chatId)
             return true
         } catch {
             appendErrorBubble(chatId: chatId, message: "Could not send through ClawJS sessions: \(error.localizedDescription)")
@@ -258,9 +263,10 @@ extension AppState {
     /// by the OpenCode-bridge nudge path that already called this
     /// helper before the function existed.
     func appendAssistantSystemMessage(to chatId: UUID, text: String) {
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
+        guard chatStore.summary(id: chatId) != nil else { return }
         let note = ChatMessage(role: .assistant, content: text, streamingFinished: true, timestamp: Date())
-        chats[idx].messages.append(note)
+        chatStore.appendMessage(chatId: chatId, note)
+        syncLegacyChatFromStore(chatId: chatId)
     }
 
     private func handleCrisisPromptIfNeeded(text: String, chatId: UUID) -> Bool {
@@ -381,10 +387,12 @@ extension AppState {
 
         let userMsg = ChatMessage(role: .user, content: combined, timestamp: Date())
         let resolvedId: UUID
-        if let id = chatId, let idx = chats.firstIndex(where: { $0.id == id }) {
-            chats[idx].messages.append(userMsg)
-            chats[idx].lastTurnInterrupted = false
-            chats[idx].lastMessageAt = userMsg.timestamp
+        if let id = chatId, chatStore.summary(id: id) != nil {
+            chatStore.appendMessage(chatId: id, userMsg)
+            chatStore.updateSummary(id: id) { summary in
+                summary.lastTurnInterrupted = false
+            }
+            syncLegacyChatFromStore(chatId: id)
             resolvedId = id
         } else {
             let titleSeed = trimmed.isEmpty
@@ -462,7 +470,7 @@ extension AppState {
     ) {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty || !attachments.isEmpty else { return }
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
+        guard chatStore.summary(id: chatId) != nil else { return }
 
         let imageAttachments = attachments.filter { $0.kind == .image }
         let audioAttachments = attachments.filter { $0.kind == .audio }
@@ -472,10 +480,13 @@ extension AppState {
             hasAudio: !audioAttachments.isEmpty
         )
         let userMsg = ChatMessage(role: .user, content: preview, timestamp: Date())
-        chats[idx].messages.append(userMsg)
+        chatStore.appendMessage(chatId: chatId, userMsg)
         // Sending a fresh prompt closes any earlier interrupted-turn
         // pill: the user has acknowledged the gap and is moving on.
-        chats[idx].lastTurnInterrupted = false
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.lastTurnInterrupted = false
+        }
+        syncLegacyChatFromStore(chatId: chatId)
 
         if handleCrisisPromptIfNeeded(text: trimmed, chatId: chatId) {
             return
@@ -531,8 +542,9 @@ extension AppState {
         messageId: UUID,
         transcript: String
     ) {
-        guard let attachment = attachments.first else { return }
-        guard let data = Data(base64Encoded: attachment.dataBase64) else { return }
+        guard let attachment = attachments.first,
+              let dataBase64 = attachment.dataBase64,
+              let data = Data(base64Encoded: dataBase64) else { return }
         let mime = attachment.mimeType
         // The local in-process server doesn't track Codex thread ids by
         // chat id (that lives inside `clawix`). Use the chat UUID as a
@@ -566,10 +578,9 @@ extension AppState {
                 )
                 await MainActor.run {
                     guard let self else { return }
-                    guard let cIdx = self.chats.firstIndex(where: { $0.id == chatId }),
-                          let mIdx = self.chats[cIdx].messages.firstIndex(where: { $0.id == messageId })
-                    else { return }
-                    self.chats[cIdx].messages[mIdx].audioRef = audioRef
+                    self.chatStore.mutateMessage(chatId: chatId, messageId: messageId) { message in
+                        message.audioRef = audioRef
+                    }
                 }
             } catch {
                 // Soft fail: the user message is still in the chat;
@@ -608,7 +619,7 @@ extension AppState {
         // Idempotency: if the chat somehow already exists (re-delivery
         // or client retry), fall through to the "append to existing"
         // path so we don't duplicate it.
-        if chats.contains(where: { $0.id == chatId }) {
+        if chatStore.summary(id: chatId) != nil || chats.contains(where: { $0.id == chatId }) {
             sendUserMessageFromBridge(chatId: chatId, text: trimmed, attachments: attachments)
             return
         }
@@ -727,13 +738,14 @@ extension AppState {
         // the placeholder.
         flushPendingAssistantTextDeltas(chatId: chatId)
         flushPendingReasoningDeltas(chatId: chatId)
-        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
-        chats[idx].hasActiveTurn = false
-        guard let last = chats[idx].messages.indices.last,
-              chats[idx].messages[last].role == .assistant,
-              !chats[idx].messages[last].streamingFinished
+        guard let transcript = chatStore.transcript(for: chatId) else { return }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = false
+        }
+        guard let msg = transcript.lastMessage,
+              msg.role == .assistant,
+              !msg.streamingFinished
         else { return }
-        let msg = chats[idx].messages[last]
         // A workSummary that's been initialized but never received items
         // (turn/started fired, then user stopped before any delta) renders
         // nothing on its own: the WorkSummaryHeader requires items, and the
@@ -746,16 +758,19 @@ extension AppState {
             && msg.timeline.isEmpty
             && workSummaryEmpty
         if isEmpty {
-            chats[idx].messages.remove(at: last)
+            transcript.remove(id: msg.id)
         } else {
-            chats[idx].messages[last].streamingFinished = true
-            // Freeze the elapsed-seconds counter at the moment of stop.
-            // Without this, WorkSummaryHeader's TimelineView keeps ticking
-            // because `summary.isActive` stays true while `endedAt` is nil.
-            if chats[idx].messages[last].workSummary != nil,
-               chats[idx].messages[last].workSummary?.endedAt == nil {
-                chats[idx].messages[last].workSummary?.endedAt = Date()
+            transcript.mutateMessage(id: msg.id) { message in
+                message.streamingFinished = true
+                // Freeze the elapsed-seconds counter at the moment of stop.
+                // Without this, WorkSummaryHeader's TimelineView keeps ticking
+                // because `summary.isActive` stays true while `endedAt` is nil.
+                if message.workSummary != nil,
+                   message.workSummary?.endedAt == nil {
+                    message.workSummary?.endedAt = Date()
+                }
             }
         }
+        syncLegacyChatFromStore(chatId: chatId)
     }
 }

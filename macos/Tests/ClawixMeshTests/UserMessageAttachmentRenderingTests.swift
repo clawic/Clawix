@@ -3,6 +3,12 @@ import ClawixCore
 @testable import Clawix
 
 final class UserMessageAttachmentRenderingTests: XCTestCase {
+    override func tearDown() {
+        RolloutAttachmentRegistry.shared.resetForTests()
+        RolloutCursorRegistry.shared.resetForTests()
+        super.tearDown()
+    }
+
     func testFilesMentionedWrapperRendersImagesAndCleanRequestText() {
         let first = "/tmp/screenshot-one.png"
         let second = "/tmp/screenshot-two.png"
@@ -28,7 +34,7 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertFalse(parsed.text.contains("My request for Codex"))
     }
 
-    func testRolloutReaderUsesLocalImagesAndTaskDuration() throws {
+    func testRolloutReaderUsesLocalImageRefsAndTaskDuration() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
@@ -71,12 +77,46 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         ]
         try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
 
-        let result = RolloutReader.readWithStatus(path: rollout, now: ISO8601DateFormatter().date(from: "2026-05-09T10:54:34Z")!)
+        let result = RolloutReader.readTailWithStatus(path: rollout, now: ISO8601DateFormatter().date(from: "2026-05-09T10:54:34Z")!)
 
         XCTAssertEqual(result.entries.count, 2)
         XCTAssertEqual(result.entries[0].attachments.count, 1)
         XCTAssertEqual(result.entries[0].attachments[0].filename, "mention.png")
+        XCTAssertNil(result.entries[0].attachments[0].dataBase64)
+        XCTAssertEqual(result.entries[0].attachments[0].byteSize, png.count)
+        XCTAssertEqual(
+            RolloutAttachmentRegistry.shared.bytes(for: result.entries[0].attachments[0].id)?.data,
+            png
+        )
         XCTAssertEqual(result.entries[1].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 129)
+    }
+
+    func testRolloutReaderWindowReadsOlderMessagesBeforeCursor() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        var lines = [
+            #"{"timestamp":"2026-05-09T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#
+        ]
+        for idx in 0..<8 {
+            lines.append(jsonLine(timestamp: "2026-05-09T10:00:0\(idx).000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "prompt \(idx)"
+            ]))
+        }
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let tail = RolloutReader.readTailWithStatus(path: rollout, maxBytes: 260)
+        XCTAssertTrue(tail.hasMoreBefore)
+        let cursor = try XCTUnwrap(tail.entries.first?.id.uuidString)
+
+        let page = RolloutReader.readWindowBefore(path: rollout, beforeMessageId: cursor, limit: 2, maxBytes: 512)
+
+        XCTAssertEqual(page.entries.map(\.text), ["prompt 4", "prompt 5"])
+        XCTAssertTrue(page.hasMoreBefore)
     }
 
     private func jsonLine(timestamp: String, type: String, payload: [String: Any]) -> String {

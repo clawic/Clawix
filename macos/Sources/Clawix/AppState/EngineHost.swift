@@ -7,13 +7,40 @@ import ClawixEngine
 extension AppState: EngineHost {
 
     public var bridgeChatsCurrent: [BridgeChatSnapshot] {
-        chats.map { Self.bridgeSnapshot(from: $0) }
+        bridgeSnapshots()
     }
 
     public var bridgeChatsPublisher: AnyPublisher<[BridgeChatSnapshot], Never> {
-        $chats
-            .map { chats in chats.map { AppState.bridgeSnapshot(from: $0) } }
+        let legacy = $chats
+            .map { [weak self] _ in self?.bridgeSnapshots() ?? [] }
             .eraseToAnyPublisher()
+        let normalized = chatStore.objectWillChange
+            .map { [weak self] _ in self?.bridgeSnapshots() ?? [] }
+            .eraseToAnyPublisher()
+        return Publishers.Merge(legacy, normalized).eraseToAnyPublisher()
+    }
+
+    public func bridgeMessagesPage(
+        sessionId: String,
+        before beforeMessageId: String,
+        limit: Int
+    ) -> (messages: [WireMessage], hasMore: Bool) {
+        if let id = UUID(uuidString: sessionId),
+           let path = chat(byId: id)?.rolloutPath {
+            let result = RolloutReader.readWindowBefore(
+                path: path,
+                beforeMessageId: beforeMessageId,
+                limit: limit
+            )
+            return (rolloutChatMessages(from: result).map { $0.toWire() }, result.hasMoreBefore)
+        }
+        guard limit > 0 else { return ([], false) }
+        let all = bridgeChatsCurrent.first(where: { $0.id == sessionId })?.messages ?? []
+        guard let cursorIdx = all.firstIndex(where: { $0.id == beforeMessageId }) else {
+            return ([], false)
+        }
+        let lower = max(0, cursorIdx - limit)
+        return (Array(all[lower..<cursorIdx]), lower > 0)
     }
 
     public func handleHydrateHistory(sessionId: UUID) {
@@ -56,6 +83,17 @@ extension AppState: EngineHost {
 
     public var audioCatalogClient: ClawJSAudioClient? {
         AudioCatalogBootstrap.shared.currentClient
+    }
+
+    public func handleRequestRolloutAttachment(
+        attachmentId: String,
+        reply: @MainActor @escaping (String?, String?, String?) -> Void
+    ) {
+        guard let bytes = RolloutAttachmentRegistry.shared.bytes(for: attachmentId) else {
+            reply(nil, nil, "Attachment no longer available")
+            return
+        }
+        reply(bytes.data.base64EncodedString(), bytes.mimeType, nil)
     }
 
     /// In-process Whisper handler for the iPhone's `transcribeAudio`
@@ -102,10 +140,18 @@ extension AppState: EngineHost {
         }
     }
 
-    private static func bridgeSnapshot(from chat: Chat) -> BridgeChatSnapshot {
+    private func bridgeSnapshots() -> [BridgeChatSnapshot] {
+        chatStore.summaries.map { summary in
+            let chat = summary.summarySnapshot()
+            let messages = chatStore.transcript(for: summary.id)?.messages ?? []
+            return bridgeSnapshot(from: chat, messages: messages)
+        }
+    }
+
+    private func bridgeSnapshot(from chat: Chat, messages: [ChatMessage]) -> BridgeChatSnapshot {
         BridgeChatSnapshot(
             chat: chat.toWire(),
-            messages: chat.messages.map { $0.toWire() }
+            messages: messages.map { $0.toWire() }
         )
     }
 }

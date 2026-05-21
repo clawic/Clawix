@@ -11,6 +11,7 @@ final class UserImageThumbnailLoaderTests: XCTestCase {
 
     override func tearDown() {
         UserImageThumbnailLoader.shared.resetForTests()
+        RolloutAttachmentRegistry.shared.resetForTests()
         super.tearDown()
     }
 
@@ -103,6 +104,44 @@ final class UserImageThumbnailLoaderTests: XCTestCase {
         XCTAssertLessThanOrEqual(cgImage.height, UserImageThumbnailLoader.defaultMaxPixelSize)
         XCTAssertTrue(second.cacheHit)
         XCTAssertEqual(first.cacheKey, second.cacheKey)
+    }
+
+    func testRolloutAttachmentRefLoadsBytesOnDemand() async throws {
+        let url = try Self.writeFixture(width: 1_100, height: 700)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let data = try Data(contentsOf: url)
+        RolloutAttachmentRegistry.shared.register(id: "rollout-ref", url: url, mimeType: "image/png")
+        let attachment = WireAttachment(
+            id: "rollout-ref",
+            kind: .image,
+            mimeType: "image/png",
+            filename: "ref.png",
+            dataBase64: nil,
+            byteSize: data.count
+        )
+
+        let result = await UserImageThumbnailLoader.shared.thumbnail(for: .attachment(attachment))
+        let cgImage = try Self.cgImage(from: XCTUnwrap(result.image))
+
+        XCTAssertEqual(result.sourceBytes, data.count)
+        XCTAssertLessThanOrEqual(cgImage.width, UserImageThumbnailLoader.defaultMaxPixelSize)
+        XCTAssertLessThanOrEqual(cgImage.height, UserImageThumbnailLoader.defaultMaxPixelSize)
+    }
+
+    func testMissingRolloutAttachmentRefFailsGracefully() async throws {
+        let attachment = WireAttachment(
+            id: "missing-ref",
+            kind: .image,
+            mimeType: "image/png",
+            filename: "missing.png",
+            dataBase64: nil,
+            byteSize: 0
+        )
+
+        let result = await UserImageThumbnailLoader.shared.thumbnail(for: .attachment(attachment))
+
+        XCTAssertNil(result.image)
+        XCTAssertEqual(result.sourceBytes, 0)
     }
 
     private static func writeFixture(width: Int, height: Int) throws -> URL {

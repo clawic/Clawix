@@ -221,6 +221,15 @@ public enum BridgeBody: Equatable, Sendable {
     /// `errorMessage` is a short reason for display.
     case generatedImageSnapshot(path: String, dataBase64: String?, mimeType: String?, errorMessage: String?)
 
+    /// Ask the host for bytes behind a rollout-hydrated attachment ref.
+    /// The id must come from a `WireMessage.attachments` entry; hosts reject
+    /// unknown ids instead of resolving arbitrary client-supplied paths.
+    case requestRolloutAttachment(attachmentId: String)
+    /// Reply to `requestRolloutAttachment`. On success `dataBase64` carries
+    /// the referenced bytes and `mimeType` repeats the declared type from the
+    /// ref. Missing files or unknown ids return nil bytes plus `errorMessage`.
+    case rolloutAttachmentSnapshot(attachmentId: String, dataBase64: String?, mimeType: String?, errorMessage: String?)
+
     /// Host-side runtime state. `state` is one of `booting`, `idle`,
     /// `syncing`, `ready`, `error`. `idle` means the bridge is healthy
     /// and paired but the agent runtime has not been launched yet.
@@ -242,6 +251,12 @@ public enum BridgeBody: Equatable, Sendable {
     /// clients never emit it.
     case requestRateLimits
 
+    // MARK: - ClawJS service status outbound (desktop client -> daemon)
+    /// Ask the daemon for the current ClawJS sidecar service status
+    /// snapshot. Reply is `clawJSServiceStatusesSnapshot`; subsequent
+    /// changes may arrive as `clawJSServiceStatusUpdated` pushes.
+    case requestClawJSServiceStatuses
+
     // MARK: - Rate limits inbound (daemon -> desktop client)
     /// Reply to `requestRateLimits` and also the shape of the push
     /// the daemon sends when Codex emits `account/rateLimits/updated`.
@@ -257,6 +272,14 @@ public enum BridgeBody: Equatable, Sendable {
     /// `account/rateLimits/updated`. Same shape as `rateLimitsSnapshot`
     /// so clients can apply both through the same code path.
     case rateLimitsUpdated(snapshot: WireRateLimitSnapshot?, byLimitId: [String: WireRateLimitSnapshot])
+
+    // MARK: - ClawJS service status inbound (daemon -> desktop client)
+    /// Current service-status snapshot for all ClawJS sidecars the host
+    /// knows about. Empty means the connected daemon does not own or expose
+    /// any sidecar status yet.
+    case clawJSServiceStatusesSnapshot(services: [WireClawJSServiceSnapshot])
+    /// Push emitted when one ClawJS sidecar service changes state.
+    case clawJSServiceStatusUpdated(service: WireClawJSServiceSnapshot)
 
     // MARK: - Audio catalog outbound (client -> daemon)
     /// Register a new audio asset in the framework's audio catalog and
@@ -338,10 +361,15 @@ public enum BridgeBody: Equatable, Sendable {
         case .audioSnapshot:      return "audioSnapshot"
         case .requestGeneratedImage: return "requestGeneratedImage"
         case .generatedImageSnapshot: return "generatedImageSnapshot"
+        case .requestRolloutAttachment: return "requestRolloutAttachment"
+        case .rolloutAttachmentSnapshot: return "rolloutAttachmentSnapshot"
         case .bridgeState:        return "bridgeState"
         case .requestRateLimits:  return "requestRateLimits"
         case .rateLimitsSnapshot: return "rateLimitsSnapshot"
         case .rateLimitsUpdated:  return "rateLimitsUpdated"
+        case .requestClawJSServiceStatuses: return "requestClawJSServiceStatuses"
+        case .clawJSServiceStatusesSnapshot: return "clawJSServiceStatusesSnapshot"
+        case .clawJSServiceStatusUpdated: return "clawJSServiceStatusUpdated"
         default:
             // Unreachable: every base bridge case is enumerated above
             // and audio cases are handled by `audioTypeTag` before this branch.
@@ -382,11 +410,12 @@ public enum BridgeBody: Equatable, Sendable {
         case path, isMarkdown, error
         case attachments
         case requestId, audioBase64, mimeType, language, errorMessage
-        case audioId
+        case audioId, attachmentId
         case dataBase64
         case limit, beforeMessageId, hasMore
         case state, chatCount
         case rateLimits, rateLimitsByLimitId
+        case services, service
         // Audio catalog
         case appId, request, transcript, asset, list, filter, durationMs, deleted
     }
@@ -509,6 +538,13 @@ public enum BridgeBody: Equatable, Sendable {
             try c.encodeIfPresent(dataBase64, forKey: .dataBase64)
             try c.encodeIfPresent(mimeType, forKey: .mimeType)
             try c.encodeIfPresent(errorMessage, forKey: .errorMessage)
+        case .requestRolloutAttachment(let attachmentId):
+            try c.encode(attachmentId, forKey: .attachmentId)
+        case .rolloutAttachmentSnapshot(let attachmentId, let dataBase64, let mimeType, let errorMessage):
+            try c.encode(attachmentId, forKey: .attachmentId)
+            try c.encodeIfPresent(dataBase64, forKey: .dataBase64)
+            try c.encodeIfPresent(mimeType, forKey: .mimeType)
+            try c.encodeIfPresent(errorMessage, forKey: .errorMessage)
         case .bridgeState(let state, let chatCount, let message):
             try c.encode(state, forKey: .state)
             try c.encode(chatCount, forKey: .chatCount)
@@ -521,6 +557,12 @@ public enum BridgeBody: Equatable, Sendable {
         case .rateLimitsUpdated(let snapshot, let byLimitId):
             try c.encodeIfPresent(snapshot, forKey: .rateLimits)
             try c.encode(byLimitId, forKey: .rateLimitsByLimitId)
+        case .requestClawJSServiceStatuses:
+            break
+        case .clawJSServiceStatusesSnapshot(let services):
+            try c.encode(services, forKey: .services)
+        case .clawJSServiceStatusUpdated(let service):
+            try c.encode(service, forKey: .service)
         default:
             // Audio cases are handled in encodeAudioPayload, called before
             // this method by the encodePayload dispatcher. Unknown base
@@ -820,6 +862,15 @@ public enum BridgeBody: Equatable, Sendable {
                 mimeType: try c.decodeIfPresent(String.self, forKey: .mimeType),
                 errorMessage: try c.decodeIfPresent(String.self, forKey: .errorMessage)
             )
+        case "requestRolloutAttachment":
+            return .requestRolloutAttachment(attachmentId: try c.decode(String.self, forKey: .attachmentId))
+        case "rolloutAttachmentSnapshot":
+            return .rolloutAttachmentSnapshot(
+                attachmentId: try c.decode(String.self, forKey: .attachmentId),
+                dataBase64: try c.decodeIfPresent(String.self, forKey: .dataBase64),
+                mimeType: try c.decodeIfPresent(String.self, forKey: .mimeType),
+                errorMessage: try c.decodeIfPresent(String.self, forKey: .errorMessage)
+            )
         case "bridgeState":
             return .bridgeState(
                 state: try c.decode(String.self, forKey: .state),
@@ -837,6 +888,16 @@ public enum BridgeBody: Equatable, Sendable {
             return .rateLimitsUpdated(
                 snapshot: try c.decodeIfPresent(WireRateLimitSnapshot.self, forKey: .rateLimits),
                 byLimitId: try c.decodeIfPresent([String: WireRateLimitSnapshot].self, forKey: .rateLimitsByLimitId) ?? [:]
+            )
+        case "requestClawJSServiceStatuses":
+            return .requestClawJSServiceStatuses
+        case "clawJSServiceStatusesSnapshot":
+            return .clawJSServiceStatusesSnapshot(
+                services: try c.decode([WireClawJSServiceSnapshot].self, forKey: .services)
+            )
+        case "clawJSServiceStatusUpdated":
+            return .clawJSServiceStatusUpdated(
+                service: try c.decode(WireClawJSServiceSnapshot.self, forKey: .service)
             )
         default:
             throw BridgeDecodingError.unknownType(type)

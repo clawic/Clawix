@@ -81,6 +81,16 @@ enum BridgeFixtureExporter {
         )
         let audioAsset = sampleAudioAsset()
         let transcript = audioAsset.transcripts[0]
+        let serviceStatus = WireClawJSServiceSnapshot(
+            id: "database",
+            state: "readyFromDaemon",
+            port: 24_102,
+            pid: 12_345,
+            restartCount: 0,
+            lastError: nil,
+            updatedAtMs: 1_750_000_000_000,
+            source: "daemon"
+        )
 
         return [
             ("auth", BridgeFrame(.auth(token: "token-abc", deviceName: "Windows", clientKind: .desktop, clientId: "client-win", installationId: "install-win", deviceId: "device-win"))),
@@ -122,6 +132,9 @@ enum BridgeFixtureExporter {
             ("requestRateLimits", BridgeFrame(.requestRateLimits)),
             ("rateLimitsSnapshot", BridgeFrame(.rateLimitsSnapshot(snapshot: rateLimit, byLimitId: ["codex": rateLimit]))),
             ("rateLimitsUpdated", BridgeFrame(.rateLimitsUpdated(snapshot: rateLimit, byLimitId: [:]))),
+            ("requestClawJSServiceStatuses", BridgeFrame(.requestClawJSServiceStatuses)),
+            ("clawJSServiceStatusesSnapshot", BridgeFrame(.clawJSServiceStatusesSnapshot(services: [serviceStatus]))),
+            ("clawJSServiceStatusUpdated", BridgeFrame(.clawJSServiceStatusUpdated(service: serviceStatus))),
             ("audioRegister", BridgeFrame(.audioRegister(requestId: "req-audio-1", request: WireAudioRegisterRequest(kind: .user_message, appId: "clawix", originActor: .user, mimeType: "audio/m4a", bytesBase64: "ZmFrZUF1ZGlv", durationMs: 2_400, deviceId: "device-win", sessionId: "session-1", threadId: "thread-1", linkedMessageId: "message-1", metadataJson: #"{"source":"fixture"}"#, transcript: WireAudioRegisterTranscript(text: "hello audio", role: .transcription, provider: "whisper", language: "en"))))),
             ("audioAttachTranscript", BridgeFrame(.audioAttachTranscript(requestId: "req-audio-2", audioId: "audio-1", transcript: WireAudioAttachTranscriptInput(text: "better transcript", role: .transcription, provider: "whisper-large", language: "en", markAsPrimary: true)))),
             ("audioGet", BridgeFrame(.audioGet(requestId: "req-audio-3", audioId: "audio-1", appId: "clawix"))),

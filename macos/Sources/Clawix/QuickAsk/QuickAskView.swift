@@ -46,11 +46,18 @@ struct QuickAskView: View {
     @State private var cameraSheetPresented = false
     @State private var recentChatsPickerPresented = false
     @State private var workWithAppsPickerPresented = false
+    @State private var visibleMessageLimit = Self.initialVisibleMessageLimit
+    @State private var lastLocalRevealAt: Date = .distantPast
+    @State private var bottomAnchor: QuickAskScrollAnchor?
     @ObservedObject private var slashStore = QuickAskSlashCommandsStore.shared
     @ObservedObject private var mentionsStore = QuickAskMentionsStore.shared
     @FocusState private var inputFocused: Bool
 
     private let cornerRadius: CGFloat = 24
+    private static let loadOlderThreshold = ChatView.loadOlderThreshold
+    private static let initialVisibleMessageLimit = ChatView.initialVisibleMessageLimit
+    private static let visibleMessagePageSize = ChatView.visibleMessagePageSize
+    private static let localRevealThrottle = ChatView.localRevealThrottle
 
     /// The QuickAsk conversation lives inside `AppState.chats` (it is a
     /// real persisted chat, not an ephemeral HUD-only buffer). We pull
@@ -296,6 +303,12 @@ struct QuickAskView: View {
         DispatchQueue.main.async { inputFocused = true }
     }
 
+    private func resetConversationWindow() {
+        visibleMessageLimit = Self.initialVisibleMessageLimit
+        lastLocalRevealAt = .distantPast
+        bottomAnchor = .bottom
+    }
+
     private var content: some View {
         VStack(alignment: .leading, spacing: controller.isExpanded ? 6 : 0) {
             if controller.isExpanded {
@@ -474,11 +487,15 @@ struct QuickAskView: View {
     private var conversationScroll: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 14) {
-                    if let transcript = currentTranscript {
+                LazyVStack(alignment: .leading, spacing: 14) {
+                    if let chatId = controller.activeChatId,
+                       let transcript = currentTranscript {
                         QuickAskConversationMessages(
+                            chatId: chatId,
                             transcript: transcript,
                             appState: appState,
+                            visibleMessageLimit: $visibleMessageLimit,
+                            bottomAnchor: $bottomAnchor,
                             onRequestScroll: {
                                 scrollToBottom(proxy: proxy)
                             }
@@ -502,6 +519,14 @@ struct QuickAskView: View {
             }
             .frame(maxHeight: .infinity)
             .scrollContentBackground(.hidden)
+            .scrollPosition(id: $bottomAnchor, anchor: .bottom)
+            .modifier(ChatScrollDeclarativeAnchors())
+            .modifier(ChatScrollUpSentinel(
+                threshold: Self.loadOlderThreshold,
+                onTrigger: {
+                    revealOlderLocalMessages(proxy: proxy)
+                }
+            ))
             // Same low-opacity capsule the sidebar paints. Legacy style
             // (vs the default overlay) reserves the scroller's 14pt column
             // outside the clipView, which sidesteps the private collapse-
@@ -510,7 +535,14 @@ struct QuickAskView: View {
             // content fits because `drawKnob()` short-circuits at
             // `knobProportion >= 0.999`.
             .thinScrollers(style: .clawixAlwaysVisible)
-            .onAppear { scrollToBottom(proxy: proxy, animated: false) }
+            .onAppear {
+                bottomAnchor = .bottom
+                scrollToBottom(proxy: proxy, animated: false)
+            }
+            .onChange(of: controller.activeChatId) { _ in
+                resetConversationWindow()
+                scrollToBottom(proxy: proxy, animated: false)
+            }
             .onReceive(NotificationCenter.default.publisher(for: QuickAskController.didShowNotification)) { _ in
                 scrollToBottom(proxy: proxy, animated: false)
             }
@@ -534,6 +566,7 @@ struct QuickAskView: View {
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
+        bottomAnchor = .bottom
         if animated {
             withAnimation(.easeOut(duration: 0.18)) {
                 proxy.scrollTo(QuickAskScrollAnchor.bottom, anchor: .bottom)
@@ -543,13 +576,62 @@ struct QuickAskView: View {
         }
     }
 
+    private func revealOlderLocalMessages(proxy: ScrollViewProxy) {
+        guard let chatId = controller.activeChatId,
+              let transcript = currentTranscript else { return }
+        let visibleCount = min(visibleMessageLimit, transcript.messageStores.count)
+        let hiddenLocalMessageCount = max(0, transcript.messageStores.count - visibleCount)
+        guard hiddenLocalMessageCount > 0 else {
+            appState.requestOlderIfNeeded(chatId: chatId)
+            return
+        }
+
+        let now = Date()
+        guard now.timeIntervalSince(lastLocalRevealAt) >= Self.localRevealThrottle else {
+            return
+        }
+        lastLocalRevealAt = now
+        let visibleStores = Array(transcript.messageStores.suffix(visibleMessageLimit))
+        let anchorId = visibleStores.first?.id
+        bottomAnchor = nil
+        visibleMessageLimit = min(
+            transcript.messageStores.count,
+            visibleMessageLimit + Self.visibleMessagePageSize
+        )
+        if let anchorId {
+            DispatchQueue.main.async {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    proxy.scrollTo(anchorId, anchor: .top)
+                }
+            }
+        }
+    }
+
     private struct QuickAskConversationMessages: View {
+        let chatId: UUID
         @ObservedObject var transcript: ChatTranscriptStore
-        let appState: AppState
+        @ObservedObject var appState: AppState
+        @Binding var visibleMessageLimit: Int
+        @Binding var bottomAnchor: QuickAskScrollAnchor?
         let onRequestScroll: () -> Void
 
         var body: some View {
-            ForEach(transcript.messageStores) { messageStore in
+            if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+                .frame(height: 24)
+                .transition(.opacity)
+            }
+
+            let visibleMessageStores = Array(transcript.messageStores.suffix(visibleMessageLimit))
+            let _ = PerfSignpost.uiChat.event("quickask.messages.visible", visibleMessageStores.count)
+            ForEach(visibleMessageStores) { messageStore in
                 QuickAskObservedMessageBubble(
                     messageStore: messageStore,
                     appState: appState,
@@ -557,8 +639,25 @@ struct QuickAskView: View {
                 )
             }
             .onChange(of: transcript.messageIds.last) { _ in
+                bottomAnchor = .bottom
                 onRequestScroll()
             }
+            .task(id: prewarmKey(for: visibleMessageStores)) {
+                await ChatMarkdownPrewarmer.prewarm(
+                    messages: visibleMessageStores.map(\.message),
+                    timelineEntryLimit: 0
+                )
+            }
+        }
+
+        private func prewarmKey(for visibleMessageStores: [ChatMessageStore]) -> ChatMarkdownPrewarmKey {
+            ChatMarkdownPrewarmKey(
+                chatId: chatId,
+                visibleMessageCount: visibleMessageStores.count,
+                firstMessageId: visibleMessageStores.first?.id,
+                lastMessageId: visibleMessageStores.last?.id,
+                lastTimelineCount: 0
+            )
         }
     }
 

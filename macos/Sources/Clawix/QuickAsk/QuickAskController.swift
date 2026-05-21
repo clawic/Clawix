@@ -256,7 +256,7 @@ final class QuickAskController: ObservableObject {
             appState.selectedModel = preferred
         }
         if let id = activeChatId {
-            if let chat = appState?.chats.first(where: { $0.id == id }), !chat.messages.isEmpty {
+            if let transcript = appState?.chatStore.transcript(for: id), !transcript.messageIds.isEmpty {
                 isExpanded = true
             } else {
                 clearActiveChat()

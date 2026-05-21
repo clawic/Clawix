@@ -13,37 +13,58 @@ extension AppState {
         var results: [String] = []
         var routes: [String: SidebarRoute] = [:]
         var seen: Set<String> = []
-        let searchableChats = (chats + archivedChats)
+        let searchableSummaries = (chatStore.summaries + chatStore.archivedSummaries)
             .filter { !$0.isQuickAskTemporary && !$0.isSideChat }
 
-        func append(_ text: String, chat: Chat) {
+        func append(_ text: String, chatId: UUID) {
             guard results.count < 50 else { return }
             let unique = uniqueSearchResult(text, seen: &seen)
             results.append(unique)
-            routes[unique] = .chat(chat.id)
+            routes[unique] = .chat(chatId)
         }
 
-        for chat in searchableChats {
-            if chat.title.range(of: trimmed, options: [.caseInsensitive, .diacriticInsensitive]) != nil {
-                append("\(chat.title) — title match", chat: chat)
+        for summary in searchableSummaries {
+            if summary.title.range(of: trimmed, options: [.caseInsensitive, .diacriticInsensitive]) != nil {
+                append("\(summary.title) — title match", chatId: summary.id)
             }
             guard results.count < 50 else { break }
-
-            var messageMatches = 0
-            for message in chat.messages where !message.content.isEmpty {
-                guard let range = message.content.range(of: trimmed, options: [.caseInsensitive, .diacriticInsensitive]) else {
-                    continue
-                }
-                let role = message.role == .user ? "User" : "Assistant"
-                append("\(chat.title) — \(role): \(searchSnippet(in: message.content, around: range))", chat: chat)
-                messageMatches += 1
-                if messageMatches >= 3 || results.count >= 50 { break }
-            }
-            if results.count >= 50 { break }
         }
 
         searchResults = results
         searchResultRoutes = routes
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let hits = try await self.clawJSSessionsClientFactory().searchMessages(
+                    query: trimmed,
+                    limit: 50
+                )
+                guard self.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed else { return }
+                var merged = results
+                var mergedRoutes = routes
+                var mergedSeen = seen
+                let chatByThreadId = Dictionary(uniqueKeysWithValues: searchableSummaries.compactMap { summary in
+                    summary.clawixThreadId.map { ($0, summary.id) }
+                })
+                for hit in hits where merged.count < 50 {
+                    guard let chatId = chatByThreadId[hit.session.id] else { continue }
+                    let role = hit.message.role == "user" ? "User" : "Assistant"
+                    let snippet = hit.snippet
+                        .replacingOccurrences(of: "<<", with: "")
+                        .replacingOccurrences(of: ">>", with: "")
+                    let unique = self.uniqueSearchResult("\(hit.session.title) — \(role): \(snippet)", seen: &mergedSeen)
+                    merged.append(unique)
+                    mergedRoutes[unique] = .chat(chatId)
+                }
+                self.searchResults = merged
+                self.searchResultRoutes = mergedRoutes
+            } catch {
+                // Leave title results in place. Global message search is
+                // backed by the ClawJS sessions sidecar and should not
+                // hydrate every transcript into AppState as a fallback.
+            }
+        }
     }
 
     private func uniqueSearchResult(_ text: String, seen: inout Set<String>) -> String {
@@ -141,7 +162,8 @@ extension AppState {
             return
         }
         var out: [FindMatch] = []
-        for msg in chat.messages {
+        let messages = chatStore.transcript(for: chatId)?.messages ?? chat.messages
+        for msg in messages {
             let haystack = msg.content as NSString
             var searchRange = NSRange(location: 0, length: haystack.length)
             while searchRange.location < haystack.length {

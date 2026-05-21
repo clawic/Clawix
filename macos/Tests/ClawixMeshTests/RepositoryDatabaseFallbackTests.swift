@@ -37,6 +37,11 @@ final class RepositoryDatabaseFallbackTests: XCTestCase {
         XCTAssertEqual(snapshots.count(), 0)
         XCTAssertTrue(snapshots.loadTop(limit: 10).isEmpty)
         XCTAssertTrue(snapshots.loadAllProjectIndexed().isEmpty)
+        XCTAssertTrue(snapshots.loadProjectIndexed(
+            projectId: UUID().uuidString,
+            projectPath: "/tmp/example",
+            limit: 10
+        ).isEmpty)
         XCTAssertEqual(snapshots.projectPathHints(), [])
     }
 

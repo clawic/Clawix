@@ -2,8 +2,8 @@ import Foundation
 import GRDB
 
 // Persistent cache of the sidebar's last applied state, used to paint
-// Pinned + chat list instantly on the next launch instead of waiting for
-// the runtime to bootstrap and paginate threads.
+// Pinned + recent chats instantly on the next launch instead of waiting
+// for the runtime to bootstrap and paginate threads.
 //
 // This is presentation cache, not source of truth: every successful
 // `applyThreads` / `mergeThreads` rewrites it from the just-applied
@@ -25,6 +25,10 @@ final class SnapshotRepository: @unchecked Sendable {
     func count() -> Int {
         guard let db = dbProvider() else { return 0 }
         return (try? db.read { try SidebarSnapshotRow.fetchCount($0) }) ?? 0
+    }
+
+    func isAvailable() -> Bool {
+        dbProvider() != nil
     }
 
     /// Top N rows for the first paint, ordered so pinned chats land first
@@ -113,9 +117,8 @@ final class SnapshotRepository: @unchecked Sendable {
     }
 
     /// Returns every persisted per-project row, ordered so each
-    /// project's most-recent chats come first. Loaded on first paint
-    /// so every accordion has content available before the runtime
-    /// answers a single RPC.
+    /// project's most-recent chats come first. Kept for maintenance and
+    /// migration tests; first paint must use paged project reads instead.
     func loadAllProjectIndexed() -> [SidebarSnapshotProjectRow] {
         guard let db = dbProvider() else { return [] }
         return (try? db.read { db in
@@ -125,6 +128,41 @@ final class SnapshotRepository: @unchecked Sendable {
                    OR (project_path IS NOT NULL AND project_path <> '')
                 ORDER BY COALESCE(NULLIF(project_id, ''), project_path) ASC, updated_at DESC
             """)
+        }) ?? []
+    }
+
+    /// Paged read for one project's persisted sidebar rows. Current rows
+    /// match on stable `project_id`; legacy rows with no id fall back to
+    /// `project_path` so older caches remain usable without a migration.
+    func loadProjectIndexed(
+        projectId: String?,
+        projectPath: String,
+        limit: Int,
+        offset: Int = 0
+    ) -> [SidebarSnapshotProjectRow] {
+        guard let db = dbProvider(), limit > 0 else { return [] }
+        let stableId = projectId?.isEmpty == false ? projectId : nil
+        guard stableId != nil || !projectPath.isEmpty else { return [] }
+        return (try? db.read { db in
+            if let stableId {
+                return try SidebarSnapshotProjectRow.fetchAll(db, sql: """
+                    SELECT * FROM sidebar_snapshot_project
+                    WHERE project_id = ?
+                       OR (
+                           (project_id IS NULL OR project_id = '')
+                           AND project_path = ?
+                       )
+                    ORDER BY updated_at DESC
+                    LIMIT ? OFFSET ?
+                """, arguments: [stableId, projectPath, limit, max(offset, 0)])
+            }
+            return try SidebarSnapshotProjectRow.fetchAll(db, sql: """
+                SELECT * FROM sidebar_snapshot_project
+                WHERE (project_id IS NULL OR project_id = '')
+                  AND project_path = ?
+                ORDER BY updated_at DESC
+                LIMIT ? OFFSET ?
+            """, arguments: [projectPath, limit, max(offset, 0)])
         }) ?? []
     }
 
