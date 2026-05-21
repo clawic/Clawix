@@ -1,0 +1,9 @@
+{
+  "number": "0020",
+  "slug": "open-standard-official-trust-mirror",
+  "title": "Open standard and official trust mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0020-open-standard-official-trust-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:open-standard-official-trust"
+}

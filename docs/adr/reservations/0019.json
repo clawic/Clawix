@@ -1,0 +1,9 @@
+{
+  "number": "0019",
+  "slug": "sdk-first-custom-surfaces-and-nonblocking-shell",
+  "title": "SDK-first custom surfaces and nonblocking shell mirror",
+  "status": "proposed",
+  "adr": "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md",
+  "historical": true,
+  "canonicalName": "adr:sdk-first-custom-surfaces"
+}

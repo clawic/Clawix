@@ -1,0 +1,9 @@
+{
+  "number": "0009",
+  "slug": "agentic-naming-and-code-structure",
+  "title": "Agentic naming and code structure",
+  "status": "accepted",
+  "adr": "docs/adr/0009-agentic-naming-and-code-structure.md",
+  "historical": true,
+  "canonicalName": "adr:agentic-naming-code-structure"
+}

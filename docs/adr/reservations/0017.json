@@ -1,0 +1,9 @@
+{
+  "number": "0017",
+  "slug": "discoverability-and-meta-code-routing",
+  "title": "Discoverability and meta-code routing",
+  "status": "accepted",
+  "adr": "docs/adr/0017-discoverability-and-meta-code-routing.md",
+  "historical": true,
+  "canonicalName": "adr:discoverability-meta-code-routing"
+}

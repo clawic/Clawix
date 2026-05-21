@@ -1,0 +1,9 @@
+{
+  "number": "0037",
+  "slug": "zero-accidental-work-mirror",
+  "title": "Zero Accidental Work mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0037-zero-accidental-work-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:zero-accidental-work"
+}

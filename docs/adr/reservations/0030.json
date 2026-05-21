@@ -1,0 +1,9 @@
+{
+  "number": "0030",
+  "slug": "launch-and-idle-contract-mirror",
+  "title": "Launch and idle contract mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0030-launch-and-idle-contract-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:launch-idle-contract"
+}

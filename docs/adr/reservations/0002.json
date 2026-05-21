@@ -1,0 +1,9 @@
+{
+  "number": "0002",
+  "slug": "naming-and-stability-surfaces",
+  "title": "Naming and stability surfaces",
+  "status": "accepted",
+  "adr": "docs/adr/0002-naming-and-stability-surfaces.md",
+  "historical": true,
+  "canonicalName": "adr:naming-stability"
+}

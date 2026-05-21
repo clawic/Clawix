@@ -1,0 +1,9 @@
+{
+  "number": "0035",
+  "slug": "streaming-backpressure-contract-mirror",
+  "title": "Streaming backpressure contract mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0035-streaming-backpressure-contract-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:streaming-backpressure-contract"
+}

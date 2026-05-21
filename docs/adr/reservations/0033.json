@@ -1,0 +1,9 @@
+{
+  "number": "0033",
+  "slug": "runtime-ecosystem-integration-standard-mirror",
+  "title": "Runtime ecosystem integration standard mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:runtime-ecosystem-integration-standard"
+}

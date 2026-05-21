@@ -1,0 +1,9 @@
+{
+  "number": "0034",
+  "slug": "portable-archive-contract-mirror",
+  "title": "Portable archive contract mirror",
+  "status": "proposed",
+  "adr": "docs/adr/0034-portable-archive-contract-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:portable-archive-contract"
+}

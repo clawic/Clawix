@@ -1,0 +1,9 @@
+{
+  "number": "0022",
+  "slug": "performance-governance-mirror",
+  "title": "Performance governance mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0022-performance-governance-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:performance-governance"
+}

@@ -1,0 +1,9 @@
+{
+  "number": "0028",
+  "slug": "global-threat-modeling-mirror",
+  "title": "Global threat modeling mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0028-global-threat-modeling-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:global-threat-modeling-governance"
+}

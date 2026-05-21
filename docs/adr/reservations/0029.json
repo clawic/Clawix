@@ -1,0 +1,9 @@
+{
+  "number": "0029",
+  "slug": "accessibility-governance",
+  "title": "Accessibility governance",
+  "status": "accepted",
+  "adr": "docs/adr/0029-accessibility-governance.md",
+  "historical": true,
+  "canonicalName": "adr:accessibility-governance"
+}

@@ -1,0 +1,9 @@
+{
+  "number": "0026",
+  "slug": "adoption-and-canonicity-governance-mirror",
+  "title": "Adoption and canonicity governance mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0026-adoption-and-canonicity-governance-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:adoption-canonicity-governance"
+}

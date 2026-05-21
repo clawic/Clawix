@@ -1,0 +1,9 @@
+{
+  "number": "0006",
+  "slug": "cli-agent-interface",
+  "title": "CLI agent interface",
+  "status": "proposed",
+  "adr": "docs/adr/0006-cli-agent-interface.md",
+  "historical": true,
+  "canonicalName": "adr:cli-agent-interface"
+}

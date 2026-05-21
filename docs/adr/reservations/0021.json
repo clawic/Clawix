@@ -1,0 +1,9 @@
+{
+  "number": "0021",
+  "slug": "decision-tension-rubric-mirror",
+  "title": "Decision tension rubric mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0021-decision-tension-rubric-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:decision-tension-rubric"
+}

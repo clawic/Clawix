@@ -1,0 +1,9 @@
+{
+  "number": "0005",
+  "slug": "integration-qa-lab",
+  "title": "Integration QA Lab",
+  "status": "accepted",
+  "adr": "docs/adr/0005-integration-qa-lab.md",
+  "historical": true,
+  "canonicalName": "adr:integration-qa-lab"
+}

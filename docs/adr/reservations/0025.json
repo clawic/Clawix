@@ -1,0 +1,9 @@
+{
+  "number": "0025",
+  "slug": "rfc-process-mirror",
+  "title": "RFC process mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0025-rfc-process-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:rfc-process"
+}

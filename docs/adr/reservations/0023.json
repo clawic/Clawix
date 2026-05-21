@@ -1,0 +1,9 @@
+{
+  "number": "0023",
+  "slug": "capability-maturity-activation-governance-mirror",
+  "title": "Capability maturity and activation governance mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0023-capability-maturity-activation-governance-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:capability-maturity-activation-governance"
+}

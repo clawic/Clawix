@@ -1,0 +1,9 @@
+{
+  "number": "0018",
+  "slug": "evolution-rescue-backbone-mirror",
+  "title": "Evolution and rescue backbone mirror",
+  "status": "proposed",
+  "adr": "docs/adr/0018-evolution-rescue-backbone-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:evolution-rescue-backbone"
+}

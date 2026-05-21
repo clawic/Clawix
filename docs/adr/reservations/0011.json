@@ -1,0 +1,9 @@
+{
+  "number": "0011",
+  "slug": "surface-route-graph",
+  "title": "Surface route graph mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0011-surface-route-graph.md",
+  "historical": true,
+  "canonicalName": "adr:surface-route-graph"
+}

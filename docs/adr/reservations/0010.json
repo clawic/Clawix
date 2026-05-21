@@ -1,0 +1,9 @@
+{
+  "number": "0010",
+  "slug": "interface-governance",
+  "title": "Interface governance and visual mutation boundary",
+  "status": "accepted",
+  "adr": "docs/adr/0010-interface-governance.md",
+  "historical": true,
+  "canonicalName": "adr:interface-governance"
+}

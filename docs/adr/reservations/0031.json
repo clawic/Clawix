@@ -1,0 +1,9 @@
+{
+  "number": "0031",
+  "slug": "ui-state-invalidation-high-churn-data-boundary-mirror",
+  "title": "UI state invalidation and high-churn data boundary mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0031-ui-state-invalidation-high-churn-data-boundary-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:ui-state-invalidation-high-churn-boundary"
+}

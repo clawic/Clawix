@@ -1,0 +1,9 @@
+{
+  "number": "0007",
+  "slug": "dual-human-programmatic-surfaces",
+  "title": "Dual human and programmatic surfaces",
+  "status": "accepted",
+  "adr": "docs/adr/0007-dual-human-programmatic-surfaces.md",
+  "historical": true,
+  "canonicalName": "adr:dual-human-programmatic-surfaces"
+}

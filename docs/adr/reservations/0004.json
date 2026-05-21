@@ -1,0 +1,9 @@
+{
+  "number": "0004",
+  "slug": "source-file-boundaries",
+  "title": "Source file boundaries",
+  "status": "accepted",
+  "adr": "docs/adr/0004-source-file-boundaries.md",
+  "historical": true,
+  "canonicalName": "adr:source-file-boundaries"
+}

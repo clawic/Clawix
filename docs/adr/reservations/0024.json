@@ -1,0 +1,9 @@
+{
+  "number": "0024",
+  "slug": "no-irreversible-data-loss-mirror",
+  "title": "No irreversible data loss guardrail mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:no-irreversible-data-loss"
+}

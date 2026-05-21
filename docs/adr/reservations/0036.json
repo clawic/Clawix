@@ -1,0 +1,9 @@
+{
+  "number": "0036",
+  "slug": "ui-state-invalidation-boundary",
+  "title": "UI state invalidation boundary",
+  "status": "accepted",
+  "adr": "docs/adr/0036-ui-state-invalidation-boundary.md",
+  "historical": true,
+  "canonicalName": "adr:ui-state-invalidation-boundary"
+}

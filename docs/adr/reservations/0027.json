@@ -1,0 +1,9 @@
+{
+  "number": "0027",
+  "slug": "supply-chain-security-governance-mirror",
+  "title": "Supply-chain security governance mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0027-supply-chain-security-governance-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:supply-chain-security-governance"
+}

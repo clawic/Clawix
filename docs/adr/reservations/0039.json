@@ -1,0 +1,8 @@
+{
+  "number": "0039",
+  "slug": "adr-number-reservation-governance-mirror",
+  "title": "ADR number reservation governance mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0039-adr-number-reservation-governance-mirror.md",
+  "canonicalName": "adr:adr-number-reservation-governance"
+}

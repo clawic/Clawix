@@ -1,0 +1,9 @@
+{
+  "number": "0016",
+  "slug": "code-hygiene-program",
+  "title": "Code hygiene program",
+  "status": "accepted",
+  "adr": "docs/adr/0016-code-hygiene-program.md",
+  "historical": true,
+  "canonicalName": "adr:code-hygiene-program"
+}

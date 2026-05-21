@@ -1,0 +1,9 @@
+{
+  "number": "0038",
+  "slug": "streaming-backpressure-bounded-queues-mirror",
+  "title": "Streaming, backpressure, and bounded queues mirror",
+  "status": "accepted",
+  "adr": "docs/adr/0038-streaming-backpressure-bounded-queues-mirror.md",
+  "historical": true,
+  "canonicalName": "adr:streaming-backpressure-bounded-queues"
+}

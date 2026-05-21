@@ -1,0 +1,9 @@
+{
+  "number": "0008",
+  "slug": "cli-jit-guidance-actor-assertions-resource-registry",
+  "title": "CLI just-in-time guidance, actor assertions, and resource registry",
+  "status": "proposed",
+  "adr": "docs/adr/0008-cli-jit-guidance-actor-assertions-resource-registry.md",
+  "historical": true,
+  "canonicalName": "adr:cli-jit-guidance-resource-registry"
+}

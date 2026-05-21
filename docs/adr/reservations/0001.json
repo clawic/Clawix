@@ -1,0 +1,9 @@
+{
+  "number": "0001",
+  "slug": "claw-framework-host-boundary",
+  "title": "Claw framework and host boundary",
+  "status": "accepted",
+  "adr": "docs/adr/0001-claw-framework-host-boundary.md",
+  "historical": true,
+  "canonicalName": "adr:claw-framework-host-boundary"
+}
