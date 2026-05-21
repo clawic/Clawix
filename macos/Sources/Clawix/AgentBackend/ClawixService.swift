@@ -113,7 +113,7 @@ final class ClawixService: ObservableObject {
             try await client.notify(method: ClawixMethod.initialized, params: EmptyObject())
             status = .ready
             applyCachedBackendMetadata()
-            PerfSignpost.backendMetadata.event("runtime.start.\(reason.rawValue)")
+            PerfSignpost.backendMetadata.event(reason.signpostName)
             return true
         } catch {
             status = .error(String(describing: error))

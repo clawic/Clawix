@@ -24,4 +24,21 @@ enum AgentRuntimeDemandReason: String {
             return "runtime surface"
         }
     }
+
+    var signpostName: StaticString {
+        switch self {
+        case .chatOpened:
+            return "runtime.start.chat_opened"
+        case .sendMessage:
+            return "runtime.start.send_message"
+        case .manualRefresh:
+            return "runtime.start.manual_refresh"
+        case .modelPicker:
+            return "runtime.start.model_picker"
+        case .usageSurface:
+            return "runtime.start.usage_surface"
+        case .runtimeSurface:
+            return "runtime.start.runtime_surface"
+        }
+    }
 }

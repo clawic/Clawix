@@ -22,9 +22,6 @@ struct PlaceholderPage: View {
                 .padding(.vertical, 22)
             }
         }
-        .task {
-            await appState.clawix?.refreshBackendMetadata(reason: .usageSurface)
-        }
     }
 }
 
@@ -119,6 +116,10 @@ struct UsagePage: View {
                 }
                 .padding(.top, 14)
             }
+        }
+        .task {
+            guard await appState.ensureAgentRuntimeReady(reason: .usageSurface) else { return }
+            await appState.clawix?.refreshBackendMetadata(reason: .usageSurface)
         }
     }
 }
