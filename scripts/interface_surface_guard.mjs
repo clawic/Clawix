@@ -164,10 +164,10 @@ if (featureFlagsText.includes("String(describing: self)")) {
 }
 
 const appCapabilityCatalogText = read("macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift");
-if (/var\s+maturity:\s*FeatureMaturity\s*=\s*\.stable/.test(appCapabilityCatalogText)) {
+if (/(?:var\s+)?maturity:\s*FeatureMaturity\s*=\s*\.stable/.test(appCapabilityCatalogText)) {
   fail("AppCapabilityDescriptor must not default new capabilities to stable; classify each descriptor explicitly");
 }
-if (/var\s+activationPolicy:\s*FeatureActivationPolicy\s*=\s*\.enabled/.test(appCapabilityCatalogText)) {
+if (/(?:var\s+)?activationPolicy:\s*FeatureActivationPolicy\s*=\s*\.enabled/.test(appCapabilityCatalogText)) {
   fail("AppCapabilityDescriptor must not default new capabilities to enabled; classify each descriptor explicitly");
 }
 for (const match of appCapabilityCatalogText.matchAll(/AppCapabilityDescriptor\([\s\S]*?\n\s+\)/g)) {
@@ -242,6 +242,17 @@ if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible"))
   fail("SurfaceRouterView must compute route-demanded services through FeatureFlags visibility");
 }
 
+for (const [relativePath, snippet] of [
+  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"'],
+  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["windows/scripts/build-release.ps1", 'scripts\\interface_surface_guard.mjs'],
+]) {
+  requireSnippet(relativePath, snippet);
+}
+
 const gatedRouteAssignmentPattern = /currentRoute\s*=\s*\.(app\(|appsHome\b|secretsHome\b|databaseHome\b|databaseWorkbench\b|databaseCollection\(|indexHome\b|marketplaceHome\b|calendarHome\b|contactsHome\b|skills\b|skillDetail\(|iotHome\b|iotDeviceDetail\(|designStylesHome\b|designStyleDetail\(|designTemplatesHome\b|designTemplateDetail\(|designReferencesHome\b|designEditor\(|agentsHome\b|agentDetail\(|personalitiesHome\b|personalityDetail\(|skillCollectionsHome\b|skillCollectionDetail\(|connectionsHome\b|connectionDetail\(|publishingHome\b|publishingComposer\(|publishingChannels\b|lifeHome\b|lifeVertical\(|lifeSettings\b)/;
 for (const relativePath of listFiles("macos/Sources/Clawix", ".swift")) {
   if (relativePath === "macos/Sources/Clawix/AppState.swift") continue;
@@ -269,6 +280,16 @@ for (const relativePath of listFiles("macos/Sources/Clawix/Publishing", ".swift"
       && !source.includes("ClawJSServiceDemandPolicy.isServiceVisible(")) {
     fail(`${relativePath} restarts publishing without central maturity visibility filtering`);
   }
+}
+const clawJSSettingsPageText = read("macos/Sources/Clawix/Settings/ClawJSSettingsPage.swift");
+if (!clawJSSettingsPageText.includes("private var visibleClawJSServices: [ClawJSService]")) {
+  fail("ClawJSSettingsPage must expose sidecar services through a central visibility-filtered list");
+}
+if (!clawJSSettingsPageText.includes("ClawJSServiceDemandPolicy.visibleServices(\n            Set(ClawJSService.allCases)")) {
+  fail("ClawJSSettingsPage must filter ClawJSService.allCases through ClawJSServiceDemandPolicy.visibleServices");
+}
+if (/ForEach\(ClawJSService\.allCases\)/.test(clawJSSettingsPageText)) {
+  fail("ClawJSSettingsPage must not list hidden sidecar services directly");
 }
 
 const v1ClosureSurfaceRequirements = {

@@ -555,6 +555,41 @@
       "canonicalName": "adr:performance-governance"
     },
     {
+      "id": "adr-docs-adr-0023-capability-maturity-activation-governance-mirror",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0023-capability-maturity-activation-governance-mirror.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0023: Capability maturity and activation governance mirror",
+        "0023-capability-maturity-activation-governance-mirror",
+        "ADR 0023",
+        "capability maturity",
+        "activation governance",
+        "adr:capability-maturity-activation-governance"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0023: Capability maturity and activation governance mirror",
+          "expectPath": "docs/adr/0023-capability-maturity-activation-governance-mirror.md"
+        },
+        {
+          "query": "adr:capability-maturity-activation-governance",
+          "expectPath": "docs/adr/0023-capability-maturity-activation-governance-mirror.md"
+        }
+      ],
+      "guard": "scripts/interface_surface_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "adr:capability-maturity-activation-governance"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "steward": "clawix",

@@ -23,7 +23,7 @@ struct ClawJSSettingsPage: View {
             bundleSection
                 .padding(.top, 18)
 
-            ForEach(ClawJSService.allCases) { service in
+            ForEach(visibleClawJSServices) { service in
                 serviceSection(for: service)
                     .padding(.top, 18)
             }
@@ -197,7 +197,7 @@ struct ClawJSSettingsPage: View {
                             .truncationMode(.middle)
                     }
                     Divider().background(Color.white.opacity(0.07))
-                    ForEach(ClawJSService.allCases) { service in
+                    ForEach(visibleClawJSServices) { service in
                         let state = manager.snapshots[service]?.state ?? .idle
                         HStack(spacing: 12) {
                             Text(service.displayName)
@@ -225,6 +225,13 @@ struct ClawJSSettingsPage: View {
                 .font(BodyFont.system(size: 12, wght: 600))
                 .foregroundColor(Palette.textSecondary)
         }
+    }
+
+    private var visibleClawJSServices: [ClawJSService] {
+        ClawJSServiceDemandPolicy.visibleServices(
+            Set(ClawJSService.allCases),
+            isVisible: FeatureFlags.shared.isVisible
+        ).sorted { $0.displayName < $1.displayName }
     }
 
     private func serviceActionButton(service: ClawJSService, state: ClawJSServiceState) -> some View {

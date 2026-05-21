@@ -21,6 +21,8 @@ cd "$PROJECT_DIR"
 
 echo "==> Legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
+echo "==> Capability maturity preflight"
+node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "ios-archive" ]]; then
     echo "ERROR: iOS archive release requires explicit approval for this exact action." >&2

@@ -21,6 +21,8 @@ VERSION="$(cat "$LINUX_ROOT/VERSION" | tr -d '\n[:space:]')"
 
 echo "[deb] legal safety preflight"
 node "$REPO_ROOT/scripts/legal_safety_check.mjs"
+echo "[deb] capability maturity preflight"
+node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-deb" ]]; then
   echo "[deb] ERROR: Linux deb release requires explicit approval for this exact action." >&2
