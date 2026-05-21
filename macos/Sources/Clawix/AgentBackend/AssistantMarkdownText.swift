@@ -674,7 +674,10 @@ struct AssistantMarkdownText: View {
         guard !checkpoints.isEmpty else { return nil }
         let activeIndex = checkpoints.firstIndex { checkpoint in
             checkpoint.addedAt.addingTimeInterval(StreamingFade.duration) >= now
-        } ?? checkpoints.index(before: checkpoints.endIndex)
+        }
+        guard let activeIndex else {
+            return checkpoints.last?.prefixCount
+        }
         if activeIndex == checkpoints.startIndex {
             return 0
         }

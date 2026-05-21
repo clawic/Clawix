@@ -78,6 +78,32 @@ enum StreamingFade {
         return now.timeIntervalSince(last.addedAt) < duration
     }
 
+    /// Bounds checkpoint history while preserving the active fade tail.
+    /// Fully-settled prefixes collapse to one distant-past sentinel so
+    /// opacity lookups still know where the scheduled text ends.
+    static func compact(
+        checkpoints: [StreamCheckpoint],
+        now: Date = Date()
+    ) -> [StreamCheckpoint] {
+        guard !checkpoints.isEmpty else { return [] }
+        let firstActive = checkpoints.firstIndex { checkpoint in
+            checkpoint.addedAt.addingTimeInterval(duration) >= now
+        }
+        guard let firstActive else {
+            guard let last = checkpoints.last else { return [] }
+            return [
+                StreamCheckpoint(prefixCount: last.prefixCount, addedAt: .distantPast)
+            ]
+        }
+        guard firstActive > checkpoints.startIndex else {
+            return checkpoints
+        }
+        let settled = checkpoints[checkpoints.index(before: firstActive)]
+        return [
+            StreamCheckpoint(prefixCount: settled.prefixCount, addedAt: .distantPast)
+        ] + Array(checkpoints[firstActive...])
+    }
+
     struct ScheduleResult {
         let newCheckpoints: [StreamCheckpoint]
         let pendingTail: String
