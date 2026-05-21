@@ -78,6 +78,19 @@ enum ClawJSServiceDemandPolicy {
         }
     }
 
+    static func services(
+        for route: SidebarRoute,
+        isVisible: (AppFeature) -> Bool
+    ) -> Set<ClawJSService> {
+        guard let gatedFeature = route.gatedFeature else {
+            return services(for: route)
+        }
+        guard isVisible(gatedFeature) else {
+            return []
+        }
+        return services(for: route)
+    }
+
     static func onDemandTrigger(for service: ClawJSService) -> String? {
         switch service {
         case .runtime, .sessions:

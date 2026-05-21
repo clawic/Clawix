@@ -2,10 +2,10 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSServiceDemandPolicyTests: XCTestCase {
-    func testMainStartupCoreStartsOnlyRuntimeAndSessions() {
+    func testMainStartupCoreDoesNotStartRuntimeServices() {
         XCTAssertEqual(
             ClawJSServiceDemandPolicy.startupServices(for: .main),
-            [.runtime, .sessions]
+            []
         )
     }
 
@@ -32,9 +32,12 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
     func testRouteDemandServicesStayOffCoreSurvivalRoutes() {
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .home), [])
-        XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .chat(UUID())), [])
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .rescue), [])
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .settings), [])
+    }
+
+    func testChatRouteDemandsRuntimeAndSessions() {
+        XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .chat(UUID())), [.runtime, .sessions])
     }
 
     func testRouteDemandServicesCoverHeavyFrameworkSurfaces() {
@@ -85,7 +88,9 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
     func testSurfaceRouterStartsRouteDemandedServices() throws {
         let source = try readSource("SurfaceRouterView.swift")
 
-        XCTAssertTrue(source.contains("ClawJSServiceDemandPolicy.services(for: route)"))
+        XCTAssertTrue(source.contains("ClawJSServiceDemandPolicy.services("))
+        XCTAssertTrue(source.contains("for: route,"))
+        XCTAssertTrue(source.contains("isVisible: FeatureFlags.shared.isVisible"))
         XCTAssertTrue(source.contains("await serviceManager.start(demandedServices, reason: .route(descriptor.id))"))
         XCTAssertTrue(source.contains("serviceManager.startupIssue(for: demandedServices)"))
     }

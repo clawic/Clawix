@@ -16,7 +16,10 @@ struct SurfaceRouterView: View {
             for: entry,
             hasActiveCustomVariant: resolution != nil
         )
-        let demandedServices = ClawJSServiceDemandPolicy.services(for: route)
+        let demandedServices = ClawJSServiceDemandPolicy.services(
+            for: route,
+            isVisible: FeatureFlags.shared.isVisible
+        )
         ZStack(alignment: .topTrailing) {
             SurfaceRouteHost(
                 descriptor: entry.descriptor,

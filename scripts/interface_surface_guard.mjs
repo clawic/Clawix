@@ -225,6 +225,21 @@ if (telemetryStatusControllerText.includes("Timer.scheduledTimer(withTimeInterva
   fail("SystemTelemetryStatusItemController must not schedule a periodic telemetry refresh timer");
 }
 
+const serviceDemandPolicyText = read("macos/Sources/Clawix/ClawJS/ClawJSServiceDemandPolicy.swift");
+for (const snippet of [
+  "isVisible: (AppFeature) -> Bool",
+  "guard let gatedFeature = route.gatedFeature else",
+  "guard isVisible(gatedFeature) else",
+]) {
+  if (!serviceDemandPolicyText.includes(snippet)) {
+    fail(`ClawJSServiceDemandPolicy is missing route maturity visibility guard snippet: ${snippet}`);
+  }
+}
+const surfaceRouterViewText = read("macos/Sources/Clawix/SurfaceRouterView.swift");
+if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible")) {
+  fail("SurfaceRouterView must compute route-demanded services through FeatureFlags visibility");
+}
+
 const v1ClosureSurfaceRequirements = {
   publishing: {
     matrix: ["| Publishing |", "`claw content brand|destination|campaign|entry|approval|publish`", "live channel publish `EXTERNAL PENDING`"],
