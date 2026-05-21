@@ -851,6 +851,7 @@ struct ComposerView: View {
             if isOpen {
                 closeComposerPopups(except: .model)
                 Task { @MainActor in
+                    guard await appState.ensureAgentRuntimeReady(reason: .modelPicker) else { return }
                     await appState.clawix?.refreshBackendMetadata(reason: .modelPicker)
                 }
             }

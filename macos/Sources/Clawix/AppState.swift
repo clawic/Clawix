@@ -1107,7 +1107,9 @@ final class AppState: ObservableObject {
         // the round-trip avoids replacing the curated dataset with an
         // empty result on the first popup open.
         if AgentThreadStore.fixtureThreads() != nil { return }
-        guard let clawix, case .ready = clawix.status else { return }
+        guard await ensureAgentRuntimeReady(reason: .manualRefresh),
+              let clawix,
+              case .ready = clawix.status else { return }
         do {
             let threads = try await clawix.listThreads(
                 archived: false,
@@ -1551,6 +1553,7 @@ final class AppState: ObservableObject {
         }
         titlesRepo.reload()
         Task { @MainActor in
+            guard await self.ensureAgentRuntimeReady(reason: .manualRefresh) else { return }
             await loadThreadsFromRuntime()
         }
     }

@@ -163,6 +163,68 @@ if (featureFlagsText.includes("String(describing: self)")) {
   fail("FeatureFlags.swift must use explicit capability ids instead of deriving them from enum spelling");
 }
 
+const appCapabilityCatalogText = read("macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift");
+if (/var\s+maturity:\s*FeatureMaturity\s*=\s*\.stable/.test(appCapabilityCatalogText)) {
+  fail("AppCapabilityDescriptor must not default new capabilities to stable; classify each descriptor explicitly");
+}
+if (/var\s+activationPolicy:\s*FeatureActivationPolicy\s*=\s*\.enabled/.test(appCapabilityCatalogText)) {
+  fail("AppCapabilityDescriptor must not default new capabilities to enabled; classify each descriptor explicitly");
+}
+for (const match of appCapabilityCatalogText.matchAll(/AppCapabilityDescriptor\([\s\S]*?\n\s+\)/g)) {
+  const block = match[0];
+  const id = block.match(/id:\s*"([^"]+)"/)?.[1] ?? "<unknown>";
+  if (!/maturity:\s*\./.test(block)) {
+    fail(`AppCapabilityDescriptor ${id} is missing explicit maturity`);
+  }
+  if (!/activationPolicy:\s*\./.test(block)) {
+    fail(`AppCapabilityDescriptor ${id} is missing explicit activationPolicy`);
+  }
+}
+for (const telemetryCapability of ["system.telemetry.snapshot", "system.telemetry.history"]) {
+  const telemetryBlock = appCapabilityCatalogText.match(new RegExp(`AppCapabilityDescriptor\\([\\s\\S]*?id:\\s*"${telemetryCapability}"[\\s\\S]*?\\n\\s+\\)`))?.[0] ?? "";
+  if (!telemetryBlock) {
+    fail(`AppCapabilityCatalog is missing ${telemetryCapability}`);
+  } else {
+    if (!/maturity:\s*\.experimental/.test(telemetryBlock)) {
+      fail(`${telemetryCapability} must remain experimental until explicitly promoted`);
+    }
+    if (!/activationPolicy:\s*\.optIn/.test(telemetryBlock)) {
+      fail(`${telemetryCapability} must remain opt-in while experimental`);
+    }
+  }
+}
+
+const appBridgeMessageHandlerText = read("macos/Sources/Clawix/Apps/AppBridgeMessageHandler.swift");
+for (const telemetryOperation of ["system.telemetry.snapshot", "system.telemetry.history"]) {
+  if (!appBridgeMessageHandlerText.includes(`try requireMaturityAllowed("${telemetryOperation}")`)) {
+    fail(`AppBridgeMessageHandler must maturity-gate ${telemetryOperation} before execution`);
+  }
+}
+if (!/capabilities\.riskMap[\s\S]*?visibleCapabilityDescriptors\(\)/.test(appBridgeMessageHandlerText)) {
+  fail("capabilities.riskMap must use visibleCapabilityDescriptors() so stable profile does not see blocked capabilities");
+}
+
+const telemetryStatusControllerText = read("macos/Sources/Clawix/SystemTelemetry/SystemTelemetryStatusItemController.swift");
+for (const snippet of [
+  'capabilityID: "system.telemetry"',
+  "maturity: .experimental",
+  "activationPolicy: .optIn",
+  "guard dependencies.isCapabilityVisible() else { return false }",
+]) {
+  if (!telemetryStatusControllerText.includes(snippet)) {
+    fail(`SystemTelemetryStatusItemController is missing maturity activation guard snippet: ${snippet}`);
+  }
+}
+if (telemetryStatusControllerText.includes('ResourceSampler.startIfNeeded(reason: "system-telemetry-menu-bar")')) {
+  fail("SystemTelemetryStatusItemController must not start CPU/resource sampling from the telemetry menu surface");
+}
+if (telemetryStatusControllerText.includes("HangDetector.startFromDiagnosticsSurface()")) {
+  fail("SystemTelemetryStatusItemController must not start hang diagnostics from the telemetry menu surface");
+}
+if (telemetryStatusControllerText.includes("Timer.scheduledTimer(withTimeInterval: 3")) {
+  fail("SystemTelemetryStatusItemController must not schedule a periodic telemetry refresh timer");
+}
+
 const v1ClosureSurfaceRequirements = {
   publishing: {
     matrix: ["| Publishing |", "`claw content brand|destination|campaign|entry|approval|publish`", "live channel publish `EXTERNAL PENDING`"],

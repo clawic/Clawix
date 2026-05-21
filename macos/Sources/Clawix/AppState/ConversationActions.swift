@@ -173,6 +173,10 @@ extension AppState {
 
         if let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.editAndResubmit(
                     chatId: chatId,
                     numTurnsToDrop: numTurns,
@@ -256,9 +260,9 @@ extension AppState {
         // sends a message. Failures are non-fatal — the forked chat
         // still works, it just starts a fresh thread on first send.
         if let parentThreadId = source.clawixThreadId,
-           let clawix,
-           case .ready = clawix.status {
+           let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else { return }
                 do {
                     _ = try await clawix.forkThread(
                         parentThreadId: parentThreadId,
@@ -378,9 +382,9 @@ extension AppState {
         // are non-fatal — if the runtime is down the side chat still
         // works as a fresh thread.
         if let parentThreadId = source.clawixThreadId,
-           let clawix,
-           case .ready = clawix.status {
+           let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else { return }
                 do {
                     _ = try await clawix.forkThread(
                         parentThreadId: parentThreadId,
@@ -456,6 +460,10 @@ extension AppState {
             )
         } else if let clawix {
             Task { @MainActor in
+                guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
+                    return
+                }
                 await clawix.sendUserMessage(chatId: chatId, text: combined)
                 self.clawixBackendStatus = clawix.status
             }
@@ -516,11 +524,6 @@ extension AppState {
             syncLegacyChatFromStore(chatId: chatId)
             return
         }
-        guard let clawix,
-              case .ready = clawix.status else {
-            appendErrorBubble(chatId: chatId, message: "Renaming requires the runtime to be available.")
-            return
-        }
         chatStore.updateSummary(id: chatId) { item in
             item.title = trimmed
         }
@@ -530,6 +533,11 @@ extension AppState {
         guard SyncSettings.syncRenamesWithCodex else { return }
         Task { @MainActor in
             do {
+                guard await self.ensureAgentRuntimeReady(reason: .manualRefresh),
+                      let clawix = self.clawix else {
+                    self.appendErrorBubble(chatId: chatId, message: "Renaming requires the runtime to be available.")
+                    return
+                }
                 try await clawix.setThreadName(threadId: threadId, name: trimmed)
             } catch {
                 self.appendErrorBubble(chatId: chatId, message: "Could not rename on the runtime: \(error)")
@@ -575,16 +583,15 @@ extension AppState {
         }
 
         guard SyncSettings.syncArchiveWithCodex else { return }
-        guard let clawix, case .ready = clawix.status else {
-            // Sync requested but runtime not available: roll back local state
-            // so the user is not silently divergent from Codex.
-            archivesRepo.unarchive(threadId)
-            markThreadArchived(threadId: threadId, archived: false)
-            appendErrorBubble(chatId: chatId, message: "Archiving requires the runtime to be available.")
-            return
-        }
         Task { @MainActor in
             do {
+                guard await self.ensureAgentRuntimeReady(reason: .manualRefresh),
+                      let clawix = self.clawix else {
+                    self.archivesRepo.unarchive(threadId)
+                    self.markThreadArchived(threadId: threadId, archived: false)
+                    self.appendErrorBubble(chatId: chatId, message: "Archiving requires the runtime to be available.")
+                    return
+                }
                 try await clawix.archiveThread(threadId: threadId)
             } catch {
                 self.archivesRepo.unarchive(threadId)
@@ -663,7 +670,9 @@ extension AppState {
                 )
                 threads = sessions.map(threadSummary(from:))
             } else {
-                guard let clawix, case .ready = clawix.status else { return }
+                guard await ensureAgentRuntimeReady(reason: .manualRefresh),
+                      let clawix,
+                      case .ready = clawix.status else { return }
                 threads = try await clawix.listThreads(
                     archived: true,
                     limit: Self.archivedSidebarLimit,
@@ -723,16 +732,16 @@ extension AppState {
         }
 
         guard SyncSettings.syncArchiveWithCodex else { return }
-        guard let clawix, case .ready = clawix.status else {
-            // Sync requested but runtime not available: roll back local state.
-            archivesRepo.archive(threadId)
-            chats.removeAll { $0.id == chatId }
-            moved.isArchived = true
-            archivedChats.insert(moved, at: min(idx, archivedChats.count))
-            return
-        }
         Task { @MainActor in
             do {
+                guard await self.ensureAgentRuntimeReady(reason: .manualRefresh),
+                      let clawix = self.clawix else {
+                    self.archivesRepo.archive(threadId)
+                    self.chats.removeAll { $0.id == chatId }
+                    moved.isArchived = true
+                    self.archivedChats.insert(moved, at: min(idx, self.archivedChats.count))
+                    return
+                }
                 try await clawix.unarchiveThread(threadId: threadId)
                 await self.loadThreadsFromRuntime()
             } catch {
