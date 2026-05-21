@@ -172,7 +172,7 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
     func replaceWithTail(_ messages: [ChatMessage], limit: Int, keeping keepIds: Set<UUID> = []) {
         let boundedLimit = max(0, limit)
         let keepMessages = messages.filter { keepIds.contains($0.id) }
-        var tail = Array(messages.suffix(boundedLimit))
+        let tail = Array(messages.suffix(boundedLimit))
         let tailIds = Set(tail.map(\.id))
         let missingKeep = keepMessages.filter { !tailIds.contains($0.id) }
         replaceMessages(missingKeep + tail)

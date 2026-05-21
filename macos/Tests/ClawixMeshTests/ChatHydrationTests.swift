@@ -158,34 +158,31 @@ final class ChatHydrationTests: XCTestCase {
             case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail":
                 return (response, Data("""
                 {
-                  "session": {
-                    "id": "thread-tail",
-                    "agent": "codex",
-                    "runtime": null,
-                    "machine": null,
-                    "workspaceId": null,
-                    "projectId": null,
-                    "projectPath": "/tmp",
-                    "runtimeAdapter": null,
-                    "runtimeSessionId": null,
-                    "title": "Tail",
-                    "createdAt": 1710000000000,
-                    "lastMessageAt": 1710000100000,
-                    "messageCount": 100,
-                    "pinned": false,
-                    "archived": false,
-                    "sidebarVisible": true,
-                    "branch": null,
-                    "cwd": "/tmp",
-                    "status": "active",
-                    "customMetadata": null
-                  },
-                  "messages": []
+                  "id": "thread-tail",
+                  "agent": "codex",
+                  "runtime": null,
+                  "machine": null,
+                  "workspaceId": null,
+                  "projectId": null,
+                  "projectPath": "/tmp",
+                  "runtimeAdapter": null,
+                  "runtimeSessionId": null,
+                  "title": "Tail",
+                  "createdAt": 1710000000000,
+                  "lastMessageAt": 1710000100000,
+                  "messageCount": 100,
+                  "pinned": false,
+                  "archived": false,
+                  "sidebarVisible": true,
+                  "branch": null,
+                  "cwd": "/tmp",
+                  "status": "active",
+                  "customMetadata": null
                 }
                 """.utf8))
             case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail/messages":
                 messageRequests.append(request)
-                let items = (0..<bridgeInitialPageLimit).map { idx in
+                let items = (0..<ClawixCore.bridgeInitialPageLimit).map { idx in
                     """
                     {
                       "id": "msg-\(idx)",
@@ -225,13 +222,13 @@ final class ChatHydrationTests: XCTestCase {
         state.hydrateHistoryIfNeeded(chatId: chatId)
 
         try await waitUntil {
-            state.chatStore.transcript(for: chatId)?.messageIds.count == bridgeInitialPageLimit
+            state.chatStore.transcript(for: chatId)?.messageIds.count == ClawixCore.bridgeInitialPageLimit
         }
 
         let request = try XCTUnwrap(messageRequests.first)
         let query = Self.queryItems(for: request)
-        XCTAssertEqual(query["limit"], "\(bridgeInitialPageLimit)")
-        XCTAssertEqual(query["offset"], "\(100 - bridgeInitialPageLimit)")
+        XCTAssertEqual(query["limit"], "\(ClawixCore.bridgeInitialPageLimit)")
+        XCTAssertEqual(query["offset"], "\(100 - ClawixCore.bridgeInitialPageLimit)")
         XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, true)
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
