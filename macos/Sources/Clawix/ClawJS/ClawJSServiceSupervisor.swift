@@ -30,7 +30,8 @@ actor ClawJSServiceSupervisor {
 
     private var processes: [ClawJSService: Process] = [:]
     private var logHandles: [ClawJSService: FileHandle] = [:]
-    private var healthTasks: [ClawJSService: Task<Void, Never>] = [:]
+    private var monitorTask: Task<Void, Never>?
+    private var serviceMonitors: [ClawJSService: ServiceMonitor] = [:]
     private var restartTasks: [ClawJSService: Task<Void, Never>] = [:]
     private var lastReadyAt: [ClawJSService: Date] = [:]
 
@@ -55,6 +56,26 @@ actor ClawJSServiceSupervisor {
         .publishing: "CLAW_PUBLISHING_TOKEN",
     ]
 
+    private enum ServiceMonitorMode: Equatable {
+        case local(pid: pid_t)
+        case daemonOwned
+    }
+
+    private struct ServiceMonitor: Equatable {
+        var mode: ServiceMonitorMode
+        var readyDeadline: Date
+        var hasReachedReady: Bool
+        var consecutiveFailures: Int
+        var nextProbeAt: Date
+        var lastDaemonUpdateAt: Date?
+    }
+
+    private static let localStartupProbeInterval: TimeInterval = 1
+    private static let localReadyProbeInterval: TimeInterval = 5
+    private static let daemonStartupProbeInterval: TimeInterval = 1
+    private static let daemonFallbackProbeInterval: TimeInterval = 15
+    private static let daemonPushFreshWindow: TimeInterval = 30
+
     init(
         snapshots: [ClawJSService: ClawJSServiceSnapshot],
         publisher: ClawJSServiceStatePublisher,
@@ -77,6 +98,13 @@ actor ClawJSServiceSupervisor {
             signedHostTokens: sessionSignedHostTokens,
             hostAssertionKeys: sessionHostAssertionKeys
         )
+    }
+
+    func applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot]) {
+        for wire in services {
+            guard let service = ClawJSService(rawValue: wire.id) else { continue }
+            applyDaemonServiceStatus(wire, to: service)
+        }
     }
 
     /// Boots the requested services. Idempotent: a service in `.starting` or
@@ -130,11 +158,8 @@ actor ClawJSServiceSupervisor {
             return
         }
         if daemonReachable {
-            healthTasks[service]?.cancel()
             update(service) { $0.state = .starting }
-            healthTasks[service] = Task { [weak self] in
-                await self?.pollDaemonOwnedService(service)
-            }
+            monitorDaemonOwnedService(service, readyTimeout: 6)
             return
         }
         await launchLocal(service)
@@ -146,8 +171,7 @@ actor ClawJSServiceSupervisor {
         processRegistry.unregister(service)
 
         process.terminationHandler = nil
-        healthTasks[service]?.cancel()
-        healthTasks[service] = nil
+        serviceMonitors[service] = nil
 
         if process.isRunning {
             process.terminate()
@@ -182,8 +206,9 @@ actor ClawJSServiceSupervisor {
     private func cancelSupervisionTasks() {
         for task in restartTasks.values { task.cancel() }
         restartTasks.removeAll()
-        for task in healthTasks.values { task.cancel() }
-        healthTasks.removeAll()
+        monitorTask?.cancel()
+        monitorTask = nil
+        serviceMonitors.removeAll()
     }
 
     /// SIGTERM with a 3 s grace, then SIGKILL stragglers. Cancels every
@@ -194,8 +219,9 @@ actor ClawJSServiceSupervisor {
     func tearDown() async {
         for task in restartTasks.values { task.cancel() }
         restartTasks.removeAll()
-        for task in healthTasks.values { task.cancel() }
-        healthTasks.removeAll()
+        monitorTask?.cancel()
+        monitorTask = nil
+        serviceMonitors.removeAll()
 
         let running = processes
         processes.removeAll()
@@ -285,10 +311,7 @@ actor ClawJSServiceSupervisor {
                 $0.state = .readyFromDaemon(port: service.port)
                 $0.lastError = nil
             }
-            healthTasks[service]?.cancel()
-            healthTasks[service] = Task { [weak self] in
-                await self?.pollDaemonOwnedService(service)
-            }
+            monitorDaemonOwnedService(service, readyTimeout: 6, reachedReady: true)
             return false
         }
 
@@ -320,22 +343,17 @@ actor ClawJSServiceSupervisor {
 
     private func startDaemonOwnedProbes(_ services: Set<ClawJSService>) {
         for service in orderedServices(from: services) {
-            healthTasks[service]?.cancel()
-            healthTasks[service] = nil
             update(service) {
                 $0.lastError = nil
                 $0.state = .starting
             }
-            healthTasks[service] = Task { [weak self] in
-                await self?.pollDaemonOwnedService(service)
-            }
+            monitorDaemonOwnedService(service, readyTimeout: 6)
         }
     }
 
     private func startDaemonAwareServices(_ services: Set<ClawJSService>) async {
         for service in orderedServices(from: services) {
-            healthTasks[service]?.cancel()
-            healthTasks[service] = nil
+            serviceMonitors[service] = nil
             let url = URL(string: "http://127.0.0.1:\(service.port)\(service.healthPath)")!
             if await ping(url: url) {
                 if await Self.reclaimOrphanedSidecarIfPossible(service) {
@@ -346,9 +364,7 @@ actor ClawJSServiceSupervisor {
                     markReachableServiceUnavailable(service)
                 }
                 if snapshots[service]?.state == .readyFromDaemon(port: service.port) {
-                    healthTasks[service] = Task { [weak self] in
-                        await self?.pollDaemonOwnedService(service)
-                    }
+                    monitorDaemonOwnedService(service, readyTimeout: 6, reachedReady: true)
                 }
             } else if ClawJSRuntime.isAvailable, commandLine(for: service) != nil {
                 await launchLocal(service, force: true)
@@ -362,36 +378,23 @@ actor ClawJSServiceSupervisor {
         }
     }
 
-    private func pollDaemonOwnedService(_ service: ClawJSService) async {
-        let url = URL(string: "http://127.0.0.1:\(service.port)\(service.healthPath)")!
-        let readyDeadline = Date().addingTimeInterval(6)
-        var wasReady = false
-
-        while !Task.isCancelled {
-            let alive = await ping(url: url)
-            if alive {
-                if await Self.reclaimOrphanedSidecarIfPossible(service) {
-                    await launchLocal(service, force: true)
-                    return
-                } else if Self.canAdoptExistingService(service) {
-                    wasReady = true
-                    publishDaemonReady(service)
-                } else {
-                    markReachableServiceUnavailable(service)
-                }
-            } else if wasReady || Date() > readyDeadline {
-                if ClawJSRuntime.isAvailable, commandLine(for: service) != nil {
-                    await launchLocal(service, force: true)
-                    return
-                }
-                let reason = "\(service.displayName) is not reachable on 127.0.0.1:\(service.port) while the bridge daemon is active."
-                update(service) {
-                    $0.state = .daemonUnavailable(reason: reason)
-                    $0.lastError = reason
-                }
-            }
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
-        }
+    private func monitorDaemonOwnedService(
+        _ service: ClawJSService,
+        readyTimeout: TimeInterval,
+        reachedReady: Bool = false
+    ) {
+        let now = Date()
+        serviceMonitors[service] = ServiceMonitor(
+            mode: .daemonOwned,
+            readyDeadline: now.addingTimeInterval(readyTimeout),
+            hasReachedReady: reachedReady,
+            consecutiveFailures: 0,
+            nextProbeAt: reachedReady
+                ? now.addingTimeInterval(Self.daemonFallbackProbeInterval)
+                : now,
+            lastDaemonUpdateAt: reachedReady ? now : nil
+        )
+        ensureMonitorTask()
     }
 
     private func publishDaemonReady(_ service: ClawJSService) {
@@ -597,13 +600,10 @@ actor ClawJSServiceSupervisor {
             processes[service] = process
             processRegistry.register(process, for: service)
 
-            // Healthz poller flips state to `.ready` once the service
-            // responds; it also detects soft hangs (process alive but no
-            // longer answering) and triggers a restart.
-            healthTasks[service]?.cancel()
-            healthTasks[service] = Task { [weak self] in
-                await self?.pollHealth(for: service, pid: process.processIdentifier)
-            }
+            // The aggregate monitor flips state to `.ready` once the
+            // service responds; it also detects soft hangs (process alive
+            // but no longer answering) and triggers a restart.
+            monitorLocalService(service, pid: process.processIdentifier)
         } catch {
             update(service) {
                 $0.state = .crashed(reason: "spawn failed: \(error.localizedDescription)")
@@ -619,8 +619,7 @@ actor ClawJSServiceSupervisor {
         processRegistry.unregister(service)
         try? logHandles[service]?.close()
         logHandles[service] = nil
-        healthTasks[service]?.cancel()
-        healthTasks[service] = nil
+        serviceMonitors[service] = nil
 
         let status = proc.terminationStatus
         let signalled = proc.terminationReason == .uncaughtSignal
@@ -662,46 +661,162 @@ actor ClawJSServiceSupervisor {
         }
     }
 
-    // MARK: - Healthz
+    // MARK: - Aggregate health supervision
 
-    private func pollHealth(for service: ClawJSService, pid: pid_t) async {
-        let url = URL(string: "http://127.0.0.1:\(service.port)\(service.healthPath)")!
-        var consecutiveFailures = 0
-        let readyDeadline = Date().addingTimeInterval(15)
-        var hasReachedReady = false
+    private func monitorLocalService(_ service: ClawJSService, pid: pid_t) {
+        let now = Date()
+        serviceMonitors[service] = ServiceMonitor(
+            mode: .local(pid: pid),
+            readyDeadline: now.addingTimeInterval(15),
+            hasReachedReady: false,
+            consecutiveFailures: 0,
+            nextProbeAt: now,
+            lastDaemonUpdateAt: nil
+        )
+        ensureMonitorTask()
+    }
 
-        while !Task.isCancelled {
-            // Bail out if the process is gone — the termination handler
-            // takes care of state transitions.
-            guard let process = processes[service], process.isRunning else { return }
-
-            let alive = await ping(url: url)
-            if alive {
-                consecutiveFailures = 0
-                if !hasReachedReady {
-                    hasReachedReady = true
-                    lastReadyAt[service] = Date()
-                    update(service) { $0.state = .ready(pid: pid, port: service.port) }
-                }
-            } else {
-                consecutiveFailures += 1
-                if !hasReachedReady, Date() > readyDeadline {
-                    update(service) {
-                        $0.state = .crashed(reason: "did not become ready within 15s")
-                    }
-                    process.terminate()
-                    return
-                }
-                if hasReachedReady, consecutiveFailures >= 5 {
-                    update(service) {
-                        $0.state = .crashed(reason: "/healthz silent for 5 consecutive checks")
-                    }
-                    process.terminate()
-                    return
-                }
-            }
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+    private func ensureMonitorTask() {
+        guard monitorTask == nil else { return }
+        monitorTask = Task { [weak self] in
+            await self?.runAggregateMonitor()
         }
+    }
+
+    private func runAggregateMonitor() async {
+        while !Task.isCancelled {
+            let sleepSeconds = await monitorDueServices()
+            guard let sleepSeconds else { break }
+            let nanoseconds = UInt64(max(0.05, sleepSeconds) * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: nanoseconds)
+        }
+        monitorTask = nil
+    }
+
+    private func monitorDueServices() async -> TimeInterval? {
+        let now = Date()
+        let due = orderedServices(from: Set(serviceMonitors.keys)).filter {
+            serviceMonitors[$0]?.nextProbeAt ?? .distantFuture <= now
+        }
+
+        if !due.isEmpty {
+            PerfSignpost.serviceSupervisor.event("monitor.wakeup")
+            PerfSignpost.serviceSupervisor.event("monitor.due_services", due.count)
+        }
+
+        for service in due {
+            await probeMonitoredService(service, now: Date())
+        }
+
+        guard !serviceMonitors.isEmpty else { return nil }
+        let next = serviceMonitors.values.map(\.nextProbeAt).min() ?? Date().addingTimeInterval(1)
+        return max(0.05, next.timeIntervalSince(Date()))
+    }
+
+    private func probeMonitoredService(_ service: ClawJSService, now: Date) async {
+        guard let monitor = serviceMonitors[service] else { return }
+        let updated: ServiceMonitor?
+        switch monitor.mode {
+        case .local(let pid):
+            updated = await probeLocalService(service, pid: pid, monitor: monitor, now: now)
+        case .daemonOwned:
+            updated = await probeDaemonOwnedService(service, monitor: monitor, now: now)
+        }
+        if let updated {
+            serviceMonitors[service] = updated
+        } else if serviceMonitors[service] == monitor {
+            serviceMonitors[service] = nil
+        }
+    }
+
+    private func probeLocalService(
+        _ service: ClawJSService,
+        pid: pid_t,
+        monitor: ServiceMonitor,
+        now: Date
+    ) async -> ServiceMonitor? {
+        var monitor = monitor
+        guard let process = processes[service], process.isRunning else {
+            return nil
+        }
+
+        let alive = await pingService(service)
+        if alive {
+            monitor.consecutiveFailures = 0
+            if !monitor.hasReachedReady {
+                monitor.hasReachedReady = true
+                lastReadyAt[service] = now
+                update(service) { $0.state = .ready(pid: pid, port: service.port) }
+            }
+            monitor.nextProbeAt = now.addingTimeInterval(Self.localReadyProbeInterval)
+            return monitor
+        }
+
+        monitor.consecutiveFailures += 1
+        monitor.nextProbeAt = now.addingTimeInterval(Self.localStartupProbeInterval)
+        if !monitor.hasReachedReady, now > monitor.readyDeadline {
+            update(service) {
+                $0.state = .crashed(reason: "did not become ready within 15s")
+            }
+            process.terminate()
+            return nil
+        }
+        if monitor.hasReachedReady, monitor.consecutiveFailures >= 5 {
+            update(service) {
+                $0.state = .crashed(reason: "\(service.healthPath) silent for 5 consecutive checks")
+            }
+            process.terminate()
+            return nil
+        }
+        return monitor
+    }
+
+    private func probeDaemonOwnedService(
+        _ service: ClawJSService,
+        monitor: ServiceMonitor,
+        now: Date
+    ) async -> ServiceMonitor? {
+        var monitor = monitor
+        if let lastDaemonUpdateAt = monitor.lastDaemonUpdateAt,
+           now.timeIntervalSince(lastDaemonUpdateAt) < Self.daemonPushFreshWindow {
+            monitor.nextProbeAt = lastDaemonUpdateAt.addingTimeInterval(Self.daemonPushFreshWindow)
+            PerfSignpost.serviceSupervisor.event("monitor.daemon_push_fresh")
+            return monitor
+        }
+
+        PerfSignpost.serviceSupervisor.event("daemon_fallback_probe")
+        let alive = await pingService(service)
+        if alive {
+            monitor.consecutiveFailures = 0
+            monitor.hasReachedReady = true
+            if Self.canAdoptExistingService(service) {
+                publishDaemonReady(service)
+            } else {
+                markReachableServiceUnavailable(service)
+            }
+            monitor.nextProbeAt = now.addingTimeInterval(Self.daemonFallbackProbeInterval)
+            return monitor
+        }
+
+        monitor.consecutiveFailures += 1
+        monitor.nextProbeAt = now.addingTimeInterval(Self.daemonStartupProbeInterval)
+        if monitor.hasReachedReady || now > monitor.readyDeadline {
+            if ClawJSRuntime.isAvailable, commandLine(for: service) != nil {
+                await launchLocal(service, force: true)
+                return nil
+            }
+            let reason = "\(service.displayName) is not reachable on 127.0.0.1:\(service.port) while the bridge daemon is active."
+            update(service) {
+                $0.state = .daemonUnavailable(reason: reason)
+                $0.lastError = reason
+            }
+        }
+        return monitor
+    }
+
+    private func pingService(_ service: ClawJSService) async -> Bool {
+        let url = URL(string: "http://127.0.0.1:\(service.port)\(service.healthPath)")!
+        return await ping(url: url)
     }
 
     private func ping(url: URL) async -> Bool {
@@ -1052,6 +1167,57 @@ actor ClawJSServiceSupervisor {
 
     // MARK: - State mutation
 
+    private func applyDaemonServiceStatus(
+        _ wire: WireClawJSServiceSnapshot,
+        to service: ClawJSService
+    ) {
+        let transitionDate = Date(timeIntervalSince1970: TimeInterval(wire.updatedAtMs) / 1_000)
+        let mappedState = state(fromDaemonStatus: wire, service: service)
+        update(service) { snap in
+            snap.state = mappedState
+            snap.restartCount = wire.restartCount
+            snap.lastError = wire.lastError
+            snap.lastTransitionAt = transitionDate
+        }
+
+        var monitor = serviceMonitors[service] ?? ServiceMonitor(
+            mode: .daemonOwned,
+            readyDeadline: Date().addingTimeInterval(6),
+            hasReachedReady: mappedState.isReady,
+            consecutiveFailures: 0,
+            nextProbeAt: Date().addingTimeInterval(Self.daemonPushFreshWindow),
+            lastDaemonUpdateAt: Date()
+        )
+        monitor.mode = .daemonOwned
+        monitor.hasReachedReady = monitor.hasReachedReady || mappedState.isReady
+        monitor.consecutiveFailures = 0
+        monitor.lastDaemonUpdateAt = Date()
+        monitor.nextProbeAt = Date().addingTimeInterval(Self.daemonPushFreshWindow)
+        serviceMonitors[service] = monitor
+        ensureMonitorTask()
+    }
+
+    private func state(fromDaemonStatus wire: WireClawJSServiceSnapshot, service: ClawJSService) -> ClawJSServiceState {
+        switch wire.state {
+        case "idle":
+            return .idle
+        case "availableOnDemand":
+            return .availableOnDemand(trigger: ClawJSServiceDemandPolicy.onDemandTrigger(for: service) ?? service.rawValue)
+        case "starting":
+            return .starting
+        case "ready", "readyFromDaemon", "running", "healthy":
+            return .readyFromDaemon(port: UInt16(wire.port))
+        case "blocked":
+            return .blocked(reason: wire.lastError ?? "\(service.displayName) is blocked by the daemon.")
+        case "crashed":
+            return .crashed(reason: wire.lastError ?? "\(service.displayName) crashed in the daemon.")
+        case "daemonUnavailable", "unavailable", "unhealthy":
+            return .daemonUnavailable(reason: wire.lastError ?? "\(service.displayName) is unavailable from the daemon.")
+        default:
+            return .daemonUnavailable(reason: wire.lastError ?? "\(service.displayName) is unavailable from the daemon.")
+        }
+    }
+
     private func update(
         _ service: ClawJSService,
         _ mutate: (inout ClawJSServiceSnapshot) -> Void
@@ -1111,10 +1277,7 @@ actor ClawJSServiceSupervisor {
             processes[.iot] = process
             processRegistry.register(process, for: .iot)
 
-            healthTasks[.iot]?.cancel()
-            healthTasks[.iot] = Task { [weak self] in
-                await self?.pollHealth(for: .iot, pid: process.processIdentifier)
-            }
+            monitorLocalService(.iot, pid: process.processIdentifier)
         } catch {
             update(.iot) {
                 $0.state = .crashed(reason: "spawn failed: \(error.localizedDescription)")

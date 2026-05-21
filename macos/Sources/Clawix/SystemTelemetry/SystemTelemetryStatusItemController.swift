@@ -21,6 +21,7 @@ final class SystemTelemetryStatusItemController {
         ) -> SystemTelemetryRefreshTimer
         var renderModel: (@MainActor (_ model: SystemTelemetryMenuBarModel) -> Void)?
         var activateDiagnostics: @MainActor () -> Void
+        var isCapabilityVisible: @MainActor () -> Bool
 
         @MainActor
         static func live() -> Dependencies {
@@ -45,6 +46,13 @@ final class SystemTelemetryStatusItemController {
                 activateDiagnostics: {
                     ResourceSampler.startIfNeeded(reason: "system-telemetry-menu-bar")
                     HangDetector.startFromDiagnosticsSurface()
+                },
+                isCapabilityVisible: {
+                    FeatureFlags.shared.isCapabilityVisible(
+                        capabilityID: "system.telemetry",
+                        maturity: .experimental,
+                        activationPolicy: .optIn
+                    )
                 }
             )
         }
@@ -85,6 +93,7 @@ final class SystemTelemetryStatusItemController {
 
     @discardableResult
     private func activateIfNeeded() -> Bool {
+        guard dependencies.isCapabilityVisible() else { return false }
         guard !isActivated else { return false }
         isActivated = true
         dependencies.activateDiagnostics()

@@ -79,7 +79,8 @@ final class SystemTelemetryBridgeTests: XCTestCase {
     @MainActor
     private func makeStatusController(
         probe: StatusControllerProbe,
-        counter: TelemetryRequestCounter = TelemetryRequestCounter()
+        counter: TelemetryRequestCounter = TelemetryRequestCounter(),
+        isCapabilityVisible: @escaping @MainActor () -> Bool = { true }
     ) -> (SystemTelemetryStatusItemController, TelemetryRequestCounter) {
         let bridge = SystemTelemetryBridge { request in
             switch (request.resource, request.action) {
@@ -139,7 +140,8 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                 return timer
             },
             renderModel: { _ in probe.renderCount += 1 },
-            activateDiagnostics: { probe.diagnosticsActivations += 1 }
+            activateDiagnostics: { probe.diagnosticsActivations += 1 },
+            isCapabilityVisible: isCapabilityVisible
         ))
         return (controller, counter)
     }
@@ -174,6 +176,22 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         XCTAssertEqual(probe.timers.count, 1)
         XCTAssertEqual(counts.widgets, 1)
         XCTAssertEqual(counts.snapshots, 1)
+    }
+
+    @MainActor
+    func testStatusControllerDoesNotActivateWhenMaturityBlocksTelemetry() async {
+        let probe = StatusControllerProbe()
+        let (controller, counter) = makeStatusController(probe: probe, isCapabilityVisible: { false })
+
+        await controller.activateFromUserSurfaceAndRefresh()
+        let counts = await counter.counts()
+
+        XCTAssertEqual(probe.diagnosticsActivations, 0)
+        XCTAssertEqual(probe.recordCalls, [])
+        XCTAssertEqual(probe.renderCount, 0)
+        XCTAssertEqual(probe.timers.count, 0)
+        XCTAssertEqual(counts.widgets, 0)
+        XCTAssertEqual(counts.snapshots, 0)
     }
 
     @MainActor

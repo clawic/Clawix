@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import ClawixCore
 
 /// Main-thread facade for ClawJS service state consumed by SwiftUI.
 /// Process supervision lives in `ClawJSServiceSupervisor`; this type only
@@ -73,6 +74,13 @@ final class ClawJSServiceManager: ObservableObject {
     func restart(_ service: ClawJSService) async {
         await supervisor.restart(service, daemonReachable: activeBridgeService.isDaemonReachable)
         await refreshFromSupervisor()
+    }
+
+    func applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot]) {
+        Task { [supervisor] in
+            await supervisor.applyDaemonServiceStatuses(services)
+            await refreshFromSupervisor()
+        }
     }
 
     nonisolated func terminateAllSynchronously() {

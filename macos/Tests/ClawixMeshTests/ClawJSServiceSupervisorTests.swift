@@ -13,6 +13,27 @@ final class ClawJSServiceSupervisorTests: XCTestCase {
         XCTAssertTrue(managerSource.contains("ClawJSServiceSupervisor"))
     }
 
+    func testServiceHealthUsesAggregateMonitorTask() throws {
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+
+        XCTAssertTrue(supervisorSource.contains("private var monitorTask: Task<Void, Never>?"))
+        XCTAssertTrue(supervisorSource.contains("private var serviceMonitors: [ClawJSService: ServiceMonitor]"))
+        XCTAssertTrue(supervisorSource.contains("runAggregateMonitor()"))
+        XCTAssertTrue(supervisorSource.contains("monitorDueServices()"))
+        XCTAssertFalse(supervisorSource.contains("healthTasks"))
+        XCTAssertFalse(supervisorSource.contains("pollHealth(for:"))
+        XCTAssertFalse(supervisorSource.contains("pollDaemonOwnedService("))
+    }
+
+    func testDaemonPushStatusSuppressesFallbackProbeWindow() throws {
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+
+        XCTAssertTrue(supervisorSource.contains("applyDaemonServiceStatuses(_ services: [WireClawJSServiceSnapshot])"))
+        XCTAssertTrue(supervisorSource.contains("daemonPushFreshWindow"))
+        XCTAssertTrue(supervisorSource.contains("monitor.daemon_push_fresh"))
+        XCTAssertTrue(supervisorSource.contains("daemonFallbackProbeInterval"))
+    }
+
     func testProcessInspectionDoesNotUseSynchronousWaits() throws {
         let supportSource = try readSource("ClawJS/ClawJSProcessSupport.swift")
         let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
