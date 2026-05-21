@@ -13,12 +13,15 @@ import os
 /// periodic lane and `sampleNowAndPersist()` for one-shot rescue exports.
 enum ResourceSampler {
     static let lastResourcesFileName = "last-resources.json"
+    static let resourceSamplesFileName = "resource-samples.json"
 
     private static let queue = DispatchQueue(label: "clawix.diag.sampler", qos: .utility)
     nonisolated(unsafe) private static var timer: DispatchSourceTimer?
     nonisolated(unsafe) private static var lastTotalTicks: UInt64 = 0
     nonisolated(unsafe) private static var lastIdleTicks: UInt64 = 0
     nonisolated(unsafe) private static var lastSample: Sample?
+    nonisolated(unsafe) private static var samples: [Sample] = []
+    private static let sampleLimit = 7_200
 
     private static let log = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.clawix.app",
@@ -143,6 +146,10 @@ enum ResourceSampler {
     private static func tick() {
         let sample = captureSample()
         lastSample = sample
+        samples.append(sample)
+        if samples.count > sampleLimit {
+            samples.removeFirst(samples.count - sampleLimit)
+        }
         // Each metric is its own event so Instruments charts the values
         // straight from the trace, no log parsing required.
         PerfSignpost.resource.event("rss_mb", Int(sample.residentBytes / 1024 / 1024))
@@ -164,10 +171,14 @@ enum ResourceSampler {
 
     private static func persistLastSampleOnQueue() {
         guard let sample = lastSample else { return }
-        guard let url = diagnosticsFileURL(named: lastResourcesFileName) else { return }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        if let data = try? encoder.encode(sample) {
+        if let url = diagnosticsFileURL(named: lastResourcesFileName),
+           let data = try? encoder.encode(sample) {
+            try? data.write(to: url, options: .atomic)
+        }
+        if let url = diagnosticsFileURL(named: resourceSamplesFileName),
+           let data = try? encoder.encode(samples) {
             try? data.write(to: url, options: .atomic)
         }
     }

@@ -239,6 +239,10 @@ if [[ -d "$DIAG_DIR" ]]; then
     done < <(find "$DIAG_DIR" -maxdepth 1 -type d -name '*clawix*' -o -name '*Clawix*' 2>/dev/null | sort)
 fi
 
+if command -v node >/dev/null 2>&1; then
+    node "$SCRIPT_DIR/rss-slope.mjs" "$OUT_DIR" > "$OUT_DIR/resource-slope.txt" 2>"$OUT_DIR/resource-slope.err" || true
+fi
+
 # Filtered console capture from the trace window. We grep our
 # subsystem so the log isn't 50 MB of unrelated system noise. `log
 # show` requires the timestamp in local time.
@@ -272,6 +276,7 @@ Files
   console.ndjson              \`log show\` output filtered by subsystem
   clawix-renders.log          RenderProbe per-window counters
   Diagnostics-*/              MetricKit JSON payloads + last-resources.json
+  resource-slope.txt          RSS/footprint slope from resource-samples.json
 
 See macos/PERF.md for the symptom-to-template mapping and what
 to look for in each lane of the trace.

@@ -82,8 +82,9 @@ All capture artifacts land in one place when you run `perf-capture.sh`:
 - `reproduction-workout.txt` (repeatable phase-marker instructions)
 - `clawix-renders.log` (RenderProbe)
 - `Diagnostics-<bundleId>/metrics-*.json`, `diagnostics-*.json`,
-  `last-resources.json` (MetricKit + ResourceSampler)
+  `last-resources.json`, `resource-samples.json` (MetricKit + ResourceSampler)
 - `console.ndjson` (`log show` filtered by subsystem)
+- `resource-slope.txt` (RSS/footprint MB/min from `resource-samples.json`)
 - `README.txt` (what was captured)
 
 ## Signpost taxonomy
@@ -96,6 +97,8 @@ All capture artifacts land in one place when you run `perf-capture.sh`:
 | `state.appstate` | `AppState.swift` `objectWillChange` ticks via `RenderProbe` | High-rate ticks correlated with publisher emissions |
 | `ipc.client` | `AgentBackend/ClawixClient.swift` receive path | Frame byte events, header/payload decode intervals, decode failures, and rejected oversize frame bytes |
 | `backend.metadata` | `AgentBackend/ClawixService.swift` metadata refresh/cache paths | Cache hit/stale/miss events and refresh duration for model/rate-limit metadata |
+| `service.supervisor` | `ClawJS/ClawJSServiceSupervisor.swift` aggregate health scheduler | Shared service-supervisor wakeups, due service count, daemon fallback probes, fresh daemon-push suppression, and restart/backoff transitions |
+| `apps.store` | `Apps/AppsStore.swift` disk monitor and manifest loader | Filesystem event counts, changed slug counts, full/index scans, and manifest read intervals |
 | `render.markdown` | `AgentBackend/AssistantMarkdownText.swift:148` `MarkdownParseCache.parse` | One `parse` interval per cache miss |
 | `render.streaming` | `StreamingFade.swift` `ingest` | One `ingest` event per delta, value = delta length |
 | `image.load` | chat user-image thumbnail loader | `thumbnail.bytes`, cache hit/miss, decode interval, decoded pixels, cache cost bytes, cancellation, failures |
@@ -224,10 +227,10 @@ in the listed file:line, and check the indicated lane / artifact.
 - In the trace: mark a generation in Allocations between user
   interactions. The growing categories tell you what is leaking
   vs growing legitimately.
-- In `Diagnostics-*/last-resources.json` and the per-second `resource`
-  signposts: chart `rss_mb` over time. A monotonic upward staircase
-  during streaming = checkpoint accumulation; a step on send/receive =
-  array republish copy churn.
+- In `Diagnostics-*/resource-samples.json`, `resource-slope.txt`, and the
+  per-second `resource` signposts: chart `rss_mb` over time. A monotonic
+  upward staircase during streaming = checkpoint accumulation; a step on
+  send/receive = array republish copy churn.
 
 ### Brief freezes / "the app skipped"
 
