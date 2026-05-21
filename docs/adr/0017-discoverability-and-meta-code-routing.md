@@ -39,6 +39,17 @@ permission to make visual decisions.
 Comments in source code remain non-canonical. Durable Clawix decisions must
 point to ADRs, docs, registries, manifests, or tests.
 
+## Performance Impact
+
+Clawix discoverability is static registry, docs, and generated routing metadata. It should not add runtime cost to the app. It reduces development cost by making launcher rules, UI governance, private-evidence aliases, route projections, and host checks findable before agents touch expensive native or bridge surfaces. Any discovered surface remains responsible for its own runtime impact.
+
+## Decision Tensions
+
+- **Prioritized axes**: agent routing, host/UI traceability, public/private boundary safety, meta-code reachability, and validation enforceability.
+- **Constrained axes**: hidden local instructions and private-only memory are constrained as sources for public Clawix behavior.
+- **Tradeoffs accepted**: durable Clawix docs, skills, guards, and manifests need registry evidence; this cost is accepted because unreachable host rules are easy to violate.
+- **Debt or pending evidence**: older ADRs, UI governance artifacts, and route projections remain baseline debt until every important artifact is reachable.
+
 ## Surface Parity
 
 - **Human surface**: `AGENTS.md`, `CLAUDE.md`, `docs/decision-map.md`,

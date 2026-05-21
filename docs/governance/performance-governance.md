@@ -103,6 +103,15 @@ limited only by entry count when entry byte cost is unbounded, whole-payload
 `Buffer.concat` or `Data` retention for large uploads, full transcripts kept in
 UI state, and checkpoints that survive their active window without compaction.
 
+## Resource Contract Closure
+
+Registered host, UI, storage, stream, cache, bridge, daemon, worker, WebView,
+and long-running-agent surfaces are not complete until `resourceContract`
+records startup, idle, memory, streaming, storage, hot-path, scale, and
+validation behavior. Existing missing contracts are allowed only through
+`docs/surface-resource-contract-clawix-baseline.json` with steward, reason,
+expiry, and reentry condition.
+
 ## Resource Dimensions
 
 - **Speed**: startup, first interaction, latency, throughput, hitches, frame

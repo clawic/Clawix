@@ -58,6 +58,25 @@ function requireStringArray(value, label, options = {}) {
   return value;
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractMarkdownDecisionRows(text, prefix) {
+  const pattern = new RegExp(`^\\|\\s*${escapeRegExp(prefix)}-[0-9]+\\s*\\|`, "gm");
+  return text.match(pattern) ?? [];
+}
+
+function extractMarkdownPatternRows(text, pattern, label) {
+  try {
+    const regex = new RegExp(pattern, "gm");
+    return text.match(regex) ?? [];
+  } catch (error) {
+    fail(`${label}: invalid markdown row pattern ${error.message}`);
+    return [];
+  }
+}
+
 function sourceRows(artifact) {
   if (Array.isArray(artifact.rows)) return artifact.rows;
   if (Array.isArray(artifact.items)) return artifact.items;
@@ -73,12 +92,31 @@ function normalizeLegacyState(seed, row) {
   return mapped;
 }
 
-function validateSeed(seed) {
-  for (const field of ["id", "artifactPath", "sourceConversationId", "artifactKind", "minimumDecisionRows"]) {
-    if (seed[field] === undefined || seed[field] === "") fail(`${seed.id ?? "seed"}: missing ${field}`);
+function validateEvidenceRefs(seed) {
+  requireStringArray(seed.evidenceRefs, `${seed.id}.evidenceRefs`, { nonEmpty: true });
+  for (const evidenceRef of seed.evidenceRefs) {
+    if (evidenceRef.startsWith("docs/") || evidenceRef.startsWith("scripts/")) {
+      requireFile(evidenceRef.split("#")[0]);
+    }
   }
-  assertPublicSafe(seed.id, seed);
-  requireFile(seed.artifactPath);
+}
+
+function validateSelectiveBackfill(seed) {
+  if (seed.historicalBackfill !== true) return;
+  if (seed.backfillTier !== "P0" && seed.backfillTier !== "P1") {
+    fail(`${seed.id}: historical backfill must declare backfillTier P0 or P1`);
+  }
+  if (typeof seed.backfillReason !== "string" || seed.backfillReason.length === 0) {
+    fail(`${seed.id}: historical backfill must declare backfillReason`);
+  }
+  if (typeof seed.backfillArtifactRef !== "string" || seed.backfillArtifactRef.length === 0) {
+    fail(`${seed.id}: historical backfill must declare backfillArtifactRef`);
+  } else if (seed.backfillArtifactRef.startsWith("docs/") || seed.backfillArtifactRef.startsWith("scripts/")) {
+    requireFile(seed.backfillArtifactRef.split("#")[0]);
+  }
+}
+
+function validateJsonSeed(seed) {
   const artifact = readJson(seed.artifactPath);
   const rows = sourceRows(artifact);
   if (rows.length < seed.minimumDecisionRows) {
@@ -100,21 +138,79 @@ function validateSeed(seed) {
   for (const state of normalizedStates) {
     if (!allowedStates.includes(state)) fail(`${seed.id}: invalid normalized state ${state}`);
   }
-  requireStringArray(seed.evidenceRefs, `${seed.id}.evidenceRefs`, { nonEmpty: true });
-  for (const evidenceRef of seed.evidenceRefs) {
-    if (evidenceRef.startsWith("docs/") || evidenceRef.startsWith("scripts/")) {
-      requireFile(evidenceRef.split("#")[0]);
+  if (normalizedStates.has("blocked")) {
+    requireStringArray(seed.blockedRefs, `${seed.id}.blockedRefs`, { nonEmpty: true });
+  }
+}
+
+function validateMarkdownSeed(seed) {
+  const text = read(seed.artifactPath);
+  const rowRequirements = [];
+  if (typeof seed.markdownRowPrefix === "string") {
+    rowRequirements.push({
+      label: seed.markdownRowPrefix,
+      minimumDecisionRows: seed.minimumDecisionRows,
+      rows: extractMarkdownDecisionRows(text, seed.markdownRowPrefix),
+    });
+  }
+  for (const requirement of seed.markdownRowPrefixes ?? []) {
+    rowRequirements.push({
+      label: requirement.prefix,
+      minimumDecisionRows: requirement.minimumDecisionRows,
+      rows: extractMarkdownDecisionRows(text, requirement.prefix),
+    });
+  }
+  if (typeof seed.markdownRowPattern === "string") {
+    rowRequirements.push({
+      label: seed.markdownRowPatternLabel ?? "markdownRowPattern",
+      minimumDecisionRows: seed.minimumDecisionRows,
+      rows: extractMarkdownPatternRows(text, seed.markdownRowPattern, `${seed.id}.markdownRowPattern`),
+    });
+  }
+  if (rowRequirements.length === 0) {
+    fail(`${seed.id}: markdown source audits must declare markdownRowPrefix, markdownRowPrefixes, or markdownRowPattern`);
+  }
+  for (const requirement of rowRequirements) {
+    if (typeof requirement.label !== "string" || requirement.label.length === 0) {
+      fail(`${seed.id}: markdown row requirement missing label`);
+      continue;
     }
+    if (typeof requirement.minimumDecisionRows !== "number" || requirement.minimumDecisionRows < 1) {
+      fail(`${seed.id}: markdown row requirement ${requirement.label} missing minimumDecisionRows`);
+      continue;
+    }
+    if (requirement.rows.length < requirement.minimumDecisionRows) {
+      fail(`${seed.id}: expected at least ${requirement.minimumDecisionRows} ${requirement.label} rows, found ${requirement.rows.length}`);
+    }
+  }
+  requireSnippet(seed.artifactPath, seed.sourceConversationId);
+  if (seed.sourcePlanId) requireSnippet(seed.artifactPath, seed.sourcePlanId);
+  const normalizedStates = new Set(seed.normalizedStates ?? []);
+  for (const state of normalizedStates) {
+    if (!allowedStates.includes(state)) fail(`${seed.id}: invalid normalized state ${state}`);
   }
   if (normalizedStates.has("blocked")) {
     requireStringArray(seed.blockedRefs, `${seed.id}.blockedRefs`, { nonEmpty: true });
   }
 }
 
+function validateSeed(seed) {
+  for (const field of ["id", "artifactPath", "sourceConversationId", "artifactKind", "minimumDecisionRows"]) {
+    if (seed[field] === undefined || seed[field] === "") fail(`${seed.id ?? "seed"}: missing ${field}`);
+  }
+  assertPublicSafe(seed.id, seed);
+  requireFile(seed.artifactPath);
+  validateEvidenceRefs(seed);
+  validateSelectiveBackfill(seed);
+  if (seed.artifactKind.startsWith("json")) validateJsonSeed(seed);
+  if (seed.artifactKind.startsWith("markdown")) validateMarkdownSeed(seed);
+}
+
 function validateRegistry() {
   const registry = readJson("docs/governance/source-decision-audits.registry.json");
   if (registry.schemaVersion !== 1) fail("registry.schemaVersion must be 1");
   if (registry.forwardOnly !== true) fail("registry.forwardOnly must be true");
+  if (registry.selectiveHistoricalBackfill !== true) fail("registry.selectiveHistoricalBackfill must be true");
   if (JSON.stringify(registry.statusVocabulary) !== JSON.stringify(allowedStates)) {
     fail(`registry.statusVocabulary must be exactly ${allowedStates.join(", ")}`);
   }
@@ -151,6 +247,10 @@ function runSelfTest() {
     legacyStateMap: { "blocked-external-pending": "blocked" },
   }, { status: "blocked-external-pending" });
   if (mapped !== "blocked") fail("self-test: blocked-external-pending must normalize to blocked");
+  const markdownRows = extractMarkdownDecisionRows("| LCA-001 | x |\n| QA-001 | y |\n", "LCA");
+  if (markdownRows.length !== 1) fail("self-test: markdown row extraction failed");
+  const patternRows = extractMarkdownPatternRows("| `plan_scope` | x |\n| QA-001 | y |\n", "^\\| `[^`]+`\\s*\\|", "self-test");
+  if (patternRows.length !== 1) fail("self-test: markdown pattern row extraction failed");
   assertPublicSafe("self-test-safe-ref", "docs/governance/source-decision-audits.md");
 }
 

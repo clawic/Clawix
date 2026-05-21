@@ -16,6 +16,17 @@ The program fails only clear mechanical debt: local unused code, true orphan fil
 
 Public APIs, package entrypoints, CLI/router/registry/protocol surfaces, canonical docs, fixtures, stable registries, and compatibility names are retained as contract. Future intent must live in an issue, backlog entry, ADR, or canonical doc; dormant code alone is not enough.
 
+## Performance Impact
+
+Clawix hygiene checks run during validation and do not add app runtime cost. Removing stale assets, orphaned files, unused code, and invalid baselines can reduce build size, test cost, and accidental startup/import work. Visual assets, Swift dynamic references, public APIs, and protected UI surfaces stay guarded so cleanup does not become destructive.
+
+## Decision Tensions
+
+- **Prioritized axes**: maintainability, app-surface safety, dependency discipline, public hygiene, and agent-safe cleanup.
+- **Constrained axes**: broad semantic deletion and visual asset cleanup are constrained until ownership and protected-surface evidence are clear.
+- **Tradeoffs accepted**: some ambiguous Clawix debt remains report-only; that is accepted to avoid deleting active UI, bridge, or release behavior.
+- **Debt or pending evidence**: baselines, stale assets, and unclear exports must keep shrinking or gain explicit classifications in the hygiene ledgers.
+
 ## Guardrail
 
 `scripts/code-hygiene-check.mjs` validates the decision checklist, baseline schema, expiration policy, ledger, JSON/Markdown report pair, and required skills. Knip is the pinned TS/JS scanner after entrypoints are configured. Periphery is the versioned Swift scanner, report-only until calibrated.

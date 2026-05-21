@@ -18,7 +18,9 @@ const simulationFlags = [
   "--simulate-invalid-approved-at",
   "--simulate-local-private-reference",
   "--simulate-invalid-baseline-hash",
+  "--simulate-missing-adoption-canonicity-packet",
   "--simulate-approved-without-protected-surface",
+  "--simulate-approved-without-adoption-canonicity-packet",
   "--simulate-approved-protected-hash-mismatch",
   "--simulate-approved-platform-mismatch",
   "--simulate-duplicate-promotion-id",
@@ -130,7 +132,9 @@ function runFailureSelfTests() {
     [["--simulate-approved-by-agent"], "approvedBy must be user"],
     [["--simulate-local-private-reference"], "privateBaselineReference must use private-codex-ui-baselines:"],
     [["--simulate-invalid-baseline-hash"], "privateBaselineHash must be a 64-character hex hash"],
+    [["--simulate-missing-adoption-canonicity-packet"], "requiredPromotionFields must include adoptionCanonicityPacketId"],
     [["--simulate-approved-without-protected-surface"], "protectedSurfaceId must reference an approved protected surface"],
+    [["--simulate-approved-without-adoption-canonicity-packet"], "adoptionCanonicityPacketId must reference an adoption/canonicity packet"],
     [["--simulate-approved-protected-hash-mismatch"], "privateBaselineHash must match protected surface simulated-protected-surface"],
     [["--simulate-approved-platform-mismatch"], "platform must match protected surface simulated-protected-surface"],
     [["--simulate-duplicate-promotion-id"], "id duplicates another promotion"],
@@ -168,6 +172,9 @@ if (manifest && args.has("--simulate-missing-approved-status")) {
 }
 if (manifest && args.has("--simulate-missing-required-promotion-field")) {
   manifest.requiredPromotionFields = manifest.requiredPromotionFields.filter((field) => field !== "geometryEvidenceHash");
+}
+if (manifest && args.has("--simulate-missing-adoption-canonicity-packet")) {
+  manifest.requiredPromotionFields = manifest.requiredPromotionFields.filter((field) => field !== "adoptionCanonicityPacketId");
 }
 requireFields(manifest, manifestPath, [
   "schemaVersion",
@@ -214,6 +221,7 @@ for (const field of [
   "geometryEvidenceReference",
   "geometryEvidenceHash",
   "protectedSurfaceId",
+  "adoptionCanonicityPacketId",
 ]) {
   if (!requiredPromotionFieldSet.has(field)) fail(`${manifestPath}.requiredPromotionFields must include ${field}`);
 }
@@ -255,6 +263,7 @@ const simulatedPromotion = {
   geometryEvidenceReference: "private-codex-ui-rendered-geometry:surfaces/simulated/geometry.json",
   geometryEvidenceHash: simulatedHash,
   protectedSurfaceId: "simulated-protected-surface",
+  adoptionCanonicityPacketId: "simulated-ui-canon-promotion-packet",
 };
 if (manifest && args.has("--simulate-invalid-promotion-status")) {
   manifest.promotions = [{ ...simulatedPromotion, status: "pending" }];
@@ -277,6 +286,10 @@ if (manifest && args.has("--simulate-invalid-baseline-hash")) {
 if (manifest && args.has("--simulate-approved-without-protected-surface")) {
   manifest.promotions = [simulatedPromotion];
 }
+if (manifest && args.has("--simulate-approved-without-adoption-canonicity-packet")) {
+  manifest.promotions = [simulatedPromotion];
+  protectedSurfaces.surfaces = [simulatedProtectedSurface];
+}
 if (manifest && args.has("--simulate-approved-protected-hash-mismatch")) {
   manifest.promotions = [simulatedPromotion];
   protectedSurfaces.surfaces = [simulatedProtectedSurface];
@@ -293,6 +306,30 @@ if (manifest && args.has("--simulate-duplicate-promotion-id")) {
 }
 const protectedSurfaceById = new Map(
   requireArray(protectedSurfaces, protectedPath, "surfaces", { nonEmpty: false }).map((surface) => [surface.id, surface]),
+);
+const adoptionCanonicityPath = "docs/governance/adoption-canonicity.manifest.json";
+const adoptionCanonicityManifest = readJson(adoptionCanonicityPath);
+const simulatedAdoptionPacket = {
+  id: "simulated-ui-canon-promotion-packet",
+  targetType: "ui_promotion",
+  targetId: "simulated-canon-promotion",
+  claimType: "ui_canon_promotion",
+  stage: "understandable",
+  targetAudience: "simulated",
+  evidenceRefs: [{ kind: "public_test", ref: "scripts/ui_canon_promotion_check.mjs", summary: "simulated" }],
+  feedbackLoop: { mechanism: "simulated", cadence: "per_promotion_review", evidenceRefs: ["scripts/ui_canon_promotion_check.mjs"] },
+  privacyMode: "hybrid_private",
+  telemetryDefault: "disabled",
+  promotionDecision: { state: "approved", decidedBy: "user", decidedAt: "2026-05-15", refs: ["scripts/ui_canon_promotion_check.mjs"] },
+  reviewCadence: "per_promotion_review",
+  reviewedAt: "2026-05-15",
+  expiresAt: "2026-08-15",
+};
+if (adoptionCanonicityManifest && !args.has("--simulate-approved-without-adoption-canonicity-packet")) {
+  adoptionCanonicityManifest.packets = [...(adoptionCanonicityManifest.packets ?? []), simulatedAdoptionPacket];
+}
+const adoptionPacketIds = new Set(
+  requireArray(adoptionCanonicityManifest, adoptionCanonicityPath, "packets", { nonEmpty: false }).map((packet) => packet.id),
 );
 
 const promotions = requireArray(manifest, manifestPath, "promotions", { nonEmpty: false });
@@ -337,6 +374,9 @@ for (const [index, promotion] of promotions.entries()) {
     if (promotion.platform !== protectedSurface.platform) {
       fail(`${label}.platform must match protected surface ${promotion.protectedSurfaceId}`);
     }
+  }
+  if (!adoptionPacketIds.has(promotion.adoptionCanonicityPacketId)) {
+    fail(`${label}.adoptionCanonicityPacketId must reference an adoption/canonicity packet`);
   }
 }
 

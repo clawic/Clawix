@@ -37,6 +37,17 @@ Telegram is the pilot integration. Clawix references the Telegram QA scenario
 and must not run a Telegram live check directly from UI code without going
 through the framework/host boundary.
 
+## Performance Impact
+
+Clawix displays or brokers integration QA state, but live provider checks remain outside default app validation. This keeps the app from spending network, provider quota, battery, or money during ordinary tests. Any UI that polls QA state, shows provider coverage, or requests approvals must stay lazy and avoid background refresh loops unless a user-visible workflow requires them.
+
+## Decision Tensions
+
+- **Prioritized axes**: provider truth, signed-host approval, credential safety, external-pending honesty, and ClawJS canon alignment.
+- **Constrained axes**: Clawix-local claims of connector completeness are constrained; the app can surface QA state but not redefine provider coverage.
+- **Tradeoffs accepted**: users may see pending/manual states instead of a false green check; that is accepted because live integrations can mutate external systems or require private credentials.
+- **Debt or pending evidence**: provider-specific app UI, approval receipts, and live validation remain pending until ClawJS labs and signed-host evidence cover them.
+
 ## Consequences
 
 - Clawix connector UI cannot claim "complete" from local UI wiring alone.

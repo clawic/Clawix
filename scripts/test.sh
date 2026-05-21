@@ -258,16 +258,22 @@ fast() {
   run node "$ROOT_DIR/scripts/constitution-assertions-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/constitution-sync-check.mjs"
   run node "$ROOT_DIR/scripts/constitution-sync-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/accessibility_governance_guard.mjs"
+  run node "$ROOT_DIR/scripts/accessibility_governance_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
   run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test
+  run node "$ROOT_DIR/scripts/release_readiness_check.mjs"
+  run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs"
   run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/security-threat-model-check.mjs"
   run node "$ROOT_DIR/scripts/security-threat-model-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/incident_response_check.mjs"
+  run node "$ROOT_DIR/scripts/incident_response_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs"
@@ -420,6 +426,7 @@ case "$LANE" in
   release)
     run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
     run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --release --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
+    run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     integration "$@"
     run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     e2e_tests

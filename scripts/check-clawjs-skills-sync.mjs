@@ -44,6 +44,7 @@ const clawixLocalSkills = new Set([
   "ui-implementation",
   "visual-regression",
   "ui-performance-budget",
+  "accessibility-governance",
 ]);
 
 function hashFile(filePath) {

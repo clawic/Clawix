@@ -35,6 +35,17 @@ The canonical framework decision is sibling ClawJS
   and future `claw verify` surface instead of inventing a parallel app-only
   standard.
 
+## Performance Impact
+
+The mirror is release and documentation governance, not runtime app behavior. It may add official-build checks, identity verification, and release metadata work, but source and community builds should not pay official-channel validation cost at runtime. Clawix must keep trust labels clear around native permissions without adding heavy startup or network checks for every launch.
+
+## Decision Tensions
+
+- **Prioritized axes**: open-source legitimacy, official Clawix trust, public/private hygiene, user transparency, and ClawJS alignment.
+- **Constrained axes**: ambiguous official language and app-side gatekeeping of compatible/source builds are constrained.
+- **Tradeoffs accepted**: official Clawix builds need stricter identity and release evidence; that cost is accepted so users can distinguish upstream trust from legitimate forks.
+- **Debt or pending evidence**: app release channels, marks, update metadata, and sensitive-permission labels must keep aligning with the ClawJS trust taxonomy.
+
 ## Surface Parity
 
 - **Human surface**: README, FORKS, TRADEMARKS, NOTICE, and release docs explain

@@ -53,6 +53,17 @@ framework-owned. Current route anchors include `GET /v1/remote/conformance`,
 `POST /v1/mesh/invitations/accept`. These anchors exist to catch stale Clawix
 mirrors; ClawJS remains the source of truth for the complete method-route list.
 
+## Performance Impact
+
+The Clawix route projection is static manifest data and should remain cheap to validate. It prevents host bridge, Relay, companion, and chat routes from being wired implicitly in ways that start extra daemons or broaden IPC paths. Runtime route legs still need launcher, bridge, signed-host, network, and UI measurements before their performance is considered validated.
+
+## Decision Tensions
+
+- **Prioritized axes**: host-route traceability, ClawJS canon alignment, bridge ownership, Relay clarity, and agent-safe navigation.
+- **Constrained axes**: Clawix-specific route records are constrained to owned host legs so the app does not become the framework graph source of truth.
+- **Tradeoffs accepted**: bridge and companion work must update route evidence before it is complete; this is accepted to avoid architecture memory and hidden cross-surface coupling.
+- **Debt or pending evidence**: projected route gaps and runtime-critical legs remain baseline or external-pending until inspect evidence covers them.
+
 ## Enforcement
 
 Agents working on Clawix runtime, bridge, companion, host, permission, approval,
@@ -70,6 +81,11 @@ implement, the decision authorizing them, the human/programmatic surface that
 completes them, and what must not be inferred from the surface. Existing
 missing narratives are bounded by
 `docs/surface-narrative-clawix-baseline.json`.
+New Clawix manifest nodes, routes, UI/interface surfaces, permissions, storage
+keys, streams, caches, and feature flags must also carry `resourceContract`:
+startup, idle, memory, streaming, storage, hot-path, scale, and validation
+behavior. Existing missing contracts are bounded by
+`docs/surface-resource-contract-clawix-baseline.json`.
 `scripts/surface-evidence-projection-check.mjs` protects the Clawix projection:
 route docs/tests/ADR evidence must resolve to files, route steps must point to
 registered edges and nodes, and the current generated missing-source gap is
@@ -79,6 +95,9 @@ exporter carries source metadata.
 `scripts/surface_narrative_guard.mjs` blocks new Clawix surfaces without
 `surfaceNarrative` so technically valid host/UI growth cannot drift
 conceptually.
+`scripts/surface_resource_contract_guard.mjs` blocks new Clawix surfaces
+without `resourceContract` so runtime/UI/storage growth cannot stay registered
+only nominally.
 
 ## Consequences
 

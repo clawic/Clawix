@@ -42,6 +42,17 @@ identity, never from Node.
 - `AGENTS.md` writes into Codex-owned sources require explicit, reversible,
   brokered opt-in.
 
+## Performance Impact
+
+The boundary prevents Clawix from carrying duplicate framework stores, permission paths, and native execution logic inside the app. Clawix still pays for bridge coordination, host registry reads, signed-host validation, and UI projections, but those costs should be lazy and tied to visible host work. Local app validation must use launcher and signed-host lanes before native permission or bridge performance is considered proven.
+
+## Decision Tensions
+
+- **Prioritized axes**: host/framework ownership, signed permission authority, data placement, public/private hygiene, and Clawix as a stable human surface.
+- **Constrained axes**: app-local shortcuts are constrained when they would make Clawix the framework source of truth or bypass the signed host.
+- **Tradeoffs accepted**: some UI features must wait for ClawJS or ClawHostKit contracts; that is acceptable to avoid duplicated schemas, stores, and permission prompts.
+- **Debt or pending evidence**: older Clawix-local logic must keep migrating to framework contracts and host-equivalent validation where native behavior is involved.
+
 ## Consequences
 
 Every migrated domain must work through both `claw` + `Claw.app` and Clawix +

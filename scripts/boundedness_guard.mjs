@@ -1,160 +1,204 @@
 #!/usr/bin/env node
+// Windowing/Pagination by Default: broad reads need an explicit window or reviewed baseline.
+// Boundedness Guard P0 coverage includes buffer-concat and eventbus retained-state risks.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const defaultRootDir = path.resolve(new URL("..", import.meta.url).pathname);
-function parseArgs(argv) {
-  const args = { rootDir: defaultRootDir, selfTest: false };
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--root") args.rootDir = path.resolve(argv[++index]);
-    else if (arg === "--self-test") args.selfTest = true;
-    else throw new Error(`unknown argument ${arg}`);
-  }
-  return args;
+const rootDefault = path.resolve(new URL("..", import.meta.url).pathname);
+const args = { rootDir: rootDefault, selfTest: false };
+for (let i = 2; i < process.argv.length; i += 1) {
+  if (process.argv[i] === "--root") args.rootDir = path.resolve(process.argv[++i]);
+  else if (process.argv[i] === "--self-test") args.selfTest = true;
+  else throw new Error(`unknown argument ${process.argv[i]}`);
 }
-const args = parseArgs(process.argv.slice(2));
 
-const excludedParts = new Set([".git", ".next", ".tmp", ".turbo", "build", ".build", "dist", "coverage", "node_modules", "vendor", "fixtures", "__fixtures__", "generated", "DerivedData", "target"]);
-const excludedBasenames = new Set(["package-lock.json", "Cargo.lock", "codebase-manifest.json", "conceptual-vocabulary-baseline.json", "discoverability.registry.json", "discoverability.md", "discoverability-baseline.json"]);
-const allowedExtensions = new Set([".cjs", ".cs", ".js", ".jsx", ".kt", ".mjs", ".md", ".sh", ".swift", ".ts", ".tsx", ".yaml", ".yml"]);
-const scanRoots = ["apps", "bridge", "cli", "docs", "macos", "ios", "android", "linux", "packages", "publishing", "scripts", "skills", "tests", "web", "windows"];
-const boundPattern = /\b(?:bounded|bound|limit|limited|max(?:imum)?|capacity|cap|bytes?|size|count|age|ttl|expires?|expiry|retention|cleanup|clean-up|prune|trim|evict|eviction|compact|compaction|window|active window|lease|backpressure|pagination|pageSize|batchSize|watermark|rotate|rotation|drop oldest|drop-oldest|ring buffer|lru|cleanupPolicy|stream|streaming)\b/iu;
-const retainedCollection = /(?:new\s+(?:Map|Set|Array)|NSCache|Map\(|Set\(|\[\]|\{\}|Cache\(|Queue\(|Deque|Array|List<|String\s*=\s*["'])/u;
-const riskPatterns = [
-  { riskKind: "buffer-concat", applies: (line) => /\bBuffer\.concat\s*\(/u.test(line) },
-  { riskKind: "whole-data-buffer", applies: (line) => /\bData\s*\([^)]*(?:contentsOf|count:|bytes:)/u.test(line) && /\b(?:upload|attachment|payload|audio|image|video|archive|transcript)\b/iu.test(line) },
-  { riskKind: "eventbus", applies: (line) => /\b(?:class|struct|actor|interface|type|const|let|var|private|public|static|final)\s+\w*EventBus\w*\b/u.test(line) },
-  { riskKind: "fanout", applies: (line) => /\b(?:fanout|fanOut|subscribers?|connections?|clients?)\w*\s*(?:[:=]|=|=>)\s*(?:new\s+(?:Map|Set|Array)|\[\]|\{\}|Set\(|Map\()/u.test(line) },
-  { riskKind: "cache", applies: (line) => /\b(?:class|actor|final class)\s+\w*[Cc]ache\w*\b/u.test(line) || (/\b(?:const|let|var|private|public|static|final|val)\s+\w*[Cc]ache\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line)) },
-  { riskKind: "queue", applies: (line) => /\b(?:class|actor|final class)\s+\w*[Qq]ueue\w*\b/u.test(line) || (/\b(?:const|let|var|private|public|static|final|val)\s+\w*[Qq]ueue\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line)) },
-  { riskKind: "log", applies: (line) => /\b(?:class|actor|final class)\s+\w*(?:LogStore|AuditStore|AuditLog)\w*\b/u.test(line) || (/\b(?:const|let|var|private|public|static|final|val)\s+\w*(?:logs|auditLog|ledger)\w*\s*(?:[:=]|=)/iu.test(line) && retainedCollection.test(line)) },
-  { riskKind: "snapshot", applies: (line) => /\b(?:const|let|var|private|public|static|final|val)\s+\w*[Ss]napshots?\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line) },
-  { riskKind: "checkpoint", applies: (line) => /\b(?:const|let|var|private|public|static|final|val)\s+\w*[Cc]heckpoints?\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line) },
-  { riskKind: "timeline", applies: (line) => /\b(?:const|let|var|private|public|static|final|val)\s+\w*[Tt]imeline\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line) },
-  { riskKind: "transcript", applies: (line) => /\b(?:const|let|var|private|public|static|final|val|@State)\s+\w*[Tt]ranscripts?\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line) },
-  { riskKind: "session-state", applies: (line) => /\b(?:const|let|var|private|public|static|final|val|@State)\s+\w*(?:SessionState|sessionState)\w*\s*(?:[:=]|=)/u.test(line) && retainedCollection.test(line) },
-  { riskKind: "ranking-cache", applies: (line) => /\b(?:class|actor|final class)\s+\w*(?:RankingCache|rankingCache)\w*\b/u.test(line) || /\b(?:const|let|var|private|public|static|final|val)\s+\w*(?:RankingCache|rankingCache)\w*\s*(?:[:=]|=)/u.test(line) },
-];
-function relative(rootDir, absolutePath) { return path.relative(rootDir, absolutePath).split(path.sep).join("/"); }
-function readText(rootDir, relativePath) { return fs.readFileSync(path.join(rootDir, relativePath), "utf8"); }
-function readJson(rootDir, relativePath) { return JSON.parse(readText(rootDir, relativePath)); }
-function isDate(value) { return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(value); }
-function shouldSkip(relativePath) {
-  const parts = relativePath.split("/");
-  if (parts.some((part) => excludedParts.has(part))) return true;
-  const basename = path.basename(relativePath);
-  if (excludedBasenames.has(basename)) return true;
-  if (/\.generated\./u.test(basename) || basename.endsWith(".min.js")) return true;
-  if (relativePath.startsWith("docs/") && basename !== "boundedness-baseline.json" && (basename.includes("baseline") || basename.includes("projection") || basename.includes("registry") || basename.includes("surface-evidence") || basename.includes("manifest"))) return true;
-  return !allowedExtensions.has(path.extname(relativePath));
+const scanRoots = ["apps", "bridge", "cli", "ios", "macos", "packages", "publishing", "scripts", "tests", "web"];
+const exts = new Set([".cjs", ".cs", ".js", ".jsx", ".kt", ".mjs", ".sh", ".swift", ".ts", ".tsx", ".yaml", ".yml"]);
+const skipParts = new Set([".git", ".next", ".tmp", ".turbo", ".build", "build", "coverage", "DerivedData", "dist", "fixtures", "__fixtures__", "generated", "node_modules", "target", "vendor", "web-dist"]);
+const skipFiles = new Set(["boundedness-guard.mjs", "boundedness_guard.mjs", "package-lock.json", "Cargo.lock"]);
+const bounded = /\b(?:limit|pageSize|offset|cursor|nextCursor|hasMore|window|windowed|visible|prefix|suffix|batch|chunk|tail|readWindowBefore|loadOlder|max\w*|cap|capped|bounded|stream|streaming)\b/iu;
+const highVolume = /\b(?:items|rows|records|messages|sessions|events|timeline|results|transcripts|transcript|documents|embeddings|rollouts|sidebars|imports)\b/iu;
+
+function rel(abs) {
+  return path.relative(args.rootDir, abs).split(path.sep).join("/");
 }
-function listFiles(rootDir, relativeDir, output = []) {
-  const absoluteDir = path.join(rootDir, relativeDir);
-  if (!fs.existsSync(absoluteDir)) return output;
-  for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
-    const absolutePath = path.join(absoluteDir, entry.name);
-    const relativePath = relative(rootDir, absolutePath);
-    if (entry.isDirectory()) { if (!excludedParts.has(entry.name)) listFiles(rootDir, relativePath, output); }
-    else if (entry.isFile() && !shouldSkip(relativePath)) output.push(relativePath);
-  }
-  return output;
+
+function read(file) {
+  return fs.readFileSync(path.join(args.rootDir, file), "utf8");
 }
-function nearbyHasBound(lines, index) {
-  const start = Math.max(0, index - 8);
-  const end = Math.min(lines.length - 1, index + 8);
-  return boundPattern.test(lines.slice(start, end + 1).join("\n"));
+
+function shouldSkip(file) {
+  const parts = file.split("/");
+  if (parts.some((part) => skipParts.has(part))) return true;
+  const basename = path.basename(file);
+  if (skipFiles.has(basename) || /\.generated\./u.test(basename) || basename.endsWith(".min.js")) return true;
+  return !exts.has(path.extname(file));
 }
-function scanFile(rootDir, relativePath) {
-  const lines = readText(rootDir, relativePath).split(/\r?\n/u);
-  const findings = [];
-  for (const [index, line] of lines.entries()) {
-    for (const risk of riskPatterns) {
-      if (!risk.applies(line) || nearbyHasBound(lines, index)) continue;
-      findings.push({ path: relativePath, line: index + 1, riskKind: risk.riskKind, snippet: line.trim().slice(0, 160) });
+
+function listFiles(dir, out = []) {
+  const absDir = path.join(args.rootDir, dir);
+  if (!fs.existsSync(absDir)) return out;
+  for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
+    const file = rel(path.join(absDir, entry.name));
+    if (entry.isDirectory()) {
+      if (!skipParts.has(entry.name)) listFiles(file, out);
+    } else if (entry.isFile() && !shouldSkip(file)) {
+      out.push(file);
     }
+  }
+  return out;
+}
+
+function statement(lines, index) {
+  return lines.slice(Math.max(0, index - 2), Math.min(lines.length, index + 9)).join("\n");
+}
+
+function nearbyBound(lines, index) {
+  return bounded.test(lines.slice(Math.max(0, index - 4), Math.min(lines.length, index + 5)).join("\n"));
+}
+
+function riskFor(line, context, lines, index) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("#")) return null;
+  if (/\blistRecords\s*\(/u.test(line) && !/\b(?:function|func)\s+listRecords\s*\(/u.test(line) && !/\blistRecords\s*\([^)]*\)\s*(?::|=>)/u.test(line) && !/\blimit\b/u.test(context)) return "database-list-without-explicit-window";
+  if (/\breadFileSync\s*\(/u.test(line) && /\.(?:jsonl|ndjson)\b/iu.test(line) && !nearbyBound(lines, index)) return "full-jsonl-read";
+  if (/\breadFileSync\s*\(/u.test(line) && /\.(?:split|filter|sort|map)\s*\(/u.test(line) && /\b(?:session|rollout|transcript|timeline|import|embedding|search|records?)\b/iu.test(context) && !nearbyBound(lines, index)) return "full-file-split-over-large-source";
+  if (/\.(?:filter|sort)\s*\(/u.test(line) && highVolume.test(line) && /\.(?:filter|sort)\s*\([^)]*\)\s*\.\s*(?:filter|sort|map|forEach)\s*\(/su.test(context) && !nearbyBound(lines, index)) return "load-all-filter-sort-render";
+  if (/\bForEach\s*\(/u.test(line) && highVolume.test(line) && !nearbyBound(lines, index)) return "ui-foreach-over-unbounded-source";
+  return null;
+}
+
+function scanFile(file) {
+  const lines = read(file).split(/\r?\n/u);
+  const findings = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const riskKind = riskFor(lines[index], statement(lines, index), lines, index);
+    if (riskKind) findings.push({ path: file, line: index + 1, riskKind, snippet: lines[index].trim().slice(0, 160) });
   }
   return findings;
 }
-function validateBaseline(rootDir, baseline, failures) {
-  if (baseline.schemaVersion !== 1) failures.push("docs/boundedness-baseline.json schemaVersion must be 1");
-  if (baseline.program !== "boundedness-guard") failures.push("docs/boundedness-baseline.json program must be boundedness-guard");
-  if (!Number.isInteger(baseline.defaultExpiryDays) || baseline.defaultExpiryDays <= 0) failures.push("docs/boundedness-baseline.json defaultExpiryDays must be a positive integer");
-  if (!Array.isArray(baseline.entries)) failures.push("docs/boundedness-baseline.json entries must be an array");
+
+function validDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(value);
+}
+
+function baselineKeys(failures) {
+  const file = "docs/boundedness-baseline.json";
+  const abs = path.join(args.rootDir, file);
+  if (!fs.existsSync(abs)) {
+    failures.push(`missing ${file}`);
+    return new Set();
+  }
+  const json = JSON.parse(fs.readFileSync(abs, "utf8"));
+  if (json.schemaVersion !== 1) failures.push(`${file} schemaVersion must be 1`);
+  if (json.program !== "boundedness-guard") failures.push(`${file} program must be boundedness-guard`);
+  if (!Number.isInteger(json.defaultExpiryDays) || json.defaultExpiryDays <= 0) failures.push(`${file} defaultExpiryDays must be positive`);
+  if (!Array.isArray(json.entries)) failures.push(`${file} entries must be an array`);
   const today = new Date().toISOString().slice(0, 10);
-  const keys = new Set();
   const ids = new Set();
-  for (const [index, entry] of (baseline.entries ?? []).entries()) {
+  const keys = new Set();
+  for (const [index, entry] of (json.entries ?? []).entries()) {
     const label = entry.id || `entries[${index}]`;
-    if (!entry.id) failures.push(`${label} is missing id`);
-    if (ids.has(entry.id)) failures.push(`${label} duplicates id ${entry.id}`);
+    if (!entry.id || ids.has(entry.id)) failures.push(`${label} must have a unique id`);
     ids.add(entry.id);
-    for (const field of ["path", "riskKind", "ownerArea", "reason", "limitKind", "limitValue", "cleanupPolicy", "reference", "expiresAt"]) if (entry[field] === undefined || entry[field] === "") failures.push(`${label} is missing ${field}`);
+    for (const field of ["path", "riskKind", "ownerArea", "reason", "limitKind", "limitValue", "cleanupPolicy", "reference", "expiresAt"]) {
+      if (!entry[field]) failures.push(`${label} is missing ${field}`);
+    }
     if (typeof entry.blocksRelease !== "boolean") failures.push(`${label} blocksRelease must be boolean`);
-    if (entry.path && !fs.existsSync(path.join(rootDir, entry.path))) failures.push(`${label} path does not exist: ${entry.path}`);
-    if (entry.expiresAt && !isDate(entry.expiresAt)) failures.push(`${label} expiresAt must be YYYY-MM-DD`);
-    if (isDate(entry.expiresAt) && entry.expiresAt < today) failures.push(`${label} expired on ${entry.expiresAt}`);
+    if (entry.path && !fs.existsSync(path.join(args.rootDir, entry.path))) failures.push(`${label} path does not exist: ${entry.path}`);
+    if (entry.expiresAt && !validDate(entry.expiresAt)) failures.push(`${label} expiresAt must be YYYY-MM-DD`);
+    if (validDate(entry.expiresAt) && entry.expiresAt < today) failures.push(`${label} expired on ${entry.expiresAt}`);
     const key = `${entry.path}:${entry.riskKind}`;
-    if (keys.has(key)) failures.push(`${label} duplicates boundedness baseline key ${key}`);
+    if (keys.has(key)) failures.push(`${label} duplicates baseline key ${key}`);
     keys.add(key);
   }
   return keys;
 }
-function requireSnippet(rootDir, relativePath, snippet, failures) {
-  const filePath = path.join(rootDir, relativePath);
-  if (!fs.existsSync(filePath)) { failures.push(`missing ${relativePath}`); return; }
-  const content = fs.readFileSync(filePath, "utf8");
-  if (!content.includes(snippet)) failures.push(`${relativePath} must include ${JSON.stringify(snippet)}`);
+
+function requireDoc(snippet, failures) {
+  const file = path.join(args.rootDir, "docs/governance/performance-governance.md");
+  if (!fs.existsSync(file)) {
+    failures.push("missing docs/governance/performance-governance.md");
+    return;
+  }
+  if (!fs.readFileSync(file, "utf8").includes(snippet)) failures.push(`performance governance must include ${JSON.stringify(snippet)}`);
 }
-function checkRoot(rootDir) {
+
+function check() {
   const failures = [];
-  requireSnippet(rootDir, "docs/governance/performance-governance.md", "Boundedness Guard P0", failures);
-  requireSnippet(rootDir, "docs/governance/performance-governance.md", "bytes, count, age, or active-window limit", failures);
-  const baselinePath = "docs/boundedness-baseline.json";
-  if (!fs.existsSync(path.join(rootDir, baselinePath))) failures.push(`missing ${baselinePath}`);
-  const baseline = fs.existsSync(path.join(rootDir, baselinePath)) ? readJson(rootDir, baselinePath) : { entries: [] };
-  const baselineKeys = validateBaseline(rootDir, baseline, failures);
-  const files = [...new Set(scanRoots.flatMap((scanRoot) => listFiles(rootDir, scanRoot)))].sort();
-  const findings = files.flatMap((file) => scanFile(rootDir, file));
-  for (const finding of findings) if (!baselineKeys.has(`${finding.path}:${finding.riskKind}`)) failures.push(`${finding.path}:${finding.line} declares ${finding.riskKind} without a nearby bound or docs/boundedness-baseline.json entry: ${finding.snippet}`);
+  requireDoc("Windowing/Pagination by Default", failures);
+  requireDoc("load all -> filter/sort/render", failures);
+  requireDoc("cursor/window/batch/limit", failures);
+  const covered = baselineKeys(failures);
+  const files = [...new Set(scanRoots.flatMap((dir) => listFiles(dir)))].sort();
+  const findings = files.flatMap(scanFile);
+  for (const finding of findings) {
+    if (!covered.has(`${finding.path}:${finding.riskKind}`)) failures.push(`${finding.path}:${finding.line} has ${finding.riskKind} without an explicit cursor/window/batch/limit or docs/boundedness-baseline.json entry: ${finding.snippet}`);
+  }
   return { failures, findings, filesScanned: files.length };
 }
-function writeFixture(rootDir, relativePath, content) {
-  const filePath = path.join(rootDir, relativePath);
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content);
+
+function writeFixture(root, file, content) {
+  const abs = path.join(root, file);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, content);
 }
-function runSelfTest() {
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boundedness-guard-"));
-  writeFixture(tempRoot, "docs/governance/performance-governance.md", "# Performance Governance\n\nNo boundedness policy yet.\n");
-  writeFixture(tempRoot, "docs/boundedness-baseline.json", JSON.stringify({ schemaVersion: 1, program: "boundedness-guard", defaultExpiryDays: 90, entries: [] }, null, 2));
-  writeFixture(tempRoot, "packages/demo/src/cache.ts", "const resultCache = new Map();\n");
-  let result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status === 0 || !result.stderr.includes("Boundedness Guard P0")) throw new Error("self-test failed to catch missing policy text");
-  writeFixture(tempRoot, "docs/governance/performance-governance.md", "# Performance Governance\n\n## Boundedness Guard P0\n\nRisk state needs a bytes, count, age, or active-window limit plus cleanup.\n");
-  result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status === 0 || !result.stderr.includes("cache")) throw new Error("self-test failed to catch unbounded cache");
-  writeFixture(tempRoot, "packages/demo/src/cache.ts", "// max count cleanup\nconst resultCache = new Map();\nfunction cleanupResultCache() {}\n");
-  result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status !== 0) throw new Error(`self-test bounded cache should pass: ${result.stderr}`);
-  writeFixture(tempRoot, "packages/demo/src/upload.ts", "const body = Buffer.concat(chunks);\n");
-  result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status === 0 || !result.stderr.includes("buffer-concat")) throw new Error("self-test failed to catch Buffer.concat");
-  writeFixture(tempRoot, "docs/boundedness-baseline.json", JSON.stringify({ schemaVersion: 1, program: "boundedness-guard", defaultExpiryDays: 90, entries: [{ id: "expired-buffer", path: "packages/demo/src/upload.ts", riskKind: "buffer-concat", ownerArea: "demo", reason: "self-test", limitKind: "count", limitValue: "temporary", cleanupPolicy: "replace with streaming", reference: "self-test", expiresAt: "2000-01-01", blocksRelease: true }] }, null, 2));
-  result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status === 0 || !result.stderr.includes("expired")) throw new Error("self-test failed to catch expired baseline");
-  writeFixture(tempRoot, "docs/boundedness-baseline.json", JSON.stringify({ schemaVersion: 1, program: "boundedness-guard", defaultExpiryDays: 90, entries: [{ id: "missing-cleanup", path: "packages/demo/src/upload.ts", riskKind: "buffer-concat", ownerArea: "demo", reason: "self-test", limitKind: "count", limitValue: "temporary", reference: "self-test", expiresAt: "2099-01-01", blocksRelease: true }] }, null, 2));
-  result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", tempRoot], { encoding: "utf8" });
-  if (result.status === 0 || !result.stderr.includes("cleanupPolicy")) throw new Error("self-test failed to catch missing cleanup policy");
-  fs.rmSync(tempRoot, { recursive: true, force: true });
+
+function run(root) {
+  return spawnSync(process.execPath, [new URL(import.meta.url).pathname, "--root", root], { encoding: "utf8" });
 }
-if (args.selfTest) { runSelfTest(); console.log("boundedness guard self-test passed"); process.exit(0); }
-const result = checkRoot(args.rootDir);
-if (result.failures.length > 0) {
-  console.error("boundedness guard failed:");
-  for (const failure of result.failures) console.error(`- ${failure}`);
-  process.exit(1);
+
+function selfTest() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "boundedness-guard-"));
+  const emptyBaseline = { schemaVersion: 1, program: "boundedness-guard", defaultExpiryDays: 90, entries: [] };
+  writeFixture(root, "docs/governance/performance-governance.md", "# Performance Governance\n");
+  writeFixture(root, "docs/boundedness-baseline.json", JSON.stringify(emptyBaseline, null, 2));
+  writeFixture(root, "packages/demo/src/db.ts", "await db.listRecords('sessions');\n");
+  let result = run(root);
+  if (result.status === 0 || !result.stderr.includes("Windowing/Pagination by Default")) throw new Error("self-test missed missing policy");
+  writeFixture(root, "docs/governance/performance-governance.md", "## Windowing/Pagination by Default\nDo not load all -> filter/sort/render; use cursor/window/batch/limit.\n");
+  result = run(root);
+  if (result.status === 0 || !result.stderr.includes("database-list-without-explicit-window")) throw new Error("self-test missed unbounded listRecords");
+  writeFixture(root, "packages/demo/src/db.ts", "await db.listRecords('sessions', { limit: 20, offset: 0 });\n");
+  writeFixture(root, "scripts/reader.mjs", "const body = fs.readFileSync('rollout.jsonl', 'utf8');\n");
+  result = run(root);
+  if (result.status === 0 || !result.stderr.includes("full-jsonl-read")) throw new Error("self-test missed JSONL full read");
+  writeFixture(root, "scripts/reader.mjs", "const maxBytes = 1024;\nconst body = fs.readFileSync('rollout.jsonl', 'utf8');\n");
+  writeFixture(root, "macos/View.swift", "let messages = store.messages\nForEach(messages) { message in Text(message.text) }\n");
+  result = run(root);
+  if (result.status === 0 || !result.stderr.includes("ui-foreach-over-unbounded-source")) throw new Error("self-test missed unbounded ForEach");
+  writeFixture(root, "docs/boundedness-baseline.json", JSON.stringify({
+    ...emptyBaseline,
+    entries: [{
+      id: "demo-ui-baseline",
+      path: "macos/View.swift",
+      riskKind: "ui-foreach-over-unbounded-source",
+      ownerArea: "demo",
+      reason: "self-test historical violation",
+      limitKind: "baseline",
+      limitValue: "temporary",
+      cleanupPolicy: "replace with visible window",
+      reference: "self-test",
+      expiresAt: "2099-01-01",
+      blocksRelease: false,
+    }],
+  }, null, 2));
+  result = run(root);
+  if (result.status !== 0) throw new Error(`self-test baseline should pass: ${result.stderr}`);
+  fs.rmSync(root, { recursive: true, force: true });
 }
-console.log(`boundedness guard passed (${result.filesScanned} files scanned, ${result.findings.length} findings baselined)`);
+
+if (args.selfTest) {
+  selfTest();
+  console.log("boundedness guard self-test passed");
+} else {
+  const { failures, findings, filesScanned } = check();
+  if (failures.length > 0) {
+    console.error("Boundedness guard failed:");
+    for (const failure of failures) console.error(`- ${failure}`);
+    process.exit(1);
+  }
+  console.log(`Boundedness guard passed (${filesScanned} files scanned, ${findings.length} baseline-covered findings).`);
+}

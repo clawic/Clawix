@@ -22,6 +22,17 @@ This ADR mirrors the canonical ClawJS naming ADR:
 When implementing shared framework or public CLI behavior, the ClawJS ADR is the
 primary source. This Clawix ADR records the host-specific consequences.
 
+## Performance Impact
+
+Naming has no direct runtime hot path, but this ADR fixes bridge ports, sockets, cache roots, env vars, deep links, and durable protocol fields that shape startup, service discovery, and persistence. Stable names reduce compatibility shims and stale cache roots; new caches, ports, protocols, and file formats still need separate resource classification. Clawix must avoid probing or starting extra framework services just to compensate for naming drift.
+
+## Decision Tensions
+
+- **Prioritized axes**: host identity clarity, public surface stability, framework alignment, repository hygiene, and migration safety.
+- **Constrained axes**: compatibility with pre-public accidental host and bridge names is constrained while Clawix can still correct them safely.
+- **Tradeoffs accepted**: app, bridge, release, and docs work must update naming registries and guards together; that cost is accepted because private identifiers and public contracts are expensive to repair later.
+- **Debt or pending evidence**: retired names and placeholder identity surfaces remain guardrail debt until every public and private boundary is classified.
+
 ## Host and framework boundary
 
 - Framework/product name: `ClawJS`.

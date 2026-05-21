@@ -18,6 +18,7 @@ timeline appends, job events, and indexing progress stay in local bounded
 stores keyed by route, message, job, surface, or visible window. Global app
 state may hold compact summaries and navigation state, not full live payload
 mirrors.
+The short closure rule is local bounded stores for high-churn payloads.
 
 ## Threat Model Impact
 

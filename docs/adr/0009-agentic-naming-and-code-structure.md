@@ -74,6 +74,17 @@ raw line-count target.
 Comments should capture why, invariants, host/provider quirks, security
 constraints, or short module maps. Do not add task narration.
 
+## Performance Impact
+
+The naming checks are static and do not affect app runtime. They reduce agent search cost and make Swift, bridge, protocol, and UI-local work easier to inspect without loading unrelated files. New runtime work introduced under these names still needs its own startup, memory, disk, and bridge-impact classification.
+
+## Decision Tensions
+
+- **Prioritized axes**: ClawJS vocabulary alignment, host/UI clarity, agent-safe navigation, source ownership, and public/private hygiene.
+- **Constrained axes**: local synonyms and provider/UI terms are constrained when they leak into stable bridge, protocol, storage, or docs surfaces.
+- **Tradeoffs accepted**: Clawix code sometimes uses less natural UI words in stable contracts; that is accepted to keep framework and host concepts aligned.
+- **Debt or pending evidence**: mixed legacy names and source-shape debt remain guarded until they can be removed or explicitly classified.
+
 ## Guardrails
 
 `scripts/naming-shape-check.mjs` produces human-readable output by default and

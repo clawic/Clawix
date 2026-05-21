@@ -489,8 +489,8 @@
           ]
         },
         "interfaceSurfaces": {
-          "count": 38,
-          "idsSha256": "af9b2dabd28e4b6d8a5dd75e21622c98280db662f0e4e8de1588817415a7e80c",
+          "count": 37,
+          "idsSha256": "3d1b3b4c5d437fad314c3d7beded19fb982c8a10895172ee3156ff6c66b25013",
           "ids": [
             "agents",
             "apps",
@@ -516,7 +516,6 @@
             "marketplace",
             "mcp",
             "pairing.qrJson",
-            "portableArchive",
             "providers.routing",
             "publishing",
             "quickAsk.snippets",

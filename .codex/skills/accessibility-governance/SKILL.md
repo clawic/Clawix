@@ -1,0 +1,1 @@
+../../../skills/accessibility-governance/SKILL.md

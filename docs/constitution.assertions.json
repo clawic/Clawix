@@ -6,7 +6,7 @@
     "repo": "clawjs",
     "root": "../../clawjs",
     "path": "docs/constitution.assertions.json",
-    "sourceDigest": "2c2d3c92f4dcaa0bd4f4f62d1d33320ac4b55f011735fd6689c3af05c305b4ae"
+    "sourceDigest": "0cad787569277b4a4aab11f7356c71ac221d179d80bfde420159e34a77344700"
   },
   "explicitlyDocumentedLanes": [
     "bash scripts/test.sh fast",
@@ -29,7 +29,9 @@
     "explicit protector lane: scripts/surface-evidence-projection-check.mjs",
     "explicit protector lane: scripts/ui_governance_guard.mjs",
     "explicit protector lane: scripts/ui_protected_surface_check.mjs",
-    "explicit protector lane: scripts/verify-sdk-first-custom-surfaces-goal.mjs"
+    "explicit protector lane: scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+    "explicit protector lane: scripts/no-irreversible-data-loss-check.mjs",
+    "explicit sibling protector lane: ../../clawjs/scripts/rfc-process-check.mjs"
   ],
   "assertions": [
     {
@@ -75,17 +77,21 @@
         "docs/decision-map.md",
         "docs/interface-matrix.md",
         "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "docs/adr/0026-adoption-and-canonicity-governance-mirror.md",
+        "docs/governance/adoption-canonicity.md",
+        "docs/governance/adoption-canonicity.manifest.json",
         "REGULATED_DOMAINS.md"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
+        "scripts/adoption_canonicity_check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/interface_surface_guard.mjs",
         "scripts/legal_safety_check.mjs"
       ],
-      "evidenceMode": "delegated",
+      "evidenceMode": "shape",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "I.2.human-and-agent-are-equal-consumers",
@@ -165,17 +171,21 @@
         "docs/decision-map.md",
         "docs/interface-matrix.md",
         "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "docs/adr/0026-adoption-and-canonicity-governance-mirror.md",
+        "docs/governance/adoption-canonicity.md",
+        "docs/governance/adoption-canonicity.manifest.json",
         "REGULATED_DOMAINS.md"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
+        "scripts/adoption_canonicity_check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/interface_surface_guard.mjs",
         "scripts/legal_safety_check.mjs"
       ],
-      "evidenceMode": "delegated",
+      "evidenceMode": "shape",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "I.5.the-cli-is-the-agent-interface-to-the-framework",
@@ -488,18 +498,26 @@
         "CONSTITUTION.md",
         "docs/data-storage-boundary.md",
         "docs/host-ownership.md",
+        "docs/adr/0024-portable-archive-contract-mirror.md",
+        "../../clawjs/docs/adr/0038-portable-archive-contract.md",
+        "../../clawjs/docs/portable-archive-contract.md",
         "docs/adr/0001-claw-framework-host-boundary.md",
-        "docs/persistent-surface-clawix.manifest.json"
+        "docs/persistent-surface-clawix.manifest.json",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/storage_boundary_guard.mjs",
-        "scripts/persistent-surface-guard.mjs"
+        "scripts/persistent-surface-guard.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs",
+        "scripts/portable_archive_mirror_check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "II.7.inference-is-paid-by-the-user-not-by-us",
@@ -605,17 +623,21 @@
         "docs/data-storage-boundary.md",
         "docs/host-ownership.md",
         "docs/adr/0001-claw-framework-host-boundary.md",
-        "docs/persistent-surface-clawix.manifest.json"
+        "docs/persistent-surface-clawix.manifest.json",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/storage_boundary_guard.mjs",
-        "scripts/persistent-surface-guard.mjs"
+        "scripts/persistent-surface-guard.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "III.1.open-data-open-local-api-open-source",
@@ -1362,19 +1384,22 @@
       "canonicalDocs": [
         "CONSTITUTION.md",
         "docs/data-storage-boundary.md",
+        "../../clawjs/docs/governance/rfc-process.md",
+        "docs/adr/0025-rfc-process-mirror.md",
         "../../clawjs/docs/canonical-data-catalog.md",
         "../../clawjs/docs/database.md",
         "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
+        "../../clawjs/scripts/rfc-process-check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/storage_boundary_guard.mjs",
         "scripts/persistent-surface-guard.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "VI.5.structured-knowledge-is-a-first-class-capability-not-a-f",
@@ -1507,19 +1532,22 @@
       "canonicalDocs": [
         "CONSTITUTION.md",
         "docs/data-storage-boundary.md",
+        "../../clawjs/docs/governance/rfc-process.md",
+        "docs/adr/0025-rfc-process-mirror.md",
         "../../clawjs/docs/canonical-data-catalog.md",
         "../../clawjs/docs/database.md",
         "../../clawjs/docs/adr/0027-governance-identity-scope-model.md"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
+        "../../clawjs/scripts/rfc-process-check.mjs",
         "scripts/doc_alignment_check.sh",
         "scripts/storage_boundary_guard.mjs",
         "scripts/persistent-surface-guard.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "VI.10.schemas-evolve-conservatively",
@@ -1688,17 +1716,21 @@
         "docs/agent-rules/index.md",
         "../../clawjs/docs/adr/0007-cli-agent-interface.md",
         "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
-        "docs/governance/performance-governance.md"
+        "docs/governance/performance-governance.md",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/check-clawjs-skills-sync.mjs",
         "scripts/discoverability-check.mjs",
-        "scripts/performance_governance_check.mjs"
+        "scripts/performance_governance_check.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "VII.6.agents-improve-themselves",
@@ -1718,17 +1750,21 @@
         "docs/agent-rules/index.md",
         "../../clawjs/docs/adr/0007-cli-agent-interface.md",
         "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
-        "docs/governance/performance-governance.md"
+        "docs/governance/performance-governance.md",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/check-clawjs-skills-sync.mjs",
         "scripts/discoverability-check.mjs",
-        "scripts/performance_governance_check.mjs"
+        "scripts/performance_governance_check.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "VII.7.agents-compose",
@@ -1868,17 +1904,21 @@
         "docs/agent-rules/index.md",
         "../../clawjs/docs/adr/0007-cli-agent-interface.md",
         "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
-        "docs/governance/performance-governance.md"
+        "docs/governance/performance-governance.md",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/check-clawjs-skills-sync.mjs",
         "scripts/discoverability-check.mjs",
-        "scripts/performance_governance_check.mjs"
+        "scripts/performance_governance_check.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",
-      "status": "partial"
+      "status": "enforced"
     },
     {
       "id": "VII.12.the-system-is-the-multiplier",
@@ -2335,12 +2375,18 @@
       "canonicalDocs": [
         "CONSTITUTION.md",
         "STYLE.md",
+        "STANDARDS.md",
         "docs/adr/0010-interface-governance.md",
+        "docs/adr/0029-accessibility-governance.md",
         "docs/ui/README.md",
+        "docs/accessibility/README.md",
+        "docs/accessibility/capability-matrix.manifest.json",
+        "docs/accessibility/surface-coverage.manifest.json",
         "docs/ui/protected-surfaces.registry.json"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
+        "scripts/accessibility_governance_guard.mjs",
         "scripts/ui_governance_guard.mjs",
         "scripts/ui_protected_surface_check.mjs",
         "scripts/doc_alignment_check.sh"
@@ -3000,7 +3046,38 @@
       "evidenceMode": "shape",
       "repoScope": "shared",
       "status": "enforced"
+    },
+    {
+      "id": "RedLine.4.no-irreversible-data-loss",
+      "principle": "VII.5",
+      "summary": "No user data is ever lost irreversibly is mirrored to explicit recovery policy, baseline, fixtures, and guardrails.",
+      "forbiddenTerms": [],
+      "affectedSurfaces": [
+        "data",
+        "storage",
+        "cli",
+        "runtime",
+        "permissions",
+        "audit",
+        "host",
+        "docs"
+      ],
+      "canonicalDocs": [
+        "CONSTITUTION.md",
+        "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+        "../../clawjs/docs/adr/0040-no-irreversible-data-loss.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json",
+        "docs/governance/no-irreversible-data-loss/baseline.json"
+      ],
+      "protectorScripts": [
+        "scripts/constitution-assertions-check.mjs",
+        "scripts/no-irreversible-data-loss-check.mjs",
+        "scripts/doc_alignment_check.sh"
+      ],
+      "evidenceMode": "fixture",
+      "repoScope": "shared",
+      "status": "enforced"
     }
   ],
-  "contractDigest": "2c2d3c92f4dcaa0bd4f4f62d1d33320ac4b55f011735fd6689c3af05c305b4ae"
+  "contractDigest": "065c131638793f8215288de448c70f7f014daaf051deabb311606071d32799e3"
 }

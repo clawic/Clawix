@@ -56,6 +56,17 @@ choices.
 - `qa/scenarios` is the canonical home for agentic/manual/live validation
   scenarios that cannot be fully automated.
 
+## Performance Impact
+
+Clawix test lanes deliberately keep ordinary validation bounded while separating signed-host, device, live, and release checks from fast local checks. The app may need heavier Swift, bridge, localization, and launcher validation, but those run only in the lanes that match the changed surface. Test runtime, quarantine age, generated artifacts, and external-pending status remain part of validation health.
+
+## Decision Tensions
+
+- **Prioritized axes**: real-boundary evidence, signed-host correctness, external-pending honesty, privacy, and release confidence.
+- **Constrained axes**: UI-only or hermetic-only proof is constrained for native permissions, app identity, bridge ownership, and device behavior.
+- **Tradeoffs accepted**: Clawix validation sometimes needs private launchers or physical prerequisites; that overhead is accepted so host behavior is not falsely validated by isolated tests.
+- **Debt or pending evidence**: unavailable host/device/live checks must remain explicit EXTERNAL PENDING with hermetic coverage and scenario records.
+
 ## ClawJS runner policy
 
 - ClawJS uses Vitest for TypeScript unit and integration tests.

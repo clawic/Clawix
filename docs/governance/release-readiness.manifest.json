@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "scope": "v1-central-promises",
+  "description": "V1 release readiness matrix for central constitutional promises. This manifest gates only the promises explicitly listed here, not the entire Constitution.",
+  "sources": {
+    "constitutionAssertions": "docs/constitution.assertions.json",
+    "humanMatrix": "docs/governance/release-readiness.md",
+    "externalPendingLedgers": [
+      "docs/governance/legal/external-pending.md",
+      "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "docs/governance/system-telemetry/external-pending.md"
+    ]
+  },
+  "releaseTargets": [
+    "macos-release",
+    "ios-release",
+    "linux-release",
+    "windows-release"
+  ],
+  "statusRules": {
+    "requiredAssertionStatus": "enforced",
+    "blockingExternalStatus": "EXTERNAL PENDING",
+    "blockingCompletionImpact": "central_promise_blocker"
+  },
+  "promises": [
+    {
+      "id": "v1-interface-parity",
+      "title": "Human and agent interface parity for claimed V1 capabilities",
+      "constitutionalAssertionIds": [
+        "I.2.human-and-agent-are-equal-consumers",
+        "I.6.capabilities-are-complete-only-when-dual-surfaced"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [],
+      "evidenceSources": [
+        "docs/interface-matrix.md",
+        "docs/adr/0007-dual-human-programmatic-surfaces.md",
+        "scripts/interface_surface_guard.mjs"
+      ],
+      "releaseRule": "Claimed V1 capabilities must be exposed through the app-facing and agent/programmatic surfaces before release."
+    },
+    {
+      "id": "v1-sovereign-local-data",
+      "title": "Local-first/user-owned data and explicit-consent data movement",
+      "constitutionalAssertionIds": [
+        "II.1.local-first-by-construction",
+        "II.3.the-user-owns-the-user-controls",
+        "II.4.zero-telemetry-by-default",
+        "Red.1.user-data-never-leaves-the-device-without-explicit-conse"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [],
+      "evidenceSources": [
+        "docs/data-storage-boundary.md",
+        "docs/host-ownership.md",
+        "scripts/storage_boundary_guard.mjs",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "releaseRule": "V1 cannot ship with local-first, ownership, telemetry, or consent assertions still below the enforced status."
+    },
+    {
+      "id": "v1-no-irreversible-data-loss",
+      "title": "No irreversible data loss for user data",
+      "constitutionalAssertionIds": [
+        "Red.4.no-user-data-is-ever-lost-irreversibly",
+        "RedLine.4.no-irreversible-data-loss",
+        "II.10.updates-preserve-use-before-perfection"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [],
+      "evidenceSources": [
+        "docs/governance/no-irreversible-data-loss/README.md",
+        "docs/governance/no-irreversible-data-loss/manifest.json",
+        "scripts/no-irreversible-data-loss-check.mjs"
+      ],
+      "releaseRule": "Delete, purge, migration, import, export, sync, and provider mutation paths must satisfy the no-irreversible-data-loss guardrail before V1 release."
+    },
+    {
+      "id": "v1-regulated-assistive",
+      "title": "Regulated domains remain assistive, never final-decision authorities",
+      "constitutionalAssertionIds": [
+        "I.8.regulated-domains-are-assistive-never-final-decision-aut"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [],
+      "evidenceSources": [
+        "SAFETY.md",
+        "REGULATED_DOMAINS.md",
+        "docs/governance/legal/source-audit.md",
+        "scripts/legal_safety_check.mjs"
+      ],
+      "releaseRule": "Release copy, UI labels, exports, provider flows, and demos must not claim professional advice, emergency response, compliance readiness, or final regulated decisions."
+    },
+    {
+      "id": "v1-governed-native-authority",
+      "title": "Native permissions, grants, and high-risk actions are traceable and approval-gated",
+      "constitutionalAssertionIds": [
+        "VII.3.permissions-are-granular-and-revocable",
+        "VII.4.destruction-has-standardized-severity",
+        "IV.4.authority-is-traceable-through-every-action"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [
+        {
+          "id": "CLX-SDK-EXT-001",
+          "targets": [
+            "macos-release"
+          ]
+        },
+        {
+          "id": "CLX-SYS-TEL-EXT-005",
+          "targets": [
+            "macos-release"
+          ]
+        }
+      ],
+      "evidenceSources": [
+        "docs/host-ownership.md",
+        "docs/native-action-broker-allowlist.json",
+        "scripts/native_permission_broker_check.mjs",
+        "scripts/native_action_broker_check.mjs"
+      ],
+      "releaseRule": "High-risk native authority must have granular grants, human approval, audit evidence, and no unresolved central external blockers for the target."
+    },
+    {
+      "id": "v1-ui-release-quality",
+      "title": "V1 app style, accessibility, and copy gates are satisfied for protected release surfaces",
+      "constitutionalAssertionIds": [
+        "IX.4.style-is-constitutional-and-lives-in-a-parallel-document",
+        "IX.5.the-product-speaks-the-user-s-language",
+        "IX.8.accessibility-is-non-optional"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [],
+      "evidenceSources": [
+        "STYLE.md",
+        "docs/ui/README.md",
+        "docs/governance/ui/completion.md",
+        "scripts/ui_release_gate_check.mjs"
+      ],
+      "releaseRule": "Protected V1 surfaces must satisfy style, accessibility, localization/copy, and release UI gate evidence before release."
+    },
+    {
+      "id": "v1-platform-release-evidence",
+      "title": "Native/platform release claims are backed by target-specific release evidence",
+      "constitutionalAssertionIds": [
+        "X.3.distribution-is-native"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release"
+      ],
+      "blockingExternalRows": [
+        {
+          "id": "CLX-SDK-EXT-002",
+          "targets": [
+            "macos-release",
+            "ios-release",
+            "windows-release"
+          ]
+        },
+        {
+          "id": "CLX-SDK-EXT-003",
+          "targets": [
+            "macos-release",
+            "ios-release",
+            "windows-release"
+          ]
+        },
+        {
+          "id": "CLX-SYS-TEL-EXT-003",
+          "targets": [
+            "macos-release"
+          ]
+        },
+        {
+          "id": "CLX-SYS-TEL-EXT-004",
+          "targets": [
+            "macos-release"
+          ]
+        }
+      ],
+      "evidenceSources": [
+        "RELEASING.md",
+        "playbooks/testing-matrix.md",
+        "scripts/release_external_pending_gate.mjs",
+        "scripts/release_readiness_check.mjs"
+      ],
+      "releaseRule": "Target-specific signed-host, device, provider, performance, and distribution evidence must exist before release claims are treated as ready."
+    }
+  ]
+}

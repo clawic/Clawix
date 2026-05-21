@@ -28,14 +28,32 @@ for (const [relativePath, snippets] of new Map([
   ["CONSTITUTION.md", [
     "The computer's resources are product correctness",
     "CPU, RAM, GPU/Neural Engine, disk, network, battery, thermals",
+    "boundedness, lazy startup, cancellation, backpressure, windowing, and idle quiescence",
   ]],
   ["docs/adr/0022-performance-governance-mirror.md", [
     "Status: Accepted",
     "Performance means whole-computer resource behavior",
     "Windowing/Pagination by Default",
+    "Resource Contract is required for Clawix implementation closure",
     "docs/boundedness-baseline.json",
+    "docs/surface-resource-contract-clawix-baseline.json",
     "## Performance Impact",
     "adr:performance-governance",
+  ]],
+  ["docs/adr/0029-streaming-backpressure-bounded-queues-mirror.md", [
+    "Status: Accepted",
+    "resourceContract.streaming",
+    "bounded stream behavior",
+  ]],
+  ["docs/adr/0030-launch-and-idle-contract-mirror.md", [
+    "Status: Accepted",
+    "resourceContract.startup",
+    "resourceContract.idle",
+  ]],
+  ["docs/adr/0031-ui-state-invalidation-high-churn-data-boundary-mirror.md", [
+    "Status: Accepted",
+    "high-churn",
+    "local bounded stores",
   ]],
   ["docs/governance/performance-governance.md", [
     "whole-computer resource behavior",
@@ -65,10 +83,14 @@ for (const [relativePath, snippets] of new Map([
   ]],
   ["docs/decision-map.md", [
     "Performance Governance",
+    "streaming/backpressure",
+    "launch/idle",
+    "high-churn UI",
     "docs/adr/0022-performance-governance-mirror.md",
     "scripts/performance_governance_check.mjs",
     "scripts/boundedness_guard.mjs",
     "scripts/hot_path_guard.mjs",
+    "scripts/surface_resource_contract_guard.mjs",
   ]],
   ["docs/constitution-map.md", [
     "Performance Governance",

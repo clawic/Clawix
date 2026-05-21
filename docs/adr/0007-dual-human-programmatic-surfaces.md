@@ -62,6 +62,17 @@ SDK namespace, or durable user-facing data domain must declare its surface
 coverage. If a capability is intentionally one-sided, the ADR must state why
 and classify the missing surface.
 
+## Performance Impact
+
+Clawix is often the human surface that completes parity, but adding UI must not force the programmatic surface, bridge, SDK, or Relay path to start eagerly. Important capabilities should be discoverable in the app while keeping data loading, streaming, and background workers bounded and cancellable. Programmatic surfaces remain responsible for their own runtime budgets.
+
+## Decision Tensions
+
+- **Prioritized axes**: user portability, human/programmatic parity, Clawix as a usable UI, and durable value outside one app session.
+- **Constrained axes**: app-only affordances are constrained when they would trap framework value behind Clawix UI.
+- **Tradeoffs accepted**: UI work may need SDK, CLI, bridge, or service support first; that extra sequencing is accepted to avoid creating isolated features.
+- **Debt or pending evidence**: existing one-surface Clawix capabilities must be classified, completed through framework surfaces, or tracked as explicit gaps.
+
 ## Enforcement
 
 - `docs/interface-matrix.md` is the human-readable coverage matrix.

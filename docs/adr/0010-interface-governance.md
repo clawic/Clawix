@@ -50,6 +50,17 @@ must report and list it instead of repairing it.
 Mechanical refactors of UI are allowed only when equivalence is proven by
 before/after geometry plus visual baseline checks, with no token or copy change.
 
+## Performance Impact
+
+Interface governance itself is mostly manifests, static checks, and review rules, but the governed surfaces are performance-sensitive: SwiftUI views, custom surfaces, animations, rendered geometry, localization, and bridge-backed state. The decision keeps visual authority separate from performance work while requiring UI performance budgets and private evidence where visual baselines are needed. Functional UI changes must stay lazy, bounded, and host-validated when they touch native behavior.
+
+## Decision Tensions
+
+- **Prioritized axes**: visual canon integrity, user-approved UI authority, accessibility, performance evidence, and agent containment.
+- **Constrained axes**: autonomous visual mutation by implementation agents is constrained even when the code change is otherwise functional.
+- **Tradeoffs accepted**: some UI fixes require proposals or private evidence before becoming complete; that friction is accepted because tests cannot fully validate taste, hierarchy, or approved visual state.
+- **Debt or pending evidence**: existing drift, private baselines, geometry, and performance budgets remain staged until approved evidence closes them.
+
 ## Component extraction rule
 
 Clawix does not pursue abstraction for its own sake. Extract reusable components only when repeated UI carries risk: at least two call sites plus state, interaction, geometry, accessibility, or performance behavior.

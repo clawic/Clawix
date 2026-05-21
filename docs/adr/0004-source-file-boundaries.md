@@ -44,6 +44,17 @@ The `clawix` CLI remains host/bridge/install/diagnostic only. If it grows, its
 entrypoint should only parse globals, dispatch, and handle top-level errors;
 command behavior belongs in command modules.
 
+## Performance Impact
+
+The guard is static and has no app runtime cost. It helps Clawix performance by forcing bridge, SwiftUI state, localization, runtime effects, and persistence work to stay reviewable instead of hiding heavy behavior in oversized files. Existing large files are debt to split or baseline, not evidence that runtime performance is acceptable.
+
+## Decision Tensions
+
+- **Prioritized axes**: reviewability, agent-safe edits, UI/bridge ownership, maintainability, and validation focus.
+- **Constrained axes**: unlimited growth of mixed Swift/UI/bridge files is constrained even when one-file iteration is faster.
+- **Tradeoffs accepted**: large cohesive files may need split plans before they grow; this is accepted to keep host and UI changes auditable.
+- **Debt or pending evidence**: historical oversized Clawix files remain baseline or extraction debt until ownership boundaries are clearer.
+
 ## Guardrail
 
 `scripts/source-size-check.mjs` audits hand-authored source files. It ignores

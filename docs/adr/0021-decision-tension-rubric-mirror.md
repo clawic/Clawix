@@ -31,8 +31,11 @@ quality applies to human-facing product and UI surfaces only, under
 through clarity, boundaries, traceability, reliability, maintainability, and
 evidence.
 
-## Decision Tensions
+## Performance Impact
 
+The mirror adds static documentation and validation expectations only. It has no app runtime cost, but it requires Clawix ADRs to state when UI, bridge, host, storage, launcher, or long-running agent decisions affect whole-computer resources. The measurement layer remains PERF.md, macos/PERF.md, UI performance budgets, and focused host validation.
+
+## Decision Tensions
 - **Prioritized axes**: discoverability and traceability; ownership and
   boundaries; public/private hygiene and official trust; human and agent
   experience.

@@ -44,6 +44,17 @@ for file in \
   "docs/governance/v1-surface-closure/completion.md" \
   "docs/governance/source-decision-audits.md" \
   "docs/governance/source-decision-audits.registry.json" \
+  "docs/governance/release-readiness.md" \
+  "docs/governance/release-readiness.manifest.json" \
+  "docs/governance/no-irreversible-data-loss/README.md" \
+  "docs/governance/no-irreversible-data-loss/manifest.json" \
+  "docs/governance/no-irreversible-data-loss/baseline.json" \
+  "docs/governance/no-irreversible-data-loss/fixtures.json" \
+  "docs/adr/0027-supply-chain-security-governance-mirror.md" \
+  "docs/supply-chain-security.md" \
+  "docs/supply-chain-security.manifest.json" \
+  "docs/supply-chain-security.manifest.schema.json" \
+  "docs/supply-chain-vulnerability-triage.md" \
   "docs/adr-operational-coverage.manifest.json" \
   "docs/adr-operational-coverage-exceptions.json" \
   "docs/interface-matrix.md" \
@@ -99,6 +110,7 @@ for file in \
   "docs/ui/inspiration/references.registry.json" \
   "docs/native-action-broker-allowlist.json" \
   ".github/PULL_REQUEST_TEMPLATE.md" \
+  ".github/CODEOWNERS" \
   "scripts/naming-shape-check.mjs" \
   "scripts/ui_canon_promotion_check.mjs" \
   "scripts/ui_decision_verification_check.mjs" \
@@ -153,7 +165,10 @@ for file in \
   "scripts/source_decision_audit_check.mjs" \
   "scripts/adr-operational-coverage-check.mjs" \
   "scripts/constitution-assertions-check.mjs" \
-  "scripts/constitution-sync-check.mjs"
+  "scripts/constitution-sync-check.mjs" \
+  "scripts/release_readiness_check.mjs" \
+  "scripts/no-irreversible-data-loss-check.mjs" \
+  "scripts/supply_chain_security_check.mjs"
 do
   require_file "$file"
 done
@@ -193,8 +208,14 @@ require_snippet "docs/constitution.assertions.json" "\"upstream\""
 require_snippet "docs/constitution.assertions.json" "\"sourceDigest\""
 require_snippet "scripts/test.sh" "scripts/constitution-assertions-check.mjs"
 require_snippet "scripts/test.sh" "scripts/constitution-sync-check.mjs"
+require_snippet "scripts/test.sh" "scripts/release_readiness_check.mjs"
 require_snippet "docs/decision-map.md" "scripts/constitution-sync-check.mjs"
+require_snippet "docs/decision-map.md" "scripts/release_readiness_check.mjs"
 require_snippet "docs/constitution-map.md" "scripts/constitution-sync-check.mjs"
+require_snippet "docs/constitution-map.md" "docs/governance/release-readiness.md"
+require_snippet "RELEASING.md" "release_readiness_check.mjs --target <target>"
+require_snippet "docs/governance/release-readiness.md" "V1 Release Readiness"
+require_snippet "docs/governance/release-readiness.manifest.json" '"scope": "v1-central-promises"'
 require_snippet "docs/decision-map.md" "governance identity and scope model"
 require_snippet "docs/decision-map.md" "workspace, project, folder, and manifest boundary"
 require_snippet "docs/data-storage-boundary.md" "Governance bindings owned by ClawJS"
@@ -207,6 +228,23 @@ require_snippet "docs/host-ownership.md" "MacControlWire"
 require_snippet "docs/decision-map.md" "scripts/native_permission_broker_check.mjs"
 require_snippet "docs/decision-map.md" "NativeMacActionBrokerTests"
 require_snippet "docs/decision-map.md" "MacControlWire"
+require_snippet "docs/decision-map.md" "Supply-chain security governance"
+require_snippet "docs/decision-map.md" "scripts/supply_chain_security_check.mjs"
+require_snippet "docs/adr/0027-supply-chain-security-governance-mirror.md" "release-critical"
+require_snippet "docs/supply-chain-security.md" "CycloneDX JSON"
+require_snippet "docs/supply-chain-security.md" "claw verify release"
+require_snippet "docs/supply-chain-security.md" "claw verify plugin"
+require_snippet "docs/supply-chain-vulnerability-triage.md" "CLX-SC-VULN-001"
+require_snippet "SECURITY.md" "Supply-chain security"
+require_snippet "RELEASING.md" "Supply-chain evidence"
+require_snippet ".github/PULL_REQUEST_TEMPLATE.md" "Dependency and supply-chain review"
+require_snippet ".github/CODEOWNERS" "scripts/supply_chain_security_check.mjs"
+require_snippet "scripts/test.sh" "scripts/supply_chain_security_check.mjs"
+require_snippet "macos/scripts/build_release_app.sh" "scripts/supply_chain_security_check.mjs"
+require_snippet "ios/scripts/build_release_app.sh" "scripts/supply_chain_security_check.mjs"
+require_snippet "linux/scripts/build_release_appimage.sh" "scripts/supply_chain_security_check.mjs"
+require_snippet "linux/scripts/build_release_deb.sh" "scripts/supply_chain_security_check.mjs"
+require_snippet "windows/scripts/build-release.ps1" "scripts\supply_chain_security_check.mjs"
 require_snippet "scripts/test.sh" "scripts/native_permission_broker_check.mjs"
 require_snippet "scripts/test.sh" "scripts/native_action_broker_check.mjs"
 require_snippet "scripts/test.sh" "scripts/clawjs_mirror_contradiction_check.mjs"
@@ -226,13 +264,22 @@ require_snippet "docs/adr/TEMPLATE.md" "## Surface Parity"
 require_snippet "docs/adr/TEMPLATE.md" "## Decision Tensions"
 require_snippet "docs/adr/TEMPLATE.md" "## Performance Impact"
 require_snippet "docs/adr/TEMPLATE.md" "## Source Decision Audit"
+require_snippet "docs/adr/TEMPLATE.md" "## Adoption And Canonicity"
 require_snippet "docs/adr/TEMPLATE.md" "adr-operational-coverage.manifest.json"
 require_snippet "docs/governance/decision-tension-rubric.md" "Canon and semantic coherence"
 require_snippet "docs/governance/performance-governance.md" "whole-computer resource behavior"
+require_snippet "docs/governance/adoption-canonicity.md" "Telemetry remains disabled by default"
+require_snippet "docs/governance/adoption-canonicity.manifest.json" "clawix-ui-canon-promotion-gate-2026-05-21"
 require_snippet "docs/governance/source-decision-audits.md" "ClawJS owns the general source decision audit contract"
 require_snippet "docs/agent-rules/index.md" "Decision Tension Rubric"
 require_snippet "docs/agent-rules/index.md" "Performance governance"
 require_snippet "docs/decision-map.md" "Decision Tension Rubric"
+require_snippet "docs/decision-map.md" "Clawix mirrors the ClawJS public RFC process"
+require_snippet "docs/decision-map.md" "scripts/rfc-process-check.mjs"
+require_snippet "docs/constitution-map.md" "rfc-process.md"
+require_snippet "docs/adr/0025-rfc-process-mirror.md" "is the canonical RFC process"
+require_snippet "docs/adr/0025-rfc-process-mirror.md" "Clawix-only process"
+require_snippet "docs/governance/README.md" "RFC Process Mirror"
 require_snippet "docs/decision-map.md" "Source decision audits"
 require_snippet "docs/decision-map.md" "scripts/source_decision_audit_check.mjs"
 require_snippet "docs/decision-map.md" "Accepted ADRs are transactional"
@@ -424,7 +471,8 @@ for snippet in \
   "Source file boundaries" \
   "scripts/launch-android.sh" \
   "scripts/launch-web.sh" \
-  "scripts/performance_governance_check.mjs"
+  "scripts/performance_governance_check.mjs" \
+  "scripts/hot_path_guard.mjs"
 do
   require_snippet "docs/decision-map.md" "$snippet"
 done
@@ -645,6 +693,10 @@ fi
 if ! node "$ROOT_DIR/scripts/remote_canon_alignment_check.mjs"; then
   fail "remote canon alignment check failed"
 fi
+
+require_snippet "docs/decision-map.md" "no-irreversible-data-loss"
+require_snippet "docs/constitution-map.md" "no-irreversible-data-loss"
+require_snippet "scripts/test.sh" "scripts/no-irreversible-data-loss-check.mjs"
 
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1

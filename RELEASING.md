@@ -16,25 +16,28 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
    production exports.
 2. Run `node scripts/legal_safety_check.mjs`.
 3. Run `node scripts/supply_chain_security_check.mjs --release --target <target>`.
-4. Confirm `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`, `SAFETY.md`,
+4. Run `node scripts/release_readiness_check.mjs --target <target>` to confirm
+   every in-scope V1 central promise in
+   `docs/governance/release-readiness.md` is release-ready for the exact target.
+5. Confirm `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`, `SAFETY.md`,
    `REGULATED_DOMAINS.md`, `EULA.md`, `SECURITY.md`, and
    `docs/governance/legal/source-audit.md` are current.
-5. Confirm public copy remains conservative: no professional-advice,
+6. Confirm public copy remains conservative: no professional-advice,
    final-decision, emergency-service, compliance-ready, autonomous-filing, or
    regulated-decision claims.
-6. Classify every new sensitive app surface, route, connector, provider,
+7. Classify every new sensitive app surface, route, connector, provider,
    export/share path, demo, or docs claim against the ClawJS regulated-domain
    safety policy before treating the release candidate as complete.
-7. Confirm official/source/community/compatible wording remains aligned with
+8. Confirm official/source/community/compatible wording remains aligned with
    [ADR 0020](docs/adr/0020-open-standard-official-trust-mirror.md),
    [FORKS.md](FORKS.md), [NOTICE](NOTICE), and [TRADEMARKS.md](TRADEMARKS.md).
-8. Confirm supply-chain evidence is complete for SBOM, provenance, lockfiles,
+9. Confirm supply-chain evidence is complete for SBOM, provenance, lockfiles,
    vulnerability triage, dependency review, artifact signatures/checksums, and
    plugin/sub-app malware review.
-9. Record any unavailable physical, provider, store, signed-host, or share-sheet
+10. Record any unavailable physical, provider, store, signed-host, or share-sheet
    validation in `docs/governance/legal/external-pending.md` as
    `EXTERNAL PENDING`; do not treat it as passed.
-10. Run the release external-pending gate for the exact target before any tag,
+11. Run the release external-pending gate for the exact target before any tag,
    upload, notarization-dependent publish step, TestFlight submission, or store
    submission:
    `node scripts/release_external_pending_gate.mjs --target <target>`.

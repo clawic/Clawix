@@ -119,6 +119,28 @@
       "programmaticSurface": "claw archive plan|export|verify|inspect|import|restore|doctor --json; ClawJS PortableArchive* contracts",
       "storageOwner": "framework-contract-plus-signed-host-secrets",
       "validation": "PortableArchiveSettingsTests, portable_archive_mirror_check.mjs, and sibling ClawJS portable archive governance check",
+      "surfaceNarrative": {
+        "concept": "Portable archive is a framework-owned backup/export/import/restore contract surfaced through Clawix Settings/Data with signed-host handling for secrets and human confirmation.",
+        "authorizingDecision": {
+          "ref": "ADR 0024 portable archive contract mirror",
+          "path": "docs/adr/0024-portable-archive-contract-mirror.md"
+        },
+        "completingSurface": {
+          "human": "Clawix Settings/Data portable archive export, verify, import preview, restore and restore report UI.",
+          "programmatic": "claw archive plan|export|verify|inspect|import|restore|doctor --json and ClawJS PortableArchive* contracts."
+        },
+        "nonInference": "This surface does not make Clawix the archive schema owner, authorize plaintext secret export, or bypass signed-host approval for restore-sensitive paths."
+      },
+      "resourceContract": {
+        "startup": "Portable archive UI does not start archive work at app launch; it reads status only when the Settings/Data surface is opened or an explicit archive action is requested.",
+        "idle": "Idle state retains only bounded UI status and no active export/import worker, file watcher, or polling loop.",
+        "memory": "Archive previews and reports must stay summarized in UI state; large payloads stream through framework/host contracts instead of full in-memory mirrors.",
+        "streaming": "Long export/import/verify/restore progress uses cancellable, bounded progress events with route-specific backpressure and no unbounded UI fanout.",
+        "storage": "Portable archive files live under the user-selected archive/export destinations and framework contracts; Clawix stores only host-operational status and approval state.",
+        "hotPath": "Settings navigation and archive status rendering must remain metadata-only and avoid scanning archive contents on the UI hot path.",
+        "scale": "Archive item enumeration must use framework previews, windows, or summaries; whole-archive reads require explicit bounded contract evidence.",
+        "validation": "PortableArchiveSettingsTests, portable_archive_mirror_check.mjs, surface_resource_contract_guard.mjs, and sibling ClawJS portable archive governance check"
+      },
       "steward": "framework"
     },
     {
