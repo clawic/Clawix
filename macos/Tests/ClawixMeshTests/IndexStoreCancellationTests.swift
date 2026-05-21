@@ -250,21 +250,27 @@ final class IndexStoreCancellationTests: XCTestCase {
                     slowCancelled.fulfill()
                     throw CancellationError()
                 }
-                return [Self.entity(id: "slow", title: "Slow")]
+                return ClawJSIndexClient.EntityPage(
+                    entities: [Self.entity(id: "slow", title: "Slow")],
+                    nextCursor: nil
+                )
             }
             if type == "fast" {
                 fastReturned.fulfill()
-                return [Self.entity(id: "fast", title: "Fast")]
+                return ClawJSIndexClient.EntityPage(
+                    entities: [Self.entity(id: "fast", title: "Fast")],
+                    nextCursor: nil
+                )
             }
-            return []
+            return ClawJSIndexClient.EntityPage(entities: [], nextCursor: nil)
         }
         let store = IndexStore(client: client, attachSupervisor: false)
 
-        store.selectedTypeFilter = "slow"
+        store.selectTypeFilter("slow")
         store.requestLoadEntities()
         await fulfillment(of: [slowStarted], timeout: 1)
 
-        store.selectedTypeFilter = "fast"
+        store.selectTypeFilter("fast")
         store.requestLoadEntities()
 
         await fulfillment(of: [slowCancelled, fastReturned], timeout: 1)
@@ -339,7 +345,9 @@ private extension IndexStore.State {
 private final class FakeIndexClient: ClawJSIndexClienting {
     var bearerToken: String? = "test-token"
     var onListTypes: () async throws -> [ClawJSIndexClient.EntityType] = { [] }
-    var onListEntities: ([String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity] = { _ in [] }
+    var onListEntities: ([String: AnyJSON]) async throws -> ClawJSIndexClient.EntityPage = { _ in
+        ClawJSIndexClient.EntityPage(entities: [], nextCursor: nil)
+    }
     var onGetEntity: (String) async throws -> ClawJSIndexClient.EntityDetailResponse = { _ in
         throw ClawJSIndexClient.Error.serviceNotReady
     }
@@ -357,7 +365,7 @@ private final class FakeIndexClient: ClawJSIndexClienting {
         ClawJSIndexClient.CountsResponse(counts: [])
     }
 
-    func listEntities(payload: [String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity] {
+    func listEntities(payload: [String: AnyJSON]) async throws -> ClawJSIndexClient.EntityPage {
         try await onListEntities(payload)
     }
 

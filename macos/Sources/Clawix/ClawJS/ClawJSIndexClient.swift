@@ -5,7 +5,7 @@ protocol ClawJSIndexClienting {
 
     func listTypes() async throws -> [ClawJSIndexClient.EntityType]
     func countsByType() async throws -> ClawJSIndexClient.CountsResponse
-    func listEntities(payload: [String: AnyJSON]) async throws -> [ClawJSIndexClient.Entity]
+    func listEntities(payload: [String: AnyJSON]) async throws -> ClawJSIndexClient.EntityPage
     func getEntity(id: String) async throws -> ClawJSIndexClient.EntityDetailResponse
     func history(entityId: String, field: String) async throws -> [ClawJSIndexClient.HistoryPoint]
     func listSearches() async throws -> [ClawJSIndexClient.Search]
@@ -141,6 +141,11 @@ struct ClawJSIndexClient {
         let thumbnailUrl: String?
     }
 
+    struct EntityPage: Decodable, Equatable {
+        let entities: [Entity]
+        let nextCursor: String?
+    }
+
     struct Observation: Decodable, Identifiable, Equatable, Hashable {
         let id: String
         let entityId: String
@@ -175,10 +180,8 @@ struct ClawJSIndexClient {
         let tags: [EntityTag]
     }
 
-    func listEntities(payload: [String: AnyJSON]) async throws -> [Entity] {
-        struct Response: Decodable { let entities: [Entity] }
-        let response: Response = try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/entities/query", method: "POST", body: payload)
-        return response.entities
+    func listEntities(payload: [String: AnyJSON]) async throws -> EntityPage {
+        try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/entities/query", method: "POST", body: payload)
     }
 
     func getEntity(id: String) async throws -> EntityDetailResponse {

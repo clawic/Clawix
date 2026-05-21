@@ -1,42 +1,69 @@
 import Combine
 import Foundation
 
+enum IndexStoreState: Equatable {
+    case idle
+    case loading
+    case ready
+    case error(String)
+}
+
+struct IndexQueryCriteria: Equatable {
+    var type: String?
+    var tagIds: [String] = []
+    var collectionId: String?
+    var fullText: String = ""
+    var limit: Int = 100
+}
+
+struct IndexSnapshot: Equatable {
+    var state: IndexStoreState = .idle
+    var types: [ClawJSIndexClient.EntityType] = []
+    var typeCounts: [String: Int] = [:]
+    var entities: [ClawJSIndexClient.Entity] = []
+    var entityNextCursor: String?
+    var entityCriteria = IndexQueryCriteria()
+    var isLoadingEntities = false
+    var searches: [ClawJSIndexClient.Search] = []
+    var monitors: [ClawJSIndexClient.Monitor] = []
+    var runs: [ClawJSIndexClient.Run] = []
+    var alerts: [ClawJSIndexClient.Alert] = []
+    var unreadAlerts: Int = 0
+    var tags: [ClawJSIndexClient.Tag] = []
+    var collections: [ClawJSIndexClient.Collection] = []
+}
+
 /// State store for the Index tab. Owns the loopback HTTP client and exposes
-/// `@Published` state SwiftUI binds to. Mirrors the Memory store pattern
+/// one published snapshot SwiftUI binds to. Mirrors the Memory store pattern
 /// without a master-password lock.
 @MainActor
 final class IndexStore: ObservableObject {
 
-    enum State: Equatable {
-        case idle
-        case loading
-        case ready
-        case error(String)
-    }
+    typealias State = IndexStoreState
 
-    @Published private(set) var state: State = .idle
-    @Published private(set) var types: [ClawJSIndexClient.EntityType] = []
-    @Published private(set) var typeCounts: [String: Int] = [:]
-    @Published private(set) var entities: [ClawJSIndexClient.Entity] = []
-    @Published private(set) var searches: [ClawJSIndexClient.Search] = []
-    @Published private(set) var monitors: [ClawJSIndexClient.Monitor] = []
-    @Published private(set) var runs: [ClawJSIndexClient.Run] = []
-    @Published private(set) var alerts: [ClawJSIndexClient.Alert] = []
-    @Published private(set) var unreadAlerts: Int = 0
-    @Published private(set) var tags: [ClawJSIndexClient.Tag] = []
-    @Published private(set) var collections: [ClawJSIndexClient.Collection] = []
-    @Published var selectedTypeFilter: String? = nil
-    @Published var selectedSubtypeFilter: String? = nil
-    @Published var fullTextQuery: String = ""
+    @Published private(set) var snapshot = IndexSnapshot()
 
     private var client: any ClawJSIndexClienting
     private var supervisorObserver: AnyCancellable?
     private var refreshTask: Task<Void, Never>?
     private var entityLoadTask: Task<Void, Never>?
+    private var searchDebounceTask: Task<Void, Never>?
     private var refreshGeneration = 0
     private var entityLoadGeneration = 0
     private var actionGenerations: [IndexActionKey: Int] = [:]
     private var actionTaskCancellations: [IndexActionKey: [UUID: () -> Void]] = [:]
+
+    var state: State { snapshot.state }
+    var types: [ClawJSIndexClient.EntityType] { snapshot.types }
+    var typeCounts: [String: Int] { snapshot.typeCounts }
+    var entities: [ClawJSIndexClient.Entity] { snapshot.entities }
+    var searches: [ClawJSIndexClient.Search] { snapshot.searches }
+    var monitors: [ClawJSIndexClient.Monitor] { snapshot.monitors }
+    var runs: [ClawJSIndexClient.Run] { snapshot.runs }
+    var alerts: [ClawJSIndexClient.Alert] { snapshot.alerts }
+    var unreadAlerts: Int { snapshot.unreadAlerts }
+    var tags: [ClawJSIndexClient.Tag] { snapshot.tags }
+    var collections: [ClawJSIndexClient.Collection] { snapshot.collections }
 
     init(
         client: (any ClawJSIndexClienting)? = nil,
@@ -57,6 +84,7 @@ final class IndexStore: ObservableObject {
     deinit {
         refreshTask?.cancel()
         entityLoadTask?.cancel()
+        searchDebounceTask?.cancel()
         for cancellations in actionTaskCancellations.values {
             cancellations.values.forEach { $0() }
         }
@@ -81,9 +109,15 @@ final class IndexStore: ObservableObject {
         }
     }
 
+    private func updateSnapshot(_ mutate: (inout IndexSnapshot) -> Void) {
+        var next = snapshot
+        mutate(&next)
+        snapshot = next
+    }
+
     func surfaceActionError(_ error: Error) {
         if error is CancellationError { return }
-        state = .error(error.localizedDescription)
+        updateSnapshot { $0.state = .error(error.localizedDescription) }
     }
 
     func requestRefresh() {
@@ -91,7 +125,57 @@ final class IndexStore: ObservableObject {
     }
 
     func requestLoadEntities() {
-        _ = startEntityLoad()
+        _ = startEntityLoad(reset: true)
+    }
+
+    func selectTypeFilter(_ type: String?) {
+        var criteria = snapshot.entityCriteria
+        criteria.type = type
+        applyEntityCriteria(criteria)
+    }
+
+    func selectTagFilter(_ tagId: String?) {
+        var criteria = snapshot.entityCriteria
+        criteria.tagIds = tagId.map { [$0] } ?? []
+        applyEntityCriteria(criteria)
+    }
+
+    func selectCollectionFilter(_ collectionId: String?) {
+        var criteria = snapshot.entityCriteria
+        criteria.collectionId = collectionId
+        applyEntityCriteria(criteria)
+    }
+
+    func updateFullTextQuery(_ query: String) {
+        var criteria = snapshot.entityCriteria
+        criteria.fullText = query
+        updateSnapshot { $0.entityCriteria = criteria }
+        searchDebounceTask?.cancel()
+        searchDebounceTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 250_000_000)
+                guard let self else { return }
+                self.applyEntityCriteria(criteria)
+            } catch is CancellationError {
+            } catch {
+            }
+        }
+    }
+
+    func loadMoreEntitiesIfNeeded(currentEntityId: String?) {
+        guard currentEntityId == snapshot.entities.last?.id else { return }
+        guard snapshot.entityNextCursor != nil, !snapshot.isLoadingEntities else { return }
+        _ = startEntityLoad(reset: false)
+    }
+
+    private func applyEntityCriteria(_ criteria: IndexQueryCriteria) {
+        searchDebounceTask?.cancel()
+        updateSnapshot {
+            $0.entityCriteria = criteria
+            $0.entities = []
+            $0.entityNextCursor = nil
+        }
+        _ = startEntityLoad(reset: true)
     }
 
     func cancelInFlightWork() {
@@ -105,8 +189,13 @@ final class IndexStore: ObservableObject {
             actionGenerations[key, default: 0] += 1
         }
         cancelAllActionTasks()
+        searchDebounceTask?.cancel()
+        searchDebounceTask = nil
         if state == .loading {
-            state = .idle
+            updateSnapshot {
+                $0.state = .idle
+                $0.isLoadingEntities = false
+            }
         }
     }
 
@@ -135,7 +224,7 @@ final class IndexStore: ObservableObject {
     private func runRefresh(generation: Int) async {
         guard generation == refreshGeneration else { return }
         ensureToken()
-        state = .loading
+        updateSnapshot { $0.state = .loading }
         do {
             async let typesTask = client.listTypes()
             async let countsTask = client.countsByType()
@@ -150,74 +239,97 @@ final class IndexStore: ObservableObject {
             )
             try Task.checkCancellation()
             guard generation == refreshGeneration else { return }
-            let entities = try await fetchEntities(limit: 500)
+            let entityPage = try await fetchEntities(criteria: snapshot.entityCriteria, cursor: nil)
             try Task.checkCancellation()
             guard generation == refreshGeneration else { return }
-            self.types = types
             var countsMap: [String: Int] = [:]
             for entry in countsResp.counts { countsMap[entry.typeName] = entry.total }
-            self.typeCounts = countsMap
-            self.searches = searches
-            self.monitors = monitors
-            self.runs = runs
-            self.alerts = alertsResp.alerts
-            self.unreadAlerts = alertsResp.unread
-            self.tags = tags
-            self.collections = collections
-            self.entities = entities
+            updateSnapshot {
+                $0.types = types
+                $0.typeCounts = countsMap
+                $0.searches = searches
+                $0.monitors = monitors
+                $0.runs = runs
+                $0.alerts = alertsResp.alerts
+                $0.unreadAlerts = alertsResp.unread
+                $0.tags = tags
+                $0.collections = collections
+                $0.entities = entityPage.entities
+                $0.entityNextCursor = entityPage.nextCursor
+                $0.isLoadingEntities = false
+                $0.state = .ready
+            }
             for alert in alertsResp.alerts where alert.ackAt == nil {
                 let entityTitle = alert.entityId.flatMap { id in
                     self.entities.first { $0.id == id }?.title
                 }
                 IndexNotificationsBridge.shared.surface(alert, entityTitle: entityTitle)
             }
-            state = .ready
             finishRefreshIfCurrent(generation)
         } catch is CancellationError {
             if generation == refreshGeneration {
-                state = .idle
+                updateSnapshot {
+                    $0.state = .idle
+                    $0.isLoadingEntities = false
+                }
                 finishRefreshIfCurrent(generation)
             }
         } catch {
             if generation == refreshGeneration {
-                state = .error(error.localizedDescription)
+                updateSnapshot {
+                    $0.state = .error(error.localizedDescription)
+                    $0.isLoadingEntities = false
+                }
                 finishRefreshIfCurrent(generation)
             }
         }
     }
 
     func loadEntities() async {
-        await startEntityLoad().value
+        await startEntityLoad(reset: true).value
     }
 
     @discardableResult
-    private func startEntityLoad() -> Task<Void, Never> {
+    private func startEntityLoad(reset: Bool) -> Task<Void, Never> {
         let generation = nextEntityLoadGeneration()
+        let criteria = snapshot.entityCriteria
+        let cursor = reset ? nil : snapshot.entityNextCursor
         entityLoadTask?.cancel()
         let task = Task<Void, Never> { @MainActor [weak self] in
             guard let self else { return }
-            await self.runLoadEntities(generation: generation)
+            await self.runLoadEntities(generation: generation, criteria: criteria, cursor: cursor, reset: reset)
         }
         entityLoadTask = task
         return task
     }
 
-    private func runLoadEntities(generation: Int) async {
+    private func runLoadEntities(generation: Int, criteria: IndexQueryCriteria, cursor: String?, reset: Bool) async {
         guard generation == entityLoadGeneration else { return }
         ensureToken()
+        updateSnapshot { $0.isLoadingEntities = true }
         do {
-            let entities = try await fetchEntities(limit: 500)
+            let page = try await fetchEntities(criteria: criteria, cursor: cursor)
             try Task.checkCancellation()
             guard generation == entityLoadGeneration else { return }
-            self.entities = entities
+            updateSnapshot {
+                $0.entityCriteria = criteria
+                $0.entities = reset ? page.entities : $0.entities + page.entities
+                $0.entityNextCursor = page.nextCursor
+                $0.isLoadingEntities = false
+            }
             finishEntityLoadIfCurrent(generation)
         } catch is CancellationError {
             if generation == entityLoadGeneration {
+                updateSnapshot { $0.isLoadingEntities = false }
                 finishEntityLoadIfCurrent(generation)
             }
         } catch {
             if generation == entityLoadGeneration {
-                self.entities = []
+                updateSnapshot {
+                    if reset { $0.entities = [] }
+                    $0.entityNextCursor = nil
+                    $0.isLoadingEntities = false
+                }
                 finishEntityLoadIfCurrent(generation)
             }
         }
@@ -245,15 +357,15 @@ final class IndexStore: ObservableObject {
 
     func searchEntitiesFullText() async -> [ClawJSIndexClient.Entity] {
         ensureToken()
-        let trimmed = fullTextQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = snapshot.entityCriteria.fullText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return entities }
         do {
-            let raw = try await fetchEntities(limit: 200)
+            var criteria = snapshot.entityCriteria
+            criteria.fullText = trimmed
+            criteria.limit = 200
+            let page = try await fetchEntities(criteria: criteria, cursor: nil)
             try Task.checkCancellation()
-            return raw.filter { entity in
-                let haystack = (entity.title ?? "") + " " + (entity.sourceUrl ?? "")
-                return haystack.localizedCaseInsensitiveContains(trimmed)
-            }
+            return page.entities
         } catch is CancellationError {
             return entities
         } catch {
@@ -261,10 +373,29 @@ final class IndexStore: ObservableObject {
         }
     }
 
-    private func fetchEntities(limit: Double) async throws -> [ClawJSIndexClient.Entity] {
-        var payload: [String: AnyJSON] = ["limit": .number(limit)]
-        if let typeFilter = selectedTypeFilter {
-            payload["type"] = .string(typeFilter)
+    private func fetchEntities(criteria: IndexQueryCriteria, cursor: String?) async throws -> ClawJSIndexClient.EntityPage {
+        var payload: [String: AnyJSON] = [
+            "limit": .number(Double(criteria.limit)),
+            "orderBy": .object([
+                "field": .string("last_seen_at"),
+                "direction": .string("desc"),
+            ]),
+        ]
+        if let type = criteria.type {
+            payload["type"] = .string(type)
+        }
+        if !criteria.tagIds.isEmpty {
+            payload["tagIds"] = .array(criteria.tagIds.map { .string($0) })
+        }
+        if let collectionId = criteria.collectionId {
+            payload["collectionId"] = .string(collectionId)
+        }
+        let fullText = criteria.fullText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !fullText.isEmpty {
+            payload["fullText"] = .string(fullText)
+        }
+        if let cursor {
+            payload["cursor"] = .string(cursor)
         }
         return try await client.listEntities(payload: payload)
     }
@@ -294,7 +425,7 @@ final class IndexStore: ObservableObject {
             let search = try await store.client.createSearch(payload: payload)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            store.searches.insert(search, at: 0)
+            store.updateSnapshot { $0.searches.insert(search, at: 0) }
             store.finishActionIfCurrent(key: key, generation: generation)
             return search
         }
@@ -309,7 +440,7 @@ final class IndexStore: ObservableObject {
             let run = try await store.client.runSearch(id: id)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            store.runs.insert(run, at: 0)
+            store.updateSnapshot { $0.runs.insert(run, at: 0) }
             store.finishActionIfCurrent(key: key, generation: generation)
             return run
         }
@@ -324,7 +455,7 @@ final class IndexStore: ObservableObject {
                 try await store.client.deleteSearch(id: id)
                 try Task.checkCancellation()
                 guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-                store.searches.removeAll { $0.id == id }
+                store.updateSnapshot { $0.searches.removeAll { $0.id == id } }
                 store.finishActionIfCurrent(key: key, generation: generation)
             }
         } catch is CancellationError {
@@ -361,7 +492,7 @@ final class IndexStore: ObservableObject {
             let monitor = try await store.client.createMonitor(payload: payload)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            store.monitors.insert(monitor, at: 0)
+            store.updateSnapshot { $0.monitors.insert(monitor, at: 0) }
             store.finishActionIfCurrent(key: key, generation: generation)
             return monitor
         }
@@ -376,7 +507,7 @@ final class IndexStore: ObservableObject {
             let run = try await store.client.fireMonitor(id: id)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            store.runs.insert(run, at: 0)
+            store.updateSnapshot { $0.runs.insert(run, at: 0) }
             store.finishActionIfCurrent(key: key, generation: generation)
             return run
         }
@@ -391,11 +522,13 @@ final class IndexStore: ObservableObject {
                 try await store.client.ackAlert(id: id)
                 try Task.checkCancellation()
                 guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-                if let index = store.alerts.firstIndex(where: { $0.id == id }) {
-                    let alert = store.alerts[index]
-                    if alert.ackAt == nil { store.unreadAlerts = max(0, store.unreadAlerts - 1) }
+                store.updateSnapshot { snapshot in
+                    if let index = snapshot.alerts.firstIndex(where: { $0.id == id }) {
+                        let alert = snapshot.alerts[index]
+                        if alert.ackAt == nil { snapshot.unreadAlerts = max(0, snapshot.unreadAlerts - 1) }
+                    }
+                    snapshot.alerts.removeAll { $0.id == id }
                 }
-                store.alerts.removeAll { $0.id == id }
                 store.finishActionIfCurrent(key: key, generation: generation)
             }
         } catch is CancellationError {
@@ -415,8 +548,10 @@ final class IndexStore: ObservableObject {
             let tag = try await store.client.applyTag(entityId: entityId, name: name, color: color)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            if !store.tags.contains(where: { $0.id == tag.id }) {
-                store.tags.append(tag)
+            store.updateSnapshot { snapshot in
+                if !snapshot.tags.contains(where: { $0.id == tag.id }) {
+                    snapshot.tags.append(tag)
+                }
             }
             store.finishActionIfCurrent(key: key, generation: generation)
             return tag
@@ -432,7 +567,7 @@ final class IndexStore: ObservableObject {
             let collection = try await store.client.createCollection(name: name, description: description)
             try Task.checkCancellation()
             guard store.isCurrentAction(key: key, generation: generation) else { throw CancellationError() }
-            store.collections.insert(collection, at: 0)
+            store.updateSnapshot { $0.collections.insert(collection, at: 0) }
             store.finishActionIfCurrent(key: key, generation: generation)
             return collection
         }

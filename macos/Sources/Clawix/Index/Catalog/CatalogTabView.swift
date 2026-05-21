@@ -54,19 +54,19 @@ private struct TypeSidebar: View {
     @ObservedObject var store: IndexStore
 
     private var allTotal: Int {
-        store.typeCounts.values.reduce(0, +)
+        store.snapshot.typeCounts.values.reduce(0, +)
     }
 
     private var canonicalEntries: [(IndexTypeMeta, Int)] {
         IndexTypeCatalog.canonicalOrder.compactMap { typeName in
-            (IndexTypeCatalog.meta(for: typeName), store.typeCounts[typeName] ?? 0)
+            (IndexTypeCatalog.meta(for: typeName), store.snapshot.typeCounts[typeName] ?? 0)
         }
     }
 
     private var customEntries: [(IndexTypeMeta, Int)] {
-        store.types
+        store.snapshot.types
             .filter { !$0.canonical }
-            .map { (IndexTypeCatalog.meta(for: $0.name), store.typeCounts[$0.name] ?? 0) }
+            .map { (IndexTypeCatalog.meta(for: $0.name), store.snapshot.typeCounts[$0.name] ?? 0) }
     }
 
     var body: some View {
@@ -76,11 +76,10 @@ private struct TypeSidebar: View {
                     title: "All",
                     lucideName: "rectangle.stack",
                     count: allTotal,
-                    isSelected: store.selectedTypeFilter == nil,
+                    isSelected: store.snapshot.entityCriteria.type == nil,
                     accent: .white.opacity(0.7)
                 ) {
-                    store.selectedTypeFilter = nil
-                    store.requestLoadEntities()
+                    store.selectTypeFilter(nil)
                 }
                 .padding(.top, 8)
 
@@ -90,11 +89,10 @@ private struct TypeSidebar: View {
                         title: meta.displayName,
                         lucideName: meta.lucideName,
                         count: count,
-                        isSelected: store.selectedTypeFilter == meta.typeName,
+                        isSelected: store.snapshot.entityCriteria.type == meta.typeName,
                         accent: meta.accent
                     ) {
-                        store.selectedTypeFilter = meta.typeName
-                        store.requestLoadEntities()
+                        store.selectTypeFilter(meta.typeName)
                     }
                 }
 
@@ -105,26 +103,31 @@ private struct TypeSidebar: View {
                             title: meta.displayName,
                             lucideName: meta.lucideName,
                             count: count,
-                            isSelected: store.selectedTypeFilter == meta.typeName,
+                            isSelected: store.snapshot.entityCriteria.type == meta.typeName,
                             accent: meta.accent
                         ) {
-                            store.selectedTypeFilter = meta.typeName
-                            store.requestLoadEntities()
+                            store.selectTypeFilter(meta.typeName)
                         }
                     }
                 }
 
-                if !store.tags.isEmpty {
+                if !store.snapshot.tags.isEmpty {
                     CatalogSectionHeader(title: "TAGS")
-                    ForEach(store.tags) { tag in
-                        TagRow(tag: tag)
+                    ForEach(store.snapshot.tags, id: \.id) { tag in
+                        let isSelected = store.snapshot.entityCriteria.tagIds.contains(tag.id)
+                        TagRow(tag: tag, isSelected: isSelected) {
+                            store.selectTagFilter(isSelected ? nil : tag.id)
+                        }
                     }
                 }
 
-                if !store.collections.isEmpty {
+                if !store.snapshot.collections.isEmpty {
                     CatalogSectionHeader(title: "COLLECTIONS")
-                    ForEach(store.collections) { collection in
-                        CollectionRow(collection: collection)
+                    ForEach(store.snapshot.collections, id: \.id) { collection in
+                        let isSelected = store.snapshot.entityCriteria.collectionId == collection.id
+                        CollectionRow(collection: collection, isSelected: isSelected) {
+                            store.selectCollectionFilter(isSelected ? nil : collection.id)
+                        }
                     }
                 }
             }
@@ -188,19 +191,31 @@ private struct TypeRow: View {
 
 private struct TagRow: View {
     let tag: ClawJSIndexClient.Tag
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var hovered = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(parsedColor)
-                .frame(width: 10, height: 10)
-            Text(tag.name)
-                .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(.white.opacity(0.78))
-            Spacer()
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(parsedColor)
+                    .frame(width: 10, height: 10)
+                Text(tag.name)
+                    .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.78))
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+            )
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
     }
 
     private var parsedColor: Color {
@@ -219,21 +234,34 @@ private struct TagRow: View {
 
 private struct CollectionRow: View {
     let collection: ClawJSIndexClient.Collection
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var hovered = false
+
     var body: some View {
-        HStack(spacing: 10) {
-            LucideIcon.auto("square.stack.3d.up", size: 13)
-                .foregroundColor(.white.opacity(0.70))
-                .frame(width: 18)
-            Text(collection.name)
-                .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(.white.opacity(0.78))
-            Spacer()
-            Text("\(collection.memberCount)")
-                .font(BodyFont.system(size: 11, wght: 500))
-                .foregroundColor(.white.opacity(0.45))
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                LucideIcon.auto("square.stack.3d.up", size: 13)
+                    .foregroundColor(.white.opacity(0.70))
+                    .frame(width: 18)
+                Text(collection.name)
+                    .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.78))
+                Spacer()
+                Text("\(collection.memberCount)")
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(.white.opacity(0.45))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+            )
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
     }
 }
 
@@ -246,7 +274,14 @@ private struct CatalogToolbar: View {
             HStack(spacing: 6) {
                 LucideIcon.auto("magnifyingglass", size: 12)
                     .foregroundColor(.white.opacity(0.5))
-                TextField("", text: $store.fullTextQuery, prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4)))
+                TextField(
+                    "",
+                    text: Binding(
+                        get: { store.snapshot.entityCriteria.fullText },
+                        set: { store.updateFullTextQuery($0) }
+                    ),
+                    prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4))
+                )
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 12.5, wght: 400))
                     .foregroundColor(.white.opacity(0.9))
@@ -279,12 +314,7 @@ private struct EntityListGrid: View {
     @Binding var selectedEntityId: String?
 
     private var filteredEntities: [ClawJSIndexClient.Entity] {
-        let trimmed = store.fullTextQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return store.entities }
-        return store.entities.filter { entity in
-            let haystack = "\(entity.title ?? "") \(entity.sourceUrl ?? "") \(entity.identityKey)"
-            return haystack.localizedCaseInsensitiveContains(trimmed)
-        }
+        store.entities
     }
 
     var body: some View {
