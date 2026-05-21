@@ -41,9 +41,16 @@ enum UserBubbleContent {
 
     static func parse(_ raw: String, attachments: [WireAttachment] = []) -> Parsed {
         let key = cacheKey(raw: raw, attachments: attachments)
-        return cache.parse(key) { _ in
-            parseUncached(raw, attachments: attachments)
-        }
+        return cache.parse(
+            key,
+            cost: { source, parsed in
+                cache.estimatedCost(
+                    for: source,
+                    blockCount: parsed.images.count + parsed.files.count + (parsed.text.isEmpty ? 0 : 1)
+                )
+            },
+            produce: { _ in parseUncached(raw, attachments: attachments) }
+        )
     }
 
     private static func parseUncached(_ raw: String, attachments: [WireAttachment]) -> Parsed {

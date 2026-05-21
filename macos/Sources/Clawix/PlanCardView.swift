@@ -26,9 +26,11 @@ enum PlanSegmenter {
     private static let cache = MarkdownBlockCache<[PlanSegment]>(countLimit: 256)
 
     static func segments(from text: String) -> [PlanSegment] {
-        cache.parse(text) { source in
-            parseSegments(from: source)
-        }
+        cache.parse(
+            text,
+            cost: { source, segments in cache.estimatedCost(for: source, blockCount: segments.count) },
+            produce: { source in parseSegments(from: source) }
+        )
     }
 
     private static func parseSegments(from text: String) -> [PlanSegment] {

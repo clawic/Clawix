@@ -163,23 +163,42 @@ struct AssistantMarkdownDocument {
     }
 }
 
+enum MarkdownParseCachePhase {
+    case streamingIntermediate
+    case settled
+}
+
 final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
     private struct Entry {
         let document: AssistantMarkdownDocument
+        let cost: Int
     }
 
     private let lock = NSLock()
     private var values: [AssistantMarkdownRenderKey: Entry] = [:]
     private var order: [AssistantMarkdownRenderKey] = []
+    private var currentCost = 0
     private let countLimit: Int
+    private let totalCostLimit: Int
+    private let maxEntryCost: Int
+    private let blockCost: Int
 
-    init(countLimit: Int) {
+    init(
+        countLimit: Int,
+        totalCostLimit: Int,
+        maxEntryCost: Int,
+        blockCost: Int = MarkdownBlockCacheDefaults.blockCost
+    ) {
         self.countLimit = countLimit
+        self.totalCostLimit = totalCostLimit
+        self.maxEntryCost = maxEntryCost
+        self.blockCost = blockCost
     }
 
     func document(
         for text: String,
         key: AssistantMarkdownRenderKey,
+        phase: MarkdownParseCachePhase = .settled,
         buildFull: (String, String) -> AssistantMarkdownDocument,
         buildTail: (String, String, Int, Int, Int, String, [IndexedAnnotatedBlock]) -> AssistantMarkdownDocument
     ) -> AssistantMarkdownDocument {
@@ -212,16 +231,37 @@ final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
         }
 
         lock.lock()
-        values[key] = Entry(document: document)
-        touch(key)
-        enforceLimit()
+        store(document, for: key, phase: phase)
         lock.unlock()
         return document
+    }
+
+    static func estimatedCost(for document: AssistantMarkdownDocument, blockCost: Int = MarkdownBlockCacheDefaults.blockCost) -> Int {
+        MarkdownBlockCacheDefaults.cost(for: document.text, blockCount: document.blocks.count, blockCost: blockCost)
     }
 
     private static func stableBlocks(from prior: AssistantMarkdownDocument) -> [IndexedAnnotatedBlock] {
         guard prior.blocks.count > 1 else { return [] }
         return Array(prior.blocks.dropLast())
+    }
+
+    private func store(_ document: AssistantMarkdownDocument, for key: AssistantMarkdownRenderKey, phase: MarkdownParseCachePhase) {
+        let cost = Self.estimatedCost(for: document, blockCost: blockCost)
+        guard cost <= maxEntryCost, cost <= totalCostLimit else {
+            remove(key)
+            PerfSignpost.renderMarkdown.event(
+                phase == .streamingIntermediate ? "parse.incremental.streaming_skipped_cost" : "parse.incremental.skipped_cost",
+                cost
+            )
+            return
+        }
+        if let existing = values[key] {
+            currentCost -= existing.cost
+        }
+        values[key] = Entry(document: document, cost: cost)
+        currentCost += cost
+        touch(key)
+        enforceLimit()
     }
 
     private func touch(_ key: AssistantMarkdownRenderKey) {
@@ -230,12 +270,17 @@ final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
     }
 
     private func enforceLimit() {
-        guard order.count > countLimit else { return }
-        let overflow = order.count - countLimit
-        for key in order.prefix(overflow) {
-            values.removeValue(forKey: key)
+        while order.count > countLimit || currentCost > totalCostLimit {
+            guard let key = order.first else { break }
+            remove(key)
         }
-        order.removeFirst(overflow)
+    }
+
+    private func remove(_ key: AssistantMarkdownRenderKey) {
+        if let existing = values.removeValue(forKey: key) {
+            currentCost -= existing.cost
+        }
+        order.removeAll { $0 == key }
     }
 }
 
@@ -245,21 +290,25 @@ final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
 /// cache used to die on unmount and force a full reparse of every
 /// message on the next chat open. Every delta to ANY message still
 /// publishes `AppState.chats`, which invalidates every
-/// `AssistantMarkdownText` body in the chat; the byte-equal source key
-/// means the body short-circuits when `text` is identical to a recent
-/// parse, including across mount/unmount cycles.
+/// `AssistantMarkdownText` body in the chat; the bounded source
+/// fingerprint means the body short-circuits when `text` is identical
+/// to a recent parse, including across mount/unmount cycles.
 ///
-/// For the message that's currently streaming the cache also covers
-/// the full-text branch: an upstream `objectWillChange` (e.g. an
-/// unrelated `@Published` setter) can invalidate body without `text`
-/// actually growing, and we want those re-runs to skip the parse too.
-/// When `text` truly grew between calls we fall through to a full
-/// reparse, small (a typical assistant turn is a few KB), but the
-/// dominant cost in the streaming pipeline is downstream rendering,
-/// not this parse.
+/// For the message that's currently streaming, the incremental cache
+/// keeps only bounded per-render-key state. It can reuse stable blocks
+/// while text grows, but oversized intermediates are returned without
+/// being retained.
 enum MarkdownParseCache {
-    fileprivate static let cache = MarkdownBlockCache<AssistantMarkdownDocument>(countLimit: 512)
-    fileprivate static let incrementalCache = AssistantMarkdownIncrementalCache(countLimit: 128)
+    fileprivate static let cache = MarkdownBlockCache<AssistantMarkdownDocument>(
+        countLimit: 512,
+        totalCostLimit: 32 * 1024 * 1024,
+        maxEntryCost: 2 * 1024 * 1024
+    )
+    fileprivate static let incrementalCache = AssistantMarkdownIncrementalCache(
+        countLimit: 128,
+        totalCostLimit: 24 * 1024 * 1024,
+        maxEntryCost: 2 * 1024 * 1024
+    )
 
     struct Result {
         let document: AssistantMarkdownDocument
@@ -280,11 +329,16 @@ enum MarkdownParseCache {
         _ = parse(text)
     }
 
-    static func parse(_ text: String, renderKey: AssistantMarkdownRenderKey? = nil) -> Result {
+    static func parse(
+        _ text: String,
+        renderKey: AssistantMarkdownRenderKey? = nil,
+        phase: MarkdownParseCachePhase = .settled
+    ) -> Result {
         if let renderKey {
             let document = incrementalCache.document(
                 for: text,
                 key: renderKey,
+                phase: phase,
                 buildFull: { source, idPrefix in
                     buildFullDocument(source, idPrefix: idPrefix)
                 },
@@ -330,7 +384,7 @@ enum MarkdownParseCache {
         }
         PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
         let document = buildFullDocument(text, idPrefix: "full")
-        cache.set(document, for: text)
+        cache.set(document, for: text, cost: documentCacheCost(document))
         return Result(
             document: document,
             cacheHit: false,
@@ -339,6 +393,10 @@ enum MarkdownParseCache {
             reusedBlockCount: 0,
             reparsedCharacterCount: text.count
         )
+    }
+
+    private static func documentCacheCost(_ document: AssistantMarkdownDocument) -> Int {
+        MarkdownBlockCacheDefaults.cost(for: document.text, blockCount: document.blocks.count)
     }
 
     private static func buildFullDocument(_ text: String, idPrefix: String) -> AssistantMarkdownDocument {
@@ -460,7 +518,11 @@ struct AssistantMarkdownText: View {
     @State private var animationTick: Int = 0
 
     var body: some View {
-        let parsed = MarkdownParseCache.parse(text, renderKey: renderKey)
+        let parsed = MarkdownParseCache.parse(
+            text,
+            renderKey: renderKey,
+            phase: streamingFinished ? .settled : .streamingIntermediate
+        )
         let blocks = parsed.blocks
         let _ = streamingPerfLogEnabled && !parsed.cacheHit
             && (!checkpoints.isEmpty || !streamingFinished)

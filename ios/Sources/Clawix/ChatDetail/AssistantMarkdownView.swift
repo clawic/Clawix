@@ -53,7 +53,11 @@ enum AssistantMarkdownParser {
     }
 
     static func parse(_ source: String) -> [AssistantBlock] {
-        cache.parse(source) { src in parseUncached(src) }
+        cache.parse(
+            source,
+            cost: { src, blocks in cache.estimatedCost(for: src, blockCount: blocks.count) },
+            produce: { src in parseUncached(src) }
+        )
     }
 
     private static func parseUncached(_ source: String) -> [AssistantBlock] {

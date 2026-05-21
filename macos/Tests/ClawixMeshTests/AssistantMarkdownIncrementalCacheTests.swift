@@ -95,6 +95,86 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertLessThan(last.reparsedCharacterCount, text.count / 4)
     }
 
+    func testStreamingIntermediateAppendReusesStableBlocksWithinLimit() {
+        let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        let first = "First paragraph.\n\nSecond paragraph."
+        let second = first + "\n\nStreaming tail."
+
+        let initial = MarkdownParseCache.parse(first, renderKey: key, phase: .streamingIntermediate)
+        let updated = MarkdownParseCache.parse(second, renderKey: key, phase: .streamingIntermediate)
+
+        let stableIds = initial.blocks.dropLast().map(\.id)
+        XCTAssertEqual(Array(updated.blocks.prefix(stableIds.count)).map(\.id), stableIds)
+        XCTAssertGreaterThan(updated.reusedBlockCount, 0)
+    }
+
+    func testOversizedStreamingIntermediateIsNotRetained() {
+        let cache = AssistantMarkdownIncrementalCache(
+            countLimit: 4,
+            totalCostLimit: 20,
+            maxEntryCost: 20,
+            blockCost: 0
+        )
+        let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        var buildCount = 0
+
+        _ = document(
+            from: cache,
+            text: String(repeating: "x", count: 21),
+            key: key,
+            phase: .streamingIntermediate,
+            buildCount: &buildCount
+        )
+        let second = document(
+            from: cache,
+            text: String(repeating: "x", count: 21),
+            key: key,
+            phase: .streamingIntermediate,
+            buildCount: &buildCount
+        )
+
+        XCTAssertFalse(second.cacheHit)
+        XCTAssertEqual(buildCount, 2)
+    }
+
+    func testSettledDocumentIsCachedWhenItFits() {
+        let cache = AssistantMarkdownIncrementalCache(
+            countLimit: 4,
+            totalCostLimit: 64,
+            maxEntryCost: 64,
+            blockCost: 0
+        )
+        let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        var buildCount = 0
+
+        _ = document(from: cache, text: "fits", key: key, phase: .settled, buildCount: &buildCount)
+        let second = document(from: cache, text: "fits", key: key, phase: .settled, buildCount: &buildCount)
+
+        XCTAssertTrue(second.cacheHit)
+        XCTAssertEqual(buildCount, 1)
+    }
+
+    func testCostLimitEvictsEvenUnderCountLimit() {
+        let cache = AssistantMarkdownIncrementalCache(
+            countLimit: 10,
+            totalCostLimit: 20,
+            maxEntryCost: 20,
+            blockCost: 0
+        )
+        let firstKey = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        let secondKey = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        var firstBuildCount = 0
+        var secondBuildCount = 0
+
+        _ = document(from: cache, text: "aaaaaaaaaaaa", key: firstKey, phase: .settled, buildCount: &firstBuildCount)
+        _ = document(from: cache, text: "bbbbbbbbbbbb", key: secondKey, phase: .settled, buildCount: &secondBuildCount)
+        let firstAgain = document(from: cache, text: "aaaaaaaaaaaa", key: firstKey, phase: .settled, buildCount: &firstBuildCount)
+
+        XCTAssertFalse(firstAgain.cacheHit)
+        XCTAssertEqual(firstBuildCount, 2)
+        XCTAssertEqual(secondBuildCount, 1)
+    }
+
     func testGeneratedHeavyTableExceedsLazyRenderingThreshold() {
         let rows = (0..<(AssistantTableView.largeTableRowThreshold + 1))
             .map { "| row\($0) | value\($0) |" }
@@ -157,5 +237,55 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         case .link(let label, let url, let isBareUrl):
             return "\(label)<\(url.absoluteString)>\(isBareUrl)"
         }
+    }
+
+    private func document(
+        from cache: AssistantMarkdownIncrementalCache,
+        text: String,
+        key: AssistantMarkdownRenderKey,
+        phase: MarkdownParseCachePhase,
+        buildCount: inout Int
+    ) -> AssistantMarkdownDocument {
+        cache.document(
+            for: text,
+            key: key,
+            phase: phase,
+            buildFull: { source, idPrefix in
+                buildCount += 1
+                return testDocument(text: source, idPrefix: idPrefix)
+            },
+            buildTail: { fullText, _, _, _, _, idPrefix, stableBlocks in
+                buildCount += 1
+                var document = testDocument(text: fullText, idPrefix: idPrefix)
+                document = AssistantMarkdownDocument(
+                    text: document.text,
+                    blocks: stableBlocks + document.blocks.dropFirst(stableBlocks.count),
+                    cacheHit: document.cacheHit,
+                    parseMs: document.parseMs,
+                    annotateMs: document.annotateMs,
+                    reusedBlockCount: stableBlocks.count,
+                    reparsedCharacterCount: fullText.count
+                )
+                return document
+            }
+        )
+    }
+
+    private func testDocument(text: String, idPrefix: String) -> AssistantMarkdownDocument {
+        let block = IndexedAnnotatedBlock(
+            id: "\(idPrefix):0:0",
+            block: .paragraph(AnnotatedParagraph(lines: [])),
+            sourceRange: 0..<text.count,
+            codeBlockOrdinal: 0
+        )
+        return AssistantMarkdownDocument(
+            text: text,
+            blocks: [block],
+            cacheHit: false,
+            parseMs: 0,
+            annotateMs: 0,
+            reusedBlockCount: 0,
+            reparsedCharacterCount: text.count
+        )
     }
 }
