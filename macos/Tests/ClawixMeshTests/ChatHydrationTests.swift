@@ -138,7 +138,7 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
     }
 
-    func testClawJSSessionsStartupUsesSidebarBootstrapOnly() async throws {
+    func testClawJSSessionsStartupLoadsOnlyBoundedPinnedAndRecentSessions() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
         let session = URLSession(configuration: configuration)
@@ -155,17 +155,20 @@ final class ChatHydrationTests: XCTestCase {
             switch request.url?.path {
             case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/health":
                 return (response, Data(#"{"ok":true,"service":"sessions","host":"127.0.0.1","port":1}"#.utf8))
-            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap":
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions":
+                let query = Self.queryItems(for: request)
+                let isPinned = query["pinned"] == "true"
                 let body = """
                 {
-                  "projects": [],
-                  "pinned": [
-                    \(Self.sessionRecordJSON(id: "pinned-thread", title: "Pinned", pinned: true, archived: false))
+                  "items": [
+                    \(Self.sessionRecordJSON(
+                        id: isPinned ? "pinned-thread" : "recent-thread",
+                        title: isPinned ? "Pinned" : "Recent",
+                        pinned: isPinned,
+                        archived: false
+                    ))
                   ],
-                  "recent": [
-                    \(Self.sessionRecordJSON(id: "recent-thread", title: "Recent", pinned: false, archived: false))
-                  ],
-                  "totalActiveVisible": 2
+                  "total": 1
                 }
                 """
                 return (response, Data(body.utf8))
@@ -189,10 +192,23 @@ final class ChatHydrationTests: XCTestCase {
         let archivedRequests = sessionRequests.filter { Self.queryItems(for: $0)["archived"] == "true" }
         XCTAssertTrue(projectRequests.isEmpty)
         XCTAssertTrue(importRequests.isEmpty)
-        XCTAssertEqual(bootstrapRequests.count, 1)
-        XCTAssertEqual(Self.queryItems(for: try XCTUnwrap(bootstrapRequests.first))["recentLimit"], "\(AppState.sidebarBootstrapRecentLimit)")
+        XCTAssertTrue(bootstrapRequests.isEmpty)
         XCTAssertTrue(archivedRequests.isEmpty)
-        XCTAssertTrue(sessionRequests.isEmpty)
+        XCTAssertEqual(sessionRequests.count, 2)
+        XCTAssertTrue(sessionRequests.contains { request in
+            let query = Self.queryItems(for: request)
+            return query["pinned"] == "true"
+                && query["archived"] == "false"
+                && query["sidebarVisible"] == "true"
+                && query["limit"] == "\(AppState.startupPinnedSessionLimit)"
+        })
+        XCTAssertTrue(sessionRequests.contains { request in
+            let query = Self.queryItems(for: request)
+            return query["pinned"] == "false"
+                && query["archived"] == "false"
+                && query["sidebarVisible"] == "true"
+                && query["limit"] == "\(AppState.startupRecentSessionLimit)"
+        })
         XCTAssertEqual(state.chats.map(\.clawixThreadId), ["pinned-thread", "recent-thread"])
         XCTAssertEqual(state.pinnedOrder.compactMap { id in state.chats.first(where: { $0.id == id })?.clawixThreadId }, ["pinned-thread"])
     }
@@ -221,17 +237,20 @@ final class ChatHydrationTests: XCTestCase {
                 return (response, Data(#"{"scanned":2,"imported":[],"skipped":1,"budgetExhausted":false,"changedFiles":1}"#.utf8))
             case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/health":
                 return (response, Data(#"{"ok":true,"service":"sessions","host":"127.0.0.1","port":1}"#.utf8))
-            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap":
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions":
+                let query = Self.queryItems(for: request)
+                let isPinned = query["pinned"] == "true"
                 let body = """
                 {
-                  "projects": [],
-                  "pinned": [
-                    \(Self.sessionRecordJSON(id: "pinned-thread", title: "Pinned", pinned: true, archived: false))
+                  "items": [
+                    \(Self.sessionRecordJSON(
+                        id: isPinned ? "pinned-thread" : "recent-thread",
+                        title: isPinned ? "Pinned" : "Recent",
+                        pinned: isPinned,
+                        archived: false
+                    ))
                   ],
-                  "recent": [
-                    \(Self.sessionRecordJSON(id: "recent-thread", title: "Recent", pinned: false, archived: false))
-                  ],
-                  "totalActiveVisible": 2
+                  "total": 1
                 }
                 """
                 return (response, Data(body.utf8))
@@ -259,9 +278,17 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertTrue(importBody.contains(#""maxFiles":64"#))
         XCTAssertTrue(importBody.contains(#""mode":"incremental""#))
         XCTAssertEqual(cacheRefreshCount, 1)
-        XCTAssertEqual(requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap" }.count, 1)
+        XCTAssertTrue(requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/bootstrap" }.isEmpty)
         let sessionRequests = requests.filter { $0.url?.path == "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions" }
-        XCTAssertTrue(sessionRequests.isEmpty)
+        XCTAssertEqual(sessionRequests.count, 2)
+        XCTAssertTrue(sessionRequests.contains { request in
+            let query = Self.queryItems(for: request)
+            return query["pinned"] == "true" && query["limit"] == "\(AppState.startupPinnedSessionLimit)"
+        })
+        XCTAssertTrue(sessionRequests.contains { request in
+            let query = Self.queryItems(for: request)
+            return query["pinned"] == "false" && query["limit"] == "\(AppState.startupRecentSessionLimit)"
+        })
         XCTAssertEqual(state.chats.map(\.clawixThreadId), ["pinned-thread", "recent-thread"])
     }
 
