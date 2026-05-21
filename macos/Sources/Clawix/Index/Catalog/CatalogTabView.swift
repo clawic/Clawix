@@ -268,20 +268,14 @@ private struct CollectionRow: View {
 private struct CatalogToolbar: View {
     @ObservedObject var store: IndexStore
     @Binding var displayMode: CatalogTabView.DisplayMode
+    @State private var query = ""
 
     var body: some View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
                 LucideIcon.auto("magnifyingglass", size: 12)
                     .foregroundColor(.white.opacity(0.5))
-                TextField(
-                    "",
-                    text: Binding(
-                        get: { store.snapshot.entityCriteria.fullText },
-                        set: { store.updateFullTextQuery($0) }
-                    ),
-                    prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4))
-                )
+                TextField("", text: $query, prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4)))
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 12.5, wght: 400))
                     .foregroundColor(.white.opacity(0.9))
@@ -305,6 +299,12 @@ private struct CatalogToolbar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+        .onAppear {
+            query = store.snapshot.entityCriteria.fullText
+        }
+        .onChange(of: query) { _, newValue in
+            store.updateFullTextQuery(newValue)
+        }
     }
 }
 
@@ -313,12 +313,12 @@ private struct EntityListGrid: View {
     let displayMode: CatalogTabView.DisplayMode
     @Binding var selectedEntityId: String?
 
-    private var filteredEntities: [ClawJSIndexClient.Entity] {
-        store.entities
+    private var pagedEntities: [ClawJSIndexClient.Entity] {
+        store.snapshot.entities
     }
 
     var body: some View {
-        if filteredEntities.isEmpty {
+        if pagedEntities.isEmpty {
             IndexEmptyState(
                 title: "No entities yet",
                 systemImage: "magnifyingglass",
@@ -343,20 +343,26 @@ private struct EntityListGrid: View {
     private var gridView: some View {
         let columns = [GridItem(.adaptive(minimum: 200), spacing: 12)]
         return LazyVGrid(columns: columns, spacing: 12) {
-            ForEach(filteredEntities) { entity in
+            ForEach(pagedEntities) { entity in
                 IndexEntityCard(entity: entity) {
                     selectedEntityId = entity.id
                 }
                 .frame(height: cardHeight(for: entity))
+                .onAppear {
+                    store.loadMoreEntitiesIfNeeded(currentEntityId: entity.id)
+                }
             }
         }
     }
 
     private var listView: some View {
         LazyVStack(spacing: 0) {
-            ForEach(filteredEntities) { entity in
+            ForEach(pagedEntities) { entity in
                 EntityListRow(entity: entity, isSelected: selectedEntityId == entity.id) {
                     selectedEntityId = entity.id
+                }
+                .onAppear {
+                    store.loadMoreEntitiesIfNeeded(currentEntityId: entity.id)
                 }
                 CardDivider()
             }

@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import Clawix
 
 @MainActor
@@ -235,6 +236,30 @@ final class IndexStoreCancellationTests: XCTestCase {
         XCTAssertTrue(store.entities.isEmpty)
     }
 
+    func testRefreshPublishesOneReadySnapshot() async {
+        let readyPublished = expectation(description: "Ready snapshot published")
+        let client = FakeIndexClient()
+        let store = IndexStore(client: client, attachSupervisor: false)
+        var readySnapshots = 0
+        var cancellables = Set<AnyCancellable>()
+        store.$snapshot
+            .dropFirst()
+            .sink { snapshot in
+                if snapshot.state == .ready {
+                    readySnapshots += 1
+                    readyPublished.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        await store.refresh()
+
+        await fulfillment(of: [readyPublished], timeout: 1)
+        XCTAssertEqual(readySnapshots, 1)
+        XCTAssertEqual(store.state, .ready)
+        _ = cancellables
+    }
+
     func testEntityReloadCancelsStaleFilterRequest() async {
         let slowStarted = expectation(description: "Slow entity request started")
         let slowCancelled = expectation(description: "Slow entity request cancelled")
@@ -267,15 +292,83 @@ final class IndexStoreCancellationTests: XCTestCase {
         let store = IndexStore(client: client, attachSupervisor: false)
 
         store.selectTypeFilter("slow")
-        store.requestLoadEntities()
         await fulfillment(of: [slowStarted], timeout: 1)
 
         store.selectTypeFilter("fast")
-        store.requestLoadEntities()
 
         await fulfillment(of: [slowCancelled, fastReturned], timeout: 1)
         try? await Task.sleep(nanoseconds: 10_000_000)
         XCTAssertEqual(store.entities.map(\.id), ["fast"])
+    }
+
+    func testDebouncedSearchOnlyIssuesFinalQuery() async {
+        let finalReturned = expectation(description: "Final search returned")
+        let client = FakeIndexClient()
+        var payloads: [[String: AnyJSON]] = []
+        client.onListEntities = { payload in
+            payloads.append(payload)
+            if payload["fullText"]?.asString == "final" {
+                finalReturned.fulfill()
+                return ClawJSIndexClient.EntityPage(
+                    entities: [Self.entity(id: "final", title: "Final")],
+                    nextCursor: nil
+                )
+            }
+            return ClawJSIndexClient.EntityPage(entities: [], nextCursor: nil)
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        store.updateFullTextQuery("first")
+        store.updateFullTextQuery("final")
+
+        await fulfillment(of: [finalReturned], timeout: 1)
+        XCTAssertEqual(payloads.compactMap { $0["fullText"]?.asString }, ["final"])
+        XCTAssertEqual(store.entities.map(\.id), ["final"])
+    }
+
+    func testEntityFilterBodyIncludesCriteriaAndCursorAppendPreservesRows() async {
+        let firstReturned = expectation(description: "First page returned")
+        let secondReturned = expectation(description: "Second page returned")
+        let client = FakeIndexClient()
+        var payloads: [[String: AnyJSON]] = []
+        client.onListEntities = { payload in
+            payloads.append(payload)
+            if payload["cursor"]?.asString == "next-page" {
+                secondReturned.fulfill()
+                return ClawJSIndexClient.EntityPage(
+                    entities: [Self.entity(id: "second", title: "Second")],
+                    nextCursor: nil
+                )
+            }
+            if payload["fullText"]?.asString == "alpha" {
+                firstReturned.fulfill()
+                return ClawJSIndexClient.EntityPage(
+                    entities: [Self.entity(id: "first", title: "First")],
+                    nextCursor: "next-page"
+                )
+            }
+            return ClawJSIndexClient.EntityPage(entities: [], nextCursor: nil)
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        store.selectTypeFilter("article")
+        store.selectTagFilter("tag-important")
+        store.selectCollectionFilter("collection-research")
+        store.updateFullTextQuery("alpha")
+
+        await fulfillment(of: [firstReturned], timeout: 1)
+        store.loadMoreEntitiesIfNeeded(currentEntityId: "first")
+        await fulfillment(of: [secondReturned], timeout: 1)
+
+        guard let firstPayload = payloads.first(where: { $0["fullText"]?.asString == "alpha" }) else {
+            return XCTFail("Expected debounced full-text entity payload")
+        }
+        XCTAssertEqual(firstPayload["type"]?.asString, "article")
+        XCTAssertEqual(firstPayload["tagIds"]?.asArray?.compactMap(\.asString), ["tag-important"])
+        XCTAssertEqual(firstPayload["collectionId"]?.asString, "collection-research")
+        XCTAssertEqual(firstPayload["fullText"]?.asString, "alpha")
+        XCTAssertEqual(payloads.last?["cursor"]?.asString, "next-page")
+        XCTAssertEqual(store.entities.map(\.id), ["first", "second"])
     }
 
     private static func entity(id: String, title: String) -> ClawJSIndexClient.Entity {

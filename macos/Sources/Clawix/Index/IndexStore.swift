@@ -147,14 +147,13 @@ final class IndexStore: ObservableObject {
     }
 
     func updateFullTextQuery(_ query: String) {
-        var criteria = snapshot.entityCriteria
-        criteria.fullText = query
-        updateSnapshot { $0.entityCriteria = criteria }
         searchDebounceTask?.cancel()
         searchDebounceTask = Task { @MainActor [weak self] in
             do {
                 try await Task.sleep(nanoseconds: 250_000_000)
                 guard let self else { return }
+                var criteria = self.snapshot.entityCriteria
+                criteria.fullText = query
                 self.applyEntityCriteria(criteria)
             } catch is CancellationError {
             } catch {
