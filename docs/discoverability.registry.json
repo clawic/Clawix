@@ -1725,6 +1725,39 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-release-external-pending-gate",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/release_external_pending_gate.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "RELEASING.md",
+        "playbooks/testing-matrix.md"
+      ],
+      "discoveryTerms": [
+        "release_external_pending_gate",
+        "Release External Pending Gate",
+        "release external pending gate",
+        "central_promise_blocker release gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "release_external_pending_gate",
+          "expectPath": "scripts/release_external_pending_gate.mjs"
+        },
+        {
+          "query": "central_promise_blocker release gate",
+          "expectPath": "docs/decision-map.md"
+        }
+      ],
+      "guard": "scripts/release_external_pending_gate.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-index-type-projection-check",
       "kind": "guardrail",
       "steward": "clawix",

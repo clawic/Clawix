@@ -69,6 +69,7 @@ file; do not hand-maintain this table.
 | `guard-scripts-discoverability-check` | guardrail |  | `scripts/discoverability-check.mjs` | discoverability-check, Discoverability Check | `scripts/discoverability-check.mjs` |
 | `guard-scripts-evolution-rescue-mirror-check` | guardrail |  | `scripts/evolution_rescue_mirror_check.mjs` | evolution_rescue_mirror_check, Evolution Rescue Mirror Check | `scripts/evolution_rescue_mirror_check.mjs` |
 | `guard-scripts-goal-completion-gate-check` | guardrail |  | `scripts/goal_completion_gate_check.mjs` | goal_completion_gate_check, Goal Completion Gate Check | `scripts/goal_completion_gate_check.mjs` |
+| `guard-scripts-release-external-pending-gate` | guardrail |  | `scripts/release_external_pending_gate.mjs` | release_external_pending_gate, Release External Pending Gate, release external pending gate, central_promise_blocker release gate | `scripts/release_external_pending_gate.mjs` |
 | `guard-scripts-index-type-projection-check` | guardrail |  | `scripts/index_type_projection_check.mjs` | index_type_projection_check, Index Type Projection Check | `scripts/index_type_projection_check.mjs` |
 | `guard-scripts-interface-surface-guard` | guardrail |  | `scripts/interface_surface_guard.mjs` | interface_surface_guard, Interface Surface Guard | `scripts/interface_surface_guard.mjs` |
 | `guard-scripts-legal-safety-check` | guardrail |  | `scripts/legal_safety_check.mjs` | legal_safety_check, Legal Safety Check | `scripts/legal_safety_check.mjs` |

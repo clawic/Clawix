@@ -30,6 +30,13 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
 7. Record any unavailable physical, provider, store, signed-host, or share-sheet
    validation in `docs/governance/legal/external-pending.md` as
    `EXTERNAL PENDING`; do not treat it as passed.
+8. Run the release external-pending gate for the exact target before any tag,
+   upload, notarization-dependent publish step, TestFlight submission, or store
+   submission:
+   `node scripts/release_external_pending_gate.mjs --target <target>`.
+   A `validation_only` or `future_extension` row may remain visible, but any
+   in-scope `central_promise_blocker` row must fail the release until accepted
+   evidence exists or an explicit later `scope_revision` changes the promise.
 
 ## GitHub Release Channel Checklist
 
@@ -54,7 +61,10 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
 3. Confirm initial legal acceptance, 18+ confirmation, EULA access,
    provider/remote/support opt-ins, sensitive export/share confirmation, and
    mandatory labels are present in the signed candidate.
-4. Treat signing, notarization, TestFlight, App Store, package manager, and
+4. Run signed-host or device validation in strict mode for native releases.
+   Direct `host` and `device` lanes may report `EXTERNAL PENDING`, but release
+   lanes must fail when those hooks are missing or report pending status.
+5. Treat signing, notarization, TestFlight, App Store, package manager, and
    installer uploads as separate exact actions requiring separate approval.
 
 ## Web Channel Checklist

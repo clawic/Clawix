@@ -13,8 +13,8 @@ public runner policy guard.
 | Web surface | `fast` | `release` | Vitest under `web/tests` |
 | Bridge protocol | `fast`, `integration` | `release` | `ClawixCore` round-trip tests and bridge fixture scripts |
 | Daemon and local bridge | `integration`, `e2e` | `release` | SwiftPM bridge/protocol tests in `integration`; app/bridge fixture scripts under `macos/scripts` in `e2e` |
-| macOS host/app | `host` | `release` | Private signed-host hook or `EXTERNAL PENDING` scenario |
-| Android/iOS device | `device` | `release` | Gradle unit tests plus private simulator/device hook |
+| macOS host/app | `host` | `release` | Direct lane may report `EXTERNAL PENDING`; release runs strict signed-host hook and blocks missing or pending evidence |
+| Android/iOS device | `device` | `release` | Gradle unit tests plus private simulator/device hook; release runs strict device validation for native device targets |
 | Surface parity | `policy`, relevant human/programmatic lane | `release` | Framework Interface Matrix coverage, Clawix human path, and at least one SDK/CLI/API/MCP/Relay path |
 | Live integrations | `live` | opt-in only | Requires `CLAWIX_TEST_LIVE=1`, framework Integration QA Lab evidence, brokered credential leases, and an approved live command |
 | Connector QA display/approval | `fast`, `integration` | `release` | ClawJS coverage matrix fixture plus Clawix host approval scenario such as `qa/scenarios/telegram-integration-qa-lab.md` |
@@ -24,6 +24,10 @@ public runner policy guard.
 - `changed` maps to `fast` or `integration` according to the changed-file selector.
 - `release` must include public hygiene, policy, fast, integration, local E2E, device state,
   and host state.
+- `release` runs `scripts/release_external_pending_gate.mjs` for the exact
+  target. In-scope `central_promise_blocker` rows fail release; `validation_only`
+  and `future_extension` rows remain report-only unless a later release claim
+  moves them into scope.
 - `live` is never part of default release.
 - Important capabilities require at least one human-path validation and one
   programmatic-path validation. Missing paths must be reported as `PARTIAL`,

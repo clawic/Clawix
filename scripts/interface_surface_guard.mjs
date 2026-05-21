@@ -244,11 +244,18 @@ if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible"))
 
 for (const [relativePath, snippet] of [
   ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"'],
+  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test'],
+  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"'],
   ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target macos-release'],
   ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target ios-release'],
   ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release'],
   ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
+  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release'],
   ["windows/scripts/build-release.ps1", 'scripts\\interface_surface_guard.mjs'],
+  ["windows/scripts/build-release.ps1", 'scripts\\release_external_pending_gate.mjs'],
 ]) {
   requireSnippet(relativePath, snippet);
 }

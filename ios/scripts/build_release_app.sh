@@ -25,6 +25,8 @@ echo "==> Capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 echo "==> ClawJS mirror release preflight"
 node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
+echo "==> External pending release preflight"
+node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target ios-release
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "ios-archive" ]]; then
     echo "ERROR: iOS archive release requires explicit approval for this exact action." >&2

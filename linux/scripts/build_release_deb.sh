@@ -25,6 +25,8 @@ echo "[deb] capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 echo "[deb] ClawJS mirror release preflight"
 node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
+echo "[deb] external pending release preflight"
+node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-deb" ]]; then
   echo "[deb] ERROR: Linux deb release requires explicit approval for this exact action." >&2

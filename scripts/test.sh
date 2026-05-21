@@ -148,6 +148,10 @@ web_tests() {
 }
 
 android_unit_tests() {
+  if [[ "${CLAWIX_SKIP_ANDROID_UNIT_TESTS:-0}" == "1" ]]; then
+    echo "PARTIAL Android unit tests skipped: CLAWIX_SKIP_ANDROID_UNIT_TESTS=1" >&2
+    return 0
+  fi
   if [[ -x "$ROOT_DIR/android/gradlew" ]]; then
     run "$ROOT_DIR/android/gradlew" -p "$ROOT_DIR/android" testDebugUnitTest
   else
@@ -164,20 +168,56 @@ e2e_tests() {
   bridge_fixture_tests
 }
 
+strict_external_pending() {
+  [[ "${CLAWIX_TEST_STRICT_EXTERNAL_PENDING:-0}" == "1" ]]
+}
+
+run_external_command() {
+  local lane="$1"
+  local command="$2"
+  local output_file="$SCRATCH_ROOT/${lane}-external-command.log"
+  set +e
+  bash -lc "$command" > >(tee "$output_file") 2> >(tee -a "$output_file" >&2)
+  local status=$?
+  set -e
+
+  if strict_external_pending && grep -q "EXTERNAL PENDING" "$output_file"; then
+    echo "FAIL: strict release $lane lane blocked because command output contains EXTERNAL PENDING" >&2
+    return 1
+  fi
+  if [[ "$status" -eq 2 ]]; then
+    if strict_external_pending; then
+      echo "FAIL: strict release $lane lane blocked because command exited with EXTERNAL PENDING status 2" >&2
+      return 1
+    fi
+    echo "EXTERNAL PENDING $lane lane: command exited with status 2" >&2
+    return 0
+  fi
+  return "$status"
+}
+
 host_tests() {
   if [[ -n "${CLAWIX_HOST_TEST_COMMAND:-}" ]]; then
-    run bash -lc "$CLAWIX_HOST_TEST_COMMAND"
+    run_external_command host "$CLAWIX_HOST_TEST_COMMAND"
   else
     echo "EXTERNAL PENDING host lane: set CLAWIX_HOST_TEST_COMMAND for signed-host validation" >&2
+    if strict_external_pending; then
+      echo "FAIL: strict release host lane blocked without signed-host validation command" >&2
+      return 1
+    fi
   fi
 }
 
 device_tests() {
   android_unit_tests
   if [[ -n "${CLAWIX_DEVICE_TEST_COMMAND:-}" ]]; then
-    run bash -lc "$CLAWIX_DEVICE_TEST_COMMAND"
+    run_external_command device "$CLAWIX_DEVICE_TEST_COMMAND"
   else
     echo "EXTERNAL PENDING device lane: set CLAWIX_DEVICE_TEST_COMMAND for simulator/device validation" >&2
+    if strict_external_pending; then
+      echo "FAIL: strict release device lane blocked without simulator/device validation command" >&2
+      return 1
+    fi
   fi
 }
 
@@ -207,6 +247,7 @@ fast() {
   run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/startup_release_contract_check.mjs"
@@ -340,9 +381,10 @@ case "$LANE" in
   release)
     run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
     integration "$@"
+    run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     e2e_tests
-    device_tests
-    host_tests
+    CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 device_tests
+    CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 host_tests
     ;;
   *)
     echo "Unknown test lane: $LANE" >&2
