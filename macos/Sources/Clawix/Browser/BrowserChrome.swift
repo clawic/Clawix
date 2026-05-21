@@ -59,7 +59,9 @@ struct BrowserTabStrip: View {
         .background(Color.black)
         .task(id: appState.visibleSidebarFaviconPrefetchSignature) {
             await appState.prefetchVisibleSidebarFavicons()
-            faviconCacheRefreshToken &+= 1
+            await MainActor.run {
+                faviconCacheRefreshToken &+= 1
+            }
         }
     }
 }
