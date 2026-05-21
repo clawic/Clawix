@@ -40,6 +40,51 @@ final class AppStateLazyDatabaseLaunchTests: XCTestCase {
         XCTAssertEqual(openCount, 0)
     }
 
+    func testAppStateInitDoesNotCreateSkillsStore() {
+        let state = AppState()
+
+        XCTAssertNil(state.skillsStore)
+    }
+
+    func testSkillsActiveSnapshotLoadsOnlyCompactActiveRecord() async {
+        var calls: [[String]] = []
+        let client = ClawJSFrameworkRecordsClient(runner: .init { args in
+            calls.append(args)
+            if args == ["skills", "get", "clawix-active-skills", "--json"] {
+                return Data("""
+                {
+                  "ok": true,
+                  "data": {
+                    "id": "active",
+                    "slug": "clawix-active-skills",
+                    "kind": "clawix_state",
+                    "name": "Clawix active skills",
+                    "body": "{\\"global\\":[{\\"slug\\":\\"review\\",\\"kind\\":\\"procedure\\",\\"scopeTag\\":\\"global\\",\\"priority\\":10,\\"params\\":null}]}",
+                    "metadata": { "surface": "skills.activeByScope" }
+                  }
+                }
+                """.utf8)
+            }
+            return Data(#"{"ok":true,"data":null}"#.utf8)
+        })
+        let chatId = UUID()
+        let state = AppState()
+        state.chats = [Chat(id: chatId, title: "Prompt prep")]
+        state.makeSkillsStore = { seedBuiltins, loadMode in
+            XCTAssertFalse(seedBuiltins)
+            XCTAssertEqual(loadMode, .none)
+            return SkillsStore(seedBuiltins: seedBuiltins, frameworkClient: client, loadMode: loadMode)
+        }
+
+        let snapshot = await state.skillsActiveSnapshot(for: chatId)
+
+        XCTAssertEqual(snapshot?.map(\.slug), ["review"])
+        XCTAssertEqual(snapshot?.first?.kind, "procedure")
+        XCTAssertEqual(snapshot?.first?.scope, "global")
+        XCTAssertEqual(snapshot?.first?.priority, 10)
+        XCTAssertEqual(calls, [["skills", "get", "clawix-active-skills", "--json"]])
+    }
+
     func testFirstPaintCachePopulatesSidebarState() throws {
         let projectID = UUID()
         let chatID = UUID()
