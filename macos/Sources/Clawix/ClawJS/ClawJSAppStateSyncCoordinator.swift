@@ -104,7 +104,7 @@ final class ClawJSAppStateSyncCoordinator {
     static let shared = ClawJSAppStateSyncCoordinator()
 
     private let dbProvider: @Sendable () -> DatabaseQueue?
-    private let sessionsClientProvider: () -> ClawJSSessionsClient
+    private let sessionsClientProvider: @MainActor () -> ClawJSSessionsClient
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let autoFlush: Bool
@@ -117,7 +117,7 @@ final class ClawJSAppStateSyncCoordinator {
     }
 
     init(dbProvider: @escaping @Sendable () -> DatabaseQueue? = { LazyDatabaseProvider.shared.dbQueue },
-         sessionsClientProvider: @escaping () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() },
+         sessionsClientProvider: @escaping @MainActor () -> ClawJSSessionsClient = { ClawJSSessionsClient.local() },
          autoFlush: Bool = true) {
         self.dbProvider = dbProvider
         self.sessionsClientProvider = sessionsClientProvider
