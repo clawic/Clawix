@@ -94,19 +94,6 @@
       "blocksRelease": false
     },
     {
-      "id": "macos-markdown-render-cache-parse",
-      "path": "macos/Sources/Clawix/AgentBackend/AssistantMarkdownText.swift",
-      "linePattern": "let parsed = MarkdownParseCache.parse(",
-      "riskKind": "markdown-parse-hot-path",
-      "ownerArea": "macos-chat",
-      "limitKind": "maxBytes",
-      "limitValue": "message markdown source",
-      "reason": "Existing macOS chat view asks the markdown cache for parsed content.",
-      "replacementPlan": "Keep incremental cache and add explicit source byte caps for parsed markdown.",
-      "expiresAt": "2026-08-19",
-      "blocksRelease": false
-    },
-    {
       "id": "macos-favicon-image-decode",
       "path": "macos/Sources/Clawix/Browser/FaviconCache.swift",
       "linePattern": "let img = NSImage(data: data) else { return nil }",

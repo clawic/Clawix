@@ -9,9 +9,9 @@ struct ToolGroupView: View {
     let items: [WorkItem]
     private let snapshot: ToolTimelinePresentationSnapshot
 
-    init(items: [WorkItem]) {
+    init(items: [WorkItem], presentation: ToolTimelinePresentationSnapshot? = nil) {
         self.items = items
-        self.snapshot = ToolTimelinePresentation.snapshot(for: items)
+        self.snapshot = presentation ?? ToolTimelinePresentation.snapshot(for: items)
     }
 
     var body: some View {
@@ -30,7 +30,8 @@ struct ToolGroupView: View {
                 if case .command(let text, _) = item.kind, let cmd = text, !cmd.isEmpty {
                     inlineRow(
                         prefix: String(localized: "Running", bundle: AppLocale.bundle, locale: AppLocale.current),
-                        body: cmd
+                        body: cmd,
+                        animated: item.id == activeRunningCommandId
                     )
                 }
             }
@@ -45,20 +46,32 @@ struct ToolGroupView: View {
         snapshot.runningCommands
     }
 
-    private func inlineRow(prefix: String, body: String) -> some View {
+    private var activeRunningCommandId: String? {
+        runningCommands.last?.id
+    }
+
+    @ViewBuilder
+    private func inlineRow(prefix: String, body: String, animated: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             TerminalIcon(size: 14)
                 .foregroundColor(Color(white: 0.45))
                 .frame(width: 16, alignment: .leading)
-            ShimmerText(
-                text: prefix + " " + body,
-                font: BodyFont.system(size: 13, wght: 500),
-                color: .white,
-                baseOpacity: 0.30,
-                peakOpacity: 0.80,
-                cycleDuration: 3.0,
-                radius: 6.0
-            )
+            if animated {
+                ShimmerText(
+                    text: prefix + " " + body,
+                    font: BodyFont.system(size: 13, wght: 500),
+                    color: .white,
+                    baseOpacity: 0.30,
+                    peakOpacity: 0.80,
+                    cycleDuration: 3.0,
+                    radius: 6.0
+                )
+            } else {
+                Text(verbatim: prefix + " " + body)
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color(white: 0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

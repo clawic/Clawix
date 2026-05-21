@@ -90,13 +90,17 @@ struct StreamCheckpoint: Equatable {
 enum AssistantTimelineEntry: Identifiable, Equatable {
     case reasoning(id: UUID, text: String)
     case message(id: UUID, text: String)
-    case tools(id: UUID, items: [WorkItem])
+    case tools(
+        id: UUID,
+        items: [WorkItem],
+        presentation: ToolTimelinePresentationSnapshot? = nil
+    )
 
     var id: UUID {
         switch self {
         case .reasoning(let id, _): return id
         case .message(let id, _):   return id
-        case .tools(let id, _):     return id
+        case .tools(let id, _, _):  return id
         }
     }
 }

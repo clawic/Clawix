@@ -47,7 +47,7 @@ extension AssistantTimelineEntry {
             return .reasoning(id: id.uuidString, text: text)
         case .message(let id, let text):
             return .message(id: id.uuidString, text: text)
-        case .tools(let id, let items):
+        case .tools(let id, let items, _):
             return .tools(id: id.uuidString, items: items.map { $0.toWire() })
         }
     }

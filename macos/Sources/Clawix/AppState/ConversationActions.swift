@@ -96,10 +96,16 @@ extension AppState {
             // First try to update an existing entry that already holds
             // this item id (handles started→completed transitions).
             for tIdx in msg.timeline.indices {
-                if case .tools(let gid, var items) = msg.timeline[tIdx],
+                if case .tools(let gid, var items, let presentation) = msg.timeline[tIdx],
                    let itemIdx = items.firstIndex(where: { $0.id == item.id }) {
+                    let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
+                        groupID: gid,
+                        previousItems: items,
+                        currentSnapshot: presentation,
+                        applying: item
+                    )
                     items[itemIdx] = item
-                    msg.timeline[tIdx] = .tools(id: gid, items: items)
+                    msg.timeline[tIdx] = .tools(id: gid, items: items, presentation: nextPresentation)
                     return
                 }
             }
@@ -109,15 +115,26 @@ extension AppState {
             // rollout reader so live-streamed chats render identically to
             // hydrated history.
             let canMerge: Bool = {
-                guard case .tools(_, let items) = msg.timeline.last,
+                guard case .tools(_, let items, _) = msg.timeline.last,
                       let last = items.last else { return false }
                 return TimelineFamily.from(last.kind).matches(item.kind)
             }()
-            if canMerge, case .tools(let gid, let items) = msg.timeline.last {
+            if canMerge, case .tools(let gid, let items, let presentation) = msg.timeline.last {
+                let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
+                    groupID: gid,
+                    previousItems: items,
+                    currentSnapshot: presentation,
+                    applying: item
+                )
                 msg.timeline[msg.timeline.count - 1] =
-                    .tools(id: gid, items: items + [item])
+                    .tools(id: gid, items: items + [item], presentation: nextPresentation)
             } else {
-                msg.timeline.append(.tools(id: UUID(), items: [item]))
+                let gid = UUID()
+                msg.timeline.append(.tools(
+                    id: gid,
+                    items: [item],
+                    presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
+                ))
             }
         }
     }

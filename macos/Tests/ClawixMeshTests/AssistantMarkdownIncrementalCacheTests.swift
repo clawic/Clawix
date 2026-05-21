@@ -2,6 +2,94 @@ import XCTest
 @testable import Clawix
 
 final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
+    @MainActor
+    func testRenderModelSkipsIdenticalRequest() async {
+        let counter = RenderModelParseCounter()
+        let model = AssistantMarkdownRenderModel { text, renderKey, phase in
+            await counter.increment()
+            return MarkdownParseCache.parse(text, renderKey: renderKey, phase: phase)
+        }
+        let request = AssistantMarkdownRenderRequest(
+            text: "Stable paragraph.",
+            renderKey: .custom(UUID().uuidString),
+            phase: .settled
+        )
+
+        XCTAssertTrue(model.request(request))
+        XCTAssertFalse(model.request(request))
+        await model.waitForCurrentRenderForTesting()
+
+        let parseCount = await counter.value()
+        XCTAssertEqual(parseCount, 1)
+        XCTAssertEqual(model.result?.document.text, request.text)
+    }
+
+    @MainActor
+    func testRenderModelIgnoresStaleResultAfterNewerRequest() async {
+        let model = AssistantMarkdownRenderModel { text, renderKey, phase in
+            if text == "slow" {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+            return MarkdownParseCache.parse(text, renderKey: renderKey, phase: phase)
+        }
+        let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+
+        XCTAssertTrue(model.request(AssistantMarkdownRenderRequest(text: "slow", renderKey: key, phase: .settled)))
+        XCTAssertTrue(model.request(AssistantMarkdownRenderRequest(text: "fast", renderKey: key, phase: .settled)))
+        await model.waitForCurrentRenderForTesting()
+        try? await Task.sleep(nanoseconds: 120_000_000)
+
+        XCTAssertEqual(model.result?.document.text, "fast")
+    }
+
+    @MainActor
+    func testRenderModelRestartsSameRequestAfterCancellationBeforeResult() async {
+        let counter = RenderModelParseCounter()
+        let model = AssistantMarkdownRenderModel { text, renderKey, phase in
+            await counter.increment()
+            if text == "pending" {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+            return MarkdownParseCache.parse(text, renderKey: renderKey, phase: phase)
+        }
+        let request = AssistantMarkdownRenderRequest(
+            text: "pending",
+            renderKey: .custom(UUID().uuidString),
+            phase: .settled
+        )
+
+        XCTAssertTrue(model.request(request))
+        await Task.yield()
+        model.cancel()
+        XCTAssertTrue(model.request(request))
+        await model.waitForCurrentRenderForTesting()
+
+        let parseCount = await counter.value()
+        XCTAssertGreaterThanOrEqual(parseCount, 1)
+        XCTAssertEqual(model.result?.document.text, "pending")
+    }
+
+    func testAnimatedSplitKeepsSettledBlocksOutsideTimelineTail() {
+        let now = Date()
+        let blocks = [
+            testIndexedBlock(id: "stable", range: 0..<12),
+            testIndexedBlock(id: "animated", range: 12..<30)
+        ]
+        let checkpoints = [
+            StreamCheckpoint(prefixCount: 12, addedAt: now.addingTimeInterval(-StreamingFade.duration - 1)),
+            StreamCheckpoint(prefixCount: 30, addedAt: now.addingTimeInterval(-StreamingFade.duration / 2))
+        ]
+
+        let split = AssistantMarkdownAnimationSplit.splitStableAndAnimatedBlocks(
+            blocks,
+            checkpoints: checkpoints,
+            now: now
+        )
+
+        XCTAssertEqual(split.stable.map(\.id), ["stable"])
+        XCTAssertEqual(split.animated.map(\.id), ["animated"])
+    }
+
     func testAppendOnlyTextReusesStableBlockIds() {
         let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
         let first = "First paragraph.\n\nSecond paragraph."
@@ -272,12 +360,7 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
     }
 
     private func testDocument(text: String, idPrefix: String) -> AssistantMarkdownDocument {
-        let block = IndexedAnnotatedBlock(
-            id: "\(idPrefix):0:0",
-            block: .paragraph(AnnotatedParagraph(lines: [])),
-            sourceRange: 0..<text.count,
-            codeBlockOrdinal: 0
-        )
+        let block = testIndexedBlock(id: "\(idPrefix):0:0", range: 0..<text.count)
         return AssistantMarkdownDocument(
             text: text,
             blocks: [block],
@@ -287,5 +370,26 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
             reusedBlockCount: 0,
             reparsedCharacterCount: text.count
         )
+    }
+
+    private func testIndexedBlock(id: String, range: Range<Int>) -> IndexedAnnotatedBlock {
+        IndexedAnnotatedBlock(
+            id: id,
+            block: .paragraph(AnnotatedParagraph(lines: [])),
+            sourceRange: range,
+            codeBlockOrdinal: 0
+        )
+    }
+}
+
+private actor RenderModelParseCounter {
+    private var count = 0
+
+    func increment() {
+        count += 1
+    }
+
+    func value() -> Int {
+        count
     }
 }

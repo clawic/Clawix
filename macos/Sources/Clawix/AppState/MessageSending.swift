@@ -183,13 +183,21 @@ extension AppState {
                         )
                     ]
                 )
+                let toolsGroupID = UUID()
                 chatStore.appendMessage(chatId: chatId, ChatMessage(
                     role: .assistant,
                     content: assistant.contentText,
                     timestamp: now,
                     workSummary: summary,
                     timeline: [
-                        .tools(id: UUID(), items: summary.items),
+                        .tools(
+                            id: toolsGroupID,
+                            items: summary.items,
+                            presentation: ToolTimelinePresentation.snapshot(
+                                groupID: toolsGroupID,
+                                items: summary.items
+                            )
+                        ),
                         .message(id: UUID(), text: assistant.contentText)
                     ]
                 ))
@@ -244,6 +252,8 @@ extension AppState {
             return
         }
         Task { @MainActor in
+            let lease = acquireLocalBridge(reason: .remoteTools)
+            defer { lease.release() }
             let result = await meshStore.startRemoteJob(
                 peer: peer,
                 workspacePath: workspace,
@@ -572,7 +582,12 @@ extension AppState {
         let messageIdString = messageId.uuidString
         Task { [weak self] in
             do {
-                await ClawJSServiceManager.shared.start([.audio], reason: .capability("audio catalog"))
+                let lease = await ClawJSServiceManager.shared.acquire(
+                    services: [.audio],
+                    reason: .capability("audio catalog"),
+                    consumer: "capability.audio.message"
+                )
+                defer { Task { await ClawJSServiceManager.shared.release(lease) } }
                 guard let client = await MainActor.run(body: { AudioCatalogBootstrap.shared.currentClient }) else {
                     throw ClawJSAudioClient.Error.serviceNotReady
                 }

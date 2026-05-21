@@ -163,7 +163,7 @@ struct AssistantMarkdownDocument {
     }
 }
 
-enum MarkdownParseCachePhase {
+enum MarkdownParseCachePhase: Hashable {
     case streamingIntermediate
     case settled
 }
@@ -512,27 +512,31 @@ struct AssistantMarkdownText: View {
     /// cached views.
     var findQuery: String = ""
     @EnvironmentObject var appState: AppState
+    @StateObject private var renderModel = AssistantMarkdownRenderModel()
     /// Bumped when the trailing fade window closes, so the body
     /// re-evaluates and tears down the `TimelineView` once nothing is
     /// animating any more.
     @State private var animationTick: Int = 0
 
+    init(
+        text: String,
+        renderKey: AssistantMarkdownRenderKey? = nil,
+        weight: Font.Weight,
+        color: Color,
+        checkpoints: [StreamCheckpoint] = [],
+        streamingFinished: Bool = true,
+        findQuery: String = ""
+    ) {
+        self.text = text
+        self.renderKey = renderKey
+        self.weight = weight
+        self.color = color
+        self.checkpoints = checkpoints
+        self.streamingFinished = streamingFinished
+        self.findQuery = findQuery
+    }
+
     var body: some View {
-        let parsed = MarkdownParseCache.parse(
-            text,
-            renderKey: renderKey,
-            phase: streamingFinished ? .settled : .streamingIntermediate
-        )
-        let blocks = parsed.blocks
-        let _ = streamingPerfLogEnabled && !parsed.cacheHit
-            && (!checkpoints.isEmpty || !streamingFinished)
-            ? logBodyTiming(parseMs: parsed.parseMs,
-                            annotateMs: parsed.annotateMs,
-                            len: text.count,
-                            blockCount: blocks.count,
-                            reusedBlockCount: parsed.reusedBlockCount,
-                            reparsedCharacterCount: parsed.reparsedCharacterCount)
-            : ()
         let now = Date()
         let animating = StreamingFade.isAnimating(
             checkpoints: checkpoints,
@@ -541,12 +545,26 @@ struct AssistantMarkdownText: View {
         )
 
         let renderCheckpoints = animating ? checkpoints : []
-        blocksView(blocks, checkpoints: renderCheckpoints, now: now)
+        blocksView(renderModel.blocks, checkpoints: renderCheckpoints, now: now)
+        .task(id: renderRequest) {
+            renderModel.request(renderRequest)
+        }
         .task(id: TickKey(timestamp: checkpoints.last?.addedAt, finished: streamingFinished)) {
             await scheduleSettle()
         }
+        .onDisappear {
+            renderModel.cancel()
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: accessibilityPlainText))
+    }
+
+    private var renderRequest: AssistantMarkdownRenderRequest {
+        AssistantMarkdownRenderRequest(
+            text: text,
+            renderKey: renderKey,
+            phase: streamingFinished ? .settled : .streamingIntermediate
+        )
     }
 
     private var accessibilityPlainText: String {
@@ -563,21 +581,6 @@ struct AssistantMarkdownText: View {
             try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
         }
         animationTick &+= 1
-    }
-
-    private func logBodyTiming(
-        parseMs: Double,
-        annotateMs: Double,
-        len: Int,
-        blockCount: Int,
-        reusedBlockCount: Int,
-        reparsedCharacterCount: Int
-    ) {
-        let line = String(
-            format: "body parse=%.2fms annotate=%.2fms len=%d blocks=%d reused=%d reparsed=%d cps=%d finished=%d",
-            parseMs, annotateMs, len, blockCount, reusedBlockCount, reparsedCharacterCount, checkpoints.count, streamingFinished ? 1 : 0
-        )
-        streamingPerfLog.log("\(line, privacy: .public)")
     }
 
     private struct TickKey: Hashable {
@@ -599,7 +602,11 @@ struct AssistantMarkdownText: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                let split = splitStableAndAnimatedBlocks(blocks, checkpoints: checkpoints, now: now)
+                let split = AssistantMarkdownAnimationSplit.splitStableAndAnimatedBlocks(
+                    blocks,
+                    checkpoints: checkpoints,
+                    now: now
+                )
                 ForEach(split.stable) { item in
                     blockView(
                         item.block,
@@ -710,40 +717,6 @@ struct AssistantMarkdownText: View {
         case .codeBlock(let language, let code):
             AssistantCodeBlockView(language: language, code: code, ordinal: codeBlockOrdinal)
         }
-    }
-
-    private func splitStableAndAnimatedBlocks(
-        _ blocks: [IndexedAnnotatedBlock],
-        checkpoints: [StreamCheckpoint],
-        now: Date
-    ) -> (stable: [IndexedAnnotatedBlock], animated: [IndexedAnnotatedBlock]) {
-        guard let animatedLowerBound = animatedSourceLowerBound(checkpoints: checkpoints, now: now) else {
-            return (blocks, [])
-        }
-        var stable: [IndexedAnnotatedBlock] = []
-        var animated: [IndexedAnnotatedBlock] = []
-        for block in blocks {
-            if block.sourceRange.upperBound <= animatedLowerBound {
-                stable.append(block)
-            } else {
-                animated.append(block)
-            }
-        }
-        return (stable, animated)
-    }
-
-    private func animatedSourceLowerBound(checkpoints: [StreamCheckpoint], now: Date) -> Int? {
-        guard !checkpoints.isEmpty else { return nil }
-        let activeIndex = checkpoints.firstIndex { checkpoint in
-            checkpoint.addedAt.addingTimeInterval(StreamingFade.duration) >= now
-        }
-        guard let activeIndex else {
-            return checkpoints.last?.prefixCount
-        }
-        if activeIndex == checkpoints.startIndex {
-            return 0
-        }
-        return checkpoints[checkpoints.index(before: activeIndex)].prefixCount
     }
 
     private func headingFontSize(_ level: Int) -> CGFloat {

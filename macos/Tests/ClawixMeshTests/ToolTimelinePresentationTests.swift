@@ -2,6 +2,97 @@ import XCTest
 @testable import Clawix
 
 final class ToolTimelinePresentationTests: XCTestCase {
+    func testIncrementalAppendAdvancesVersionAndMatchesFullSnapshot() {
+        let groupID = UUID()
+        let first = WorkItem(
+            id: "cmd-1",
+            kind: .command(text: "sed -n '1p' README.md", actions: [.read]),
+            status: .completed
+        )
+        let second = WorkItem(
+            id: "cmd-2",
+            kind: .command(text: "rg timeline", actions: [.search]),
+            status: .completed
+        )
+
+        let seed = ToolTimelinePresentation.snapshot(groupID: groupID, items: [first])
+        let updated = ToolTimelinePresentation.updatedSnapshot(
+            groupID: groupID,
+            previousItems: [first],
+            currentSnapshot: seed,
+            applying: second
+        )
+
+        XCTAssertEqual(updated.version, seed.version + 1)
+        XCTAssertEqual(updated.aggregateRows, ToolTimelinePresentation.aggregateRows(for: [first, second]))
+    }
+
+    func testIncrementalStatusTransitionMovesCommandOutOfRunningRows() {
+        let groupID = UUID()
+        let running = WorkItem(
+            id: "cmd-1",
+            kind: .command(text: "swift test", actions: []),
+            status: .inProgress
+        )
+        let completed = WorkItem(
+            id: "cmd-1",
+            kind: .command(text: "swift test", actions: []),
+            status: .completed
+        )
+
+        let seed = ToolTimelinePresentation.snapshot(groupID: groupID, items: [running])
+        XCTAssertEqual(seed.runningCommands, [running])
+        XCTAssertEqual(seed.aggregateRows, [])
+
+        let updated = ToolTimelinePresentation.updatedSnapshot(
+            groupID: groupID,
+            previousItems: [running],
+            currentSnapshot: seed,
+            applying: completed
+        )
+
+        XCTAssertEqual(updated.runningCommands, [])
+        XCTAssertEqual(updated.aggregateRows, ToolTimelinePresentation.aggregateRows(for: [completed]))
+    }
+
+    func testSameFamilyCommandGroupUsesVersionedAggregate() {
+        let groupID = UUID()
+        var items: [WorkItem] = [
+            WorkItem(id: "cmd-0", kind: .command(text: "pwd", actions: []), status: .completed)
+        ]
+        var snapshot = ToolTimelinePresentation.snapshot(groupID: groupID, items: items)
+
+        for index in 1..<50 {
+            let item = WorkItem(
+                id: "cmd-\(index)",
+                kind: .command(text: "pwd", actions: []),
+                status: .completed
+            )
+            snapshot = ToolTimelinePresentation.updatedSnapshot(
+                groupID: groupID,
+                previousItems: items,
+                currentSnapshot: snapshot,
+                applying: item
+            )
+            items.append(item)
+        }
+
+        XCTAssertEqual(snapshot.version, 49)
+        XCTAssertEqual(snapshot.aggregateRows, ToolTimelinePresentation.aggregateRows(for: items))
+    }
+
+    func testSeededSnapshotMatchesHydratedFullRows() {
+        let items = [
+            WorkItem(id: "web-1", kind: .webSearch, status: .completed),
+            WorkItem(id: "js-1", kind: .jsCall(title: "Inspect page", flavor: .browser), status: .completed),
+            WorkItem(id: "img-1", kind: .imageView, status: .completed)
+        ]
+
+        let snapshot = ToolTimelinePresentation.snapshot(groupID: UUID(), items: items)
+
+        XCTAssertEqual(snapshot.aggregateRows, ToolTimelinePresentation.aggregateRows(for: items))
+    }
+
     func testComputerUseMcpServerGetsCanonicalRow() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(

@@ -964,7 +964,12 @@ extension AppState {
             return UUID(uuidString: id).map { .message(id: $0, text: text) }
         case .tools(let id, let items):
             guard let uuid = UUID(uuidString: id) else { return nil }
-            return .tools(id: uuid, items: items.compactMap(workItem(from:)))
+            let workItems = items.compactMap(workItem(from:))
+            return .tools(
+                id: uuid,
+                items: workItems,
+                presentation: ToolTimelinePresentation.snapshot(groupID: uuid, items: workItems)
+            )
         }
     }
 

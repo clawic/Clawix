@@ -437,8 +437,8 @@ struct MessageRow: View, Equatable {
             messageEntryBody(entryId: entryId, text: text)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityHidden(!exposeMessageAccessibility)
-        case .tools(_, let items):
-            ToolGroupView(items: items)
+        case .tools(_, let items, let presentation):
+            ToolGroupView(items: items, presentation: presentation)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityHidden(!exposeMessageAccessibility)
         }
@@ -663,7 +663,7 @@ final class ChangedFilePathCache {
         var seen: Set<String> = []
         var result: [String] = []
         for entry in message.timeline {
-            guard case .tools(_, let items) = entry else { continue }
+            guard case .tools(_, let items, _) = entry else { continue }
             for item in items {
                 guard case .fileChange(let paths) = item.kind else { continue }
                 for path in paths where seen.insert(path).inserted {

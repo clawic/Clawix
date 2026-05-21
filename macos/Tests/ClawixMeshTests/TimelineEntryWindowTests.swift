@@ -44,6 +44,36 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(texts(in: expanded), (0..<12).map(String.init))
     }
 
+    func testVisibleWindowRemainsBoundedWhenToolGroupContainsManyItems() {
+        let tools = (0..<200).map { index in
+            WorkItem(
+                id: "cmd-\(index)",
+                kind: .command(text: "pwd", actions: []),
+                status: .completed
+            )
+        }
+        let toolGroupID = UUID()
+        let timeline = entries(count: 10) + [
+            .tools(
+                id: toolGroupID,
+                items: tools,
+                presentation: ToolTimelinePresentation.snapshot(groupID: toolGroupID, items: tools)
+            )
+        ]
+
+        let visible = TimelineEntryWindow.visibleEntries(
+            in: timeline,
+            isStreaming: true,
+            visibleLimit: 8
+        )
+
+        XCTAssertEqual(visible.count, 8)
+        XCTAssertTrue(visible.contains { entry in
+            if case .tools = entry { return true }
+            return false
+        })
+    }
+
     private func entries(count: Int) -> [AssistantTimelineEntry] {
         (0..<count).map { index in
             .message(id: UUID(), text: String(index))

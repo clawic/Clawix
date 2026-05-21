@@ -1026,11 +1026,26 @@ private struct PendingAssistant {
         )
         // Consecutive shell commands fold into the same tools group so the
         // aggregated row reads "Se han explorado 3 archivos, ran 1 command".
-        if case .tools(let groupId, let items) = timeline.last,
+        if case .tools(let groupId, let items, let presentation) = timeline.last,
            items.last.map({ TimelineFamily.command.matches($0.kind) }) ?? false {
-            timeline[timeline.count - 1] = .tools(id: groupId, items: items + [item])
+            let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
+                groupID: groupId,
+                previousItems: items,
+                currentSnapshot: presentation,
+                applying: item
+            )
+            timeline[timeline.count - 1] = .tools(
+                id: groupId,
+                items: items + [item],
+                presentation: nextPresentation
+            )
         } else {
-            timeline.append(.tools(id: UUID(), items: [item]))
+            let groupId = UUID()
+            timeline.append(.tools(
+                id: groupId,
+                items: [item],
+                presentation: ToolTimelinePresentation.snapshot(groupID: groupId, items: [item])
+            ))
         }
     }
 
@@ -1038,14 +1053,21 @@ private struct PendingAssistant {
     /// that arrived before its exec_command_end) with the richer payload.
     mutating func updateCommand(id: String, text: String?, actions: [CommandActionKind]) {
         for tIdx in timeline.indices {
-            if case .tools(let gid, var items) = timeline[tIdx],
+            if case .tools(let gid, var items, let presentation) = timeline[tIdx],
                let itemIdx = items.firstIndex(where: { $0.id == id }) {
-                items[itemIdx] = WorkItem(
+                let item = WorkItem(
                     id: id,
                     kind: .command(text: text, actions: actions),
                     status: .completed
                 )
-                timeline[tIdx] = .tools(id: gid, items: items)
+                let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
+                    groupID: gid,
+                    previousItems: items,
+                    currentSnapshot: presentation,
+                    applying: item
+                )
+                items[itemIdx] = item
+                timeline[tIdx] = .tools(id: gid, items: items, presentation: nextPresentation)
                 return
             }
         }
@@ -1057,17 +1079,37 @@ private struct PendingAssistant {
     /// stacked between reasoning paragraphs.
     mutating func appendOther(_ item: WorkItem) {
         let openNew: Bool
-        if case .tools(_, let items) = timeline.last, let last = items.last {
+        if case .tools(_, let items, _) = timeline.last, let last = items.last {
             openNew = !TimelineFamily.from(last.kind).matches(item.kind)
         } else {
             openNew = true
         }
         if openNew {
-            timeline.append(.tools(id: UUID(), items: [item]))
-        } else if case .tools(let gid, let items) = timeline.last {
-            timeline[timeline.count - 1] = .tools(id: gid, items: items + [item])
+            let gid = UUID()
+            timeline.append(.tools(
+                id: gid,
+                items: [item],
+                presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
+            ))
+        } else if case .tools(let gid, let items, let presentation) = timeline.last {
+            let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
+                groupID: gid,
+                previousItems: items,
+                currentSnapshot: presentation,
+                applying: item
+            )
+            timeline[timeline.count - 1] = .tools(
+                id: gid,
+                items: items + [item],
+                presentation: nextPresentation
+            )
         } else {
-            timeline.append(.tools(id: UUID(), items: [item]))
+            let gid = UUID()
+            timeline.append(.tools(
+                id: gid,
+                items: [item],
+                presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
+            ))
         }
     }
 
