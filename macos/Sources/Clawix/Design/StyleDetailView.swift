@@ -88,7 +88,7 @@ struct StyleDetailView: View {
                 Button("Delete", role: .destructive) {
                     do {
                         try store.deleteStyle(style)
-                        appState.currentRoute = .designStylesHome
+                        appState.navigate(to: .designStylesHome)
                     } catch {
                         saveError = error.localizedDescription
                     }
@@ -110,7 +110,7 @@ struct StyleDetailView: View {
     private func header(_ style: StyleManifest) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Button {
-                appState.currentRoute = .designStylesHome
+                appState.navigate(to: .designStylesHome)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.left")
@@ -850,7 +850,7 @@ struct StyleDetailView: View {
         guard let style = currentStyle else { return }
         do {
             let newId = try store.duplicateStyle(style)
-            appState.currentRoute = .designStyleDetail(id: newId)
+            appState.navigate(to: .designStyleDetail(id: newId))
         } catch {
             saveError = error.localizedDescription
         }
@@ -983,7 +983,7 @@ struct StyleDetailView: View {
                 .font(BodyFont.system(size: 15, wght: 500))
                 .foregroundColor(Color(white: 0.70))
             Button("Back to styles") {
-                appState.currentRoute = .designStylesHome
+                appState.navigate(to: .designStylesHome)
             }
             .buttonStyle(.plain)
             .padding(.top, 6)

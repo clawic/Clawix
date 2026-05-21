@@ -119,7 +119,7 @@ struct SecretsSettingsPage: View {
                 IconChipButton(
                     symbol: "arrow.up.right.square",
                     label: "Open",
-                    action: { appState.currentRoute = .secretsHome }
+                    action: { appState.navigate(to: .secretsHome) }
                 )
             }
             CardDivider()

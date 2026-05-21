@@ -81,7 +81,7 @@ struct AppsHomeView: View {
                     ], spacing: 18) {
                         ForEach(filteredApps) { record in
                             AppCard(record: record) {
-                                appState.currentRoute = .app(record.id)
+                                appState.navigate(to: .app(record.id))
                             } onDelete: {
                                 pendingDelete = record
                             }
@@ -173,7 +173,7 @@ struct AppsHomeView: View {
         do {
             let imported = try appsStore.importApp(from: sourceURL, originClass: .imported)
             ToastCenter.shared.show("Imported \(imported.name)")
-            appState.currentRoute = .app(imported.id)
+            appState.navigate(to: .app(imported.id))
         } catch {
             ToastCenter.shared.show(error.localizedDescription, icon: .error)
         }

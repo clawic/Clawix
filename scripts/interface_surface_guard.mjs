@@ -240,6 +240,18 @@ if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible"))
   fail("SurfaceRouterView must compute route-demanded services through FeatureFlags visibility");
 }
 
+const gatedRouteAssignmentPattern = /currentRoute\s*=\s*\.(app\(|appsHome\b|secretsHome\b|databaseHome\b|databaseWorkbench\b|databaseCollection\(|indexHome\b|marketplaceHome\b|calendarHome\b|contactsHome\b|skills\b|skillDetail\(|iotHome\b|iotDeviceDetail\(|designStylesHome\b|designStyleDetail\(|designTemplatesHome\b|designTemplateDetail\(|designReferencesHome\b|designEditor\(|agentsHome\b|agentDetail\(|personalitiesHome\b|personalityDetail\(|skillCollectionsHome\b|skillCollectionDetail\(|connectionsHome\b|connectionDetail\(|publishingHome\b|publishingComposer\(|publishingChannels\b|lifeHome\b|lifeVertical\(|lifeSettings\b)/;
+for (const relativePath of listFiles("macos/Sources/Clawix", ".swift")) {
+  if (relativePath === "macos/Sources/Clawix/AppState.swift") continue;
+  const source = read(relativePath);
+  const lines = source.split(/\r?\n/);
+  for (const [index, line] of lines.entries()) {
+    if (gatedRouteAssignmentPattern.test(line)) {
+      fail(`${relativePath}:${index + 1} must open gated routes with appState.navigate(to:) so maturity visibility is enforced`);
+    }
+  }
+}
+
 const v1ClosureSurfaceRequirements = {
   publishing: {
     matrix: ["| Publishing |", "`claw content brand|destination|campaign|entry|approval|publish`", "live channel publish `EXTERNAL PENDING`"],

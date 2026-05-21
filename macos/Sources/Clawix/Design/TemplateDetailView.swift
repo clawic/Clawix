@@ -58,7 +58,7 @@ struct TemplateDetailView: View {
     private func header(_ template: TemplateManifest) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Button {
-                appState.currentRoute = .designTemplatesHome
+                appState.navigate(to: .designTemplatesHome)
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.left")
@@ -120,7 +120,7 @@ struct TemplateDetailView: View {
                 styleId: styleId,
                 variantId: selectedVariantId
             )
-            appState.currentRoute = .designEditor(documentId: document.id)
+            appState.navigate(to: .designEditor(documentId: document.id))
         } catch {
             editorCreationError = "Could not open the template in the editor: \(error.localizedDescription)"
         }
@@ -387,7 +387,7 @@ struct TemplateDetailView: View {
                 .font(BodyFont.system(size: 15, wght: 500))
                 .foregroundColor(Color(white: 0.70))
             Button("Back to templates") {
-                appState.currentRoute = .designTemplatesHome
+                appState.navigate(to: .designTemplatesHome)
             }
             .buttonStyle(.plain)
             .padding(.top, 6)

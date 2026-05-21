@@ -85,15 +85,15 @@ struct DatabaseSearchOverlay: View {
                 .padding(.horizontal, 14)
                 .padding(.top, 12)
             actionRow(label: "New task", systemIcon: "checkmark.circle") {
-                appState.currentRoute = .databaseCollection("tasks")
+                appState.navigate(to: .databaseCollection("tasks"))
                 isPresented = false
             }
             actionRow(label: "New note", systemIcon: "note.text") {
-                appState.currentRoute = .databaseCollection("notes")
+                appState.navigate(to: .databaseCollection("notes"))
                 isPresented = false
             }
             actionRow(label: "Open Database admin", systemIcon: "cylinder.split.1x2") {
-                appState.currentRoute = .databaseHome
+                appState.navigate(to: .databaseHome)
                 isPresented = false
             }
         }
@@ -120,7 +120,7 @@ struct DatabaseSearchOverlay: View {
 
     private func resultRow(_ result: Result) -> some View {
         Button {
-            appState.currentRoute = .databaseCollection(result.collection)
+            appState.navigate(to: .databaseCollection(result.collection))
             isPresented = false
         } label: {
             HStack(alignment: .top, spacing: 10) {

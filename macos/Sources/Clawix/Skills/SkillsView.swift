@@ -260,7 +260,7 @@ struct SkillsView: View {
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 14) {
             ForEach(filteredSkills) { skill in
                 SkillCardView(skill: skill, store: store) {
-                    appState.currentRoute = .skillDetail(slug: skill.slug)
+                    appState.navigate(to: .skillDetail(slug: skill.slug))
                 }
             }
         }

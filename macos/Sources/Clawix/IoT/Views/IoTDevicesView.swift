@@ -19,7 +19,7 @@ struct IoTDevicesView: View {
                     } else {
                         ForEach(grouped, id: \.0) { section in
                             AreaSection(label: section.0, devices: section.1) { device in
-                                appState.currentRoute = .iotDeviceDetail(id: device.id)
+                                appState.navigate(to: .iotDeviceDetail(id: device.id))
                             }
                         }
                     }

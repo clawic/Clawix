@@ -125,7 +125,7 @@ struct EditorView: View {
         HStack(spacing: 12) {
             Button {
                 flushPendingSave()
-                appState.currentRoute = .designTemplateDetail(id: template.id)
+                appState.navigate(to: .designTemplateDetail(id: template.id))
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.left")
@@ -322,7 +322,7 @@ struct EditorView: View {
         let templateId = doc.templateId
         do {
             try store.delete(doc)
-            appState.currentRoute = .designTemplateDetail(id: templateId)
+            appState.navigate(to: .designTemplateDetail(id: templateId))
         } catch {
             saveError = error.localizedDescription
         }
@@ -407,7 +407,7 @@ struct EditorView: View {
                 .font(BodyFont.system(size: 15, wght: 500))
                 .foregroundColor(Color(white: 0.70))
             Button("Back to templates") {
-                appState.currentRoute = .designTemplatesHome
+                appState.navigate(to: .designTemplatesHome)
             }
             .buttonStyle(.plain)
             .padding(.top, 6)

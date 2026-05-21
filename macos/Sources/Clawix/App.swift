@@ -636,7 +636,7 @@ private struct MenuBarContent: View {
             Section {
                 Menu {
                     Button {
-                        appState.currentRoute = .secretsHome
+                        appState.navigate(to: .secretsHome)
                         openMainWindow()
                     } label: {
                         Label("Show Secrets", systemImage: "tray.full")
@@ -661,14 +661,14 @@ private struct MenuBarContent: View {
                             .foregroundColor(.secondary)
                     case .locked:
                         Button {
-                            appState.currentRoute = .secretsHome
+                            appState.navigate(to: .secretsHome)
                             openMainWindow()
                         } label: {
                             Label("Unlock…", systemImage: "lock.open.fill")
                         }
                     case .uninitialized:
                         Button {
-                            appState.currentRoute = .secretsHome
+                            appState.navigate(to: .secretsHome)
                             openMainWindow()
                         } label: {
                             Label("Set up Secrets…", systemImage: "key.fill")

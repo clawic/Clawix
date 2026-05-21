@@ -39,7 +39,7 @@ struct AppsSidebarSection: View {
                             AppsSidebarRow(
                                 record: record,
                                 isSelected: isSelected(record),
-                                onOpen: { appState.currentRoute = .app(record.id) },
+                                onOpen: { appState.navigate(to: .app(record.id)) },
                                 onTogglePin: { appsStore.togglePinned(record) },
                                 onDelete: { pendingDelete = record }
                             )
@@ -81,7 +81,7 @@ struct AppsSidebarSection: View {
                     .tracking(0.4)
                 Spacer()
                 Button {
-                    appState.currentRoute = .appsHome
+                    appState.navigate(to: .appsHome)
                 } label: {
                     Image(systemName: "square.grid.2x2.fill")
                         .font(.system(size: 11, weight: .semibold))
@@ -118,7 +118,7 @@ struct AppsSidebarSection: View {
 
     private var allAppsButton: some View {
         Button {
-            appState.currentRoute = .appsHome
+            appState.navigate(to: .appsHome)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "ellipsis.circle")

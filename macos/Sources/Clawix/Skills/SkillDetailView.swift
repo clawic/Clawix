@@ -39,7 +39,7 @@ struct SkillDetailView: View {
                 message: Text("This removes the skill from your local catalog. This cannot be undone."),
                 primaryButton: .destructive(Text("Delete")) {
                     store?.remove(slug: skill.slug)
-                    appState.currentRoute = .skills
+                    appState.navigate(to: .skills)
                 },
                 secondaryButton: .cancel()
             )
@@ -75,7 +75,7 @@ struct SkillDetailView: View {
     }
 
     private var backLink: some View {
-        Button { appState.currentRoute = .skills } label: {
+        Button { appState.navigate(to: .skills) } label: {
             HStack(spacing: 5) {
                 Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
                 Text("All skills").font(.system(size: 12, weight: .medium))
@@ -280,7 +280,7 @@ struct SkillDetailView: View {
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                 Button("Open Secrets") {
-                    appState.currentRoute = .secretsHome
+                    appState.navigate(to: .secretsHome)
                 }
                 .font(.system(size: 11, weight: .semibold))
             }
@@ -357,7 +357,7 @@ struct SkillDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "link").font(.system(size: 11)).foregroundColor(.secondary)
                         Text("Template:").font(.system(size: 11)).foregroundColor(.secondary)
-                        Button { appState.currentRoute = .skillDetail(slug: template.slug) } label: {
+                        Button { appState.navigate(to: .skillDetail(slug: template.slug)) } label: {
                             Text(template.name).font(.system(size: 12, weight: .medium)).foregroundColor(.accentColor)
                         }
                         .buttonStyle(.plain)
@@ -521,7 +521,7 @@ struct SkillDetailView: View {
                 .font(.system(size: 36, weight: .light))
                 .foregroundColor(.secondary)
             Text("Skill not found.").font(.system(size: 15, weight: .semibold))
-            Button("Back to all skills") { appState.currentRoute = .skills }
+            Button("Back to all skills") { appState.navigate(to: .skills) }
                 .buttonStyle(.plain)
                 .foregroundColor(.accentColor)
         }

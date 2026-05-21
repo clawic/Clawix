@@ -57,7 +57,7 @@ struct AppsSettingsPage: View {
                             AppsSettingsRow(
                                 record: record,
                                 variantDefault: variantDefaultPresentation(for: record),
-                                onOpen: { appState.currentRoute = .app(record.id) },
+                                onOpen: { appState.navigate(to: .app(record.id)) },
                                 onTogglePin: { appsStore.togglePinned(record) },
                                 onToggleInternet: { toggleInternet(record) },
                                 onSetUserDefault: { setVariantDefault(record, scope: .user) },

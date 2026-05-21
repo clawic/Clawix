@@ -35,7 +35,7 @@ struct StylesHomeView: View {
                     ], spacing: 18) {
                         ForEach(filteredStyles) { style in
                             StyleCard(style: style) {
-                                appState.currentRoute = .designStyleDetail(id: style.id)
+                                appState.navigate(to: .designStyleDetail(id: style.id))
                             }
                         }
                     }

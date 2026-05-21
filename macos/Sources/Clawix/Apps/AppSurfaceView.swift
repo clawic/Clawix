@@ -136,7 +136,7 @@ struct AppSurfaceView: View {
             .help("Reload app")
 
             Button {
-                appState.currentRoute = .appsHome
+                appState.navigate(to: .appsHome)
             } label: {
                 Image(systemName: "square.grid.2x2")
                     .font(.system(size: 11, weight: .semibold))

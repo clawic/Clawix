@@ -139,7 +139,7 @@ struct TemplatesHomeView: View {
                 ForEach(list) { template in
                     TemplateCard(template: template,
                                  previewStyle: previewStyle()) {
-                        appState.currentRoute = .designTemplateDetail(id: template.id)
+                        appState.navigate(to: .designTemplateDetail(id: template.id))
                     }
                 }
             }

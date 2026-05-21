@@ -124,7 +124,7 @@ struct DatabaseWorkbenchCommands: View {
     }
 
     private func openWorkbench() {
-        appState.currentRoute = .databaseWorkbench
+        appState.navigate(to: .databaseWorkbench)
         ToastCenter.shared.show("Database workbench opened")
     }
 
@@ -196,7 +196,7 @@ struct DatabaseWorkbenchMenuBarSection: View {
         Section {
             Menu {
                 Button {
-                    appState.currentRoute = .databaseWorkbench
+                    appState.navigate(to: .databaseWorkbench)
                     openMainWindow()
                 } label: {
                     Label("Open Workbench", systemImage: "cylinder.split.1x2")
@@ -233,7 +233,7 @@ struct DatabaseWorkbenchMenuBarSection: View {
 
                 Button {
                     session.newDraft()
-                    appState.currentRoute = .databaseWorkbench
+                    appState.navigate(to: .databaseWorkbench)
                     openMainWindow()
                 } label: {
                     Label("New Query Draft", systemImage: "doc.badge.plus")

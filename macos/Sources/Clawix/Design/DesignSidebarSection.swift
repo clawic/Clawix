@@ -21,21 +21,21 @@ struct DesignSidebarSection: View {
                         icon: "paintpalette",
                         count: store.styles.count,
                         isSelected: isSelected(.designStylesHome),
-                        onOpen: { appState.currentRoute = .designStylesHome }
+                        onOpen: { appState.navigate(to: .designStylesHome) }
                     )
                     DesignSidebarRow(
                         title: "Templates",
                         icon: "rectangle.grid.2x2",
                         count: store.templates.count,
                         isSelected: isSelected(.designTemplatesHome),
-                        onOpen: { appState.currentRoute = .designTemplatesHome }
+                        onOpen: { appState.navigate(to: .designTemplatesHome) }
                     )
                     DesignSidebarRow(
                         title: "References",
                         icon: "books.vertical",
                         count: store.references.count,
                         isSelected: isSelected(.designReferencesHome),
-                        onOpen: { appState.currentRoute = .designReferencesHome }
+                        onOpen: { appState.navigate(to: .designReferencesHome) }
                     )
                     Color.clear.frame(height: 9.75)
                 }

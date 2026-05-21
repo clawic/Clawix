@@ -59,7 +59,7 @@ struct SkillsChipBar: View {
             return "circle"
         }()
         return Button {
-            appState.currentRoute = .skillDetail(slug: state.slug)
+            appState.navigate(to: .skillDetail(slug: state.slug))
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: state.kind.icon)
@@ -84,7 +84,7 @@ struct SkillsChipBar: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button("Open detail") {
-                appState.currentRoute = .skillDetail(slug: state.slug)
+                appState.navigate(to: .skillDetail(slug: state.slug))
             }
             if let chatId {
                 Button("Deactivate for this chat") {

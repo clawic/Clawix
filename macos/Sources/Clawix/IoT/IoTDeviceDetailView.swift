@@ -38,7 +38,7 @@ struct IoTDeviceDetailView: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 10) {
                 Button {
-                    appState.currentRoute = .iotHome
+                    appState.navigate(to: .iotHome)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
@@ -184,7 +184,7 @@ struct IoTDeviceDetailView: View {
         defer { removing = false }
         do {
             try await manager.removeDevice(device)
-            appState.currentRoute = .iotHome
+            appState.navigate(to: .iotHome)
         } catch {
             errorMessage = error.localizedDescription
         }
