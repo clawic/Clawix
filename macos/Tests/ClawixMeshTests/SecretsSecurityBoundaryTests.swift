@@ -3,7 +3,7 @@ import XCTest
 
 final class SecretsSecurityBoundaryTests: XCTestCase {
     func testSecretsServiceDoesNotUseDiskAdminTokenFallback() throws {
-        let source = try readSource("ClawJS/ClawJSServiceManager.swift")
+        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
 
         XCTAssertFalse(
             source.contains("adminTokenFromTokenFile(for: .secrets)"),
@@ -28,11 +28,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     }
 
     func testSecretsServiceDoesNotExposeTokensInEnvironment() throws {
-        let source = try readSource("ClawJS/ClawJSServiceManager.swift")
+        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
         let environmentBody = try extractFunctionBody(
-            named: "private static func environment(",
+            named: "private nonisolated static func environment(",
             from: source,
-            until: "    private static func secretsBootstrapPayload"
+            until: "    private nonisolated static func secretsBootstrapPayload"
         )
 
         XCTAssertTrue(
@@ -62,11 +62,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     }
 
     func testIntegratedServiceTokensUseStdinBootstrapNotEnvironmentOrDisk() throws {
-        let source = try readSource("ClawJS/ClawJSServiceManager.swift")
+        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
         let environmentBody = try extractFunctionBody(
-            named: "private static func environment(",
+            named: "private nonisolated static func environment(",
             from: source,
-            until: "    private static func secretsBootstrapPayload"
+            until: "    private nonisolated static func secretsBootstrapPayload"
         )
 
         XCTAssertTrue(
@@ -105,7 +105,7 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     }
 
     func testSecretsServiceUsesKeychainPlatformKeyForKekBootstrap() throws {
-        let managerSource = try readSource("ClawJS/ClawJSServiceManager.swift")
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
         let clientSource = try readSource("ClawJS/ClawJSSecretsClient.swift")
         let lockScreenSource = try readSource("Secrets/SecretsLockScreen.swift")
         let reauthSource = try readSource("Secrets/SecretsReauthentication.swift")
@@ -117,11 +117,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         let devScript = try readProjectSource("scripts/dev.sh")
 
         XCTAssertTrue(
-            managerSource.contains("SecretsPlatformKey.loadOrCreate()"),
+            supervisorSource.contains("SecretsPlatformKey.loadOrCreate()"),
             "Secrets launch must provide a host-protected platform KEK to the ClawJS vault."
         )
         XCTAssertTrue(
-            managerSource.contains("payload[\"kekBase64\"] = platformKey.base64EncodedString()"),
+            supervisorSource.contains("payload[\"kekBase64\"] = platformKey.base64EncodedString()"),
             "The platform KEK should travel only in the anonymous bootstrap payload."
         )
         XCTAssertTrue(

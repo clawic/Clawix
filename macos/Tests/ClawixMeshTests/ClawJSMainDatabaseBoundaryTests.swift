@@ -20,6 +20,7 @@ final class ClawJSMainDatabaseBoundaryTests: XCTestCase {
 
         let allowedSuffixes: Set<String> = [
             "ClawJS/ClawJSServiceManager.swift",
+            "ClawJS/ClawJSServiceSupervisor.swift",
         ]
         let forbiddenTerms = [
             "clawjs.sqlite",

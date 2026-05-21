@@ -63,13 +63,15 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertFalse(source.contains("ClawJSServiceManager.shared.start()"))
     }
 
-    func testManagerStartAPIIteratesOnlyRequestedServices() throws {
-        let source = try readSource("ClawJS/ClawJSServiceManager.swift")
+    func testManagerStartAPIDelegatesOnlyRequestedServices() throws {
+        let managerSource = try readSource("ClawJS/ClawJSServiceManager.swift")
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
 
-        XCTAssertTrue(source.contains("func start(_ services: Set<ClawJSService>, reason: ClawJSServiceStartReason) async"))
-        XCTAssertTrue(source.contains("await startDaemonAwareServices(services)"))
-        XCTAssertTrue(source.contains("for service in orderedServices(from: services)"))
-        XCTAssertFalse(source.contains("for service in ClawJSService.allCases {\n            await launchLocal(service)"))
+        XCTAssertTrue(managerSource.contains("func start(_ services: Set<ClawJSService>, reason: ClawJSServiceStartReason) async"))
+        XCTAssertTrue(managerSource.contains("await supervisor.start("))
+        XCTAssertTrue(supervisorSource.contains("await startDaemonAwareServices(services)"))
+        XCTAssertTrue(supervisorSource.contains("for service in orderedServices(from: services)"))
+        XCTAssertFalse(supervisorSource.contains("for service in ClawJSService.allCases {\n            await launchLocal(service)"))
     }
 
     func testSettingsSerializesAvailableOnDemandStatus() throws {
