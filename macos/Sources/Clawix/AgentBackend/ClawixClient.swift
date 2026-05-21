@@ -18,6 +18,7 @@ enum ClawixClientError: Error, CustomStringConvertible {
     case rpcError(code: Int, message: String)
     case invalidResponse(String)
     case decodingError(String)
+    case frameTooLarge(bytes: Int, maxBytes: Int)
 
     var description: String {
         switch self {
@@ -33,14 +34,16 @@ enum ClawixClientError: Error, CustomStringConvertible {
             return "Invalid response: \(s)"
         case .decodingError(let s):
             return "Decoding error: \(s)"
+        case .frameTooLarge(let bytes, let maxBytes):
+            return "Backend JSON-RPC frame too large: \(bytes) bytes exceeds \(maxBytes) bytes."
         }
     }
 }
 
 /// Server-initiated message that the host app may want to react to.
 enum ClawixServerEvent {
-    case notification(method: String, params: JSONValue?)
-    case request(id: ClawixRPCID, method: String, params: JSONValue?)
+    case notification(ClawixServerNotification)
+    case request(ClawixServerRequest)
 }
 
 actor ClawixClient {
@@ -52,11 +55,12 @@ actor ClawixClient {
     private var stdinPipe: Pipe?
     private var stdoutPipe: Pipe?
     private var stderrPipe: Pipe?
-    private var readBuffer = Data()
+    private var stdoutFramer = ClawixStdoutFramer()
+    private let frameDecoder = ClawixFrameDecoder()
     private var stderrLogHandle: FileHandle?
 
     private var nextRequestId: Int = 1
-    private var pending: [Int: CheckedContinuation<JSONValue?, Error>] = [:]
+    private var pending: [Int: PendingResponse] = [:]
 
     private var eventsContinuation: AsyncStream<ClawixServerEvent>.Continuation?
     nonisolated let events: AsyncStream<ClawixServerEvent>
@@ -134,11 +138,11 @@ actor ClawixClient {
         stdinPipe = nil
         stdoutPipe = nil
         stderrPipe = nil
-        readBuffer.removeAll()
+        stdoutFramer.reset()
         try? stderrLogHandle?.close()
         stderrLogHandle = nil
         // Fail any in-flight requests
-        for (_, c) in pending { c.resume(throwing: ClawixClientError.notRunning) }
+        for response in pending.values { response.resume(throwing: ClawixClientError.notRunning) }
         pending.removeAll()
     }
 
@@ -148,47 +152,50 @@ actor ClawixClient {
             try? log.write(contentsOf: Data(line.utf8))
         }
         process = nil
-        for (_, c) in pending { c.resume(throwing: ClawixClientError.notRunning) }
+        for response in pending.values { response.resume(throwing: ClawixClientError.notRunning) }
         pending.removeAll()
     }
 
     // MARK: - Public requests
 
     func send<P: Encodable, R: Decodable>(method: String, params: P, expecting: R.Type) async throws -> R {
-        let raw = try await sendRaw(method: method, params: params)
-        guard let raw else {
-            throw ClawixClientError.invalidResponse("Empty result for \(method)")
+        guard process != nil else { throw ClawixClientError.notRunning }
+        let id = nextRequestId
+        nextRequestId += 1
+        let req = ClawixOutgoingRequest(id: id, method: method, params: params)
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<R, Error>) in
+            pending[id] = PendingResponse(
+                resumeFrame: { [frameDecoder] data in
+                    do {
+                        let result = try await frameDecoder.decodeResponse(data, expecting: R.self)
+                        continuation.resume(returning: result)
+                    } catch let error as ClawixClientError {
+                        switch error {
+                        case .rpcError:
+                            continuation.resume(throwing: error)
+                        default:
+                            continuation.resume(throwing: ClawixClientError.decodingError("\(method): \(error)"))
+                        }
+                    } catch {
+                        continuation.resume(throwing: ClawixClientError.decodingError("\(method): \(error)"))
+                    }
+                },
+                resumeError: { error in
+                    continuation.resume(throwing: error)
+                }
+            )
+            do {
+                try writeFrame(req)
+            } catch {
+                _ = pending.removeValue(forKey: id)
+                continuation.resume(throwing: error)
+            }
         }
-        do {
-            return try raw.decode(R.self)
-        } catch {
-            throw ClawixClientError.decodingError("\(method): \(error)")
-        }
-    }
-
-    func send<P: Encodable>(method: String, params: P) async throws -> JSONValue? {
-        try await sendRaw(method: method, params: params)
     }
 
     func notify<P: Encodable>(method: String, params: P) throws {
         let n = ClawixOutgoingNotification(method: method, params: params)
         try writeFrame(n)
-    }
-
-    private func sendRaw<P: Encodable>(method: String, params: P) async throws -> JSONValue? {
-        guard process != nil else { throw ClawixClientError.notRunning }
-        let id = nextRequestId
-        nextRequestId += 1
-        let req = ClawixOutgoingRequest(id: id, method: method, params: params)
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<JSONValue?, Error>) in
-            pending[id] = continuation
-            do {
-                try writeFrame(req)
-            } catch {
-                pending.removeValue(forKey: id)
-                continuation.resume(throwing: error)
-            }
-        }
     }
 
     /// Resolve a server-initiated request (server -> client). v1 callers
@@ -228,22 +235,26 @@ actor ClawixClient {
         }
     }
 
-    private func appendStdout(_ data: Data) {
-        readBuffer.append(data)
-        while let nl = readBuffer.firstIndex(of: 0x0a) {
-            let line = readBuffer.subdata(in: 0 ..< nl)
-            readBuffer.removeSubrange(0 ... nl)
-            if line.isEmpty { continue }
-            handleLine(line)
+    private func appendStdout(_ data: Data) async {
+        let frames: [Data]
+        do {
+            frames = try stdoutFramer.append(data)
+        } catch {
+            failBackend(error)
+            return
+        }
+        for frame in frames {
+            await handleFrame(frame)
         }
     }
 
-    private func handleLine(_ data: Data) {
-        let decoder = JSONDecoder()
-        let decoded: ClawixIncomingMessage? = PerfSignpost.ipcClient.interval("decode") {
-            try? decoder.decode(ClawixIncomingMessage.self, from: data)
-        }
-        guard let msg = decoded else {
+    private func handleFrame(_ data: Data) async {
+        emitFrameSizeSignposts(bytes: data.count)
+        let header: ClawixFrameHeader
+        do {
+            header = try await frameDecoder.decodeHeader(data)
+        } catch {
+            PerfSignpost.ipcClient.event("decode.failed")
             // Not all server output is JSON-RPC: log it and move on.
             if let log = stderrLogHandle, let s = String(data: data, encoding: .utf8) {
                 try? log.write(contentsOf: Data("[stdout-non-json] \(s)\n".utf8))
@@ -252,29 +263,46 @@ actor ClawixClient {
         }
 
         // Response to a request we made (id present, no method)
-        if let id = msg.id, msg.method == nil {
-            guard case .int(let intId) = id, let cont = pending.removeValue(forKey: intId) else {
+        if let id = header.id, header.method == nil {
+            guard case .int(let intId) = id, let response = pending.removeValue(forKey: intId) else {
                 return
             }
-            if let err = msg.error {
-                cont.resume(throwing: ClawixClientError.rpcError(code: err.code, message: err.message))
-            } else {
-                cont.resume(returning: msg.result)
-            }
+            await response.resume(with: data)
             return
         }
 
         // Server-initiated request (id and method present)
-        if let id = msg.id, let method = msg.method {
-            handleServerRequest(id: id, method: method, params: msg.params)
-            eventsContinuation?.yield(.request(id: id, method: method, params: msg.params))
+        if let id = header.id, let method = header.method {
+            do {
+                let request = try await frameDecoder.decodeRequest(id: id, method: method, data: data)
+                handleServerRequest(request)
+            } catch {
+                PerfSignpost.ipcClient.event("decode.failed")
+                try? resolveServerRequestWithError(
+                    id: id,
+                    code: -32600,
+                    message: "Invalid request payload for \(method)"
+                )
+            }
             return
         }
 
         // Server notification (method present, no id)
-        if let method = msg.method {
-            eventsContinuation?.yield(.notification(method: method, params: msg.params))
+        if let method = header.method {
+            do {
+                let notification = try await frameDecoder.decodeNotification(method: method, data: data)
+                eventsContinuation?.yield(.notification(notification))
+            } catch {
+                PerfSignpost.ipcClient.event("decode.failed")
+            }
             return
+        }
+    }
+
+    private func emitFrameSizeSignposts(bytes: Int) {
+        PerfSignpost.ipcClient.event("frame.bytes", bytes)
+        if bytes > ClawixFrameLimits.warnBytes {
+            PerfSignpost.ipcClient.event("frame.large.bytes", bytes)
         }
     }
 
@@ -286,16 +314,13 @@ actor ClawixClient {
     /// surfaces plan-mode questions, so we hand the request id to the
     /// service via `events` and let the UI resolve it after the user
     /// answers (or dismisses).
-    private func handleServerRequest(id: ClawixRPCID, method: String, params: JSONValue?) {
-        switch method {
-        case ClawixMethod.rToolUserInput:
-            // Defer; ClawixService stores the id and answers on user click.
-            break
-        case ClawixMethod.rFileChangeApproval,
-             ClawixMethod.rExecApproval,
-             ClawixMethod.rPermissionsApproval:
+    private func handleServerRequest(_ request: ClawixServerRequest) {
+        switch request {
+        case .toolUserInput:
+            eventsContinuation?.yield(.request(request))
+        case let .approval(id, _):
             try? resolveServerRequest(id: id, result: ApprovalDecisionResponse(decision: "decline"))
-        default:
+        case let .unknown(id, method):
             // For unknown server requests we send a JSON-RPC method-not-found
             // error so the server doesn't deadlock waiting for us.
             try? resolveServerRequestWithError(
@@ -304,6 +329,20 @@ actor ClawixClient {
                 message: "Method \(method) not handled by Clawix v1"
             )
         }
+    }
+
+    private func failBackend(_ error: Error) {
+        if case ClawixClientError.frameTooLarge(let bytes, _) = error {
+            PerfSignpost.ipcClient.event("frame.rejected.bytes", bytes)
+        }
+        if let log = stderrLogHandle {
+            try? log.write(contentsOf: Data("[stdout-frame-error] \(String(describing: error))\n".utf8))
+        }
+        process?.terminate()
+        process = nil
+        stdoutFramer.reset()
+        for response in pending.values { response.resume(throwing: error) }
+        pending.removeAll()
     }
 
     // MARK: - Stderr reader
@@ -346,6 +385,19 @@ actor ClawixClient {
 private final class WeakBox<T: AnyObject> {
     weak var value: T?
     init(_ value: T) { self.value = value }
+}
+
+private struct PendingResponse {
+    let resumeFrame: (Data) async -> Void
+    let resumeError: (Error) -> Void
+
+    func resume(with data: Data) async {
+        await resumeFrame(data)
+    }
+
+    func resume(throwing error: Error) {
+        resumeError(error)
+    }
 }
 
 // `eventsContinuation` cannot be touched non-isolated, but `deinit` runs

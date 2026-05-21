@@ -69,16 +69,9 @@ struct ClawixOutgoingErrorResponse: Encodable {
     let error: ClawixErrorBody
 }
 
-// Single shape for any inbound message. The dispatcher inspects which
-// fields are present (`id`/`method`/`result`/`error`) to decide whether
-// it is a response, a server-initiated request, or a notification.
-struct ClawixIncomingMessage: Decodable {
-    let jsonrpc: String?
-    let id: ClawixRPCID?
-    let method: String?
-    let params: JSONValue?
-    let result: JSONValue?
-    let error: ClawixErrorBody?
+struct ClawixIgnoredResponse: Decodable {
+    init() {}
+    init(from decoder: Decoder) throws {}
 }
 
 // MARK: - Method names (just constants so we don't typo)

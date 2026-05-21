@@ -84,7 +84,8 @@ final class ClawixService: ObservableObject {
                         extensionFields: true,
                         optOutNotificationMethods: nil
                     )
-                )
+                ),
+                expecting: ClawixIgnoredResponse.self
             )
             try await client.notify(method: ClawixMethod.initialized, params: EmptyObject())
             status = .ready
@@ -403,7 +404,8 @@ final class ClawixService: ObservableObject {
         await dismissPendingPlanQuestionIfAny(chatId: chatId)
         _ = try? await client.send(
             method: ClawixMethod.turnInterrupt,
-            params: TurnInterruptParams(threadId: threadId, turnId: active.turnId)
+            params: TurnInterruptParams(threadId: threadId, turnId: active.turnId),
+            expecting: TurnInterruptResult.self
         )
     }
 
@@ -436,7 +438,8 @@ final class ClawixService: ObservableObject {
             appState?.markChat(chatId: chatId, hasActiveTurn: false)
             _ = try? await client.send(
                 method: ClawixMethod.turnInterrupt,
-                params: TurnInterruptParams(threadId: threadId, turnId: active.turnId)
+                params: TurnInterruptParams(threadId: threadId, turnId: active.turnId),
+                expecting: TurnInterruptResult.self
             )
         }
 
@@ -487,7 +490,8 @@ final class ClawixService: ObservableObject {
         guard status == .ready else { return }
         _ = try? await client.send(
             method: ClawixMethod.threadResume,
-            params: ThreadResumeParams(threadId: threadId)
+            params: ThreadResumeParams(threadId: threadId),
+            expecting: ClawixIgnoredResponse.self
         )
     }
 
@@ -534,10 +538,10 @@ final class ClawixService: ObservableObject {
 
     private func handle(event: ClawixServerEvent) async {
         switch event {
-        case let .request(id, method, params):
-            await handleServerRequest(id: id, method: method, params: params)
-        case let .notification(method, params):
-            handleNotification(method: method, params: params)
+        case let .request(request):
+            await handleServerRequest(request)
+        case let .notification(notification):
+            handleNotification(notification)
         }
     }
 
@@ -545,18 +549,19 @@ final class ClawixService: ObservableObject {
     /// transport layer auto-declines). Currently we only care about
     /// `item/tool/requestUserInput` — that's how plan-mode questions
     /// arrive.
-    private func handleServerRequest(id: ClawixRPCID, method: String, params: JSONValue?) async {
-        guard method == ClawixMethod.rToolUserInput else { return }
-        guard let payload = try? params?.decode(ToolRequestUserInputParams.self),
+    private func handleServerRequest(_ request: ClawixServerRequest) async {
+        guard case let .toolUserInput(id, payload) = request,
               !interruptedTurnIds.contains(payload.turnId),
               let chatId = chatByThread[payload.threadId]
         else {
             // Decode failure or stale request: unblock the daemon with an
             // empty answers map so it doesn't hang forever.
-            try? await client.resolveServerRequest(
-                id: id,
-                result: ToolRequestUserInputResponse(answers: [:])
-            )
+            if case let .toolUserInput(id, _) = request {
+                try? await client.resolveServerRequest(
+                    id: id,
+                    result: ToolRequestUserInputResponse(answers: [:])
+                )
+            }
             return
         }
         let pending = PendingPlanQuestion(
@@ -570,11 +575,10 @@ final class ClawixService: ObservableObject {
         appState?.registerPendingPlanQuestion(pending)
     }
 
-    private func handleNotification(method: String, params: JSONValue?) {
-        switch method {
-        case ClawixMethod.nTurnStarted:
-            if let payload = try? params?.decode(TurnEnvelope.self),
-               !interruptedTurnIds.contains(payload.turn.id),
+    private func handleNotification(_ notification: ClawixServerNotification) {
+        switch notification {
+        case let .turnStarted(payload):
+            if !interruptedTurnIds.contains(payload.turn.id),
                let chatId = chatByThread[payload.threadId] {
                 // Eagerly create the assistant placeholder so the
                 // elapsed-time header can render the live counter even
@@ -586,31 +590,28 @@ final class ClawixService: ObservableObject {
                 }
             }
 
-        case ClawixMethod.nAgentMsgDelta:
-            if let payload = try? params?.decode(AgentMessageDelta.self),
-               !interruptedTurnIds.contains(payload.turnId),
+        case let .agentMessageDelta(payload):
+            if !interruptedTurnIds.contains(payload.turnId),
                let chatId = chatByThread[payload.threadId] {
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
                 appState?.appendAssistantDelta(chatId: chatId, delta: payload.delta)
             }
 
-        case ClawixMethod.nReasoningDelta, ClawixMethod.nReasoningSumDelta:
-            if let payload = try? params?.decode(ReasoningTextDelta.self),
-               !interruptedTurnIds.contains(payload.turnId),
+        case let .reasoningTextDelta(payload), let .reasoningSummaryTextDelta(payload):
+            if !interruptedTurnIds.contains(payload.turnId),
                let chatId = chatByThread[payload.threadId] {
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
                 appState?.appendReasoningDelta(chatId: chatId, delta: payload.delta)
             }
 
-        case ClawixMethod.nItemStarted:
-            handleItem(params: params, completed: false)
+        case let .itemStarted(payload):
+            handleItem(payload: payload, completed: false)
 
-        case ClawixMethod.nItemCompleted:
-            handleItem(params: params, completed: true)
+        case let .itemCompleted(payload):
+            handleItem(payload: payload, completed: true)
 
-        case ClawixMethod.nTurnCompleted:
-            if let payload = try? params?.decode(TurnEnvelope.self),
-               let chatId = chatByThread[payload.threadId] {
+        case let .turnCompleted(payload):
+            if let chatId = chatByThread[payload.threadId] {
                 let turnId = payload.turn.id
                 if interruptedTurnIds.remove(turnId) != nil {
                     // User-stopped turn finished server-side. State
@@ -638,45 +639,37 @@ final class ClawixService: ObservableObject {
                 }
             }
 
-        case ClawixMethod.nThreadStarted:
+        case .threadStarted(_):
             // Server-emitted echo; nothing to do, we already know.
             break
 
-        case ClawixMethod.nThreadTokenUsage:
-            if let payload = try? params?.decode(ThreadTokenUsageEnvelope.self),
-               let chatId = chatByThread[payload.threadId] {
+        case let .threadTokenUsage(payload):
+            if let chatId = chatByThread[payload.threadId] {
                 appState?.updateTokenUsage(chatId: chatId, usage: payload.tokenUsage)
             }
 
-        case ClawixMethod.nAccountRateLimitsUpdated:
-            if let payload = try? params?.decode(AccountRateLimitsUpdatedNotification.self) {
-                appState?.rateLimits = payload.rateLimits
-                if let buckets = payload.rateLimitsByLimitId {
-                    appState?.rateLimitsByLimitId = buckets
-                }
+        case let .accountRateLimitsUpdated(payload):
+            appState?.rateLimits = payload.rateLimits
+            if let buckets = payload.rateLimitsByLimitId {
+                appState?.rateLimitsByLimitId = buckets
             }
 
-        case ClawixMethod.nThreadArchived:
-            if let payload = try? params?.decode(ThreadIdNotification.self) {
-                appState?.markThreadArchived(threadId: payload.threadId, archived: true)
-            }
+        case let .threadArchived(payload):
+            appState?.markThreadArchived(threadId: payload.threadId, archived: true)
 
-        case ClawixMethod.nThreadUnarchived:
-            if let payload = try? params?.decode(ThreadIdNotification.self) {
-                appState?.markThreadArchived(threadId: payload.threadId, archived: false)
-            }
+        case let .threadUnarchived(payload):
+            appState?.markThreadArchived(threadId: payload.threadId, archived: false)
 
-        case ClawixMethod.nThreadNameUpdated:
-            if let payload = try? params?.decode(ThreadNameUpdatedNotification.self),
-               let name = payload.threadName {
+        case let .threadNameUpdated(payload):
+            if let name = payload.threadName {
                 appState?.applyRuntimeTitle(threadId: payload.threadId, title: name)
             }
 
-        case ClawixMethod.nError:
+        case .error:
             // Surface a generic error; specific parsing is out of v1 scope.
             break
 
-        default:
+        case .unknown(_):
             break
         }
     }
@@ -687,9 +680,8 @@ final class ClawixService: ObservableObject {
     ///      mcpToolCall, dynamicToolCall, imageGeneration, imageView):
     ///      register/refresh a WorkItem entry on the assistant message so
     ///      the elapsed-time disclosure has something to show.
-    private func handleItem(params: JSONValue?, completed: Bool) {
-        guard let payload = try? params?.decode(ItemEnvelope.self),
-              !interruptedTurnIds.contains(payload.turnId),
+    private func handleItem(payload: ItemEnvelope, completed: Bool) {
+        guard !interruptedTurnIds.contains(payload.turnId),
               let chatId = chatByThread[payload.threadId]
         else { return }
 
