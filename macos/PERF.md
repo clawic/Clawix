@@ -62,14 +62,19 @@ that gap with static code-reading guesses.
 | --- | --- | --- | --- |
 | `RenderProbe` + `HitchProbe` | `Sources/Clawix/RenderProbe.swift` | yes | Per-window body re-eval counters and hitch buckets in `/tmp/clawix-renders.log` |
 | `PerfSignpost` taxonomy | `Sources/Clawix/Diagnostics/Signposts.swift` | yes (suppressible via `CLAWIX_DISABLE_SIGNPOSTS=1`) | Categorised intervals/events visible in Instruments `os_signpost` track |
-| `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | yes | RSS, footprint, %CPU once per second; emitted as signposts and dumped to `last-resources.json` on app exit |
-| `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | DEBUG by default; `CLAWIX_FORCE_HANG_DETECTOR=1` to enable in release | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) |
+| `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | explicit diagnostics only | RSS, footprint, %CPU once per second after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, system telemetry menu activation, or a rescue/diagnostics one-shot |
+| `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | explicit diagnostics only | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, telemetry menu activation, or `CLAWIX_FORCE_HANG_DETECTOR=1` |
 | `MetricKitObserver` | `Sources/Clawix/Diagnostics/MetricKitObserver.swift` | yes | Apple's own daily payloads (launch time, hitch ratio, hangs with backtraces, app exit reasons) |
 | `streamingPerfLog` | `Sources/Clawix/StreamingFade.swift` | yes (toggle in source) | Streaming pipeline per-message timings via `Logger("stream-perf")` |
 | `perf-workout.sh` phase markers | `scripts/perf-workout.sh` | manual | Repeatable phase boundaries in `/tmp/clawix-renders.log` for before/after comparisons |
 | `LaunchMilestones` | `Sources/Clawix/Diagnostics/LaunchMilestones.swift` | yes | One-shot startup release milestones for `process_start -> first_chat_interactive` |
 
-All of the above land in one place when you run `perf-capture.sh`:
+Normal app launch keeps only minimal signposts and MetricKit registration
+active before first paint. `perf-capture.sh` opts the launched app into
+periodic diagnostics with `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1` so traces still
+include resource and hang lanes when a performance investigation requests them.
+
+All capture artifacts land in one place when you run `perf-capture.sh`:
 
 - `trace.trace` (Instruments)
 - `capture-metadata.env` and `git-status.txt` (exact build, bundle,
@@ -89,14 +94,14 @@ All of the above land in one place when you run `perf-capture.sh`:
 | `ui.sidebar` | `SidebarView.swift:145` `makeSnapshot` | One `snapshot` interval per body invocation |
 | `launch` | app entry, root window, sidebar, composer, startup core | One-shot events: `process_start`, `app_init_start`, `app_init_end`, `first_window`, `first_sidebar_paint`, `first_chat_interactive`, `core_ready` |
 | `state.appstate` | `AppState.swift` `objectWillChange` ticks via `RenderProbe` | High-rate ticks correlated with publisher emissions |
-| `ipc.client` | `AgentBackend/ClawixClient.swift:241` `handleLine` | One `decode` interval per JSON-RPC frame |
+| `ipc.client` | `AgentBackend/ClawixClient.swift` receive path | Frame byte events, header/payload decode intervals, decode failures, and rejected oversize frame bytes |
 | `backend.metadata` | `AgentBackend/ClawixService.swift` metadata refresh/cache paths | Cache hit/stale/miss events and refresh duration for model/rate-limit metadata |
 | `render.markdown` | `AgentBackend/AssistantMarkdownText.swift:148` `MarkdownParseCache.parse` | One `parse` interval per cache miss |
 | `render.streaming` | `StreamingFade.swift` `ingest` | One `ingest` event per delta, value = delta length |
-| `image.load` | (reserved for image decoding work) | (call sites added when needed) |
+| `image.load` | chat user-image thumbnail loader | `thumbnail.bytes`, cache hit/miss, decode interval, decoded pixels, cache cost bytes, cancellation, failures |
 | `secrets.crypto` | (reserved for KDF / AEAD work) | (call sites added when needed) |
 | `hang` | `Diagnostics/HangDetector.swift` | One `main-stalled` event per stall, value = ms |
-| `resource` | `Diagnostics/ResourceSampler.swift` | `rss_mb`, `footprint_mb`, `cpu_pct` once per second |
+| `resource` | `Diagnostics/ResourceSampler.swift` | `rss_mb`, `footprint_mb`, `cpu_pct` once per second after explicit diagnostics activation |
 
 Add a new category by editing `Signposts.swift`, registering it in
 the table above, and only then emitting from a call site. The ad-hoc
@@ -229,9 +234,14 @@ in the listed file:line, and check the indicated lane / artifact.
 - Hypothesis: synchronous main-thread work, typically
   `JSONDecoder().decode` on the IPC hot path or a sync image decode.
 - Capture: `bash macos/scripts/perf-capture.sh --template "Time Profiler" --name freeze`.
-- Look at: `macos/Sources/Clawix/AgentBackend/ClawixClient.swift:241`
-  (decode), `macos/Sources/Clawix/ChatView.swift:490-523`
-  (`UserImageThumbnail` sync `NSImage(contentsOf:)`).
+- Look at: `macos/Sources/Clawix/AgentBackend/ClawixClient.swift`
+  and `AgentBackend/ClawixFrameDecoder.swift` (IPC frame/decode) and
+  `macos/Sources/Clawix/Chat/ChatView+UserBubble.swift`
+  (`UserImageThumbnailLoader` downsample/cache metrics).
+- For IPC frames, compare `ipc.client.frame.bytes` and
+  `ipc.client.decode.bytes` with the adjacent `decode.header` / `decode`
+  intervals. `frame.rejected.bytes` means the client hit the hard frame cap
+  before dispatching payload work.
 - In the trace: filter Time Profiler to the main thread; correlate
   the `hang.main-stalled` signpost events with the dominant
   symbols in the Heaviest Stack Trace.
