@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "valid": [
+    {
+      "id": "host-archive-chat",
+      "class": "recoverable",
+      "operation": "archive chat",
+      "actor": "human",
+      "approval": "ordinary_ui_action",
+      "auditReceipt": true,
+      "recoveryEvidence": ["archiveRow", "unarchiveAction"]
+    },
+    {
+      "id": "host-repair-with-snapshot",
+      "class": "snapshot_recoverable",
+      "operation": "repair host state",
+      "actor": "signed_host",
+      "approval": "repair_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": ["preRepairSnapshot", "repairReceipt"]
+    },
+    {
+      "id": "host-provider-archive",
+      "class": "external_recoverable",
+      "operation": "archive provider resource",
+      "actor": "signed_host_connector",
+      "approval": "host_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": ["providerArchiveReceipt", "providerUnarchiveRoute"]
+    },
+    {
+      "id": "host-provider-hard-delete-human-approved",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "operation": "delete provider resource",
+      "actor": "human_confirmed_signed_host",
+      "approval": "exact_human_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": ["signedHostReceipt", "providerReceipt", "localPreActionExportRef", "externalPendingLiveValidation"]
+    }
+  ],
+  "invalid": [
+    {
+      "id": "agent-host-hard-purge",
+      "class": "forbidden_for_agents",
+      "operation": "purge host record",
+      "actor": "agent",
+      "approval": "host_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": [],
+      "expectedReason": "agents cannot perform irreversible purge"
+    },
+    {
+      "id": "host-import-overwrite-without-snapshot",
+      "class": "snapshot_recoverable",
+      "operation": "import overwrite",
+      "actor": "human",
+      "approval": "exact_human_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": ["conflictReport"],
+      "expectedReason": "snapshot recoverable operations require snapshot evidence"
+    },
+    {
+      "id": "host-provider-hard-delete-without-exact-approval",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "operation": "delete provider resource",
+      "actor": "signed_host_connector",
+      "approval": "host_approval",
+      "auditReceipt": true,
+      "recoveryEvidence": ["providerReceipt"],
+      "expectedReason": "irreversible external operations require exact human approval"
+    },
+    {
+      "id": "host-purge-without-audit",
+      "class": "forbidden_for_agents",
+      "operation": "purge transcript",
+      "actor": "human",
+      "approval": "exact_human_approval",
+      "auditReceipt": false,
+      "recoveryEvidence": ["recoveryWindowExpired"],
+      "expectedReason": "destructive operations require audit receipt"
+    }
+  ]
+}

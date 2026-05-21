@@ -3,6 +3,7 @@
   "canonicalContract": "../../../clawjs/docs/governance/source-decision-audits.md",
   "canonicalRegistry": "../../../clawjs/docs/governance/source-decision-audits.registry.json",
   "forwardOnly": true,
+  "selectiveHistoricalBackfill": true,
   "statusVocabulary": ["implemented", "documented", "blocked", "superseded"],
   "rowContract": {
     "requiredFields": [
@@ -79,6 +80,80 @@
         "docs/governance/v1-surface-closure/acceptance.json",
         "docs/governance/v1-surface-closure/validation.json",
         "scripts/v1_surface_closure_audit_check.mjs"
+      ]
+    },
+    {
+      "id": "adoption-canonicity-governance-p0",
+      "artifactPath": "docs/governance/adoption-canonicity/source-review.json",
+      "sourceConversationId": "current-thread-2026-05-21",
+      "sourcePlanId": "p0-adoption-and-canonicity-governance",
+      "artifactKind": "json-source-review",
+      "minimumDecisionRows": 1,
+      "normalizedStates": ["implemented"],
+      "evidenceRefs": [
+        "docs/governance/adoption-canonicity.md",
+        "docs/governance/adoption-canonicity.manifest.json",
+        "scripts/adoption_canonicity_check.mjs",
+        "scripts/ui_canon_promotion_check.mjs"
+      ]
+    },
+    {
+      "id": "legal-closure-selective-backfill",
+      "artifactPath": "docs/governance/legal/source-audit.md",
+      "sourceConversationId": "019e3a44-1175-7930-b45c-252f342b5ec2",
+      "artifactKind": "markdown-source-audit",
+      "markdownRowPrefix": "LCA",
+      "minimumDecisionRows": 33,
+      "historicalBackfill": true,
+      "backfillTier": "P0",
+      "backfillReason": "App-side legal, consent, export/share, support, provider, and release decisions are public-release blockers.",
+      "backfillArtifactRef": "docs/governance/legal/source-audit.md",
+      "normalizedStates": ["implemented", "blocked"],
+      "blockedRefs": [
+        "docs/governance/legal/external-pending.md"
+      ],
+      "evidenceRefs": [
+        "docs/governance/legal/source-audit.md",
+        "docs/governance/legal/external-pending.md",
+        "scripts/legal_safety_check.mjs"
+      ]
+    },
+    {
+      "id": "global-threat-modeling-mirror-selective-backfill",
+      "artifactPath": "docs/adr/0028-global-threat-modeling-mirror.md",
+      "sourceConversationId": "2026-05-21-p0-global-threat-modeling-request",
+      "artifactKind": "markdown-adr-source-audit",
+      "markdownRowPattern": "^## Source Decision Audit$",
+      "markdownRowPatternLabel": "Source Decision Audit section",
+      "minimumDecisionRows": 1,
+      "historicalBackfill": true,
+      "backfillTier": "P0",
+      "backfillReason": "The ADR states no separate Clawix source decision row existed for the P0 global threat modeling mirror.",
+      "backfillArtifactRef": "docs/adr/0028-global-threat-modeling-mirror.md#source-decision-audit",
+      "normalizedStates": ["implemented"],
+      "evidenceRefs": [
+        "docs/adr/0028-global-threat-modeling-mirror.md",
+        "docs/supply-chain-security.md",
+        "scripts/security-threat-model-check.mjs"
+      ]
+    },
+    {
+      "id": "ui-state-invalidation-boundary-selective-backfill",
+      "artifactPath": "docs/adr/0026-ui-state-invalidation-boundary.md",
+      "sourceConversationId": "2026-05-21-p0-ui-state-invalidation-boundary-request",
+      "artifactKind": "markdown-adr-source-audit",
+      "markdownRowPattern": "^## Source Decision Audit$",
+      "markdownRowPatternLabel": "Source Decision Audit section",
+      "minimumDecisionRows": 1,
+      "historicalBackfill": true,
+      "backfillTier": "P0",
+      "backfillReason": "The ADR records the P0 UI state invalidation boundary decision outside the forward-only registry.",
+      "backfillArtifactRef": "docs/adr/0026-ui-state-invalidation-boundary.md#source-decision-audit",
+      "normalizedStates": ["implemented"],
+      "evidenceRefs": [
+        "docs/adr/0026-ui-state-invalidation-boundary.md",
+        "macos/PERF.md",
+        "scripts/ui_state_invalidation_boundary_check.mjs"
       ]
     }
   ]

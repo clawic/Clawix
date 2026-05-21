@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "description": "Expiring Clawix mirror baseline for no-irreversible-data-loss gaps that existed when ADR 0024 introduced baseline-plus-blocking rollout.",
+  "rolloutMode": "baseline_plus_blocking",
+  "entries": [
+    {
+      "id": "host-local-cache-delete-inventory",
+      "owner": "clawix",
+      "severity": "blocks-new-growth",
+      "surface": "host-local UI/cache/snapshot database and cache cleanup paths",
+      "reason": "Clawix has host-local caches and snapshot projections with delete/replace paths that are rebuildable or cache-only, but this slice does not attach policy ids to every individual source path.",
+      "expiresAt": "2026-08-21",
+      "repair": "Classify each host-local delete or replace path as recoverable, rebuildable, or snapshot_recoverable and attach tests.",
+      "reference": "docs/adr/0024-no-irreversible-data-loss-mirror.md"
+    },
+    {
+      "id": "host-transcript-purge-recovery-audit",
+      "owner": "clawix",
+      "severity": "blocks-new-growth",
+      "surface": "dictation transcript and audio purge",
+      "reason": "Transcript and audio purge paths exist for retention cleanup; this slice freezes growth while a dedicated recovery-window and audit receipt implementation is backfilled.",
+      "expiresAt": "2026-08-21",
+      "repair": "Add explicit purge UI policy, recovery-window metadata, audit receipts, and retention tests for transcript/audio purge paths.",
+      "reference": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift"
+    },
+    {
+      "id": "host-provider-hard-delete-ui-evidence",
+      "owner": "clawix",
+      "severity": "external-pending",
+      "surface": "provider hard-delete UI and signed-host receipts",
+      "reason": "Clawix can present framework connector decisions, but live provider hard-delete evidence requires exact approval, real provider receipt, and same-machine host validation.",
+      "expiresAt": "2026-08-21",
+      "repair": "Add provider hard-delete confirmation UI evidence packets and signed-host/provider receipt fixtures once an approved live validation lane exists.",
+      "reference": "docs/interface-matrix.md"
+    }
+  ],
+  "monitoredKeywordBaselines": [
+    {
+      "path": "docs/interface-matrix.md",
+      "maxKeywordHits": 120
+    },
+    {
+      "path": "docs/persistent-surface-clawix.manifest.json",
+      "maxKeywordHits": 180
+    },
+    {
+      "path": "macos/Sources/Clawix/Persistence/Database.swift",
+      "maxKeywordHits": 80
+    },
+    {
+      "path": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift",
+      "maxKeywordHits": 60
+    }
+  ]
+}

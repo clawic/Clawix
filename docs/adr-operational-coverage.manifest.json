@@ -53,6 +53,138 @@
           "command": "claw inspect why search --json"
         }
       ]
+    },
+    {
+      "adr": "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/no-irreversible-data-loss-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/governance/no-irreversible-data-loss/README.md"
+      ],
+      "programmaticSurface": [
+        "scripts/no-irreversible-data-loss-check.mjs"
+      ],
+      "persistence": [
+        "docs/governance/no-irreversible-data-loss/manifest.json",
+        "docs/governance/no-irreversible-data-loss/baseline.json",
+        "docs/governance/no-irreversible-data-loss/fixtures.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw inspect why search --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0026-ui-state-invalidation-boundary.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/ui_state_invalidation_boundary_check.mjs",
+        "scripts/test.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "macos/PERF.md"
+      ],
+      "programmaticSurface": [
+        "scripts/ui_state_invalidation_boundary_check.mjs",
+        "macos/Tests/ClawixMeshTests/SidebarStoreTests.swift",
+        "macos/Tests/ClawixMeshTests/ChatStorePublicationTests.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw inspect why search --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0026-zero-accidental-work-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/zero_accidental_work_check.mjs",
+        "scripts/test.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/discoverability.md"
+      ],
+      "programmaticSurface": [
+        "scripts/zero_accidental_work_check.mjs",
+        "macos/Sources/Clawix/ClawJS/ClawJSServiceDemandPolicy.swift",
+        "packages/ClawixEngine/Sources/ClawixEngine/BridgeRuntimeWakePolicy.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"zero accidental work\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0026-streaming-backpressure-contract-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/discoverability-check.mjs",
+        "../clawjs/scripts/streaming-backpressure-contract-check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/adr/0026-streaming-backpressure-contract-mirror.md"
+      ],
+      "programmaticSurface": [
+        "../clawjs/packages/clawjs-core/src/streaming-backpressure.ts",
+        "macos/Sources/Clawix/AppState.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"streaming backpressure\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0032-problem-to-guardrail-loop-mirror.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/problem_to_guardrail_check.mjs",
+        "scripts/test.sh"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "docs/agent-rules/index.md",
+        "skills/adr-to-guardrail/SKILL.md",
+        "skills/code-review-risk/SKILL.md"
+      ],
+      "programmaticSurface": [
+        "scripts/problem_to_guardrail_check.mjs"
+      ],
+      "persistence": [
+        "docs/adr/0032-problem-to-guardrail-loop-mirror.md",
+        "docs/adr-operational-coverage.manifest.json"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"problem to guardrail\" --json"
+        }
+      ]
     }
   ]
 }

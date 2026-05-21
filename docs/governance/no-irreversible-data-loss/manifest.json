@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "policyId": "no-irreversible-data-loss.v1",
+  "canonicalAdr": "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+  "constitutionalRefs": [
+    "II.6",
+    "II.10",
+    "VII.5",
+    "VII.6",
+    "VII.11",
+    "red-line-4"
+  ],
+  "rollout": {
+    "mode": "baseline_plus_blocking",
+    "baselinePath": "docs/governance/no-irreversible-data-loss/baseline.json",
+    "newOrTouchedSurfacePolicy": "block_without_recovery_policy"
+  },
+  "recoveryClasses": [
+    "recoverable",
+    "snapshot_recoverable",
+    "rebuildable",
+    "external_recoverable",
+    "irreversible_external_requires_exact_human_approval",
+    "forbidden_for_agents"
+  ],
+  "coverageTargets": [
+    "local-delete",
+    "hard-purge",
+    "trash-archive",
+    "migration",
+    "import-overwrite",
+    "export",
+    "sync-apply",
+    "agent-action",
+    "agent-self-modification",
+    "external-provider-mutation",
+    "provider-hard-delete"
+  ],
+  "policies": [
+    {
+      "id": "host-delete-archive-first",
+      "class": "recoverable",
+      "targets": ["local-delete", "trash-archive"],
+      "defaultBehavior": "Clawix delete affordances prefer archive or trash with visible recovery state",
+      "actorPolicy": "agents cannot bypass host recovery UI for user-created data",
+      "approvalPolicy": "ordinary scoped approval for recoverable delete; exact human approval for stronger action",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/interface-matrix.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-purge-human-only",
+      "class": "forbidden_for_agents",
+      "targets": ["hard-purge"],
+      "defaultBehavior": "purge is separate from ordinary UI delete and cannot be agent-executed",
+      "actorPolicy": "agents cannot perform irreversible purge through Clawix",
+      "approvalPolicy": "exact human approval plus recovery-window expiry",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-migration-snapshot-repair",
+      "class": "snapshot_recoverable",
+      "targets": ["migration"],
+      "defaultBehavior": "host migrations and repair actions preserve launch, chat, and repair state",
+      "actorPolicy": "host repair actions are approval-gated when they delete, move, externally mutate, or submit reports",
+      "approvalPolicy": "required for risky repair, deletion, movement, report submission, and large backup overrides",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/adr/0018-evolution-rescue-backbone-mirror.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-import-overwrite-stage-or-snapshot",
+      "class": "snapshot_recoverable",
+      "targets": ["import-overwrite"],
+      "defaultBehavior": "host import UI must stage or merge; overwrite requires snapshot and conflict report",
+      "actorPolicy": "agents cannot choose overwrite without user-visible conflict evidence",
+      "approvalPolicy": "exact human approval for overwrite",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-export-portability",
+      "class": "recoverable",
+      "targets": ["export"],
+      "defaultBehavior": "Clawix exposes export and repair context without trapping state in host UI",
+      "actorPolicy": "export can be initiated under scoped read permission",
+      "approvalPolicy": "private envelope or external submission requires explicit approval",
+      "auditReceipt": "required",
+      "testEvidence": ["CONSTITUTION.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-sync-apply-plan-reconcile",
+      "class": "snapshot_recoverable",
+      "targets": ["sync-apply"],
+      "defaultBehavior": "Clawix consumes framework sync plans, conflict reports, and handoff receipts before destructive apply",
+      "actorPolicy": "remote or delegated action cannot launder authority through a Clawix client",
+      "approvalPolicy": "exact human approval for destructive conflict resolution",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/decision-map.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-agent-action-reversible-by-default",
+      "class": "recoverable",
+      "targets": ["agent-action", "agent-self-modification"],
+      "defaultBehavior": "agent-visible Clawix actions preserve framework scope, audit, and recovery policy",
+      "actorPolicy": "agents cannot expand permissions or purge irreversibly from host UI",
+      "approvalPolicy": "host approval for sensitive or destructive grants",
+      "auditReceipt": "required",
+      "testEvidence": ["CONSTITUTION.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-provider-recoverable-first",
+      "class": "external_recoverable",
+      "targets": ["external-provider-mutation"],
+      "defaultBehavior": "Clawix presents provider archive, trash, restore, cancel, or unarchive options before hard delete when available",
+      "actorPolicy": "connector control plane and signed host approval must both pass before runtime",
+      "approvalPolicy": "host approval required for destructive provider operations",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/interface-matrix.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    },
+    {
+      "id": "host-provider-hard-delete-exact-approval",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "targets": ["provider-hard-delete"],
+      "defaultBehavior": "Clawix must label provider hard delete as irreversible external action",
+      "actorPolicy": "agents cannot execute provider hard delete without exact human approval and eligible framework policy",
+      "approvalPolicy": "exact human approval, signed-host receipt, provider receipt, local snapshot/export evidence where possible, and EXTERNAL PENDING live evidence until proved",
+      "auditReceipt": "required",
+      "testEvidence": ["docs/interface-matrix.md", "docs/governance/no-irreversible-data-loss/fixtures.json"],
+      "owner": "clawix"
+    }
+  ],
+  "monitoredFiles": [
+    {
+      "path": "docs/interface-matrix.md",
+      "reason": "stable UI/programmatic surfaces include destructive provider and local delete routes",
+      "keywords": ["delete", "archive", "purge", "external", "pending"]
+    },
+    {
+      "path": "docs/persistent-surface-clawix.manifest.json",
+      "reason": "durable host and framework storage surfaces expose delete/archive/snapshot candidates",
+      "keywords": ["delete", "archive", "snapshot", "purge"]
+    },
+    {
+      "path": "macos/Sources/Clawix/Persistence/Database.swift",
+      "reason": "host database migrations and cache cleanup",
+      "keywords": ["delete", "migration", "snapshot", "archive"]
+    },
+    {
+      "path": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift",
+      "reason": "host transcript delete and purge paths",
+      "keywords": ["delete", "purge", "archive"]
+    }
+  ]
+}

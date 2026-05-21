@@ -202,15 +202,26 @@ run_external_command() {
 }
 
 host_tests() {
+  local status=0
   if [[ -n "${CLAWIX_HOST_TEST_COMMAND:-}" ]]; then
-    run_external_command host "$CLAWIX_HOST_TEST_COMMAND"
+    run_external_command host "$CLAWIX_HOST_TEST_COMMAND" || status=$?
   else
     echo "EXTERNAL PENDING host lane: set CLAWIX_HOST_TEST_COMMAND for signed-host validation" >&2
     if strict_external_pending; then
       echo "FAIL: strict release host lane blocked without signed-host validation command" >&2
-      return 1
+      status=1
     fi
   fi
+  if [[ -n "${CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE:-}" ]]; then
+    run node "$ROOT_DIR/scripts/startup_release_contract_check.mjs" --require-launch-evidence || status=$?
+  else
+    echo "EXTERNAL PENDING host lane: set CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE for launch dependency budget validation" >&2
+    if strict_external_pending; then
+      echo "FAIL: strict release host lane blocked without launch dependency evidence" >&2
+      status=1
+    fi
+  fi
+  return "$status"
 }
 
 device_tests() {
@@ -253,9 +264,26 @@ fast() {
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test
+  run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs"
+  run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/security-threat-model-check.mjs"
+  run node "$ROOT_DIR/scripts/security-threat-model-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs"
   run node "$ROOT_DIR/scripts/performance_governance_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/hot_path_guard.mjs"
+  run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
+  run node "$ROOT_DIR/scripts/boundedness_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/problem_to_guardrail_check.mjs"
+  run node "$ROOT_DIR/scripts/problem_to_guardrail_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/no-irreversible-data-loss-check.mjs"
+  run node "$ROOT_DIR/scripts/no-irreversible-data-loss-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/adoption_canonicity_check.mjs"
+  run node "$ROOT_DIR/scripts/adoption_canonicity_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/portable_archive_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/startup_release_contract_check.mjs"
+  run node "$ROOT_DIR/scripts/zero_accidental_work_check.mjs"
+  run node "$ROOT_DIR/scripts/zero_accidental_work_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs"
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
@@ -271,6 +299,8 @@ fast() {
   run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs"
   run node "$ROOT_DIR/scripts/surface_narrative_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/surface_narrative_guard.mjs"
+  run node "$ROOT_DIR/scripts/surface_resource_contract_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/surface_resource_contract_guard.mjs"
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"
@@ -294,6 +324,7 @@ fast() {
   run node "$ROOT_DIR/scripts/ui_completion_audit_check.mjs"
   run node "$ROOT_DIR/scripts/ui_completion_source_manifest_check.mjs"
   run node "$ROOT_DIR/scripts/ui_completion_gate_check.mjs"
+  run node "$ROOT_DIR/scripts/ui_state_invalidation_boundary_check.mjs"
   run node "$ROOT_DIR/scripts/ui_implementation_evidence_check.mjs"
   run node "$ROOT_DIR/scripts/ui_implementation_phase_check.mjs"
   run node "$ROOT_DIR/scripts/ui_skill_contract_check.mjs"
@@ -388,6 +419,7 @@ case "$LANE" in
     ;;
   release)
     run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
+    run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --release --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     integration "$@"
     run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     e2e_tests
