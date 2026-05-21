@@ -10,7 +10,7 @@ import Combine
 final class SkillsStore: ObservableObject {
     typealias SyncOperation = @MainActor () async throws -> Date
 
-    enum LoadMode {
+    enum LoadMode: Equatable {
         case none
         case activeOnly
         case fullCatalog
