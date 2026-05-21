@@ -63,4 +63,42 @@ final class ClawixUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Clawix"].waitForExistence(timeout: 3))
         XCTAssertFalse(app.buttons["Chat actions"].waitForExistence(timeout: 1))
     }
+
+    func testVirtualTranscriptLongThreadReturnsToTail() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["CLAWIX_MOCK"] = "1"
+        app.launchEnvironment["CLAWIX_DISABLE_AUTOFOCUS"] = "1"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["Clawix"].waitForExistence(timeout: 8))
+        app.staticTexts["Long thread · pagination preview"].tap()
+
+        let tail = app.descendants(matching: .any)["transcript-message-long-msg-150"]
+        XCTAssertTrue(tail.waitForExistence(timeout: 5))
+
+        app.swipeDown()
+        app.swipeDown()
+
+        let scrollToBottom = app.buttons["Scroll to bottom"]
+        XCTAssertTrue(scrollToBottom.waitForExistence(timeout: 3))
+        scrollToBottom.tap()
+        XCTAssertTrue(tail.waitForExistence(timeout: 3))
+    }
+
+    func testVirtualTranscriptHeavyMarkdownThreadOpensAtTail() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["CLAWIX_MOCK"] = "1"
+        app.launchEnvironment["CLAWIX_DISABLE_AUTOFOCUS"] = "1"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["Clawix"].waitForExistence(timeout: 8))
+        app.staticTexts["Heavy markdown transcript preview"].tap()
+
+        let tail = app.descendants(matching: .any)["transcript-message-heavy-msg-90"]
+        XCTAssertTrue(tail.waitForExistence(timeout: 5))
+
+        app.swipeDown()
+
+        XCTAssertTrue(app.buttons["Scroll to bottom"].waitForExistence(timeout: 3))
+    }
 }

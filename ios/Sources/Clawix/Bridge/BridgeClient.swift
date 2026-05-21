@@ -152,7 +152,13 @@ final class BridgeClient: NSObject {
         // don't understand `limit` ignore it and send the whole
         // transcript, which still works (`hasMore` arrives as nil and
         // the store treats that as "no scroll-up available").
-        send(BridgeFrame(.openSession(sessionId: sessionId, limit: bridgeInitialPageLimit)), on: winner)
+        send(
+            BridgeFrame(.openSession(
+                sessionId: sessionId,
+                limit: Self.initialOpenLimit(for: store.messagesByChat[sessionId])
+            )),
+            on: winner
+        )
     }
 
     /// Fetch the next page of older messages for `sessionId`. The cursor
@@ -166,6 +172,31 @@ final class BridgeClient: NSObject {
             beforeMessageId: beforeMessageId,
             limit: bridgeOlderPageLimit
         )), on: winner)
+    }
+
+    private static func initialOpenLimit(for cachedMessages: [WireMessage]?) -> Int {
+        guard let cachedMessages, !cachedMessages.isEmpty else {
+            return bridgeInitialPageLimit
+        }
+        let weight = cachedMessages
+            .suffix(bridgeInitialPageLimit)
+            .reduce(0) { partial, message in
+                partial + transcriptWeight(message)
+            }
+        return weight >= 140
+            ? BridgeStore.iosHeavyTranscriptInitialPageLimit
+            : bridgeInitialPageLimit
+    }
+
+    private static func transcriptWeight(_ message: WireMessage) -> Int {
+        var weight = max(1, message.content.count / 220)
+        weight += message.timeline.count * 6
+        weight += message.attachments.count * 4
+        if message.workSummary != nil { weight += 6 }
+        if !message.reasoningText.isEmpty { weight += max(3, message.reasoningText.count / 260) }
+        if message.content.contains("```") { weight += 14 }
+        if message.content.contains("![") || message.content.contains("file:") { weight += 12 }
+        return weight
     }
 
     func sendMessage(sessionId: String, text: String, attachments: [WireAttachment]) {

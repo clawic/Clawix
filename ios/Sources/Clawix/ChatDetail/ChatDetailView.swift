@@ -124,7 +124,7 @@ struct ChatDetailView: View {
     /// older history available, the store fires `loadOlderMessages`.
     /// Re-entrancy is gated by `loadingOlderByChat`, so the geometry
     /// callback can fire freely without burning round trips.
-    private static let loadOlderThreshold: CGFloat = 200
+    static let loadOlderThreshold: CGFloat = 200
 
     // Derived scroll predicates. Keeping them computed (vs. @State)
     // means a single source of truth and no risk of going stale.
@@ -143,13 +143,30 @@ struct ChatDetailView: View {
         !ClawixEnv.isEnabled(ClawixEnv.disableAutofocus) && (isFreshChat ?? false)
     }
 
+    private var transcriptRows: [VirtualTranscriptRow] {
+        var rows: [VirtualTranscriptRow] = []
+        if store.loadingOlderByChat[chatId] == true {
+            rows.append(.loadingOlder())
+        }
+        rows.append(.spacer(id: "__top_spacer__", height: 8))
+        if hasLoaded {
+            if messages.isEmpty {
+                rows.append(.emptyPlaceholder())
+            } else {
+                rows.append(contentsOf: messages.map(transcriptMessageRow))
+            }
+        } else {
+            rows.append(.loadingPlaceholder())
+        }
+        rows.append(.spacer(id: "__bottom_spacer__", height: 30))
+        rows.append(.tail(id: ChatScroll.tail))
+        return rows
+    }
+
     var body: some View {
-        // The transcript is fully declarative: `defaultScrollAnchor`
-        // pins the first layout to the bottom and `scrollPosition`
-        // exposes the current anchor id as state. The scroll-to-bottom
-        // button mutates that binding instead of calling into a
-        // ScrollViewProxy, which removes the imperative path that used
-        // to race with layout-in-flight.
+        // The transcript is virtualized below the SwiftUI chrome. It
+        // still exposes the same tail-id model to the scroll-to-bottom
+        // button so the rest of the chat can stay declarative.
         ZStack(alignment: .bottom) {
             transcript
                 .background(Palette.background.ignoresSafeArea())
@@ -228,94 +245,21 @@ struct ChatDetailView: View {
     // MARK: Transcript
 
     private var transcript: some View {
-        // Messaging-style scroll built on the iOS 18 split
-        // `defaultScrollAnchor(_:for:)` API. Each role gets its own
-        // anchor so the three concerns don't fight each other:
-        //
-        //   * `.alignment   = .top`    → when the transcript is shorter
-        //                                than the viewport (fresh chat
-        //                                with one or two bubbles), it
-        //                                sits at the top edge instead
-        //                                of being pinned to the bottom
-        //                                with empty space above.
-        //   * `.initialOffset = .bottom` → opening an existing chat
-        //                                whose history overflows lands
-        //                                directly at the latest message.
-        //   * `.sizeChanges = .bottom` → while streaming, sending or
-        //                                receiving new content, the
-        //                                viewport stays glued to the
-        //                                tail unless the user has
-        //                                scrolled away.
-        //
-        // The 1pt `Color.clear` sentinel at the end of the stack is the
-        // canonical "you are at the tail" marker for `scrollPosition`.
-        //
-        // Eager `VStack` (not `LazyVStack`) on purpose: tall assistant
-        // rows (timeline + markdown + file pills) interact badly with
-        // LazyVStack's just-in-time materialization here, where rows
-        // that should be entering the viewport pop in suddenly
-        // instead of sliding under the chrome. The transcript stays
-        // bounded by pagination (`bridgeInitialPageLimit` on first
-        // paint, page-by-page on scroll-up) instead of a hard cap.
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                // Spinner that surfaces while a `loadOlderMessages`
-                // round trip is in flight. Sits above the messages so
-                // the user gets feedback the moment the scroll-up
-                // sentinel fires; collapses to zero height when idle
-                // so the layout doesn't reserve dead space.
-                if store.loadingOlderByChat[chatId] == true {
-                    HStack {
-                        Spacer()
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(Palette.textTertiary)
-                        Spacer()
-                    }
-                    .frame(height: 28)
-                    .transition(.opacity)
-                }
-                Color.clear.frame(height: 8)
+        let messageLookup = Dictionary(uniqueKeysWithValues: messages.map { ($0.id, $0) })
+        return VirtualTranscriptView(
+            rows: transcriptRows,
+            tailId: ChatScroll.tail,
+            bottomId: $bottomId,
+            onMetricsChange: handleTranscriptMetrics,
+            onNearTop: {
                 if hasLoaded {
-                    if messages.isEmpty {
-                        chatEmptyPlaceholder
-                    } else {
-                        ForEach(messages, id: \.id) { msg in
-                            MessageView(
-                                message: msg,
-                                attachmentImages: store.attachmentImagesByMessageId[msg.id] ?? [],
-                                isReasoningExpanded: expandedReasoning.contains(msg.id),
-                                toggleReasoning: { toggleReasoning(messageId: msg.id) },
-                                onOpenFile: onOpenFile,
-                                onOpenImage: { startIndex, images in
-                                    #if canImport(UIKit)
-                                    imageViewer = ImageViewerSelection(
-                                        images: images,
-                                        startIndex: startIndex
-                                    )
-                                    #endif
-                                },
-                                shouldAnimateEntrance: shouldAnimateEntrance(for: msg),
-                                store: store
-                            )
-                            .id(msg.id)
-                            .onAppear { alreadySeenMessageIds.insert(msg.id) }
-                        }
-                    }
-                } else {
-                    chatLoadingPlaceholder
+                    store.requestOlderIfNeeded(chatId: chatId)
                 }
-                Color.clear.frame(height: 30)
-                Color.clear.frame(height: 1).id(ChatScroll.tail)
-            }
-            .padding(.horizontal, 20)
-            .scrollTargetLayout()
+            },
+            onRowVisible: markTranscriptRowVisible
+        ) { row in
+            transcriptRowContent(row, messageLookup: messageLookup)
         }
-        .scrollIndicators(.hidden)
-        .defaultScrollAnchor(.top, for: .alignment)
-        .defaultScrollAnchor(.bottom, for: .initialOffset)
-        .defaultScrollAnchor(.bottom, for: .sizeChanges)
-        .scrollPosition(id: $bottomId, anchor: .bottom)
         .simultaneousGesture(
             TapGesture().onEnded {
                 #if canImport(UIKit)
@@ -326,33 +270,6 @@ struct ChatDetailView: View {
                 #endif
             }
         )
-        // Geometry feeds `hasOverflow` AND the scroll-up trigger for
-        // pagination. We collect content/container/insets/offset in
-        // one Equatable struct so SwiftUI filters out the sub-pixel
-        // updates that fire while the composer is animating its
-        // height. `offsetY` becoming small (user near the top, with
-        // overflow above the threshold) is the "load older" signal;
-        // the store dedupes so the callback can fire freely.
-        .onScrollGeometryChange(for: ScrollMetrics.self) { geom in
-            ScrollMetrics(
-                content: geom.contentSize.height,
-                container: geom.containerSize.height,
-                insets: geom.contentInsets.top + geom.contentInsets.bottom,
-                offsetY: geom.contentOffset.y
-            )
-        } action: { _, m in
-            contentHeight = m.content
-            viewportHeight = m.container
-            verticalInsets = m.insets
-            // Threshold check: only fire when there is real overflow
-            // (no point pulling more for a chat that fits in the
-            // viewport) and the user is genuinely near the top.
-            let nearTop = m.offsetY < Self.loadOlderThreshold
-            let realOverflow = m.content > m.container - m.insets + 1
-            if hasLoaded, nearTop, realOverflow {
-                store.requestOlderIfNeeded(chatId: chatId)
-            }
-        }
         .onChange(of: hasLoaded, initial: true) { _, loaded in
             guard loaded, !didCaptureInitialSnapshot else { return }
             didCaptureInitialSnapshot = true
@@ -360,30 +277,28 @@ struct ChatDetailView: View {
             unreadAnchorId = messages.last?.id
         }
         .onChange(of: contentHeight) { _, h in
-            // Geometry-driven gate for the transcript fade-in: SwiftUI
-            // delivers a non-zero `contentHeight` only after the
-            // ScrollView has measured its content AND resolved the
-            // `.initialOffset = .bottom` anchor, so this is the
-            // canonical "the layout is settled, safe to fade in"
-            // signal. Previously we paired this with a 16ms
-            // `Task.sleep` safety net, but that was arbitrary and
-            // missed the mark on chats whose eager VStack took
-            // longer than one frame to measure (60 rows of markdown
-            // + timeline + inline images), causing a visible
-            // reanchor mid-fade. With the markdown parser pre-warmed
-            // off-main from `BridgeStore.openChat`, measurement
-            // settles in a single frame and this gate fires
-            // reliably before the user sees anything.
+            // Geometry-driven gate for the transcript fade-in: the
+            // virtual transcript reports a non-zero content height only
+            // after the collection has measured its hosted SwiftUI
+            // cells and applied the tail anchor.
             guard !transcriptVisible, hasLoaded, h > 0 else { return }
             transcriptVisible = true
         }
-        .onChange(of: messages.count) { oldCount, newCount in
-            guard newCount > oldCount, !isAtBottom else { return }
+        .onChange(of: messages.map(\.id)) { oldIds, newIds in
+            guard newIds.count > oldIds.count else {
+                unreadAnchorId = messages.last?.id
+                return
+            }
+            markPrependedMessagesSeen(oldIds: oldIds, newIds: newIds)
+            guard !isAtBottom else {
+                unreadAnchorId = messages.last?.id
+                return
+            }
             // Only count new messages at the tail toward the unread
             // badge. Pages prepended at the head also grow `count`,
             // but they're history the user is intentionally pulling
             // and shouldn't bump the new-message indicator.
-            let oldLastId = unreadAnchorId
+            let oldLastId = oldIds.last ?? unreadAnchorId
             let newLastId = messages.last?.id
             if let newLastId, newLastId != oldLastId {
                 unreadCount += 1
@@ -397,15 +312,113 @@ struct ChatDetailView: View {
         .animation(.easeOut(duration: 0.14), value: transcriptVisible)
     }
 
-    private struct ScrollMetrics: Equatable {
-        let content: CGFloat
-        let container: CGFloat
-        let insets: CGFloat
-        let offsetY: CGFloat
-    }
-
     private enum ChatScroll {
         static let tail = "__chat_tail__"
+    }
+
+    private func transcriptMessageRow(_ message: WireMessage) -> VirtualTranscriptRow {
+        let estimate = estimatedTranscriptHeight(for: message)
+        return VirtualTranscriptRow(
+            id: message.id,
+            kind: .message(message.id),
+            estimatedHeight: estimate,
+            retainsOverscan: estimate >= 420
+        )
+    }
+
+    private func estimatedTranscriptHeight(for message: WireMessage) -> CGFloat {
+        if message.role == .user {
+            let attachmentHeight: CGFloat = message.attachments.isEmpty ? 0 : 116
+            return min(320, max(54, CGFloat(message.content.count) / 1.8 + attachmentHeight))
+        }
+
+        var estimate: CGFloat = max(48, CGFloat(message.content.count) / 1.55)
+        estimate += CGFloat(message.timeline.count) * 42
+        if message.workSummary != nil { estimate += 52 }
+        if !message.reasoningText.isEmpty { estimate += 80 }
+        if message.content.contains("```") { estimate += 180 }
+        if message.content.contains("![") || message.content.contains("file:") { estimate += 220 }
+        return min(max(estimate, 72), 1_600)
+    }
+
+    @ViewBuilder
+    private func transcriptRowContent(
+        _ row: VirtualTranscriptRow,
+        messageLookup: [String: WireMessage]
+    ) -> some View {
+        switch row.kind {
+        case .loadingOlder:
+            HStack {
+                Spacer()
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Palette.textTertiary)
+                Spacer()
+            }
+            .frame(height: 28)
+            .transition(.opacity)
+
+        case .loadingPlaceholder:
+            chatLoadingPlaceholder
+
+        case .emptyPlaceholder:
+            chatEmptyPlaceholder
+
+        case .message(let id):
+            if let msg = messageLookup[id] {
+                MessageView(
+                    message: msg,
+                    attachmentImages: store.attachmentImagesByMessageId[msg.id] ?? [],
+                    isReasoningExpanded: expandedReasoning.contains(msg.id),
+                    toggleReasoning: { toggleReasoning(messageId: msg.id) },
+                    onOpenFile: onOpenFile,
+                    onOpenImage: { startIndex, images in
+                        #if canImport(UIKit)
+                        imageViewer = ImageViewerSelection(
+                            images: images,
+                            startIndex: startIndex
+                        )
+                        #endif
+                    },
+                    shouldAnimateEntrance: shouldAnimateEntrance(for: msg),
+                    store: store
+                )
+                .id(msg.id)
+                .accessibilityIdentifier("transcript-message-\(msg.id)")
+            }
+
+        case .spacer(let height):
+            Color.clear.frame(height: height)
+
+        case .tail:
+            Color.clear.frame(height: 1)
+        }
+    }
+
+    private func handleTranscriptMetrics(_ metrics: VirtualTranscriptMetrics) {
+        contentHeight = metrics.content
+        viewportHeight = metrics.container
+        verticalInsets = metrics.insets
+    }
+
+    private func markTranscriptRowVisible(_ row: VirtualTranscriptRow) {
+        guard case .message(let id) = row.kind else { return }
+        alreadySeenMessageIds.insert(id)
+        if let msg = messages.first(where: { $0.id == id }),
+           row.retainsOverscan,
+           msg.role == .assistant,
+           !msg.content.isEmpty {
+            Task.detached(priority: .userInitiated) {
+                AssistantMarkdownParser.prewarm(msg.content)
+            }
+        }
+    }
+
+    private func markPrependedMessagesSeen(oldIds: [String], newIds: [String]) {
+        guard let oldFirst = oldIds.first,
+              let firstOldIndex = newIds.firstIndex(of: oldFirst),
+              firstOldIndex > 0 else { return }
+        alreadySeenMessageIds.formUnion(newIds[..<firstOldIndex])
     }
 
     private func shouldAnimateEntrance(for message: WireMessage) -> Bool {
@@ -643,6 +656,7 @@ struct ChatDetailView: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Scroll to bottom")
         .scaleEffect(showScrollToBottom ? 1 : 0.6, anchor: .center)
         .opacity(showScrollToBottom ? 1 : 0)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: showScrollToBottom)

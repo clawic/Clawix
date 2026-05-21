@@ -15,6 +15,7 @@ fileprivate let bridgeDbg = Logger(subsystem: "clawix.bridge.dbg", category: "st
 
 @Observable
 final class BridgeStore {
+    static let iosHeavyTranscriptInitialPageLimit = 30
 
     /// Path the bridge client is using. `lan` covers Bonjour-resolved
     /// endpoints AND direct IPv4 candidates from the QR (any private
@@ -1139,25 +1140,37 @@ final class BridgeStore {
         // exactly what a real `openSession(limit:)` reply would deliver.
         let longTail = Array(MockConversationFixtures.longMessages.suffix(bridgeInitialPageLimit))
         seeded[MockConversationFixtures.longChatId] = longTail
+        let heavyTail = Array(
+            MockConversationFixtures.heavyMarkdownMessages
+                .suffix(Self.iosHeavyTranscriptInitialPageLimit)
+        )
+        seeded[MockConversationFixtures.heavyMarkdownChatId] = heavyTail
         s.messagesByChat = seeded
         s.hasMoreByChat[MockConversationFixtures.longChatId] = MockConversationFixtures.longMessages.count > longTail.count
         s.oldestKnownIdByChat[MockConversationFixtures.longChatId] = longTail.first?.id
+        s.hasMoreByChat[MockConversationFixtures.heavyMarkdownChatId] = MockConversationFixtures.heavyMarkdownMessages.count > heavyTail.count
+        s.oldestKnownIdByChat[MockConversationFixtures.heavyMarkdownChatId] = heavyTail.first?.id
         // Stand in for the bridge's `loadOlderMessages` round trip:
         // serves the next slice of `MockConversationFixtures.longMessages` after a
         // 200ms delay so the spinner is observable, then flips
         // `loadingOlderByChat` back off via `applyMessagesPage`.
         s.mockLoadOlderHandler = { @MainActor [weak s] chatId, beforeId in
             guard let s else { return }
-            guard chatId == MockConversationFixtures.longChatId else {
+            let transcript: [WireMessage]
+            if chatId == MockConversationFixtures.longChatId {
+                transcript = MockConversationFixtures.longMessages
+            } else if chatId == MockConversationFixtures.heavyMarkdownChatId {
+                transcript = MockConversationFixtures.heavyMarkdownMessages
+            } else {
                 s.applyMessagesPage(chatId: chatId, messages: [], hasMore: false)
                 return
             }
-            guard let cursorIdx = MockConversationFixtures.longMessages.firstIndex(where: { $0.id == beforeId }) else {
+            guard let cursorIdx = transcript.firstIndex(where: { $0.id == beforeId }) else {
                 s.applyMessagesPage(chatId: chatId, messages: [], hasMore: false)
                 return
             }
             let lower = max(0, cursorIdx - bridgeOlderPageLimit)
-            let slice = Array(MockConversationFixtures.longMessages[lower..<cursorIdx])
+            let slice = Array(transcript[lower..<cursorIdx])
             let hasMore = lower > 0
             Task { @MainActor [weak s] in
                 try? await Task.sleep(nanoseconds: 200_000_000)

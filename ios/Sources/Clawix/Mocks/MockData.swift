@@ -16,6 +16,7 @@ enum MockConversationFixtures {
     /// messages so the iPhone shows the trailing 60 on entry and
     /// reveals the rest in batches as the user scrolls up.
     static let longChatId = "BBBBBBBB-1111-2222-3333-444444444444"
+    static let heavyMarkdownChatId = "CCCCCCCC-1111-2222-3333-444444444444"
 
     static let chats: [WireSession] = [
         WireSession(
@@ -29,6 +30,18 @@ enum MockConversationFixtures {
             lastMessagePreview: "Tail message of the synthetic long thread.",
             branch: "main",
             cwd: "/workspace/long-thread"
+        ),
+        WireSession(
+            id: heavyMarkdownChatId,
+            title: "Heavy markdown transcript preview",
+            createdAt: now.addingTimeInterval(-3600 * 10),
+            isPinned: false,
+            isArchived: false,
+            hasActiveTurn: false,
+            lastMessageAt: now.addingTimeInterval(-90),
+            lastMessagePreview: "Large markdown and timeline rows for scroll performance.",
+            branch: "perf/ios-transcript",
+            cwd: "/workspace/heavy-markdown"
         ),
         WireSession(
             id: "8B46DFE1-B932-48E6-94E7-C86E65F7F18D",
@@ -190,6 +203,7 @@ enum MockConversationFixtures {
     /// Generated lazily so the cost of building 150 `WireMessage`
     /// values only lands when the long-thread chat is opened.
     static let longMessages: [WireMessage] = makeLongMessages()
+    static let heavyMarkdownMessages: [WireMessage] = makeHeavyMarkdownMessages()
 
     private static func makeLongMessages() -> [WireMessage] {
         var out: [WireMessage] = []
@@ -211,6 +225,83 @@ enum MockConversationFixtures {
                 streamingFinished: true,
                 timestamp: base.addingTimeInterval(TimeInterval(i * 60))
             ))
+        }
+        return out
+    }
+
+    private static func makeHeavyMarkdownMessages() -> [WireMessage] {
+        var out: [WireMessage] = []
+        out.reserveCapacity(90)
+        let base = now.addingTimeInterval(-60 * 90)
+        for i in 0..<90 {
+            let isUser = i % 3 == 0
+            if isUser {
+                out.append(WireMessage(
+                    id: "heavy-msg-\(i + 1)",
+                    role: .user,
+                    content: "Please review the migration note #\(i + 1) and keep the visible transcript anchored while older history loads.",
+                    streamingFinished: true,
+                    timestamp: base.addingTimeInterval(TimeInterval(i * 60))
+                ))
+            } else {
+                let body = """
+                Reply #\(i + 1)
+
+                The assistant response intentionally carries several markdown blocks so the iOS virtual transcript has tall rows to measure without using a real daemon.
+
+                1. Preserve the current viewport anchor.
+                2. Reuse cells for off-screen history.
+                3. Keep generated markdown stable while streaming updates land.
+
+                ```swift
+                struct TranscriptProbe\(i + 1) {
+                    let messageId = "heavy-msg-\(i + 1)"
+                    let expectedAnchor = "stable"
+                }
+                ```
+
+                This paragraph pads the row with enough prose to behave like a real agent response with timelines, code, and file pills in the same turn.
+                """
+                out.append(WireMessage(
+                    id: "heavy-msg-\(i + 1)",
+                    role: .assistant,
+                    content: body,
+                    reasoningText: "Measured row #\(i + 1) with markdown, timeline-like prose, and a code block.",
+                    streamingFinished: true,
+                    timestamp: base.addingTimeInterval(TimeInterval(i * 60)),
+                    timeline: [
+                        .reasoning(
+                            id: "heavy-reason-\(i + 1)",
+                            text: "Estimating markdown row height before display."
+                        ),
+                        .tools(
+                            id: "heavy-tools-\(i + 1)",
+                            items: [
+                                WireWorkItem(
+                                    id: "heavy-tool-\(i + 1)",
+                                    kind: "command",
+                                    status: .completed,
+                                    commandText: "measure transcript row",
+                                    commandActions: ["unknown"]
+                                )
+                            ]
+                        )
+                    ],
+                    workSummary: WireWorkSummary(
+                        startedAt: base.addingTimeInterval(TimeInterval(i * 60 - 8)),
+                        endedAt: base.addingTimeInterval(TimeInterval(i * 60)),
+                        items: [
+                            WireWorkItem(
+                                id: "heavy-summary-\(i + 1)",
+                                kind: "command",
+                                status: .completed,
+                                commandText: "render markdown fixture",
+                                commandActions: ["unknown"]
+                            )
+                        ]
+                    )
+                ))
+            }
         }
         return out
     }
