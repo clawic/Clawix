@@ -12,7 +12,13 @@
     "url": "git+https://github.com/clawic/clawix.git",
     "directory": "cli"
   },
-  "keywords": ["codex", "cli", "bridge", "iphone", "remote"],
+  "keywords": [
+    "codex",
+    "cli",
+    "bridge",
+    "iphone",
+    "remote"
+  ],
   "bin": {
     "clawix": "bin/clawix.js"
   },
@@ -23,12 +29,18 @@
   "engines": {
     "node": ">=18"
   },
-  "os": ["darwin"],
-  "cpu": ["arm64", "x64"],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64",
+    "x64"
+  ],
   "files": [
     "bin/",
     "lib/",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "packageManager": "npm@11.12.1"
 }

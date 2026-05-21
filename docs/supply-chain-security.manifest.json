@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "canonicalSource": "../../../clawjs/docs/supply-chain-security.md",
+  "policy": {
+    "mode": "baseline-plus-release-hard-fail",
+    "releaseHardFail": true,
+    "sbomFormat": "CycloneDX JSON",
+    "provenanceTarget": "SLSA Build L2 for CI-built official artifacts",
+    "vulnerabilitySla": {
+      "acknowledgeHours": 48,
+      "criticalPlanHours": 24,
+      "criticalFixHours": 72,
+      "highDays": 7,
+      "mediumDays": 30,
+      "lowDays": 90
+    }
+  },
+  "surfaces": [
+    {
+      "id": "clawix.web",
+      "kind": "web",
+      "path": "web/package.json",
+      "releaseCritical": true,
+      "releaseTargets": ["web-release"],
+      "lockfile": { "status": "pass", "evidence": "web/pnpm-lock.yaml" },
+      "sbom": { "status": "pass", "evidence": "release evidence must include CycloneDX JSON for the web bundle" },
+      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for official web artifacts" },
+      "dependencyReview": { "status": "pass", "evidence": "PR template and CODEOWNERS supply-chain review routing" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md" },
+      "artifactIntegrity": { "status": "pass", "evidence": "release evidence includes SHA-256 checksum and signed-checksum/signature refs" },
+      "malwareReview": { "status": "pass", "evidence": "custom app/plugin activation policy in docs/supply-chain-security.md" }
+    },
+    {
+      "id": "clawix.linux-tauri",
+      "kind": "tauri",
+      "path": "linux/app/package.json",
+      "releaseCritical": true,
+      "releaseTargets": ["linux-release"],
+      "lockfile": { "status": "pass", "evidence": "linux/app/package-lock.json and linux/app/src-tauri/Cargo.lock" },
+      "sbom": { "status": "pass", "evidence": "release evidence must include CycloneDX JSON for npm and Cargo components" },
+      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for AppImage/deb artifacts" },
+      "dependencyReview": { "status": "pass", "evidence": "PR template and CODEOWNERS dependency review routing" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md tracks current moderate dev-server advisory" },
+      "artifactIntegrity": { "status": "pass", "evidence": "GPG signatures, checksums, and release evidence for AppImage/deb" },
+      "malwareReview": { "status": "pass", "evidence": "native permission and shell plugin review before activation" }
+    },
+    {
+      "id": "clawix.macos-swiftpm",
+      "kind": "swiftpm",
+      "path": "macos/Package.swift",
+      "releaseCritical": true,
+      "releaseTargets": ["macos-release", "ios-release"],
+      "lockfile": { "status": "pass", "evidence": "macos/Package.resolved plus helper Package.resolved files" },
+      "sbom": { "status": "pass", "evidence": "release evidence must include SwiftPM SBOM references" },
+      "provenance": { "status": "pass", "evidence": "CI build provenance or local signed release evidence" },
+      "dependencyReview": { "status": "pass", "evidence": "Package.swift and Package.resolved changes route through supply-chain review" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and ClawJS SLA" },
+      "artifactIntegrity": { "status": "pass", "evidence": "codesign, notarization evidence, checksums, and signed update channel" },
+      "malwareReview": { "status": "pass", "evidence": "signed-host helper and custom-surface activation review policy" }
+    },
+    {
+      "id": "clawix.windows-dotnet",
+      "kind": "dotnet",
+      "path": "windows/Clawix.App/Clawix.App.csproj",
+      "releaseCritical": true,
+      "releaseTargets": ["windows-release"],
+      "lockfile": { "status": "baseline_exception", "evidence": "NuGet lockfile is pending for Windows projects", "exception": "Release guard records the gap; Windows release remains blocked until lockfile evidence or explicit scope revision exists." },
+      "sbom": { "status": "pass", "evidence": "release evidence must include .NET/NuGet SBOM references" },
+      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for MSIX" },
+      "dependencyReview": { "status": "pass", "evidence": "csproj dependency changes route through supply-chain review" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and ClawJS SLA" },
+      "artifactIntegrity": { "status": "pass", "evidence": "Authenticode signature plus release checksums" },
+      "malwareReview": { "status": "pass", "evidence": "native helper and plugin activation review policy" }
+    },
+    {
+      "id": "clawix.bundled-clawjs",
+      "kind": "bundled-runtime",
+      "path": "macos/scripts/bundle_clawjs.sh",
+      "releaseCritical": true,
+      "releaseTargets": ["macos-release"],
+      "lockfile": { "status": "pass", "evidence": "bundled @clawjs/cli version is pinned in macos/CLAWJS_VERSION and verified through ClawJS release evidence" },
+      "sbom": { "status": "pass", "evidence": "release evidence must include bundled ClawJS SBOM refs" },
+      "provenance": { "status": "pass", "evidence": "npm package provenance for bundled @clawjs/cli" },
+      "dependencyReview": { "status": "pass", "evidence": "CLAWJS_VERSION changes require supply-chain review" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "ClawJS SECURITY.md and supply-chain triage" },
+      "artifactIntegrity": { "status": "pass", "evidence": "bundled package checksums and app codesign verification" },
+      "malwareReview": { "status": "pass", "evidence": "bundled runtime is official ClawJS release only" }
+    },
+    {
+      "id": "clawix.release-channel",
+      "kind": "release-channel",
+      "path": "RELEASING.md",
+      "releaseCritical": true,
+      "releaseTargets": ["macos-release", "ios-release", "linux-release", "windows-release", "web-release", "all"],
+      "lockfile": { "status": "pass", "evidence": "release preflights require lockfile/resolved dependency evidence" },
+      "sbom": { "status": "pass", "evidence": "release checklist requires SBOM refs" },
+      "provenance": { "status": "pass", "evidence": "release checklist requires provenance/attestation refs" },
+      "dependencyReview": { "status": "pass", "evidence": "PR checklist and CODEOWNERS supply-chain routes" },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "release checklist requires vulnerability triage status" },
+      "artifactIntegrity": { "status": "pass", "evidence": "signed checksums, platform signatures, appcast signatures, and package signatures" },
+      "malwareReview": { "status": "pass", "evidence": "plugin/sub-app quarantine and activation review policy" }
+    }
+  ]
+}

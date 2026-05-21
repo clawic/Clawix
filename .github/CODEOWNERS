@@ -1,0 +1,16 @@
+* @clawic
+
+/docs/ @clawic
+/macos/ @clawic
+/ios/ @clawic
+/linux/ @clawic
+/windows/ @clawic
+/web/ @clawic
+package.json @clawic
+**/package.json @clawic
+**/package-lock.json @clawic
+**/pnpm-lock.yaml @clawic
+**/Package.resolved @clawic
+**/Cargo.lock @clawic
+docs/supply-chain-security* @clawic
+scripts/supply_chain_security_check.mjs @clawic

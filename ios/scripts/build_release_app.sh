@@ -25,6 +25,8 @@ echo "==> Capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 echo "==> ClawJS mirror release preflight"
 node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
+echo "==> Supply-chain security preflight"
+node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target ios-release
 echo "==> External pending release preflight"
 node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target ios-release
 

@@ -16,6 +16,7 @@ $repoRoot = (Resolve-Path (Join-Path $ROOT "..")).Path
 & (Join-Path $PSScriptRoot "public_hygiene_check.ps1")
 node (Join-Path $repoRoot "scripts\legal_safety_check.mjs")
 node (Join-Path $repoRoot "scripts\interface_surface_guard.mjs")
+node (Join-Path $repoRoot "scripts\supply_chain_security_check.mjs") --release --target windows-release
 node (Join-Path $repoRoot "scripts\release_external_pending_gate.mjs") --target windows-release
 
 if ($env:CLAWIX_RELEASE_APPROVED_FOR -ne "windows-msix") {

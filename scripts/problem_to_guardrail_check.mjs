@@ -57,7 +57,7 @@ function runSelfTest() {
   assert.deepEqual(validate(), []);
   const broken = new Map([[
     "docs/agent-rules/index.md",
-    read("docs/agent-rules/index.md").replace("guard/test añadido", "fixed locally"),
+    read("docs/agent-rules/index.md").replaceAll("guard/test añadido", "fixed locally"),
   ]]);
   assert.match(validate(broken).join("\n"), /guard\/test añadido/);
 }

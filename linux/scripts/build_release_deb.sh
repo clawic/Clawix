@@ -25,6 +25,8 @@ echo "[deb] capability maturity preflight"
 node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
 echo "[deb] ClawJS mirror release preflight"
 node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
+echo "[deb] supply-chain security preflight"
+node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target linux-release
 echo "[deb] external pending release preflight"
 node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release
 
