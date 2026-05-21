@@ -24,7 +24,7 @@ enum SyncSettings {
     }
 
     static var autoReloadOnFocus: Bool {
-        get { store.object(forKey: autoReloadKey) as? Bool ?? true }
+        get { store.object(forKey: autoReloadKey) as? Bool ?? false }
         set { store.set(newValue, forKey: autoReloadKey) }
     }
 }

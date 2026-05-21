@@ -297,7 +297,7 @@ struct GeneralPage: View {
             SettingsCard {
                 ToggleRow(
                     title: "Auto-refresh on focus",
-                    detail: "Reload chats from Codex automatically when this app becomes the active window.",
+                    detail: "When enabled, reload chats from Codex when this app becomes the active window.",
                     isOn: Binding(
                         get: { autoReloadOnFocus },
                         set: { newValue in
