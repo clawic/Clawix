@@ -496,6 +496,9 @@ extension AppState {
             timestamp: Date()
         )
         chatStore.appendMessage(chatId: chatId, bubble)
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.hasActiveTurn = false
+        }
         syncLegacyChatFromStore(chatId: chatId)
     }
 

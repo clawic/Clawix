@@ -40,4 +40,33 @@ final class RescueChatFallbackTests: XCTestCase {
         XCTAssertFalse(chat.hasActiveTurn)
         XCTAssertEqual(state.composer.text, "")
     }
+
+    func testMainComposerDoesNotSilentlySwallowSendWhenBridgeIsNotReady() async {
+        let state = AppState()
+        state.chats = []
+        state.currentRoute = .home
+        state.clawJSSessionsCanonicalActive = false
+        state.rescueDecision = RescueSurvivalPolicy.evaluate(
+            signals: [],
+            availableRuntimeCount: 1
+        )
+        state.daemonBridgeClient = DaemonBridgeClient(
+            appState: state,
+            pairing: state.sharedBridgePairingService()
+        )
+        state.composer.text = "reply OK"
+
+        state.sendMessage()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let chat = try! XCTUnwrap(state.chats.first)
+        let messages = try! XCTUnwrap(state.chatStore.transcript(for: chat.id)?.messages)
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertEqual(messages[0].role, .user)
+        XCTAssertEqual(messages[1].role, .assistant)
+        XCTAssertTrue(messages[1].isError)
+        XCTAssertTrue(messages[1].content.contains("Agent runtime is unavailable"))
+        XCTAssertFalse(chat.hasActiveTurn)
+        XCTAssertEqual(state.composer.text, "")
+    }
 }

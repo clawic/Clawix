@@ -77,8 +77,11 @@ extension AppState {
                 if await self.sendMessageViaClawJSSessions(chatId: chatId, text: combined, attachments: attachments) {
                     return
                 }
-                if let daemonBridgeClient = self.daemonBridgeClient {
-                    daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: self.wireAttachments(from: attachments))
+                if let daemonBridgeClient = self.daemonBridgeClient,
+                   daemonBridgeClient.isReadyForRequests {
+                    if !daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: self.wireAttachments(from: attachments)) {
+                        self.appendErrorBubble(chatId: chatId, message: "Background bridge is not ready. Try again once it reconnects.")
+                    }
                 } else if let clawix = self.clawix {
                     guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
                         self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
@@ -86,6 +89,8 @@ extension AppState {
                     }
                     await clawix.sendUserMessage(chatId: chatId, text: combined)
                     self.clawixBackendStatus = clawix.status
+                } else {
+                    self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable.")
                 }
             }
             return
@@ -95,9 +100,11 @@ extension AppState {
             return
         }
 
-        if let daemonBridgeClient {
+        if let daemonBridgeClient, daemonBridgeClient.isReadyForRequests {
             trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
-            daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: wireAttachments(from: attachments))
+            if !daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: wireAttachments(from: attachments)) {
+                appendErrorBubble(chatId: chatId, message: "Background bridge is not ready. Try again once it reconnects.")
+            }
         } else if selectedAgentRuntime == .opencode {
             appendAssistantSystemMessage(
                 to: chatId,
@@ -112,6 +119,8 @@ extension AppState {
                 await clawix.sendUserMessage(chatId: chatId, text: combined)
                 self.clawixBackendStatus = clawix.status
             }
+        } else {
+            appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable.")
         }
     }
 
@@ -206,7 +215,7 @@ extension AppState {
             return true
         } catch {
             appendErrorBubble(chatId: chatId, message: "Could not send through ClawJS sessions: \(error.localizedDescription)")
-            return false
+            return true
         }
     }
 

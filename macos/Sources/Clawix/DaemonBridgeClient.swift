@@ -17,6 +17,10 @@ final class DaemonBridgeClient {
         self.pairing = pairing
     }
 
+    var isReadyForRequests: Bool {
+        connection != nil && isAuthenticated
+    }
+
     func connect() {
         disconnect()
         let parameters = NWParameters.tcp
@@ -49,7 +53,8 @@ final class DaemonBridgeClient {
         isAuthenticated = false
     }
 
-    func openSession(_ sessionId: UUID) {
+    @discardableResult
+    func openSession(_ sessionId: UUID) -> Bool {
         // Always opt into pagination, same as the iPhone client. The
         // initial paint only needs the trailing window
         // (`bridgeInitialPageLimit`); older history streams in via
@@ -57,7 +62,7 @@ final class DaemonBridgeClient {
         // transcript on every session tap was the dominant cost behind
         // the "transcript reanchors visibly while building from the
         // top" symptom on Mac, even over loopback.
-        send(.openSession(sessionId: sessionId.uuidString, limit: bridgeInitialPageLimit))
+        return send(.openSession(sessionId: sessionId.uuidString, limit: bridgeInitialPageLimit))
     }
 
     /// Fetch the next page of older messages for `chatId`. The cursor
@@ -73,20 +78,24 @@ final class DaemonBridgeClient {
         ))
     }
 
-    func sendMessage(chatId: UUID, text: String, attachments: [WireAttachment] = []) {
-        send(.sendMessage(sessionId: chatId.uuidString, text: text, attachments: attachments))
+    @discardableResult
+    func sendMessage(chatId: UUID, text: String, attachments: [WireAttachment] = []) -> Bool {
+        return send(.sendMessage(sessionId: chatId.uuidString, text: text, attachments: attachments))
     }
 
-    func archiveChat(_ chatId: UUID) {
-        send(.archiveSession(sessionId: chatId.uuidString))
+    @discardableResult
+    func archiveChat(_ chatId: UUID) -> Bool {
+        return send(.archiveSession(sessionId: chatId.uuidString))
     }
 
-    func unarchiveChat(_ chatId: UUID) {
-        send(.unarchiveSession(sessionId: chatId.uuidString))
+    @discardableResult
+    func unarchiveChat(_ chatId: UUID) -> Bool {
+        return send(.unarchiveSession(sessionId: chatId.uuidString))
     }
 
-    func interruptTurn(chatId: UUID) {
-        send(.interruptTurn(sessionId: chatId.uuidString))
+    @discardableResult
+    func interruptTurn(chatId: UUID) -> Bool {
+        return send(.interruptTurn(sessionId: chatId.uuidString))
     }
 
     private func handle(_ state: NWConnection.State) {
