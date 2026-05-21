@@ -2,6 +2,10 @@ import Combine
 import Foundation
 
 struct ChatSummary: Identifiable, Equatable {
+    // Stable sidebar/search projection only. Do not add transcript text,
+    // reasoning, timeline, or per-token streaming fields here; those belong
+    // in ChatMessageStore/ChatTranscriptStore so streaming does not invalidate
+    // unrelated UI surfaces.
     let id: UUID
     var title: String
     var createdAt: Date

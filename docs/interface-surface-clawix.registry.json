@@ -113,6 +113,15 @@
       "steward": "host"
     },
     {
+      "id": "portableArchive",
+      "status": "stable",
+      "humanSurface": "Clawix Settings/Data portable archive export, verify, import preview, restore and restore report UI",
+      "programmaticSurface": "claw archive plan|export|verify|inspect|import|restore|doctor --json; ClawJS PortableArchive* contracts",
+      "storageOwner": "framework-contract-plus-signed-host-secrets",
+      "validation": "PortableArchiveSettingsTests, portable_archive_mirror_check.mjs, and sibling ClawJS portable archive governance check",
+      "steward": "framework"
+    },
+    {
       "id": "mcp",
       "featureFlag": "mcp",
       "status": "stable",
@@ -250,6 +259,16 @@
           "programmatic": "Framework runtime adapter registry and host policy consumed through Clawix feature visibility checks"
         },
         "nonInference": "This interface surface does not make Clawix the runtime adapter owner, bypass framework registry policy, or enable hidden adapters without the feature flag."
+      },
+      "resourceContract": {
+        "startup": "The selector does not start an adapter on launch; it reads visible runtime adapter metadata when the settings/runtime surface is shown.",
+        "idle": "Idle state keeps only selected adapter metadata and feature visibility, not a running adapter process.",
+        "memory": "The adapter list is bounded by the framework runtime adapter registry and rendered as a small selector model.",
+        "streaming": "No stream is owned by the selector; active runtime job streams must declare their own route resource contracts.",
+        "storage": "Selection persists through framework runtime configuration or host policy, not a separate Clawix-owned runtime store.",
+        "hotPath": "UI routing and selector rendering are the hot path and must remain simple metadata reads.",
+        "scale": "Designed for tens of adapters; 1,000 entries require searchable/paginated selection, and 100,000 adapters are outside product scope.",
+        "validation": "node scripts/surface_resource_contract_guard.mjs and Runtime adapter registry tests"
       },
       "steward": "framework"
     },

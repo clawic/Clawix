@@ -36,7 +36,8 @@ performance fix.
   warm models, build indexes, start polling, or initialize optional surfaces
   before a user, agent, route, or explicit module requires it.
 - Keep caches, logs, snapshots, attachments, indexes, local model artifacts,
-  and host state bounded by size, age, count, retention, or explicit cleanup.
+  and host state bounded by bytes, count, age, or active-window limit plus
+  explicit cleanup.
 - Make idle mean idle: no visible or hidden timers, TimelineViews, workers,
   WebViews, daemon loops, GPU work, or bridge polling should keep running when
   no useful work remains.
@@ -47,6 +48,45 @@ performance fix.
   evidence that they are harmless.
 - Prefer equivalent cheaper behavior when tests and measurements prove the
   same user-visible and programmatic behavior.
+
+## Windowing/Pagination by Default
+
+The default rule is: do not load all -> filter/sort/render. Chat
+transcripts, QuickAsk, sidebars, database administration, search results,
+rollout JSONL readers, embeddings, timelines, tables, and imports must use a
+cursor/window/batch/limit contract before they touch large data.
+
+Clawix UI and bridge surfaces should render bounded slices, request older data
+through explicit cursors or offsets, and keep first paint independent from
+full-history hydration. Rollout and transcript paths should use tail windows
+and `readWindowBefore`-style older-page fetches. Database workbench imports
+must stream or batch, or prove a maximum file size and row count before using
+whole-file parsing.
+
+Exceptions are allowed only for datasets with a documented maximum count or
+byte size. Existing historical exceptions live in
+`docs/boundedness-baseline.json`; new or touched exceptions need the affected
+surface, risk kind, bound, cleanup policy, review reference, and expiry.
+
+## Boundedness Guard P0
+
+Any cache, queue, log, snapshot, checkpoint, timeline, upload buffer,
+transcript, session state, EventBus, WebSocket or SSE fanout, markdown cache,
+ranking cache, or similar retained collection must declare a bytes, count, age,
+or active-window limit plus cleanup ownership. The cleanup policy names how the
+state is trimmed, expired, compacted, evicted, backpressured, paginated,
+leased, or otherwise released.
+
+Unbounded growth is a P0 closure blocker. New app or host work fails validation
+when a risk surface has no nearby boundedness declaration. Historical debt is
+allowed only through `docs/boundedness-baseline.json`, with owner area, reason,
+limit kind, current limit value, cleanup policy, reference, expiration date, and
+release-blocking classification.
+
+Examples that block closure include async queues without a maximum, caches
+limited only by entry count when entry byte cost is unbounded, whole-payload
+`Buffer.concat` or `Data` retention for large uploads, full transcripts kept in
+UI state, and checkpoints that survive their active window without compaction.
 
 ## Resource Dimensions
 
@@ -78,6 +118,10 @@ Performance work still starts with reproduction and instrumentation. Static
 reading can identify risk, but it does not prove a fix. Missing signed-host,
 physical device, provider, or private baseline evidence remains `EXTERNAL
 PENDING`.
+
+`scripts/boundedness_guard.mjs` protects the progressive guardrail in the fast
+lane by blocking new obvious broad reads unless nearby code or the baseline
+shows cursor/window/batch/limit behavior.
 
 ## Visual Boundary
 

@@ -32,6 +32,7 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
     func testRouteDemandServicesStayOffCoreSurvivalRoutes() {
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .home), [])
+        XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .search), [])
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .rescue), [])
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .settings), [])
     }
@@ -121,6 +122,25 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
         XCTAssertTrue(source.contains("ClawixStartupCore.run(role: ClawixAppRole.current)"))
         XCTAssertFalse(source.contains("ClawJSServiceManager.shared.start()"))
+    }
+
+    func testAppStateInitDoesNotStartPostFirstFrameWork() throws {
+        let source = try readSource("AppState.swift")
+        guard let initStart = source.range(of: "    init(\n") else {
+            XCTFail("AppState.init not found")
+            return
+        }
+        guard let nextMethodStart = source.range(of: "    func loadThreadsFromRuntime()") else {
+            XCTFail("AppState.init end marker not found")
+            return
+        }
+
+        let initBody = String(source[initStart.lowerBound..<nextMethodStart.lowerBound])
+
+        XCTAssertFalse(initBody.contains("FaviconCache.shared.primeDiskCache()"))
+        XCTAssertFalse(initBody.contains("clawix.startIfNeeded("))
+        XCTAssertTrue(source.contains("startPostFirstFrameFaviconCache()"))
+        XCTAssertTrue(source.contains("Bridge transport startup is allowed here without runtime"))
     }
 
     func testManagerStartAPIDelegatesOnlyRequestedServices() throws {

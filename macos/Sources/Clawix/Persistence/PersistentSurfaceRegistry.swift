@@ -87,6 +87,7 @@ struct PersistentSurfaceNode: Codable, Equatable {
     var nullable: Bool?
     var source: String?
     var surfaceNarrative: PersistentSurfaceNarrative?
+    var resourceContract: PersistentSurfaceResourceContract?
     var notes: String?
     var warnings: [String]?
 }
@@ -108,14 +109,25 @@ struct PersistentSurfaceNarrativeCompletion: Codable, Equatable {
     var programmatic: String
 }
 
+struct PersistentSurfaceResourceContract: Codable, Equatable {
+    var startup: String
+    var idle: String
+    var memory: String
+    var streaming: String
+    var storage: String
+    var hotPath: String
+    var scale: String
+    var validation: String
+}
+
 struct PersistentSurfaceManifest: Codable, Equatable {
     var version: Int
     var nodes: [PersistentSurfaceNode]
 }
 
 enum ClawixPersistentSurface {
-    static func root(id: String, name: String, path: String, storageClass: String = "nativeAppData", surfaceNarrative: PersistentSurfaceNarrative? = nil, notes: String? = nil) -> PersistentSurfaceNode {
-        node(id: id, kind: .root, name: name, path: path, storageClass: storageClass, surfaceNarrative: surfaceNarrative, notes: notes)
+    static func root(id: String, name: String, path: String, storageClass: String = "nativeAppData", surfaceNarrative: PersistentSurfaceNarrative? = nil, resourceContract: PersistentSurfaceResourceContract? = nil, notes: String? = nil) -> PersistentSurfaceNode {
+        node(id: id, kind: .root, name: name, path: path, storageClass: storageClass, surfaceNarrative: surfaceNarrative, resourceContract: resourceContract, notes: notes)
     }
 
     static func database(
@@ -125,9 +137,10 @@ enum ClawixPersistentSurface {
         parentId: String? = nil,
         storageClass: String = "nativeAppData",
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
+        resourceContract: PersistentSurfaceResourceContract? = nil,
         notes: String? = nil
     ) -> PersistentSurfaceNode {
-        node(id: id, kind: .database, name: name, path: path, storageClass: storageClass, parentId: parentId, surfaceNarrative: surfaceNarrative, notes: notes)
+        node(id: id, kind: .database, name: name, path: path, storageClass: storageClass, parentId: parentId, surfaceNarrative: surfaceNarrative, resourceContract: resourceContract, notes: notes)
     }
 
     static func table(_ name: String, databaseId: String) -> PersistentSurfaceNode {
@@ -221,9 +234,10 @@ enum ClawixPersistentSurface {
         kind: PersistentSurfaceKind = .preferenceKey,
         source: String? = nil,
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
+        resourceContract: PersistentSurfaceResourceContract? = nil,
         notes: String? = nil
     ) -> PersistentSurfaceNode {
-        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", source: source, surfaceNarrative: surfaceNarrative, notes: notes)
+        node(id: id, kind: kind, name: name, key: key, storageClass: "nativeAppData", source: source, surfaceNarrative: surfaceNarrative, resourceContract: resourceContract, notes: notes)
     }
 
     static func file(
@@ -263,6 +277,7 @@ enum ClawixPersistentSurface {
         direction: String = "bidirectional",
         canonicality: String = "hostOnly",
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
+        resourceContract: PersistentSurfaceResourceContract? = nil,
         notes: String? = nil
     ) -> PersistentSurfaceNode {
         node(
@@ -287,6 +302,7 @@ enum ClawixPersistentSurface {
             fieldPath: fieldPath,
             enumType: enumType,
             surfaceNarrative: surfaceNarrative,
+            resourceContract: resourceContract,
             notes: notes
         )
     }
@@ -322,6 +338,7 @@ enum ClawixPersistentSurface {
         nullable: Bool? = nil,
         source: String? = nil,
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
+        resourceContract: PersistentSurfaceResourceContract? = nil,
         notes: String? = nil,
         warnings: [String]? = nil,
         surfaceSteward: String = "clawix",
@@ -362,6 +379,7 @@ enum ClawixPersistentSurface {
             nullable: nullable,
             source: source,
             surfaceNarrative: surfaceNarrative,
+            resourceContract: resourceContract,
             notes: notes,
             warnings: warnings
         )
@@ -1149,6 +1167,16 @@ enum ClawixPersistentSurfaceRegistry {
                         programmatic: "FeatureFlags.setCapabilityOptIn(_:capabilityID:) stores sorted capability ids in UserDefaults under FeatureFlags.enabledCapabilityIDs."
                     ),
                     nonInference: "This key does not authorize production developer surfaces, bypass release-build feature gates, or make any incomplete capability stable."
+                ),
+                resourceContract: PersistentSurfaceResourceContract(
+                    startup: "Feature flag opt-in ids are read only when feature visibility is evaluated; no background service starts from this key.",
+                    idle: "Idle state is a small UserDefaults string array and no live observer is required.",
+                    memory: "The enabled capability id set is bounded by the app capability catalog size and copied into memory only for feature checks.",
+                    streaming: "No stream is attached to this preference key; changes are explicit settings writes.",
+                    storage: "Writes a sorted capability id array to UserDefaults with host-local retention until the user clears or changes the opt-in.",
+                    hotPath: "Feature visibility checks can run during UI routing and must remain simple set membership checks.",
+                    scale: "Expected tens of capability ids; 1,000 ids remains a small set lookup, and 100,000 ids is outside product scope for this local preference.",
+                    validation: "node scripts/surface_resource_contract_guard.mjs and Clawix feature flag tests"
                 )
             )
         ]

@@ -66,6 +66,35 @@ final class SidebarStoreTests: XCTestCase {
         XCTAssertEqual(store.revision, revision)
     }
 
+    func testLongStreamingRunDoesNotAdvanceSidebarRevisionUntilSummaryChanges() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: chatId, title: "Long stream", messages: [assistant], createdAt: Date())
+        ]
+        let store = SidebarStore(appState: state)
+        let revision = store.revision
+
+        for index in 0..<1_000 {
+            state.appendAssistantDelta(chatId: chatId, delta: "token-\(index) ")
+            state.flushPendingAssistantTextDeltas(chatId: chatId)
+            state.appendReasoningDelta(chatId: chatId, delta: "reason-\(index) ")
+            state.flushPendingReasoningDeltas(chatId: chatId)
+        }
+
+        XCTAssertEqual(store.revision, revision)
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), [chatId])
+
+        state.markChat(chatId: chatId, hasActiveTurn: true)
+
+        XCTAssertGreaterThan(store.revision, revision)
+        XCTAssertEqual(store.snapshot.chrono.first?.hasActiveTurn, true)
+    }
+
     func testSummaryStatusChangesAdvanceSidebarRevision() {
         let state = AppState()
         let chatId = UUID()

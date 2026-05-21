@@ -107,6 +107,9 @@ struct DatabaseWorkbenchOperationRecord: Codable, Equatable, Identifiable {
 @MainActor
 final class DatabaseWorkbenchOperationStore: ObservableObject {
     static let shared = DatabaseWorkbenchOperationStore()
+    private static let localImportMaxBytes: UInt64 = 5 * 1024 * 1024
+    private static let localCSVImportMaxRows = 10_000
+    private static let localCSVImportBatchSize = 500
 
     @Published var inputPath: String {
         didSet { persistState() }
@@ -360,6 +363,7 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
         }
 
         do {
+            try validateLocalImportFile(source, maxBytes: localImportMaxBytes, fileManager: fileManager)
             let csv = try String(contentsOfFile: source, encoding: .utf8)
             let rows = try parseCSV(
                 csv,
@@ -377,6 +381,13 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
             let dataRows = rows.dropFirst().filter { row in
                 row.count > 1 || row.first?.isEmpty == false
             }
+            guard dataRows.count <= localCSVImportMaxRows else {
+                return .init(
+                    kind: .importCSV,
+                    status: .blocked,
+                    message: "CSV import failed: file has \(dataRows.count) data rows; local imports are capped at \(localCSVImportMaxRows) rows per batch."
+                )
+            }
             guard dataRows.allSatisfy({ $0.count == header.count }) else {
                 return .init(kind: .importCSV, status: .blocked, message: "CSV import failed: row column counts do not match the header.")
             }
@@ -390,8 +401,11 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
             try queue.write { db in
                 let placeholders = Array(repeating: "?", count: columns.count).joined(separator: ", ")
                 let sql = "INSERT INTO \(table) (\(columns.joined(separator: ", "))) VALUES (\(placeholders))"
-                for row in dataRows {
-                    try db.execute(sql: sql, arguments: StatementArguments(row))
+                for batchStart in stride(from: 0, to: dataRows.count, by: localCSVImportBatchSize) {
+                    let batchEnd = min(batchStart + localCSVImportBatchSize, dataRows.count)
+                    for row in dataRows[batchStart..<batchEnd] {
+                        try db.execute(sql: sql, arguments: StatementArguments(row))
+                    }
                 }
             }
             return .init(kind: .importCSV, status: .localReady, message: "SQLite CSV import wrote \(dataRows.count) row\(dataRows.count == 1 ? "" : "s").")
@@ -412,6 +426,7 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
         }
 
         do {
+            try validateLocalImportFile(source, maxBytes: localImportMaxBytes, fileManager: fileManager)
             let sql = try String(contentsOfFile: source, encoding: .utf8)
             guard !sql.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 return .init(kind: .importSQLDump, status: .blocked, message: "SQL dump import failed: SQL file is empty.")
@@ -674,6 +689,18 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
         }
     }
 
+    private static func validateLocalImportFile(
+        _ path: String,
+        maxBytes: UInt64,
+        fileManager: FileManager
+    ) throws {
+        let attributes = try fileManager.attributesOfItem(atPath: path)
+        let size = (attributes[.size] as? NSNumber)?.uint64Value ?? 0
+        guard size <= maxBytes else {
+            throw DatabaseWorkbenchLocalOperationError.inputFileTooLarge(maxBytes: maxBytes)
+        }
+    }
+
     private static func quotedSQLiteIdentifier(_ raw: String) -> String? {
         let parts = raw
             .split(separator: ".", omittingEmptySubsequences: false)
@@ -820,6 +847,7 @@ enum DatabaseWorkbenchLocalOperationError: LocalizedError, Equatable {
     case outputDirectoryMissing
     case invalidCSVHeader
     case malformedCSV
+    case inputFileTooLarge(maxBytes: UInt64)
 
     var errorDescription: String? {
         switch self {
@@ -833,6 +861,8 @@ enum DatabaseWorkbenchLocalOperationError: LocalizedError, Equatable {
             return "CSV header contains a column name that cannot be mapped safely."
         case .malformedCSV:
             return "CSV contains an unclosed quoted field."
+        case .inputFileTooLarge(let maxBytes):
+            return "Input file is larger than the local import cap of \(maxBytes) bytes; split it into smaller batches."
         }
     }
 }

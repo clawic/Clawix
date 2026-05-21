@@ -5747,6 +5747,16 @@
       "privacy" : "userData",
       "project" : "macos",
       "repo" : "Clawix",
+      "resourceContract" : {
+        "hotPath" : "Feature visibility checks can run during UI routing and must remain simple set membership checks.",
+        "idle" : "Idle state is a small UserDefaults string array and no live observer is required.",
+        "memory" : "The enabled capability id set is bounded by the app capability catalog size and copied into memory only for feature checks.",
+        "scale" : "Expected tens of capability ids; 1,000 ids remains a small set lookup, and 100,000 ids is outside product scope for this local preference.",
+        "startup" : "Feature flag opt-in ids are read only when feature visibility is evaluated; no background service starts from this key.",
+        "storage" : "Writes a sorted capability id array to UserDefaults with host-local retention until the user clears or changes the opt-in.",
+        "streaming" : "No stream is attached to this preference key; changes are explicit settings writes.",
+        "validation" : "node scripts/surface_resource_contract_guard.mjs and Clawix feature flag tests"
+      },
       "source" : "macos/Sources/Clawix/FeatureFlags.swift",
       "storageClass" : "nativeAppData",
       "surfaceNarrative" : {

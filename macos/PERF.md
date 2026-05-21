@@ -268,6 +268,31 @@ in the listed file:line, and check the indicated lane / artifact.
 - Existing `stream-perf` Logger lines in `console.ndjson` give the
   per-message timings the StreamingFade pipeline already records.
 
+### Long streaming invalidates unrelated UI
+
+- Hypothesis: streaming text, reasoning, or timeline deltas escaped their
+  per-chat/per-message store and are republishing global state, forcing
+  sidebar snapshots, sorts, search routes, chrome, or unrelated surfaces to
+  recompute per token.
+- Capture: `bash macos/scripts/perf-capture.sh --template "SwiftUI" --name streaming-invalidation --scenario "long streaming invalidates unrelated UI"`.
+- While recording: use a dummy or fixture-backed long streaming chat. Do not
+  send real prompts or use paid providers for this scenario without explicit
+  approval. Add render-log phase markers around the streaming-only window:
+  `MARK: ui-state-invalidation-streaming-start` before deltas and
+  `MARK: ui-state-invalidation-streaming-end` after the final streaming delta.
+- Look at: `macos/Sources/Clawix/AppState/ChatStores.swift`,
+  `macos/Sources/Clawix/AppState.swift`,
+  `macos/Sources/Clawix/Sidebar/SidebarStore.swift`, and
+  `macos/Sources/Clawix/SidebarView.swift`.
+- In the trace: `render.streaming.ingest` and `ui.chat` may be active, but
+  `state.appstate` should stay quiet unless a real route/preference/summary
+  change occurred. `ui.sidebar.snapshot` should not fire during a streaming-only
+  window.
+- In `clawix-renders.log`: `ChatMessageStore.message` may rise with deltas;
+  `makeSnapshot` and `SidebarView` should stay at zero between the two
+  streaming-only markers. Validate a saved log with
+  `node scripts/ui_state_invalidation_boundary_check.mjs --render-log <path>`.
+
 ### High idle CPU when nothing is happening
 
 - Hypothesis: a TimelineView still animating, a publisher still

@@ -139,6 +139,51 @@ final class ChatStorePublicationTests: XCTestCase {
         ])
     }
 
+    func testLongStreamingPublishesOnlyMessageStoreAndNotGlobalSurfaces() {
+        let state = AppState()
+        let chatId = UUID()
+        let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
+        state.chats = [
+            Chat(id: chatId, title: "Boundary", messages: [assistant], createdAt: Date())
+        ]
+        let sidebarStore = SidebarStore(appState: state)
+        let sidebarRevision = sidebarStore.revision
+
+        var chatsPublishes = 0
+        var summariesPublishes = 0
+        var searchRoutePublishes = 0
+        var messagePublishes = 0
+        state.$chats.dropFirst().sink { _ in
+            chatsPublishes += 1
+        }.store(in: &cancellables)
+        state.chatStore.$summaries.dropFirst().sink { _ in
+            summariesPublishes += 1
+        }.store(in: &cancellables)
+        state.$searchResultRoutes.dropFirst().sink { _ in
+            searchRoutePublishes += 1
+        }.store(in: &cancellables)
+        let messageStore = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)
+        messageStore!.objectWillChange.sink {
+            messagePublishes += 1
+        }.store(in: &cancellables)
+
+        for index in 0..<1_000 {
+            state.appendAssistantDelta(chatId: chatId, delta: "token-\(index) ")
+            state.flushPendingAssistantTextDeltas(chatId: chatId)
+        }
+
+        XCTAssertEqual(chatsPublishes, 0)
+        XCTAssertEqual(summariesPublishes, 0)
+        XCTAssertEqual(searchRoutePublishes, 0)
+        XCTAssertEqual(sidebarStore.revision, sidebarRevision)
+        XCTAssertEqual(messagePublishes, 1_000)
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
+        XCTAssertEqual(
+            messageStore?.message.content,
+            (0..<1_000).map { "token-\($0) " }.joined()
+        )
+    }
+
     func testPendingReasoningFlushesBeforeToolTimelineEntry() {
         let state = AppState()
         let chatId = UUID()

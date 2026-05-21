@@ -89,7 +89,7 @@ struct PortableArchiveSettingsPage: View {
             SettingsRow {
                 RowLabel(
                     title: "Inspect manifest",
-                    detail: "Show deterministic inventory, counts, restore report schema, redacted receipts, and referenced external sources."
+                    detail: "Show deterministic .clawexport and .clawbackup inventory, counts, restore report schema, redacted receipts, and referenced external sources."
                 )
             } trailing: {
                 IconChipButton(symbol: "doc.text.magnifyingglass", label: "Inspect") {

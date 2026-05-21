@@ -17,6 +17,7 @@ const allowedFlags = new Set([
   "--simulate-missing-private-alias",
   "--simulate-premature-enforcement",
   "--simulate-stale-approved-baseline",
+  "--require-launch-evidence",
 ]);
 
 let currentEvidenceArg = "";
@@ -189,6 +190,84 @@ function compareAgainstBaseline(current, baseline, manifest) {
   }
 }
 
+function valueText(value) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    return [
+      value.command,
+      value.executable,
+      value.path,
+      value.name,
+      value.argv,
+      value.args,
+    ].flat().filter(Boolean).join(" ");
+  }
+  return String(value ?? "");
+}
+
+function evidenceArray(packet, fields) {
+  for (const field of fields) {
+    if (Array.isArray(packet?.[field])) return packet[field];
+  }
+  return [];
+}
+
+function validateLaunchDependencyEvidence(packet) {
+  requireFields(packet, "launch dependency evidence", ["flowId", "platform", "capturedWindow"]);
+  if (packet?.flowId !== "macos-startup-first-chat-interactive") {
+    fail("launch dependency evidence.flowId must be macos-startup-first-chat-interactive");
+  }
+  if (packet?.platform !== "macos") fail("launch dependency evidence.platform must be macos");
+  if (packet?.capturedWindow !== "initial-window-before-route-demand") {
+    fail("launch dependency evidence.capturedWindow must be initial-window-before-route-demand");
+  }
+
+  const forbiddenProcessFragments = [
+    "Contents/Resources/clawjs/node",
+    "node_modules/@clawjs/runtime",
+    "node_modules/@clawjs/search",
+    "node_modules/@clawjs/database",
+    "node_modules/@clawjs/local-data",
+    "node_modules/@clawjs/domain-pack-dense-data",
+    "open runtime",
+    "open sessions",
+    "open database",
+    "open index",
+  ];
+  for (const processInfo of evidenceArray(packet, ["processes", "processTable", "childProcesses"])) {
+    const text = valueText(processInfo);
+    for (const fragment of forbiddenProcessFragments) {
+      if (text.includes(fragment)) fail(`launch dependency evidence must not include early heavy process ${fragment}`);
+    }
+  }
+
+  for (const portInfo of evidenceArray(packet, ["ports", "listeningPorts", "listeners"])) {
+    const raw = typeof portInfo === "number" ? portInfo : portInfo?.port ?? portInfo?.localPort ?? portInfo?.listenPort;
+    const port = Number(raw);
+    if (Number.isInteger(port) && port >= 24100 && port <= 24199) {
+      fail(`launch dependency evidence must not include early ClawJS service port ${port}`);
+    }
+  }
+
+  const forbiddenPathFragments = [
+    "runtime.sqlite",
+    "sessions.sqlite",
+    "index.sqlite",
+    "search.sqlite",
+    "core.sqlite",
+    "/Search/",
+    "/Runtime/",
+    "/Sessions/",
+    "/Index/",
+  ];
+  for (const pathInfo of evidenceArray(packet, ["paths", "createdPaths", "openedPaths", "files"])) {
+    const text = valueText(pathInfo);
+    for (const fragment of forbiddenPathFragments) {
+      if (text.includes(fragment)) fail(`launch dependency evidence must not include early service storage ${fragment}`);
+    }
+  }
+}
+
 const manifestPath = "docs/performance/startup-release-contract.manifest.json";
 const docPath = "docs/performance/startup-release-contract.md";
 const manifest = readJson(manifestPath);
@@ -332,6 +411,46 @@ for (const [sourceName, source, snippet] of [
   ["ClawJSServiceDemandPolicy.swift", startupSource, "LaunchMilestones.mark(.coreReady)"],
 ]) {
   if (!source.includes(snippet)) fail(`${sourceName} must emit ${snippet}`);
+}
+
+for (const snippet of [
+  "static let startupCoreServices: Set<ClawJSService> = []",
+  "case .home, .search",
+  ".settings, .rescue",
+  "return []",
+  "case .chat:",
+  "return [.runtime, .sessions]",
+]) {
+  if (!startupSource.includes(snippet)) fail(`ClawJSServiceDemandPolicy launch dependency budget must include ${snippet}`);
+}
+for (const forbidden of [
+  "startupCoreServices: Set<ClawJSService> = [.runtime",
+  "startupCoreServices: Set<ClawJSService> = [.sessions",
+  "startupCoreServices: Set<ClawJSService> = [.database",
+  "startupCoreServices: Set<ClawJSService> = [.index",
+]) {
+  if (startupSource.includes(forbidden)) fail(`ClawJSServiceDemandPolicy must not start heavy service at launch: ${forbidden}`);
+}
+if (!appSource.includes("ClawixStartupCore.run(role: ClawixAppRole.current)")) {
+  fail("AppDelegate must start through ClawixStartupCore.run(role:) instead of direct service startup");
+}
+for (const forbidden of [
+  "ClawJSServiceManager.shared.start([.runtime",
+  "ClawJSServiceManager.shared.start([.sessions",
+  "ClawJSServiceManager.shared.start([.database",
+  "ClawJSServiceManager.shared.start([.index",
+  "ClawJSServiceManager.shared.start(Set(ClawJSService.allCases)",
+]) {
+  if (appSource.includes(forbidden)) fail(`AppDelegate launch must not directly start heavy services: ${forbidden}`);
+}
+
+const launchEvidencePath = process.env.CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE || "";
+if (launchEvidencePath) {
+  const launchEvidence = readJsonFile(launchEvidencePath, "CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE");
+  if (launchEvidence) validateLaunchDependencyEvidence(launchEvidence);
+} else if (args.has("--require-launch-evidence")) {
+  console.error("EXTERNAL PENDING launch dependency budget: CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE is not set");
+  process.exit(2);
 }
 
 const privateRoot = process.env[manifest?.privateRootEnv || ""] || "";

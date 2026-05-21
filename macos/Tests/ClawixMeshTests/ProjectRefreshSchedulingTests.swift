@@ -32,6 +32,21 @@ final class ProjectRefreshSchedulingTests: XCTestCase {
         XCTAssertEqual(starts, 0)
     }
 
+    func testPostFirstFramePersistenceDoesNotPrewarmProjects() async throws {
+        let state = AppState()
+        var starts = 0
+        state.projects = (0..<8).map { makeProject("Startup-\($0)") }
+        state.projectThreadListLoader = { _, _ in
+            starts += 1
+            return []
+        }
+
+        state.startPostFirstFramePersistence()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(starts, 0)
+    }
+
     func testExpandedRefreshesDeduplicateByPath() async throws {
         let state = AppState()
         let first = makeProject("Shared")

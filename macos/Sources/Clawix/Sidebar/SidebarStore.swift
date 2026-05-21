@@ -25,6 +25,10 @@ final class SidebarStore: ObservableObject {
         archivedLoading = appState.archivedLoading
         rebuild()
 
+        // Sidebar invalidation boundary: observe stable summary projections
+        // only. Full transcript and streaming message deltas stay in
+        // ChatMessageStore/ChatTranscriptStore so token flow cannot rebuild
+        // sidebar sorts, filters, or chrome.
         appState.chatStore.$summaries
             .dropFirst()
             .sink { [weak self] summaries in

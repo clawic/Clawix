@@ -32,12 +32,17 @@ for (const [relativePath, snippets] of new Map([
   ["docs/adr/0022-performance-governance-mirror.md", [
     "Status: Accepted",
     "Performance means whole-computer resource behavior",
+    "Windowing/Pagination by Default",
+    "docs/boundedness-baseline.json",
     "## Performance Impact",
     "adr:performance-governance",
   ]],
   ["docs/governance/performance-governance.md", [
     "whole-computer resource behavior",
     "## Required Impact Classification",
+    "## Windowing/Pagination by Default",
+    "load all -> filter/sort/render",
+    "cursor/window/batch/limit",
     "## Resource Dimensions",
     "GPU / Neural Engine",
     "## Visual Boundary",
@@ -60,6 +65,7 @@ for (const [relativePath, snippets] of new Map([
     "Performance Governance",
     "docs/adr/0022-performance-governance-mirror.md",
     "scripts/performance_governance_check.mjs",
+    "scripts/boundedness_guard.mjs",
   ]],
   ["docs/constitution-map.md", [
     "Performance Governance",
@@ -71,6 +77,15 @@ for (const [relativePath, snippets] of new Map([
   ]],
   ["docs/governance/README.md", [
     "Performance Governance",
+  ]],
+  ["docs/boundedness-baseline.json", [
+    "\"program\": \"boundedness-guard\"",
+    "\"entries\"",
+  ]],
+  ["scripts/boundedness_guard.mjs", [
+    "Windowing/Pagination by Default",
+    "database-list-without-explicit-window",
+    "full-jsonl-read",
   ]],
   ["PERF.md", [
     "whole-computer resource pressure",

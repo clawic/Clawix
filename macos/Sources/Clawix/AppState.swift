@@ -478,6 +478,7 @@ final class AppState: ObservableObject {
     /// of the file-system path entirely.
     var persistTask: Task<Void, Never>?
     private var postFirstFramePersistenceStarted = false
+    private var postFirstFrameFaviconCacheStarted = false
     var appStateCanonicalReconciliationTask: Task<Void, Never>?
     var sidebarSnapshotProjectIDBackfillTask: Task<Void, Never>?
     private var loadedProjectSnapshotKeys: Set<String> = []
@@ -639,12 +640,6 @@ final class AppState: ObservableObject {
         loadChatSidebars()
         applyLaunchRoute()
         syncChatStoreFromLegacySnapshots()
-        // FaviconCache hits disk; defer it past the first paint so the
-        // synchronous init returns as fast as possible and SwiftUI can
-        // render the sidebar from the snapshot.
-        Task { @MainActor in
-            FaviconCache.shared.primeDiskCache()
-        }
 
         // Forward auth coordinator changes so views observing AppState
         // also rebuild when login / logout state flips. Coalesce bursts
@@ -725,9 +720,10 @@ final class AppState: ObservableObject {
             }
         }
 
-        // Bridge to the iOS companion. Always-on so the pairing UI
-        // can show a QR the iPhone scans without flipping any env
-        // var. Disabled with CLAWIX_BRIDGE_DISABLE=1 for tests or
+        // Bridge transport startup is allowed here without runtime
+        // startup. The BridgeRuntimeWakePolicy owns the separate
+        // runtime-wake contract for explicit chat/session intents.
+        // Disabled with CLAWIX_BRIDGE_DISABLE=1 for tests or
         // multi-instance debugging.
         if ProcessInfo.processInfo.environment["CLAWIX_BRIDGE_DISABLE"] != "1",
            !daemonBridgeEnabled {
@@ -946,6 +942,7 @@ final class AppState: ObservableObject {
     func startPostFirstFramePersistence() {
         guard !postFirstFramePersistenceStarted else { return }
         postFirstFramePersistenceStarted = true
+        startPostFirstFrameFaviconCache()
         if case let .chat(id) = currentRoute {
             scheduleChatRuntimeDemand(chatId: id)
         }
@@ -956,6 +953,14 @@ final class AppState: ObservableObject {
                 provider.openIfNeeded()
             }.value
             await self.handlePostFirstFrameDatabaseState(state)
+        }
+    }
+
+    private func startPostFirstFrameFaviconCache() {
+        guard !postFirstFrameFaviconCacheStarted else { return }
+        postFirstFrameFaviconCacheStarted = true
+        Task { @MainActor in
+            FaviconCache.shared.primeDiskCache()
         }
     }
 

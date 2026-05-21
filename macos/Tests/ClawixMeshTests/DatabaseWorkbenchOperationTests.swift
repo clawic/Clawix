@@ -173,6 +173,29 @@ final class DatabaseWorkbenchOperationTests: XCTestCase {
         XCTAssertTrue(plan.message.contains("row column counts do not match"), plan.message)
     }
 
+    func test_sqliteCSVImportRequiresBoundedRowBatch() throws {
+        let paths = try makeSQLiteFixture(includeRows: false)
+        defer { try? FileManager.default.removeItem(at: paths.directory) }
+        let input = paths.directory.appendingPathComponent("users.csv")
+        let rows = (1...10_001).map { "\($0),User \($0)" }.joined(separator: "\n")
+        try "id,name\n\(rows)\n".write(to: input, atomically: true, encoding: .utf8)
+        let store = DatabaseWorkbenchOperationStore(defaults: defaults)
+        store.inputPath = input.path
+        store.objectName = "users"
+        let prefs = DatabaseWorkbenchPreferences(defaults: defaults)
+        prefs.csvDelimiter = .comma
+
+        let plan = store.perform(
+            .importCSV,
+            profile: paths.profile,
+            activeSQL: "",
+            preferences: prefs
+        )
+
+        XCTAssertEqual(plan.status, .blocked)
+        XCTAssertTrue(plan.message.contains("local imports are capped at 10000 rows per batch"), plan.message)
+    }
+
     func test_sqliteCSVImportBlocksMalformedQuotedInput() throws {
         let paths = try makeSQLiteFixture(includeRows: false)
         defer { try? FileManager.default.removeItem(at: paths.directory) }

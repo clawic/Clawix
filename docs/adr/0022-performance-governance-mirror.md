@@ -40,6 +40,25 @@ retention, backpressure, cancellation, batching, pagination/windowing,
 incremental indexing, idle quiescence, and no unproven heavy work on main/UI hot
 paths.
 
+Windowing/Pagination by Default makes broad reads a P0/P1 closure blocker. Any
+chat transcript, QuickAsk surface, sidebar, database-admin view, search result,
+rollout JSONL reader, embedding job, timeline, table, or import must use a
+cursor/window/batch/limit contract before touching large data. The pattern
+`load all -> filter/sort/render` is forbidden unless the dataset has a
+documented maximum count or byte size. Pre-existing exceptions must live in
+`docs/boundedness-baseline.json` with owner, reason, current limit, cleanup
+policy, reference, expiration, and release-blocking status.
+
+Resource Contract is required for Clawix implementation closure. New registered
+host, UI, storage, stream, cache, bridge, daemon, worker, WebView, or
+long-running agent surfaces must carry `resourceContract` metadata before they
+are complete. That contract names startup behavior, idle quiescence, memory
+bounds, streaming/backpressure behavior, storage retention, hot-path
+constraints, scale/windowing expectations, and validation evidence. Historical
+missing contracts are allowed only through
+`docs/surface-resource-contract-clawix-baseline.json` with steward, reason,
+expiry, and reentry condition.
+
 Performance governance does not grant visual authority. Layout, animation,
 visible timing, copy, style, or interaction changes still obey
 `docs/adr/0010-interface-governance.md`.
@@ -73,15 +92,17 @@ perceived app lightness.
   `docs/decision-map.md`, `docs/constitution-map.md`, and
   `docs/agent-rules/index.md`.
 - **Programmatic surface**: `scripts/performance_governance_check.mjs`,
-  docs alignment, discoverability checks, and `claw search "performance
-  governance" --json`.
+  `scripts/boundedness_guard.mjs`, docs alignment, discoverability checks, and
+  `claw search "performance governance" --json`.
 - **Persistence**: this mirror ADR, the mirror doc, ADR template, decision map,
-  discoverability records, and guardrail script carry the durable route.
+  `docs/boundedness-baseline.json`, discoverability records, and guardrail
+  scripts carry the durable route.
 - **Gaps**: strict non-UI resource budgets are future progressive enforcement.
   Private visual/performance baselines remain external-pending until approved.
 - **Validation**: `bash scripts/doc_alignment_check.sh`,
   `node scripts/performance_governance_check.mjs`, `node
-  scripts/discoverability-check.mjs`, and the fast lane protect the mirror.
+  scripts/boundedness_guard.mjs`, `node scripts/discoverability-check.mjs`, and
+  the fast lane protect the mirror.
 
 ## Discovery Route
 
