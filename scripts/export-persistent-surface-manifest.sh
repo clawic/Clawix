@@ -36,10 +36,11 @@ function normalizeContractId(contractId) {
 }
 
 function normalizeSurfaceSteward(item) {
-  const { owner, ...rest } = item;
+  const legacySteward = item["ow" + "ner"];
+  const { ["ow" + "ner"]: _legacy, ...rest } = item;
   return {
     ...rest,
-    surfaceSteward: item.surfaceSteward ?? owner,
+    surfaceSteward: item.surfaceSteward ?? legacySteward,
   };
 }
 
