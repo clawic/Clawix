@@ -11,6 +11,12 @@ struct ClawJSSettingsPage: View {
     @State private var databaseProbe: DatabaseProbeResult?
     @State private var databaseProbeInFlight = false
     @State private var manualServiceLeases: [ClawJSService: ServiceDemandLease] = [:]
+    @State private var runtimeLensSelection: ClawJSRuntimeLensID = .openclaw
+    @State private var runtimeLensSnapshots: [ClawJSRuntimeLensID: ClawJSRuntimeLensSnapshot] = [:]
+    @State private var runtimeLensLoading = false
+    @State private var runtimeLensError: String?
+
+    private let runtimeLensClient = ClawJSRuntimeLensClient()
 
     private enum DatabaseProbeResult: Equatable {
         case success(service: String, host: String, port: Int)
@@ -24,6 +30,9 @@ struct ClawJSSettingsPage: View {
             bundleSection
                 .padding(.top, 18)
 
+            runtimeLensSection
+                .padding(.top, 18)
+
             ForEach(visibleClawJSServices) { service in
                 serviceSection(for: service)
                     .padding(.top, 18)
@@ -35,6 +44,9 @@ struct ClawJSSettingsPage: View {
         }
         .onDisappear {
             Task { await releaseManualServiceLeases() }
+        }
+        .task {
+            await refreshRuntimeLenses()
         }
     }
 
@@ -72,6 +84,154 @@ struct ClawJSSettingsPage: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Runtime lenses
+
+    private var runtimeLensSection: some View {
+        SectionCard(title: "Runtime lenses") {
+            VStack(alignment: .leading, spacing: 12) {
+                Picker("", selection: $runtimeLensSelection) {
+                    ForEach(ClawJSRuntimeLensID.allCases) { runtime in
+                        Text(runtime.label).tag(runtime)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+
+                if runtimeLensLoading {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Refreshing")
+                            .font(BodyFont.system(size: 11.5))
+                            .foregroundColor(Palette.textSecondary)
+                    }
+                }
+
+                if let message = runtimeLensError {
+                    Text(message)
+                        .font(BodyFont.system(size: 11.5))
+                        .foregroundColor(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let snapshot = runtimeLensSnapshots[runtimeLensSelection] {
+                    runtimeLensSummary(snapshot)
+                    Divider().background(Color.white.opacity(0.07))
+                    runtimeLensDomains(snapshot)
+                }
+
+                HStack {
+                    Button("Refresh") {
+                        Task { await refreshRuntimeLenses() }
+                    }
+                    .buttonStyle(.borderless)
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                    .disabled(runtimeLensLoading)
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    private func runtimeLensSummary(_ snapshot: ClawJSRuntimeLensSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            row(label: "Runtime") {
+                Text(snapshot.runtimeName)
+                    .font(BodyFont.system(size: 12.5, weight: .medium))
+                    .foregroundColor(Palette.textPrimary)
+            }
+            Divider().background(Color.white.opacity(0.07))
+            row(label: "CLI") {
+                statusPill(
+                    text: snapshot.status.cliAvailable == true ? "Available" : "Unavailable",
+                    color: snapshot.status.cliAvailable == true ? .green : .orange
+                )
+            }
+            Divider().background(Color.white.opacity(0.07))
+            row(label: "Gateway") {
+                statusPill(
+                    text: snapshot.status.gatewayAvailable == true ? "Available" : "Degraded",
+                    color: snapshot.status.gatewayAvailable == true ? .green : .orange
+                )
+            }
+            if let home = snapshot.status.diagnostics?.locations?.homeDir {
+                Divider().background(Color.white.opacity(0.07))
+                row(label: "Home") {
+                    Text(home)
+                        .font(BodyFont.system(size: 11.5))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            if let error = snapshot.status.diagnostics?.lastError, !error.isEmpty {
+                Divider().background(Color.white.opacity(0.07))
+                Text(error)
+                    .font(BodyFont.system(size: 11.5))
+                    .foregroundColor(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func runtimeLensDomains(_ snapshot: ClawJSRuntimeLensSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(snapshot.domains) { domain in
+                HStack(spacing: 10) {
+                    Text(domain.domain)
+                        .font(BodyFont.system(size: 12.5, weight: .medium))
+                        .foregroundColor(Palette.textPrimary)
+                        .frame(width: 86, alignment: .leading)
+                    statusPill(
+                        text: domain.status ?? (domain.supported == false ? "unsupported" : "unknown"),
+                        color: runtimeDomainColor(domain)
+                    )
+                    if let strategy = domain.strategy {
+                        Text(strategy)
+                            .font(BodyFont.system(size: 11.5))
+                            .foregroundColor(Palette.textSecondary)
+                    }
+                    if let count = domain.count {
+                        Text("\(count)")
+                            .font(BodyFont.system(size: 11.5, weight: .medium))
+                            .foregroundColor(Palette.textSecondary)
+                            .monospacedDigit()
+                    }
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    private func runtimeDomainColor(_ domain: ClawJSRuntimeLensSnapshot.Domain) -> Color {
+        switch domain.status {
+        case "ready": return .green
+        case "degraded", "detected": return .orange
+        case "error": return .red
+        case "unsupported": return Color.white.opacity(0.35)
+        default: return domain.supported == false ? Color.white.opacity(0.35) : .blue
+        }
+    }
+
+    @MainActor
+    private func refreshRuntimeLenses() async {
+        runtimeLensLoading = true
+        runtimeLensError = nil
+        defer { runtimeLensLoading = false }
+
+        var next: [ClawJSRuntimeLensID: ClawJSRuntimeLensSnapshot] = [:]
+        for runtime in ClawJSRuntimeLensID.allCases {
+            do {
+                next[runtime] = try await runtimeLensClient.load(runtime: runtime)
+            } catch {
+                runtimeLensError = error.localizedDescription
+            }
+        }
+        if !next.isEmpty {
+            runtimeLensSnapshots = next
         }
     }
 
