@@ -2085,14 +2085,17 @@ final class AppState: ObservableObject {
     /// fades because the StreamCheckpoint schedule keeps its leaky-
     /// bucket spacing inside `applyAssistantTextDelta`).
     ///
-    /// Only the assistant's text content is coalesced. Reasoning deltas
-    /// interleave with tool-item events and have to land in arrival
-    /// order against the timeline, so they keep their per-call publish.
+    /// Text and reasoning deltas are coalesced independently. Each
+    /// cross-stream boundary drains the older buffer first so the
+    /// timeline preserves the backend's arrival order.
     private var pendingAssistantTextBuffers: [UUID: String] = [:]
     private var assistantTextFlushScheduled = false
+    private var pendingReasoningBuffers: [UUID: String] = [:]
+    private var reasoningFlushScheduled = false
 
     func appendAssistantDelta(chatId: UUID, delta: String) {
         if delta.isEmpty { return }
+        flushPendingReasoningDeltas(chatId: chatId)
         pendingAssistantTextBuffers[chatId, default: ""] += delta
         scheduleAssistantTextFlush()
     }
@@ -2102,6 +2105,7 @@ final class AppState: ObservableObject {
     /// through the Codex turn-completion machinery.
     func markAssistantFinished(chatId: UUID, messageId: UUID) {
         flushPendingAssistantTextDeltas(chatId: chatId)
+        flushPendingReasoningDeltas(chatId: chatId)
         guard let transcript = chatStore.transcript(for: chatId),
               transcript.lastMessage?.id == messageId
         else { return }
@@ -2117,6 +2121,7 @@ final class AppState: ObservableObject {
     /// Replace the in-flight assistant placeholder with an error message.
     func markAssistantFailed(chatId: UUID, messageId: UUID, error: String) {
         dropPendingAssistantText(chatId: chatId)
+        dropPendingReasoning(chatId: chatId)
         guard let transcript = chatStore.transcript(for: chatId),
               let last = transcript.lastMessage,
               last.id == messageId
@@ -2177,6 +2182,35 @@ final class AppState: ObservableObject {
         pendingAssistantTextBuffers.removeValue(forKey: chatId)
     }
 
+    private func scheduleReasoningFlush() {
+        guard !reasoningFlushScheduled else { return }
+        reasoningFlushScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            self?.flushPendingReasoningDeltas()
+        }
+    }
+
+    func flushPendingReasoningDeltas() {
+        reasoningFlushScheduled = false
+        guard !pendingReasoningBuffers.isEmpty else { return }
+        let buffers = pendingReasoningBuffers
+        pendingReasoningBuffers.removeAll(keepingCapacity: true)
+        for (chatId, delta) in buffers where !delta.isEmpty {
+            applyReasoningDelta(chatId: chatId, delta: delta)
+        }
+    }
+
+    func flushPendingReasoningDeltas(chatId: UUID) {
+        guard let delta = pendingReasoningBuffers.removeValue(forKey: chatId),
+              !delta.isEmpty
+        else { return }
+        applyReasoningDelta(chatId: chatId, delta: delta)
+    }
+
+    func dropPendingReasoning(chatId: UUID) {
+        pendingReasoningBuffers.removeValue(forKey: chatId)
+    }
+
     private func applyAssistantTextDelta(chatId: UUID, delta: String) {
         guard let transcript = chatStore.transcript(for: chatId),
               let lastMessage = transcript.lastMessage,
@@ -2214,6 +2248,9 @@ final class AppState: ObservableObject {
             if !result.newCheckpoints.isEmpty {
                 message.streamCheckpoints.append(contentsOf: result.newCheckpoints)
             }
+            message.streamCheckpoints = StreamingFade.compact(
+                checkpoints: message.streamCheckpoints
+            )
             message.streamPendingTail = result.pendingTail
             totalLen = message.content.count
             totalCps = message.streamCheckpoints.count
@@ -2245,6 +2282,11 @@ final class AppState: ObservableObject {
         // applied a runloop tick later would appear after reasoning that
         // arrived later in the stream.
         flushPendingAssistantTextDeltas(chatId: chatId)
+        pendingReasoningBuffers[chatId, default: ""] += delta
+        scheduleReasoningFlush()
+    }
+
+    private func applyReasoningDelta(chatId: UUID, delta: String) {
         guard let transcript = chatStore.transcript(for: chatId),
               let lastMessage = transcript.lastMessage,
               lastMessage.role == .assistant
@@ -2282,6 +2324,9 @@ final class AppState: ObservableObject {
                 message.reasoningCheckpoints[entryId, default: []]
                     .append(contentsOf: result.newCheckpoints)
             }
+            message.reasoningCheckpoints[entryId] = StreamingFade.compact(
+                checkpoints: message.reasoningCheckpoints[entryId] ?? []
+            )
             message.reasoningPendingTails[entryId] = result.pendingTail
         }
     }
@@ -2290,6 +2335,7 @@ final class AppState: ObservableObject {
         // Drain any text deltas still buffered for this chat before we
         // fold in the canonical body / mark the turn finished.
         flushPendingAssistantTextDeltas(chatId: chatId)
+        flushPendingReasoningDeltas(chatId: chatId)
         guard let transcript = chatStore.transcript(for: chatId),
               let lastMessage = transcript.lastMessage,
               lastMessage.role == .assistant
@@ -2329,6 +2375,9 @@ final class AppState: ObservableObject {
                     message.streamCheckpoints
                         .append(contentsOf: flushed.newCheckpoints)
                 }
+                message.streamCheckpoints = StreamingFade.compact(
+                    checkpoints: message.streamCheckpoints
+                )
                 message.streamPendingTail = flushed.pendingTail
             }
             // Same for every reasoning chunk in the timeline.
@@ -2348,6 +2397,9 @@ final class AppState: ObservableObject {
                     message.reasoningCheckpoints[entryId, default: []]
                         .append(contentsOf: flushed.newCheckpoints)
                 }
+                message.reasoningCheckpoints[entryId] = StreamingFade.compact(
+                    checkpoints: message.reasoningCheckpoints[entryId] ?? []
+                )
                 message.reasoningPendingTails[entryId] = flushed.pendingTail
             }
         }

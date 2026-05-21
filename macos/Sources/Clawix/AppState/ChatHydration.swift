@@ -476,6 +476,7 @@ extension AppState {
         // Wholesale rehydrate from the daemon: drop any buffered text
         // delta that would otherwise pile on top of the canonical body.
         dropPendingAssistantText(chatId: id)
+        dropPendingReasoning(chatId: id)
         if messages.isEmpty,
            chatStore.summary(id: id)?.forkedFromChatId != nil,
            !transcript.messages.isEmpty {
@@ -539,6 +540,7 @@ extension AppState {
         // The daemon's wire message is authoritative; any locally
         // buffered delta would double-append on top of it.
         dropPendingAssistantText(chatId: id)
+        dropPendingReasoning(chatId: id)
         if msg.role == .user,
            let replacementIdx = optimisticUserReplacementIndex(chatId: id, remote: msg, messages: transcript.messages) {
             let localId = transcript.messages[replacementIdx].id
@@ -629,6 +631,7 @@ extension AppState {
         // content replaces ours wholesale, so any pending tick of
         // local deltas would double up on top of the canonical body.
         dropPendingAssistantText(chatId: id)
+        dropPendingReasoning(chatId: id)
         if transcript.messageStore(id: msgId) != nil {
             transcript.mutateMessage(id: msgId) { message in
                 message.content = content

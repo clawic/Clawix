@@ -73,6 +73,9 @@ extension AppState {
         // of the new `.tools` entry. Otherwise the buffered preamble
         // (flushed on the next runloop tick) would render after the tool.
         flushPendingAssistantTextDeltas(chatId: chatId)
+        // Reasoning is buffered too; drain it before the tool row so a
+        // "thinking..." segment that arrived first stays before tools.
+        flushPendingReasoningDeltas(chatId: chatId)
         mutateMessage(chatId: chatId, messageId: messageId) { msg in
             if msg.workSummary == nil {
                 msg.workSummary = WorkSummary(startedAt: Date(), endedAt: nil, items: [])
@@ -157,6 +160,7 @@ extension AppState {
         // deltas still buffered for this chat belong to the assistant
         // turn we're about to drop, so discard them.
         dropPendingAssistantText(chatId: chatId)
+        dropPendingReasoning(chatId: chatId)
         transcript.removeAll(from: mIdx)
         let edited = ChatMessage(role: .user, content: trimmed, timestamp: Date())
         chatStore.appendMessage(chatId: chatId, edited)

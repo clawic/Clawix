@@ -726,6 +726,7 @@ extension AppState {
         // the actual streamed content instead of an empty string from
         // the placeholder.
         flushPendingAssistantTextDeltas(chatId: chatId)
+        flushPendingReasoningDeltas(chatId: chatId)
         guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
         chats[idx].hasActiveTurn = false
         guard let last = chats[idx].messages.indices.last,
