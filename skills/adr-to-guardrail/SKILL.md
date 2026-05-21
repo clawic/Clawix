@@ -33,7 +33,11 @@ Make an ADR operational.
    implementing: record the puntual problem, general class, existing rule, and
    close with `guard/test añadido`, `ADR/regla añadida`, or
    `deuda explícita con expiry`.
-10. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
+10. Enforce the anti-loop rule: if the work adds `2 ciclos seguidos` of ADRs,
+   ledgers, manifests, guards, or baselines `sin reducir blockers reales`, stop
+   and classify the closure as `blocker directo`, `deuda lateral`, or
+   `pendiente externo`; no más gobernanza para arreglar exceso de gobernanza.
+11. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
 
 ## Constraints
 
@@ -45,4 +49,7 @@ Make an ADR operational.
   fails.
 - Do not close a detected problem with only "fixed"; leave a guard/test,
   ADR/rule, or expiring debt.
+- Do not add governance to fix excess governance after `2 ciclos seguidos`
+  `sin reducir blockers reales`; stop as `blocker directo`, `deuda lateral`, or
+  `pendiente externo`.
 - Do not preserve accidental pre-public legacy unless an ADR explicitly grants a bounded exception.

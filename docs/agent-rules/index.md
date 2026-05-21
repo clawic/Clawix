@@ -29,7 +29,10 @@ domains are assistive only.
 - Problem-to-Guardrail loop: `docs/adr/0032-problem-to-guardrail-loop-mirror.md`
   and sibling ClawJS ADR 0046 require detected problems to close as
   `guard/test añadido`, `ADR/regla añadida`, or
-  `deuda explícita con expiry`.
+  `deuda explícita con expiry`. Anti-loop rule: after `2 ciclos seguidos` of
+  ADRs, ledgers, manifests, guards, or baselines `sin reducir blockers reales`,
+  stop and classify the closure as `blocker directo`, `deuda lateral`, or
+  `pendiente externo`; no más gobernanza para arreglar exceso de gobernanza.
 - Clawix/ClawJS mirror parity:
   `scripts/clawjs_mirror_contradiction_check.mjs` checks that Clawix mirrors
   still route constitution, ownership, storage, naming, route graph, official
@@ -167,6 +170,9 @@ Use relevant skills instead of pasting long procedures into context:
 - Every Clawix problem detected by an agent or review closes with one durable
   output: `guard/test añadido`, `ADR/regla añadida`, or
   `deuda explícita con expiry`.
+- If an agent adds `2 ciclos seguidos` of ADRs, ledgers, manifests, guards, or
+  baselines `sin reducir blockers reales`, it must stop and close as
+  `blocker directo`, `deuda lateral`, or `pendiente externo`.
 - Performance-sensitive work classifies whole-computer resource impact before
   durable acceptance: speed, CPU, RAM, GPU/Neural Engine, disk, network,
   battery, thermals, idle behavior, and growth.

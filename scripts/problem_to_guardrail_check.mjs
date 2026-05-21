@@ -6,10 +6,18 @@ import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const outputs = ["guard/test añadido", "ADR/regla añadida", "deuda explícita con expiry"];
+const antiLoop = [
+  "2 ciclos seguidos",
+  "sin reducir blockers reales",
+  "blocker directo",
+  "deuda lateral",
+  "pendiente externo",
+];
 const required = new Map([
   ["docs/adr/0032-problem-to-guardrail-loop-mirror.md", [
     "Problem-to-Guardrail loop mirror",
     ...outputs,
+    ...antiLoop,
     "punctual problem",
     "general class",
     "existing rule",
@@ -17,15 +25,17 @@ const required = new Map([
   ["docs/decision-map.md", [
     "Problem-to-Guardrail",
     ...outputs,
+    ...antiLoop,
     "scripts/problem_to_guardrail_check.mjs",
   ]],
   ["docs/agent-rules/index.md", [
     "Problem-to-Guardrail loop",
     ...outputs,
+    ...antiLoop,
   ]],
-  ["docs/adr/TEMPLATE.md", outputs],
-  ["skills/adr-to-guardrail/SKILL.md", outputs],
-  ["skills/code-review-risk/SKILL.md", outputs],
+  ["docs/adr/TEMPLATE.md", [...outputs, ...antiLoop]],
+  ["skills/adr-to-guardrail/SKILL.md", [...outputs, ...antiLoop]],
+  ["skills/code-review-risk/SKILL.md", [...outputs, ...antiLoop]],
   ["docs/adr-operational-coverage.manifest.json", [
     "docs/adr/0032-problem-to-guardrail-loop-mirror.md",
     "scripts/problem_to_guardrail_check.mjs",
@@ -57,9 +67,9 @@ function runSelfTest() {
   assert.deepEqual(validate(), []);
   const broken = new Map([[
     "docs/agent-rules/index.md",
-    read("docs/agent-rules/index.md").replaceAll("guard/test añadido", "fixed locally"),
+    read("docs/agent-rules/index.md").replaceAll("2 ciclos seguidos", "more governance"),
   ]]);
-  assert.match(validate(broken).join("\n"), /guard\/test añadido/);
+  assert.match(validate(broken).join("\n"), /2 ciclos seguidos/);
 }
 
 if (process.argv.includes("--self-test")) {

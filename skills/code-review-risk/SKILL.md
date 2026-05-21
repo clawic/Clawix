@@ -18,8 +18,12 @@ Review for risk first.
    punctual problem, general class, existing rule that should have caught it,
    and close with `guard/test añadido`, `ADR/regla añadida`, or
    `deuda explícita con expiry`.
-6. Separate findings from open questions and low-risk polish.
-7. If no issues are found, state the remaining test gaps or residual risk.
+6. Enforce the anti-loop rule: if closure adds `2 ciclos seguidos` of ADRs,
+   ledgers, manifests, guards, or baselines `sin reducir blockers reales`, stop
+   and classify the closure as `blocker directo`, `deuda lateral`, or
+   `pendiente externo`; no más gobernanza para arreglar exceso de gobernanza.
+7. Separate findings from open questions and low-risk polish.
+8. If no issues are found, state the remaining test gaps or residual risk.
 
 ## Constraints
 
@@ -27,3 +31,5 @@ Review for risk first.
 - Do not assume generated or staged files are safe without inspection.
 - Do not recommend reverting unrelated user work.
 - Do not mark a confirmed problem simply fixed when the defect class can recur.
+- Do not recommend more governance after `2 ciclos seguidos` `sin reducir
+  blockers reales`; classify the remaining state directly.

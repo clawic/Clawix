@@ -112,3 +112,7 @@ List the practical tradeoffs, migration impact, and follow-up enforcement.
 For every problem found while making or reviewing this decision, close the
 general class with one durable output: `guard/test añadido`,
 `ADR/regla añadida`, or `deuda explícita con expiry`.
+If closure adds `2 ciclos seguidos` of ADRs, ledgers, manifests, guards, or
+baselines `sin reducir blockers reales`, stop and classify the state as
+`blocker directo`, `deuda lateral`, or `pendiente externo`; no más gobernanza
+para arreglar exceso de gobernanza.

@@ -22,6 +22,17 @@ Closure records the punctual problem, general class, existing rule that should
 have caught it, and the selected durable output. If automation is not feasible,
 the debt must carry steward, reason, expiry, and reentry condition.
 
+Anti-loop limit: if an agent adds `2 ciclos seguidos` of ADRs, ledgers,
+manifests, guards, or baselines `sin reducir blockers reales`, it must stop.
+`2 ciclos seguidos` means two consecutive closures in the same agent/task based
+on governance documents or checks. `sin reducir blockers reales` means the work
+did not resolve, narrow with evidence, or move a concrete blocker to external
+pending. The closure must classify the remaining state as `blocker directo`,
+`deuda lateral`, or `pendiente externo`; `pendiente externo` is equivalent to
+`EXTERNAL PENDING` when closure depends on a provider, permission, hardware,
+credential, physical evidence, or external approval. No más gobernanza para
+arreglar exceso de gobernanza.
+
 ## Threat Model Impact
 
 This mirror adds no runtime trust boundary. It improves safety by routing
@@ -37,7 +48,8 @@ regressions from closing as one-off fixes.
 - **Prioritized axes**: cumulative review, public hygiene, and enforceable
   app governance.
 - **Constrained axes**: “fixed locally” is not enough when a defect class can
-  recur.
+  recur, but governance work is also constrained when it does not reduce real
+  blockers.
 - **Tradeoffs accepted**: closure may require a small guard or docs update.
 - **Debt or pending evidence**: manual debt is allowed only with expiry.
 
@@ -71,3 +83,5 @@ sibling ClawJS ADR 0046.
 
 Clawix closure for detected defects must leave a guard/test, ADR/rule, or
 expiring debt instead of only a punctual fix.
+Governance closure is also incomplete when it only adds more governance after
+two consecutive governance cycles without reducing a concrete blocker.
