@@ -19,6 +19,8 @@ const simulationFlags = [
   "--simulate-missing-detector-kind",
   "--simulate-unsupported-detector-platform",
   "--simulate-invalid-detector-regex",
+  "--simulate-invalid-detector-severity",
+  "--simulate-missing-report-only-severity",
   "--simulate-unknown-copy-kind",
   "--simulate-missing-governance-guard-platform-scope",
 ];
@@ -116,6 +118,13 @@ if (manifest && args.has("--simulate-unsupported-detector-platform") && Array.is
 if (manifest && args.has("--simulate-invalid-detector-regex") && Array.isArray(manifest.detectors)) {
   manifest.detectors[0].pattern = "(";
 }
+if (manifest && args.has("--simulate-invalid-detector-severity") && Array.isArray(manifest.detectors)) {
+  manifest.detectors[0].severity = "warning";
+}
+if (manifest && args.has("--simulate-missing-report-only-severity") && Array.isArray(manifest.detectors)) {
+  const detector = manifest.detectors.find((candidate) => candidate?.id === "cross-ordering");
+  if (detector) delete detector.severity;
+}
 if (copyInventory && args.has("--simulate-unknown-copy-kind") && Array.isArray(copyInventory.restrictedCopyKinds)) {
   copyInventory.restrictedCopyKinds.push("confirmation-text");
 }
@@ -187,13 +196,22 @@ for (const kind of requiredKinds) {
 
 const seenKinds = new Set();
 const seenPlatforms = new Set();
+const seenSeverities = new Set();
 const detectorPatternsByKind = new Map();
 const detectorIds = new Set();
+const reportOnlyDetectorIds = new Set(["cross-ordering", "cross-visible-name", "cross-hierarchy", "cross-spacing"]);
+const allowedDetectorSeverities = new Set(["blocking", "report-only"]);
 for (const [index, detector] of requireArray(manifest, detectorPath, "detectors").entries()) {
   const label = `${detectorPath}.detectors[${index}]`;
   requireFields(detector, label, ["id", "platforms", "changeKind", "pattern", "reason"]);
   if (detectorIds.has(detector.id)) fail(`${label}.id duplicates ${detector.id}`);
   detectorIds.add(detector.id);
+  const severity = detector.severity || "blocking";
+  if (!allowedDetectorSeverities.has(severity)) fail(`${label}.severity must be blocking or report-only`);
+  seenSeverities.add(severity);
+  if (reportOnlyDetectorIds.has(detector.id) && severity !== "report-only") {
+    fail(`${label}.severity must be report-only for broad lexical detector ${detector.id}`);
+  }
   if (!requiredKinds.has(detector.changeKind)) fail(`${label}.changeKind is not registered`);
   seenKinds.add(detector.changeKind);
   detectorPatternsByKind.set(
@@ -216,6 +234,9 @@ for (const kind of requiredKinds) {
 }
 for (const platform of requiredPlatforms) {
   if (!seenPlatforms.has(platform)) fail(`${detectorPath}.detectors must cover ${platform}`);
+}
+for (const severity of allowedDetectorSeverities) {
+  if (!seenSeverities.has(severity)) fail(`${detectorPath}.detectors must include ${severity} severity`);
 }
 
 const copySignalsByKind = {
@@ -247,9 +268,9 @@ let governanceGuardSource = fs.existsSync(path.join(rootDir, "scripts/ui_governa
 if (args.has("--simulate-missing-governance-guard-platform-scope")) {
   governanceGuardSource = governanceGuardSource.replace("detector.platforms.includes(platform)", "");
 }
-for (const snippet of ["platformForPath", "detector.platforms.includes(platform)", "--simulate-cross-platform-visual-diff"]) {
+for (const snippet of ["platformForPath", "detector.platforms.includes(platform)", "--simulate-cross-platform-visual-diff", "blockingVisualHits", "reportOnlyVisualHits"]) {
   if (!governanceGuardSource.includes(snippet)) {
-    fail(`scripts/ui_governance_guard.mjs must enforce detector platform scoping via ${snippet}`);
+    fail(`scripts/ui_governance_guard.mjs must enforce detector platform/severity handling via ${snippet}`);
   }
 }
 
@@ -266,8 +287,10 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-missing-detector-kind", "detectors must cover spacing"],
     ["--simulate-unsupported-detector-platform", "platforms contains unsupported visionos"],
     ["--simulate-invalid-detector-regex", "pattern is not a valid regex"],
+    ["--simulate-invalid-detector-severity", "severity must be blocking or report-only"],
+    ["--simulate-missing-report-only-severity", "severity must be report-only for broad lexical detector cross-ordering"],
     ["--simulate-unknown-copy-kind", "must declare copy detector signals for confirmation-text"],
-    ["--simulate-missing-governance-guard-platform-scope", "ui_governance_guard.mjs must enforce detector platform scoping"],
+    ["--simulate-missing-governance-guard-platform-scope", "ui_governance_guard.mjs must enforce detector platform/severity handling"],
   ]) {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, flag], {
       cwd: rootDir,

@@ -20,6 +20,7 @@ const simulationFlags = [
   "--simulate-duplicate-pattern-visual-scope",
   "--simulate-invalid-budget-visual-scope",
   "--simulate-unsafe-file-visual-scope",
+  "--simulate-report-only-functional-diff",
 ];
 const allowedFlags = new Set(simulationFlags);
 const today = new Date().toISOString().slice(0, 10);
@@ -36,6 +37,7 @@ const simulateMissingPatternVisualScope = rawArgs.includes("--simulate-missing-p
 const simulateDuplicatePatternVisualScope = rawArgs.includes("--simulate-duplicate-pattern-visual-scope");
 const simulateInvalidBudgetVisualScope = rawArgs.includes("--simulate-invalid-budget-visual-scope");
 const simulateUnsafeFileVisualScope = rawArgs.includes("--simulate-unsafe-file-visual-scope");
+const simulateReportOnlyFunctionalDiff = rawArgs.includes("--simulate-report-only-functional-diff");
 const errors = [];
 
 function fail(message) {
@@ -564,6 +566,7 @@ for (const [index, detector] of requireArray(visualDetectors, visualDetectorsPat
       id: detector.id,
       platforms: Array.isArray(detector.platforms) ? detector.platforms : [],
       changeKind: detector.changeKind,
+      severity: detector.severity === "report-only" ? "report-only" : "blocking",
       reason: detector.reason,
       regex: new RegExp(detector.pattern),
     });
@@ -994,6 +997,7 @@ function visualDiffHits(diffText, sourceLabel) {
           operation: "added",
           detector: detector.id,
           changeKind: detector.changeKind,
+          severity: detector.severity,
           reason: detector.reason,
           text: line.slice(1, 241),
         });
@@ -1012,6 +1016,7 @@ function visualDiffHits(diffText, sourceLabel) {
           operation: "removed",
           detector: detector.id,
           changeKind: detector.changeKind,
+          severity: detector.severity,
           reason: detector.reason,
           text: line.slice(1, 241),
         });
@@ -1059,15 +1064,32 @@ const simulatedCrossPlatformVisualDiff = [
   '+<button className="gap-2 text-red-500" aria-label="Rename">Rename</button>',
   '+const visibleModelOptions = ["visible-model-alpha", "visible-model-beta"];',
 ].join("\n");
+const simulatedReportOnlyFunctionalDiff = [
+  "diff --git a/macos/Sources/SimulatedFunctional.swift b/macos/Sources/SimulatedFunctional.swift",
+  "+++ b/macos/Sources/SimulatedFunctional.swift",
+  "@@ -1,0 +1,8 @@",
+  "+private var order: [String] = []",
+  "+let offset = max(0, cursor - limit)",
+  '+let title = metadata.title',
+  "+// sidebar and chat are mentioned here as technical routing context.",
+  "+// header and section are internal parser terms, not visible UI.",
+].join("\n");
 const visualHits = simulateCrossPlatformVisualDiff
   ? visualDiffHits(simulatedCrossPlatformVisualDiff, "simulated cross-platform visual diff")
   : simulateUnauthorizedVisualDiff
   ? visualDiffHits(simulatedVisualDiff, "simulated unauthorized visual diff")
+  : simulateReportOnlyFunctionalDiff
+  ? visualDiffHits(simulatedReportOnlyFunctionalDiff, "simulated report-only functional diff")
   : [
       ...visualDiffHits(git(diffArgs), changedBase ? `diff against ${changedBase}` : "working tree"),
       ...(changedBase ? [] : visualDiffHits(git(stagedDiffArgs), "staged")),
     ];
-if (visualHits.length > 0 && !visualAuthorized) {
+const blockingVisualHits = visualHits.filter((hit) => hit.severity !== "report-only");
+const reportOnlyVisualHits = visualHits.filter((hit) => hit.severity === "report-only");
+function visualHitLine(hit) {
+  return `  ${hit.path}:${hit.line} [${hit.source}/${hit.operation}/${hit.detector}/${hit.changeKind}/${hit.severity}] reason=${hit.reason} text=${hit.text}`;
+}
+if (blockingVisualHits.length > 0 && !visualAuthorized) {
   fail(
     [
       "unauthorized visual/copy/layout source edit detected",
@@ -1075,17 +1097,17 @@ if (visualHits.length > 0 && !visualAuthorized) {
       `current model signal: ${visualModelEnv || "<unset>"}=${requestedVisualModel || "<unset>"}`,
       `proposal route: ${visualModelAllowlist?.proposalPath || "docs/ui/visual-change-proposal.template.md"}`,
       "non-authorized agents must leave a conceptual proposal instead of editing visible presentation",
-      ...visualHits
+      ...blockingVisualHits
         .slice(0, 20)
-        .map(
-          (hit) =>
-            `  ${hit.path}:${hit.line} [${hit.source}/${hit.operation}/${hit.detector}/${hit.changeKind}] reason=${hit.reason} text=${hit.text}`,
-        ),
+        .map(visualHitLine),
+      ...reportOnlyVisualHits
+        .slice(0, 10)
+        .map((hit) => `  report-only ${visualHitLine(hit).trimStart()}`),
     ].join("\n"),
   );
 }
-if (visualHits.length > 0 && visualAuthorized) {
-  const scopeResult = approvedScopeForHits(visualHits);
+if (blockingVisualHits.length > 0 && visualAuthorized) {
+  const scopeResult = approvedScopeForHits(blockingVisualHits);
   if (!scopeResult.ok) {
     fail(
       [
@@ -1094,12 +1116,12 @@ if (visualHits.length > 0 && visualAuthorized) {
         `current scope signal: ${visualScopeEnv}=${requestedVisualScopeId || "<unset>"}`,
         `reason: ${scopeResult.reason}`,
         `proposal route: ${visualModelAllowlist?.proposalPath || "docs/ui/visual-change-proposal.template.md"}`,
-        ...visualHits
+        ...blockingVisualHits
           .slice(0, 20)
-          .map(
-            (hit) =>
-              `  ${hit.path}:${hit.line} [${hit.source}/${hit.operation}/${hit.detector}/${hit.changeKind}] reason=${hit.reason} text=${hit.text}`,
-          ),
+          .map(visualHitLine),
+        ...reportOnlyVisualHits
+          .slice(0, 10)
+          .map((hit) => `  report-only ${visualHitLine(hit).trimStart()}`),
       ].join("\n"),
     );
   }
@@ -1178,7 +1200,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
       fail(`self-test ${selfTestArgs.join(" ")} output must include ${expectedOutput}`);
     }
   };
-  const runPassingSelfTest = (selfTestArgs, env) => {
+  const runPassingSelfTest = (selfTestArgs, env, expectedOutput = "") => {
     const result = spawnSync(process.execPath, [new URL(import.meta.url).pathname, ...selfTestArgs], {
       cwd: rootDir,
       env,
@@ -1186,7 +1208,11 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     });
     const output = `${result.stdout || ""}${result.stderr || ""}`;
     if (result.status !== 0) {
-      fail(`self-test ${selfTestArgs.join(" ")} must pass with an approved visual scope; output: ${output}`);
+      fail(`self-test ${selfTestArgs.join(" ")} must pass; output: ${output}`);
+      return;
+    }
+    if (expectedOutput && !output.includes(expectedOutput)) {
+      fail(`self-test ${selfTestArgs.join(" ")} output must include ${expectedOutput}`);
     }
   };
 
@@ -1252,12 +1278,24 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ["--simulate-unauthorized-visual-diff", "--simulate-approved-visual-scope"],
     { ...authorizedEnv, [visualScopeEnv]: "simulated-approved-scope" },
   );
+  runPassingSelfTest(
+    ["--simulate-report-only-functional-diff"],
+    baseSelfTestEnv,
+    "report-only visual/copy/layout source findings",
+  );
 }
 
 if (errors.length > 0) {
   console.error("UI governance guard failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
+}
+
+if (reportOnlyVisualHits.length > 0) {
+  console.error("UI governance guard report-only visual/copy/layout source findings:");
+  for (const hit of reportOnlyVisualHits.slice(0, 20)) {
+    console.error(visualHitLine(hit));
+  }
 }
 
 console.log("UI governance guard passed");

@@ -33,7 +33,11 @@ accessibility behavior.
 7. Register any new durable UI governance artifact, guard, harness, docs router,
    or skill in `docs/discoverability.registry.json` so future agents can reach
    it within two hops.
-8. Run `node scripts/ui_governance_guard.mjs`, the relevant UI governance
+8. At task closure, validate against the task's starting commit by setting
+   `CLAWIX_UI_GUARD_DIFF_BASE=<task-base>`. Use `origin/main` only when the
+   task is explicitly PR, release, or historical-audit scope; classify those
+   findings separately from local closure.
+9. Run `node scripts/ui_governance_guard.mjs`, the relevant UI governance
    checks, and the focused functional tests.
 
 ## Constraints

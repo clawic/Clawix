@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "active",
-  "policy": "Unauthorized visual, copy, and layout edits are detected from platform-specific source tokens. Detector changes are governance changes and must stay public-safe.",
+  "policy": "Unauthorized visual, copy, and layout edits are detected from platform-specific source tokens. Detector changes are governance changes and must stay public-safe. Blocking detectors protect clear visible UI mutations; report-only detectors classify broad lexical risk without authorizing or blocking functional work.",
   "sourceRoots": ["macos/Sources", "ios/Sources", "apps/macos/Sources", "apps/ios/Sources", "android/app/src/main", "web/src"],
   "requiredChangeKinds": [
     "color",
@@ -36,20 +36,23 @@
     { "id": "swiftui-layout", "platforms": ["macos", "ios"], "changeKind": "layout", "pattern": "\\b(HStack|VStack|ZStack|Spacer|frame\\(|padding|lineLimit)\\b", "reason": "SwiftUI layout tokens affect placement and density." },
     { "id": "swiftui-shape", "platforms": ["macos", "ios"], "changeKind": "size", "pattern": "\\b(RoundedRectangle|Capsule|Circle|cornerRadius|opacity)\\b", "reason": "Shape, radius, and opacity tokens affect visual geometry." },
     { "id": "swiftui-typography", "platforms": ["macos", "ios"], "changeKind": "typography", "pattern": "\\b(Text\\(\"|font\\(|tracking|textCase)\\b", "reason": "Text styling and visible strings need UI authorization." },
+    { "id": "swiftui-visible-copy", "platforms": ["macos", "ios"], "changeKind": "microcopy", "pattern": "\\b(Button|Label|Toggle|Picker)\\(\"", "reason": "SwiftUI visible control copy is governed copy." },
     { "id": "swiftui-accessible-copy", "platforms": ["macos", "ios"], "changeKind": "microcopy", "pattern": "\\b(help\\(\"|accessibilityLabel\\()\\b", "reason": "Tooltip and accessibility copy are governed copy." },
     { "id": "swiftui-motion", "platforms": ["macos", "ios"], "changeKind": "animation", "pattern": "\\b(animation|transition)\\b", "reason": "Motion changes are visual behavior." },
     { "id": "compose-layout", "platforms": ["android"], "changeKind": "layout", "pattern": "\\b(Modifier\\.(padding|size|height|width)|Row\\(|Column\\(|Box\\()\\b", "reason": "Compose layout tokens affect placement and density." },
     { "id": "compose-color", "platforms": ["android"], "changeKind": "color", "pattern": "\\b(MaterialTheme|Color\\(|background\\(|tint\\s*=)\\b", "reason": "Compose color tokens affect presentation." },
     { "id": "compose-icon", "platforms": ["android"], "changeKind": "icon", "pattern": "\\b(Icon\\(|Icons\\.)\\b", "reason": "Compose icon selection is a visual decision." },
     { "id": "compose-typography", "platforms": ["android"], "changeKind": "typography", "pattern": "\\b(Text\\(|fontSize|fontWeight)\\b", "reason": "Compose text styling and visible strings are governed." },
+    { "id": "compose-accessible-copy", "platforms": ["android"], "changeKind": "microcopy", "pattern": "\\b(contentDescription\\s*=|placeholder\\s*=)\\b", "reason": "Compose accessible and placeholder copy are governed copy." },
     { "id": "web-class-style", "platforms": ["web"], "changeKind": "layout", "pattern": "\\b(className=|style=|display:|grid|flex|gap|padding|margin)\\b", "reason": "Web class and style tokens affect presentation." },
     { "id": "web-color", "platforms": ["web"], "changeKind": "color", "pattern": "\\b(color:|background:|bg-|text-|border-)\\b", "reason": "Web color tokens affect presentation." },
     { "id": "web-icon", "platforms": ["web"], "changeKind": "icon", "pattern": "\\b(LucideIcon|Icon\\(|aria-label=)\\b", "reason": "Icon selection and accessible labels are governed." },
+    { "id": "web-visible-copy", "platforms": ["web"], "changeKind": "microcopy", "pattern": "\\b(aria-label=|placeholder=|title=)\\b", "reason": "Web accessible, placeholder, and title copy are governed copy." },
     { "id": "web-motion", "platforms": ["web"], "changeKind": "animation", "pattern": "\\b(animation|transition|duration-|ease-)\\b", "reason": "Web motion tokens are visual behavior." },
     { "id": "cross-visible-option-list", "platforms": ["macos", "ios", "android", "web"], "changeKind": "microcopy", "pattern": "(\\breturn\\b|=)\\s*\\[[^\\]]*\"[A-Za-z0-9][^\"]{2,}\"[^\\]]*\\]", "reason": "Visible picker and menu option lists are governed copy." },
-    { "id": "cross-ordering", "platforms": ["macos", "ios", "android", "web"], "changeKind": "ordering", "pattern": "\\b(sort\\(|sorted\\(|order|position)\\b", "reason": "Visible ordering can change hierarchy." },
-    { "id": "cross-visible-name", "platforms": ["macos", "ios", "android", "web"], "changeKind": "visible-name", "pattern": "\\b(title|label|placeholder|tooltip|help|emptyState|loadingState|errorMessage)\\b", "reason": "Visible names, placeholders, tooltips, and state messages are governed copy." },
-    { "id": "cross-hierarchy", "platforms": ["macos", "ios", "android", "web"], "changeKind": "hierarchy", "pattern": "\\b(section|header|footer|sidebar|toolbar|menu)\\b", "reason": "Visible hierarchy changes need UI authorization." },
-    { "id": "cross-spacing", "platforms": ["macos", "ios", "android", "web"], "changeKind": "spacing", "pattern": "\\b(spacing|inset|offset|gap|padding|margin)\\b", "reason": "Spacing changes are visual decisions." }
+    { "id": "cross-ordering", "platforms": ["macos", "ios", "android", "web"], "changeKind": "ordering", "severity": "report-only", "pattern": "\\b(sort\\(|sorted\\(|order|position)\\b", "reason": "Broad ordering words can indicate visible hierarchy risk, but are common in functional code." },
+    { "id": "cross-visible-name", "platforms": ["macos", "ios", "android", "web"], "changeKind": "visible-name", "severity": "report-only", "pattern": "\\b(title|label|placeholder|tooltip|help|emptyState|loadingState|errorMessage)\\b", "reason": "Broad copy-like names can indicate visible copy risk, but are common in models and persistence." },
+    { "id": "cross-hierarchy", "platforms": ["macos", "ios", "android", "web"], "changeKind": "hierarchy", "severity": "report-only", "pattern": "\\b(section|header|footer|sidebar|toolbar|menu)\\b", "reason": "Broad hierarchy words can indicate visible structure risk, but are common in comments and internal data." },
+    { "id": "cross-spacing", "platforms": ["macos", "ios", "android", "web"], "changeKind": "spacing", "severity": "report-only", "pattern": "\\b(spacing|inset|offset|gap|padding|margin)\\b", "reason": "Broad spacing words can indicate visual spacing risk, but are common in pagination and indexing." }
   ]
 }

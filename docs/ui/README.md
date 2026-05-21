@@ -66,8 +66,11 @@ the public repo.
   geometry evidence.
 - `visual-change-scopes.manifest.json`: public-safe approved scope metadata for
   visual/copy/layout work.
-- `visual-change-detectors.manifest.json`: platform-specific source tokens and
-  classification buckets for unauthorized visual/copy/layout diffs.
+- `visual-change-detectors.manifest.json`: platform-specific source tokens,
+  detector severity, and classification buckets for unauthorized
+  visual/copy/layout diffs. `blocking` detectors require visual authorization;
+  `report-only` detectors classify broad lexical risk without blocking
+  functional changes.
 - `visual-proposals.registry.json`: public-safe conceptual proposal records for
   visual/copy/layout changes.
 - `debt.baseline.json`: frozen existing visual drift.
@@ -127,117 +130,121 @@ the public repo.
 7. Keep canon promotion records current with
    `scripts/ui_canon_promotion_check.mjs`; only the user can approve a
    promotion.
-8. Keep decision verification evidence current with
+8. For task closure, set `CLAWIX_UI_GUARD_DIFF_BASE` to the task's starting
+   commit when validating the local task. Use `origin/main` only for PR,
+   release, or historical audit scope, and report historical findings
+   separately from the task closure.
+9. Keep decision verification evidence current with
    `scripts/ui_decision_verification_check.mjs`; unresolved decisions must
    declare private evidence aliases covered by the derived evidence plan plus
    the private verifiers that block closure. In this manifest, `open` and
    `blocked-external-pending` decisions are explicitly `EXTERNAL PENDING` and
    block `update_goal`.
-9. Keep UI debt reports current with `scripts/ui_debt_report_check.mjs`; debt
+10. Keep UI debt reports current with `scripts/ui_debt_report_check.mjs`; debt
    items are report-only outside a visual-authorized cleanup scope and
    opportunistic fixes stay forbidden.
-10. Keep UI debt audit contracts current with
+11. Keep UI debt audit contracts current with
     `scripts/ui_debt_audit_manifest_check.mjs`; private visual inventory must
     prove exact debt findings before the debt baseline can be closed.
-11. Keep critical cleanup queue records current with
+12. Keep critical cleanup queue records current with
    `scripts/ui_critical_cleanup_queue_check.mjs`; queued cleanup remains
    non-executable until an allowlisted visual lane receives approval, and V1
    delivery can only be completed or tracked pending for that lane.
-12. Keep UI exceptions current with `scripts/ui_exception_check.mjs`; active
+13. Keep UI exceptions current with `scripts/ui_exception_check.mjs`; active
    exceptions must be owned, approved, reviewed, and expiring.
-13. Keep inspiration references current with
+14. Keep inspiration references current with
    `scripts/ui_inspiration_reference_check.mjs`; external references are
    non-canonical until the user explicitly promotes a Clawix decision.
-14. Keep protected surface freeze contracts current with
+15. Keep protected surface freeze contracts current with
    `scripts/ui_protected_surface_check.mjs`.
-15. Keep approval authority current with
+16. Keep approval authority current with
    `scripts/ui_approval_authority_check.mjs`; future approvals must be from the
    user, point to private approval evidence bound to the public record hash, and pass
    `scripts/ui_private_approval_verify.mjs --require-approved` once approval
    records exist.
-16. Keep canon unit contracts current with `scripts/ui_canon_unit_check.mjs`;
+17. Keep canon unit contracts current with `scripts/ui_canon_unit_check.mjs`;
    narrower units require explicit canon promotion before becoming canon.
-17. Keep geometry contracts current with `scripts/ui_geometry_contract_check.mjs`.
-18. Keep UI implementation evidence output current with
+18. Keep geometry contracts current with `scripts/ui_geometry_contract_check.mjs`.
+19. Keep UI implementation evidence output current with
    `scripts/ui_implementation_evidence_check.mjs`; every UI change must declare
    mutation class, mapping, touched files, visible surfaces, state coverage, and
    public checks.
-19. Keep UI implementation phases current with
+20. Keep UI implementation phases current with
    `scripts/ui_implementation_phase_check.mjs`; governance work may proceed
    before private visual evidence, but cleanup execution stays blocked.
-20. Keep interactive state source coverage current with
+21. Keep interactive state source coverage current with
    `scripts/ui_state_coverage_check.mjs`; missing source evidence must be an
    explicit expiring gap.
-21. Keep visible surface references current with
+22. Keep visible surface references current with
    `scripts/ui_surface_reference_check.mjs`; pattern references must resolve to
    public-safe repo files or docs anchors.
-22. Keep visible surface baseline coverage current with
+23. Keep visible surface baseline coverage current with
    `scripts/ui_surface_baseline_coverage_check.mjs`; every inventory entry must
    have private baseline, rendered geometry, and copy snapshot references.
-23. Keep rendered drift report routes current with
+24. Keep rendered drift report routes current with
    `scripts/ui_rendered_drift_check.mjs`.
-24. Keep gate wiring current with `scripts/ui_release_gate_check.mjs`; UI
+25. Keep gate wiring current with `scripts/ui_release_gate_check.mjs`; UI
    governance checks must stay in local test lanes and public CI, and public CI
    must not require private evidence roots.
-25. Keep rendered geometry evidence contracts current with
+26. Keep rendered geometry evidence contracts current with
    `scripts/ui_rendered_geometry_manifest_check.mjs`; private pattern geometry
    evidence must include measured values plus the approved geometry hash before
    pending size clauses can become measured contracts.
-26. Keep copy contracts current with `scripts/ui_copy_governance_check.mjs`;
+27. Keep copy contracts current with `scripts/ui_copy_governance_check.mjs`;
    private copy evidence must include hashed `copyItems` plus the approved
    snapshot hash before copy can be treated as approved canon.
-27. Keep performance budget contracts current with
+28. Keep performance budget contracts current with
    `scripts/ui_performance_budget_check.mjs`; budget flow references must match
    private baseline references and stay scoped to critical flows.
-28. Keep pattern performance ownership current with
+29. Keep pattern performance ownership current with
    `scripts/ui_pattern_performance_check.mjs`; every critical flow must map to
    registry patterns that declare the same performance contract.
-29. Keep pattern registry mutation permissions current with
+30. Keep pattern registry mutation permissions current with
    `scripts/ui_pattern_mutation_guard.mjs`; geometry, copy, states, and canon
    references in pattern manifests require an allowlisted visual lane.
-30. Keep component extraction APIs current with
+31. Keep component extraction APIs current with
    `scripts/ui_component_extraction_check.mjs`.
-31. Keep mechanical refactor evidence current with
+32. Keep mechanical refactor evidence current with
    `scripts/ui_mechanical_equivalence_check.mjs`.
-32. Keep visual authorization scopes current with
+33. Keep visual authorization scopes current with
    `scripts/ui_visual_scope_check.mjs`; no scope is authorized by default, and
    approved scopes must declare files plus a change budget.
-33. Keep visual change detectors current with `scripts/ui_visual_detector_check.mjs`;
+34. Keep visual change detectors current with `scripts/ui_visual_detector_check.mjs`;
    presentation, copy, and hierarchy buckets must stay explicit.
-34. Keep visual model authorization current with
+35. Keep visual model authorization current with
    `scripts/ui_visual_model_allowlist_check.mjs`; the active model signal must
    identify an allowlisted visual model with private approval evidence.
-35. Keep visual guard failure diagnostics current with
+36. Keep visual guard failure diagnostics current with
    `scripts/ui_visual_guard_failure_check.mjs`; failures must include route,
    reason, and required permission.
-36. Keep conceptual visual proposal records current with
+37. Keep conceptual visual proposal records current with
    `scripts/ui_visual_proposal_check.mjs`.
-37. Keep private artifacts out of the public repo with
+38. Keep private artifacts out of the public repo with
    `scripts/ui_private_artifact_boundary_check.mjs`; public files may store
    aliases, manifests, hashes, and runner contracts only.
-38. Keep visible source coverage current with `scripts/ui_surface_inventory_check.mjs`.
+39. Keep visible source coverage current with `scripts/ui_surface_inventory_check.mjs`.
    Every visible source candidate must resolve to exactly one pattern, debt,
    exception, or protected-surface classification; use `excludeScopes` to keep
    broad public-safe globs from masking known debt.
-39. Keep private baseline coverage current with
+40. Keep private baseline coverage current with
    `scripts/ui_private_baseline_manifest_check.mjs`; the public repo stores only
    safe hashes, aliases, tolerances, and runner IDs.
-40. Keep the private evidence plan current with
+41. Keep the private evidence plan current with
     `scripts/ui_private_evidence_plan_check.mjs`; it derives expected private
     evidence records without requiring private roots.
-41. Keep aggregate private visual validation current with
+42. Keep aggregate private visual validation current with
     `scripts/ui_private_visual_validation_manifest_check.mjs`; approved private
     evidence must require user approval scope metadata before it can satisfy
     completion.
-42. Keep the completion audit current with
+43. Keep the completion audit current with
     `scripts/ui_completion_audit_check.mjs`; it must list every decision and
     keep open private evidence as `EXTERNAL PENDING`.
-43. Keep the completion source contract current with
+44. Keep the completion source contract current with
     `scripts/ui_completion_source_manifest_check.mjs`; final completion also
     requires `scripts/ui_private_completion_source_verify.mjs` against the
     private goal file and source session. The source session must satisfy
     `completion-source.manifest.json.sourceSessionRequirements`.
-44. Keep the final completion gate current with
+45. Keep the final completion gate current with
     `scripts/ui_completion_gate_check.mjs`; `update_goal` is allowed only after
     `scripts/ui_private_completion_verify.mjs --require-approved` exits 0, and
     public approval records require `CLAWIX_UI_PRIVATE_APPROVAL_ROOT` in the
@@ -253,7 +260,7 @@ the public repo.
     `completion-gate.manifest.json` so public CI verifies missing-root,
     passed-source-review, and placeholder-root closure reasons without private
     artifacts.
-45. Capture private evidence from the derived plan, not by hand-maintaining a
+46. Capture private evidence from the derived plan, not by hand-maintaining a
     second checklist. Run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group
     records by `privateReference` alias and private root environment:
@@ -305,21 +312,21 @@ the public repo.
     It groups each unresolved decision by package, file state, relative private
     evidence path, required fields, and verifier commands without publishing
     private root paths or raw artifacts.
-46. Close the remaining unresolved completion decisions only by satisfying their blocking
+47. Close the remaining unresolved completion decisions only by satisfying their blocking
     evidence groups in `../governance/ui/completion.md`: surface baselines, rendered
     geometry, copy snapshots, rendered drift, debt audit, performance budgets,
     and pattern geometry. Missing private roots stay `EXTERNAL PENDING`; do not
     convert them to public evidence, placeholders, or simulated approval.
-47. When all private roots are available, verify every record in the derived
+48. When all private roots are available, verify every record in the derived
     private evidence plan with
     `CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> node scripts/ui_private_evidence_verify.mjs --require-approved`.
     If mechanical-equivalence records exist, also set
     `CLAWIX_UI_PRIVATE_MECHANICAL_EQUIVALENCE_ROOT=<private-root>`.
-48. When all private roots are available, verify visual and performance
+49. When all private roots are available, verify visual and performance
     evidence end to end with
     `CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved`.
     The approval root is required while public approval records exist.
-49. When private approval evidence is available, verify it with
+50. When private approval evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_approval_verify.mjs --require-approved`.
     Before approval evidence is available, run
     `node scripts/ui_private_approval_verify.mjs --approval-plan` to list the
@@ -332,24 +339,24 @@ the public repo.
     `node scripts/ui_private_approval_verify.mjs --write-approval-template-root <outside-repo-dir>`.
     The generated files are invalid templates until replaced with approved
     private user approval evidence.
-50. When private debt audit evidence is available, verify it with
+51. When private debt audit evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> node scripts/ui_private_debt_audit_verify.mjs --require-approved`.
     Debt audit evidence must include hashed `findingItems` so each private
     finding is independently accountable without publishing visual values.
-51. When private geometry evidence is available, verify it with
+52. When private geometry evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> node scripts/ui_private_geometry_verify.mjs --require-approved`.
-52. When private baselines are available, verify them with
+53. When private baselines are available, verify them with
     `CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_baseline_verify.mjs --require-approved`.
-53. When private performance measurements are available, verify them with
+54. When private performance measurements are available, verify them with
     `CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_performance_budget_verify.mjs --require-approved`.
-54. When private copy snapshots are available, verify them with
+55. When private copy snapshots are available, verify them with
     `CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_copy_verify.mjs --require-approved`.
     Copy evidence must include hashed `copyItems` and `copyHierarchyHash` so
     visible text, order, and hierarchy are governed without publishing raw copy.
-55. When private rendered drift reports are available, verify them with
+56. When private rendered drift reports are available, verify them with
     `CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> node scripts/ui_private_drift_verify.mjs --require-approved`.
     Each private report must include hashed per-category `driftResults` entries
     for every public drift category, so approval records prove what was checked
     without publishing screenshots, copy, geometry, or performance captures.
-56. When the lane is not visual-authorized, use
+57. When the lane is not visual-authorized, use
    `visual-change-proposal.template.md` instead of changing presentation.
