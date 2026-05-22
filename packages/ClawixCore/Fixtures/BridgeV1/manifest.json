@@ -1,0 +1,419 @@
+{
+  "bridgeSchemaVersion" : 1,
+  "contractId" : "clawix.protocol.bridge.v1",
+  "fixtureCount" : 56,
+  "fixtures" : [
+    {
+      "direction" : "clientToDaemon",
+      "file" : "001-auth.json",
+      "index" : 1,
+      "name" : "auth",
+      "type" : "auth"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "002-listSessions.json",
+      "index" : 2,
+      "name" : "listSessions",
+      "type" : "listSessions"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "003-openSession.json",
+      "index" : 3,
+      "name" : "openSession",
+      "type" : "openSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "004-loadOlderMessages.json",
+      "index" : 4,
+      "name" : "loadOlderMessages",
+      "type" : "loadOlderMessages"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "005-sendMessage.json",
+      "index" : 5,
+      "name" : "sendMessage",
+      "type" : "sendMessage"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "006-newSession.json",
+      "index" : 6,
+      "name" : "newSession",
+      "type" : "newSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "007-interruptTurn.json",
+      "index" : 7,
+      "name" : "interruptTurn",
+      "type" : "interruptTurn"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "008-authOk.json",
+      "index" : 8,
+      "name" : "authOk",
+      "type" : "authOk"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "009-authFailed.json",
+      "index" : 9,
+      "name" : "authFailed",
+      "type" : "authFailed"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "010-versionMismatch.json",
+      "index" : 10,
+      "name" : "versionMismatch",
+      "type" : "versionMismatch"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "011-sessionsSnapshot.json",
+      "index" : 11,
+      "name" : "sessionsSnapshot",
+      "type" : "sessionsSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "012-sessionUpdated.json",
+      "index" : 12,
+      "name" : "sessionUpdated",
+      "type" : "sessionUpdated"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "013-messagesSnapshot.json",
+      "index" : 13,
+      "name" : "messagesSnapshot",
+      "type" : "messagesSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "014-messagesPage.json",
+      "index" : 14,
+      "name" : "messagesPage",
+      "type" : "messagesPage"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "015-messageAppended.json",
+      "index" : 15,
+      "name" : "messageAppended",
+      "type" : "messageAppended"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "016-messageStreaming.json",
+      "index" : 16,
+      "name" : "messageStreaming",
+      "type" : "messageStreaming"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "017-errorEvent.json",
+      "index" : 17,
+      "name" : "errorEvent",
+      "type" : "errorEvent"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "018-editPrompt.json",
+      "index" : 18,
+      "name" : "editPrompt",
+      "type" : "editPrompt"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "019-archiveSession.json",
+      "index" : 19,
+      "name" : "archiveSession",
+      "type" : "archiveSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "020-unarchiveSession.json",
+      "index" : 20,
+      "name" : "unarchiveSession",
+      "type" : "unarchiveSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "021-pinSession.json",
+      "index" : 21,
+      "name" : "pinSession",
+      "type" : "pinSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "022-unpinSession.json",
+      "index" : 22,
+      "name" : "unpinSession",
+      "type" : "unpinSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "023-renameSession.json",
+      "index" : 23,
+      "name" : "renameSession",
+      "type" : "renameSession"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "024-pairingStart.json",
+      "index" : 24,
+      "name" : "pairingStart",
+      "type" : "pairingStart"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "025-listProjects.json",
+      "index" : 25,
+      "name" : "listProjects",
+      "type" : "listProjects"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "026-readFile.json",
+      "index" : 26,
+      "name" : "readFile",
+      "type" : "readFile"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "027-pairingPayload.json",
+      "index" : 27,
+      "name" : "pairingPayload",
+      "type" : "pairingPayload"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "028-projectsSnapshot.json",
+      "index" : 28,
+      "name" : "projectsSnapshot",
+      "type" : "projectsSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "029-fileSnapshot.json",
+      "index" : 29,
+      "name" : "fileSnapshot",
+      "type" : "fileSnapshot"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "030-transcribeAudio.json",
+      "index" : 30,
+      "name" : "transcribeAudio",
+      "type" : "transcribeAudio"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "031-transcriptionResult.json",
+      "index" : 31,
+      "name" : "transcriptionResult",
+      "type" : "transcriptionResult"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "032-requestAudio.json",
+      "index" : 32,
+      "name" : "requestAudio",
+      "type" : "requestAudio"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "033-audioSnapshot.json",
+      "index" : 33,
+      "name" : "audioSnapshot",
+      "type" : "audioSnapshot"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "034-requestGeneratedImage.json",
+      "index" : 34,
+      "name" : "requestGeneratedImage",
+      "type" : "requestGeneratedImage"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "035-generatedImageSnapshot.json",
+      "index" : 35,
+      "name" : "generatedImageSnapshot",
+      "type" : "generatedImageSnapshot"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "036-requestRolloutAttachment.json",
+      "index" : 36,
+      "name" : "requestRolloutAttachment",
+      "type" : "requestRolloutAttachment"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "037-rolloutAttachmentSnapshot.json",
+      "index" : 37,
+      "name" : "rolloutAttachmentSnapshot",
+      "type" : "rolloutAttachmentSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "038-bridgeState.json",
+      "index" : 38,
+      "name" : "bridgeState",
+      "type" : "bridgeState"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "039-requestRateLimits.json",
+      "index" : 39,
+      "name" : "requestRateLimits",
+      "type" : "requestRateLimits"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "040-rateLimitsSnapshot.json",
+      "index" : 40,
+      "name" : "rateLimitsSnapshot",
+      "type" : "rateLimitsSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "041-rateLimitsUpdated.json",
+      "index" : 41,
+      "name" : "rateLimitsUpdated",
+      "type" : "rateLimitsUpdated"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "042-requestClawJSServiceStatuses.json",
+      "index" : 42,
+      "name" : "requestClawJSServiceStatuses",
+      "type" : "requestClawJSServiceStatuses"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "043-clawJSServiceStatusesSnapshot.json",
+      "index" : 43,
+      "name" : "clawJSServiceStatusesSnapshot",
+      "type" : "clawJSServiceStatusesSnapshot"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "044-clawJSServiceStatusUpdated.json",
+      "index" : 44,
+      "name" : "clawJSServiceStatusUpdated",
+      "type" : "clawJSServiceStatusUpdated"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "045-audioRegister.json",
+      "index" : 45,
+      "name" : "audioRegister",
+      "type" : "audioRegister"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "046-audioAttachTranscript.json",
+      "index" : 46,
+      "name" : "audioAttachTranscript",
+      "type" : "audioAttachTranscript"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "047-audioGet.json",
+      "index" : 47,
+      "name" : "audioGet",
+      "type" : "audioGet"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "048-audioGetBytes.json",
+      "index" : 48,
+      "name" : "audioGetBytes",
+      "type" : "audioGetBytes"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "049-audioList.json",
+      "index" : 49,
+      "name" : "audioList",
+      "type" : "audioList"
+    },
+    {
+      "direction" : "clientToDaemon",
+      "file" : "050-audioDelete.json",
+      "index" : 50,
+      "name" : "audioDelete",
+      "type" : "audioDelete"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "051-audioRegisterResult.json",
+      "index" : 51,
+      "name" : "audioRegisterResult",
+      "type" : "audioRegisterResult"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "052-audioAttachTranscriptResult.json",
+      "index" : 52,
+      "name" : "audioAttachTranscriptResult",
+      "type" : "audioAttachTranscriptResult"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "053-audioGetResult.json",
+      "index" : 53,
+      "name" : "audioGetResult",
+      "type" : "audioGetResult"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "054-audioBytesResult.json",
+      "index" : 54,
+      "name" : "audioBytesResult",
+      "type" : "audioBytesResult"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "055-audioListResult.json",
+      "index" : 55,
+      "name" : "audioListResult",
+      "type" : "audioListResult"
+    },
+    {
+      "direction" : "daemonToClient",
+      "file" : "056-audioDeleteResult.json",
+      "index" : 56,
+      "name" : "audioDeleteResult",
+      "type" : "audioDeleteResult"
+    }
+  ],
+  "platformValidators" : [
+    {
+      "path" : "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift",
+      "platform" : "swift"
+    },
+    {
+      "path" : "web/tests/unit/wire.test.ts",
+      "platform" : "web"
+    },
+    {
+      "path" : "android/app/src/test/java/com/example/clawix/android/BridgeFrameRoundtripTest.kt",
+      "platform" : "android"
+    },
+    {
+      "path" : "windows/Clawix.Tests/BridgeFixtureParityTests.cs",
+      "platform" : "windows"
+    }
+  ],
+  "schemaVersion" : 1,
+  "source" : "packages/ClawixCore/Sources/BridgeProtocolFixtures/BridgeFixtures.swift"
+}

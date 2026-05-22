@@ -1,0 +1,1 @@
+{"schemaVersion":1,"type":"audioAttachTranscriptResult","requestId":"req-audio-2","transcript":{"audioId":"audio-1","role":"transcription","text":"hello audio","provider":"whisper","language":"en","id":"transcript-1","createdAt":1750000001000,"isPrimary":true}}
