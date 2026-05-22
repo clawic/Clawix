@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "data": {
+    "runtimeId": "example",
+    "domain": "sessions",
+    "action": "pin",
+    "status": "local_overlay_applied",
+    "authority": "clawix_local_overlay",
+    "writesRuntime": false,
+    "writesLocalOverlay": true,
+    "result": {
+      "id": "2026/05/21/runtime-session",
+      "overlayThreadId": "runtime:example:sessions:2026%2F05%2F21%2Fruntime-session",
+      "pinned": true,
+      "receipt": {
+        "requestId": "appstate-test",
+        "hostId": "runtime-portal",
+        "status": "applied"
+      }
+    }
+  }
+}

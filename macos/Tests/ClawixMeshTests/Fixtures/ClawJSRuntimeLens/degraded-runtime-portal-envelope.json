@@ -1,0 +1,812 @@
+{
+  "ok": true,
+  "data": {
+    "runtimeId": "example",
+    "runtimeName": "Example Agent",
+    "support": {
+      "stability": "dev-only",
+      "supportLevel": "dev-only",
+      "recommended": false,
+      "ecosystem": {
+        "supportStage": "dev_only",
+        "recommended": false,
+        "production": false,
+        "summary": "Example ecosystem remains blocked until native write-back and live channel evidence exist.",
+        "claimSource": "runtime-ecosystem-manifest",
+        "provenance": {
+          "source": "runtime-ecosystem-manifest",
+          "runtimeId": "example"
+        },
+        "evidenceRequirements": [
+          {
+            "id": "example.channels.live_evidence",
+            "blockerClass": "external_pending",
+            "approvalRequired": true,
+            "commandShape": "runtime example domain channels --json",
+            "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
+            "riskControls": ["read_only_first"],
+            "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+            "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+            "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "approve_and_run_runtime_example_domain_channels_read_only_evidence",
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
+          }
+        ]
+      }
+    },
+    "supportAudit": {
+      "scope": "runtime_ecosystem_support_audit",
+      "closureState": "blocked",
+      "supportComplete": false,
+      "allDomainsAccountedFor": true,
+      "supportStage": "dev_only",
+      "recommended": false,
+      "production": false,
+      "uiParityClaim": "partial_runtime_lens",
+      "summary": "Example ecosystem remains blocked until native write-back and live channel evidence exist.",
+      "blockingReasons": ["native_write_back_pending", "live_evidence_pending"],
+      "blockerSummary": {
+        "byBlockerClass": {
+          "direct_blocker": 2,
+          "external_pending": 1
+        },
+        "directBlockerDomains": ["sessions"],
+        "externalPendingDomains": ["channels"],
+        "blockedWriteBackDomains": ["sessions"],
+        "ecosystemExternalPendingDomains": ["channels"],
+        "evidenceRequirementCount": 3,
+        "productBlockedRequirementCount": 2
+      },
+      "evidenceRequirements": [
+        {
+          "id": "example.sessions.create.action_contract",
+          "blockerClass": "direct_blocker",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_create_contract_exists",
+          "expectedEvidence": ["official_create_command_or_api", "non_destructive_fixture"],
+          "riskControls": ["no_silent_runtime_write"],
+          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "currentBehavior": "non_executable_action_plan_only",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
+        }
+      ],
+      "domains": [
+        {
+          "domain": "sessions",
+          "claim": "inventoried",
+          "status": "error",
+          "canonicalAuthority": "runtime",
+          "nativeAuthority": "runtime",
+          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackAllowed": false,
+          "validation": "fixture_required",
+          "externalPending": false,
+          "blockerClasses": ["direct_blocker"],
+          "evidenceDispositions": ["blocked_until_official_runtime_contract", "blocked_until_official_runtime_action_contract"],
+          "supportResolutions": ["explicitly_product_blocked_not_a_silent_gap"],
+          "evidenceRequirementIds": ["example.sessions.write_back_contract", "example.sessions.create.action_contract"]
+        },
+        {
+          "domain": "channels",
+          "claim": "inventoried",
+          "status": "degraded",
+          "canonicalAuthority": "runtime",
+          "nativeAuthority": "runtime",
+          "writeBackPolicy": "external_pending_live_accounts",
+          "writeBackAllowed": false,
+          "validation": "external_pending_for_live_accounts",
+          "externalPending": true,
+          "blockerClasses": ["external_pending"],
+          "evidenceDispositions": ["external_pending_until_approved_redacted_live_receipt"],
+          "supportResolutions": ["external_pending_not_product_blocked"],
+          "evidenceRequirementIds": ["example.channels.live_evidence"]
+        }
+      ],
+      "promotionGate": "support_claim_remains_unpromoted_until_all_evidence_requirements_are_closed_or_explicitly_product_blocked",
+      "closureChecklist": [
+        {
+          "domain": "sessions",
+          "closureStatus": "product_blocked",
+          "claim": "inventoried",
+          "status": "error",
+          "readProjectionStatus": "projected",
+          "implementedFacets": ["manifest_domain_contract", "claw_cli_resource_surface", "session_list_action"],
+          "blockingFacets": ["native_action_contract", "native_write_back_contract", "product_blocked_claim"],
+          "projectionDisposition": "read_projection_available_write_back_blocked",
+          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "validation": "fixture_required",
+          "blockerClasses": ["direct_blocker"],
+          "evidenceRequirementIds": ["example.sessions.create.action_contract", "example.sessions.pin.native_write_back_contract"],
+          "supportResolutions": ["explicitly_product_blocked_not_a_silent_gap"],
+          "safeDefault": "keep_lowered_claim_until_upstream_native_contract_exists",
+          "nextAction": "wait_for_official_runtime_contract_then_add_fixture_and_round_trip_evidence"
+        },
+        {
+          "domain": "channels",
+          "closureStatus": "external_pending",
+          "claim": "inventoried",
+          "status": "ok",
+          "readProjectionStatus": "degraded_projection",
+          "implementedFacets": ["manifest_domain_contract", "read_projection_contract"],
+          "blockingFacets": ["approved_live_evidence"],
+          "projectionDisposition": "read_projection_available_live_evidence_pending",
+          "writeBackPolicy": "external_pending_live_accounts",
+          "validation": "external_pending_for_live_accounts",
+          "blockerClasses": ["external_pending"],
+          "evidenceRequirementIds": ["example.channels.live_evidence"],
+          "supportResolutions": ["external_pending_not_product_blocked"],
+          "safeDefault": "keep_unpromoted_until_approved_redacted_evidence",
+          "nextAction": "use_matching_evidenceReentryPacket_after_explicit_approval"
+        }
+      ],
+      "closureChecklistSummary": {
+        "product_blocked": 1,
+        "external_pending": 1
+      },
+      "syncPolicySummary": {
+        "domainCount": 2,
+        "canonicalAuthorityCounts": {
+          "runtime": 1,
+          "claw_registry_with_runtime_binding": 1
+        },
+        "nativeAuthorityCounts": {
+          "runtime": 2
+        },
+        "persistenceCounts": {
+          "index_and_shadow_when_safe": 1,
+          "secret_refs_only": 1
+        },
+        "relationCounts": {
+          "native_projection": 1,
+          "gateway_projection": 1
+        },
+        "writeBackPolicyCounts": {
+          "blocked_until_fixture_coverage": 1,
+          "external_pending_live_accounts": 1
+        },
+        "lossPolicyCounts": {
+          "preserve_when_safe": 1,
+          "secret_refs_only": 1
+        },
+        "freshnessCounts": {
+          "snapshot": 1,
+          "degraded_snapshot": 1
+        },
+        "readOnlyProjectionDomains": ["sessions", "channels"],
+        "writeBackAllowedDomains": [],
+        "blockedWriteBackDomains": ["sessions"],
+        "externalPendingDomains": ["channels"],
+        "localOverlayDomains": ["sessions"],
+        "localOverlayActions": ["pin", "unpin"],
+        "noSilentOverwrite": true,
+        "defaultSyncMode": "read_projection_first_no_silent_write_back",
+        "safeDefault": "project_runtime_state_do_not_sync_or_write_back_without_official_contract"
+      },
+      "projectionSummary": {
+        "byReadProjectionStatus": {
+          "projected": 1,
+          "degraded_projection": 1
+        },
+        "implementedFacetCounts": {
+          "manifest_domain_contract": 2,
+          "session_list_action": 1
+        },
+        "blockingFacetCounts": {
+          "native_action_contract": 1,
+          "approved_live_evidence": 1
+        },
+        "projectedDomainCount": 2,
+        "unsupportedDomainCount": 0,
+        "productBlockedButProjectedDomainCount": 1
+      },
+      "evidenceReadinessSummary": {
+        "statusCounts": {
+          "approval_required": 1,
+          "blocked_until_upstream_contract": 1
+        },
+        "blockerClassCounts": {
+          "external_pending": 1,
+          "direct_blocker": 1
+        },
+        "safeDefaultCounts": {
+          "do_not_run_without_explicit_approval_and_redaction": 1,
+          "keep_unpromoted_and_do_not_synthesize_runtime_state": 1
+        },
+        "totalRequirementCount": 3,
+        "approvalRequiredCount": 1,
+        "externalPendingCount": 1,
+        "upstreamContractBlockedCount": 1,
+        "productBlockedCount": 2,
+        "unresolvedNativeRequirementCount": 0,
+        "approvalRequiredRequirementIds": ["example.channels.live_evidence"],
+        "externalPendingRequirementIds": ["example.channels.live_evidence"],
+        "upstreamContractRequirementIds": ["example.sessions.create.action_contract"],
+        "productBlockedRequirementIds": ["example.sessions.create.action_contract", "example.sessions.pin.native_write_back_contract"],
+        "unresolvedNativeRequirementIds": [],
+        "nextRequiredActions": ["approved_redacted_live_evidence", "official_runtime_native_contract_fixture"],
+        "reentryPolicy": "use_evidence_reentry_packets_before_claim_promotion",
+        "safeDefault": "keep_unpromoted_and_follow_exact_reentry_packets"
+      },
+      "finalPromotionReview": {
+        "status": "unpromoted",
+        "finalPromotionAllowed": false,
+        "claimDisposition": "unpromoted_external_pending",
+        "productBlockedByDecisionCount": 2,
+        "externalPendingCount": 1,
+        "unresolvedNativeRequirementCount": 0,
+        "productBlockedRequirementIds": ["example.sessions.create.action_contract", "example.sessions.pin.native_write_back_contract"],
+        "externalPendingRequirementIds": ["example.channels.live_evidence"],
+        "unresolvedNativeRequirementIds": [],
+        "requiredForPromotion": ["approved_redacted_live_evidence", "keep_lowered_claim_until_upstream_native_contracts_exist", "ecosystem_production_claim", "ecosystem_recommended_claim"],
+        "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims"
+      },
+      "finalSupportClaimDecision": {
+        "status": "not_promoted",
+        "decision": "keep_current_lowered_runtime_ecosystem_claim",
+        "effectiveSupportStage": "dev_only",
+        "recommended": false,
+        "production": false,
+        "uiParityClaim": "partial_template_only",
+        "uiParityDisposition": "partial_lens_validated_not_full_native_parity",
+        "blockedPromotionClaims": ["recommended", "production", "native_parity", "write_back"],
+        "blockerClasses": ["external_pending", "direct_blocker"],
+        "productBlockedRequirementIds": ["example.sessions.create.action_contract", "example.sessions.pin.native_write_back_contract"],
+        "externalPendingRequirementIds": ["example.channels.live_evidence"],
+        "unresolvedNativeRequirementIds": [],
+        "promotionEvidenceRequired": ["approved_redacted_live_evidence", "keep_lowered_claim_until_upstream_native_contracts_exist"],
+        "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
+        "safeDefault": "keep_unpromoted_until_evidence_or_upstream_contract_changes",
+        "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production"
+      },
+      "provenance": {
+        "source": "runtime-portal-support-audit",
+        "runtimeId": "example"
+      },
+      "evidenceReentryPackets": [
+        {
+          "id": "example.channels.live_evidence.reentry",
+          "requirementId": "example.channels.live_evidence",
+          "blockerClass": "external_pending",
+          "status": "approval_required",
+          "approvalRequired": true,
+          "commandShape": "runtime example domain channels --json",
+          "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
+          "riskControls": ["read_only_first"],
+          "reentryCondition": "approve_and_run_runtime_example_domain_channels_read_only_evidence",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "supportResolution": "external_pending_not_product_blocked",
+          "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
+          "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
+          "safeDefault": "do_not_run_without_explicit_approval_and_redaction"
+        },
+        {
+          "id": "example.sessions.create.action_contract.reentry",
+          "requirementId": "example.sessions.create.action_contract",
+          "blockerClass": "direct_blocker",
+          "status": "blocked_until_upstream_contract",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_create_contract_exists",
+          "expectedEvidence": ["official_create_command_or_api", "non_destructive_fixture"],
+          "riskControls": ["no_silent_runtime_write"],
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+        }
+      ]
+    },
+    "status": {
+      "adapter": "example",
+      "runtimeName": "Example Agent",
+      "version": "1.2.3",
+      "installed": false,
+      "cliAvailable": false,
+      "gatewayAvailable": false,
+      "capabilities": {
+        "conversationCli": true,
+        "gateway": false,
+        "skills": false
+      },
+      "capabilityMap": {
+        "runtime": {
+          "supported": true,
+          "status": "error",
+          "strategy": "cli",
+          "diagnostics": {
+            "source": "runtime",
+            "probeMethod": "cli"
+          }
+        },
+        "workspace": {
+          "supported": true,
+          "status": "ready",
+          "strategy": "native"
+        },
+        "channels": {
+          "supported": true,
+          "status": "degraded",
+          "strategy": "native",
+          "limitations": ["Channel inventory is normalized from Example gateway capabilities."]
+        },
+        "plugins": {
+          "supported": false,
+          "status": "unsupported",
+          "strategy": "unsupported"
+        }
+      },
+      "diagnostics": {
+        "lastError": "example CLI not found",
+        "locations": {
+          "homeDir": "/Users/tester/.example",
+          "workspacePath": "/tmp/workspace",
+          "configPath": "/Users/tester/.example/config.json",
+          "authStorePath": "/Users/tester/.example/auth.json",
+          "gatewayConfigPath": "/Users/tester/.example/gateway.json"
+        }
+      }
+    },
+    "session": {
+      "primaryTransport": "gateway",
+      "fallbackTransport": "cli",
+      "sessionPersistence": "runtime",
+      "streamingMode": "hybrid",
+      "sessionPath": "/Users/tester/.example/sessions",
+      "supportsGateway": true,
+      "transport": {
+        "kind": "cli",
+        "streaming": true
+      }
+    },
+    "workspace": {
+      "canonicalPaths": {
+        "SOUL": "/tmp/workspace/SOUL.md",
+        "USER": "/tmp/workspace/USER.md",
+        "SKILLS": "/tmp/workspace/SKILLS.md"
+      },
+      "managedFiles": ["/tmp/workspace/AGENTS.md", "/tmp/workspace/CLAUDE.md"]
+    },
+    "commands": {
+      "authority": "runtime_adapter",
+      "executableByClawCli": [
+        {
+          "command": "runtime example sessions list",
+          "delegatesTo": "runtime session metadata projection",
+          "writesRuntime": false,
+          "args": ["sessions", "list"]
+        },
+        {
+          "command": "runtime example sessions inject --session-key <id> --message <text> --confirm-runtime-write",
+          "delegatesTo": "blocked until native inject contract",
+          "writesRuntime": false,
+          "args": ["sessions", "inject", "--session-key", "<id>", "--message", "<text>", "--confirm-runtime-write"]
+        },
+        {
+          "command": "runtime example sessions create --title <title>",
+          "delegatesTo": "blocked until official runtime create contract and fixture",
+          "writesRuntime": false,
+          "wouldWriteRuntime": true,
+          "args": ["sessions", "create", "--title", "<title>"]
+        }
+      ],
+      "resourceDomains": ["sessions", "skills", "memory", "channels", "providers", "auth", "models", "scheduler", "plugins", "gateway", "doctorCompat", "sandboxPermissions", "configuration"],
+      "mutationPolicy": "Runtime-owned actions must delegate to the runtime adapter or be marked unsupported."
+    },
+    "domains": [
+      { "domain": "sessions", "supported": true, "status": "error", "strategy": "cli", "authority": "runtime_adapter", "claim": "inventoried", "canonicalAuthority": "runtime", "nativeAuthority": "runtime", "persistence": "index_and_shadow_when_safe", "relation": "native_projection", "lossPolicy": "preserve_when_safe", "writeBackPolicy": "blocked_until_fixture_coverage", "writeBackAllowed": false, "validation": "fixture_required", "freshness": "degraded_snapshot", "limitations": [], "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "sessions" } },
+      { "domain": "skills", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "memory", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      {
+        "domain": "channels",
+        "supported": true,
+        "status": "degraded",
+        "strategy": "native",
+        "count": 7,
+        "authority": "runtime_adapter",
+        "claim": "inventoried",
+        "canonicalAuthority": "runtime",
+        "nativeAuthority": "runtime",
+        "persistence": "secret_refs_only",
+        "relation": "gateway_projection",
+        "lossPolicy": "secret_refs_only",
+        "writeBackPolicy": "external_pending_live_accounts",
+        "writeBackAllowed": false,
+        "validation": "external_pending_for_live_accounts",
+        "externalPending": true,
+        "officialCommands": ["example gateway", "example gateway setup", "example gateway start"],
+        "evidenceRequirements": [
+          {
+            "id": "example.channels.live_evidence",
+            "blockerClass": "external_pending",
+            "approvalRequired": true,
+            "commandShape": "runtime example domain channels --json",
+            "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
+            "riskControls": ["read_only_first"],
+            "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+            "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+            "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "approve_and_run_runtime_example_domain_channels_read_only_evidence",
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
+          }
+        ],
+        "limitations": ["normalized"],
+        "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "channels" }
+      },
+      { "domain": "providers", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "auth", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_and_host_by_action", "limitations": [] },
+      { "domain": "models", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "scheduler", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "plugins", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "gateway", "supported": true, "status": "degraded", "strategy": "gateway", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "doctorCompat", "supported": true, "status": "ready", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
+      { "domain": "sandboxPermissions", "supported": true, "status": "degraded", "strategy": "hosted", "authority": "runtime_and_host_by_action", "limitations": [] },
+      { "domain": "configuration", "supported": true, "status": "ready", "strategy": "native", "authority": "runtime_config_with_claw_workspace_projection", "limitations": [] }
+    ],
+    "domainData": {
+      "sessions": {
+        "session": {
+          "transport": {
+            "kind": "cli",
+            "streaming": true
+          },
+          "supportsGateway": true,
+          "primaryTransport": "gateway",
+          "fallbackTransport": "cli",
+          "sessionPersistence": "runtime",
+          "streamingMode": "hybrid",
+          "sessionPath": "/Users/tester/.example/sessions"
+        },
+        "sessions": [
+          {
+            "id": "2026/05/21/runtime-session",
+            "label": "runtime-session",
+            "kind": "session",
+            "path": "/Users/tester/.example/sessions/2026/05/21/runtime-session.jsonl",
+            "status": "projected",
+            "updatedAt": "2026-05-21T17:40:00.000Z",
+            "sizeBytes": 128,
+            "pinned": true,
+            "pinAuthority": "clawix_local_overlay",
+            "divergence": "local_pin_overlay",
+            "localOverlay": {
+              "pinned": true,
+              "authority": "clawix_local_overlay",
+              "writesRuntime": false
+            },
+            "nativeIdentifier": {
+              "name": "sessionPathId"
+            },
+            "provenance": {
+              "source": "runtime-session-store",
+              "runtimeId": "example",
+              "path": "/Users/tester/.example/sessions/2026/05/21/runtime-session.jsonl"
+            }
+          }
+        ],
+        "totalProjected": 1,
+        "inventoryError": "OpenClaw unavailable in fixture",
+        "overlayState": {
+          "runtimeId": "example",
+          "overlayAuthority": "clawix_local_overlay",
+          "writesRuntime": false,
+          "writeBackStatus": "blocked_until_official_runtime_pin_api",
+          "conflictPolicy": "no_silent_overwrite",
+          "totalOverlays": 1,
+          "totalConflicts": 1,
+          "overlays": [
+            {
+              "id": "2026/05/21/runtime-session",
+              "overlayThreadId": "runtime:example:sessions:2026%2F05%2F21%2Fruntime-session",
+              "kind": "pin",
+              "pinned": true,
+              "authority": "clawix_local_overlay",
+              "writesRuntime": false,
+              "nativeFound": true,
+              "nativePinned": false,
+              "conflictStatus": "local_only"
+            }
+          ]
+        },
+        "actionContracts": [
+          {
+            "action": "list",
+            "status": "degraded",
+            "statusWhenSessionPath": "implemented",
+            "authority": "runtime",
+            "writesRuntime": false,
+            "persistence": "metadata_only",
+            "delegatesTo": "runtime session path metadata projection",
+            "guard": "bounded_scan_without_transcript_reads"
+          },
+          {
+            "action": "pin",
+            "status": "local_overlay_only",
+            "authority": "clawix_local_overlay",
+            "writesRuntime": false,
+            "persistence": "local_pin_overlay",
+            "delegatesTo": "ClawJS app-state local pin overlay",
+            "guard": "must_not_write_runtime_pin_without_official_api"
+          },
+          {
+            "action": "create",
+            "status": "blocked",
+            "authority": "runtime",
+            "writesRuntime": false,
+            "wouldWriteRuntime": true,
+            "persistence": "none",
+            "delegatesTo": "blocked until official runtime create contract and fixture",
+            "guard": "blocked_until_official_create_fixture",
+            "requiredEvidence": [
+              "official_create_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy"
+            ]
+          }
+        ],
+        "actionPolicy": [
+          {
+            "action": "list",
+            "status": "implemented",
+            "authority": "runtime",
+            "writesRuntime": false,
+            "persistence": "metadata_only",
+            "delegatesTo": "runtime session path metadata projection",
+            "guard": "bounded_scan_without_transcript_reads"
+          },
+          {
+            "action": "pin",
+            "status": "local_overlay_only",
+            "authority": "clawix_local_overlay",
+            "writesRuntime": false,
+            "persistence": "local_pin_overlay",
+            "delegatesTo": "ClawJS app-state local pin overlay",
+            "guard": "must_not_write_runtime_pin_without_official_api"
+          },
+          {
+            "action": "create",
+            "status": "blocked",
+            "authority": "runtime",
+            "writesRuntime": false,
+            "wouldWriteRuntime": true,
+            "persistence": "none",
+            "delegatesTo": "blocked_until_fixture_coverage",
+            "guard": "blocked_until_official_create_fixture",
+            "requiredEvidence": ["official_create_command_or_api", "non_destructive_fixture"]
+          }
+        ],
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "canonicalAuthority": "runtime",
+          "nativeAuthority": "runtime",
+          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "validation": "fixture_required",
+          "freshness": "degraded_snapshot",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "sessions" },
+          "evidenceRequirements": [
+            {
+              "id": "example.sessions.write_back_contract",
+              "blockerClass": "direct_blocker",
+              "approvalRequired": false,
+              "commandShape": "not_executable_until_official_runtime_contract_exists",
+              "expectedEvidence": ["official_runtime_cli_or_api", "non_destructive_fixture"],
+              "riskControls": ["no_direct_runtime_store_mutation"],
+              "evidenceDisposition": "blocked_until_official_runtime_contract",
+              "currentBehavior": "read_only_projection_or_local_overlay_only",
+              "fallbackPolicy": "do_not_synthesize_native_write_back",
+              "claimEffect": "blocks_recommended_production_native_parity",
+              "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
+              "promotionGate": "claim_remains_unpromoted_until_write_back_contract_is_implemented"
+            }
+          ]
+        }
+      },
+      "skills": {
+        "skills": [
+          { "id": "example-skills", "label": "Example Skills", "enabled": true, "scope": "runtime", "path": "/Users/tester/.example/skills" }
+        ],
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "validation": "snapshot_required",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "skills" }
+        }
+      },
+      "channels": {
+        "channels": [
+          {
+            "id": "telegram",
+            "label": "Channel A",
+            "kind": "chat",
+            "status": "disconnected",
+            "provider": "telegram",
+            "lastError": "channel disabled in fixture",
+            "metadata": {
+              "mode": "disabled",
+              "knownChats": 0
+            }
+          },
+          { "id": "slack", "label": "Channel B", "kind": "chat", "status": "configured" }
+        ],
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "canonicalAuthority": "runtime",
+          "nativeAuthority": "runtime",
+          "writeBackPolicy": "external_pending_live_accounts",
+          "validation": "external_pending_for_live_accounts",
+          "externalPending": true,
+          "freshness": "degraded_snapshot",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "channels" },
+          "evidenceRequirements": [
+            {
+              "id": "example.channels.live_evidence",
+              "blockerClass": "external_pending",
+              "approvalRequired": true,
+              "commandShape": "runtime example domain channels --json",
+              "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
+              "riskControls": ["read_only_first"],
+              "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+              "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+              "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+              "claimEffect": "blocks_recommended_production_native_parity",
+              "reentryCondition": "approve_and_run_runtime_example_domain_channels_read_only_evidence",
+              "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
+            }
+          ]
+        }
+      },
+      "providers": {
+        "providers": [
+          {
+            "id": "openai",
+            "label": "openai",
+            "envVars": ["OPENAI_API_KEY"],
+            "auth": {
+              "supportsApiKey": true,
+              "supportsEnv": true
+            }
+          }
+        ]
+      },
+      "auth": {
+        "auth": {
+          "openai": {
+            "provider": "openai",
+            "hasAuth": true,
+            "hasSubscription": false,
+            "hasApiKey": true,
+            "hasProfileApiKey": false,
+            "hasEnvKey": true,
+            "authType": "env",
+            "maskedCredential": "****1234"
+          },
+          "anthropic": {
+            "provider": "anthropic",
+            "hasAuth": false,
+            "hasSubscription": false,
+            "hasApiKey": false,
+            "hasProfileApiKey": false,
+            "hasEnvKey": false
+          }
+        },
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_and_host_by_action",
+          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "validation": "secret_guard",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "auth" }
+        }
+      },
+      "models": {
+        "models": [
+          {
+            "id": "claude-3-haiku",
+            "modelId": "claude-3-haiku",
+            "provider": "anthropic",
+            "label": "Claude Haiku",
+            "available": true,
+            "source": "runtime",
+            "isDefault": false
+          }
+        ],
+        "defaultModel": {
+          "provider": "anthropic",
+          "modelId": "claude-3-opus",
+          "label": "Claude Opus"
+        },
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "validation": "model_fixture_required",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "models" }
+        }
+      },
+      "plugins": {
+        "plugins": [],
+        "status": {
+          "supported": false,
+          "status": "unsupported",
+          "strategy": "unsupported",
+          "limitations": ["plugins unavailable in fixture"],
+          "diagnostics": {
+            "mode": "managed",
+            "diagnostics": ["plugin CLI not available in fixture"]
+          }
+        },
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "validation": "plugin_fixture_required",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "plugins" }
+        }
+      },
+      "gateway": {
+        "gatewayAvailable": false,
+        "capability": {
+          "supported": true,
+          "status": "degraded",
+          "strategy": "gateway",
+          "limitations": ["gateway unavailable in fixture"],
+          "diagnostics": {
+            "source": "runtime",
+            "probeMethod": "gateway",
+            "transport": "gateway",
+            "inventoryFreshness": "degraded_snapshot"
+          }
+        },
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_adapter",
+          "validation": "fixture_required",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "gateway" }
+        }
+      },
+      "doctorCompat": {
+        "runtimeVersion": "example 0.9.0",
+        "diagnostics": {
+          "lastError": "example CLI not found"
+        },
+        "capability": {
+          "supported": true,
+          "status": "ready",
+          "strategy": "native"
+        }
+      },
+      "sandboxPermissions": {
+        "capability": {
+          "supported": true,
+          "status": "degraded",
+          "strategy": "hosted",
+          "limitations": ["host permission review required"]
+        }
+      },
+      "configuration": {
+        "canonicalPaths": {
+          "SOUL": "/tmp/workspace/SOUL.md",
+          "USER": "/tmp/workspace/USER.md"
+        },
+        "managedFiles": ["/tmp/workspace/AGENTS.md"],
+        "diagnostics": {
+          "lastError": "config drift in fixture"
+        },
+        "supportContract": {
+          "claim": "inventoried",
+          "authority": "runtime_config_with_claw_workspace_projection",
+          "validation": "config_fixture_required",
+          "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "example", "domain": "configuration" }
+        }
+      }
+    }
+  }
+}

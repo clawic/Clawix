@@ -66,7 +66,10 @@ let package = Package(
                 .product(name: "ClawixCore", package: "ClawixCore"),
                 .product(name: "ClawHostKit", package: "host")
             ],
-            path: "Tests/ClawixMeshTests"
+            path: "Tests/ClawixMeshTests",
+            resources: [
+                .copy("Fixtures")
+            ]
         ),
         .executableTarget(
             name: "Clawix",

@@ -1,0 +1,100 @@
+{
+  "ok": true,
+  "data": {
+    "runtimeId": "example",
+    "runtimeName": "Example Agent",
+    "status": {
+      "installed": true,
+      "cliAvailable": true,
+      "gatewayAvailable": false
+    },
+    "session": {
+      "primaryTransport": "gateway",
+      "fallbackTransport": "cli",
+      "sessionPersistence": "runtime",
+      "streamingMode": "hybrid",
+      "sessionPath": "/Users/tester/.example/sessions"
+    },
+    "workspace": {
+      "canonicalPaths": {
+        "SOUL": "/tmp/workspace/SOUL.md"
+      },
+      "managedFiles": ["/tmp/workspace/AGENTS.md"]
+    },
+    "resources": {
+      "providers": [
+        {
+          "id": "openai",
+          "label": "OpenAI",
+          "envVars": ["OPENAI_API_KEY"],
+          "auth": {
+            "supportsApiKey": true,
+            "supportsEnv": true
+          }
+        }
+      ],
+      "models": [],
+      "defaultModel": {
+        "provider": "openai",
+        "modelId": "gpt-4.1",
+        "label": "GPT 4.1"
+      },
+      "auth": {
+        "openai": {
+          "provider": "openai",
+          "hasAuth": true,
+          "hasSubscription": false,
+          "hasApiKey": true,
+          "hasProfileApiKey": false,
+          "hasEnvKey": true,
+          "authType": "env",
+          "maskedCredential": "sk-..."
+        }
+      },
+      "schedulers": [
+        {
+          "id": "example-scheduler",
+          "label": "Example Scheduler",
+          "enabled": true,
+          "status": "idle",
+          "kind": "workflow"
+        }
+      ],
+      "memory": [
+        {
+          "id": "example-memory",
+          "label": "Example Memory",
+          "kind": "index",
+          "path": "/Users/tester/.example/memories"
+        }
+      ],
+      "skills": [
+        {
+          "id": "example-skills",
+          "label": "Example Skills",
+          "enabled": true,
+          "scope": "runtime",
+          "path": "/Users/tester/.example/skills"
+        }
+      ],
+      "channels": [
+        {
+          "id": "discord",
+          "label": "Discord",
+          "kind": "chat",
+          "status": "configured"
+        }
+      ]
+    },
+    "domains": [
+      { "domain": "skills", "supported": true, "status": "ready" },
+      { "domain": "memory", "supported": true, "status": "ready" },
+      { "domain": "channels", "supported": true, "status": "ready" },
+      { "domain": "providers", "supported": true, "status": "ready" },
+      { "domain": "auth", "supported": true, "status": "ready" },
+      { "domain": "models", "supported": true, "status": "ready" },
+      { "domain": "scheduler", "supported": true, "status": "ready" },
+      { "domain": "configuration", "supported": true, "status": "ready" }
+    ]
+  }
+}
