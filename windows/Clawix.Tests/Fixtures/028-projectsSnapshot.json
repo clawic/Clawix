@@ -1,1 +1,1 @@
-{"schemaVersion":1,"type":"projectsSnapshot","projects":[{"title":"Clawix","id":"project-1","cwd":"/tmp/clawix-fixture","hasGitRepo":true,"branch":"main","lastUsedAt":"2023-11-14T22:16:40Z"}]}
+{"type":"projectsSnapshot","projects":[{"hasGitRepo":true,"branch":"main","id":"project-1","cwd":"/tmp/clawix-fixture","lastUsedAt":"2023-11-14T22:16:40Z","title":"Clawix"}],"schemaVersion":1}

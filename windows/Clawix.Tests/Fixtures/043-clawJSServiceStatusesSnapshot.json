@@ -1,0 +1,1 @@
+{"schemaVersion":1,"type":"clawJSServiceStatusesSnapshot","services":[{"source":"daemon","restartCount":0,"id":"database","state":"readyFromDaemon","pid":12345,"port":24102,"updatedAtMs":1750000000000}]}

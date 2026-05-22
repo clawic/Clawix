@@ -1,1 +1,1 @@
-{"type":"loadOlderMessages","sessionId":"session-1","limit":40,"beforeMessageId":"message-0","schemaVersion":1}
+{"schemaVersion":1,"sessionId":"session-1","type":"loadOlderMessages","beforeMessageId":"message-0","limit":40}

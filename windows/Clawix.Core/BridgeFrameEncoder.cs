@@ -174,6 +174,15 @@ internal sealed partial class BridgeFrameConverter
                 if (gis.MimeType is not null) writer.WriteString("mimeType", gis.MimeType);
                 if (gis.ErrorMessage is not null) writer.WriteString("errorMessage", gis.ErrorMessage);
                 break;
+            case BridgeBody.RequestRolloutAttachment rra:
+                writer.WriteString("attachmentId", rra.AttachmentId);
+                break;
+            case BridgeBody.RolloutAttachmentSnapshot ras:
+                writer.WriteString("attachmentId", ras.AttachmentId);
+                if (ras.DataBase64 is not null) writer.WriteString("dataBase64", ras.DataBase64);
+                if (ras.MimeType is not null) writer.WriteString("mimeType", ras.MimeType);
+                if (ras.ErrorMessage is not null) writer.WriteString("errorMessage", ras.ErrorMessage);
+                break;
             case BridgeBody.BridgeState bs:
                 writer.WriteString("state", bs.State);
                 writer.WriteNumber("chatCount", bs.ChatCount);
@@ -198,6 +207,16 @@ internal sealed partial class BridgeFrameConverter
                 }
                 writer.WritePropertyName("rateLimitsByLimitId");
                 JsonSerializer.Serialize(writer, rlu.ByLimitId, options);
+                break;
+            case BridgeBody.RequestClawJSServiceStatuses:
+                break;
+            case BridgeBody.ClawJSServiceStatusesSnapshot css:
+                writer.WritePropertyName("services");
+                JsonSerializer.Serialize(writer, css.Services, options);
+                break;
+            case BridgeBody.ClawJSServiceStatusUpdated csu:
+                writer.WritePropertyName("service");
+                JsonSerializer.Serialize(writer, csu.Service, options);
                 break;
             case BridgeBody.AudioRegister ar:
                 writer.WriteString("requestId", ar.RequestId);

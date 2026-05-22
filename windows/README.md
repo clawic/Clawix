@@ -86,14 +86,17 @@ windows/
 dotnet test Clawix.Tests
 ```
 
-The fixtures in `Clawix.Tests/Fixtures/` come from the Swift
-`BridgeFixtureExporter`:
+The canonical fixtures come from the generated Swift-owned corpus at
+`../packages/ClawixCore/Fixtures/BridgeV1`. `Clawix.Tests` links those files as
+`CanonicalBridgeFixtures`; `Clawix.Tests/Fixtures/` is only a byte-for-byte
+legacy mirror for review and compatibility.
 
 ```bash
 bash windows/scripts/dump-fixtures.sh
 ```
 
-Any decode drift between Swift and C# fails the fixture parity tests.
+Any decode drift between Swift and C# fails the fixture parity tests and
+`node scripts/bridge_contract_parity_check.mjs`.
 
 ## Release
 

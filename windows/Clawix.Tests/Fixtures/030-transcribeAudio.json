@@ -1,1 +1,1 @@
-{"schemaVersion":1,"language":"en","type":"transcribeAudio","audioBase64":"ZmFrZUF1ZGlv","requestId":"req-1","mimeType":"audio/m4a"}
+{"schemaVersion":1,"audioBase64":"ZmFrZUF1ZGlv","mimeType":"audio/m4a","requestId":"req-1","language":"en","type":"transcribeAudio"}

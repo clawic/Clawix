@@ -204,6 +204,16 @@ public abstract record BridgeBody
         public override string TypeTag => "generatedImageSnapshot";
     }
 
+    public sealed record RequestRolloutAttachment(string AttachmentId) : BridgeBody
+    {
+        public override string TypeTag => "requestRolloutAttachment";
+    }
+
+    public sealed record RolloutAttachmentSnapshot(string AttachmentId, string? DataBase64, string? MimeType, string? ErrorMessage) : BridgeBody
+    {
+        public override string TypeTag => "rolloutAttachmentSnapshot";
+    }
+
     // ===== bootstrap =====
 
     public sealed record BridgeState(string State, int ChatCount, string? Message) : BridgeBody
@@ -226,6 +236,21 @@ public abstract record BridgeBody
     public sealed record RateLimitsUpdated(WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) : BridgeBody
     {
         public override string TypeTag => "rateLimitsUpdated";
+    }
+
+    public sealed record RequestClawJSServiceStatuses : BridgeBody
+    {
+        public override string TypeTag => "requestClawJSServiceStatuses";
+    }
+
+    public sealed record ClawJSServiceStatusesSnapshot(IReadOnlyList<WireClawJSServiceSnapshot> Services) : BridgeBody
+    {
+        public override string TypeTag => "clawJSServiceStatusesSnapshot";
+    }
+
+    public sealed record ClawJSServiceStatusUpdated(WireClawJSServiceSnapshot Service) : BridgeBody
+    {
+        public override string TypeTag => "clawJSServiceStatusUpdated";
     }
 
     // ===== audio catalog =====

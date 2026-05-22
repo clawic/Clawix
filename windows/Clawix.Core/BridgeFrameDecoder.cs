@@ -142,6 +142,14 @@ internal sealed partial class BridgeFrameConverter : JsonConverter<BridgeFrame>
                 GetStrOpt("mimeType"),
                 GetStrOpt("errorMessage")),
 
+            "requestRolloutAttachment" => new BridgeBody.RequestRolloutAttachment(GetStr("attachmentId")),
+
+            "rolloutAttachmentSnapshot" => new BridgeBody.RolloutAttachmentSnapshot(
+                GetStr("attachmentId"),
+                GetStrOpt("dataBase64"),
+                GetStrOpt("mimeType"),
+                GetStrOpt("errorMessage")),
+
             "bridgeState" => new BridgeBody.BridgeState(
                 GetStr("state"),
                 GetInt("chatCount"),
@@ -156,6 +164,14 @@ internal sealed partial class BridgeFrameConverter : JsonConverter<BridgeFrame>
             "rateLimitsUpdated" => new BridgeBody.RateLimitsUpdated(
                 Get<WireRateLimitSnapshot>("rateLimits"),
                 Get<Dictionary<string, WireRateLimitSnapshot>>("rateLimitsByLimitId") ?? new Dictionary<string, WireRateLimitSnapshot>()),
+
+            "requestClawJSServiceStatuses" => new BridgeBody.RequestClawJSServiceStatuses(),
+
+            "clawJSServiceStatusesSnapshot" => new BridgeBody.ClawJSServiceStatusesSnapshot(
+                GetReq<List<WireClawJSServiceSnapshot>>("services")),
+
+            "clawJSServiceStatusUpdated" => new BridgeBody.ClawJSServiceStatusUpdated(
+                GetReq<WireClawJSServiceSnapshot>("service")),
 
             "audioRegister" => new BridgeBody.AudioRegister(
                 GetStr("requestId"),
