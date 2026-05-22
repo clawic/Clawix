@@ -19,12 +19,17 @@ let package = Package(
         ),
         .testTarget(
             name: "ClawixCoreTests",
-            dependencies: ["ClawixCore"],
+            dependencies: ["ClawixCore", "BridgeProtocolFixtures"],
             path: "Tests/ClawixCoreTests"
+        ),
+        .target(
+            name: "BridgeProtocolFixtures",
+            dependencies: ["ClawixCore"],
+            path: "Sources/BridgeProtocolFixtures"
         ),
         .executableTarget(
             name: "BridgeFixtureExporter",
-            dependencies: ["ClawixCore"],
+            dependencies: ["ClawixCore", "BridgeProtocolFixtures"],
             path: "Tools/BridgeFixtureExporter"
         )
     ]

@@ -42,8 +42,8 @@ The current schema version is `1`.
 - `sendMessage` / `newSession` `{ sessionId, text, attachments? }`. Routes a
   user prompt with optional image/audio attachments.
 - Desktop-capable clients may additionally use edit/archive/pin/project,
-  pairing, file, audio, image, rate-limit and skills frames registered in
-  `BridgeProtocol.swift`.
+  pairing, file, audio, image, rate-limit and skills frames registered in the
+  Swift bridge protocol sources.
 
 ## Inbound (daemon -> client)
 
@@ -69,6 +69,15 @@ The current schema version is `1`.
   rewrites, edits). `finished=true` freezes the message.
 - `errorEvent` `{ code, message }`. Non-fatal error to surface in UI.
 
-The exhaustive frame and model definitions live in `BridgeProtocol.swift` and
-`BridgeModels.swift`; this document pins the public wire conventions, not a
-second hand-maintained schema.
+The exhaustive frame and model definitions live in `BridgeProtocol.swift`,
+`BridgeModels.swift`, and adjacent bridge protocol source files; this document
+pins the public wire conventions, not a second hand-maintained schema.
+
+## Generated parity corpus
+
+Bridge V1 platform parity is validated from the generated corpus at
+`packages/ClawixCore/Fixtures/BridgeV1`. `BridgeFixtureExporter` writes one
+flat JSON fixture per frame plus `manifest.json`, which pins
+`clawix.protocol.bridge.v1`, fixture order, direction, and platform validator
+commands. Swift, Web, Android, and Windows validators consume that same corpus;
+Windows' local fixture folder is only a mirror, not a source of truth.
