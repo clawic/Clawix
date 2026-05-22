@@ -11,6 +11,19 @@ private let daemonBridgePort: UInt16 = 24080
 
 @MainActor
 final class AppState: ObservableObject {
+    /// Weak back-reference to the live main-window state, set from
+    /// `ClawixApp.init`. Lets app-lifecycle code (e.g. the quit guard in
+    /// `AppDelegate`) ask about in-flight work without threading the
+    /// object through AppKit. Never assigned for the sidebar-tool roles.
+    static weak var shared: AppState?
+
+    /// True while at least one local chat still has an unfinished turn
+    /// (the agent is mid-response). Drives the confirm-before-quit guard
+    /// so a `⌘Q` during an active turn doesn't silently drop the work.
+    var hasActiveLocalWork: Bool {
+        chats.contains { $0.hasActiveTurn }
+    }
+
     @Published var currentRoute: SidebarRoute = .home {
         didSet {
             let visibleRoute = currentRoute.visibleRoute(isVisible: FeatureFlags.shared.isVisible)
@@ -372,9 +385,6 @@ final class AppState: ObservableObject {
     /// before the runtime bootstraps and paginates the real thread list.
     /// Rewritten at the end of every applyThreads / mergeThreads.
     let snapshotRepo: SnapshotRepository
-    private static let launchRouteKindKey = "LaunchRouteKind"
-    private static let launchRouteChatUuidKey = "LaunchRouteChatUuid"
-    private static let launchRouteThreadIdKey = "LaunchRouteThreadId"
     private let dummyModeActive: Bool = ProcessInfo.processInfo.environment["CLAWIX_DUMMY_MODE"] == "1"
     /// True when the snapshot cache is active. Disabled while fixtures
     /// are driving the threads list (CLAWIX_THREAD_FIXTURE) so tests
@@ -1006,98 +1016,6 @@ final class AppState: ObservableObject {
     /// merging tens of thousands of rows for a power user — those
     /// surface through subsequent server-side searches.
     static let popupFullProjectFetchLimit = 500
-
-    private func applyLaunchRoute() {
-        let arguments = ProcessInfo.processInfo.arguments
-        let argumentRoute = arguments.indices
-            .first(where: { arguments[$0] == "--route" && arguments.indices.contains($0 + 1) })
-            .map { arguments[$0 + 1] }
-        let env = ProcessInfo.processInfo.environment
-        let route = argumentRoute ?? env["CLAWIX_ROUTE"] ?? ""
-        switch route {
-        case "search":
-            currentRoute = .search
-            searchQuery = "authentication"
-            performSearch(searchQuery)
-        case "plugins":
-            currentRoute = .plugins
-        case "automations":
-            currentRoute = .automations
-        case "project":
-            currentRoute = .project
-        case "settings":
-            currentRoute = .settings
-        case "rescue":
-            currentRoute = .rescue
-        case "chat":
-            chats = [sampleChat]
-            currentRoute = .chat(sampleChat.id)
-        case "chat-browser":
-            chats = [browserSampleChat, sampleChat]
-            currentRoute = .chat(browserSampleChat.id)
-        case "chat-computer-use":
-            chats = [computerUseSampleChat, sampleChat]
-            currentRoute = .chat(computerUseSampleChat.id)
-        case "browser":
-            currentRoute = .home
-            openBrowser()
-        default:
-            if !restorePersistedLaunchRoute() {
-                currentRoute = .home
-            }
-        }
-        if currentRoute == .secretsHome, !FeatureFlags.shared.isVisible(.secrets) {
-            currentRoute = .home
-        }
-    }
-
-    private func restorePersistedLaunchRoute() -> Bool {
-        let defaults = Self.sidebarDefaults
-        let kind = defaults.string(forKey: Self.launchRouteKindKey)
-        if kind == "rescue" {
-            currentRoute = .rescue
-            return true
-        }
-        guard kind == "chat" else {
-            return false
-        }
-
-        let tokens = [
-            defaults.string(forKey: Self.launchRouteThreadIdKey),
-            defaults.string(forKey: Self.launchRouteChatUuidKey)
-        ]
-        for token in tokens.compactMap({ $0 }) {
-            if openSessionDeepLink(token) {
-                return true
-            }
-        }
-        return false
-    }
-
-    private func persistLaunchRoute() {
-        let defaults = Self.sidebarDefaults
-        switch currentRoute {
-        case .chat(let id):
-            guard let chat = chat(byId: id) else { return }
-            defaults.set("chat", forKey: Self.launchRouteKindKey)
-            defaults.set(chat.id.uuidString, forKey: Self.launchRouteChatUuidKey)
-            if let threadId = chat.clawixThreadId {
-                defaults.set(threadId, forKey: Self.launchRouteThreadIdKey)
-            } else {
-                defaults.removeObject(forKey: Self.launchRouteThreadIdKey)
-            }
-        case .home:
-            defaults.set("home", forKey: Self.launchRouteKindKey)
-            defaults.removeObject(forKey: Self.launchRouteChatUuidKey)
-            defaults.removeObject(forKey: Self.launchRouteThreadIdKey)
-        case .rescue:
-            defaults.set("rescue", forKey: Self.launchRouteKindKey)
-            defaults.removeObject(forKey: Self.launchRouteChatUuidKey)
-            defaults.removeObject(forKey: Self.launchRouteThreadIdKey)
-        default:
-            break
-        }
-    }
 
     // MARK: - ClawixService callbacks
 
