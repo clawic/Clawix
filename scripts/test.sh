@@ -309,6 +309,8 @@ fast() {
   run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test
   run node "$ROOT_DIR/scripts/release_readiness_check.mjs"
   run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/debt_control_baseline_check.mjs"
+  run node "$ROOT_DIR/scripts/debt_control_baseline_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs"
   run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/security-threat-model-check.mjs"
@@ -323,6 +325,7 @@ fast() {
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/bridge_contract_parity_check.mjs"
   run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs"
   run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/problem_to_guardrail_check.mjs"
@@ -339,6 +342,8 @@ fast() {
   run node "$ROOT_DIR/scripts/open_source_canonicity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/discoverability-check.mjs"
   run node "$ROOT_DIR/scripts/discoverability-check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/generate-surface-route-registry.mjs" --self-test
+  run node "$ROOT_DIR/scripts/generate-surface-route-registry.mjs" --check
   run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs"
   run node "$ROOT_DIR/scripts/adr-operational-coverage-check.mjs" --self-test
   run node "$ROOT_DIR/scripts/localization_surface_guard.mjs" --self-test
@@ -414,7 +419,10 @@ fast() {
   run node "$ROOT_DIR/scripts/codebase-manifest.mjs" --check
   run node "$ROOT_DIR/scripts/package_surface_guard.mjs"
   policy_guard
-  mapfile -t packages < <(fast_swift_packages)
+  packages=()
+  while IFS= read -r package; do
+    packages+=("$package")
+  done < <(fast_swift_packages)
   swift_package_tests "${packages[@]}"
   web_tests "$@"
 }
@@ -422,7 +430,10 @@ fast() {
 integration() {
   fast "$@"
   run python3 "$ROOT_DIR/macos/scripts/compile_xcstrings.py"
-  mapfile -t packages < <(integration_swift_packages)
+  packages=()
+  while IFS= read -r package; do
+    packages+=("$package")
+  done < <(integration_swift_packages)
   swift_package_tests "${packages[@]}"
 }
 
@@ -472,12 +483,9 @@ case "$LANE" in
     live_tests
     ;;
   release)
-    run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release
-    run node "$ROOT_DIR/scripts/supply_chain_security_check.mjs" --release --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
+    run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}" --phase preflight --run
     run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs"
-    run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     integration "$@"
-    run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"
     e2e_tests
     CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 device_tests
     CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 host_tests
