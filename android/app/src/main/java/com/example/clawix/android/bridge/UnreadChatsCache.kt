@@ -16,7 +16,7 @@ class UnreadChatsCache(context: Context) {
     fun load(): Set<String> = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
 
     fun save(ids: Set<String>) {
-        prefs.edit().putStringSet(KEY, ids).apply()
+        prefs.edit().putStringSet(KEY, ids.toList().takeLast(maxEntries).toSet()).apply()
     }
 
     fun mark(id: String) {
@@ -33,5 +33,6 @@ class UnreadChatsCache(context: Context) {
 
     companion object {
         private const val KEY = "ids"
+        private const val maxEntries = 200
     }
 }

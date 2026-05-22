@@ -15,7 +15,10 @@ class ProjectLabelsCache(context: Context) {
     fun get(id: String): String? = prefs.getString(id, null)
 
     fun put(id: String, label: String) {
-        prefs.edit().putString(id, label).apply()
+        val editor = prefs.edit().putString(id, label)
+        val overflow = prefs.all.keys.filter { it != id }.drop(maxEntries - 1)
+        for (key in overflow) editor.remove(key)
+        editor.apply()
     }
 
     fun all(): Map<String, String> {
@@ -25,5 +28,9 @@ class ProjectLabelsCache(context: Context) {
 
     fun clear() {
         prefs.edit().clear().apply()
+    }
+
+    companion object {
+        private const val maxEntries = 200
     }
 }

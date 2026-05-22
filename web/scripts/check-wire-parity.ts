@@ -1,6 +1,6 @@
 /**
- * Wire parity check between Swift `BridgeModels.swift` / `BridgeProtocol.swift`
- * and the TypeScript Zod schemas in `src/bridge/wire.ts` / `src/bridge/frames.ts`.
+ * Wire parity check between Swift bridge model/protocol sources and the
+ * TypeScript Zod schemas in `src/bridge/wire.ts` / `src/bridge/frames.ts`.
  *
  * Strategy: parse the Swift sources for top-level public structs/enums and
  * extract their member names. Then parse the Zod sources to extract the
@@ -21,7 +21,10 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
 const REPO = path.resolve(ROOT, "..");
 const SWIFT_MODELS = path.join(REPO, "packages/ClawixCore/Sources/ClawixCore/BridgeModels.swift");
-const SWIFT_PROTOCOL = path.join(REPO, "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift");
+const SWIFT_PROTOCOL_FILES = [
+  path.join(REPO, "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift"),
+  path.join(REPO, "packages/ClawixCore/Sources/ClawixCore/WireRateLimits.swift"),
+];
 const TS_WIRE = path.join(ROOT, "src/bridge/wire.ts");
 const TS_FRAMES = path.join(ROOT, "src/bridge/frames.ts");
 
@@ -116,7 +119,7 @@ function diff(a: string[], b: string[]): { onlyA: string[]; onlyB: string[] } {
 function main() {
   const swiftModels = parseSwiftStructs(readFile(SWIFT_MODELS));
   const swiftEnums = parseSwiftEnums(readFile(SWIFT_MODELS));
-  const swiftProtocol = parseSwiftStructs(readFile(SWIFT_PROTOCOL));
+  const swiftProtocol = SWIFT_PROTOCOL_FILES.flatMap((file) => parseSwiftStructs(readFile(file)));
   const zodWire = parseZodObjects(readFile(TS_WIRE));
   const zodFrames = parseZodObjects(readFile(TS_FRAMES));
 

@@ -1,5 +1,6 @@
 import Foundation
 import ClawixCore
+import ImageIO
 import Observation
 import os
 #if canImport(UIKit)
@@ -16,6 +17,8 @@ fileprivate let bridgeDbg = Logger(subsystem: "clawix.bridge.dbg", category: "st
 @Observable
 final class BridgeStore {
     static let iosHeavyTranscriptInitialPageLimit = 30
+    private static let inlineAttachmentMaxPixelSize = 512
+    private static let generatedImageMaxPixelSize = 2048
 
     /// Path the bridge client is using. `lan` covers Bonjour-resolved
     /// endpoints AND direct IPv4 candidates from the QR (any private
@@ -705,7 +708,10 @@ final class BridgeStore {
                     base64Encoded: att.dataBase64,
                     options: .ignoreUnknownCharacters
                   ),
-                  let image = UIImage(data: data) else { continue }
+                  let image = Self.downsampledImage(
+                    from: data,
+                    maxPixelSize: Self.inlineAttachmentMaxPixelSize
+                  ) else { continue }
             images.append(image)
         }
         if !images.isEmpty {
@@ -1060,7 +1066,10 @@ final class BridgeStore {
             return
         }
         #if canImport(UIKit)
-        guard let image = UIImage(data: data) else {
+        guard let image = Self.downsampledImage(
+            from: data,
+            maxPixelSize: Self.generatedImageMaxPixelSize
+        ) else {
             generatedImagesByPath[path] = .failed(reason: "Couldn't decode image")
             return
         }
@@ -1069,6 +1078,27 @@ final class BridgeStore {
         generatedImagesByPath[path] = .loaded(data)
         #endif
     }
+
+    #if canImport(UIKit)
+    private static func downsampledImage(from data: Data, maxPixelSize: Int) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(
+            data as CFData,
+            [kCGImageSourceShouldCache: false] as CFDictionary
+        ) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return UIImage(cgImage: image)
+    }
+    #endif
 
     func messages(for chatId: String) -> [WireMessage] {
         messagesByChat[chatId] ?? []

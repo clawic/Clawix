@@ -20,7 +20,8 @@ export const ZWireAttachment = z.object({
   kind: ZWireAttachmentKind.default("image"),
   mimeType: z.string(),
   filename: z.string().optional(),
-  dataBase64: z.string(),
+  dataBase64: z.string().optional(),
+  byteSize: z.number().int().optional(),
 });
 export type WireAttachment = z.infer<typeof ZWireAttachment>;
 
@@ -33,6 +34,18 @@ export const ZWireProject = z.object({
   lastUsedAt: ZIso8601.optional(),
 });
 export type WireProject = z.infer<typeof ZWireProject>;
+
+export const ZWireClawJSServiceSnapshot = z.object({
+  id: z.string(),
+  state: z.string(),
+  port: z.number().int(),
+  pid: z.number().int().nullable().optional(),
+  restartCount: z.number().int(),
+  lastError: z.string().nullable().optional(),
+  updatedAtMs: z.number().int(),
+  source: z.string(),
+});
+export type WireClawJSServiceSnapshot = z.infer<typeof ZWireClawJSServiceSnapshot>;
 
 export const ZWireSession = z.object({
   id: z.string(),

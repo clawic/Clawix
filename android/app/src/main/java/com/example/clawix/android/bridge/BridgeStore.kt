@@ -40,8 +40,8 @@ class BridgeStore(
         val payload = snapshotCache.load() ?: return
         _state.update {
             it.copy(
-                chats = payload.sessions,
-                messagesBySession = payload.messagesBySession,
+                chats = payload.sessions.take(maxSessionCount),
+                messagesBySession = trimMessagesBySession(payload.messagesBySession, payload.sessions.map { it.id }.toSet()),
             )
         }
     }
@@ -55,7 +55,13 @@ class BridgeStore(
     }
 
     fun applySessionsSnapshot(chats: List<WireSession>) {
-        _state.update { it.copy(chats = chats) }
+        _state.update { current ->
+            val trimmedChats = chats.take(maxSessionCount)
+            current.copy(
+                chats = trimmedChats,
+                messagesBySession = trimMessagesBySession(current.messagesBySession, trimmedChats.map { it.id }.toSet()),
+            )
+        }
         persistAsync()
     }
 
@@ -64,7 +70,7 @@ class BridgeStore(
             val existing = current.chats.toMutableList()
             val idx = existing.indexOfFirst { it.id == chat.id }
             if (idx >= 0) existing[idx] = chat else existing.add(0, chat)
-            current.copy(chats = existing)
+            current.copy(chats = existing.take(maxSessionCount))
         }
         persistAsync()
     }
@@ -101,10 +107,10 @@ class BridgeStore(
     fun applyMessagesSnapshot(sessionId: String, messages: List<WireMessage>, hasMore: Boolean?) {
         _state.update { current ->
             val map = current.messagesBySession.toMutableMap()
-            map[sessionId] = messages
+            map[sessionId] = messages.takeLast(maxMessagesPerSession)
             val more = current.hasMoreBySession.toMutableMap()
             if (hasMore != null) more[sessionId] = hasMore else more.remove(sessionId)
-            current.copy(messagesBySession = map, hasMoreBySession = more)
+            current.copy(messagesBySession = trimMessagesBySession(map), hasMoreBySession = more)
         }
         persistAsync()
     }
@@ -112,10 +118,10 @@ class BridgeStore(
     fun applyMessagesPage(sessionId: String, older: List<WireMessage>, hasMore: Boolean) {
         _state.update { current ->
             val existing = current.messagesBySession[sessionId] ?: emptyList()
-            val merged = (older + existing).distinctBy { it.id }
+            val merged = (older + existing).distinctBy { it.id }.takeLast(maxMessagesPerSession)
             val map = current.messagesBySession.toMutableMap().apply { put(sessionId, merged) }
             val more = current.hasMoreBySession.toMutableMap().apply { put(sessionId, hasMore) }
-            current.copy(messagesBySession = map, hasMoreBySession = more)
+            current.copy(messagesBySession = trimMessagesBySession(map), hasMoreBySession = more)
         }
         persistAsync()
     }
@@ -124,9 +130,9 @@ class BridgeStore(
         _state.update { current ->
             val existing = current.messagesBySession[sessionId] ?: emptyList()
             val map = current.messagesBySession.toMutableMap().apply {
-                put(sessionId, existing + message)
+                put(sessionId, (existing + message).takeLast(maxMessagesPerSession))
             }
-            current.copy(messagesBySession = map)
+            current.copy(messagesBySession = trimMessagesBySession(map))
         }
         if (message.role == com.example.clawix.android.core.WireRole.assistant && _state.value.openSessionId != sessionId) {
             unreadCache.mark(sessionId)
@@ -157,7 +163,7 @@ class BridgeStore(
                 )
                 updatedChats[upd.sessionId] = newList
             }
-            current.copy(messagesBySession = updatedChats)
+            current.copy(messagesBySession = trimMessagesBySession(updatedChats))
         }
     }
 
@@ -171,14 +177,14 @@ class BridgeStore(
     fun applyFileSnapshot(snapshot: FileSnapshotState) {
         _state.update {
             val map = it.fileSnapshots.toMutableMap().apply { put(snapshot.path, snapshot) }
-            it.copy(fileSnapshots = map)
+            it.copy(fileSnapshots = trimMapToLast(map, maxFileSnapshots))
         }
     }
 
     fun applyGeneratedImage(image: GeneratedImageState) {
         _state.update {
             val map = it.generatedImages.toMutableMap().apply { put(image.path, image) }
-            it.copy(generatedImages = map)
+            it.copy(generatedImages = trimMapToLast(map, maxGeneratedImages))
         }
     }
 
@@ -189,7 +195,7 @@ class BridgeStore(
 
     fun registerPendingNewSession(sessionId: String) {
         _state.update {
-            it.copy(pendingNewSessions = it.pendingNewSessions + sessionId)
+            it.copy(pendingNewSessions = (it.pendingNewSessions + sessionId).toList().takeLast(maxPendingSessions).toSet())
         }
     }
 
@@ -201,14 +207,14 @@ class BridgeStore(
 
     fun registerPendingTranscription(requestId: String, chatId: String) {
         _state.update {
-            it.copy(pendingTranscriptions = it.pendingTranscriptions + (requestId to chatId))
+            it.copy(pendingTranscriptions = trimMapToLast(it.pendingTranscriptions + (requestId to chatId), maxPendingTranscriptions))
         }
     }
 
     fun applyTranscriptionResult(requestId: String, text: String) {
         _state.update {
             val pending = it.pendingTranscriptions - requestId
-            val results = it.transcriptionResults + (requestId to text)
+            val results = trimMapToLast(it.transcriptionResults + (requestId to text), maxTranscriptionResults)
             it.copy(pendingTranscriptions = pending, transcriptionResults = results)
         }
     }
@@ -228,5 +234,33 @@ class BridgeStore(
                 snapshotCache.save(s.chats, s.messagesBySession)
             }
         }
+    }
+
+    private fun trimMessagesBySession(
+        messages: Map<String, List<WireMessage>>,
+        keepSessionIds: Set<String>? = null
+    ): Map<String, List<WireMessage>> {
+        return messages
+            .filterKeys { keepSessionIds == null || it in keepSessionIds }
+            .entries
+            .toList()
+            .takeLast(maxRetainedMessageSessions)
+            .associate { (sessionId, list) -> sessionId to list.takeLast(maxMessagesPerSession) }
+    }
+
+    private fun <K, V> trimMapToLast(map: Map<K, V>, limit: Int): Map<K, V> {
+        if (map.size <= limit) return map
+        return map.entries.toList().takeLast(limit).associate { (key, value) -> key to value }
+    }
+
+    companion object {
+        private const val maxSessionCount = 100
+        private const val maxRetainedMessageSessions = 32
+        private const val maxMessagesPerSession = 160
+        private const val maxFileSnapshots = 20
+        private const val maxGeneratedImages = 12
+        private const val maxPendingSessions = 20
+        private const val maxPendingTranscriptions = 20
+        private const val maxTranscriptionResults = 20
     }
 }

@@ -15,6 +15,7 @@ import {
   ZWireAudioListResult,
   ZWireAudioRegisterRequest,
   ZWireAudioTranscript,
+  ZWireClawJSServiceSnapshot,
   ZWireSession,
   ZWireMessage,
   ZWireProject,
@@ -104,7 +105,9 @@ export const ZTranscribeAudio = z.object({
 });
 export const ZRequestAudio = z.object({ ...base, type: z.literal("requestAudio"), audioId: z.string() });
 export const ZRequestGeneratedImage = z.object({ ...base, type: z.literal("requestGeneratedImage"), path: z.string() });
+export const ZRequestRolloutAttachment = z.object({ ...base, type: z.literal("requestRolloutAttachment"), attachmentId: z.string() });
 export const ZRequestRateLimits = z.object({ ...base, type: z.literal("requestRateLimits") });
+export const ZRequestClawJSServiceStatuses = z.object({ ...base, type: z.literal("requestClawJSServiceStatuses") });
 
 /** Inbound: server -> client */
 export const ZAuthOk = z.object({ ...base, type: z.literal("authOk"), hostDisplayName: z.string().optional() });
@@ -198,6 +201,15 @@ export const ZGeneratedImageSnapshot = z.object({
   errorMessage: z.string().optional(),
 });
 
+export const ZRolloutAttachmentSnapshot = z.object({
+  ...base,
+  type: z.literal("rolloutAttachmentSnapshot"),
+  attachmentId: z.string(),
+  dataBase64: z.string().optional(),
+  mimeType: z.string().optional(),
+  errorMessage: z.string().optional(),
+});
+
 export const ZBridgeState = z.object({
   ...base,
   type: z.literal("bridgeState"),
@@ -221,6 +233,18 @@ export const ZRateLimitsUpdated = z.object({
   ...base,
   type: z.literal("rateLimitsUpdated"),
   ...ZRateLimitsPayload.shape,
+});
+
+export const ZClawJSServiceStatusesSnapshot = z.object({
+  ...base,
+  type: z.literal("clawJSServiceStatusesSnapshot"),
+  services: z.array(ZWireClawJSServiceSnapshot),
+});
+
+export const ZClawJSServiceStatusUpdated = z.object({
+  ...base,
+  type: z.literal("clawJSServiceStatusUpdated"),
+  service: ZWireClawJSServiceSnapshot,
 });
 
 // Audio catalog frames (outbound: client -> daemon).
@@ -332,7 +356,9 @@ export const ZBridgeFrame = z.discriminatedUnion("type", [
   ZTranscribeAudio,
   ZRequestAudio,
   ZRequestGeneratedImage,
+  ZRequestRolloutAttachment,
   ZRequestRateLimits,
+  ZRequestClawJSServiceStatuses,
   ZAuthOk,
   ZAuthFailed,
   ZVersionMismatch,
@@ -349,9 +375,12 @@ export const ZBridgeFrame = z.discriminatedUnion("type", [
   ZTranscriptionResult,
   ZAudioSnapshot,
   ZGeneratedImageSnapshot,
+  ZRolloutAttachmentSnapshot,
   ZBridgeState,
   ZRateLimitsSnapshot,
   ZRateLimitsUpdated,
+  ZClawJSServiceStatusesSnapshot,
+  ZClawJSServiceStatusUpdated,
   ZAudioRegister,
   ZAudioAttachTranscript,
   ZAudioGet,
