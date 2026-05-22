@@ -1,22 +1,5 @@
 import SwiftUI
 
-enum SurfaceRouteModule: String, Equatable, Hashable, CaseIterable {
-    case core
-    case protected
-    case apps
-    case automation
-    case data
-    case drive
-    case time
-    case skills
-    case iot
-    case design
-    case agents
-    case publishing
-    case life
-    case network
-}
-
 struct SurfaceRouteRegistryEntry {
     var descriptor: SurfaceRouteDescriptor
     var module: SurfaceRouteModule
@@ -47,9 +30,9 @@ enum SurfaceRouteRegistry {
     static func entry(for route: SidebarRoute) -> SurfaceRouteRegistryEntry {
         switch route {
         case .home:
-            return entry(route, module: .core) { MainContentView() }
+            return entry(route) { MainContentView() }
         case .search:
-            return entry(route, module: .core) {
+            return entry(route) {
                 MainContentView()
                     .overlay(alignment: .top) {
                         SearchPopoverOverlay()
@@ -57,117 +40,122 @@ enum SurfaceRouteRegistry {
                     }
             }
         case .plugins:
-            return entry(route, module: .automation) { MainContentView() }
+            return entry(route) { MainContentView() }
         case .automations:
-            return entry(route, module: .automation) { AutomationsView() }
+            return entry(route) { AutomationsView() }
         case .project:
-            return entry(route, module: .core) { MainContentView() }
+            return entry(route) { MainContentView() }
         case .appsHome:
-            return entry(route, module: .apps) { AppsHomeView() }
+            return entry(route) { AppsHomeView() }
         case .app(let id):
-            return entry(route, module: .apps, readinessMode: .childReported) {
-                AppSurfaceView(appId: id)
-            }
+            return entry(route) { AppSurfaceView(appId: id) }
         case .chat(let id):
-            return entry(route, module: .core) { ChatView(chatId: id) }
+            return entry(route) { ChatView(chatId: id) }
         case .settings:
-            return entry(route, module: .core) { SettingsContent() }
+            return entry(route) { SettingsContent() }
         case .rescue:
-            return entry(route, module: .core) { RescueDiagnosticsView() }
+            return entry(route) { RescueDiagnosticsView() }
         case .secretsHome:
-            return entry(route, module: .protected) { SecretsScreen() }
+            return entry(route) { SecretsScreen() }
         case .databaseHome:
-            return entry(route, module: .data) { DatabaseScreen(mode: .admin) }
+            return entry(route) { DatabaseScreen(mode: .admin) }
         case .databaseWorkbench:
-            return entry(route, module: .data) { DatabaseWorkbenchView() }
+            return entry(route) { DatabaseWorkbenchView() }
         case .databaseCollection(let name):
-            return entry(route, module: .data) { DatabaseScreen(mode: .curated(collectionName: name)) }
+            return entry(route) { DatabaseScreen(mode: .curated(collectionName: name)) }
         case .memoryHome:
-            return entry(route, module: .data) { MemoryScreen() }
+            return entry(route) { MemoryScreen() }
         case .indexHome:
-            return entry(route, module: .data) { IndexScreen() }
+            return entry(route) { IndexScreen() }
+        case .macCare:
+            return entry(route) { MacCareScreen() }
         case .marketplaceHome:
-            return entry(route, module: .apps) { MarketplaceScreen() }
+            return entry(route) { MarketplaceScreen() }
         case .driveAdmin:
-            return entry(route, module: .drive) { DriveScreen(mode: .admin) }
+            return entry(route) { DriveScreen(mode: .admin) }
         case .drivePhotos:
-            return entry(route, module: .drive) { DriveScreen(mode: .photos) }
+            return entry(route) { DriveScreen(mode: .photos) }
         case .driveDocuments:
-            return entry(route, module: .drive) { DriveScreen(mode: .documents) }
+            return entry(route) { DriveScreen(mode: .documents) }
         case .driveRecent:
-            return entry(route, module: .drive) { DriveScreen(mode: .recent) }
+            return entry(route) { DriveScreen(mode: .recent) }
         case .driveFolder(let id):
-            return entry(route, module: .drive) { DriveScreen(mode: .folder(id)) }
+            return entry(route) { DriveScreen(mode: .folder(id)) }
         case .calendarHome:
-            return entry(route, module: .time) { CalendarScreen() }
+            return entry(route) { CalendarScreen() }
         case .contactsHome:
-            return entry(route, module: .time) { ContactsScreen() }
+            return entry(route) { ContactsScreen() }
         case .networkControl:
-            return entry(route, module: .network) { NetworkControlCenterScreen() }
+            return entry(route) { NetworkControlCenterScreen() }
         case .skills:
-            return entry(route, module: .skills) { SkillsView() }
+            return entry(route) { SkillsView() }
         case .skillDetail(let slug):
-            return entry(route, module: .skills) { SkillDetailView(slug: slug) }
+            return entry(route) { SkillDetailView(slug: slug) }
         case .iotHome:
-            return entry(route, module: .iot) { IoTScreen() }
+            return entry(route) { IoTScreen() }
         case .iotDeviceDetail(let id):
-            return entry(route, module: .iot) { IoTDeviceDetailView(deviceId: id) }
+            return entry(route) { IoTDeviceDetailView(deviceId: id) }
         case .designStylesHome:
-            return entry(route, module: .design) { StylesHomeView() }
+            return entry(route) { StylesHomeView() }
         case .designStyleDetail(let id):
-            return entry(route, module: .design) { StyleDetailView(styleId: id) }
+            return entry(route) { StyleDetailView(styleId: id) }
         case .designTemplatesHome:
-            return entry(route, module: .design) { TemplatesHomeView() }
+            return entry(route) { TemplatesHomeView() }
         case .designTemplateDetail(let id):
-            return entry(route, module: .design) { TemplateDetailView(templateId: id) }
+            return entry(route) { TemplateDetailView(templateId: id) }
         case .designReferencesHome:
-            return entry(route, module: .design) { ReferencesHomeView() }
+            return entry(route) { ReferencesHomeView() }
         case .designEditor(let id):
-            return entry(route, module: .design) { EditorView(documentId: id) }
+            return entry(route) { EditorView(documentId: id) }
         case .agentsHome:
-            return entry(route, module: .agents) { AgentsHomeView() }
+            return entry(route) { AgentsHomeView() }
         case .agentDetail(let id):
-            return entry(route, module: .agents) { AgentDetailView(agentId: id) }
+            return entry(route) { AgentDetailView(agentId: id) }
         case .personalitiesHome:
-            return entry(route, module: .agents) { PersonalitiesHomeView() }
+            return entry(route) { PersonalitiesHomeView() }
         case .personalityDetail(let id):
-            return entry(route, module: .agents) { PersonalityDetailView(personalityId: id) }
+            return entry(route) { PersonalityDetailView(personalityId: id) }
         case .skillCollectionsHome:
-            return entry(route, module: .skills) { SkillCollectionsHomeView() }
+            return entry(route) { SkillCollectionsHomeView() }
         case .skillCollectionDetail(let id):
-            return entry(route, module: .skills) { SkillCollectionDetailView(collectionId: id) }
+            return entry(route) { SkillCollectionDetailView(collectionId: id) }
         case .connectionsHome:
-            return entry(route, module: .agents) { ConnectionsHomeView() }
+            return entry(route) { ConnectionsHomeView() }
         case .connectionDetail(let id):
-            return entry(route, module: .agents) { ConnectionDetailView(connectionId: id) }
+            return entry(route) { ConnectionDetailView(connectionId: id) }
         case .publishingHome:
-            return entry(route, module: .publishing) { PublishingHomeView() }
+            return entry(route) {
+                PublishingRootView { PublishingHomeView() }
+            }
         case .publishingComposer(let prefill, let scheduleAt):
-            return entry(route, module: .publishing) {
-                PublishingComposerView(prefillBody: prefill, prefillScheduleAt: scheduleAt)
+            return entry(route) {
+                PublishingRootView {
+                    PublishingComposerView(prefillBody: prefill, prefillScheduleAt: scheduleAt)
+                }
             }
         case .publishingChannels:
-            return entry(route, module: .publishing) { PublishingChannelsView() }
+            return entry(route) {
+                PublishingRootView { PublishingChannelsView() }
+            }
         case .lifeHome:
-            return entry(route, module: .life) { LifeHomeScreen() }
+            return entry(route) { LifeHomeScreen() }
         case .lifeVertical(let id):
-            return entry(route, module: .life) { LifeVerticalScreen(verticalId: id) }
+            return entry(route) { LifeVerticalScreen(verticalId: id) }
         case .lifeSettings:
-            return entry(route, module: .life) { LifeSettingsView() }
+            return entry(route) { LifeSettingsView() }
         }
     }
 
     @MainActor
     private static func entry<Content: View>(
         _ route: SidebarRoute,
-        module: SurfaceRouteModule,
-        readinessMode: SurfaceRouteReadinessMode = .immediateAfterFirstRender,
         @ViewBuilder surface: @escaping @MainActor () -> Content
     ) -> SurfaceRouteRegistryEntry {
-        SurfaceRouteRegistryEntry(
-            descriptor: route.surfaceDescriptor,
-            module: module,
-            readinessMode: readinessMode,
+        let metadata = route.surfaceRouteMetadata
+        return SurfaceRouteRegistryEntry(
+            descriptor: metadata.descriptor,
+            module: metadata.module,
+            readinessMode: metadata.readinessMode,
             makeSurface: { AnyView(surface()) }
         )
     }

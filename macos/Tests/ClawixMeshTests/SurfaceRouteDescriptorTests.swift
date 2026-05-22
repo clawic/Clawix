@@ -20,21 +20,13 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
         "rescue"
     ]
 
-    private static let reviewedHeavySurfaceDependencies: Set<SurfaceRouteDependency> = [
-        .languageModels,
-        .searchIndex,
-        .databaseBackfill,
-        .customApps,
-        .connectors,
-        .downloads,
-        .externalProviders
-    ]
+    private static let reviewedHeavySurfaceDependencies = Set(SurfaceRouteDependency.allCases)
 
     func testCoreSurvivalRouteSetIsExactAndDependencyFree() {
         let descriptors = Self.reviewedCoreSurvivalRoutes.map(\.surfaceDescriptor)
 
         XCTAssertEqual(Set(descriptors.map(\.id)), Self.reviewedCoreSurvivalRouteIds)
-        XCTAssertEqual(Set(SurfaceRouteDependency.allCases), Self.reviewedHeavySurfaceDependencies)
+        XCTAssertEqual(Set(SurfaceRouteDependency.allCases.map(\.rawValue)), SurfaceRouteMetadataCatalog.manifestDependencyKinds)
 
         for descriptor in descriptors {
             XCTAssertEqual(descriptor.criticality, .core, descriptor.id)
@@ -75,7 +67,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             .settings,
             .rescue
         ]
-        let unavailableDependencies = Set(SurfaceRouteDependency.allCases)
+        let unavailableDependencies = Self.reviewedHeavySurfaceDependencies
 
         for route in routes {
             let descriptor = route.surfaceDescriptor
@@ -113,6 +105,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             .databaseCollection("tasks"),
             .memoryHome,
             .indexHome,
+            .macCare,
             .marketplaceHome,
             .driveAdmin,
             .drivePhotos,
@@ -164,6 +157,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             .app(UUID()),
             .appsHome,
             .databaseCollection("tasks"),
+            .macCare,
             .driveAdmin,
             .calendarHome,
             .networkControl,
@@ -188,6 +182,7 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
             (.appsHome, [.customApps, .downloads]),
             (.databaseCollection("tasks"), [.databaseBackfill]),
             (.indexHome, [.searchIndex]),
+            (.macCare, []),
             (.driveAdmin, [.connectors, .downloads]),
             (.calendarHome, [.connectors, .downloads]),
             (.networkControl, [.connectors]),
@@ -242,5 +237,9 @@ final class SurfaceRouteDescriptorTests: XCTestCase {
         let network = SidebarRoute.networkControl.surfaceDescriptor
         XCTAssertEqual(network.routeTarget, "network-control")
         XCTAssertTrue(network.canUseCustomVariantDefault)
+
+        let macCare = SidebarRoute.macCare.surfaceDescriptor
+        XCTAssertEqual(macCare.routeTarget, "mac-care")
+        XCTAssertTrue(macCare.canUseCustomVariantDefault)
     }
 }

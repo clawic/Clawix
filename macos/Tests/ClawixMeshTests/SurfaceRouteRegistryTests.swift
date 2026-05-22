@@ -18,15 +18,9 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         "life",
         "network"
     ]
-
-    private static let reviewedSurfaceReadinessModeKinds: Set<String> = [
-        "immediateAfterFirstRender",
-        "childReported"
-    ]
-
-    private static let reviewedDirectChildReportedReadinessRouteIds: Set<String> = [
-        "app:00000000-0000-0000-0000-000000000003"
-    ]
+    private static let reviewedSurfaceReadinessModeKinds = SurfaceRouteMetadataCatalog.manifestReadinessModeKinds
+    private static let reviewedDirectChildReportedReadinessRouteCases = SurfaceRouteMetadataCatalog.manifestDirectChildReportedRouteCases
+    private static let reviewedDirectChildReportedReadinessRouteIds = SurfaceRouteMetadataCatalog.manifestDirectChildReportedRouteCases
 
     @MainActor
     func testRegistryEntryDescriptorMatchesSidebarRouteDescriptor() {
@@ -73,6 +67,7 @@ final class SurfaceRouteRegistryTests: XCTestCase {
             (.appsHome, .apps),
             (.automations, .automation),
             (.databaseHome, .data),
+            (.macCare, .data),
             (.driveAdmin, .drive),
             (.calendarHome, .time),
             (.skills, .skills),
@@ -84,14 +79,25 @@ final class SurfaceRouteRegistryTests: XCTestCase {
             (.networkControl, .network)
         ]
 
+        let entries = reviewedModuleCases.map { SurfaceRouteRegistry.entry(for: $0.0) }
         XCTAssertEqual(Set(SurfaceRouteModule.allCases.map(\.rawValue)), Self.reviewedSurfaceRouteModuleKinds)
-        XCTAssertEqual(Set(reviewedModuleCases.map { $0.1.rawValue }), Self.reviewedSurfaceRouteModuleKinds)
+        XCTAssertEqual(Set(entries.map { $0.module.rawValue }), Self.reviewedSurfaceRouteModuleKinds)
+        for (route, expectedModule) in reviewedModuleCases {
+            XCTAssertEqual(SurfaceRouteRegistry.entry(for: route).module, expectedModule)
+        }
 
-        for (route, module) in reviewedModuleCases {
+        for route in Self.allRepresentativeRoutes {
             let entry = SurfaceRouteRegistry.entry(for: route)
 
-            XCTAssertEqual(entry.module, module, entry.descriptor.id)
+            XCTAssertEqual(entry.module, route.surfaceRouteMetadata.module, entry.descriptor.id)
         }
+    }
+
+    func testRepresentativeRoutesCoverManifestRouteCases() {
+        XCTAssertEqual(
+            Set(Self.allRepresentativeRoutes.map(\.surfaceRouteMetadata.routeCase)),
+            SurfaceRouteMetadataCatalog.manifestRouteCases
+        )
     }
 
     @MainActor
@@ -169,7 +175,15 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         XCTAssertEqual(reviewedModeKinds, Self.reviewedSurfaceReadinessModeKinds)
         XCTAssertEqual(Set(entries.map { Self.surfaceReadinessModeKind($0.readinessMode) }), Self.reviewedSurfaceReadinessModeKinds)
         XCTAssertEqual(
-            Set(entries.filter { $0.readinessMode == .childReported }.map(\.descriptor.id)),
+            Set(Self.reviewedReadinessRoutes.filter {
+                SurfaceRouteRegistry.entry(for: $0).readinessMode == .childReported
+            }.map(\.surfaceRouteMetadata.routeCase)),
+            Self.reviewedDirectChildReportedReadinessRouteCases
+        )
+        XCTAssertEqual(
+            Set(Self.reviewedReadinessRoutes.filter {
+                SurfaceRouteRegistry.entry(for: $0).readinessMode == .childReported
+            }.map(\.surfaceRouteMetadata.routeCase)),
             Self.reviewedDirectChildReportedReadinessRouteIds
         )
 
@@ -201,10 +215,11 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         .secretsHome,
         .databaseHome,
         .databaseWorkbench,
-        .databaseCollection("tasks"),
-        .memoryHome,
-        .indexHome,
-        .marketplaceHome,
+            .databaseCollection("tasks"),
+            .memoryHome,
+            .indexHome,
+            .macCare,
+            .marketplaceHome,
         .driveAdmin,
         .drivePhotos,
         .driveDocuments,
@@ -253,10 +268,11 @@ final class SurfaceRouteRegistryTests: XCTestCase {
         .secretsHome,
         .databaseHome,
         .databaseWorkbench,
-        .databaseCollection("tasks"),
-        .memoryHome,
-        .indexHome,
-        .marketplaceHome,
+            .databaseCollection("tasks"),
+            .memoryHome,
+            .indexHome,
+            .macCare,
+            .marketplaceHome,
         .driveAdmin,
         .drivePhotos,
         .driveDocuments,

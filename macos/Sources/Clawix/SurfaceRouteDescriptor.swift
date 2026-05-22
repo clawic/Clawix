@@ -23,6 +23,7 @@ struct SurfaceRouteDescriptor: Equatable, Hashable {
     var supportsVariantDefault: Bool
     var timeoutSeconds: TimeInterval?
     var requiresIndependentDegradation: Bool
+    var dependencies: Set<SurfaceRouteDependency>
 
     var isCoreSurvivalRoute: Bool { criticality == .core }
     var canUseCustomVariantDefault: Bool { supportsVariantDefault && routeTarget != nil }
@@ -38,41 +39,7 @@ enum SurfaceShellIsolationPolicy {
     static func surfaceDependencies(
         for descriptor: SurfaceRouteDescriptor
     ) -> Set<SurfaceRouteDependency> {
-        guard !descriptor.isCoreSurvivalRoute else { return [] }
-
-        if descriptor.criticality == .protected {
-            return []
-        }
-
-        if descriptor.id.hasPrefix("app:") || descriptor.id == "apps" {
-            return [.customApps, .downloads]
-        }
-        if descriptor.id.hasPrefix("database") {
-            return [.databaseBackfill]
-        }
-        if descriptor.id == "index" || descriptor.id.hasPrefix("memory") {
-            return [.searchIndex]
-        }
-        if descriptor.id.hasPrefix("drive")
-            || descriptor.id == "calendar"
-            || descriptor.id == "contacts"
-            || descriptor.id.hasPrefix("connection") {
-            return [.connectors, .downloads]
-        }
-        if descriptor.id.hasPrefix("iot") {
-            return [.connectors, .externalProviders]
-        }
-        if descriptor.id.hasPrefix("agent") || descriptor.id.hasPrefix("personality") {
-            return [.languageModels]
-        }
-        if descriptor.id == "network-control" {
-            return [.connectors]
-        }
-        if descriptor.id.hasPrefix("publishing") {
-            return [.connectors, .externalProviders]
-        }
-
-        return []
+        descriptor.dependencies
     }
 
     static func unavailableSurfaceDependencies(
@@ -95,15 +62,7 @@ enum SurfaceShellIsolationPolicy {
 
 extension SidebarRoute {
     var surfaceDescriptor: SurfaceRouteDescriptor {
-        let routeTarget = appVariantRouteTarget.map(Self.normalizedSurfaceRouteTarget)
-        return SurfaceRouteDescriptor(
-            id: surfaceStableID,
-            criticality: surfaceCriticality,
-            routeTarget: routeTarget,
-            supportsVariantDefault: routeTarget != nil,
-            timeoutSeconds: surfaceTimeoutSeconds,
-            requiresIndependentDegradation: surfaceCriticality != .core
-        )
+        surfaceRouteMetadata.descriptor
     }
 
     private static func normalizedSurfaceRouteTarget(_ routeTarget: String) -> String {
@@ -118,6 +77,7 @@ extension SidebarRoute {
             return .protected
         case .app, .appsHome, .plugins, .automations, .databaseHome,
              .databaseWorkbench, .databaseCollection, .memoryHome, .indexHome,
+             .macCare,
              .marketplaceHome, .driveAdmin, .drivePhotos, .driveDocuments,
              .driveRecent, .driveFolder, .calendarHome, .contactsHome,
              .networkControl, .skills, .skillDetail, .iotHome, .iotDeviceDetail,
@@ -177,6 +137,8 @@ extension SidebarRoute {
             return "memory"
         case .indexHome:
             return "index"
+        case .macCare:
+            return "mac-care"
         case .marketplaceHome:
             return "marketplace"
         case .driveAdmin:
