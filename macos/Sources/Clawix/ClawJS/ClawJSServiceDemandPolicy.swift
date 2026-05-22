@@ -29,7 +29,7 @@ enum ClawJSServiceVisibilityGate: Equatable {
 }
 
 enum ClawJSServiceDemandPolicy {
-    static let startupCoreServices: Set<ClawJSService> = [.sessions]
+    static let startupCoreServices: Set<ClawJSService> = []
 
     static func startupServices(for role: ClawixAppRole) -> Set<ClawJSService> {
         switch role {
@@ -72,7 +72,7 @@ enum ClawJSServiceDemandPolicy {
         case .chat:
             return [.runtime, .sessions]
         case .home, .search, .plugins, .automations, .project, .app, .appsHome,
-             .settings, .rescue, .calendarHome, .contactsHome,
+             .settings, .rescue, .calendarHome, .contactsHome, .macCare,
              .networkControl, .skills, .skillDetail, .designStylesHome,
              .designStyleDetail, .designTemplatesHome, .designTemplateDetail,
              .designReferencesHome, .designEditor, .agentsHome, .agentDetail,

@@ -2,11 +2,12 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSServiceDemandPolicyTests: XCTestCase {
-    func testMainStartupCoreStartsSessionsButNotRuntime() {
+    func testMainStartupCoreDoesNotStartRuntimeServices() {
         XCTAssertEqual(
             ClawJSServiceDemandPolicy.startupServices(for: .main),
-            [.sessions]
+            []
         )
+        XCTAssertFalse(ClawJSServiceDemandPolicy.startupServices(for: .main).contains(.sessions))
         XCTAssertFalse(ClawJSServiceDemandPolicy.startupServices(for: .main).contains(.runtime))
     }
 
@@ -172,9 +173,21 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
     func testPublishingIsNotStartedByHardCodedServiceArray() throws {
         let routerSource = try readSource("SurfaceRouterView.swift")
         let publishingHomeSource = try readSource("Publishing/PublishingHomeView.swift")
+        let appSource = try readSource("App.swift")
+        let chatSource = try readSource("ChatView.swift")
+        let registrySource = try readSource("SurfaceRouteRegistry.swift")
+        let rootSource = try readSource("Publishing/PublishingRootView.swift")
 
         XCTAssertTrue(routerSource.contains("ClawJSServiceDemandPolicy.services("))
-        XCTAssertTrue(publishingHomeSource.contains("ClawJSServiceDemandPolicy.services("))
+        XCTAssertFalse(appSource.contains("PublishingWorkspaceStore()"))
+        XCTAssertFalse(chatSource.contains("PublishingWorkspaceStore"))
+        XCTAssertTrue(chatSource.contains("flags.isVisible(.publishing)"))
+        XCTAssertTrue(registrySource.contains("PublishingRootView { PublishingHomeView() }"))
+        XCTAssertTrue(registrySource.contains("PublishingRootView {\n                    PublishingComposerView"))
+        XCTAssertTrue(registrySource.contains("PublishingRootView { PublishingChannelsView() }"))
+        XCTAssertTrue(rootSource.contains("@StateObject private var store = PublishingWorkspaceStore()"))
+        XCTAssertFalse(publishingHomeSource.contains("ClawJSServiceDemandPolicy.services("))
+        XCTAssertFalse(publishingHomeSource.contains("ClawJSServiceManager.shared.acquire("))
         XCTAssertFalse(routerSource.contains("start([.publishing]"))
         XCTAssertFalse(publishingHomeSource.contains("start([.publishing]"))
     }
