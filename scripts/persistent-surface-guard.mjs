@@ -181,10 +181,24 @@ function isBuilderFile(filePath, body) {
     || filePath.endsWith("persistent-surface-guard.mjs");
 }
 
+function registryText(registry) {
+  if (!registry) return "";
+  return typeof registry === "string" ? registry : registry.text;
+}
+
+function registryHasValue(registry, value) {
+  if (!registry || !value) return false;
+  if (typeof registry !== "string" && registry.values?.has(value)) return true;
+  const text = registryText(registry);
+  if (text.includes(value)) return true;
+  const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`["'\`]${escaped}["'\`]`).test(text);
+}
+
 function isRegisteredDdlSource(filePath, body, registryBody) {
   const relative = path.relative(rootDir, filePath);
   return body.includes("@clawjs-persistent-surface-ddl-source")
-    && registryBody.includes(`"${relative}"`);
+    && registryText(registryBody).includes(`"${relative}"`);
 }
 
 function lineNumber(body, index) {
@@ -192,9 +206,7 @@ function lineNumber(body, index) {
 }
 
 function quotedRegistryContains(registryBody, value) {
-  if (registryBody.includes(value)) return true;
-  const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`["'\`]${escaped}["'\`]`).test(registryBody);
+  return registryHasValue(registryBody, value);
 }
 
 function registeredRouteContains(registryBody, route) {
@@ -298,16 +310,44 @@ function swiftRegisteredKeyFindings(filePath, body, registryBody) {
     if (!isLikelyPersistentSwiftKey(value)) continue;
     const typeName = enclosingSwiftType(body, match.index);
     const qualified = typeName ? `${typeName}.${name}` : name;
-    if (!registryBody.includes(qualified) && !registryBody.includes(`.${name}`) && !registryBody.includes(value)) {
+    if (!registryHasValue(registryBody, qualified) && !registryHasValue(registryBody, `.${name}`) && !registryHasValue(registryBody, value)) {
       findings.push({
         file: path.relative(rootDir, filePath),
         line: lineNumber(body, match.index),
         rule: "swift.unregistered-persistent-key",
-        message: "persistent Swift key constants must be registered in PersistentSurfaceRegistry",
+        message: "persistent Swift key constants must be registered in the persistent surface manifest",
       });
     }
   }
   return findings;
+}
+
+function addManifestNodeValues(values, node) {
+  for (const key of ["id", "key", "value", "path", "route", "fieldPath"]) {
+    if (typeof node?.[key] === "string" && node[key].length > 0) {
+      values.add(node[key]);
+    }
+  }
+}
+
+function buildRegistryIndex(files) {
+  const values = new Set();
+  const textParts = [];
+  for (const filePath of files) {
+    if (!fs.existsSync(filePath)) continue;
+    const body = fs.readFileSync(filePath, "utf8");
+    if (filePath.endsWith("persistent-surface-clawix.manifest.json")) {
+      const manifest = JSON.parse(body);
+      for (const node of manifest.nodes ?? []) {
+        addManifestNodeValues(values, node);
+      }
+      continue;
+    }
+    if (filePath.endsWith("surface-registry.ts")) {
+      textParts.push(body);
+    }
+  }
+  return { values, text: textParts.join("\n") };
 }
 
 function scanFile(filePath, registryBody = "") {
@@ -475,15 +515,15 @@ if (targets.length === 0) {
 
 const allFiles = targets.flatMap((target) => listFiles(path.resolve(rootDir, target)));
 const canonicalRegistryFiles = [
-  path.join(rootDir, "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"),
   path.join(rootDir, "docs/persistent-surface-clawix.manifest.json"),
+  path.join(rootDir, "macos/Sources/Clawix/Resources/persistent-surface-clawix.manifest.json"),
   path.join(rootDir, "../clawjs/packages/clawjs-core/src/surface-registry.ts"),
   path.join(rootDir, "../../clawjs/packages/clawjs-core/src/surface-registry.ts"),
 ].filter((filePath) => fs.existsSync(filePath));
-const registryBody = [...allFiles, ...canonicalRegistryFiles]
-  .filter((filePath) => filePath.endsWith("PersistentSurfaceRegistry.swift") || filePath.endsWith("surface-registry.ts") || filePath.endsWith("persistent-surface-clawix.manifest.json"))
-  .map((filePath) => fs.readFileSync(filePath, "utf8"))
-  .join("\n");
+const registryBody = buildRegistryIndex(
+  [...allFiles, ...canonicalRegistryFiles]
+    .filter((filePath) => filePath.endsWith("surface-registry.ts") || filePath.endsWith("persistent-surface-clawix.manifest.json"))
+);
 const findings = allFiles.flatMap((filePath) => scanFile(filePath, registryBody));
 if (wantsJson) {
   console.log(JSON.stringify({ ok: findings.length === 0, summary: summarizeFindings(findings), findings }, null, 2));

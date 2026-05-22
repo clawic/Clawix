@@ -1,5 +1,4 @@
 import Foundation
-import GRDB
 
 enum PersistentSurfaceKind: String, Codable {
     case root
@@ -143,41 +142,6 @@ enum ClawixPersistentSurface {
         node(id: id, kind: .database, name: name, path: path, storageClass: storageClass, parentId: parentId, surfaceNarrative: surfaceNarrative, resourceContract: resourceContract, notes: notes)
     }
 
-    static func table(_ name: String, databaseId: String) -> PersistentSurfaceNode {
-        node(
-            id: "\(databaseId).table.\(name)",
-            kind: .table,
-            name: name,
-            storageClass: "nativeAppData",
-            parentId: databaseId,
-            databaseId: databaseId
-        )
-    }
-
-    static func column(_ name: String, tableId: String, databaseId: String, dataType: String, nullable: Bool = false) -> PersistentSurfaceNode {
-        node(
-            id: "\(tableId).column.\(name)",
-            kind: .column,
-            name: name,
-            storageClass: "nativeAppData",
-            parentId: tableId,
-            databaseId: databaseId,
-            dataType: dataType,
-            nullable: nullable
-        )
-    }
-
-    static func index(_ name: String, tableId: String, databaseId: String) -> PersistentSurfaceNode {
-        node(
-            id: "\(tableId).index.\(name)",
-            kind: .index,
-            name: name,
-            storageClass: "nativeAppData",
-            parentId: tableId,
-            databaseId: databaseId
-        )
-    }
-
     static func folder(
         id: String,
         name: String,
@@ -197,8 +161,6 @@ enum ClawixPersistentSurface {
             path: path,
             storageClass: "frameworkGlobal",
             canonicality: "frameworkCanonical",
-            privacy: "userData",
-            lifecycle: "durable",
             parentId: parentId,
             project: "framework",
             notes: notes,
@@ -216,8 +178,6 @@ enum ClawixPersistentSurface {
             path: path,
             storageClass: "frameworkGlobal",
             canonicality: "frameworkCanonical",
-            privacy: "userData",
-            lifecycle: "durable",
             parentId: parentId,
             project: "framework",
             notes: notes,
@@ -288,7 +248,6 @@ enum ClawixPersistentSurface {
             storageClass: "external",
             canonicality: canonicality,
             privacy: "public",
-            lifecycle: "durable",
             parentId: parentId,
             project: project,
             surfaceClass: surfaceClass,
@@ -330,17 +289,10 @@ enum ClawixPersistentSurface {
         schemaId: String? = nil,
         fieldPath: String? = nil,
         enumType: String? = nil,
-        idPattern: String? = nil,
-        externalProvider: String? = nil,
-        replacement: String? = nil,
-        introducedIn: String? = nil,
-        dataType: String? = nil,
-        nullable: Bool? = nil,
         source: String? = nil,
         surfaceNarrative: PersistentSurfaceNarrative? = nil,
         resourceContract: PersistentSurfaceResourceContract? = nil,
         notes: String? = nil,
-        warnings: [String]? = nil,
         surfaceSteward: String = "clawix",
         repo: String = "Clawix",
         language: String = "swift"
@@ -371,260 +323,40 @@ enum ClawixPersistentSurface {
             schemaId: schemaId,
             fieldPath: fieldPath,
             enumType: enumType,
-            idPattern: idPattern,
-            externalProvider: externalProvider,
-            replacement: replacement,
-            introducedIn: introducedIn,
-            dataType: dataType,
-            nullable: nullable,
+            idPattern: nil,
+            externalProvider: nil,
+            replacement: nil,
+            introducedIn: nil,
+            dataType: nil,
+            nullable: nil,
             source: source,
             surfaceNarrative: surfaceNarrative,
             resourceContract: resourceContract,
             notes: notes,
-            warnings: warnings
+            warnings: nil
         )
     }
 }
 
+
 enum ClawixPersistentSurfaceRegistry {
-    static let version = 1
     static let localDatabaseId = "clawix.database.local"
+    static let bridgeProtocolV1Id = "clawix.protocol.bridge.v1"
+
+    static var version: Int {
+        manifest.version
+    }
 
     static var manifest: PersistentSurfaceManifest {
-        PersistentSurfaceManifest(version: version, nodes: nodes)
+        do {
+            return try loadBundledManifest()
+        } catch {
+            fatalError("Unable to load persistent surface manifest: \(error)")
+        }
     }
 
     static var nodes: [PersistentSurfaceNode] {
-        [
-            ClawixPersistentSurface.root(
-                id: "clawix.applicationSupport",
-                name: "Clawix Application Support",
-                path: "~/Library/Application Support/Clawix",
-                notes: "Host GUI-only app data and host runtime support. Framework-owned reusable data belongs under ~/.claw or workspace .claw/ roots."
-            ),
-            ClawixPersistentSurface.root(
-                id: "clawix.home",
-                name: "Clawix home",
-                path: "~/.clawix",
-                storageClass: "hostOperational"
-            ),
-            ClawixPersistentSurface.database(
-                id: localDatabaseId,
-                name: "Clawix local database",
-                path: "~/Library/Application Support/Clawix/clawix.sqlite",
-                parentId: "clawix.applicationSupport",
-                notes: "Host-local UI/cache/snapshot database only; framework resources remain canonical in ClawJS storage."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.audio",
-                name: "Audio",
-                path: "~/.claw/audio",
-                parentId: nil,
-                notes: "Framework-owned audio catalog bytes and SQLite metadata served by @clawjs/audio."
-            ),
-            ClawixPersistentSurface.persistentTemp(
-                id: "clawix.dictationAudioDebug",
-                name: "Dictation audio debug",
-                path: "~/.clawix/tmp/dictation-audio-debug",
-                parentId: "clawix.home"
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.meshHome",
-                name: "Remote mesh home",
-                path: "~/.clawix/mesh",
-                parentId: "clawix.home"
-            ),
-            ClawixPersistentSurface.database(
-                id: "clawix.secretsTemporaryVaultPattern",
-                name: "Temporary secrets vault database pattern",
-                path: "<tmp>/clawix-vault-<uuid>.sqlite",
-                parentId: nil,
-                storageClass: "hostOperational",
-                notes: "Test/dummy-mode host vault path. Plaintext secrets stay in signed host or vault surfaces, never framework storage."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.apps",
-                name: "Apps",
-                path: "~/.claw/apps",
-                parentId: nil,
-                notes: "Framework-owned app manifests and static app files consumed by Clawix UI."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.resources",
-                name: "Resources",
-                path: "~/.claw/resources",
-                parentId: nil,
-                notes: "Framework-owned app resource registry directory consumed by Clawix custom surfaces."
-            ),
-            ClawixPersistentSurface.frameworkFile(
-                id: "claw.framework.resources.state",
-                name: "Resources registry state",
-                path: "~/.claw/resources/resources.json",
-                parentId: "claw.framework.resources",
-                notes: "Framework-owned resource registry state. Clawix reads it as a host UI/bridge consumer."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.design",
-                name: "Design",
-                path: "~/.claw/design",
-                parentId: nil,
-                notes: "Framework-owned design styles, templates, references, and editor documents consumed by Clawix UI."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.snippets",
-                name: "Snippets",
-                path: "~/.claw/core.sqlite#snippets",
-                parentId: nil,
-                notes: "Framework-owned QuickAsk slash commands, mention prompts, dictation prompts, and prompt templates."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.agents",
-                name: "Agents",
-                path: "~/.claw/agents,~/.claw/personalities,~/.claw/skill-collections,~/.claw/connections",
-                parentId: nil,
-                notes: "Framework-owned agent identity, personalities, skill collections, and connection records. Clawix is a UI facade; secret material stays in the host vault."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.skills",
-                name: "Skills",
-                path: "~/.claw/core.sqlite#skills",
-                parentId: nil,
-                notes: "Framework-owned skill catalog records and active skill state consumed by Clawix UI."
-            ),
-            ClawixPersistentSurface.frameworkFolder(
-                id: "claw.framework.providerRouting",
-                name: "Provider routing",
-                path: "~/.claw/core.sqlite#provider_routing,provider_settings",
-                parentId: nil,
-                notes: "Framework-owned provider/model routing and provider enabled state. Secret material stays in the host vault; records store opaque refs only."
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.embeddedRuntimeDistribution",
-                name: "Embedded runtime distribution",
-                path: "~/Library/Application Support/Clawix/clawjs",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Host-managed embedded runtime distribution/cache. The local clawjs path segment is compatibility layout only; this is not a framework data root and not a canonical ClawJS store."
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.secrets",
-                name: "Secrets",
-                path: "~/Library/Application Support/Clawix/secrets",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Signed-host vault/proxy state. Framework records may reference opaque secret ids only."
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.localModels",
-                name: "Local models",
-                path: "~/Library/Application Support/Clawix/local-models",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Host/runtime-local model binaries and installation state. Framework storage records capabilities and non-sensitive metadata only."
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.dictationSounds",
-                name: "Dictation sounds",
-                path: "~/Library/Application Support/Clawix/dictation-sounds",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Host UI playback assets for dictation feedback. The durable audio catalog and transcripts live in the framework audio surface."
-            ),
-            ClawixPersistentSurface.cache(
-                id: "clawix.captures",
-                name: "Quick Ask captures",
-                path: "~/Library/Caches/Clawix-Captures"
-            ),
-            ClawixPersistentSurface.cache(
-                id: "clawix.favicons",
-                name: "Browser favicons",
-                path: "~/Library/Caches/Clawix/Favicons"
-            ),
-            ClawixPersistentSurface.cache(
-                id: "clawix.backendMetadataCache",
-                name: "Backend metadata cache",
-                path: "~/Library/Caches/Clawix/BackendMetadata"
-            ),
-            ClawixPersistentSurface.cache(
-                id: "clawix.localModelsCache",
-                name: "Local models cache",
-                path: "~/Library/Caches/Clawix/local-models"
-            ),
-            ClawixPersistentSurface.cache(
-                id: "clawix.devCache",
-                name: "Development cache",
-                path: "~/Library/Caches/Clawix-Dev"
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.logs",
-                name: "Logs",
-                path: "~/Library/Logs/Clawix",
-                parentId: "clawix.applicationSupport"
-            ),
-            ClawixPersistentSurface.file(
-                id: "clawix.hostActionAudit",
-                name: "Host action audit log",
-                path: "~/Library/Application Support/Clawix/host-action-audit.jsonl",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Append-only audit for host-owned Browser, Screen Tools, Mac Utilities, and agent-visible native action policy decisions."
-            ),
-            ClawixPersistentSurface.file(
-                id: "clawix.macControlTimeline",
-                name: "Mac Control timeline",
-                path: "~/Library/Application Support/Clawix/mac-control-timeline.jsonl",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Append-only local projection of Mac Control plans, approval requirements, execution evaluations, and errors for the Settings timeline."
-            ),
-            ClawixPersistentSurface.file(
-                id: "clawix.macControlPendingApprovals",
-                name: "Mac Control pending approvals",
-                path: "~/Library/Application Support/Clawix/mac-control-pending-approvals.json",
-                parentId: "clawix.applicationSupport",
-                storageClass: "hostOperational",
-                notes: "Host-owned pending approval projection for Mac Control Settings. Durable source is local to the signed host identity."
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.bridgeState",
-                name: "Bridge state",
-                path: "~/.clawix/state",
-                parentId: "clawix.home",
-                storageClass: "hostOperational"
-            ),
-            ClawixPersistentSurface.file(
-                id: "clawix.bridgeStatus",
-                name: "Bridge status",
-                path: "~/.clawix/state/bridge-status.json",
-                parentId: "clawix.bridgeState",
-                storageClass: "hostOperational"
-            ),
-            ClawixPersistentSurface.folder(
-                id: "clawix.bridgeBin",
-                name: "Bridge binaries",
-                path: "~/.clawix/bin",
-                parentId: "clawix.home",
-                storageClass: "hostOperational"
-            ),
-            ClawixPersistentSurface.preference(
-                id: "clawix.prefs.sidebar.viewMode",
-                name: "Sidebar view mode",
-                key: ClawixPersistentSurfaceKeys.sidebarViewMode,
-                kind: .appStorageKey
-            ),
-            ClawixPersistentSurface.preference(
-                id: "clawix.prefs.sidebar.projectSortMode",
-                name: "Sidebar project sort mode",
-                key: ClawixPersistentSurfaceKeys.projectSortMode,
-                kind: .appStorageKey
-            ),
-            ClawixPersistentSurface.preference(
-                id: "clawix.prefs.feed.displayMode",
-                name: "Feed display mode",
-                key: ClawixPersistentSurfaceKeys.feedDisplayMode,
-                kind: .appStorageKey
-            ),
-        ] + contractSurfaceNodes + preferenceSurfaceNodes + databaseSurfaceNodes
+        manifest.nodes
     }
 
     private static var contractSurfaceNodes: [PersistentSurfaceNode] {
@@ -729,6 +461,9 @@ enum ClawixPersistentSurfaceRegistry {
             "CLAWIX_DUMMY_MODE",
             "CLAWIX_E2E_DICTATION_REPORT",
             "CLAWIX_E2E_ENHANCEMENT_FAIL",
+            "CLAWIX_E2E_HYDRATE_REPORT",
+            "CLAWIX_E2E_OPEN_FIRST_CHAT",
+            "CLAWIX_E2E_STATE_REPORT",
             "CLAWIX_E2E_TRANSCRIPTION_TEXT",
             "CLAWIX_FILE_FIXTURE_DIR",
             "CLAWIX_FIXTURE_SEEDING",
@@ -792,6 +527,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.native.permission.mac.contacts", "mac.permission.contacts", "macOS Contacts permission"),
             ("clawix.native.permission.mac.calendar", "mac.permission.calendar", "macOS Calendar permission"),
             ("clawix.native.permission.mac.reminders", "mac.permission.reminders", "macOS Reminders permission"),
+            ("clawix.native.permission.mac.filesDesktopDocumentsDownloads", "mac.permission.files_desktop_documents_downloads", "macOS Files and Folders permission for Desktop, Documents, and Downloads"),
             ("clawix.native.permission.apple.cameraUsage", "NSCameraUsageDescription", "Apple camera usage description"),
             ("clawix.native.permission.apple.localNetworkUsage", "NSLocalNetworkUsageDescription", "Apple local network usage description"),
             ("clawix.native.permission.apple.microphoneUsage", "NSMicrophoneUsageDescription", "Apple microphone usage description"),
@@ -1050,6 +786,8 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.updater.pendingBuild", "Pending update build", UpdaterController.pendingBuildKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.updater.pendingDisplay", "Pending update display", UpdaterController.pendingDisplayKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.hotkey", "Quick Ask hotkey", QuickAskHotkeyRegistrar.defaultsKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.quickAsk.bottomCenter", "Quick Ask panel bottom center", QuickAskController.bottomCenterKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.quickAsk.activeChatId", "Quick Ask active chat id", QuickAskController.chatIdKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.clipboardLastSeen", "Quick Ask clipboard last seen", QuickAskClipboardSniffer.lastSeenKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.clipboardLastSeenAt", "Quick Ask clipboard last seen at", QuickAskClipboardSniffer.lastSeenAtKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.secrets.deviceId", "Secrets device id", SecretsPaths.deviceIdKey, PersistentSurfaceKind.preferenceKey),
@@ -1183,32 +921,36 @@ enum ClawixPersistentSurfaceRegistry {
         ]
     }
 
-    private static var databaseSurfaceNodes: [PersistentSurfaceNode] {
-        let tables: [(String, [(String, String, Bool)], [String])] = [
-            ("projects", [("id", "TEXT", false), ("resource_id", "TEXT", true), ("name", "TEXT", false), ("path", "TEXT", false), ("created_at", "INTEGER", false)], ["projects_path_idx", "projects_resource_id_idx"]),
-            ("pinned_threads", [("thread_id", "TEXT", false), ("sort_order", "INTEGER", false), ("pinned_at", "INTEGER", false)], ["pinned_threads_order_idx"]),
-            ("chat_project_overrides", [("thread_id", "TEXT", false), ("project_path", "TEXT", false)], []),
-            ("projectless_threads", [("thread_id", "TEXT", false)], []),
-            ("session_titles", [("thread_id", "TEXT", false), ("title", "TEXT", false), ("updated_at", "INTEGER", false), ("source", "TEXT", false)], []),
-            ("meta", [("key", "TEXT", false), ("value", "TEXT", false)], []),
-            ("local_archives", [("thread_id", "TEXT", false), ("archived_at", "INTEGER", false)], ["local_archives_archived_at_idx"]),
-            ("hidden_codex_roots", [("path", "TEXT", false), ("hidden_at", "INTEGER", false)], ["hidden_codex_roots_hidden_at_idx"]),
-            ("sidebar_snapshot", [("thread_id", "TEXT", false), ("chat_uuid", "TEXT", false), ("title", "TEXT", false), ("cwd", "TEXT", true), ("project_id", "TEXT", true), ("project_path", "TEXT", true), ("updated_at", "INTEGER", false), ("archived", "INTEGER", false), ("pinned", "INTEGER", false), ("captured_at", "INTEGER", false)], ["sidebar_snapshot_order_idx", "sidebar_snapshot_project_id_idx"]),
-            ("sidebar_snapshot_project", [("thread_id", "TEXT", false), ("chat_uuid", "TEXT", false), ("title", "TEXT", false), ("cwd", "TEXT", true), ("project_id", "TEXT", true), ("project_path", "TEXT", false), ("updated_at", "INTEGER", false), ("archived", "INTEGER", false), ("pinned", "INTEGER", false), ("captured_at", "INTEGER", false)], ["sidebar_snapshot_project_path_idx", "sidebar_snapshot_project_project_id_idx"]),
-            ("project_sort_order", [("project_id", "TEXT", false), ("sort_order", "INTEGER", false)], ["project_sort_order_idx"]),
-            ("dictation_transcript", [("id", "TEXT", false), ("timestamp", "INTEGER", false), ("original_text", "TEXT", false), ("enhanced_text", "TEXT", true), ("model_used", "TEXT", true), ("language", "TEXT", true), ("duration_seconds", "REAL", false), ("audio_file_path", "TEXT", true), ("power_mode_id", "TEXT", true), ("word_count", "INTEGER", false), ("transcription_ms", "INTEGER", false), ("enhancement_ms", "INTEGER", false), ("enhancement_provider", "TEXT", true), ("cost_usd", "REAL", false)], ["dictation_transcript_timestamp_idx"]),
-            ("terminal_tabs", [("id", "TEXT", false), ("chat_id", "TEXT", false), ("label", "TEXT", false), ("initial_cwd", "TEXT", false), ("layout_json", "TEXT", false), ("focused_leaf", "TEXT", true), ("position", "INTEGER", false), ("created_at", "INTEGER", false)], ["terminal_tabs_chat_position_idx"]),
-            ("app_state_outbox", [("id", "TEXT", false), ("operation_json", "TEXT", false), ("status", "TEXT", false), ("attempt_count", "INTEGER", false), ("last_error", "TEXT", true), ("receipt_json", "TEXT", true), ("created_at", "INTEGER", false), ("updated_at", "INTEGER", false), ("next_attempt_at", "INTEGER", false)], ["app_state_outbox_status_idx"]),
-            ("app_state_sync_receipts", [("receipt_id", "TEXT", false), ("request_id", "TEXT", false), ("host_id", "TEXT", false), ("status", "TEXT", false), ("operation_count", "INTEGER", false), ("applied_at", "TEXT", false), ("error_json", "TEXT", true), ("raw_json", "TEXT", false), ("recorded_at", "INTEGER", false)], ["app_state_sync_receipts_request_idx"]),
-        ]
+    static func bundledManifestURL() throws -> URL {
+        guard let url = Bundle.module.url(
+            forResource: "persistent-surface-clawix.manifest",
+            withExtension: "json"
+        ) else {
+            throw PersistentSurfaceRegistryError.missingBundledManifest
+        }
+        return url
+    }
 
-        return tables.flatMap { tableName, columns, indexes in
-            let table = ClawixPersistentSurface.table(tableName, databaseId: localDatabaseId)
-            return [table]
-                + columns.map { name, type, nullable in
-                    ClawixPersistentSurface.column(name, tableId: table.id, databaseId: localDatabaseId, dataType: type, nullable: nullable)
-                }
-                + indexes.map { ClawixPersistentSurface.index($0, tableId: table.id, databaseId: localDatabaseId) }
+    static func loadManifest(from url: URL) throws -> PersistentSurfaceManifest {
+        try loadManifest(data: Data(contentsOf: url))
+    }
+
+    static func loadManifest(data: Data) throws -> PersistentSurfaceManifest {
+        try JSONDecoder().decode(PersistentSurfaceManifest.self, from: data)
+    }
+
+    private static func loadBundledManifest() throws -> PersistentSurfaceManifest {
+        try loadManifest(from: try bundledManifestURL())
+    }
+}
+
+enum PersistentSurfaceRegistryError: Error, Equatable, LocalizedError {
+    case missingBundledManifest
+
+    var errorDescription: String? {
+        switch self {
+        case .missingBundledManifest:
+            return "persistent-surface-clawix.manifest.json is not packaged in the Clawix resource bundle"
         }
     }
 }
@@ -1277,99 +1019,4 @@ enum ClawixPersistentSurfaceKeys {
     static let appleLanguages = "AppleLanguages"
     static let swiftSurfaceRunnerEnv = "CLAWIX_SWIFT_SURFACE_RUNNER"
     static let systemTelemetryHostCommandEnv = "CLAW_SYSTEM_TELEMETRY_HOST_COMMAND"
-}
-
-enum ClawixPersistentSurfacePaths {
-    static func applicationSupportRoot() throws -> URL {
-        try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent(components.clawix, isDirectory: true)
-    }
-
-    static func applicationSupportChild(_ child: String, isDirectory: Bool = true) throws -> URL {
-        try applicationSupportRoot().appendingPathComponent(child, isDirectory: isDirectory)
-    }
-
-    static func homeChild(_ child: String, isDirectory: Bool = true) -> URL {
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent(components.clawixHome, isDirectory: true)
-            .appendingPathComponent(child, isDirectory: isDirectory)
-    }
-
-    static func frameworkGlobalRoot() -> URL {
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent(components.clawHome, isDirectory: true)
-    }
-
-    static func frameworkGlobalChild(_ child: String, isDirectory: Bool = true) -> URL {
-        frameworkGlobalRoot().appendingPathComponent(child, isDirectory: isDirectory)
-    }
-
-    static func logsRoot() throws -> URL {
-        try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent(components.logs, isDirectory: true)
-            .appendingPathComponent(components.clawix, isDirectory: true)
-    }
-
-    static func cacheRoot() throws -> URL {
-        try FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent(components.devCache, isDirectory: true)
-    }
-
-    static func picturesChild(_ child: String, isDirectory: Bool = true) -> URL {
-        FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(child, isDirectory: isDirectory)
-    }
-
-    enum components {
-        static let clawix = "Clawix"
-        static let clawHome = ".claw"
-        static let clawixHome = ".clawix"
-        static let clawWorkspace = ".claw"
-        static let bridgeState = "state"
-        static let workspace = "workspace"
-        static let logs = "Logs"
-        static let devCache = "Clawix-Dev"
-        static let apps = "Apps"
-        static let resources = "resources"
-        static let resourcesStateFile = "resources.json"
-        static let design = "Design"
-        static let clawjs = "clawjs"
-        static let secrets = "secrets"
-        static let localModels = "local-models"
-        static let favicons = "Favicons"
-        static let audio = "audio"
-        static let dictation = "dictation"
-        static let tmp = "tmp"
-        static let dictationAudioDebug = "dictation-audio-debug"
-        static let dictationSounds = "dictation-sounds"
-        static let captures = "Clawix-Captures"
-        static let appStorageFile = ".clawix-storage.json"
-        static let bundleName = "Clawix_Clawix.bundle"
-        static let bridgeStatusFile = "bridge-status.json"
-        static let hostActionAuditFile = "host-action-audit.jsonl"
-        static let macControlTimelineFile = "mac-control-timeline.jsonl"
-        static let macControlPendingApprovalsFile = "mac-control-pending-approvals.json"
-        static let sqlite = "clawix.sqlite"
-        static let sqliteExtension = "sqlite"
-        static let sessionsDatabase = "sessions.sqlite"
-        static let indexDatabase = "index.sqlite"
-        static let secretsDatabase = "secrets.sqlite"
-        static let iotDatabase = "iot.sqlite"
-        static let files = "files"
-        static let blobs = "blobs"
-        static let status = "status"
-        static let sources = "Sources"
-        static let helpers = "Helpers"
-        static let bridged = "Bridged"
-    }
-}
-
-enum ClawixRegisteredDatabaseQueue {
-    static func open(path: String, configuration: Configuration = Configuration()) throws -> DatabaseQueue {
-        try DatabaseQueue(path: path, configuration: configuration)
-    }
-
-    static func open(url: URL, configuration: Configuration = Configuration()) throws -> DatabaseQueue {
-        try open(path: url.path, configuration: configuration)
-    }
 }

@@ -2,64 +2,53 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_ARG="${1:-"$ROOT/docs/persistent-surface-clawix.manifest.json"}"
+CANONICAL="$ROOT/docs/persistent-surface-clawix.manifest.json"
+RESOURCE="$ROOT/macos/Sources/Clawix/Resources/persistent-surface-clawix.manifest.json"
+SURFACE_ROUTE_REGISTRY="$ROOT/docs/surface-route-registry.manifest.json"
+OUT_ARG="${1:-"$CANONICAL"}"
 if [[ "$OUT_ARG" = /* ]]; then
   OUT="$OUT_ARG"
 else
   OUT="$ROOT/$OUT_ARG"
 fi
-TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
 
-cd "$ROOT/macos"
-CLAWIX_PERSISTENT_SURFACE_MANIFEST_OUT="$TMP" \
-  swift test --filter PersistentSurfaceRegistryTests/testClawixPersistentSurfaceRegistryCoversLocalDatabaseAndPrefs
-
-node - "$TMP" "$OUT" "$ROOT/docs/persistent-surface-clawix.manifest.json" <<'NODE'
+node - "$CANONICAL" "$RESOURCE" "$OUT" "$SURFACE_ROUTE_REGISTRY" <<'NODE'
 const fs = require("node:fs");
-const [generatedPath, outPath, canonicalPath] = process.argv.slice(2);
-const generated = JSON.parse(fs.readFileSync(generatedPath, "utf8"));
-let routeGraphSource = {};
-for (const candidate of [outPath, canonicalPath]) {
-  if (!candidate || !fs.existsSync(candidate)) continue;
-  if (fs.statSync(candidate).size === 0) continue;
-  const parsed = JSON.parse(fs.readFileSync(candidate, "utf8"));
-  if (Array.isArray(parsed.edges) && Array.isArray(parsed.routes)) {
-    routeGraphSource = parsed;
-    break;
+const path = require("node:path");
+const [canonicalPath, resourcePath, outPath, surfaceRouteRegistryPath] = process.argv.slice(2);
+const manifest = JSON.parse(fs.readFileSync(canonicalPath, "utf8"));
+const surfaceRouteRegistry = JSON.parse(fs.readFileSync(surfaceRouteRegistryPath, "utf8"));
+if (!Number.isInteger(manifest.version)) {
+  throw new Error("persistent surface manifest is missing integer version");
+}
+if (!Array.isArray(manifest.nodes)) {
+  throw new Error("persistent surface manifest is missing nodes[]");
+}
+const ids = new Set();
+for (const node of manifest.nodes) {
+  if (!node || typeof node.id !== "string" || node.id.length === 0) {
+    throw new Error("persistent surface manifest contains a node without id");
   }
+  if (ids.has(node.id)) {
+    throw new Error(`persistent surface manifest contains duplicate node id ${node.id}`);
+  }
+  ids.add(node.id);
 }
-
-function normalizeContractId(contractId) {
-  if (contractId === "clawix.protocol.bridge") return "clawix.protocol.bridge.v1";
-  return contractId;
-}
-
-function normalizeSurfaceSteward(item) {
-  const legacySteward = item["ow" + "ner"];
-  const { ["ow" + "ner"]: _legacy, ...rest } = item;
-  return {
-    ...rest,
-    surfaceSteward: item.surfaceSteward ?? legacySteward,
-  };
-}
-
-const merged = {
-  nodes: generated.nodes,
-  edges: (routeGraphSource.edges ?? []).map((edge) => ({
-    ...normalizeSurfaceSteward(edge),
-    contractId: normalizeContractId(edge.contractId),
-  })),
-  routes: (routeGraphSource.routes ?? []).map((route) => ({
-    ...normalizeSurfaceSteward(route),
-    steps: (route.steps ?? []).map((step) => ({
-      ...normalizeSurfaceSteward(step),
-      contractId: normalizeContractId(step.contractId),
-    })),
-  })),
-  version: generated.version,
+manifest.surfaceRouteRegistry = {
+  sourceManifest: "docs/surface-route-registry.manifest.json",
+  generatedSwift: surfaceRouteRegistry.generatedSwift,
+  generator: "scripts/generate-surface-route-registry.mjs",
+  version: surfaceRouteRegistry.version,
+  routeCount: Array.isArray(surfaceRouteRegistry.routes) ? surfaceRouteRegistry.routes.length : 0,
+  modules: surfaceRouteRegistry.modules ?? [],
+  dependencies: surfaceRouteRegistry.dependencies ?? [],
+  readinessModes: surfaceRouteRegistry.readinessModes ?? [],
 };
-const pretty = JSON.stringify(merged, null, 2)
+const pretty = JSON.stringify(manifest, null, 2)
   .replace(/"([^"\\]*(?:\\.[^"\\]*)*)":/g, '"$1" :');
-fs.writeFileSync(outPath, `${pretty}\n`);
+const output = `${pretty}\n`;
+for (const target of new Set([canonicalPath, resourcePath, outPath])) {
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, output);
+}
 NODE
