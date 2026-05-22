@@ -20,6 +20,7 @@ import com.example.clawix.android.core.WireAudioRegisterRequest
 import com.example.clawix.android.core.WireAudioRegisterTranscript
 import com.example.clawix.android.core.WireAudioTranscript
 import com.example.clawix.android.core.WireAudioTranscriptRole
+import com.example.clawix.android.core.WireClawJSServiceSnapshot
 import com.example.clawix.android.core.WireSession
 import com.example.clawix.android.core.WireMessage
 import com.example.clawix.android.core.WireRole
@@ -27,8 +28,10 @@ import com.example.clawix.android.core.WireTimelineEntry
 import com.example.clawix.android.core.WireWorkItem
 import com.example.clawix.android.core.WireWorkItemStatus
 import com.example.clawix.android.bridge.Credentials
+import java.io.File
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
@@ -76,6 +79,17 @@ class BridgeFrameRoundtripTest {
             metadataJson = """{"source":"fixture"}""",
         ),
         transcripts = listOf(sampleTranscript),
+    )
+
+    private val sampleService = WireClawJSServiceSnapshot(
+        id = "database",
+        state = "readyFromDaemon",
+        port = 24_102,
+        pid = 12_345,
+        restartCount = 0,
+        lastError = null,
+        updatedAtMs = 1_750_000_000_000,
+        source = "daemon",
     )
 
     private fun roundtrip(body: BridgeBody) {
@@ -254,11 +268,19 @@ class BridgeFrameRoundtripTest {
         roundtrip(BridgeBody.RequestGeneratedImage("/path/to/img.png"))
         roundtrip(BridgeBody.GeneratedImageSnapshot("/path/img.png", "BBB=", "image/png", null))
         roundtrip(BridgeBody.GeneratedImageSnapshot("/path/img.png", null, null, "denied"))
+        roundtrip(BridgeBody.RequestRolloutAttachment("rollout-att"))
+        roundtrip(BridgeBody.RolloutAttachmentSnapshot("rollout-att", "BBB=", "image/png", null))
     }
 
     @Test fun roundtrip_bridge_state() {
         roundtrip(BridgeBody.BridgeStateFrame("ready", 12, null))
         roundtrip(BridgeBody.BridgeStateFrame("error", 0, "boot crashed"))
+    }
+
+    @Test fun roundtrip_clawjs_service_statuses() {
+        roundtrip(BridgeBody.RequestClawJSServiceStatuses)
+        roundtrip(BridgeBody.ClawJSServiceStatusesSnapshot(listOf(sampleService)))
+        roundtrip(BridgeBody.ClawJSServiceStatusUpdated(sampleService))
     }
 
     @Test fun pairing_payload_preserves_remote_route_fields() {
@@ -328,5 +350,28 @@ class BridgeFrameRoundtripTest {
         assertEquals(false, c.isPinned)
         assertEquals(false, c.isArchived)
         assertEquals(false, c.lastTurnInterrupted)
+    }
+
+    @Test fun generated_swift_bridge_fixture_corpus_decodes_and_roundtrips() {
+        val manifestUrl = javaClass.classLoader!!.getResource("manifest.json")
+        assertNotNull("Bridge V1 manifest should be copied into test resources", manifestUrl)
+        val fixtureRoot = File(manifestUrl!!.toURI()).parentFile
+        val manifest = parser.parseToJsonElement(File(fixtureRoot, "manifest.json").readText()).jsonObject
+        assertEquals("clawix.protocol.bridge.v1", manifest["contractId"]?.jsonPrimitive?.content)
+        assertEquals(BRIDGE_SCHEMA_VERSION, manifest["bridgeSchemaVersion"]?.jsonPrimitive?.content?.toInt())
+
+        val fixtures = manifest["fixtures"]!!.jsonArray
+        assertEquals(manifest["fixtureCount"]?.jsonPrimitive?.content?.toInt(), fixtures.size)
+        for (fixture in fixtures) {
+            val entry = fixture.jsonObject
+            val file = entry["file"]!!.jsonPrimitive.content
+            val type = entry["type"]!!.jsonPrimitive.content
+            val raw = File(fixtureRoot, file).readText()
+            val decoded = BridgeCoder.decode(raw)
+            assertEquals("schemaVersion mismatch on $file", BRIDGE_SCHEMA_VERSION, decoded.schemaVersion)
+            assertEquals("type mismatch on $file", type, decoded.body.typeTag)
+            val encoded = BridgeCoder.encode(decoded)
+            assertEquals("body mismatch on $file", decoded.body, BridgeCoder.decode(encoded).body)
+        }
     }
 }

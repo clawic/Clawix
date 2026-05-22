@@ -135,6 +135,10 @@ sealed class BridgeBody {
     data class GeneratedImageSnapshot(val path: String, val dataBase64: String?, val mimeType: String?, val errorMessage: String?) : BridgeBody() {
         override val typeTag = "generatedImageSnapshot"
     }
+    data class RequestRolloutAttachment(val attachmentId: String) : BridgeBody() { override val typeTag = "requestRolloutAttachment" }
+    data class RolloutAttachmentSnapshot(val attachmentId: String, val dataBase64: String?, val mimeType: String?, val errorMessage: String?) : BridgeBody() {
+        override val typeTag = "rolloutAttachmentSnapshot"
+    }
 
     // MARK: - bridge bootstrap state
     data class BridgeStateFrame(val state: String, val chatCount: Int, val message: String?) : BridgeBody() {
@@ -148,6 +152,13 @@ sealed class BridgeBody {
     }
     data class RateLimitsUpdated(val snapshot: WireRateLimitSnapshot?, val byLimitId: Map<String, WireRateLimitSnapshot>) : BridgeBody() {
         override val typeTag = "rateLimitsUpdated"
+    }
+    data object RequestClawJSServiceStatuses : BridgeBody() { override val typeTag = "requestClawJSServiceStatuses" }
+    data class ClawJSServiceStatusesSnapshot(val services: List<WireClawJSServiceSnapshot>) : BridgeBody() {
+        override val typeTag = "clawJSServiceStatusesSnapshot"
+    }
+    data class ClawJSServiceStatusUpdated(val service: WireClawJSServiceSnapshot) : BridgeBody() {
+        override val typeTag = "clawJSServiceStatusUpdated"
     }
 
     // MARK: - audio catalog

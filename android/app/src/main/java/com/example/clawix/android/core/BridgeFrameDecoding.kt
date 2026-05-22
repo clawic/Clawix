@@ -105,6 +105,13 @@ internal fun decodePayload(type: String, obj: JsonObject): BridgeBody = when (ty
         obj.optString("mimeType"),
         obj.optString("errorMessage"),
     )
+    "requestRolloutAttachment" -> BridgeBody.RequestRolloutAttachment(obj.requireString("attachmentId"))
+    "rolloutAttachmentSnapshot" -> BridgeBody.RolloutAttachmentSnapshot(
+        obj.requireString("attachmentId"),
+        obj.optString("dataBase64"),
+        obj.optString("mimeType"),
+        obj.optString("errorMessage"),
+    )
     "bridgeState" -> BridgeBody.BridgeStateFrame(
         obj.requireString("state"),
         obj.requireInt("chatCount"),
@@ -118,6 +125,13 @@ internal fun decodePayload(type: String, obj: JsonObject): BridgeBody = when (ty
     "rateLimitsUpdated" -> BridgeBody.RateLimitsUpdated(
         snapshot = obj.optObj("rateLimits", WireRateLimitSnapshot.serializer()),
         byLimitId = obj.optMap("rateLimitsByLimitId", WireRateLimitSnapshot.mapSerializer) ?: emptyMap(),
+    )
+    "requestClawJSServiceStatuses" -> BridgeBody.RequestClawJSServiceStatuses
+    "clawJSServiceStatusesSnapshot" -> BridgeBody.ClawJSServiceStatusesSnapshot(
+        obj.requireList("services", WireClawJSServiceSnapshot.listSerializer),
+    )
+    "clawJSServiceStatusUpdated" -> BridgeBody.ClawJSServiceStatusUpdated(
+        obj.requireObj("service", WireClawJSServiceSnapshot.serializer()),
     )
     "audioRegister" -> BridgeBody.AudioRegister(
         obj.requireString("requestId"),

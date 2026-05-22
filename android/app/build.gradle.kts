@@ -87,6 +87,12 @@ android {
         compose = true
     }
 
+    sourceSets {
+        getByName("test") {
+            resources.srcDir(rootProject.projectDir.parentFile.resolve("packages/ClawixCore/Fixtures/BridgeV1"))
+        }
+    }
+
     packaging {
         resources {
             excludes += setOf(

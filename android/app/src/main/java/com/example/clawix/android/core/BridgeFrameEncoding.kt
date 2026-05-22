@@ -119,6 +119,13 @@ internal fun encodePayload(body: BridgeBody, b: kotlinx.serialization.json.JsonO
             body.mimeType?.let { b.put("mimeType", it) }
             body.errorMessage?.let { b.put("errorMessage", it) }
         }
+        is BridgeBody.RequestRolloutAttachment -> b.put("attachmentId", body.attachmentId)
+        is BridgeBody.RolloutAttachmentSnapshot -> {
+            b.put("attachmentId", body.attachmentId)
+            body.dataBase64?.let { b.put("dataBase64", it) }
+            body.mimeType?.let { b.put("mimeType", it) }
+            body.errorMessage?.let { b.put("errorMessage", it) }
+        }
         is BridgeBody.BridgeStateFrame -> {
             b.put("state", body.state)
             b.put("chatCount", body.chatCount)
@@ -137,6 +144,13 @@ internal fun encodePayload(body: BridgeBody, b: kotlinx.serialization.json.JsonO
                 "rateLimitsByLimitId",
                 BridgeJson.encodeToJsonElement(WireRateLimitSnapshot.mapSerializer, body.byLimitId)
             )
+        }
+        BridgeBody.RequestClawJSServiceStatuses -> {}
+        is BridgeBody.ClawJSServiceStatusesSnapshot -> {
+            b.put("services", BridgeJson.encodeToJsonElement(WireClawJSServiceSnapshot.listSerializer, body.services))
+        }
+        is BridgeBody.ClawJSServiceStatusUpdated -> {
+            b.put("service", BridgeJson.encodeToJsonElement(WireClawJSServiceSnapshot.serializer(), body.service))
         }
         is BridgeBody.AudioRegister -> {
             b.put("requestId", body.requestId)

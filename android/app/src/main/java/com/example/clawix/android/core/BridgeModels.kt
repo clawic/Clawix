@@ -64,6 +64,22 @@ data class WireProject(
 }
 
 @Serializable
+data class WireClawJSServiceSnapshot(
+    val id: String,
+    val state: String,
+    val port: Int,
+    val pid: Int? = null,
+    val restartCount: Int = 0,
+    val lastError: String? = null,
+    val updatedAtMs: Long,
+    val source: String,
+) {
+    companion object {
+        val listSerializer: KSerializer<List<WireClawJSServiceSnapshot>> = ListSerializer(serializer())
+    }
+}
+
+@Serializable
 data class WireSession(
     val id: String,
     val title: String,
