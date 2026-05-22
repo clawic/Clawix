@@ -20,6 +20,7 @@ final class FillerWordsStore: ObservableObject {
 
     nonisolated static let enabledKey = "dictation.fillerWords.enabled"
     nonisolated static let listKey = "dictation.fillerWords.list"
+    private static let maxStoredListBytes = 65_536
 
     @Published private(set) var enabled: Bool {
         didSet { defaults.set(enabled, forKey: Self.enabledKey) }
@@ -41,6 +42,8 @@ final class FillerWordsStore: ObservableObject {
         }
         self.enabled = defaults.bool(forKey: Self.enabledKey)
         if let data = defaults.data(forKey: Self.listKey),
+           data.count <= Self.maxStoredListBytes,
+           // hot-path-ok maxBytes=65536 reason=dictation filler list from UserDefaults is capped before decode
            let decoded = try? JSONDecoder().decode([String: [String]].self, from: data) {
             // Merge user data on top of defaults so newly-added
             // languages in subsequent app updates appear without
