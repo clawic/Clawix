@@ -71,31 +71,38 @@ struct SidebarToggleButton: View {
 // branch is derived per §2.4 to preserve the same perceptual function
 // (subtle elevation, soft lift). Every call site that already reads a
 // `Palette.*` token adapts to light mode for free — no call-site changes.
+// Light branch values mirror the Codex desktop palette (bundle-extracted
+// tokens): surface `#fff`, surface-under `#f9f9f9`, foreground text
+// `#1a1c1f` (a cool near-black, not a flat gray), borders as low-alpha
+// foreground. The dark branch keeps Clawix's own canonical dark identity
+// (STYLE.md §2.1). The two are wired through `Color.dynamic` so each call
+// site adapts for free.
 enum Palette {
-    static let background    = Color.dynamic(light: Color(white: 0.985), dark: Color(white: 0.04))
-    static let sidebar       = Color.dynamic(light: Color(white: 0.95),  dark: Color(white: 0.245))
-    static let cardFill      = Color.dynamic(light: Color(white: 0.95),  dark: Color(white: 0.14))
-    static let cardHover     = Color.dynamic(light: Color(white: 0.915), dark: Color(white: 0.17))
-    static let border        = Color.dynamic(light: Color(white: 0.86),  dark: Color(white: 0.20))
-    static let borderSubtle  = Color.dynamic(light: Color(white: 0.90),  dark: Color(white: 0.15))
-    static let popupStroke   = Color.overlay(0.10)
+    static let background    = Color.dynamic(light: Color(white: 1.0),   dark: Color(white: 0.04))
+    static let sidebar       = Color.dynamic(light: Color(white: 0.976), dark: Color(white: 0.245))
+    static let cardFill      = Color.dynamic(light: Color(white: 0.972), dark: Color(white: 0.14))
+    static let cardHover     = Color.dynamic(light: Color(white: 0.95),  dark: Color(white: 0.17))
+    static let border        = Color.dynamic(light: Color(white: 0.912), dark: Color(white: 0.20))
+    static let borderSubtle  = Color.dynamic(light: Color(white: 0.94),  dark: Color(white: 0.15))
+    static let popupStroke   = Color.dynamic(light: Color.black.opacity(0.08), dark: Color.white.opacity(0.10))
     static let popupStrokeWidth: CGFloat = 0.5
-    static let selFill       = Color.dynamic(light: Color(white: 0.88),  dark: Color(white: 0.28))
-    static let textPrimary   = Color.dynamic(light: Color(white: 0.12),  dark: Color.white)
-    static let textSecondary = Color.dynamic(light: Color(white: 0.40),  dark: Color(white: 0.55))
+    static let selFill       = Color.dynamic(light: Color(white: 0.91),  dark: Color(white: 0.28))
+    // Codex foreground `#1a1c1f` — a cool near-black, not a flat gray.
+    static let textPrimary   = Color.dynamic(light: Color(red: 0.102, green: 0.110, blue: 0.122), dark: Color.white)
+    static let textSecondary = Color.dynamic(light: Color(red: 0.37, green: 0.38, blue: 0.40), dark: Color(white: 0.55))
     static let textTertiary  = Color.dynamic(light: Color(white: 0.55),  dark: Color(white: 0.38))
     // Brand accent is identical on both modes (brand consistency, §2.4).
     static let pastelBlue    = Color(red: 0.45, green: 0.65, blue: 1.0)
 
-    // Semantic status colours. The dark branch keeps the soft, light-on-dark
-    // tone the app already used; the light branch deepens the hue so the same
-    // status reads with adequate contrast on a near-white surface.
-    static let danger  = Color.dynamic(light: Color(red: 0.80, green: 0.18, blue: 0.18),
-                                       dark:  Color(red: 0.95, green: 0.45, blue: 0.45))
-    static let warning = Color.dynamic(light: Color(red: 0.78, green: 0.42, blue: 0.08),
-                                       dark:  Color(red: 0.95, green: 0.62, blue: 0.30))
-    static let success = Color.dynamic(light: Color(red: 0.16, green: 0.52, blue: 0.30),
-                                       dark:  Color(red: 0.40, green: 0.85, blue: 0.55))
+    // Semantic status colours. Light branch = Codex light status hues
+    // (success `#00a240`, warning `#e25507`, error `#e02e2a`); dark branch
+    // keeps the soft light-on-dark tone the app already used.
+    static let danger  = Color.dynamic(light: Color(red: 0.878, green: 0.180, blue: 0.165),
+                                       dark:  Color(red: 0.95,  green: 0.45,  blue: 0.45))
+    static let warning = Color.dynamic(light: Color(red: 0.886, green: 0.333, blue: 0.027),
+                                       dark:  Color(red: 0.95,  green: 0.62,  blue: 0.30))
+    static let success = Color.dynamic(light: Color(red: 0.0,   green: 0.635, blue: 0.251),
+                                       dark:  Color(red: 0.40,  green: 0.85,  blue: 0.55))
 }
 
 // MARK: - Standard dropdown / popup menu style

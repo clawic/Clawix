@@ -28,6 +28,7 @@ struct ChatView: View {
     /// the inner `ComposerView` reads/writes this one instead of the
     /// global `appState.composer`.
     @StateObject private var sideComposer = ComposerState()
+    @StateObject private var remoteProjectionStore = ClawJSRemoteProjectionStore()
 
     @State private var workMenuOpen = false
     @State private var branchMenuOpen = false
@@ -96,11 +97,14 @@ struct ChatView: View {
                                 ForEach(activeRemoteJobs) { job in
                                     RemoteJobCard(
                                         state: job,
+                                        remoteProjectionState: remoteProjectionStore.state,
                                         onDismiss: { meshStore.clearJob(job.id) }
                                     )
                                 }
                             }
                             .frame(maxWidth: chatRailMaxWidth)
+                            .task { remoteProjectionStore.load() }
+                            .onDisappear { remoteProjectionStore.cancel() }
                         }
 
                         GoalBannerView(chatId: chatId)

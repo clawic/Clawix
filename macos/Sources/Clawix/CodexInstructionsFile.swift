@@ -81,7 +81,7 @@ enum CodexInstructionsFile {
     static func replaceSentinelBlock(id: String, body: String) throws {
         let begin = beginMarker(id: id)
         let end = endMarker(id: id)
-        let current = (try? read()) ?? ""
+        let current = try read()
 
         let block = "\(begin)\n\(body)\n\(end)"
 
@@ -123,7 +123,7 @@ enum CodexInstructionsFile {
     /// Removes a sentinel-delimited block by id, including the markers and
     /// the surrounding blank line. No-op if the block isn't present.
     static func removeSentinelBlock(id: String) throws {
-        let current = (try? read()) ?? ""
+        let current = try read()
         let begin = beginMarker(id: id)
         let end = endMarker(id: id)
         guard let beginRange = current.range(of: begin),

@@ -23,6 +23,9 @@ struct SearchPopoverOverlay: View {
     /// to the popup's top so the search icon never moves; only the
     /// bottom edge tracks the result count.
     @State private var contentNaturalHeight: CGFloat = 220
+    @State private var quickSwitchHeaders: [AppState.QuickSwitchChatHeader] = []
+    @State private var quickSwitchRequestKey: String = ""
+    @State private var quickSwitchTask: Task<Void, Never>?
 
     private static let popupCornerRadius: CGFloat = 26
     private static let popupStrokeColor = Color.overlay(0.18)
@@ -69,6 +72,22 @@ struct SearchPopoverOverlay: View {
     private func projectName(for chat: Chat) -> String? {
         guard let pid = chat.projectId else { return nil }
         return appState.projects.first(where: { $0.id == pid })?.name
+    }
+
+    private var trimmedSearchQuery: String {
+        appState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func quickSwitchKey(for project: Project?) -> String {
+        "\(project?.id.uuidString ?? "all")|\(trimmedSearchQuery)"
+    }
+
+    private func activeQuickSwitchHeaders(for project: Project?) -> [AppState.QuickSwitchChatHeader] {
+        guard !trimmedSearchQuery.isEmpty,
+              quickSwitchRequestKey == quickSwitchKey(for: project) else {
+            return []
+        }
+        return quickSwitchHeaders
     }
 
     private var sortedProjects: [Project] {
@@ -120,10 +139,19 @@ struct SearchPopoverOverlay: View {
             // field is in the responder chain.
             queryFocused = true
             triggerScopedHistoryLoadIfNeeded()
+            refreshQuickSwitchHeaders()
+        }
+        .onDisappear {
+            quickSwitchTask?.cancel()
+            quickSwitchTask = nil
+        }
+        .onChange(of: appState.searchQuery) { _, _ in
+            refreshQuickSwitchHeaders()
         }
         .onChange(of: appState.searchScopedProjectId) { _, _ in
             queryFocused = true
             triggerScopedHistoryLoadIfNeeded()
+            refreshQuickSwitchHeaders()
         }
     }
 
@@ -135,6 +163,11 @@ struct SearchPopoverOverlay: View {
 
     private func selectResult(at index: Int) {
         guard index >= 0 else { return }
+        let quickMatches = activeQuickSwitchHeaders(for: scopedProject)
+        if !quickMatches.isEmpty, index < min(quickMatches.count, 9) {
+            appState.openQuickSwitchSession(quickMatches[index])
+            return
+        }
         let chats: [Chat]
         if let project = scopedProject {
             chats = filteredScopedChats(for: project)
@@ -219,8 +252,11 @@ struct SearchPopoverOverlay: View {
 
     @ViewBuilder
     private var unscopedContent: some View {
+        let quickMatches = activeQuickSwitchHeaders(for: nil)
         let pinned = filteredPinnedChats
-        if !pinned.isEmpty {
+        if !quickMatches.isEmpty {
+            quickSwitchContent(quickMatches, header: "Matches")
+        } else if !pinned.isEmpty {
             ScrollView(showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(appState.searchQuery.trimmingCharacters(in: .whitespaces).isEmpty ? "Pinned chats" : "Matches")
@@ -257,8 +293,11 @@ struct SearchPopoverOverlay: View {
 
     @ViewBuilder
     private func scopedContent(for project: Project) -> some View {
+        let quickMatches = activeQuickSwitchHeaders(for: project)
         let chats = filteredScopedChats(for: project)
-        if chats.isEmpty {
+        if !quickMatches.isEmpty {
+            quickSwitchContent(quickMatches, header: "Matches")
+        } else if chats.isEmpty {
             emptyContent(message: appState.searchQuery.isEmpty
                          ? UserFacingEmptyState.projectChats.message
                          : UserFacingEmptyState.searchNoMatches.message)
@@ -279,6 +318,39 @@ struct SearchPopoverOverlay: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .thinScrollers()
         }
+    }
+
+    private func quickSwitchContent(
+        _ headers: [AppState.QuickSwitchChatHeader],
+        header: String
+    ) -> some View {
+        ScrollView(showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(header)
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(MenuStyle.headerText)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
+                VStack(spacing: 0) {
+                    ForEach(Array(headers.prefix(9).enumerated()), id: \.element.id) { index, header in
+                        SearchQuickSwitchRow(
+                            title: header.title,
+                            projectName: header.projectName,
+                            shortcutNumber: index + 1,
+                            isFirst: index == 0,
+                            onSelect: { appState.openQuickSwitchSession(header) }
+                        )
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(naturalHeightProbe)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .thinScrollers()
     }
 
     private func emptyContent(message: String) -> some View {
@@ -322,6 +394,31 @@ struct SearchPopoverOverlay: View {
         guard let project = scopedProject else { return }
         Task.detached(priority: .userInitiated) { [project] in
             await appState.loadAllThreadsForProject(project)
+        }
+    }
+
+    private func refreshQuickSwitchHeaders() {
+        quickSwitchTask?.cancel()
+        let trimmed = trimmedSearchQuery
+        let project = scopedProject
+        guard !trimmed.isEmpty else {
+            quickSwitchHeaders = []
+            quickSwitchRequestKey = ""
+            quickSwitchTask = nil
+            return
+        }
+        let key = quickSwitchKey(for: project)
+        quickSwitchRequestKey = key
+        quickSwitchTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            guard !Task.isCancelled else { return }
+            let headers = await appState.quickSwitchSessionHeaders(
+                query: trimmed,
+                scopedProject: project,
+                limit: 9
+            )
+            guard !Task.isCancelled, quickSwitchRequestKey == key else { return }
+            quickSwitchHeaders = headers
         }
     }
 }
@@ -695,6 +792,65 @@ struct SearchPinnedRow: View {
     var body: some View {
         HStack(spacing: 11) {
             PinIcon(size: 13, lineWidth: 1.0)
+                .foregroundColor(MenuStyle.rowIcon)
+                .frame(width: 18, alignment: .center)
+
+            Text(displayTitle)
+                .font(BodyFont.system(size: 13.5, wght: 500))
+                .foregroundColor(MenuStyle.rowText)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Spacer(minLength: 12)
+
+            if let projectName {
+                Text(projectName)
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(MenuStyle.rowSubtle)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 140, alignment: .trailing)
+            }
+
+            ShortcutGlyph(number: shortcutNumber)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .contentShape(Rectangle())
+        .background(
+            MenuRowHover(
+                active: hovered || isFirst,
+                intensity: (hovered || isFirst) ? MenuStyle.rowHoverIntensityStrong : MenuStyle.rowHoverIntensity
+            )
+        )
+        .onHover { hovered = $0 }
+        .onTapGesture(perform: onSelect)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(displayTitle)
+        .accessibilityValue(projectName ?? "")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction(named: Text("Open chat"), onSelect)
+    }
+}
+
+struct SearchQuickSwitchRow: View {
+    let title: String
+    let projectName: String?
+    let shortcutNumber: Int
+    let isFirst: Bool
+    let onSelect: () -> Void
+
+    @State private var hovered = false
+
+    private var displayTitle: String {
+        title.isEmpty
+            ? String(localized: "Conversation", bundle: AppLocale.packageBundle)
+            : title
+    }
+
+    var body: some View {
+        HStack(spacing: 11) {
+            LucideIcon(.messageCircle, size: 11)
                 .foregroundColor(MenuStyle.rowIcon)
                 .frame(width: 18, alignment: .center)
 

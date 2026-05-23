@@ -1,6 +1,14 @@
 import Foundation
 
 extension AppState {
+    struct QuickSwitchChatHeader: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let projectName: String?
+        let updatedAt: Date
+        let session: ClawJSSessionsClient.SessionRecord
+    }
+
     func performSearch(_ query: String) {
         searchQuery = query
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -67,6 +75,56 @@ extension AppState {
         }
     }
 
+    func quickSwitchSessionHeaders(
+        query: String,
+        scopedProject: Project? = nil,
+        limit: Int = 9
+    ) async -> [QuickSwitchChatHeader] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        do {
+            let response = try await clawJSSessionsClientFactory().quickSwitchSessions(
+                query: trimmed,
+                projectPath: scopedProject?.path,
+                includeArchived: false,
+                limit: limit,
+                offset: 0
+            )
+            guard response.source == "sessions.quick_switch",
+                  response.searchedMessageHistory == false else {
+                return []
+            }
+            let projectsByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
+            return response.items
+                .filter { !$0.archived && $0.sidebarVisible }
+                .map { session in
+                    let root = scopedProject?.path
+                        ?? rootPath(
+                            threadId: session.id,
+                            cwd: session.cwd ?? session.projectPath,
+                            projectByPath: projectsByPath
+                        )
+                    let project = root.flatMap { projectsByPath[$0] }
+                    return QuickSwitchChatHeader(
+                        id: session.id,
+                        title: Self.quickSwitchTitle(for: session),
+                        projectName: project?.name,
+                        updatedAt: Self.sessionDate(milliseconds: session.lastMessageAt ?? session.createdAt),
+                        session: session
+                    )
+                }
+        } catch {
+            return []
+        }
+    }
+
+    @discardableResult
+    func openQuickSwitchSession(_ header: QuickSwitchChatHeader) -> Bool {
+        let chat = materializeQuickSwitchSession(header.session)
+        navigate(to: .chat(chat.id))
+        return true
+    }
+
     private func uniqueSearchResult(_ text: String, seen: inout Set<String>) -> String {
         guard seen.contains(text) else {
             seen.insert(text)
@@ -95,6 +153,80 @@ extension AppState {
         if lower > start { snippet = "…" + snippet }
         if upper < end { snippet += "…" }
         return snippet.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func materializeQuickSwitchSession(_ session: ClawJSSessionsClient.SessionRecord) -> Chat {
+        let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
+        let root = rootPath(
+            threadId: session.id,
+            cwd: session.cwd ?? session.projectPath,
+            projectByPath: projectByPath
+        )
+        let projectId = root.flatMap { projectByPath[$0]?.id }
+        let old = (chats + archivedChats).first { $0.clawixThreadId == session.id }
+        let archived = session.archived
+        let chat = Chat(
+            id: old?.id ?? UUID(uuidString: session.id) ?? UUID(),
+            title: Self.quickSwitchTitle(for: session),
+            messages: [],
+            createdAt: Self.sessionDate(milliseconds: session.lastMessageAt ?? session.createdAt),
+            clawixThreadId: session.id,
+            rolloutPath: old?.rolloutPath,
+            historyHydrated: old?.historyHydrated ?? false,
+            hasActiveTurn: old?.hasActiveTurn ?? false,
+            projectId: projectId,
+            isArchived: archived,
+            isPinned: !archived && session.pinned,
+            hasUnreadCompletion: old?.hasUnreadCompletion ?? false,
+            cwd: session.cwd ?? session.projectPath,
+            hasGitRepo: old?.hasGitRepo ?? false,
+            branch: old?.branch ?? session.branch,
+            availableBranches: old?.availableBranches ?? [],
+            uncommittedFiles: old?.uncommittedFiles
+        )
+
+        if let index = chats.firstIndex(where: { $0.id == chat.id || $0.clawixThreadId == session.id }) {
+            if archived {
+                chats.remove(at: index)
+                upsertArchivedQuickSwitchChat(chat)
+            } else {
+                chats[index] = chat
+            }
+        } else if let index = archivedChats.firstIndex(where: { $0.id == chat.id || $0.clawixThreadId == session.id }) {
+            if archived {
+                archivedChats[index] = chat
+            } else {
+                archivedChats.remove(at: index)
+                chats.insert(chat, at: 0)
+            }
+        } else if archived {
+            upsertArchivedQuickSwitchChat(chat)
+        } else {
+            chats.insert(chat, at: 0)
+        }
+
+        return chat
+    }
+
+    private func upsertArchivedQuickSwitchChat(_ chat: Chat) {
+        if let index = archivedChats.firstIndex(where: { $0.id == chat.id || $0.clawixThreadId == chat.clawixThreadId }) {
+            archivedChats[index] = chat
+        } else {
+            archivedChats.insert(chat, at: 0)
+            if archivedChats.count > Self.archivedSidebarLimit {
+                archivedChats = Array(archivedChats.prefix(Self.archivedSidebarLimit))
+            }
+        }
+    }
+
+    private static func sessionDate(milliseconds value: Int64) -> Date {
+        let seconds = value > 10_000_000_000 ? Double(value) / 1000.0 : Double(value)
+        return Date(timeIntervalSince1970: seconds)
+    }
+
+    private static func quickSwitchTitle(for session: ClawJSSessionsClient.SessionRecord) -> String {
+        let title = session.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty ? "Conversation" : title
     }
 
     // MARK: - Find (in-page)
