@@ -16,11 +16,20 @@
     "owner": {
       "generic-owner-authority": {
         "android/app/src/main/java/com/example/clawix/android/ClawixApplication.kt": 2,
-        "docs/adr/0003-testing-architecture.md": 3,
-        "docs/adr/0011-surface-route-graph.md": 2,
-        "docs/adr/0016-code-hygiene-program.md": 1,
+        "docs/adr/0001-claw-framework-host-boundary.md": 1,
+        "docs/adr/0003-testing-architecture.md": 4,
+        "docs/adr/0004-source-file-boundaries.md": 2,
+        "docs/adr/0009-agentic-naming-and-code-structure.md": 1,
+        "docs/adr/0011-surface-route-graph.md": 3,
+        "docs/adr/0016-code-hygiene-program.md": 2,
         "docs/adr/0019-sdk-first-custom-surfaces-and-nonblocking-shell.md": 1,
         "docs/adr/0021-decision-tension-rubric-mirror.md": 3,
+        "docs/adr/0022-performance-governance-mirror.md": 1,
+        "docs/adr/0025-rfc-process-mirror.md": 1,
+        "docs/adr/0030-launch-and-idle-contract-mirror.md": 1,
+        "docs/adr/0036-ui-state-invalidation-boundary.md": 1,
+        "docs/adr/0037-zero-accidental-work-mirror.md": 3,
+        "docs/adr/TEMPLATE.md": 1,
         "docs/agent-rules/index.md": 4,
         "docs/code-hygiene-baseline.json": 1,
         "docs/code-hygiene-decision-checklist.md": 2,
@@ -30,15 +39,19 @@
         "docs/constitution.assertions.json": 28,
         "docs/data-storage-boundary.md": 3,
         "docs/debt-ledger-projection.manifest.json": 1,
-        "docs/decision-map.md": 25,
+        "docs/decision-map.md": 27,
         "docs/governance/code-hygiene/completion.md": 1,
+        "docs/governance/core-ux-reliability.manifest.json": 1,
         "docs/governance/decision-tension-rubric.md": 2,
-        "docs/governance/performance-governance.md": 1,
+        "docs/governance/no-irreversible-data-loss/baseline.json": 3,
+        "docs/governance/no-irreversible-data-loss/manifest.json": 9,
+        "docs/governance/performance-governance.md": 4,
+        "docs/governance/release-readiness.manifest.json": 3,
+        "docs/governance/release-readiness.md": 2,
         "docs/governance/v1-surface-closure/acceptance.json": 1,
         "docs/governance/v1-surface-closure/completion.md": 1,
         "docs/host-ownership.md": 4,
-        "docs/interface-matrix.md": 3,
-        "docs/interface-surface-clawix.registry.json": 1,
+        "docs/interface-matrix.md": 2,
         "docs/naming-style-guide.md": 3,
         "docs/native-action-broker-allowlist.json": 1,
         "docs/persistent-surface-clawix.manifest.json": 1,
@@ -53,9 +66,11 @@
         "ios/Sources/Clawix/Marketplace/MarketplaceView.swift": 2,
         "ios/Sources/Clawix/Profile/ProfileClient.swift": 3,
         "macos/Sources/Clawix/Agents/AgentModels.swift": 1,
-        "macos/Sources/Clawix/AppState.swift": 1,
+        "macos/Sources/Clawix/AppState.swift": 2,
         "macos/Sources/Clawix/BackgroundBridgeService.swift": 2,
+        "macos/Sources/Clawix/Bridge/LocalBridgeDemand.swift": 8,
         "macos/Sources/Clawix/ClawJS/ClawJSDriveRealtimeClient.swift": 1,
+        "macos/Sources/Clawix/ClawJS/ClawJSMacCareClient.swift": 1,
         "macos/Sources/Clawix/ClawJS/ClawJSProfileClient.swift": 3,
         "macos/Sources/Clawix/ContentSharedControls.swift": 1,
         "macos/Sources/Clawix/Dictation/DictationCoordinator.swift": 1,
@@ -72,7 +87,6 @@
         "macos/Sources/Clawix/Terminal/TerminalScrollIndicator.swift": 1,
         "macos/Sources/Clawix/ThinScrollbar.swift": 1,
         "macos/Tests/ClawixMeshTests/ProfileSurfaceStoreCancellationTests.swift": 1,
-        "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift": 1,
         "scripts/interface_surface_guard.mjs": 1,
         "scripts/life_registry_projection_check.mjs": 1,
         "scripts/ui_governance_guard.mjs": 1
@@ -95,7 +109,29 @@
       }
     }
   },
-  "generatedAt": "2026-05-21T10:36:18.695Z",
+  "debtControl": {
+    "budget": {
+      "cadence": "next_touch_or_expiry",
+      "current": 274,
+      "maxAllowed": 274,
+      "metric": "protected_vocabulary_debt_hits",
+      "nextMaxAllowed": 273,
+      "target": 0,
+      "unit": "hit"
+    },
+    "expiresAt": "2026-08-19",
+    "ownerArea": "naming-governance",
+    "releaseEffect": {
+      "gate": "node scripts/conceptual-vocabulary-guard.mjs",
+      "mode": "blocks_growth",
+      "reason": "Protected vocabulary baseline must shrink or block new conceptual drift.",
+      "targets": [
+        "changed-work"
+      ]
+    },
+    "severity": "P2"
+  },
+  "generatedAt": "2026-05-22T22:47:24.404Z",
   "policy": "Reviewed conceptual vocabulary debt may shrink without review. Any increase in a tracked path or any new tracked path fails scripts/conceptual-vocabulary-guard.mjs unless the occurrence is removed or this baseline is deliberately updated with rationale.",
   "protectedTerms": [
     "owner",
@@ -126,8 +162,8 @@
       "occurrences": 2
     },
     "owner": {
-      "files": 61,
-      "occurrences": 176
+      "files": 75,
+      "occurrences": 221
     },
     "sync": {
       "files": 1,
