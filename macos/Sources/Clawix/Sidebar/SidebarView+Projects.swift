@@ -201,7 +201,7 @@ struct ProjectAccordion: View, Equatable {
                 // actually drives lazy materialisation.
                 LazyVStack(alignment: .leading, spacing: 0) {
                     if chats.isEmpty {
-                        Text("No chats")
+                        Text(UserFacingEmptyState.chats.message)
                             .font(BodyFont.system(size: 11, wght: 500))
                             .foregroundColor(Color(white: 0.40))
                             .padding(.leading, 30)

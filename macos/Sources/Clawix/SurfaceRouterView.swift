@@ -100,6 +100,7 @@ private struct SurfaceRouteHost<Content: View>: View {
     let demandedServices: Set<ClawJSService>
     @Binding var state: SurfaceRouteSupervisionState
     @ObservedObject private var serviceManager = ClawJSServiceManager.shared
+    @State private var retryNonce = 0
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -113,8 +114,9 @@ private struct SurfaceRouteHost<Content: View>: View {
         .onAppear { state = SurfaceRouteSupervisor.start(descriptor: descriptor) }
         .onChange(of: descriptor.id) { _, _ in
             state = SurfaceRouteSupervisor.start(descriptor: descriptor)
+            retryNonce = 0
         }
-        .task(id: descriptor.id) {
+        .task(id: "\(descriptor.id)-\(retryNonce)") {
             await supervise()
         }
     }
@@ -198,10 +200,19 @@ private struct SurfaceRouteHost<Content: View>: View {
                 .foregroundColor(Color(white: 0.66))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
+            Button("Retry") {
+                retrySurface()
+            }
+            .buttonStyle(.bordered)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.background.opacity(0.92))
+    }
+
+    private func retrySurface() {
+        state = SurfaceRouteSupervisor.start(descriptor: descriptor)
+        retryNonce += 1
     }
 
     @MainActor
@@ -221,7 +232,9 @@ private struct SurfaceRouteHost<Content: View>: View {
                 consumer: "route.\(descriptor.id)"
             )
             if let issue = serviceManager.startupIssue(for: demandedServices) {
-                state = .degraded(surfaceID: descriptor.id, reason: issue)
+                let failure = UserFacingFailure.classify(issue)
+                failure.log(surface: "surfaceRoute.\(descriptor.id)")
+                state = .degraded(surfaceID: descriptor.id, reason: failure.displayMessage)
                 await holdLeaseUntilCancelled()
                 return
             }

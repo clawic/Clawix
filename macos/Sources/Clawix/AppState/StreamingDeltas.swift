@@ -32,13 +32,15 @@ extension AppState {
     func markAssistantFailed(chatId: UUID, messageId: UUID, error: String) {
         dropPendingAssistantText(chatId: chatId)
         dropPendingReasoning(chatId: chatId)
+        let failure = UserFacingFailure.classify(error)
+        failure.log(surface: "chat.assistantFailed")
         guard let transcript = chatStore.transcript(for: chatId),
               let last = transcript.lastMessage,
               last.id == messageId
         else { return }
         let display = last.content.isEmpty
-            ? error
-            : "\(last.content)\n\n[error: \(error)]"
+            ? failure.chatLine
+            : "\(last.content)\n\n\(failure.chatLine)"
         transcript.mutateMessage(id: messageId) { message in
             message.content = display
             message.isError = true

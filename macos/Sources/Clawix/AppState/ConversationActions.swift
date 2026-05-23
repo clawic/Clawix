@@ -464,16 +464,16 @@ extension AppState {
             return
         }
 
-        if let daemonBridgeClient {
+        if daemonBridgeClient != nil {
             // Same as `sendMessage()`: keep the BridgeBus subscription
             // explicit because we don't switch `currentRoute` here
             // (the user is still on the parent chat route).
-            trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
-            daemonBridgeClient.openSession(chatId)
-            daemonBridgeClient.sendMessage(
+            sendBridgeMessageOrReport(
                 chatId: chatId,
                 text: combined,
-                attachments: wireAttachments(from: attachments)
+                optimisticMessageId: userMsg.id,
+                attachments: wireAttachments(from: attachments),
+                openSessionBeforeSend: true
             )
         } else if let clawix {
             Task { @MainActor in
@@ -489,9 +489,11 @@ extension AppState {
 
     func appendErrorBubble(chatId: UUID, message: String) {
         guard chatStore.summary(id: chatId) != nil else { return }
+        let failure = UserFacingFailure.classify(message)
+        failure.log(surface: "chat.errorBubble")
         let bubble = ChatMessage(
             role: .assistant,
-            content: "Error: \(message)",
+            content: failure.chatLine,
             isError: true,
             timestamp: Date()
         )

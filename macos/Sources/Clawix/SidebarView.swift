@@ -189,7 +189,7 @@ struct SidebarView: View {
                     // bottom gap every other closable section shows.
                     if visiblePinned.isEmpty {
                         LazyVStack(alignment: .leading, spacing: 0) {
-                            Text("No pinned chats match the filter")
+                            Text(UserFacingEmptyState.pinnedChatsFiltered.message)
                                 .font(BodyFont.system(size: 13.5, wght: 500))
                                 .foregroundColor(Color(white: 0.40))
                                 .padding(.leading, 34)
@@ -233,9 +233,9 @@ struct SidebarView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         VStack(alignment: .leading, spacing: 0) {
                             if showEmptyState {
-                                Text(chronoFilterActive && !snapshot.chrono.isEmpty
-                                     ? "No chats match the filter"
-                                     : "No chats")
+                                Text((chronoFilterActive && !snapshot.chrono.isEmpty
+                                      ? UserFacingEmptyState.chatsFiltered
+                                      : UserFacingEmptyState.chats).message)
                                     .font(BodyFont.system(size: 13.5, wght: 500))
                                     .foregroundColor(Color(white: 0.40))
                                     .padding(.leading, 34)
@@ -641,7 +641,7 @@ struct SidebarView: View {
         let visible = visibleTools
         if visible.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                Text("No tools visible")
+                Text(UserFacingEmptyState.tools.message)
                     .font(BodyFont.system(size: 13.5, wght: 500))
                     .foregroundColor(Color(white: 0.40))
                     .padding(.leading, 34)

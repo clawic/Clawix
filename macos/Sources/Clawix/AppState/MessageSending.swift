@@ -77,11 +77,13 @@ extension AppState {
                 if await self.sendMessageViaClawJSSessions(chatId: chatId, text: combined, attachments: attachments) {
                     return
                 }
-                if let daemonBridgeClient = self.daemonBridgeClient,
-                   daemonBridgeClient.isReadyForRequests {
-                    if !daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: self.wireAttachments(from: attachments)) {
-                        self.appendErrorBubble(chatId: chatId, message: "Background bridge is not ready. Try again once it reconnects.")
-                    }
+                if self.daemonBridgeClient != nil {
+                    self.sendBridgeMessageOrReport(
+                        chatId: chatId,
+                        text: combined,
+                        optimisticMessageId: userMsg.id,
+                        attachments: self.wireAttachments(from: attachments)
+                    )
                 } else if let clawix = self.clawix {
                     guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
                         self.appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable: \(self.clawixBackendStatus)")
@@ -100,11 +102,13 @@ extension AppState {
             return
         }
 
-        if let daemonBridgeClient, daemonBridgeClient.isReadyForRequests {
-            trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
-            if !daemonBridgeClient.sendMessage(chatId: chatId, text: combined, attachments: wireAttachments(from: attachments)) {
-                appendErrorBubble(chatId: chatId, message: "Background bridge is not ready. Try again once it reconnects.")
-            }
+        if daemonBridgeClient != nil {
+            sendBridgeMessageOrReport(
+                chatId: chatId,
+                text: combined,
+                optimisticMessageId: userMsg.id,
+                attachments: wireAttachments(from: attachments)
+            )
         } else if selectedAgentRuntime == .opencode {
             appendAssistantSystemMessage(
                 to: chatId,
@@ -447,7 +451,7 @@ extension AppState {
             return resolvedId
         }
 
-        if let daemonBridgeClient {
+        if daemonBridgeClient != nil {
             // sendMessage() reaches openSession implicitly via the
             // currentRoute didSet; QuickAsk doesn't switch the route
             // (the HUD stays on top of whatever the user was doing),
@@ -455,9 +459,12 @@ extension AppState {
             // explicitly. openSession is idempotent (Set.insert) so
             // calling it on every submit is safe and also covers the
             // re-subscribe-after-reconnect case.
-            trackOptimisticUserMessage(chatId: resolvedId, messageId: userMsg.id)
-            daemonBridgeClient.openSession(resolvedId)
-            daemonBridgeClient.sendMessage(chatId: resolvedId, text: combined)
+            sendBridgeMessageOrReport(
+                chatId: resolvedId,
+                text: combined,
+                optimisticMessageId: userMsg.id,
+                openSessionBeforeSend: true
+            )
         } else if let clawix {
             Task { @MainActor in
                 guard await self.ensureAgentRuntimeReady(reason: .sendMessage) else {
@@ -467,6 +474,8 @@ extension AppState {
                 await clawix.sendUserMessage(chatId: resolvedId, text: combined)
                 self.clawixBackendStatus = clawix.status
             }
+        } else {
+            appendErrorBubble(chatId: resolvedId, message: "Agent runtime is unavailable.")
         }
 
         return resolvedId
@@ -540,12 +549,16 @@ extension AppState {
             return
         }
 
-        if let daemonBridgeClient {
+        if daemonBridgeClient != nil {
             // The daemon spools the attachments itself and emits
             // `localImage` paths to Codex; we just forward the raw
             // wire payload over loopback.
-            trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
-            daemonBridgeClient.sendMessage(chatId: chatId, text: trimmed, attachments: attachments)
+            sendBridgeMessageOrReport(
+                chatId: chatId,
+                text: trimmed,
+                optimisticMessageId: userMsg.id,
+                attachments: attachments
+            )
         } else if let clawix {
             let imagePaths = AttachmentSpooler.write(
                 attachments: imageAttachments,
@@ -563,6 +576,8 @@ extension AppState {
                 )
                 self.clawixBackendStatus = clawix.status
             }
+        } else {
+            appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable.")
         }
     }
 
@@ -702,9 +717,13 @@ extension AppState {
             return
         }
 
-        if let daemonBridgeClient {
-            trackOptimisticUserMessage(chatId: chatId, messageId: userMsg.id)
-            daemonBridgeClient.sendMessage(chatId: chatId, text: trimmed, attachments: attachments)
+        if daemonBridgeClient != nil {
+            sendBridgeMessageOrReport(
+                chatId: chatId,
+                text: trimmed,
+                optimisticMessageId: userMsg.id,
+                attachments: attachments
+            )
         } else if let clawix {
             let imagePaths = AttachmentSpooler.write(
                 attachments: imageAttachments,
@@ -722,6 +741,8 @@ extension AppState {
                 )
                 self.clawixBackendStatus = clawix.status
             }
+        } else {
+            appendErrorBubble(chatId: chatId, message: "Agent runtime is unavailable.")
         }
     }
 

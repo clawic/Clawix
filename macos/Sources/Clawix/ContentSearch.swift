@@ -250,8 +250,8 @@ struct SearchPopoverOverlay: View {
             .thinScrollers()
         } else {
             emptyContent(message: appState.searchQuery.isEmpty
-                         ? "Search by chat title"
-                         : "No matches")
+                         ? UserFacingEmptyState.searchPrompt.message
+                         : UserFacingEmptyState.searchNoMatches.message)
         }
     }
 
@@ -260,8 +260,8 @@ struct SearchPopoverOverlay: View {
         let chats = filteredScopedChats(for: project)
         if chats.isEmpty {
             emptyContent(message: appState.searchQuery.isEmpty
-                         ? "No chats in this project yet"
-                         : "No matches")
+                         ? UserFacingEmptyState.projectChats.message
+                         : UserFacingEmptyState.searchNoMatches.message)
         } else {
             ScrollView(showsIndicators: true) {
                 LazyVStack(spacing: 0) {
@@ -281,7 +281,7 @@ struct SearchPopoverOverlay: View {
         }
     }
 
-    private func emptyContent(message: LocalizedStringKey) -> some View {
+    private func emptyContent(message: String) -> some View {
         Text(message)
             .font(BodyFont.system(size: 13, wght: 500))
             .foregroundColor(MenuStyle.rowSubtle)
