@@ -327,7 +327,7 @@ private struct TextForm: View {
             .foregroundColor(Palette.textPrimary)
             .scrollContentBackground(.hidden)
             .padding(8)
-            .background(Color.white.opacity(0.04))
+            .background(Color.overlay(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .frame(minHeight: 110)
         } else {
@@ -495,7 +495,7 @@ private struct JSONForm: View {
             .foregroundColor(Palette.textPrimary)
             .scrollContentBackground(.hidden)
             .padding(8)
-            .background(Color.white.opacity(0.04))
+            .background(Color.overlay(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .frame(minHeight: 100)
             if !isValid {
@@ -579,7 +579,7 @@ private struct FileForm: View {
             }
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(
-                    isTargeted ? Palette.pastelBlue : Color.white.opacity(0.12),
+                    isTargeted ? Palette.pastelBlue : Color.overlay(0.12),
                     style: StrokeStyle(lineWidth: 1, dash: [4, 4])
                 )
                 .frame(height: 64)

@@ -16,17 +16,17 @@ struct CollectionView: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             if showsCuratedTabs {
                 CuratedTabsView(collection: collection, state: filterBinding)
-                Divider().background(Color.white.opacity(0.04))
+                Divider().background(Color.overlay(0.04))
             }
             FilterBar(collection: collection, state: filterBinding)
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             HStack(spacing: 0) {
                 tableArea
                 if detailVisible, let focused = focusedRecord {
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     RecordDetailPane(collection: collection, record: focused)
                         .id("\(focused.id)-\(focused.updatedAt)")
                         .frame(width: 380)
@@ -69,7 +69,7 @@ struct CollectionView: View {
                     .font(BodyFont.system(size: 10))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.white.opacity(0.06))
+                    .background(Color.overlay(0.06))
                     .clipShape(Capsule())
                     .foregroundColor(Palette.textSecondary)
             }
@@ -98,8 +98,8 @@ struct CollectionView: View {
                 .font(BodyFont.system(size: 12, wght: 600))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 5)
-                .background(Color.white.opacity(0.92))
-                .foregroundColor(.black)
+                .background(Color.overlay(0.92))
+                .foregroundColor(Palette.background)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -126,7 +126,7 @@ struct CollectionView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if let window = recordWindow, window.hasNextPage {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 Button {
                     manager.requestLoadNextRecordsPage(collection: collection.name)
                 } label: {

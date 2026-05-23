@@ -18,11 +18,11 @@ struct RecordsTableView: View {
         ScrollView([.horizontal, .vertical]) {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(records.prefix(Self.visibleRecordLimit)) { record in
                         rowView(for: record)
-                        Divider().background(Color.white.opacity(0.04))
+                        Divider().background(Color.overlay(0.04))
                     }
                 }
             }
@@ -60,7 +60,7 @@ struct RecordsTableView: View {
             }
             Spacer(minLength: 0)
         }
-        .background(Color.white.opacity(0.03))
+        .background(Color.overlay(0.03))
     }
 
     private func rowView(for record: DBRecord) -> some View {
@@ -104,9 +104,9 @@ struct RecordsTableView: View {
     @ViewBuilder
     private func rowBackground(isSelected: Bool, isFocused: Bool) -> some View {
         if isSelected {
-            Color.white.opacity(0.10)
+            Color.overlay(0.10)
         } else if isFocused {
-            Color.white.opacity(0.04)
+            Color.overlay(0.04)
         } else {
             Color.clear
         }

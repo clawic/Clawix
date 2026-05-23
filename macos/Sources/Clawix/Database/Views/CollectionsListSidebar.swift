@@ -16,7 +16,7 @@ struct CollectionsListSidebar: View {
             }
             .padding(.vertical, 8)
         }
-        .background(Color.white.opacity(0.02))
+        .background(Color.overlay(0.02))
     }
 
     @ViewBuilder
@@ -58,7 +58,7 @@ struct CollectionsListSidebar: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 4)
-            .background(isSelected ? Color.white.opacity(0.08) : Color.clear)
+            .background(isSelected ? Color.overlay(0.08) : Color.clear)
         }
         .buttonStyle(.plain)
     }

@@ -533,7 +533,7 @@ private struct DatabaseConnectionProfileEditorSheet: View {
                 .padding(.bottom, 20)
             }
 
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             HStack {
                 Button("Cancel", action: onCancel)
                 Spacer()
@@ -602,7 +602,7 @@ private struct MultilineTextRow: View {
                 .scrollContentBackground(.hidden)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.045))
+                        .fill(Color.overlay(0.045))
                 )
         }
         .padding(.horizontal, 14)

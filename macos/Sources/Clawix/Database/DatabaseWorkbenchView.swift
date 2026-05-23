@@ -14,16 +14,16 @@ struct DatabaseWorkbenchView: View {
     var body: some View {
         VStack(spacing: 0) {
             workbenchToolbar
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             HStack(spacing: 0) {
                 if prefs.showItemList {
                     objectSidebar
                         .frame(width: 260)
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                 }
                 queryColumn
                 if prefs.showRowDetail {
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     rowDetailColumn
                         .frame(width: 260)
                 }
@@ -114,7 +114,7 @@ struct DatabaseWorkbenchView: View {
                 }
             }
 
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
 
             Text("Operations")
                 .font(BodyFont.system(size: 12, wght: 700))
@@ -132,7 +132,7 @@ struct DatabaseWorkbenchView: View {
                 .buttonStyle(.plain)
             }
 
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
 
             Text("Query drafts")
                 .font(BodyFont.system(size: 12, wght: 700))
@@ -171,12 +171,12 @@ struct DatabaseWorkbenchView: View {
                 .background(Palette.background)
                 .frame(minHeight: 220)
 
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
 
             if prefs.showConsoleLog {
                 consolePanel
                     .frame(height: 110)
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
             }
 
             resultPanel
@@ -257,7 +257,7 @@ struct DatabaseWorkbenchView: View {
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
             .background(Palette.cardFill)
-            .overlay(Rectangle().stroke(Color.white.opacity(0.07), lineWidth: 1))
+            .overlay(Rectangle().stroke(Color.overlay(0.07), lineWidth: 1))
     }
 
     private var rowDetailColumn: some View {
@@ -268,7 +268,7 @@ struct DatabaseWorkbenchView: View {
             Text("Select a result row after an approved runner returns data.")
                 .font(BodyFont.system(size: 12))
                 .foregroundColor(Palette.textSecondary)
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             Text("History")
                 .font(BodyFont.system(size: 12, wght: 700))
                 .foregroundColor(Palette.textPrimary)
@@ -284,7 +284,7 @@ struct DatabaseWorkbenchView: View {
                 }
             }
             if !operations.records.isEmpty {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 Text("Operations")
                     .font(BodyFont.system(size: 12, wght: 700))
                     .foregroundColor(Palette.textPrimary)

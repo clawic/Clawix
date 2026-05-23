@@ -21,7 +21,7 @@ struct FilterBar: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.white.opacity(0.06))
+            .background(Color.overlay(0.06))
             .clipShape(Capsule())
 
             ForEach(state.chips) { chip in
@@ -47,7 +47,7 @@ struct FilterBar: View {
                 .foregroundColor(Palette.textSecondary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color.white.opacity(0.06))
+                .background(Color.overlay(0.06))
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)

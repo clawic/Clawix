@@ -30,7 +30,7 @@ struct CuratedTabsView: View {
                             .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(activeTabId == tab.id ? Color.white.opacity(0.08) : Color.clear)
+                                    .fill(activeTabId == tab.id ? Color.overlay(0.08) : Color.clear)
                             )
                     }
                     .buttonStyle(.plain)

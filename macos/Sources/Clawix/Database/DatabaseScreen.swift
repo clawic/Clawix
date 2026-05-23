@@ -109,7 +109,7 @@ struct DatabaseScreen: View {
             HStack(spacing: 0) {
                 CollectionsListSidebar(selectedCollection: $selectedCollection)
                     .frame(width: 240)
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 if let name = selectedCollection ?? manager.collections.first?.name,
                    let collection = manager.collection(named: name) {
                     CollectionView(collection: collection, showsCuratedTabs: false)

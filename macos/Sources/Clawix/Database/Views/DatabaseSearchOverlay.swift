@@ -44,7 +44,7 @@ struct DatabaseSearchOverlay: View {
                 .keyboardShortcut(.cancelAction)
             }
             .padding(14)
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             if query.isEmpty {
                 placeholder
             } else if results.isEmpty {
@@ -72,7 +72,7 @@ struct DatabaseSearchOverlay: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.45), radius: 28, y: 12)
     }

@@ -18,7 +18,7 @@ struct RecordDetailPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     ForEach(collection.fields) { field in
@@ -48,7 +48,7 @@ struct RecordDetailPane: View {
                 .padding(16)
             }
         }
-        .background(Color.white.opacity(0.02))
+        .background(Color.overlay(0.02))
         .onAppear { hydrateDraft() }
         .onChange(of: record.id) { _, _ in
             hydrateDraft()
