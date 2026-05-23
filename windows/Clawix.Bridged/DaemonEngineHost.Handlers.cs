@@ -8,11 +8,13 @@ public sealed partial class DaemonEngineHost
 {
     public async Task HandleSendMessageAsync(string sessionId, string text, IReadOnlyList<WireAttachment> attachments, CancellationToken ct)
     {
+        _rolloutAttachments.Register(attachments);
         await _backend.NotifyAsync("thread/prompt", new { sessionId, text, attachments }, ct);
     }
 
     public async Task HandleNewSessionAsync(string sessionId, string text, IReadOnlyList<WireAttachment> attachments, CancellationToken ct)
     {
+        _rolloutAttachments.Register(attachments);
         await _backend.NotifyAsync("thread/start", new { sessionId, text, attachments }, ct);
     }
 
@@ -70,7 +72,7 @@ public sealed partial class DaemonEngineHost
     }
 
     public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestRolloutAttachmentAsync(string attachmentId, CancellationToken ct)
-        => Task.FromResult<(string?, string?, string?)>((null, null, "Rollout attachment is not available on this host"));
+        => Task.FromResult(_rolloutAttachments.Read(attachmentId));
 
     public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestGeneratedImageAsync(string path, CancellationToken ct)
     {

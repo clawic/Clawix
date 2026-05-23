@@ -23,6 +23,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     private (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) _rateLimits = (null, new Dictionary<string, WireRateLimitSnapshot>());
     private List<WireClawJSServiceSnapshot> _serviceStatuses = ClawJSServiceStatusCatalog.InitialSnapshot();
     private readonly AudioCatalogStore _audioCatalog = new(Paths.ClawixAudioCatalog);
+    private readonly RolloutAttachmentStore _rolloutAttachments = new(Paths.ClawixRolloutAttachments);
     private readonly WindowsTranscriptionService _transcription;
 
     public DaemonEngineHost(

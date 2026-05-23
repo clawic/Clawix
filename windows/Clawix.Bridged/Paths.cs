@@ -26,6 +26,7 @@ public static class Paths
     public static string ClawixLocalAppData => Path.Combine(LocalAppData, "Clawix");
     public static string ClawixLogs => Path.Combine(ClawixLocalAppData, "logs");
     public static string ClawixAudioCatalog => Path.Combine(ClawixAppData, "audio");
+    public static string ClawixRolloutAttachments => Path.Combine(ClawixAppData, "rollout-attachments");
 
     public static void EnsureDirectories()
     {
@@ -34,6 +35,7 @@ public static class Paths
         Directory.CreateDirectory(ClawixLocalAppData);
         Directory.CreateDirectory(ClawixLogs);
         Directory.CreateDirectory(ClawixAudioCatalog);
+        Directory.CreateDirectory(ClawixRolloutAttachments);
     }
 
     private static string EnvPath(string name, Environment.SpecialFolder fallback)
