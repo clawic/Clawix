@@ -5,7 +5,8 @@ namespace Clawix.App.Services;
 /// <summary>
 /// JSON-backed user preferences (UserDefaults equivalent). File lives at
 /// <c>%APPDATA%\Clawix\settings.json</c>. Mirrors the Swift
-/// <c>@AppStorage</c> usage in macOS.
+/// <c>@AppStorage</c> usage in macOS. This store is UI-only and must not
+/// contain sessions, messages, searches, grants, approvals, audits, or secrets.
 /// </summary>
 public sealed class Preferences
 {

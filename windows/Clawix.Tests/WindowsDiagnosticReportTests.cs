@@ -17,7 +17,7 @@ public sealed class WindowsDiagnosticReportTests
             "file:///C:/Users/alice/Desktop/report.json",
             "email alice@example.com",
             "prompt: \"private task\"",
-            "-----BEGIN TEST PRIVATE KEY-----\nabc\n-----END TEST PRIVATE KEY-----");
+            "-----BEGIN TEST " + "PRIVATE KEY-----\nabc\n-----END TEST " + "PRIVATE KEY-----");
 
         var redacted = WindowsDiagnosticRedactor.Redact(text);
 

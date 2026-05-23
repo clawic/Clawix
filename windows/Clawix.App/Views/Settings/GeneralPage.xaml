@@ -22,7 +22,7 @@
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <ToggleSwitch Header="Use dev-only Mica backdrop" />
           <ToggleSwitch Header="Disable hardware acceleration" />
-          <ToggleSwitch Header="Send anonymous diagnostics" />
+          <ToggleSwitch Header="Anonymous diagnostics unavailable" IsEnabled="False" />
           <NumberBox Header="Bridge loopback port (advanced)" Value="24080" Minimum="1024" Maximum="65535" />
           <Button Content="Reveal config folder..." Click="RevealConfig_Click" />
           <Button Content="Reset all preferences..." Style="{ThemeResource AccentButtonStyle}" Click="Reset_Click" />
