@@ -11,4 +11,7 @@ public static class WindowsPreferenceKeys
     public const string QuickAskEnabled = "quickAsk.enabled";
     public const string QuickAskIncludeSelectedText = "quickAsk.includeSelectedText";
     public const string QuickAskIncludeScreenshot = "quickAsk.includeScreenshot";
+    public const string PrivacySendCrashReports = "privacy.sendCrashReports";
+    public const string PrivacyShareAnonymousTelemetry = "privacy.shareAnonymousTelemetry";
+    public const string PrivacyAllowTrainingOnConversations = "privacy.allowTrainingOnConversations";
 }

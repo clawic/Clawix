@@ -6,9 +6,17 @@
   <ScrollViewer Padding="24">
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Privacy" FontSize="22" FontWeight="SemiBold" />
-      <ToggleSwitch Header="Send crash reports" />
-      <ToggleSwitch Header="Share anonymous usage telemetry" />
-      <ToggleSwitch Header="Allow training on conversations" IsOn="False" IsEnabled="False" />
+      <ToggleSwitch x:Name="CrashReportsSwitch"
+                    Header="Send crash reports"
+                    Toggled="CrashReportsSwitch_Toggled" />
+      <ToggleSwitch x:Name="TelemetrySwitch"
+                    Header="Share anonymous usage telemetry"
+                    Toggled="TelemetrySwitch_Toggled" />
+      <ToggleSwitch x:Name="TrainingSwitch"
+                    Header="Allow training on conversations"
+                    IsEnabled="False"
+                    Toggled="TrainingSwitch_Toggled" />
+      <TextBlock x:Name="PrivacyStatusText" Opacity="0.7" />
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <Button Content="Export all my data..." />
