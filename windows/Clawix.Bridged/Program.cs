@@ -44,7 +44,10 @@ if (binary is null)
 Log.Information("Using Codex binary: {Path}", binary);
 
 await using var backend = new CodexBackend(binary, loggerFactory.CreateLogger<CodexBackend>());
-await using var host = new DaemonEngineHost(backend, loggerFactory.CreateLogger<DaemonEngineHost>());
+await using var host = new DaemonEngineHost(
+    backend,
+    loggerFactory.CreateLogger<DaemonEngineHost>(),
+    loggerFactory.CreateLogger<WindowsTranscriptionService>());
 
 var server = new BridgeServer(host, pairing, loggerFactory.CreateLogger<BridgeServer>(),
     bindAddress: IPAddress.Loopback, port: port, bonjour: bonjour);

@@ -23,11 +23,16 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     private (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) _rateLimits = (null, new Dictionary<string, WireRateLimitSnapshot>());
     private List<WireClawJSServiceSnapshot> _serviceStatuses = ClawJSServiceStatusCatalog.InitialSnapshot();
     private readonly AudioCatalogStore _audioCatalog = new(Paths.ClawixAudioCatalog);
+    private readonly WindowsTranscriptionService _transcription;
 
-    public DaemonEngineHost(CodexBackend backend, ILogger<DaemonEngineHost> logger)
+    public DaemonEngineHost(
+        CodexBackend backend,
+        ILogger<DaemonEngineHost> logger,
+        ILogger<WindowsTranscriptionService> transcriptionLogger)
     {
         _backend = backend;
         _logger = logger;
+        _transcription = new WindowsTranscriptionService(transcriptionLogger);
         _backend.Notification += OnBackendNotification;
     }
 
@@ -99,5 +104,9 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
         BridgeSessionsChanged?.Invoke(sessions);
     }
 
-    public ValueTask DisposeAsync() => _backend.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        _transcription.Dispose();
+        await _backend.DisposeAsync();
+    }
 }

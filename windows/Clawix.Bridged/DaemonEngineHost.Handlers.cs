@@ -61,9 +61,7 @@ public sealed partial class DaemonEngineHost
     }
 
     public Task<(string? Text, string? Error)> HandleTranscribeAudioAsync(string audioBase64, string mimeType, string? language, CancellationToken ct)
-    {
-        return Task.FromResult<(string?, string?)>((null, "Transcription not yet available on Windows"));
-    }
+        => _transcription.TranscribeAsync(audioBase64, mimeType, language, ct);
 
     public Task<(string? AudioBase64, string? MimeType, string? Error)> HandleRequestAudioAsync(string audioId, CancellationToken ct)
     {
