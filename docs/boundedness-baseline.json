@@ -14,7 +14,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-clawixapplication-kt-snapshot",
@@ -27,7 +49,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-bridge-bridgestate-kt-snapshot",
@@ -40,7 +84,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-bridge-bridgestate-kt-transcript",
@@ -53,7 +119,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-bridge-projectlabelscache-kt-cache",
@@ -66,7 +154,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-bridge-unreadchatscache-kt-cache",
@@ -79,7 +189,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-composer-voicerecorder-kt-transcript",
@@ -92,7 +224,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-core-bridgemodels-kt-timeline",
@@ -105,7 +259,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-core-bridgemodels-kt-transcript",
@@ -118,7 +294,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-android-app-src-main-java-com-example-clawix-android-core-snapshotcache-kt-cache",
@@ -131,7 +329,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "android",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-cli-lib-postinstall-js-buffer-concat",
@@ -144,7 +364,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "cli",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-ios-sources-clawix-chatdetail-chatdetailview-swift-cache",
@@ -157,7 +399,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-ios-sources-clawix-composer-cameracaptureview-swift-queue",
@@ -170,7 +434,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-helpers-bridged-sources-clawix-bridge-remotemeshhttpcontroller-swift-cache",
@@ -183,7 +469,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-helpers-bridged-sources-clawix-bridge-rollouthistory-swift-timeline",
@@ -196,7 +504,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-helpers-bridged-sources-clawix-bridge-main-swift-queue",
@@ -209,7 +539,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-agentbackend-assistantmarkdowntext-swift-cache",
@@ -222,7 +574,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-agentbackend-assistantmarkdowntext-swift-checkpoint",
@@ -235,7 +609,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-agentbackend-rolloutreader-swift-timeline",
@@ -248,7 +644,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-agents-agentstore-swift-fanout",
@@ -261,7 +679,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-appstate-swift-queue",
@@ -274,7 +714,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-appstate-swift-snapshot",
@@ -287,7 +749,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-appstate-chathydration-swift-transcript",
@@ -300,7 +784,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-appstate-conversationactions-swift-snapshot",
@@ -313,7 +819,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-appstate-messagesending-swift-whole-data-buffer",
@@ -326,7 +854,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-chat-chatview-userbubble-swift-cache",
@@ -339,7 +889,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-clawjs-clawjssecretsbackend-swift-log",
@@ -352,7 +924,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-diagnostics-hangdetector-swift-queue",
@@ -365,7 +959,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-diagnostics-resourcesampler-swift-queue",
@@ -378,7 +994,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-dictation-miclevelmeter-swift-queue",
@@ -391,7 +1029,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-hostactions-maccontrolcenter-swift-timeline",
@@ -404,7 +1064,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-persistence-database-swift-queue",
@@ -417,7 +1099,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-quickask-quickaskdiag-swift-queue",
@@ -430,7 +1134,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-settings-settingsview-personalizationpage-swift-snapshot",
@@ -443,7 +1169,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-sidebar-sidebarview-accountpopover-swift-snapshot",
@@ -456,7 +1204,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-sources-clawix-terminal-terminalpersistence-swift-queue",
@@ -469,7 +1239,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-agentstorecancellationtests-swift-fanout",
@@ -482,7 +1274,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-appstatelazydatabaselaunchtests-swift-queue",
@@ -495,7 +1309,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-appstatesynccoordinatortests-swift-queue",
@@ -508,7 +1344,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-assistantmarkdownincrementalcachetests-swift-cache",
@@ -521,7 +1379,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-backendmetadatacachetests-swift-cache",
@@ -534,7 +1414,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-fakemeshdaemon-swift-queue",
@@ -547,7 +1449,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-macos-tests-clawixmeshtests-sidebarsnapshotprojectidbackfilltests-swift-queue",
@@ -560,7 +1484,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-packages-clawixcore-tests-clawixcoretests-markdownblockcachetests-swift-cache",
@@ -573,7 +1519,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ClawixCore",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-packages-secretsvault-sources-secretsvault-auditstore-swift-log",
@@ -586,7 +1554,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "SecretsVault",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-packages-secretsvault-tests-secretsvaulttests-auditstoretests-swift-log",
@@ -599,7 +1589,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "SecretsVault",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "historical-scripts-ui-pattern-mutation-guard-mjs-cache",
@@ -612,7 +1624,29 @@
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "scripts",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "ios-design-hub-documents-windowing",
@@ -625,7 +1659,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-design",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "ios-p2p-chat-messages-windowing",
@@ -638,7 +1694,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-chat",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-agent-detail-items-windowing",
@@ -651,7 +1729,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "agents",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-agent-editor-items-windowing",
@@ -664,7 +1764,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "agents",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-command-palette-items-windowing",
@@ -677,7 +1799,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "command-palette",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-drive-items-windowing",
@@ -690,7 +1834,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "drive",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-network-events-windowing",
@@ -703,7 +1869,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "network-control",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-p2p-chat-messages-windowing",
@@ -716,7 +1904,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "p2p-chat",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-secret-detail-events-windowing",
@@ -729,7 +1939,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "secrets",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-secrets-audit-events-windowing",
@@ -742,7 +1974,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "secrets",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "macos-app-settings-rows-windowing",
@@ -755,7 +2009,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "settings",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     },
     {
       "id": "ui-private-completion-jsonl-windowing",
@@ -768,7 +2044,29 @@
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "private-validation",
+        "expiresAt": "2026-08-19",
+        "severity": "P0",
+        "budget": {
+          "metric": "unbounded_risk_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/boundedness_guard.mjs",
+          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+        }
+      }
     }
   ]
 }

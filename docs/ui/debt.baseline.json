@@ -7,32 +7,104 @@
     {
       "id": "ui-debt-design-surface-raw-visual-values",
       "scope": "macos/Sources/Clawix/Design/**",
-      "platforms": ["macos"],
+      "platforms": [
+        "macos"
+      ],
       "reason": "Existing design-surface code includes raw system icons, colors, tracking, and local component styling before interface governance existed.",
       "owner": "interface-governance",
       "status": "frozen-existing-debt",
       "reviewAfter": "2026-08-15",
-      "allowedAction": "List and plan cleanup for visual-authorized model; do not opportunistically repair from unrelated work."
+      "allowedAction": "List and plan cleanup for visual-authorized model; do not opportunistically repair from unrelated work.",
+      "debtControl": {
+        "ownerArea": "interface-governance",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "ui_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/ui_governance_guard.mjs",
+          "reason": "Frozen UI debt must not expand outside visual-authorized cleanup."
+        }
+      }
     },
     {
       "id": "ui-debt-automations-surface-raw-visual-values",
       "scope": "macos/Sources/Clawix/AutomationsView.swift",
-      "platforms": ["macos"],
+      "platforms": [
+        "macos"
+      ],
       "reason": "Existing surface uses direct colors and SF Symbols and needs registry-guided cleanup.",
       "owner": "interface-governance",
       "status": "frozen-existing-debt",
       "reviewAfter": "2026-08-15",
-      "allowedAction": "List and plan cleanup for visual-authorized model."
+      "allowedAction": "List and plan cleanup for visual-authorized model.",
+      "debtControl": {
+        "ownerArea": "interface-governance",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "ui_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/ui_governance_guard.mjs",
+          "reason": "Frozen UI debt must not expand outside visual-authorized cleanup."
+        }
+      }
     },
     {
       "id": "ui-debt-plan-question-card-raw-visual-values",
       "scope": "macos/Sources/Clawix/PlanQuestionCard.swift",
-      "platforms": ["macos"],
+      "platforms": [
+        "macos"
+      ],
       "reason": "Existing question-card surface predates visual mutation boundary and includes local visual values.",
       "owner": "interface-governance",
       "status": "frozen-existing-debt",
       "reviewAfter": "2026-08-15",
-      "allowedAction": "List and plan cleanup for visual-authorized model."
+      "allowedAction": "List and plan cleanup for visual-authorized model.",
+      "debtControl": {
+        "ownerArea": "interface-governance",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "ui_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/ui_governance_guard.mjs",
+          "reason": "Frozen UI debt must not expand outside visual-authorized cleanup."
+        }
+      }
     }
   ]
 }

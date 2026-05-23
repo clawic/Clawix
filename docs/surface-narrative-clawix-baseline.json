@@ -8,10 +8,30 @@
       "reason": "Initial bounded baseline for Clawix manifest and interface surfaces that predate the surfaceNarrative contract.",
       "risk": "Existing host/UI surfaces remain registered, but their conceptual authorization is not yet machine-checkable.",
       "expires": "2026-08-18",
+      "debtControl": {
+        "ownerArea": "surface-narrative",
+        "expiresAt": "2026-08-18",
+        "severity": "P2",
+        "budget": {
+          "metric": "missing_surface_narrative",
+          "unit": "entry",
+          "current": 472,
+          "maxAllowed": 472,
+          "nextMaxAllowed": 471,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": ["changed-work"],
+          "gate": "node scripts/surface_narrative_guard.mjs",
+          "reason": "Surface narrative debt must shrink before affected route narrative coverage can be treated as complete."
+        }
+      },
       "missingNarrative": {
         "persistentNodes": {
-          "count": 465,
-          "idsSha256": "23edb003946df7a37be101f0fb2da09e0ebfd93ea1c9787c1fbb0b22cfc7ec8a",
+          "count": 472,
+          "idsSha256": "a1dc78871daa285a7ea6bea334beb1ec2736dfb474cd78df9bb59d4c5b54dee6",
           "ids": [
             "claw.framework.agents",
             "claw.framework.apps",
@@ -183,6 +203,7 @@
             "clawix.env.clawix_bridge_defaults_suite",
             "clawix.env.clawix_bridge_disable",
             "clawix.env.clawix_bridge_disable_bonjour",
+            "clawix.env.clawix_bridge_helper_path",
             "clawix.env.clawix_bridge_host",
             "clawix.env.clawix_bridge_http_port",
             "clawix.env.clawix_bridge_initial_timeout_seconds",
@@ -198,6 +219,9 @@
             "clawix.env.clawix_dummy_mode",
             "clawix.env.clawix_e2e_dictation_report",
             "clawix.env.clawix_e2e_enhancement_fail",
+            "clawix.env.clawix_e2e_hydrate_report",
+            "clawix.env.clawix_e2e_open_first_chat",
+            "clawix.env.clawix_e2e_state_report",
             "clawix.env.clawix_e2e_transcription_text",
             "clawix.env.clawix_file_fixture_dir",
             "clawix.env.clawix_fixture_seeding",
@@ -267,6 +291,7 @@
             "clawix.native.permission.mac.calendar",
             "clawix.native.permission.mac.camera",
             "clawix.native.permission.mac.contacts",
+            "clawix.native.permission.mac.filesDesktopDocumentsDownloads",
             "clawix.native.permission.mac.inputMonitoring",
             "clawix.native.permission.mac.microphone",
             "clawix.native.permission.mac.reminders",
@@ -387,6 +412,8 @@
             "clawix.prefs.publishing.calendarMode",
             "clawix.prefs.publishing.homeTab",
             "clawix.prefs.publishing.workspace",
+            "clawix.prefs.quickAsk.activeChatId",
+            "clawix.prefs.quickAsk.bottomCenter",
             "clawix.prefs.quickAsk.clipboardLastSeen",
             "clawix.prefs.quickAsk.clipboardLastSeenAt",
             "clawix.prefs.quickAsk.hotkey",
@@ -533,7 +560,29 @@
         }
       },
       "nextPhase": "Backfill surfaceNarrative on high-change host, route, permission, and UI surfaces, then reduce this baseline.",
-      "reentryCondition": "Any new Clawix API, UI, CLI, schema, storage key, route, permission, or feature flag surface must carry surfaceNarrative before landing."
+      "reentryCondition": "Any new Clawix API, UI, CLI, schema, storage key, route, permission, or feature flag surface must carry surfaceNarrative before landing.",
+      "debtControl": {
+        "ownerArea": "clawix",
+        "expiresAt": "2026-08-18",
+        "severity": "P2",
+        "budget": {
+          "metric": "missing_surface_narratives",
+          "unit": "entry",
+          "current": 504,
+          "maxAllowed": 504,
+          "nextMaxAllowed": 503,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/surface_narrative_guard.mjs",
+          "reason": "Surface narrative debt must shrink as surfaces gain explicit authorizing narratives."
+        }
+      }
     }
   ]
 }

@@ -40,6 +40,11 @@
       "sourceType": "external_validation",
       "path": "docs/governance/system-telemetry/external-validation.manifest.json",
       "validation": "scripts/verify-system-telemetry-goal.mjs"
+    },
+    {
+      "sourceType": "baseline_debt_control",
+      "path": "scripts/debt_control_baseline_check.mjs",
+      "validation": "scripts/debt_control_baseline_check.mjs"
     }
   ],
   "privateOverlay": {

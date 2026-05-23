@@ -13,7 +13,29 @@
       "reason": "Existing iOS bridge path decodes image payloads before presentation.",
       "replacementPlan": "Add downsampling or an explicit pixel cap at the bridge image boundary.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-bridge",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "ios-bridge-framebuffer-image-decode",
@@ -26,7 +48,29 @@
       "reason": "Existing iOS bridge path decodes one received image payload.",
       "replacementPlan": "Add downsampling or an explicit pixel cap at the bridge image boundary.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-bridge",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "ios-assistant-markdown-body-parse",
@@ -39,7 +83,29 @@
       "reason": "Existing iOS chat view parses assistant markdown during rendering.",
       "replacementPlan": "Move parsing behind incremental cache or add an explicit message byte cap.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-chat",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "ios-design-import-image-decode",
@@ -52,7 +118,29 @@
       "reason": "Existing design store decodes imported image data.",
       "replacementPlan": "Use downsampling at import or enforce a design image pixel cap.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-design",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "ios-design-image-decode",
@@ -65,7 +153,29 @@
       "reason": "Existing design store decodes one image payload.",
       "replacementPlan": "Use downsampling at import or enforce a design image pixel cap.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "ios-design",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "linux-chat-markdown-render",
@@ -78,7 +188,29 @@
       "reason": "Existing Linux chat view renders markdown in the message view.",
       "replacementPlan": "Cache parsed markdown or add an explicit visible-message byte cap.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "linux-chat",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-markdown-block-slice-parse",
@@ -91,7 +223,29 @@
       "reason": "Existing macOS markdown renderer parses block slices on cache miss.",
       "replacementPlan": "Keep incremental cache and add explicit source byte caps for parsed markdown.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-chat",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-favicon-image-decode",
@@ -104,7 +258,29 @@
       "reason": "Existing favicon cache decodes small browser icon payloads.",
       "replacementPlan": "Use downsampling or enforce a favicon pixel cap before decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-browser",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-drive-realtime-envelope-json",
@@ -117,7 +293,29 @@
       "reason": "Existing drive realtime client decodes one incoming event envelope.",
       "replacementPlan": "Enforce a realtime frame byte cap before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-drive",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-framework-records-wait",
@@ -130,7 +328,29 @@
       "reason": "Existing framework records client waits for a helper process.",
       "replacementPlan": "Move process waiting off the main actor or use async termination handling.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-clawjs",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-framework-records-json",
@@ -143,7 +363,29 @@
       "reason": "Existing framework records client decodes one helper response.",
       "replacementPlan": "Enforce a helper response byte cap before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-clawjs",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-project-handoff-wait-primary",
@@ -156,7 +398,29 @@
       "reason": "Existing project handoff client waits for helper completion.",
       "replacementPlan": "Move process waiting off the main actor or use async termination handling.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-clawjs",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-contacts-avatar-image-decode",
@@ -169,7 +433,29 @@
       "reason": "Existing contact avatar view decodes photo data while rendering.",
       "replacementPlan": "Downsample contact photos before render or cache bounded thumbnails.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-contacts",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-field-renderer-json",
@@ -182,7 +468,29 @@
       "reason": "Existing database field renderer decodes a field JSON fragment.",
       "replacementPlan": "Enforce a rendered field byte cap or preformat JSON off the render path.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-database",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-dictation-filler-json",
@@ -195,7 +503,29 @@
       "reason": "Existing dictation manager decodes local filler-word config.",
       "replacementPlan": "Document and enforce a config byte cap before decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-dictation",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-drive-thumbnail-image-decode",
@@ -208,7 +538,29 @@
       "reason": "Existing drive screen decodes thumbnails requested at 256px.",
       "replacementPlan": "Ensure thumbnail store downsampling is explicit and documented inline.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-drive",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-native-search-wait",
@@ -221,7 +573,29 @@
       "reason": "Existing native search bridge waits for helper completion.",
       "replacementPlan": "Move process waiting off the main actor or use async termination handling.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-host-actions",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-root-search-json",
@@ -234,7 +608,29 @@
       "reason": "Existing root search bridge decodes one helper response.",
       "replacementPlan": "Enforce helper output byte caps before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-host-actions",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-index-entity-keys-sort",
@@ -247,7 +643,29 @@
       "reason": "Existing entity detail body sorts field keys for stable display.",
       "replacementPlan": "Precompute sorted keys in view model or cap visible field count.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-index",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-index-search-criteria-sort",
@@ -260,7 +678,29 @@
       "reason": "Existing searches body sorts criteria keys for stable display.",
       "replacementPlan": "Precompute sorted keys in view model or cap visible criteria count.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-index",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-iot-discovery-device-json",
@@ -273,7 +713,29 @@
       "reason": "Existing IoT discovery feed decodes one discovered-device payload.",
       "replacementPlan": "Enforce discovery payload byte caps before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-iot",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-iot-discovery-json-object",
@@ -286,7 +748,29 @@
       "reason": "Existing IoT discovery feed decodes one event payload.",
       "replacementPlan": "Enforce discovery event byte caps before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-iot",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-iot-manager-json-object",
@@ -299,7 +783,29 @@
       "reason": "Existing IoT manager decodes one message payload.",
       "replacementPlan": "Enforce IoT message byte caps before JSON decode.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-iot",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-network-control-wait",
@@ -312,7 +818,29 @@
       "reason": "Existing network control bridge waits for helper completion.",
       "replacementPlan": "Move process waiting off the main actor or use async termination handling.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-network-control",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-rescue-repair-wait",
@@ -325,7 +853,29 @@
       "reason": "Existing rescue repair context waits for helper completion.",
       "replacementPlan": "Move process waiting off the main actor or use async termination handling.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-rescue",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     },
     {
       "id": "macos-secrets-scope-sort",
@@ -338,7 +888,29 @@
       "reason": "Existing approval prompt sorts scope entries for stable display.",
       "replacementPlan": "Precompute sorted scope entries before rendering or cap scope entry count.",
       "expiresAt": "2026-08-19",
-      "blocksRelease": false
+      "blocksRelease": false,
+      "debtControl": {
+        "ownerArea": "macos-secrets",
+        "expiresAt": "2026-08-19",
+        "severity": "P1",
+        "budget": {
+          "metric": "hot_path_debt_entries",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/hot_path_guard.mjs",
+          "reason": "P1 hot-path debt must block growth until the replacement plan removes or bounds it."
+        }
+      }
     }
   ]
 }

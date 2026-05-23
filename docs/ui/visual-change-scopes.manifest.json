@@ -36,5 +36,27 @@
     "expiresAt",
     "privateApprovalReference"
   ],
-  "activeScopes": []
+  "activeScopes": [
+    {
+      "id": "runtime-lens-settings-2026-05-22",
+      "status": "approved",
+      "platforms": ["macos"],
+      "surfaces": ["macos-settings-and-configuration", "macos-chat-and-composer"],
+      "patterns": ["settings-surface", "chat-surface", "composer-chrome", "entity-card", "icon-chip-button"],
+      "files": [
+        "macos/Sources/Clawix/Settings/ClawJSSettingsPage.swift",
+        "macos/Sources/Clawix/Chat/ChatView+TranscriptScroller.swift"
+      ],
+      "changeKinds": ["animation", "color", "spacing", "icon", "layout", "microcopy", "typography"],
+      "changeBudget": {
+        "maxFiles": 2,
+        "maxLines": 2000,
+        "allowedChangeKinds": ["animation", "color", "spacing", "icon", "layout", "microcopy", "typography"]
+      },
+      "approvedBy": "user",
+      "approvedAt": "2026-05-22",
+      "expiresAt": "2026-06-30",
+      "privateApprovalReference": "private-codex-ui-approval:runtime-lens-settings-2026-05-22"
+    }
+  ]
 }

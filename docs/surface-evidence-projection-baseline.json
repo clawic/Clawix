@@ -9,8 +9,8 @@
       "reason": "Swift manifest export currently lacks source locator metadata for generated nodes, edges, and routes.",
       "missingSource": {
         "nodes": {
-          "count": 465,
-          "idsSha256": "23edb003946df7a37be101f0fb2da09e0ebfd93ea1c9787c1fbb0b22cfc7ec8a",
+          "count": 472,
+          "idsSha256": "a1dc78871daa285a7ea6bea334beb1ec2736dfb474cd78df9bb59d4c5b54dee6",
           "ids": [
             "claw.framework.agents",
             "claw.framework.apps",
@@ -182,6 +182,7 @@
             "clawix.env.clawix_bridge_defaults_suite",
             "clawix.env.clawix_bridge_disable",
             "clawix.env.clawix_bridge_disable_bonjour",
+            "clawix.env.clawix_bridge_helper_path",
             "clawix.env.clawix_bridge_host",
             "clawix.env.clawix_bridge_http_port",
             "clawix.env.clawix_bridge_initial_timeout_seconds",
@@ -197,6 +198,9 @@
             "clawix.env.clawix_dummy_mode",
             "clawix.env.clawix_e2e_dictation_report",
             "clawix.env.clawix_e2e_enhancement_fail",
+            "clawix.env.clawix_e2e_hydrate_report",
+            "clawix.env.clawix_e2e_open_first_chat",
+            "clawix.env.clawix_e2e_state_report",
             "clawix.env.clawix_e2e_transcription_text",
             "clawix.env.clawix_file_fixture_dir",
             "clawix.env.clawix_fixture_seeding",
@@ -266,6 +270,7 @@
             "clawix.native.permission.mac.calendar",
             "clawix.native.permission.mac.camera",
             "clawix.native.permission.mac.contacts",
+            "clawix.native.permission.mac.filesDesktopDocumentsDownloads",
             "clawix.native.permission.mac.inputMonitoring",
             "clawix.native.permission.mac.microphone",
             "clawix.native.permission.mac.reminders",
@@ -386,6 +391,8 @@
             "clawix.prefs.publishing.calendarMode",
             "clawix.prefs.publishing.homeTab",
             "clawix.prefs.publishing.workspace",
+            "clawix.prefs.quickAsk.activeChatId",
+            "clawix.prefs.quickAsk.bottomCenter",
             "clawix.prefs.quickAsk.clipboardLastSeen",
             "clawix.prefs.quickAsk.clipboardLastSeenAt",
             "clawix.prefs.quickAsk.hotkey",
@@ -500,6 +507,28 @@
         "count": 0,
         "idsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "ids": []
+      },
+      "debtControl": {
+        "ownerArea": "surface-evidence",
+        "expiresAt": "2026-06-30",
+        "severity": "P2",
+        "budget": {
+          "metric": "missing_surface_evidence",
+          "unit": "entry",
+          "current": 469,
+          "maxAllowed": 469,
+          "nextMaxAllowed": 468,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/surface-evidence-projection-check.mjs",
+          "reason": "Surface evidence debt must shrink before affected route evidence can be treated as complete."
+        }
       }
     }
   ]
