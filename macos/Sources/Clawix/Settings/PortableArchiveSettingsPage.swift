@@ -34,7 +34,7 @@ enum PortableArchiveUXState: String, CaseIterable {
         case .cacheWillRebuild:
             return "Rebuildable caches and search indexes are excluded and rebuilt from canonical data."
         case .restoreBlocked:
-            return "Restore waits for import preview, verification, signed-host proof when needed, and explicit approval."
+            return "Restore waits for import preview, verification, signed-host proof when needed, explicit approval, and exact target confirmation."
         case .restoreComplete:
             return "Restore report is available with counts, target root, approvals, and redacted receipts."
         }
@@ -117,7 +117,7 @@ struct PortableArchiveSettingsPage: View {
             SettingsRow {
                 RowLabel(
                     title: "Restore",
-                    detail: "Apply only after successful verification, explicit approval, and signed-host proof for encrypted secrets."
+                    detail: "Apply only after successful verification, explicit approval, exact target confirmation, and signed-host proof for encrypted secrets."
                 )
             } trailing: {
                 IconChipButton(symbol: "arrow.counterclockwise", label: "Restore") {

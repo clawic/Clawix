@@ -24,7 +24,8 @@ final class PortableArchiveSettingsTests: XCTestCase {
             ".clawbackup",
             ".clawexport",
             ".clawsecrets",
-            "signed-host proof"
+            "signed-host proof",
+            "exact target confirmation"
         ] {
             XCTAssertTrue(page.contains(required), "missing \(required)")
         }

@@ -21,6 +21,10 @@ The UI consumes `.clawbackup` as the full readable portable archive,
 encrypted secrets envelope. Clawix must show `requires_signed_host` when secrets
 backup/import/restore needs reauthentication or host proof.
 
+Dangerous restore operations require successful import preview, verification,
+explicit human approval, and exact target confirmation before the restore report
+can become complete.
+
 Clawix does not allow plaintext secrets export. Raw Secret Keys, platform wraps,
 Keychain material, active bearer tokens, grant tokens, and plaintext secret
 values are forbidden in `.clawbackup`.

@@ -40,6 +40,7 @@ struct ComposerView: View {
     @State private var mentionFilePickerActive = false
     @State private var showShortcuts = false
     @State private var showInbox = false
+    @State private var showStatus = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -145,6 +146,8 @@ struct ComposerView: View {
                                     showShortcuts = true
                                 } else if cmd.id == "inbox" {
                                     showInbox = true
+                                } else if cmd.id == "estado" {
+                                    showStatus = true
                                 }
                             },
                             onHover: { cmd in
@@ -593,6 +596,10 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $showInbox) {
             InboxOverlay { showInbox = false }
+                .environmentObject(appState)
+        }
+        .sheet(isPresented: $showStatus) {
+            StatusPanel { showStatus = false }
                 .environmentObject(appState)
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
