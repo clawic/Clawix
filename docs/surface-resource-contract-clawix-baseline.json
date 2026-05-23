@@ -557,7 +557,29 @@
         }
       },
       "nextPhase": "Backfill resourceContract on high-change host, route, permission, stream, cache, and UI surfaces, then reduce this baseline.",
-      "reentryCondition": "Any new Clawix API, UI, CLI, schema, storage key, route, permission, stream, cache, or feature flag surface must carry resourceContract before landing."
+      "reentryCondition": "Any new Clawix API, UI, CLI, schema, storage key, route, permission, stream, cache, or feature flag surface must carry resourceContract before landing.",
+      "debtControl": {
+        "ownerArea": "surface-resource-contract",
+        "expiresAt": "2026-08-18",
+        "severity": "P2",
+        "budget": {
+          "metric": "missing_surface_resource_contract",
+          "unit": "entry",
+          "current": 528,
+          "maxAllowed": 528,
+          "nextMaxAllowed": 527,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/surface_resource_contract_guard.mjs",
+          "reason": "Surface resource-contract debt must shrink before affected resource coverage can be treated as complete."
+        }
+      }
     }
   ]
 }

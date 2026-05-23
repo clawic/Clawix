@@ -525,9 +525,9 @@
         "budget": {
           "metric": "missing_surface_evidence",
           "unit": "entry",
-          "current": 469,
-          "maxAllowed": 469,
-          "nextMaxAllowed": 468,
+          "current": 486,
+          "maxAllowed": 486,
+          "nextMaxAllowed": 485,
           "target": 0,
           "cadence": "expiry"
         },
