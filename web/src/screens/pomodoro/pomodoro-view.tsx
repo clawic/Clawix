@@ -5,7 +5,6 @@ import {
   formatClock,
   formatScheduleTime,
   scheduledItemsForDate,
-  type BlockerRule,
   type Mood,
   type PomodoroScheduleItem,
   type PomodoroSettings,
@@ -16,6 +15,24 @@ import { AnalyticsPanel, DayHeader, StatsGrid, Timeline } from "./pomodoro-analy
 import { pomodoroReducer, type PomodoroAction as Action } from "./pomodoro-reducer";
 import { POMODORO_SOUND_OPTIONS, pomodoroSoundFrequency, pomodoroSoundWaveType } from "./pomodoro-sound";
 import { filterPomodoroLogs, parsePomodoroUrlCommand, pomodoroAnalyticsLogs, timerEndMainActionLabel } from "./pomodoro-view-model";
+import {
+  ActionButton,
+  AppBlockerCard,
+  Card,
+  CodeLine,
+  EmptyText,
+  Header,
+  NumberRow,
+  PanelButton,
+  PrimaryButton,
+  RangeRow,
+  RuleText,
+  SelectRow,
+  Toggle,
+  WebsiteBlockerCard,
+  download,
+  type PomodoroPanel,
+} from "./pomodoro-view-controls";
 import { storage } from "../../lib/storage";
 import cx from "../../lib/cx";
 import { t } from "../../localization/i18n";
@@ -41,17 +58,6 @@ import {
   ZapIcon,
 } from "../../icons";
 
-type Panel =
-  | "timer"
-  | "analytics"
-  | "tasks"
-  | "categories"
-  | "profiles"
-  | "blockers"
-  | "calendar"
-  | "automation"
-  | "settings";
-
 const STORE_KEY = "pomodoro.sessionParity.v1";
 
 export function PomodoroView() {
@@ -59,7 +65,7 @@ export function PomodoroView() {
     const saved = storage.get<PomodoroState>(STORE_KEY);
     return saved ?? defaultPomodoroState();
   });
-  const [panel, setPanel] = useState<Panel>("timer");
+  const [panel, setPanel] = useState<PomodoroPanel>("timer");
   const [mood, setMood] = useState<Mood>(state.settings.defaultMood);
   const [reflection, setReflection] = useState("");
   const audioRef = useRef<AudioContext | null>(null);
@@ -763,132 +769,4 @@ function SettingsPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
       </div>
     </section>
   );
-}
-
-function PanelButton({ panel, current, icon, label, onClick }: { panel: Panel; current: Panel; icon: React.ReactNode; label: string; onClick: (panel: Panel) => void }) {
-  return (
-    <button onClick={() => onClick(panel)} className={cx("flex h-9 items-center gap-2 rounded-[8px] px-2.5 text-left text-[12.5px]", current === panel ? "bg-[rgba(255,255,255,0.10)] text-[var(--color-fg)]" : "text-[var(--color-menu-row-text)] hover:bg-[rgba(255,255,255,0.04)]")}>
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function Header({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div>
-      <div className="text-[18px] font-bold">{title}</div>
-      <div className="text-[12px] text-[var(--color-fg-secondary)]">{subtitle}</div>
-    </div>
-  );
-}
-
-function Card({ title, action, children }: { title: string; action?: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-[13px] font-bold">{title}</div>
-        {action && <div className="text-[11px] text-[var(--color-fg-secondary)]">{action}</div>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function WebsiteBlockerCard({ title, rule, onChange }: { title: string; rule: BlockerRule; onChange: (rule: BlockerRule) => void }) {
-  return (
-    <Card title={title} action={rule.type === "deny" ? "Deny list" : "Allow list"}>
-      <Toggle label={t("Enable website blocker")} checked={rule.enabled} onChange={(v) => onChange({ ...rule, enabled: v })} />
-      <SelectRow label={t("Type")} value={rule.type} options={["deny", "allow"]} onChange={(v) => onChange({ ...rule, type: v as BlockerRule["type"] })} />
-      <textarea value={rule.entries} onChange={(e) => onChange({ ...rule, entries: e.target.value })} className="field mt-3 min-h-[130px] w-full p-3" placeholder={t("example.com&#10;social.example")} />
-      <div className="mt-2 text-[11.5px] text-[var(--color-fg-secondary)]">{t("Entries are enforced as an in-app active blocker list for this example.")}</div>
-    </Card>
-  );
-}
-
-function AppBlockerCard({ title, enabled, apps, onChange }: { title: string; enabled: boolean; apps: string[]; onChange: (enabled: boolean, apps: string[]) => void }) {
-  return (
-    <Card title={title} action={`${apps.length} apps`}>
-      <Toggle label={t("Enable app blocker")} checked={enabled} onChange={(v) => onChange(v, apps)} />
-      <textarea value={apps.join("\n")} onChange={(e) => onChange(enabled, e.target.value.split(/\r?\n/).filter(Boolean))} className="field mt-3 min-h-[130px] w-full p-3" placeholder={t("App name per line")} />
-    </Card>
-  );
-}
-
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <label className="flex min-h-9 items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] py-2 text-[12.5px] last:border-b-0">
-      <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-    </label>
-  );
-}
-
-function NumberRow({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <label className="flex min-h-9 items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] py-2 text-[12.5px] last:border-b-0">
-      <span>{label}</span>
-      <input type="number" value={value} min={0} onChange={(e) => onChange(Number(e.target.value))} className="field h-8 w-24 text-right" />
-    </label>
-  );
-}
-
-function RangeRow({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <label className="block border-b border-[var(--color-border-subtle)] py-2 text-[12.5px] last:border-b-0">
-      <div className="flex justify-between"><span>{label}</span><span className="text-[var(--color-fg-secondary)]">{value.toFixed(2)}</span></div>
-      <input type="range" min={0} max={1} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-2 w-full" />
-    </label>
-  );
-}
-
-function SelectRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return (
-    <label className="flex min-h-9 items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] py-2 text-[12.5px] last:border-b-0">
-      <span>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-8 rounded-[8px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.04)] px-2 text-[12px]">
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
-    </label>
-  );
-}
-
-function ActionButton({ icon, label, onClick, className }: { icon: React.ReactNode; label: string; onClick: () => void; className?: string }) {
-  return (
-    <button onClick={onClick} className={cx("inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[rgba(255,255,255,0.07)] px-3 text-[12px] hover:bg-[rgba(255,255,255,0.10)]", className)}>
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function PrimaryButton({ icon, label, onClick, className }: { icon: React.ReactNode; label: string; onClick: () => void; className?: string }) {
-  return (
-    <button onClick={onClick} className={cx("inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-[var(--color-destructive)] px-3 text-[12px] font-bold text-white hover:brightness-110", className)}>
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function CodeLine({ value }: { value: string }) {
-  return <div className="mb-2 rounded-[8px] bg-black p-2 font-mono text-[11px] text-[var(--color-fg-secondary)]">{value}</div>;
-}
-
-function RuleText({ text }: { text: string }) {
-  return <div className="rounded-[8px] bg-[rgba(255,255,255,0.035)] p-3">{text}</div>;
-}
-
-function EmptyText({ children }: { children: React.ReactNode }) {
-  return <div className="text-[12px] text-[var(--color-fg-secondary)]">{children}</div>;
-}
-
-function download(filename: string, data: string, mime: string) {
-  const blob = new Blob([data], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }

@@ -40,6 +40,14 @@ import {
   pomodoroAnalyticsLogs,
   timerEndMainActionLabel,
 } from "../../src/screens/pomodoro/pomodoro-view-model";
+import {
+  defaultPomodoroCategories,
+  defaultPomodoroSettings,
+} from "../../src/screens/pomodoro/pomodoro-defaults";
+import {
+  parsePlainTasks as parsePlainTasksDirect,
+  updateTaskEstimate as updateTaskEstimateDirect,
+} from "../../src/screens/pomodoro/pomodoro-tasks";
 
 describe("pomodoro model", () => {
   it("starts, pauses, resumes and saves focus time", () => {
@@ -151,6 +159,34 @@ describe("pomodoro model", () => {
     const tasks = parsePlainTasks("- One\nTwo\n\n* Three", "general");
     expect(tasks.map((task) => task.title)).toEqual(["One", "Two", "Three"]);
     expect(formatClock(65)).toBe("1:05");
+  });
+
+  it("keeps extracted defaults wired to the public default state", () => {
+    const now = Date.UTC(2026, 4, 12, 9, 0, 0);
+    const state = defaultPomodoroState(now);
+    const categories = defaultPomodoroCategories();
+
+    expect(state.categories).toEqual(categories);
+    expect(state.settings).toEqual(defaultPomodoroSettings());
+    expect(state.categoryId).toBe(categories[0]?.id);
+    expect(state.selectedDate).toBe("2026-05-12");
+  });
+
+  it("keeps extracted task helpers equivalent to the model exports", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.111111);
+    const dateSpy = vi.spyOn(Date, "now").mockReturnValue(Date.UTC(2026, 4, 12, 9, 0, 0));
+    try {
+      expect(parsePlainTasks("- One\nTwo", "general")).toEqual(parsePlainTasksDirect("- One\nTwo", "general"));
+
+      const state = defaultPomodoroState(Date.UTC(2026, 4, 12, 9, 0, 0));
+      state.tasks = parsePlainTasks("Estimate task", "general");
+      expect(updateTaskEstimate(state, state.tasks[0]!.id, 42.6)).toEqual(
+        updateTaskEstimateDirect(state, state.tasks[0]!.id, 42.6),
+      );
+    } finally {
+      randomSpy.mockRestore();
+      dateSpy.mockRestore();
+    }
   });
 
   it("keeps extracted sound profiles equivalent to the view helpers", () => {

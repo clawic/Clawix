@@ -3276,6 +3276,294 @@
       "pt-BR": "Nenhum plugin corresponde",
       "ru": "Нет подходящих плагинов",
       "zh-Hans": "没有匹配的插件"
+    },
+    "Show Sessions on Apple calendar": {
+      "de": "Show Sessions on Apple calendar",
+      "en": "Show Sessions on Apple calendar",
+      "es": "Show Sessions on Apple calendar",
+      "fr": "Show Sessions on Apple calendar",
+      "it": "Show Sessions on Apple calendar",
+      "ja": "Show Sessions on Apple calendar",
+      "ko": "Show Sessions on Apple calendar",
+      "pt-BR": "Show Sessions on Apple calendar",
+      "ru": "Show Sessions on Apple calendar",
+      "zh-Hans": "Show Sessions on Apple calendar"
+    },
+    "Skills": {
+      "de": "Skills",
+      "en": "Skills",
+      "es": "Skills",
+      "fr": "Skills",
+      "it": "Skill",
+      "ja": "スキル",
+      "ko": "스킬",
+      "pt-BR": "Skills",
+      "ru": "Навыки",
+      "zh-Hans": "技能"
+    },
+    "Your central library. Activate per chat, project or globally. Sync to other agents on toggle.": {
+      "de": "Deine zentrale Bibliothek. Aktiviere pro Chat, Projekt oder global. Beim Umschalten mit anderen Agenten synchronisieren.",
+      "en": "Your central library. Activate per chat, project or globally. Sync to other agents on toggle.",
+      "es": "Tu biblioteca central. Activa por chat, proyecto o globalmente. Sincroniza con otros agentes al alternar.",
+      "fr": "Votre bibliothèque centrale. Activez par chat, projet ou globalement. Synchronisez avec d’autres agents au changement.",
+      "it": "La tua libreria centrale. Attiva per chat, progetto o globalmente. Sincronizza con altri agenti al cambio.",
+      "ja": "中央ライブラリです。チャット、プロジェクト、またはグローバルに有効化し、切り替え時に他のエージェントへ同期します。",
+      "ko": "중앙 라이브러리입니다. 채팅, 프로젝트 또는 전역으로 활성화하고 토글 시 다른 에이전트와 동기화합니다.",
+      "pt-BR": "Sua biblioteca central. Ative por chat, projeto ou globalmente. Sincronize com outros agentes ao alternar.",
+      "ru": "Центральная библиотека. Включайте для чата, проекта или глобально. Синхронизируйте с другими агентами при переключении.",
+      "zh-Hans": "你的中央库。可按聊天、项目或全局启用，并在切换时同步到其他代理。"
+    },
+    "Search skills...": {
+      "de": "Skills suchen...",
+      "en": "Search skills...",
+      "es": "Buscar skills...",
+      "fr": "Rechercher des skills...",
+      "it": "Cerca skill...",
+      "ja": "スキルを検索...",
+      "ko": "스킬 검색...",
+      "pt-BR": "Pesquisar skills...",
+      "ru": "Искать навыки...",
+      "zh-Hans": "搜索技能..."
+    },
+    "Synced": {
+      "de": "Synchronisiert",
+      "en": "Synced",
+      "es": "Sincronizado",
+      "fr": "Synchronisé",
+      "it": "Sincronizzato",
+      "ja": "同期済み",
+      "ko": "동기화됨",
+      "pt-BR": "Sincronizado",
+      "ru": "Синхронизировано",
+      "zh-Hans": "已同步"
+    },
+    "Sync now": {
+      "de": "Jetzt synchronisieren",
+      "en": "Sync now",
+      "es": "Sincronizar ahora",
+      "fr": "Synchroniser",
+      "it": "Sincronizza ora",
+      "ja": "今すぐ同期",
+      "ko": "지금 동기화",
+      "pt-BR": "Sincronizar agora",
+      "ru": "Синхронизировать",
+      "zh-Hans": "立即同步"
+    },
+    "New skill": {
+      "de": "Neuer Skill",
+      "en": "New skill",
+      "es": "Nuevo skill",
+      "fr": "Nouveau skill",
+      "it": "Nuova skill",
+      "ja": "新しいスキル",
+      "ko": "새 스킬",
+      "pt-BR": "Novo skill",
+      "ru": "Новый навык",
+      "zh-Hans": "新技能"
+    },
+    "All kinds": {
+      "de": "Alle Arten",
+      "en": "All kinds",
+      "es": "Todos los tipos",
+      "fr": "Tous les types",
+      "it": "Tutti i tipi",
+      "ja": "すべての種類",
+      "ko": "모든 종류",
+      "pt-BR": "Todos os tipos",
+      "ru": "Все типы",
+      "zh-Hans": "所有类型"
+    },
+    "Personality": {
+      "de": "Persönlichkeit",
+      "en": "Personality",
+      "es": "Personalidad",
+      "fr": "Personnalité",
+      "it": "Personalità",
+      "ja": "パーソナリティ",
+      "ko": "성격",
+      "pt-BR": "Personalidade",
+      "ru": "Личность",
+      "zh-Hans": "人格"
+    },
+    "Procedure": {
+      "de": "Prozedur",
+      "en": "Procedure",
+      "es": "Procedimiento",
+      "fr": "Procédure",
+      "it": "Procedura",
+      "ja": "手順",
+      "ko": "절차",
+      "pt-BR": "Procedimento",
+      "ru": "Процедура",
+      "zh-Hans": "流程"
+    },
+    "Snippet": {
+      "de": "Snippet",
+      "en": "Snippet",
+      "es": "Fragmento",
+      "fr": "Extrait",
+      "it": "Snippet",
+      "ja": "スニペット",
+      "ko": "스니펫",
+      "pt-BR": "Snippet",
+      "ru": "Фрагмент",
+      "zh-Hans": "片段"
+    },
+    "Role": {
+      "de": "Rolle",
+      "en": "Role",
+      "es": "Rol",
+      "fr": "Rôle",
+      "it": "Ruolo",
+      "ja": "ロール",
+      "ko": "역할",
+      "pt-BR": "Função",
+      "ru": "Роль",
+      "zh-Hans": "角色"
+    },
+    "Reset filters": {
+      "de": "Filter zurücksetzen",
+      "en": "Reset filters",
+      "es": "Restablecer filtros",
+      "fr": "Réinitialiser les filtres",
+      "it": "Reimposta filtri",
+      "ja": "フィルターをリセット",
+      "ko": "필터 초기화",
+      "pt-BR": "Redefinir filtros",
+      "ru": "Сбросить фильтры",
+      "zh-Hans": "重置筛选"
+    },
+    "No skills match these filters.": {
+      "de": "Keine Skills passen zu diesen Filtern.",
+      "en": "No skills match these filters.",
+      "es": "Ningún skill coincide con estos filtros.",
+      "fr": "Aucun skill ne correspond à ces filtres.",
+      "it": "Nessuna skill corrisponde a questi filtri.",
+      "ja": "これらのフィルターに一致するスキルはありません。",
+      "ko": "이 필터와 일치하는 스킬이 없습니다.",
+      "pt-BR": "Nenhum skill corresponde a estes filtros.",
+      "ru": "Нет навыков для этих фильтров.",
+      "zh-Hans": "没有技能匹配这些筛选条件。"
+    },
+    "No skills yet.": {
+      "de": "Noch keine Skills.",
+      "en": "No skills yet.",
+      "es": "Aún no hay skills.",
+      "fr": "Aucun skill pour le moment.",
+      "it": "Ancora nessuna skill.",
+      "ja": "まだスキルはありません。",
+      "ko": "아직 스킬이 없습니다.",
+      "pt-BR": "Ainda não há skills.",
+      "ru": "Навыков пока нет.",
+      "zh-Hans": "还没有技能。"
+    },
+    "Try clearing some filters above, or create a new skill.": {
+      "de": "Entferne einige Filter oben oder erstelle einen neuen Skill.",
+      "en": "Try clearing some filters above, or create a new skill.",
+      "es": "Prueba a limpiar algunos filtros o crea un nuevo skill.",
+      "fr": "Essayez de retirer des filtres ou créez un nouveau skill.",
+      "it": "Prova a rimuovere alcuni filtri o crea una nuova skill.",
+      "ja": "上のフィルターを解除するか、新しいスキルを作成してください。",
+      "ko": "위 필터를 지우거나 새 스킬을 만드세요.",
+      "pt-BR": "Tente limpar alguns filtros ou crie um novo skill.",
+      "ru": "Очистите часть фильтров или создайте новый навык.",
+      "zh-Hans": "尝试清除上方筛选条件，或创建新技能。"
+    },
+    "Create your first skill.": {
+      "de": "Erstelle deinen ersten Skill.",
+      "en": "Create your first skill.",
+      "es": "Crea tu primer skill.",
+      "fr": "Créez votre premier skill.",
+      "it": "Crea la tua prima skill.",
+      "ja": "最初のスキルを作成してください。",
+      "ko": "첫 스킬을 만드세요.",
+      "pt-BR": "Crie seu primeiro skill.",
+      "ru": "Создайте первый навык.",
+      "zh-Hans": "创建你的第一个技能。"
+    },
+    "Name": {
+      "de": "Name",
+      "en": "Name",
+      "es": "Nombre",
+      "fr": "Nom",
+      "it": "Nome",
+      "ja": "名前",
+      "ko": "이름",
+      "pt-BR": "Nome",
+      "ru": "Название",
+      "zh-Hans": "名称"
+    },
+    "Description": {
+      "de": "Beschreibung",
+      "en": "Description",
+      "es": "Descripción",
+      "fr": "Description",
+      "it": "Descrizione",
+      "ja": "説明",
+      "ko": "설명",
+      "pt-BR": "Descrição",
+      "ru": "Описание",
+      "zh-Hans": "描述"
+    },
+    "Tags, comma separated": {
+      "de": "Tags, durch Kommas getrennt",
+      "en": "Tags, comma separated",
+      "es": "Etiquetas separadas por comas",
+      "fr": "Tags séparés par des virgules",
+      "it": "Tag separati da virgole",
+      "ja": "タグ、カンマ区切り",
+      "ko": "쉼표로 구분한 태그",
+      "pt-BR": "Tags separados por vírgula",
+      "ru": "Теги через запятую",
+      "zh-Hans": "标签，用逗号分隔"
+    },
+    "Cancel": {
+      "de": "Abbrechen",
+      "en": "Cancel",
+      "es": "Cancelar",
+      "fr": "Annuler",
+      "it": "Annulla",
+      "ja": "キャンセル",
+      "ko": "취소",
+      "pt-BR": "Cancelar",
+      "ru": "Отмена",
+      "zh-Hans": "取消"
+    },
+    "Create": {
+      "de": "Erstellen",
+      "en": "Create",
+      "es": "Crear",
+      "fr": "Créer",
+      "it": "Crea",
+      "ja": "作成",
+      "ko": "만들기",
+      "pt-BR": "Criar",
+      "ru": "Создать",
+      "zh-Hans": "创建"
+    },
+    "Active": {
+      "de": "Aktiv",
+      "en": "Active",
+      "es": "Activo",
+      "fr": "Actif",
+      "it": "Attiva",
+      "ja": "有効",
+      "ko": "활성",
+      "pt-BR": "Ativo",
+      "ru": "Активен",
+      "zh-Hans": "活跃"
+    },
+    "Built-in": {
+      "de": "Integriert",
+      "en": "Built-in",
+      "es": "Integrado",
+      "fr": "Intégré",
+      "it": "Integrata",
+      "ja": "組み込み",
+      "ko": "내장",
+      "pt-BR": "Integrado",
+      "ru": "Встроенный",
+      "zh-Hans": "内置"
     }
   },
   "sameAsEnglishAllowed": {
@@ -5940,6 +6228,31 @@
       "es",
       "fr",
       "pt-BR"
+    ],
+    "Show Sessions on Apple calendar": [
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt-BR",
+      "ru",
+      "zh-Hans"
+    ],
+    "Skills": [
+      "de",
+      "es",
+      "fr",
+      "pt-BR"
+    ],
+    "Snippet": [
+      "de",
+      "it",
+      "pt-BR"
+    ],
+    "Name": [
+      "de"
     ]
   }
 }

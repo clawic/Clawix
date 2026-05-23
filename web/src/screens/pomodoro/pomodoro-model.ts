@@ -1,15 +1,15 @@
 import {
-  csvCell,
   dateKey,
   formatDuration,
   formatScheduleTime,
   includesFolded,
+  intentionHas,
   makeId,
   parseScheduleTime,
-  reportRangeBounds,
-  sameDay,
   type PomodoroReportRange,
 } from "./pomodoro-helpers";
+import { defaultPomodoroCategories, defaultPomodoroSettings } from "./pomodoro-defaults";
+import { totalFocusSeconds as totalFocusSecondsForBreak } from "./pomodoro-reporting";
 
 export {
   dateKey,
@@ -19,6 +19,18 @@ export {
   sameDay,
 } from "./pomodoro-helpers";
 export type { PomodoroReportRange } from "./pomodoro-helpers";
+export {
+  currentBlockers,
+  exportLogsCsv,
+  logInReportRange,
+  reportRangeLabel,
+  totalBreakSeconds,
+  totalFocusSeconds,
+} from "./pomodoro-reporting";
+export {
+  parsePlainTasks,
+  updateTaskEstimate,
+} from "./pomodoro-tasks";
 
 type TimerMode = "idle" | "focus" | "paused" | "break" | "ended";
 
@@ -202,78 +214,14 @@ export interface PomodoroState {
 
 export function defaultPomodoroState(now = Date.now()): PomodoroState {
   const today = dateKey(now);
-  const categories: PomodoroCategory[] = [
-    { id: "general", name: "General", color: "#ef5b5b" },
-    { id: "deep-work", name: "Deep work", color: "#73a6ff" },
-    { id: "admin", name: "Admin", color: "#f1b85b" },
-  ];
+  const categories = defaultPomodoroCategories();
 
   return {
     categories,
     tasks: [],
     schedules: [],
     logs: [],
-    settings: {
-      dailyGoalMinutes: 120,
-      showSuggestionsBy: "all",
-      focusIntentionOnCategoryChange: true,
-      autoStartSuggestion: true,
-      snapIntervalMinutes: 5,
-      autoStartFocus: false,
-      autoStartBreak: false,
-      defaultMood: "neutral",
-      askReflection: false,
-      sleepAction: "nothing",
-      launchAtLogin: false,
-      sessionMinutes: 25,
-      shortBreakMinutes: 5,
-      longBreakMinutes: 20,
-      longBreakAfterFocusMinutes: 90,
-      breathCount: 1,
-      sessionMainAction: "restart",
-      breakMainAction: "start-session",
-      endingSoonEnabled: true,
-      endingSoonMinutes: 2,
-      endingSoonSound: true,
-      presenceEnabled: false,
-      sessionOverflowEnabled: true,
-      pauseOverflowEnabled: true,
-      breakOverflowEnabled: true,
-      overflowMinutes: 10,
-      backgroundSoundEnabled: false,
-      sessionSound: "Clock Ticking",
-      sessionEndSound: "Kitchen Timer",
-      breakSound: "Ocean Waves",
-      breakEndSound: "Gong",
-      sessionVolume: 0.05,
-      sessionEndVolume: 0.5,
-      breakVolume: 0.5,
-      breakEndVolume: 0.5,
-      sessionWebBlocker: { enabled: false, type: "deny", entries: "" },
-      breakWebBlocker: { enabled: false, type: "deny", entries: "" },
-      sessionAppBlocker: { enabled: false, apps: [] },
-      breakAppBlocker: { enabled: false, apps: [] },
-      slackBlockerEnabled: false,
-      slackTeams: [],
-      menuShowDuration: true,
-      menuShowCategory: true,
-      menuShowTodayTotal: false,
-      showDockIcon: true,
-      keepWindowOnTop: false,
-      keepWindowOnTopOnBreak: true,
-      showOnAllSpaces: false,
-      minimizeWhenStarted: false,
-      showOnTimerEnd: true,
-      windowTrackerEnabled: false,
-      windowTrackers: [],
-      theme: "system",
-      language: "en",
-      localShortcutsEnabled: true,
-      globalShortcutsEnabled: false,
-      appleScriptEnabled: true,
-      urlSchemeEnabled: true,
-      developerTodoPreview: true,
-    },
+    settings: defaultPomodoroSettings(),
     active: null,
     intentionDraft: "",
     categoryId: categories[0]!.id,
@@ -552,67 +500,11 @@ export function runTimerEndMainAction(
 }
 
 function nextBreakMinutes(state: PomodoroState): number {
-  const totalFocusMinutes = totalFocusSeconds(state, state.selectedDate) / 60;
+  const totalFocusMinutes = totalFocusSecondsForBreak(state, state.selectedDate) / 60;
   if (totalFocusMinutes >= state.settings.longBreakAfterFocusMinutes) {
     return state.settings.longBreakMinutes;
   }
   return state.settings.shortBreakMinutes;
-}
-
-export function totalFocusSeconds(state: PomodoroState, key: string): number {
-  return state.logs
-    .filter((log) => !log.abandoned && log.kind === "focus" && sameDay(log.startAt, key))
-    .reduce((sum, log) => sum + log.durationSec, 0);
-}
-
-export function totalBreakSeconds(state: PomodoroState, key: string): number {
-  return state.logs
-    .filter((log) => !log.abandoned && log.kind === "break" && sameDay(log.startAt, key))
-    .reduce((sum, log) => sum + log.durationSec, 0);
-}
-
-export function logInReportRange(log: PomodoroLog, state: PomodoroState): boolean {
-  const range = reportRangeBounds(state.selectedDate, state.reportRange ?? "day");
-  return log.startAt >= range.start && log.startAt < range.end;
-}
-
-export function reportRangeLabel(state: PomodoroState): string {
-  const selected = new Date(`${state.selectedDate}T12:00:00`);
-  switch (state.reportRange ?? "day") {
-    case "day":
-      return selected.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    case "week": {
-      const range = reportRangeBounds(state.selectedDate, "week");
-      const start = new Date(range.start);
-      const end = new Date(range.end - 1);
-      return `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
-    }
-    case "month":
-      return selected.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  }
-}
-
-export function parsePlainTasks(text: string, categoryId: string): PomodoroTask[] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.replace(/^[-*]\s+/, "").trim())
-    .filter(Boolean)
-    .map((title, index) => ({
-      id: makeId("task", Date.now() + index),
-      title,
-      source: "plain-text" as const,
-      categoryId,
-      estimateMinutes: 25,
-      done: false,
-    }));
-}
-
-export function updateTaskEstimate(state: PomodoroState, id: string, estimateMinutes: number): PomodoroState {
-  const nextEstimate = Math.max(1, Math.round(estimateMinutes));
-  return {
-    ...state,
-    tasks: state.tasks.map((task) => (task.id === id ? { ...task, estimateMinutes: nextEstimate } : task)),
-  };
 }
 
 export function scheduledItemsForDate(state: PomodoroState, key: string): PomodoroScheduleItem[] {
@@ -681,39 +573,6 @@ export function startScheduleItem(state: PomodoroState, now: number, id: string)
     ...started,
     notices: pushNotice(started, now + 1, "Calendar plan", `Started scheduled block at ${formatScheduleTime(item.startMinutes)}.`),
   };
-}
-
-export function exportLogsCsv(state: PomodoroState): string {
-  const rows = [
-    ["type", "intention", "category", "start", "end", "duration_seconds", "pause_seconds", "mood", "notes"],
-    ...state.logs.map((log) => [
-      log.kind,
-      log.intention,
-      state.categories.find((cat) => cat.id === log.categoryId)?.name ?? log.categoryId,
-      new Date(log.startAt).toISOString(),
-      new Date(log.endAt).toISOString(),
-      `${log.durationSec}`,
-      `${log.pausesSec}`,
-      log.mood ?? "",
-      log.notes ?? "",
-    ]),
-  ];
-  return rows.map((row) => row.map(csvCell).join(",")).join("\n");
-}
-
-export function currentBlockers(state: PomodoroState): string[] {
-  const active = state.active;
-  const mode = active?.mode;
-  if (!mode || mode === "idle" || mode === "paused" || mode === "ended") return [];
-  if (mode === "focus" && intentionHas(active.intention, "learn")) return [];
-  const webRule = mode === "break" ? state.settings.breakWebBlocker : state.settings.sessionWebBlocker;
-  const appRule = mode === "break" ? state.settings.breakAppBlocker : state.settings.sessionAppBlocker;
-  const webEntries = webRule.enabled
-    ? webRule.entries.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
-    : [];
-  const appEntries = appRule.enabled ? appRule.apps : [];
-  const slackEntries = state.settings.slackBlockerEnabled ? state.settings.slackTeams.map((team) => `Chat: ${team}`) : [];
-  return [...webEntries.map((entry) => `Web: ${entry}`), ...appEntries.map((entry) => `App: ${entry}`), ...slackEntries];
 }
 
 export function addWindowTrackerRule(
@@ -977,10 +836,6 @@ function soundProfile(state: PomodoroState, slot: PomodoroSoundSlot): { label: s
     case "break-end":
       return { label: "Break end sound", name: state.settings.breakEndSound, volume: state.settings.breakEndVolume };
   }
-}
-
-function intentionHas(intention: string, needle: string): boolean {
-  return intention.toLowerCase().includes(needle.toLowerCase());
 }
 
 function pushNotice(state: PomodoroState, at: number, title: string, detail: string): PomodoroNotice[] {

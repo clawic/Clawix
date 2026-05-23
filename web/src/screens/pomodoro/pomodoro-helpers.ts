@@ -74,6 +74,10 @@ export function includesFolded(value: string, expected: string): boolean {
   return value.toLowerCase().includes(expected.toLowerCase());
 }
 
+export function intentionHas(intention: string, needle: string): boolean {
+  return intention.toLowerCase().includes(needle.toLowerCase());
+}
+
 export function makeId(prefix: string, now: number): string {
   return `${prefix}-${Math.round(now).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
