@@ -11,7 +11,7 @@ struct TextAlignStartIcon: View {
     var body: some View {
         TextAlignStartIconShape()
             .stroke(style: StrokeStyle(
-                lineWidth: 2.5 * (size / 28),
+                lineWidth: 2.7 * (size / 28),
                 lineCap: .round,
                 lineJoin: .round
             ))

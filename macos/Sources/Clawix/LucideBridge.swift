@@ -104,6 +104,55 @@ struct LucideIcon: View {
         case badgeCheck
         case webhook
         case fileText
+        // Ported from Lucide so former SF Symbols / the circleDot fallback
+        // resolve to real custom glyphs instead of Apple's library.
+        case house
+        case calendar
+        case library
+        case network
+        case megaphone
+        case layers
+        case handshake
+        case wandSparkles
+        case sparkles
+        case paintbrush
+        case palette
+        case scroll
+        case circleUser
+        case user
+        case layoutGrid
+        case grid2x2
+        case clipboardList
+        case radioTower
+        case rss
+        case circleHelp
+        case brain
+        case smartphone
+        case code
+        case heart
+        case bookmark
+        case shield
+        case lightbulb
+        case flame
+        case pencil
+        case wrench
+        case gitBranch
+        case sun
+        case keyboard
+        case fingerprint
+        case slidersHorizontal
+        case package
+        case monitor
+        case server
+        case smile
+        case layoutDashboard
+        case puzzle
+        case plug
+        case blocks
+        case panelTop
+        case listTodo
+        case squareMousePointer
+        case keyRound
     }
 
     let kind: Kind
@@ -203,6 +252,53 @@ struct LucideIcon: View {
             case .badgeCheck:             BadgeCheckIcon(size: size)
             case .webhook:                WebhookIcon(size: size)
             case .fileText:               FileTextIcon(size: size)
+            case .house:                  HouseIcon(size: size)
+            case .calendar:               CalendarIcon(size: size)
+            case .library:                LibraryIcon(size: size)
+            case .network:                NetworkIcon(size: size)
+            case .megaphone:              MegaphoneIcon(size: size)
+            case .layers:                 LayersIcon(size: size)
+            case .handshake:              HandshakeIcon(size: size)
+            case .wandSparkles:           WandSparklesIcon(size: size)
+            case .sparkles:               SparklesIcon(size: size)
+            case .paintbrush:             PaintbrushIcon(size: size)
+            case .palette:                PaletteIcon(size: size)
+            case .scroll:                 ScrollIcon(size: size)
+            case .circleUser:             CircleUserIcon(size: size)
+            case .user:                   UserIcon(size: size)
+            case .layoutGrid:             LayoutGridIcon(size: size)
+            case .grid2x2:                Grid2x2Icon(size: size)
+            case .clipboardList:          ClipboardListIcon(size: size)
+            case .radioTower:             RadioTowerIcon(size: size)
+            case .rss:                    RssIcon(size: size)
+            case .circleHelp:             CircleHelpIcon(size: size)
+            case .brain:                  BrainIcon(size: size)
+            case .smartphone:             SmartphoneIcon(size: size)
+            case .code:                   CodeIcon(size: size)
+            case .heart:                  HeartIcon(size: size)
+            case .bookmark:               BookmarkIcon(size: size)
+            case .shield:                 ShieldIcon(size: size)
+            case .lightbulb:              LightbulbIcon(size: size)
+            case .flame:                  FlameIcon(size: size)
+            case .pencil:                 PencilIcon(size: size)
+            case .wrench:                 WrenchLineIcon(size: size)
+            case .gitBranch:              GitBranchLineIcon(size: size)
+            case .sun:                    SunIcon(size: size)
+            case .keyboard:               KeyboardIcon(size: size)
+            case .fingerprint:            FingerprintIcon(size: size)
+            case .slidersHorizontal:      SlidersHorizontalIcon(size: size)
+            case .package:                PackageIcon(size: size)
+            case .monitor:                MonitorIcon(size: size)
+            case .server:                 ServerIcon(size: size)
+            case .smile:                  SmileIcon(size: size)
+            case .layoutDashboard:        LayoutDashboardIcon(size: size)
+            case .puzzle:                 PuzzleIcon(size: size)
+            case .plug:                   PlugIcon(size: size)
+            case .blocks:                 BlocksIcon(size: size)
+            case .panelTop:               PanelTopIcon(size: size)
+            case .listTodo:               ListTodoIcon(size: size)
+            case .squareMousePointer:     SquareMousePointerIcon(size: size)
+            case .keyRound:               KeyRoundIcon(size: size)
             }
         }
         .accessibilityHidden(true)
@@ -260,8 +356,9 @@ struct LucideIcon: View {
         case "text.alignleft":   return .textAlignStart
         case "flag":             return .listChecks
         case "note.text", "doc.text": return .fileText
-        case "square.stack.3d.up": return .folder
-        case "brain":            return .audioWaveform
+        case "square.stack.3d.up", "square.stack", "square.stack.fill",
+             "square.3.layers.3d", "square.3.stack.3d": return .layers
+        case "brain", "brain.head.profile": return .brain
         case "cylinder.split.1x2", "internaldrive": return .database
         case "clock.arrow.circlepath": return .clock
         case "key.viewfinder":   return .key
@@ -297,17 +394,63 @@ struct LucideIcon: View {
         case "xmark.circle", "xmark.circle.fill": return .circleX
         case "circle":            return .circleDot
         case "badge.check":       return .badgeCheck
-        case "bookmark",
-             "cloud.moon",
-             "shield",
-             "pencil",
-             "lightbulb",
-             "person.crop.circle",
-             "bubble.middle.bottom",
-             "safari",
-             "flame",
-             "arrow.triangle.branch",
-             "quote.bubble":      return .circleDot
+        // Former catch-all that collapsed a dozen concepts into one
+        // circle+dot placeholder. Each now resolves to a real glyph.
+        case "bookmark", "bookmark.fill":  return .bookmark
+        case "cloud.moon", "moon.stars":   return .moon
+        case "shield", "shield.fill", "checkmark.shield": return .shield
+        case "pencil", "pencil.line", "square.and.pencil", "pencil.circle": return .pencil
+        case "lightbulb", "lightbulb.fill": return .lightbulb
+        case "person.crop.circle", "person", "person.fill", "person.circle": return .circleUser
+        case "bubble.middle.bottom", "quote.bubble", "bubble.right": return .messageCircle
+        case "safari":            return .globe
+        case "flame", "flame.fill": return .flame
+        case "arrow.triangle.branch": return .gitBranch
+        // Former SF passthroughs in the sidebar / tools catalog.
+        case "house", "house.fill": return .house
+        case "calendar", "calendar.badge.clock": return .calendar
+        case "books.vertical", "books.vertical.fill", "book", "book.closed": return .library
+        case "network":           return .globe
+        case "layers", "square.3.stack.3d.top.filled": return .layers
+        case "puzzle", "puzzlepiece", "puzzlepiece.extension", "puzzlepiece.fill": return .puzzle
+        case "plug", "powerplug", "powerplug.fill", "poweroutlet.type.b": return .plug
+        case "blocks", "building.columns", "shippingbox.and.arrow.backward": return .blocks
+        case "list.todo", "checklist.checked", "checkmark.rectangle": return .listTodo
+        case "square.mouse.pointer", "rectangle.and.hand.point.up.left", "cursorarrow.rays": return .squareMousePointer
+        case "key.round", "key.horizontal": return .keyRound
+        case "panel.top", "menubar.rectangle": return .panelTop
+        case "megaphone", "megaphone.fill": return .megaphone
+        case "handshake", "hands.sparkles": return .handshake
+        case "wand.and.stars", "wand.and.rays", "wand.and.stars.inverse": return .wandSparkles
+        case "sparkles":          return .sparkles
+        case "paintbrush", "paintbrush.fill", "paintbrush.pointed": return .paintbrush
+        case "paintpalette", "paintpalette.fill", "swatchpalette": return .palette
+        case "scroll", "scroll.fill", "doc.plaintext": return .scroll
+        case "rectangle.3.group", "rectangle.grid.2x2", "rectangle.grid.2x2.fill",
+             "rectangle.3.offgrid": return .layoutGrid
+        case "square.grid.2x2", "square.grid.2x2.fill",
+             "circle.grid.2x2", "circle.grid.2x2.fill", "square.grid.3x3": return .grid2x2
+        case "list.bullet.rectangle", "list.bullet.rectangle.portrait",
+             "list.bullet.clipboard", "list.clipboard": return .clipboardList
+        case "antenna.radiowaves.left.and.right",
+             "antenna.radiowaves.left.and.right.circle": return .radioTower
+        case "dot.radiowaves.left.and.right", "dot.radiowaves.right",
+             "dot.radiowaves.up.forward": return .rss
+        case "questionmark.circle", "questionmark.circle.fill", "questionmark": return .circleHelp
+        case "smartphone", "iphone", "ipad", "ipad.landscape": return .smartphone
+        case "heart", "heart.fill": return .heart
+        case "chevron.left.slash.chevron.right", "curlybraces", "curlybraces.square": return .code
+        case "wrench.and.screwdriver", "wrench.and.screwdriver.fill",
+             "wrench", "wrench.fill", "wrench.adjustable": return .wrench
+        case "keyboard", "keyboard.fill": return .keyboard
+        case "fingerprint", "touchid": return .fingerprint
+        case "slider.horizontal.3", "slider.horizontal.2.square", "slider.vertical.3": return .slidersHorizontal
+        case "shippingbox", "shippingbox.fill", "cube", "cube.box": return .package
+        case "macwindow.on.rectangle", "display", "display.2", "tv": return .monitor
+        case "server.rack", "xserve": return .server
+        case "sun.max", "sun.min", "sun.max.fill": return .sun
+        case "face.smiling", "face.smiling.fill", "smiley": return .smile
+        case "square.grid.3x1.below.line.grid.1x2", "rectangle.grid.1x2": return .layoutDashboard
         case "eye":               return .eye
         case "eye.slash":         return .eyeOff
         case "eyeglasses", "eyeglasses.slash": return .glasses

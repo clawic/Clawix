@@ -11,7 +11,7 @@ struct CameraIcon: View {
     var body: some View {
         CameraIconShape()
             .stroke(style: StrokeStyle(
-                lineWidth: 2.5 * (size / 28),
+                lineWidth: 2.7 * (size / 28),
                 lineCap: .round,
                 lineJoin: .round
             ))
@@ -27,7 +27,8 @@ struct CameraIconShape: Shape {
         let xform = CGAffineTransform(translationX: dx, y: dy).scaledBy(x: s, y: s)
         var path = Path()
         path.addPath(SVGPathBuilder.build("M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"), transform: xform)
-        path.addEllipse(in: CGRect(x: 12 - 3, y: 13 - 3, width: 2 * 3, height: 2 * 3), transform: xform)
+        // Lens enlarged (r 3 → 4.2) so the inner circle reads bigger.
+        path.addEllipse(in: CGRect(x: 12 - 4.2, y: 13 - 4.2, width: 2 * 4.2, height: 2 * 4.2), transform: xform)
         return path
     }
 }

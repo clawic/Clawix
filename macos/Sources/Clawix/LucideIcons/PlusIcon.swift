@@ -15,7 +15,7 @@ struct PlusIcon: View {
     var body: some View {
         PlusIconShape()
             .stroke(style: StrokeStyle(
-                lineWidth: lineWidth ?? 2.5 * (size / 28),
+                lineWidth: lineWidth ?? 2.7 * (size / 28),
                 lineCap: .round,
                 lineJoin: .round
             ))
