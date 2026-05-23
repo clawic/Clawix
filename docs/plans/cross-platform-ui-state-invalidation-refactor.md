@@ -1,8 +1,8 @@
 # Cross-Platform UI State Invalidation Refactor
 
-Status: planned
+Status: implemented with validation pending
 
-Owner area: Clawix UI performance, bridge clients, companion chat surfaces
+Steward area: Clawix UI performance, bridge clients, companion chat surfaces
 
 Canonical decisions:
 
@@ -92,7 +92,7 @@ High-churn data may:
 
 ## Desired Store Shape
 
-Each client should converge on the same ownership split while using platform
+Each client should converge on the same state responsibility split while using platform
 idioms.
 
 Summary store:
@@ -153,17 +153,17 @@ Required target shape:
 - Split iOS state into a summary-facing store and transcript-facing store.
 - Keep `BridgeStore` or rename it only if useful, but its public observed
   surface for list/chrome code must not include live transcript payloads.
-- Introduce a transcript owner such as `ChatTranscriptStore`,
+- Introduce a transcript steward store such as `ChatTranscriptStore`,
   `ChatMessageStore`, or `BridgeTranscriptStore`.
 - Route `messageStreaming`, `messageAppended`, `messagesSnapshot`, and
-  `messagesPage` into the transcript owner.
-- Route `sessionsSnapshot` and `sessionUpdated` into the summary owner.
+  `messagesPage` into the transcript steward.
+- Route `sessionsSnapshot` and `sessionUpdated` into the summary steward.
 - Keep local optimistic send behavior by writing the user placeholder to the
-  transcript owner and the active-turn summary to the summary owner in a single
+  transcript steward and the active-turn summary to the summary steward in a single
   user-visible tick.
 - Keep crisis-refusal/local refusal behavior by appending the refusal to the
-  transcript owner and updating the summary only once.
-- Keep pagination state in the transcript owner, not in the summary-facing
+  transcript steward and updating the summary only once.
+- Keep pagination state in the transcript steward, not in the summary-facing
   store, unless the exposed value is a compact per-chat boolean that only the
   chat detail route observes.
 - Move prewarm and attachment-image cache reads so they do not make sidebar or
@@ -454,48 +454,88 @@ Runtime/performance evidence:
 
 Architecture:
 
-- [ ] iOS summary and transcript state are separated.
-- [ ] Android summary and transcript state are separated.
-- [ ] Web streaming has a coalesced transcript update path.
-- [ ] Search/index paths do not consume per-token deltas globally.
-- [ ] Snapshot persistence does not run once per streaming token.
+- [x] iOS summary and transcript state are separated.
+- [x] Android summary and transcript state are separated.
+- [x] Web streaming has a coalesced transcript update path.
+- [x] Search/index paths do not consume per-token deltas globally.
+- [x] Snapshot persistence does not run once per streaming token.
 
 Tests:
 
-- [ ] macOS existing focused tests still pass.
-- [ ] iOS store publication tests exist and pass.
-- [ ] Android stream/list isolation tests exist and pass.
-- [ ] Web selector/coalescing tests exist and pass.
-- [ ] Guard script self-test or fixtures cover pass and fail cases.
+- [x] macOS existing focused tests still pass.
+- [ ] iOS store publication tests exist and parse; execution is pending an
+  available iOS simulator/device destination.
+- [x] Android stream/list isolation tests exist and pass.
+- [x] Web selector/coalescing tests exist and pass.
+- [x] Guard script fixtures cover pass and fail cases.
 
 Guardrails:
 
-- [ ] `scripts/ui_state_invalidation_boundary_check.mjs` enforces macOS, iOS,
+- [x] `scripts/ui_state_invalidation_boundary_check.mjs` enforces macOS, iOS,
   Android, and Web.
-- [ ] The guard is included in `bash scripts/test.sh fast`.
-- [ ] The guard rejects broad app-state transcript regressions.
-- [ ] The guard rejects sidebar/search/project subscriptions to live transcript
+- [x] The guard is included in `bash scripts/test.sh fast`.
+- [x] The guard rejects broad app-state transcript regressions.
+- [x] The guard rejects sidebar/search/project subscriptions to live transcript
   deltas.
 
 Docs and routing:
 
-- [ ] ADR 0036 no longer says cross-platform enforcement is pending.
-- [ ] ADR 0031 mirror no longer says non-macOS checks are pending.
-- [ ] Decision map lists cross-platform checks.
-- [ ] Discoverability and ADR operational coverage route the updated guard.
+- [x] ADR 0036 no longer says cross-platform enforcement is pending.
+- [x] ADR 0031 mirror no longer says non-macOS checks are pending.
+- [x] Decision map lists cross-platform checks.
+- [x] Discoverability and ADR operational coverage route the updated guard.
 
 Validation:
 
-- [ ] All required local commands pass or have a concrete blocker.
-- [ ] Any external-pending row is justified by physical/live environment need,
+- [x] All required local commands pass or have a concrete blocker.
+- [x] Any external-pending row is justified by physical/live environment need,
   not by missing local tests.
 - [ ] Final report separates architecture validated, tests passed,
   performance measured, performance probable, and external pending.
 
+## Current Validation Evidence
+
+Validated in the current implementation state:
+
+- `node scripts/ui_state_invalidation_boundary_check.mjs`: passed.
+- `node scripts/adr-operational-coverage-check.mjs`: passed.
+- `node scripts/performance_governance_check.mjs`: passed.
+- `node scripts/discoverability-check.mjs`: passed after regenerating
+  discoverability from the current artifact inventory.
+- `node scripts/discoverability-check.mjs generate --check`: passed.
+- `node scripts/ui_governance_guard.mjs`: passed.
+- `node scripts/evolution_rescue_mirror_check.mjs --self-test`: passed.
+- `node scripts/evolution_rescue_mirror_check.mjs`: passed after removing the
+  default clean temporary SwiftPM scratch build; an explicit
+  `CLAWIX_RESCUE_SWIFTPM_SCRATCH_PATH` still preserves the isolated-build path
+  when requested.
+- `node scripts/cross_platform_localization_guard.mjs`: passed after adding
+  the missing iOS localized resources for the existing chat advanced settings
+  strings reached by the fast lane.
+- `swift test --package-path macos --filter 'SidebarStoreTests|ChatStorePublicationTests'`:
+  passed.
+- `pnpm --dir web test -- store.test.ts`: passed.
+- `pnpm --dir web exec tsc --noEmit`: passed.
+- `bash scripts/launch-android.sh test`: passed.
+- iOS project generation and source parsing: passed for the iOS store and test
+  sources.
+
+Concrete blockers before goal closure:
+
+- `xcodebuild test -project Clawix.xcodeproj -scheme Clawix -destination
+  'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
+  -only-testing:ClawixTests`: `EXTERNAL PENDING`; no matching available iOS
+  simulator/device destination is installed in the validation environment.
+- `bash scripts/test.sh fast`: blocked by unrelated current-tree surface
+  narrative drift after passing the UI state invalidation guard prerequisites.
+  The first remaining failing guard is `scripts/surface_narrative_guard.mjs`,
+  which reports persistent-node/interface-surface baseline drift unrelated to
+  this state invalidation refactor.
+
 ## Non-Goals
 
 - Do not redesign chat UI visuals.
-- Do not change visual copy/layout unless required by state ownership and
+- Do not change visual copy/layout unless required by state responsibility and
   already covered by existing UI canon.
 - Do not introduce live provider calls or paid API calls for validation.
 - Do not use real prompts for this work without explicit approval.

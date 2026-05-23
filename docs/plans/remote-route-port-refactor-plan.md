@@ -102,9 +102,905 @@ Still required:
 - decide whether `ClawJSServiceEnvironmentBuilder` and
   `ClawJSServiceSupervisor` should stay as resolver consumers or collapse into
   one shared environment builder;
-- reduce strict-mode baseline violations to zero or document an accepted
-  migration baseline before adding this guard to the canonical validation lane;
 - complete all later phases in this plan.
+
+### 2026-05-23 Boundary Strict Closure Slice
+
+Delivered:
+
+- added `ClawixBridgeEndpointResolver` in ClawixEngine for bridge WebSocket and
+  HTTP origins;
+- migrated Swift bridge consumers (`PairingService`, `BridgeServer`,
+  `BridgeServerNIO`, `DaemonBridgeClient`, and `MeshClient`) to the shared
+  bridge endpoint resolver;
+- added Linux, Windows, and Web bridge endpoint resolver modules and migrated
+  their bridge clients away from ad hoc loopback URL construction;
+- added `ClawJSAudioEndpointResolver` and migrated the shared audio client;
+- migrated Memory, ClawJS settings, Local Models, and OpenCode loopback URL
+  display/open paths to resolver-style helpers;
+- refined the inventory guard so localized UI copy, README documentation,
+  Tauri declarative loopback policy, provider-local examples, generated
+  `dist/` output, and verifier fixtures are classified instead of counted as
+  executable endpoint debt;
+- added endpoint resolver tests in ClawixEngine;
+- wired `remote_route_port_boundary_check.mjs --self-test` and
+  `remote_route_port_boundary_check.mjs --strict` into `scripts/test.sh`.
+
+Validation run:
+
+```bash
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node --check scripts/remote_route_port_boundary_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --self-test
+node scripts/remote_canon_alignment_check.mjs
+claw inspect remote --json
+swift test --package-path macos --filter ClawJSServiceSupervisorTests
+swift test --package-path packages/ClawixEngine
+bash scripts/test.sh --self-test
+pnpm --dir web exec tsc -b --noEmit
+rustfmt --edition 2021 --check linux/app/src-tauri/src/bridge_endpoint.rs linux/app/src-tauri/src/daemon_client.rs
+```
+
+Result:
+
+- inventory now has 1997 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- guard syntax check and self-test passed;
+- remote canon alignment passed;
+- `claw inspect remote --json` returned `ok: true`, `baseline_registered`, and
+  zero missing routes;
+- `ClawJSServiceSupervisorTests` passed 22 tests with zero failures;
+- `ClawixEngine` package tests passed 23 tests with zero failures;
+- `scripts/test.sh --self-test` passed, proving the strict guard is reachable
+  from the canonical test launcher;
+- Web TypeScript check passed;
+- Rust formatting check passed for the touched Linux bridge endpoint/client
+  files.
+
+Validation not completed:
+
+- `cargo check --manifest-path linux/app/src-tauri/Cargo.toml` is blocked by
+  the local Rust toolchain: this workspace has rustc 1.86.0, while current
+  dependencies require rustc 1.88.0 or newer;
+- `dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --no-restore` could not
+  run because `dotnet` is not installed in this environment;
+- `pnpm --dir web test` currently fails in `tests/unit/route-catalog.test.ts`
+  because the current worktree route catalog has an unrelated `agents` tool id
+  mismatch; the endpoint TypeScript check passed.
+
+Still required:
+
+- migrate or retire compatibility mesh adapters before their recorded
+  `expiresAt` date;
+- audit remaining route consumers against ClawJS `claw inspect routes`,
+  `claw inspect route ...`, `claw remote contracts`, and `claw remote pending`;
+- complete UI/projection phases and real-app validation where the plan requires
+  visible Clawix evidence;
+- complete the closure checklist at the end of this file.
+
+### 2026-05-23 Mesh Classification Guard
+
+Delivered:
+
+- `docs/governance/mesh-route-classification.json`
+- `scripts/mesh_route_classification_check.mjs`
+- `scripts/test.sh` now runs the mesh classification guard before the remote
+  route/port boundary guard.
+
+Scope covered:
+
+- `GET /v1/mesh/identity`
+- `GET /v1/mesh/peers`
+- `POST /v1/mesh/peers`
+- `GET /v1/mesh/workspaces`
+- `POST /v1/mesh/workspaces`
+- `POST /v1/mesh/link`
+- `POST /v1/mesh/pair`
+- `POST /v1/mesh/remote-jobs`
+- `POST /v1/mesh/jobs`
+- `GET /v1/mesh/jobs/{jobId}`
+- `POST /v1/mesh/jobs/cancel`
+- `POST /v1/mesh/jobs/events`
+- `POST /v1/mesh/hosts`
+- `DELETE /v1/mesh/hosts/{nodeId}`
+- `POST /v1/mesh/hosts/{nodeId}/revoke`
+- `POST /v1/mesh/hosts/{nodeId}/unrevoke`
+
+Validation run:
+
+```bash
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/mesh_route_classification_check.mjs --self-test
+node scripts/mesh_route_classification_check.mjs
+node --check scripts/remote_route_port_boundary_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+claw inspect route remote.chatGateway --json
+claw inspect route gateway.headlessAgentHost --json
+claw inspect route mesh.resourceShare --json
+claw inspect route remote.secretBrokeredOperation --json
+claw inspect route sync.sessions --json
+claw remote contracts --json
+claw remote pending --json
+bash scripts/test.sh --self-test
+npm exec vitest run packages/mesh/src/mesh-server.test.ts
+```
+
+Result:
+
+- mesh classification syntax check passed;
+- mesh classification self-test passed;
+- mesh classification guard passed against current Clawix Swift constants,
+  `RemoteMeshHTTPController`, `PersistentSurfaceRegistry`, and `MeshClient`;
+- remote route/port inventory regenerated with 1991 findings and zero
+  baseline violations;
+- strict remote route/port boundary check passed after the mesh manifest was
+  added to inventory;
+- remote canon alignment passed;
+- ClawJS route inspection confirmed `remote.chatGateway`,
+  `gateway.headlessAgentHost`, `mesh.resourceShare`, `remote.secretBrokeredOperation`,
+  and `sync.sessions` are registered framework route contracts;
+- `claw remote contracts --json` returned canonical remote contract data;
+- `claw remote pending --json` returned the external-pending physical/provider
+  requirements that the mesh compatibility rows cite;
+- `scripts/test.sh --self-test` passed.
+- sibling ClawJS `packages/mesh/src/mesh-server.test.ts` passed 10 tests.
+
+Validation not completed:
+
+- `swift test --package-path macos --filter MeshClientTests` is currently
+  blocked before the focused tests run because the local ClawJS checkout fails
+  to compile `apps/host/Sources/ClawHostKit/MacControl.swift` under the active
+  Swift concurrency checks (`utilityKeepAwakeAssertion` is nonisolated mutable
+  shared state);
+- `pnpm --dir <clawjs-repo> --filter @clawjs/mesh test` is not
+  applicable because the sibling ClawJS checkout is configured to use npm and
+  `@clawjs/mesh` has no package-local `test` script; the direct Vitest command
+  above was used instead.
+
+Still required:
+
+- replace compatibility adapter routes with ClawJS/shared route projections
+  before `2026-07-15`;
+- add removal or replacement tests when each compatibility adapter is migrated;
+- decide whether the Swift `RemoteMeshHTTPController` remains as a thin
+  host-local wrapper or delegates fully to the ClawJS mesh package;
+- complete UI/projection phases and real-app validation where the plan requires
+  visible Clawix evidence.
+
+### 2026-05-23 Remote Mesh URL Builder Slice
+
+Delivered:
+
+- `RemoteMeshHTTPController` no longer hand-builds remote mesh URLs with raw
+  `http://.../v1/mesh/...` strings;
+- remote identity, pair, and encrypted peer POST URLs now flow through one
+  local `meshURL(host:httpPort:path:)` helper;
+- loopback endpoint identity now consumes `ClawixBridgeEndpointResolver`;
+- linked-peer bridge port fallback now consumes
+  `ClawixBridgeEndpointResolver.defaultWebSocketPort`.
+
+Validation run:
+
+```bash
+swift test --package-path macos/Helpers/Bridged --filter RemoteMesh
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- the bridged helper package compiled through `RemoteMeshHTTPController`; Swift
+  then reported that no tests match `RemoteMesh`, so this is compile evidence,
+  not behavioral test evidence;
+- focused search of `RemoteMeshHTTPController` no longer finds raw
+  `http://...`, `127.0.0.1`, `24080`, `/v1/mesh/identity`, or
+  `/v1/mesh/pair` literals;
+- remote route/port inventory regenerated with 1997 findings and zero baseline
+  violations;
+- mesh classification guard passed;
+- strict remote route/port boundary check passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- migrate the remaining compatibility adapters to ClawJS/shared route
+  projections before their recorded expiry.
+
+### 2026-05-23 Remote Mesh URL Builder Test Slice
+
+Delivered:
+
+- extracted `RemoteMeshEndpointResolver.url(host:httpPort:path:)` as the
+  focused URL builder used by `RemoteMeshHTTPController`;
+- added a SwiftPM test target for the bridged helper package;
+- added `RemoteMeshEndpointResolverTests` covering typed mesh route URL
+  construction for identity, pair path normalization, and remote job routes.
+
+Validation run:
+
+```bash
+swift test --package-path macos/Helpers/Bridged --filter RemoteMeshEndpointResolverTests
+node --check scripts/remote_route_port_boundary_check.mjs
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `RemoteMeshEndpointResolverTests` passed 3 tests with zero failures;
+- bridged helper SwiftPM tests now compile and run against the executable
+  target;
+- inventory regenerated with 2006 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- migrate the remaining compatibility adapters to ClawJS/shared route
+  projections before their recorded expiry;
+- complete UI/projection phases and real-app validation where the plan requires
+  visible Clawix evidence.
+
+### 2026-05-23 Remote Projection Client Slice
+
+Delivered:
+
+- added `ClawJSRemoteProjectionClient`, a read-only ClawJS projection client
+  that consumes `claw inspect remote --json`, `claw remote contracts --json`,
+  and `claw remote pending --json`;
+- added `ClawJSRemoteProjectionStore` with explicit `available` and
+  `unavailable` states so the UI fails closed when projection data cannot be
+  loaded;
+- extended `ClawJSAsyncProcessRunner` so ClawJS CLI calls can run with the
+  canonical workspace directory and environment;
+- wired Remote Access settings to render framework projection status from the
+  store instead of declaring route data locally;
+- added focused tests for command arguments, decode shape, unavailable state,
+  and rejection of any projection that declares writes;
+- updated existing Remote Access tests to match the current page contract.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter ClawJSRemoteProjectionClientTests
+swift test --package-path macos --filter RemoteAccess
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+claw inspect remote --json
+claw remote contracts --json
+claw remote pending --json
+```
+
+Result:
+
+- `ClawJSRemoteProjectionClientTests` passed 4 tests with zero failures;
+- `RemoteAccess` Swift filter passed 7 tests with zero failures;
+- strict remote route/port boundary check passed with 1997 findings and zero
+  baseline violations;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed;
+- live ClawJS projection commands returned `baseline_registered`, 16 required
+  remote routes, zero missing routes, 16 remote contracts, and 13
+  external-pending requirements with writes disabled.
+
+Still required:
+
+- route remaining Companion, mesh/job status, and deeper host-detail surfaces
+  through this projection store or successor projections where they render
+  framework-owned remote contract state;
+- add real-app evidence for the visible Remote Access projection state;
+- capture performance/idle evidence proving the projection does not broaden
+  launch behavior or create unbounded polling;
+- migrate or retire compatibility mesh adapters before their recorded expiry.
+
+### 2026-05-23 Hosts Remote Projection Surface Slice
+
+Delivered:
+
+- wired Settings > Hosts to consume `ClawJSRemoteProjectionStore` in read-only
+  mode;
+- added a visible framework remote readiness card for conformance, registered
+  routes, contract count, and external-pending count;
+- kept host pairing, workspace mutation, and bridge lease behavior on the
+  existing `MeshStore`/local bridge path;
+- added a focused source-boundary test proving Hosts consumes the projection
+  and does not declare `/v1/remote/*`, `/v1/gateway/*`, or `/v1/sync/*`
+  route tables locally.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter HostsRemoteProjectionSurfaceTests
+swift test --package-path macos --filter RemoteAccess
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `HostsRemoteProjectionSurfaceTests` passed 1 test with zero failures;
+- `RemoteAccess` Swift filter passed 7 tests with zero failures after Hosts
+  compiled with the projection wiring;
+- inventory regenerated with 2009 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- add real-app evidence for the visible Hosts and Remote Access projection
+  states;
+- capture performance/idle evidence proving the projection does not broaden
+  launch behavior or create unbounded polling;
+- continue projection wiring for Companion and mesh/job status surfaces that
+  render framework-owned remote readiness;
+- migrate or retire compatibility mesh adapters before their recorded expiry.
+
+### 2026-05-23 Host Detail Remote Projection Surface Slice
+
+Delivered:
+
+- wired Host Detail to receive the existing `ClawJSRemoteProjectionStore` from
+  Settings > Hosts;
+- added a framework remote readiness card to the host detail sheet;
+- avoided a second projection load in the detail sheet, so opening a host does
+  not add another ClawJS CLI read or polling path;
+- extended the Hosts projection surface test to cover Host Detail and assert it
+  does not declare `/v1/remote/*`, `/v1/gateway/*`, or `/v1/sync/*` route
+  tables locally.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter HostsRemoteProjectionSurfaceTests
+swift test --package-path macos --filter RemoteAccess
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `HostsRemoteProjectionSurfaceTests` passed 2 tests with zero failures;
+- `RemoteAccess` Swift filter passed 7 tests with zero failures;
+- inventory regenerated with 2016 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- add real-app evidence for the visible Hosts, Host Detail, and Remote Access
+  projection states;
+- capture performance/idle evidence proving the projection does not broaden
+  launch behavior or create unbounded polling;
+- continue projection wiring for Companion surfaces that render framework-owned
+  remote readiness;
+- migrate or retire compatibility mesh adapters before their recorded expiry.
+
+### 2026-05-23 Remote Job Projection Surface Slice
+
+Delivered:
+
+- wired `RemoteJobCard` to render ClawJS remote projection status while a
+  remote job card is visible;
+- `ChatView` now owns a projection store but loads it only inside the active
+  remote-job UI block, so opening a normal chat without active remote jobs does
+  not start a ClawJS projection read;
+- the card shows unavailable projection state fail-closed and summarizes
+  registered framework routes plus external-pending count when available;
+- added focused source-boundary tests for the ChatView/RemoteJobCard wiring and
+  for the absence of local `/v1/remote/*`, `/v1/gateway/*`, or `/v1/sync/*`
+  route declarations in the job card.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter RemoteJobProjectionSurfaceTests
+swift test --package-path macos --filter HostsRemoteProjectionSurfaceTests
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `RemoteJobProjectionSurfaceTests` passed 2 tests with zero failures;
+- `HostsRemoteProjectionSurfaceTests` passed 2 tests with zero failures;
+- inventory regenerated with 2032 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- add real-app evidence for the visible RemoteJob, Hosts, Host Detail, and
+  Remote Access projection states;
+- capture performance/idle evidence proving the projection does not broaden
+  launch behavior or create unbounded polling;
+- migrate or retire compatibility mesh adapters before their recorded expiry.
+
+### 2026-05-23 Companion Projection Surface Slice
+
+Delivered:
+
+- wired the iPhone pairing window (`PairWindowView`) to consume
+  `ClawJSRemoteProjectionStore` while the pairing surface is visible;
+- added a compact framework remote readiness card to the pairing window without
+  changing QR payload, token rotation, bridge lease, or pairing behavior;
+- the projection load is cancelled when the pairing window closes, so the
+  Companion surface does not create an unbounded background projection loop;
+- added a source-boundary test proving the Companion pairing surface consumes
+  projection state and does not declare `/v1/remote/*`, `/v1/gateway/*`, or
+  `/v1/sync/*` route tables locally.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter CompanionProjectionSurfaceTests
+swift test --package-path macos --filter RemoteJobProjectionSurfaceTests
+swift test --package-path macos --filter HostsRemoteProjectionSurfaceTests
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `CompanionProjectionSurfaceTests` passed 1 test with zero failures;
+- `RemoteJobProjectionSurfaceTests` passed 2 tests with zero failures;
+- `HostsRemoteProjectionSurfaceTests` passed 2 tests with zero failures;
+- inventory regenerated with 2038 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- mesh classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- add real-app evidence for the visible Companion, RemoteJob, Hosts, Host
+  Detail, and Remote Access projection states;
+- capture performance/idle evidence proving the projection does not broaden
+  launch behavior or create unbounded polling;
+- migrate or retire compatibility mesh adapters before their recorded expiry.
+
+### 2026-05-23 Compatibility Adapter Evidence Guard Slice
+
+Delivered:
+
+- strengthened `scripts/mesh_route_classification_check.mjs` so every
+  `compatibility_adapter` must carry concrete `replacementEvidence`;
+- added a date guard requiring adapter `expiresAt` to remain after the manifest
+  `reviewedAt` date, so stale adapters cannot pass silently after review;
+- added retired-route guardrails requiring replacement evidence plus removal or
+  absence-oriented target tests before a route can be marked retired;
+- extended the guard self-test to prove missing replacement evidence is a
+  failing condition.
+
+Validation run:
+
+```bash
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/mesh_route_classification_check.mjs --self-test
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- mesh classification syntax check passed;
+- mesh classification self-test passed;
+- mesh classification guard passed against the current manifest;
+- inventory regenerated with 2041 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- migrate or retire compatibility mesh adapters before their recorded expiry;
+- complete real-app evidence and performance/idle evidence for projection UI
+  surfaces.
+
+### 2026-05-23 MeshClient Compatibility Adapter Revalidation
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter MeshClientTests/test_remoteJob_dispatchesAndPolls
+swift test --package-path macos --filter MeshClientTests
+```
+
+Result:
+
+- the previously blocked focused remote job dispatch/poll test now passes;
+- the full `MeshClientTests` filter passed 11 tests with zero failures;
+- current client behavior for identity, peers, workspaces, remote jobs, host
+  stability, typed unreachable errors, and workspace-denied mapping is covered
+  while the compatibility adapter migration remains open.
+
+Still required:
+
+- replace or retire the compatibility adapter routes before `2026-07-15`;
+- add removal or replacement tests as each adapter is migrated away from the
+  Clawix-owned loopback mesh routes.
+
+### 2026-05-23 Runtime Jobs Replacement Evidence Slice
+
+Delivered:
+
+- replaced generic `runtime jobs projection` target refs for
+  `/v1/mesh/jobs/{jobId}` and `/v1/mesh/jobs/events` with concrete ClawJS
+  runtime jobs replacement refs:
+  `jobs.stream`, `@clawjs/runtime:GET /v1/runtime/jobs/{id}`,
+  `@clawjs/runtime:GET /v1/runtime/jobs/{id}/events`, and
+  `@clawjs/runtime:GET /v1/runtime/jobs/events`;
+- added concrete replacement evidence from sibling ClawJS runtime docs,
+  client, and app route registration files;
+- strengthened the mesh classification guard so compatibility adapters with
+  `replace_with_runtime_or_gateway_job_projection` require runtime jobs
+  replacement refs and runtime jobs evidence;
+- extended the guard self-test to prove a generic runtime projection row fails.
+
+Validation run:
+
+```bash
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/mesh_route_classification_check.mjs --self-test
+node scripts/mesh_route_classification_check.mjs
+npm exec vitest run packages/clawjs-runtime/src/runtime-logs.test.ts packages/clawjs-runtime/src/lazy-app.test.ts packages/clawjs-runtime/src/config.test.ts
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- mesh classification syntax check passed;
+- mesh classification self-test passed;
+- mesh classification guard passed against the current manifest;
+- sibling ClawJS runtime focused tests passed 3 files and 6 tests;
+- inventory regenerated with 2050 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- migrate the Clawix mesh job snapshot/event compatibility reads to a runtime
+  jobs projection or retire them after replacement is wired;
+- add removal tests when the compatibility routes are no longer needed.
+
+### 2026-05-23 Remote Projection Cancellation Evidence Slice
+
+Delivered:
+
+- `ClawJSRemoteProjectionStore.cancel()` now returns the store from `loading`
+  to `idle` after cancelling the in-flight projection task;
+- added a focused async test proving a cancelled ClawJS projection read does
+  not publish a late available/unavailable state and does not advance past the
+  first CLI command;
+- this gives concrete idle/performance evidence for the projection surfaces:
+  Remote Access, Hosts, Host Detail, RemoteJob, and Companion all cancel their
+  projection store work when their visible surface goes away.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter ClawJSRemoteProjectionClientTests
+```
+
+Result:
+
+- first attempt was interrupted before tests ran because
+  `macos/Sources/Clawix/Settings/AppsSettingsPage.swift` changed during build
+  in the shared dirty worktree;
+- rerun passed 5 tests with zero failures.
+
+Still required:
+
+- capture real-app visible evidence once `.app-mode` is intentionally switched
+  to `real`;
+- keep runtime polling evidence separate from UI projection cancellation
+  evidence when migrating the mesh job compatibility adapters.
+
+### 2026-05-23 Remote Projection Readiness Payload Slice
+
+Delivered:
+
+- inspected the live ClawJS canonical payload from `claw inspect remote --json`
+  and confirmed it exposes `externalValidationReadiness`,
+  `providerDeviceE2EPlan`, and closure blockers through
+  `externalValidationReadiness.closureGateBlockers`;
+- extended `ClawJSRemoteProjectionSnapshot` so Clawix consumes framework
+  external validation readiness, required provider/device E2E domains,
+  topology targets, route ids, external-pending ids, validation steps, and
+  closure blockers instead of reducing the projection to route and contract
+  lists;
+- extended the no-write fail-closed check so writes declared by readiness,
+  provider/device E2E plan, or any provider/device validation step reject the
+  projection;
+- updated `ClawJSRemoteProjectionClientTests` fixtures to cover the live
+  ClawJS readiness and provider/device E2E plan shape, including blocked
+  external requirement ids and closure blockers.
+
+Validation run:
+
+```bash
+claw inspect remote --json
+claw remote contracts --json
+claw remote pending --json
+swift test --package-path macos --filter ClawJSRemoteProjectionClientTests
+```
+
+Result:
+
+- live `claw inspect remote --json` returned readiness status `not_ready`,
+  closure gate status `blocked`, closure blockers `source_qa_review` and
+  `external_validation`, 13 blocked external requirements, and
+  `providerDeviceE2EPlan` with 5 validation domains and writes disabled;
+- live `claw remote contracts --json` returned 16 contracts with writes
+  disabled;
+- live `claw remote pending --json` returned 13 external-pending requirements,
+  including `provider_device_e2e`, with writes disabled;
+- `ClawJSRemoteProjectionClientTests` passed 6 tests with zero failures.
+
+Still required:
+
+- surface the richer readiness and provider/device E2E fields in every
+  visible Clawix status view that claims remote validation readiness;
+- keep external validation blocked until accepted ClawJS evidence artifacts and
+  approved physical/provider runs exist;
+- capture real-app visible evidence once `.app-mode` is intentionally switched
+  to `real`.
+
+### 2026-05-23 Windows Secrets Projection Endpoint Slice
+
+Delivered:
+
+- removed the newly detected ad hoc interpolated `http://127.0.0.1:{port}`
+  construction from `windows/Clawix.Core/WindowsSecretsProjectionRoutes.cs`;
+- kept the same default secrets projection origin semantics by building the
+  URI through `UriBuilder("http", LoopbackHost, port)` with the loopback host
+  stored separately;
+- regenerated the remote route/port inventory after the Windows secrets route
+  change.
+
+Validation run:
+
+```bash
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter WindowsSecretsProjectionRoutesTests
+```
+
+Result:
+
+- remote route/port boundary check passed with 2062 findings and zero baseline
+  violations;
+- mesh route classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed;
+- Windows focused test could not run in this macOS workspace because `dotnet`
+  is not installed (`zsh:1: command not found: dotnet`).
+
+Still required:
+
+- run `dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter
+  WindowsSecretsProjectionRoutesTests` in a workspace with the .NET SDK before
+  claiming the Windows route helper fully validated.
+
+### 2026-05-23 Remote Projection UI Readiness Slice
+
+Delivered:
+
+- added snapshot-derived UI summaries for external readiness status, closure
+  blockers, blocked external requirements, and provider/device E2E plan
+  coverage;
+- Remote Access settings, Hosts, Host Detail, Companion pairing, and Remote Job
+  cards now render the richer ClawJS projection readiness instead of stopping
+  at route/contract/pending counts;
+- source-level UI tests now assert those surfaces consume the projection
+  summaries and still do not declare `/v1/remote/*`, `/v1/gateway/*`, or
+  `/v1/sync/*` routes locally.
+
+Validation run:
+
+```bash
+swift test --package-path macos --filter 'ClawJSRemoteProjectionClientTests|HostsRemoteProjectionSurfaceTests|RemoteJobProjectionSurfaceTests|CompanionProjectionSurfaceTests|SettingsSurfaceTruthTests/testRemoteAccessSettingsRendersFullRemoteProjectionReadiness'
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- selected Swift projection/UI tests passed 12 tests with zero failures.
+- remote route/port boundary check passed with 2068 findings and zero baseline
+  violations;
+- mesh route classification guard passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- capture real-app visible evidence once `.app-mode` is intentionally switched
+  to `real`;
+- add performance/idle evidence for opening these status views in the real app
+  or explicitly keep it partial until real-app validation is available.
+
+### 2026-05-23 Remote Mesh Network Boundary Test Slice
+
+Delivered:
+
+- added bridged-helper tests for `RemoteMeshHTTPController` network boundary
+  behavior;
+- proved loopback-only compatibility routes do not handle non-loopback
+  requests: peers, workspaces, local job snapshot, local peer upsert, workspace
+  upsert, local link, and outbound remote-job start;
+- proved peer-signed compatibility routes fail closed with invalid remote
+  envelopes on non-loopback requests: inbound job start, job cancel, and job
+  events;
+- documented public identity and pairing as explicit non-loopback exceptions,
+  with pairing still rejecting invalid payloads;
+- referenced this boundary test from the mesh classification manifest as
+  current-behavior evidence for the affected host-local and compatibility
+  routes.
+- strengthened `scripts/mesh_route_classification_check.mjs` so every route
+  implemented by `RemoteMeshHTTPController` must cite this network boundary
+  test evidence.
+
+Validation run:
+
+```bash
+swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/mesh_route_classification_check.mjs --self-test
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- `RemoteMeshHTTPControllerBoundaryTests` passed 3 tests with zero failures;
+- mesh classification syntax check passed;
+- mesh classification self-test passed;
+- mesh classification guard passed with required network-boundary evidence;
+- inventory regenerated with 2047 findings and zero baseline violations;
+- strict remote route/port boundary check passed;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- migrate or retire compatibility routes before their expiry;
+- add replacement/removal tests when those routes stop being served by
+  `RemoteMeshHTTPController`.
+
+### 2026-05-23 Persistent Mesh Manifest Alignment Guard Slice
+
+Delivered:
+
+- strengthened `scripts/mesh_route_classification_check.mjs` to parse mesh
+  routes from both persistent-surface manifests:
+  `docs/persistent-surface-clawix.manifest.json` and
+  `macos/Sources/Clawix/Resources/persistent-surface-clawix.manifest.json`;
+- the guard now requires both persistent manifests to expose the same mesh
+  route set;
+- every persistent mesh route must have a row in
+  `docs/governance/mesh-route-classification.json`;
+- the self-test now proves drift between the public manifest and macOS resource
+  manifest fails, and that an unclassified persistent mesh route fails.
+
+Validation run:
+
+```bash
+node --check scripts/mesh_route_classification_check.mjs
+node scripts/mesh_route_classification_check.mjs --self-test
+node scripts/mesh_route_classification_check.mjs
+node scripts/remote_route_port_boundary_check.mjs --write
+node scripts/remote_route_port_boundary_check.mjs --strict
+node scripts/remote_canon_alignment_check.mjs
+bash scripts/test.sh --self-test
+```
+
+Result:
+
+- mesh classification syntax check passed;
+- mesh classification self-test passed;
+- mesh classification guard passed with persistent manifest alignment enabled;
+- after a concurrent inventory drift during validation, inventory was
+  regenerated and strict mode passed with 2057 findings and zero baseline
+  violations;
+- remote canon alignment passed;
+- `scripts/test.sh --self-test` passed.
+
+Still required:
+
+- keep generated persistent-surface resources aligned when compatibility routes
+  are migrated or retired;
+- migrate or retire compatibility routes before their expiry.
+
+### 2026-05-23 Real-App Validation Attempt
+
+Validation attempted:
+
+```bash
+cat .app-mode
+official real-app validation preflight --check-only
+```
+
+Result:
+
+- `.app-mode` is currently `dummy`;
+- the official real-app validation check failed before app interaction with
+  `real_app_mode_not_real`;
+- no Computer Use validation was attempted because the precondition for the
+  canonical app target was not satisfied.
+
+Rechecked after Companion projection wiring:
+
+```bash
+cat .app-mode
+official real-app validation preflight --check-only
+```
+
+Result:
+
+- `.app-mode` remains `dummy`;
+- the official real-app validation check still fails with
+  `real_app_mode_not_real`;
+- visible validation for Companion, RemoteJob, Hosts, Host Detail, and Remote
+  Access projection states remains `PARTIAL`.
+
+Status:
+
+- `PARTIAL`: Remote Access, Hosts, Host Detail, RemoteJob, and Companion
+  projection UI are covered by Swift tests and static guardrails, but visible
+  app validation and runtime performance evidence remain blocked until the
+  workspace is intentionally switched to `real` mode through the private
+  policy.
 
 ## Purpose
 
@@ -115,7 +1011,7 @@ for remote routes, mesh routes, service endpoints, and loopback ports.
 
 The goal of this refactor is to make the boundary mechanically enforceable:
 
-- ClawJS remains the canonical owner of framework routes, remote contracts,
+- ClawJS remains the canonical steward of framework routes, remote contracts,
   service route catalogs, and `claw inspect` output.
 - Clawix owns only signed-host behavior, local UI, the local bridge transport,
   host-local adapters, and presentation of framework-owned remote state.
@@ -314,7 +1210,7 @@ Minimum inventory fields:
 - literal value
 - category: `host_leg`, `service_endpoint`, `mesh_route`,
   `framework_remote_route`, `fixture`, `docs`, `external_provider`, `unknown`
-- owner: `clawix`, `claw`, `external`, `test`
+- steward: `clawix`, `claw`, `external`, `test`
 - replacement strategy
 - required validation
 
@@ -436,8 +1332,8 @@ Required classification fields:
 - method
 - current implementation file
 - current client file
-- current owner
-- target owner
+- current steward
+- target steward
 - classification
 - ClawJS replacement route or route id
 - migration state
@@ -470,7 +1366,7 @@ Add or extend guardrails so the boundary cannot regress.
 
 Required checks:
 
-- A remote route ownership guard that rejects Clawix-owned API route entries for
+- A remote route stewardship guard that rejects Clawix-stewarded API route entries for
   `/v1/remote/*`, `/v1/gateway/*`, and `/v1/sync/*`.
 - A mesh classification guard that rejects unclassified `/v1/mesh/*` additions.
 - A loopback endpoint guard that rejects new ad hoc `127.0.0.1` service URL
@@ -490,7 +1386,7 @@ Likely scripts to extend or add:
 Acceptance:
 
 - negative fixtures prove each forbidden category fails;
-- allowlist entries require reason, owner, expiry when applicable, and test;
+- allowlist entries require reason, steward, expiry when applicable, and test;
 - docs-only anchors remain allowed only in ADR/interface docs;
 - guard is part of `bash scripts/test.sh fast` or a documented focused lane.
 
@@ -515,7 +1411,7 @@ Rules:
 - Do not make Clawix the source of truth for framework remote APIs.
 - Do not list remote route anchors as Clawix-owned API routes.
 - Generated files must be regenerated by their canonical generator.
-- Baseline changes must explain debt control, owner, risk, expiry, and reentry.
+- Baseline changes must explain debt control, steward, risk, expiry, and reentry.
 
 Acceptance:
 
@@ -722,7 +1618,7 @@ Update docs only after the code and guardrails agree.
 
 Every durable new surface must include:
 
-- owner
+- steward
 - canonicality
 - route or endpoint source
 - route classification
@@ -785,7 +1681,7 @@ This refactor must not:
 
 The final implementation report must include:
 
-- summary of route ownership changes;
+- summary of route stewardship changes;
 - list of deleted or migrated literals;
 - mesh route classification table;
 - endpoint resolver callsite migration summary;
@@ -794,4 +1690,4 @@ The final implementation report must include:
 - signed-host or partial validation status;
 - performance evidence or explicit performance pending status;
 - external-pending rows that remain;
-- known follow-up items with owner and blocker.
+- known follow-up items with steward and blocker.

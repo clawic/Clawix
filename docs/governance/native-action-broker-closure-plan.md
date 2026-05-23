@@ -2,7 +2,7 @@
 
 Status: implementation plan.
 
-Owner area: host-security.
+Steward area: host-security.
 
 Goal: remove every executable macOS action exception from
 `docs/native-action-broker-allowlist.json` by routing Mac Utilities,
@@ -130,7 +130,7 @@ The checker must allow these patterns only in:
 
 - `ClawHostKit` broker implementation files.
 - test fakes that do not mutate the host.
-- temporary allowlist entries with owner, reason, migration target, expiry,
+- temporary allowlist entries with steward, reason, migration target, expiry,
   and exact pattern id.
 
 Add self-test fixtures for blocked and allowed examples. Closure requires the
@@ -228,7 +228,7 @@ Required behavior:
 Required tests:
 
 - Already-muted systems are not unmuted by Clawix.
-- Fast cancel/start sequences preserve ownership correctly.
+- Fast cancel/start sequences preserve state responsibility correctly.
 - Delayed mute and delayed unmute cancellation cannot leave stale work items.
 - AppleScript or CoreAudio failure returns a failed receipt and user-visible
   error.
@@ -359,8 +359,9 @@ Run sibling ClawJS focused tests after broker or atlas changes:
 
 ```bash
 swift test --package-path apps/host --filter MacControlTests
-node --test packages/clawjs-core/src/mac-control-plane.test.ts
-node --test packages/clawjs/src/cli-mac-control-command.test.ts
+npx vitest run --config vitest.config.ts \
+  packages/clawjs-core/src/mac-control-plane.test.ts \
+  packages/clawjs/src/cli-mac-control-command.test.ts
 ```
 
 Run repository guardrails before final closure:
@@ -417,3 +418,96 @@ The goal is not complete until every item is true:
 
 Only after this checklist is complete may the native action broker closure
 goal be marked complete.
+
+## Implementation Status 2026-05-23
+
+Implemented:
+
+- ClawJS `MacControlActionBroker` now plans and executes brokered capabilities
+  for dictation text injection, audio mute status/set, media playback
+  status/pause/resume, and Mac Utilities actions.
+- Clawix Mac Utilities, dictation `TextInjector`, dictation `MediaController`,
+  and dictation `PlaybackController` now route through `NativeMacActionBroker`
+  / `MacControlActionBroker` receipts instead of direct AppleScript, pasteboard,
+  keyboard event, CoreAudio mute, power assertion, pointer, or utility process
+  execution in those files.
+- `docs/native-action-broker-allowlist.json` has zero active entries.
+- The obsolete Clawix `ClawixMacUtilityRoutes` escape hatch and the unused
+  `pmset` / `defaults` / `killall` route constants were removed; the old test
+  that required those local routes was removed because it contradicted the
+  broker closure.
+- Sensitive mutations now fail closed when the audit write fails.
+- Documentation and discoverability were updated in `docs/host-ownership.md`,
+  `docs/decision-map.md`, and the ClawJS Mac control governance docs.
+
+Hermetic validation passed:
+
+```bash
+node scripts/native_permission_broker_check.mjs
+node scripts/native_action_broker_check.mjs --self-test
+node scripts/native_action_broker_check.mjs
+node scripts/no-irreversible-data-loss-check.mjs
+swift test --package-path macos --scratch-path /tmp/clawix-native-action-broker-closure-build --filter 'NativeMacActionBrokerTests|HostActionPolicyTests|DictationTextInjectionBrokerTests|DictationMediaBrokerTests|MacUtilitiesBrokerRoutingTests'
+swift test --package-path apps/host --filter MacControlTests
+npx vitest run --config vitest.config.ts packages/clawjs-core/src/mac-control-plane.test.ts packages/clawjs/src/cli-mac-control-command.test.ts
+```
+
+Results:
+
+- Clawix focused broker suite passed 24 tests with zero failures.
+- ClawJS `MacControlTests` passed 38 tests with zero failures.
+- ClawJS Vitest Mac control suites passed 19 tests with zero failures.
+- `node scripts/no-irreversible-data-loss-check.mjs` now passes with 474 source
+  hits covered by 26 action classes; the prior whole-tree destructive-source
+  failures were classified or ignored explicitly, including the Linux contacts
+  and QuickAsk snippets surface command rows.
+- `bash macos/scripts/public_hygiene_check.sh` now passes. The prior blockers
+  were resolved by replacing the Windows Secrets live vault dependency with a
+  blocked projection placeholder and by keeping Windows crash/telemetry toggles
+  disabled until governed routes exist.
+- `node scripts/release_external_pending_gate.mjs --self-test` passes after
+  isolating its strict host/device lane fixtures from ambient local validation
+  environment variables and coordination leases.
+- `bash scripts/test.sh fast` now progresses through the broker checks,
+  public hygiene, rescue mirror, release/debt/security/performance guards,
+  persistent-surface guard, surface narrative/resource-contract guards,
+  remote route/port inventory, UI completion, UI release gate, and conceptual
+  vocabulary. It is still not passing evidence because
+  `scripts/ui_surface_inventory_check.mjs` reports unmapped visible UI
+  candidates outside this broker closure:
+  `macos/Sources/Clawix/AgentControl/ClxControlHandlers.swift`,
+  `macos/Sources/Clawix/AgentControl/ClxWindowCapture.swift`,
+  `macos/Sources/Clawix/Appshots/AppshotComposerActions.swift`,
+  `ios/Sources/Clawix/Advanced/CommandPalette.swift`,
+  `ios/Sources/Clawix/Advanced/ComposerDraftStore.swift`, and
+  `ios/Sources/Clawix/Advanced/QueuedDrafts.swift`.
+- `bash scripts/test.sh changed` is not passing evidence yet. Earlier attempts
+  were blocked by active `fast` coordination leases; rerun after the current
+  `fast` inventory blocker is resolved or formally narrowed.
+
+Current blockers:
+
+- Signed real-app validation is `EXTERNAL PENDING`: `.app-mode` is `dummy`, and
+  the canonical real-app preflight fails with `real_app_mode_not_real`. No
+  Computer Use exercise or visible broker receipt/audit validation was attempted
+  because the signed real-app precondition is not satisfied.
+- `bash scripts/test.sh changed` is currently blocked before execution by the
+  coordination broker. Do not bypass this for final closure; rerun after
+  the `fast` inventory blocker is resolved or formally narrowed.
+- `bash scripts/test.sh fast` is blocked by UI surface inventory drift unrelated
+  to the native action broker closure. The next steward must map, classify, or
+  intentionally exclude the six reported UI candidate files before `fast` can
+  be used as closure evidence.
+- A manual broad native-pattern search still finds native launch/process and
+  pasteboard helpers outside the original exception set, for example
+  `ChangedFileCard.swift`, `HelpMenuCommands.swift`, `QuickAskActions.swift`,
+  `ClawJSProcessSupport.swift`, `Settings/Providers/DeviceCodeSignInSheet.swift`,
+  `ScreenTools/ScreenToolService.swift`, and multiple agent/framework bridge
+  clients. The original allowlist exceptions are migrated, but this is not yet
+  proof that every native macOS touchpoint in all Clawix source is brokered.
+
+Do not mark the goal complete until the real-app validation row is satisfied or
+explicitly accepted as external pending, until `changed` and `fast` produce
+passing evidence or documented scope-revision evidence, and until the broad
+native-pattern remainder is either brokered, explicitly classified as outside
+Mac Control, or tracked as a concrete follow-up blocker.

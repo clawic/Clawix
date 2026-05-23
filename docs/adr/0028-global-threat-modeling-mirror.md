@@ -76,7 +76,7 @@ affected.
 
 ## Source Decision Audit
 
-Source alias: `2026-05-21-p0-global-threat-modeling-request`.
+Source alias: `source:global-threat-modeling`.
 
 This mirror implements the same P0 global threat modeling request as sibling
 ClawJS ADR 0039. No separate Clawix source decision audit row existed for this

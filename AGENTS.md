@@ -115,6 +115,8 @@ Canonical `bash scripts/test.sh <lane>` and
 they report `PENDING`, do not launch the same lane manually or wait idly; record
 the pending status and continue with non-conflicting work. Bypass requires
 `CLAW_AGENT_COORDINATION_BYPASS_REASON` and is partial/degraded evidence.
+Runners heartbeat acquired leases while checks are active and release all
+primary and declared resource leases before exiting.
 
 ## Public Hygiene And Commits
 

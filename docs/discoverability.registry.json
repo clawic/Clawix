@@ -999,6 +999,8 @@
         "ADR 0026",
         "ui state invalidation boundary",
         "high-churn streaming state",
+        "cross-platform streaming invalidation",
+        "iOS Android Web transcript boundary",
         "adr:ui-state-invalidation-boundary"
       ],
       "searchQueries": [
@@ -2878,6 +2880,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-mesh-route-classification-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/mesh_route_classification_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "mesh_route_classification_check",
+        "Mesh Route Classification Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "mesh_route_classification_check",
+          "expectPath": "scripts/mesh_route_classification_check.mjs"
+        }
+      ],
+      "guard": "scripts/mesh_route_classification_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-naming-shape-check",
       "kind": "guardrail",
       "steward": "clawix",
@@ -3344,6 +3371,31 @@
         }
       ],
       "guard": "scripts/remote_canon_alignment_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-remote-route-port-boundary-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/remote_route_port_boundary_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "remote_route_port_boundary_check",
+        "Remote Route Port Boundary Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "remote_route_port_boundary_check",
+          "expectPath": "scripts/remote_route_port_boundary_check.mjs"
+        }
+      ],
+      "guard": "scripts/remote_route_port_boundary_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -4723,7 +4775,9 @@
       ],
       "discoveryTerms": [
         "ui_state_invalidation_boundary_check",
-        "Ui State Invalidation Boundary Check"
+        "Ui State Invalidation Boundary Check",
+        "cross-platform UI state invalidation guard",
+        "iOS Android Web streaming invalidation checks"
       ],
       "searchQueries": [
         {

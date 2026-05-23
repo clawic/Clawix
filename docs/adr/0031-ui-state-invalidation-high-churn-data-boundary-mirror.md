@@ -39,8 +39,10 @@ flows.
 - **Constrained axes**: broad `AppState`-style stores cannot carry live
   payload deltas.
 - **Tradeoffs accepted**: structural changes need explicit summary publishing.
-- **Debt or pending evidence**: macOS has the first enforced slice; other
-  platforms add checks when their high-churn stores are touched.
+- **Debt or pending evidence**: macOS, iOS, Android, and Web chat streaming
+  stores now have static guard coverage and focused store/coalescer tests.
+  Runtime iOS execution remains dependent on an available simulator/device
+  destination in the validation environment.
 
 ## Source Decision Audit
 
@@ -52,9 +54,12 @@ routes to sibling ClawJS ADR 0045 and local ADR 0026.
 - **Human surface**: `docs/decision-map.md`, `macos/PERF.md`, and local ADR
   0026.
 - **Programmatic surface**: `scripts/ui_state_invalidation_boundary_check.mjs`,
-  `scripts/surface_resource_contract_guard.mjs`, and focused UI tests.
+  `scripts/surface_resource_contract_guard.mjs`, focused macOS/iOS/Android/Web
+  UI store tests, and Web/Android platform test lanes.
 - **Persistence**: ADR operational coverage and resource contracts.
-- **Gaps**: non-macOS checks are pending until those surfaces change.
+- **Gaps**: non-macOS chat streaming checks are enforced for iOS, Android, and
+  Web source/test surfaces; only live iOS runtime execution depends on local
+  destination availability.
 - **Validation**: UI invalidation guard, resource contract guard, and focused
   platform tests.
 

@@ -1,0 +1,731 @@
+{
+  "schemaVersion": 1,
+  "sourcePlan": "docs/plans/remote-route-port-refactor-plan.md",
+  "reviewedAt": "2026-05-23",
+  "canonicalSources": [
+    {
+      "kind": "clawjs_route_graph",
+      "command": "claw inspect route remote.chatGateway --json"
+    },
+    {
+      "kind": "clawjs_route_graph",
+      "command": "claw inspect route gateway.headlessAgentHost --json"
+    },
+    {
+      "kind": "clawjs_route_graph",
+      "command": "claw inspect route mesh.resourceShare --json"
+    },
+    {
+      "kind": "clawjs_remote_contracts",
+      "command": "claw remote contracts --json"
+    },
+    {
+      "kind": "clawjs_external_pending",
+      "command": "claw remote pending --json"
+    },
+    {
+      "kind": "clawjs_mesh_package",
+      "path": "<clawjs-repo>/packages/mesh/README.md"
+    },
+    {
+      "kind": "clawjs_mesh_package",
+      "path": "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+    }
+  ],
+  "policy": {
+    "newMeshRoutes": "fail until classified here",
+    "compatibilityAdapters": "must carry expiresAt, replacement contract refs, current tests, target tests, and external pending evidence",
+    "hostLocalHelpers": "may stay only as private bridge helpers; route literals must move behind generated ClawJS or shared route projections before closure",
+    "retiredRoutes": "must keep replacement evidence and removal tests for one release window"
+  },
+  "routes": [
+    {
+      "id": "clawix.mesh.identity.get",
+      "method": "GET",
+      "route": "/v1/mesh/identity",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:GET /v1/mesh/identity",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_identity_decodesNodeIdentity",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route mesh.resourceShare --json"
+      ],
+      "securityPosture": {
+        "access": "bearer_or_pairing_metadata",
+        "notes": "Identity exposes pairing metadata only; no secrets or job payloads."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "device_trust_acceptance"
+      ]
+    },
+    {
+      "id": "clawix.mesh.peers.get",
+      "method": "GET",
+      "route": "/v1/mesh/peers",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:GET /v1/mesh/peers",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_peers_decodesEnvelope"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route mesh.resourceShare --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Peer list is local host state and must not be served to LAN clients."
+      },
+      "externalPending": [
+        "physical_peer_trust"
+      ]
+    },
+    {
+      "id": "clawix.mesh.peers.post",
+      "method": "POST",
+      "route": "/v1/mesh/peers",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh host store",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route mesh.resourceShare --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Peer registration mutates local trust state and must remain private."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.workspaces.get",
+      "method": "GET",
+      "route": "/v1/mesh/workspaces",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:GET /v1/mesh/workspaces",
+        "sync.sessions"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_workspaces_decodesEnvelope"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route sync.sessions --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Workspace paths are local host allowlist state."
+      },
+      "externalPending": [
+        "physical_sync_driver_application"
+      ]
+    },
+    {
+      "id": "clawix.mesh.workspaces.post",
+      "method": "POST",
+      "route": "/v1/mesh/workspaces",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh workspace store",
+        "sync.sessions"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_addWorkspace_postsAndReturns"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route sync.sessions --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Workspace allowlist writes must stay local and auditable."
+      },
+      "externalPending": [
+        "physical_sync_driver_application",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.link.post",
+      "method": "POST",
+      "route": "/v1/mesh/link",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:POST /v1/mesh/link",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_link_returnsPeer",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route mesh.resourceShare --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "The local app initiates pairing; remote token is sent only to the selected peer."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "device_trust_acceptance"
+      ]
+    },
+    {
+      "id": "clawix.mesh.pair.post",
+      "method": "POST",
+      "route": "/v1/mesh/pair",
+      "classification": "host_local_bridge_helper",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "retained_as_private_helper_pending_shared_route_projection",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:POST /v1/mesh/pair",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh",
+        "claw inspect route mesh.resourceShare --json"
+      ],
+      "securityPosture": {
+        "access": "pairing_token",
+        "notes": "Pairing accepts only the presented one-time token and records scoped trust."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "device_trust_acceptance"
+      ]
+    },
+    {
+      "id": "clawix.mesh.remote_jobs.post",
+      "method": "POST",
+      "route": "/v1/mesh/remote-jobs",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_gateway_remote_job_contract",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "remote.chatGateway",
+        "gateway.headlessAgentHost",
+        "@clawjs/mesh:POST /v1/mesh/remote-jobs"
+      ],
+      "replacementEvidence": [
+        "claw inspect route remote.chatGateway --json",
+        "claw inspect route gateway.headlessAgentHost --json",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_remoteJob_dispatchesAndPolls",
+        "swift test --package-path macos --filter MeshClientTests/test_workspaceDenied_isMappedToTypedError",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route remote.chatGateway --json",
+        "claw remote contracts --json",
+        "claw remote pending --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Outbound remote-job start currently asks the local helper to seal and forward the job."
+      },
+      "externalPending": [
+        "agent_runtime_execution",
+        "physical_iroh_handshake",
+        "signed_host_audit_persistence",
+        "provider_device_e2e"
+      ]
+    },
+    {
+      "id": "clawix.mesh.jobs.post",
+      "method": "POST",
+      "route": "/v1/mesh/jobs",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_gateway_remote_job_contract",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "targetContractRefs": [
+        "remote.chatGateway",
+        "gateway.headlessAgentHost",
+        "@clawjs/mesh:POST /v1/mesh/jobs"
+      ],
+      "replacementEvidence": [
+        "claw inspect route remote.chatGateway --json",
+        "claw inspect route gateway.headlessAgentHost --json",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route remote.chatGateway --json",
+        "claw remote contracts --json"
+      ],
+      "securityPosture": {
+        "access": "signed_encrypted_peer",
+        "notes": "Inbound jobs require signed encrypted envelopes from known non-revoked peers."
+      },
+      "externalPending": [
+        "agent_runtime_execution",
+        "physical_iroh_handshake",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.jobs.get",
+      "method": "GET",
+      "route": "/v1/mesh/jobs/{jobId}",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_runtime_or_gateway_job_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "remote.chatGateway",
+        "gateway.headlessAgentHost",
+        "jobs.stream",
+        "@clawjs/runtime:GET /v1/runtime/jobs/{id}",
+        "@clawjs/runtime:GET /v1/runtime/jobs/{id}/events"
+      ],
+      "replacementEvidence": [
+        "claw inspect route remote.chatGateway --json",
+        "claw inspect route gateway.headlessAgentHost --json",
+        "<clawjs-repo>/packages/clawjs-runtime/README.md",
+        "<clawjs-repo>/packages/clawjs-runtime/src/client.ts",
+        "<clawjs-repo>/packages/clawjs-runtime/src/app.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "swift test --package-path macos --filter MeshClientTests/test_remoteJob_dispatchesAndPolls",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route remote.chatGateway --json",
+        "claw remote contracts --json",
+        "npm exec vitest run packages/clawjs-runtime/src/runtime-logs.test.ts packages/clawjs-runtime/src/lazy-app.test.ts packages/clawjs-runtime/src/config.test.ts"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Local polling surface for a remote job snapshot and event log."
+      },
+      "externalPending": [
+        "agent_runtime_execution",
+        "provider_device_e2e"
+      ]
+    },
+    {
+      "id": "clawix.mesh.jobs_cancel.post",
+      "method": "POST",
+      "route": "/v1/mesh/jobs/cancel",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_gateway_remote_job_contract",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "targetContractRefs": [
+        "remote.chatGateway",
+        "gateway.headlessAgentHost"
+      ],
+      "replacementEvidence": [
+        "claw inspect route remote.chatGateway --json",
+        "claw inspect route gateway.headlessAgentHost --json"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route remote.chatGateway --json",
+        "claw remote contracts --json"
+      ],
+      "securityPosture": {
+        "access": "signed_encrypted_peer",
+        "notes": "Cancellation is a signed peer mutation and must remain auditable."
+      },
+      "externalPending": [
+        "agent_runtime_execution",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.jobs_events.post",
+      "method": "POST",
+      "route": "/v1/mesh/jobs/events",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_runtime_or_gateway_job_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "packages/ClawixCore/Sources/ClawixCore/StableSurfaceValues.swift",
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
+        "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift"
+      ],
+      "targetContractRefs": [
+        "remote.chatGateway",
+        "gateway.headlessAgentHost",
+        "jobs.stream",
+        "@clawjs/runtime:GET /v1/runtime/jobs/events",
+        "@clawjs/runtime:GET /v1/runtime/jobs/{id}/events"
+      ],
+      "replacementEvidence": [
+        "claw inspect route remote.chatGateway --json",
+        "claw inspect route gateway.headlessAgentHost --json",
+        "<clawjs-repo>/packages/clawjs-runtime/README.md",
+        "<clawjs-repo>/packages/clawjs-runtime/src/client.ts",
+        "<clawjs-repo>/packages/clawjs-runtime/src/app.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos/Helpers/Bridged --filter RemoteMeshHTTPControllerBoundaryTests",
+        "python3 macos/Helpers/Bridged/Tests/e2e_remote_mesh.py"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route remote.chatGateway --json",
+        "claw remote contracts --json",
+        "npm exec vitest run packages/clawjs-runtime/src/runtime-logs.test.ts packages/clawjs-runtime/src/lazy-app.test.ts packages/clawjs-runtime/src/config.test.ts"
+      ],
+      "securityPosture": {
+        "access": "signed_encrypted_peer",
+        "notes": "Events are read through a signed peer envelope until replaced by runtime event projection."
+      },
+      "externalPending": [
+        "agent_runtime_execution",
+        "provider_device_e2e"
+      ]
+    },
+    {
+      "id": "clawix.mesh.hosts.post",
+      "method": "POST",
+      "route": "/v1/mesh/hosts",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_clawjs_host_store_and_trust_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:POST /v1/mesh/hosts",
+        "mesh.resourceShare",
+        "remote.secretBrokeredOperation"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts",
+        "claw inspect route remote.secretBrokeredOperation --json"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos --filter MeshClientTests",
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route mesh.resourceShare --json",
+        "claw inspect route remote.secretBrokeredOperation --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Host upsert may reference SSH secret ids; plaintext secret material must stay in the broker/store."
+      },
+      "externalPending": [
+        "device_trust_acceptance",
+        "provider_secret_retrieval",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.hosts.delete",
+      "method": "DELETE",
+      "route": "/v1/mesh/hosts/{nodeId}",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_clawjs_host_store_and_trust_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:DELETE /v1/mesh/hosts/:id",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos --filter MeshClientTests",
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route mesh.resourceShare --json",
+        "claw remote pending --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Hard delete is allowed only for local host records and must not imply remote revocation."
+      },
+      "externalPending": [
+        "device_trust_acceptance",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.hosts_revoke.post",
+      "method": "POST",
+      "route": "/v1/mesh/hosts/{nodeId}/revoke",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_clawjs_host_store_and_trust_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:POST /v1/mesh/hosts/:id/revoke",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos --filter MeshClientTests",
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route mesh.resourceShare --json",
+        "claw remote pending --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Revocation updates local trust state and must have audit evidence before remote production use."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "device_trust_acceptance",
+        "signed_host_audit_persistence"
+      ]
+    },
+    {
+      "id": "clawix.mesh.hosts_unrevoke.post",
+      "method": "POST",
+      "route": "/v1/mesh/hosts/{nodeId}/unrevoke",
+      "classification": "compatibility_adapter",
+      "currentOwner": "clawix",
+      "targetOwner": "clawjs",
+      "migrationState": "replace_with_clawjs_host_store_and_trust_projection",
+      "expiresAt": "2026-07-15",
+      "currentImplementationRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift"
+      ],
+      "currentClientRefs": [
+        "macos/Sources/Clawix/Bridge/MeshClient.swift",
+        "macos/Sources/Clawix/Bridge/MeshStore.swift"
+      ],
+      "targetContractRefs": [
+        "@clawjs/mesh:POST /v1/mesh/hosts/:id/unrevoke",
+        "mesh.resourceShare"
+      ],
+      "replacementEvidence": [
+        "<clawjs-repo>/packages/mesh/README.md",
+        "<clawjs-repo>/packages/mesh/src/mesh-server.ts"
+      ],
+      "currentBehaviorTests": [
+        "swift test --package-path macos --filter MeshClientTests",
+        "pnpm --dir <clawjs-repo> test --filter @clawjs/mesh"
+      ],
+      "targetBehaviorTests": [
+        "claw inspect route mesh.resourceShare --json",
+        "claw remote pending --json"
+      ],
+      "securityPosture": {
+        "access": "loopback",
+        "notes": "Unrevocation is local trust repair until a signed ClawJS trust decision replaces it."
+      },
+      "externalPending": [
+        "physical_peer_trust",
+        "device_trust_acceptance",
+        "signed_host_audit_persistence"
+      ]
+    }
+  ]
+}

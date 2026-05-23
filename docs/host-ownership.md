@@ -75,10 +75,11 @@ execution, and audit. `MacControlActionBroker` is the canonical broker;
 `MacControlWire` is the JSON contract boundary that maps broker plans and
 receipts to the framework/host shape consumed by bridge, API, MCP, and CLI
 adapters. Clawix keeps `NativeMacActionBroker` and `NativeMacActionWire` only
-as local compatibility aliases to those shared types. The first brokered slice
-covers Wi-Fi, windows, and Shortcuts; feature code should add capability
-adapters in `ClawHostKit` instead of spawning `networksetup`, `shortcuts`, or
-AppleScript directly. Temporary native action exceptions live in
+as local compatibility aliases to those shared types. The brokered slice now
+covers Wi-Fi, windows, Shortcuts, dictation text injection, audio mute, and approved media playback;
+feature code should add capability adapters in `ClawHostKit` instead of
+spawning `networksetup`, `shortcuts`, or AppleScript directly. Temporary native
+action exceptions live in
 `docs/native-action-broker-allowlist.json` with owner, reason, migration target,
 and expiry.
 

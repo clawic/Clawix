@@ -85,7 +85,7 @@
     {
       "id": "adoption-canonicity-governance-p0",
       "artifactPath": "docs/governance/adoption-canonicity/source-review.json",
-      "sourceConversationId": "source:local-review",
+      "sourceConversationId": "source:adoption-canonicity",
       "sourcePlanId": "p0-adoption-and-canonicity-governance",
       "artifactKind": "json-source-review",
       "minimumDecisionRows": 1,
@@ -121,7 +121,7 @@
     {
       "id": "global-threat-modeling-mirror-selective-backfill",
       "artifactPath": "docs/adr/0028-global-threat-modeling-mirror.md",
-      "sourceConversationId": "2026-05-21-p0-global-threat-modeling-request",
+      "sourceConversationId": "source:global-threat-modeling",
       "artifactKind": "markdown-adr-source-audit",
       "markdownRowPattern": "^## Source Decision Audit$",
       "markdownRowPatternLabel": "Source Decision Audit section",
@@ -140,7 +140,7 @@
     {
       "id": "ui-state-invalidation-boundary-selective-backfill",
       "artifactPath": "docs/adr/0036-ui-state-invalidation-boundary.md",
-      "sourceConversationId": "2026-05-21-p0-ui-state-invalidation-boundary-request",
+      "sourceConversationId": "source:ui-state-invalidation-boundary",
       "artifactKind": "markdown-adr-source-audit",
       "markdownRowPattern": "^## Source Decision Audit$",
       "markdownRowPatternLabel": "Source Decision Audit section",

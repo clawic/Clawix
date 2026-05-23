@@ -90,7 +90,7 @@ sidebar summaries, sidebar snapshots, search route maps, or unrelated chrome.
 
 ## Source Decision Audit
 
-Source alias: `2026-05-21-p0-ui-state-invalidation-boundary-request`.
+Source alias: `source:ui-state-invalidation-boundary`.
 
 This ADR implements the public-safe decision from the 2026-05-21 P0 UI state
 invalidation boundary request. The implemented evidence is this ADR, the
@@ -103,16 +103,18 @@ tests, and `scripts/ui_state_invalidation_boundary_check.mjs`.
   explain the boundary and the long-streaming validation scenario.
 - **Programmatic surface**: `scripts/ui_state_invalidation_boundary_check.mjs`,
   `swift test --package-path macos --filter 'SidebarStoreTests|ChatStorePublicationTests'`,
-  and `bash scripts/test.sh fast` enforce the macOS slice.
+  iOS `ClawixTests`, Android `testDebugUnitTest`, Web unit/typecheck lanes,
+  and `bash scripts/test.sh fast` enforce the cross-platform slice.
 - **Persistence**: no user data schema changes. The durable public contract is
   persisted in `docs/discoverability.registry.json`,
   `docs/adr-operational-coverage.manifest.json`, and this ADR.
-- **Gaps**: cross-platform enforcement is `pending`; the rule applies now, but
-  platform-specific checks should be added when non-macOS streaming stores are
-  changed.
+- **Gaps**: no static/source guard gap remains for iOS, Android, or Web chat
+  streaming stores. Runtime iOS simulator/device execution still depends on an
+  available iOS destination in the validation environment.
 - **Validation**: human-path validation is the macOS performance playbook
-  scenario. Programmatic validation is the focused Swift test filter and the
-  UI state invalidation boundary guard.
+  scenario. Programmatic validation is the focused macOS Swift test filter,
+  iOS store invalidation tests, Android store/coalescer tests, Web store tests,
+  and the UI state invalidation boundary guard.
 
 ## Discovery Route
 

@@ -30,7 +30,8 @@
       "/__pycache__/",
       "/web-dist/assets/",
       "BIP39Wordlist.swift$",
-      "/Tests/"
+      "/Tests/",
+      "\\.test\\.(ts|tsx|js|mjs)$"
     ],
     "keywordPattern": "\\b(delete|deleteAll|archive|unarchive|trash|purge|wipe|erase|destroy|rmSync|removeItem|DELETE|DROP)\\b|fs\\.rm|\\.deleteAll\\("
   },
@@ -39,13 +40,13 @@
       "id": "visual-icons-copy-and-comments",
       "reason": "Icon names, glyph bridges, explanatory text, and comments that do not execute deletion or data movement.",
       "pathPattern": ".*",
-      "linePattern": "(Lucide|TrashIcon|ArchiveIcon|archivebox|FolderOpenIcon|MenuIconImage|Theme/LucideBridge|LucideBridge|Image\\(systemName|Comment|///|//|\\* |Text\\(|title:|subtitle:|detail:|return \"|case \\.?(trash|archive)|case \"trash\"|case \"archive\"|static let (delete|archive)|public static let delete|price-drop|removed id|Removed|DiffLineKind|\\.removed|destroy\\(|Delete is intentionally|nothing to delete)"
+      "linePattern": "(Lucide|TrashIcon|ArchiveIcon|archivebox|FolderOpenIcon|IconChipButton|IconImage\\(\"trash\"|FolderOpenIcon|MenuIconImage|Theme/LucideBridge|LucideBridge|Image\\(systemName|Comment|///|//|\\* |Text\\(|title:|subtitle:|detail:|label:|hint=|return \"|case \\.?(trash|archive)|case \"trash\"|case \"archive\"|\"document\".*\"archive\"|kind: \"archive\"|action: \"archive\"|id: \"archive|static let (delete|archive)|public static let delete|price-drop|removed id|Removed|DiffLineKind|\\.removed|destroy\\(|Delete is intentionally|nothing to delete)"
     },
     {
       "id": "in-memory-listener-or-cache-remove",
       "reason": "In-memory listener sets, render caches, transient dictionaries, or DOM/request bookkeeping; no durable user data is deleted.",
       "pathPattern": ".*",
-      "linePattern": "(listeners\\.delete|stateListeners\\.delete|htmlCache\\.delete|delete pending|pending\\[|inflight\\.remove|activeRequests\\.removeAll|remove\\(key\\)|eventCoalescer\\.reset|stdoutFramer\\.reset|recognizer\\?\\.destroy|socket\\.destroy)"
+      "linePattern": "(listeners\\.delete|stateListeners\\.delete|htmlCache\\.delete|delete pending|pending\\[|delete next\\[|inflight\\.remove|activeRequests\\.removeAll|remove\\(key\\)|eventCoalescer\\.reset|stdoutFramer\\.reset|recognizer\\?\\.destroy|socket\\.destroy)"
     },
     {
       "id": "ui-state-reset-or-selection-remove",
@@ -70,7 +71,7 @@
       "confirmation": "ordinary_ui_action",
       "recoveryOrReport": ["archived chat section", "unarchive action", "runtime mirror rollback on failure"],
       "sourcePatterns": [
-        { "pathPattern": "(ConversationActions|ArchivesRepository|SidebarThreadProjection|ClawixProtocol|BridgeProtocol|DaemonEngineHost|OpenCodeDaemonEngineHost|clawix-bridge/main|windows/Clawix\\.Bridged|web/src/bridge/store|android/app/src/main/java/.*/chatlist/ChatActionsSheet)", "linePattern": "(archive|unarchive|thread/archive|thread/unarchive|archived)" },
+        { "pathPattern": "(ConversationActions|ArchivesRepository|SidebarThreadProjection|ClawixProtocol|BridgeProtocol|DaemonEngineHost|OpenCodeDaemonEngineHost|clawix-bridge/main|windows/Clawix\\.Bridged|web/src/bridge/store|android/app/src/main/java/.*/chatlist/ChatActionsSheet|ios/Sources/Clawix/Advanced/CommandPalette\\.swift)", "linePattern": "(archive|unarchive|thread/archive|thread/unarchive|archived)" },
         { "pathPattern": "(ContentChrome|SidebarChatContextMenu|SidebarView|Sidebar/)", "linePattern": "(archive|unarchive)" }
       ]
     },
@@ -170,7 +171,7 @@
       "confirmation": "destructive alert names the app and states folder removal cannot be undone",
       "recoveryOrReport": ["app list refresh", "error shown through throwing call sites"],
       "sourcePatterns": [
-        { "pathPattern": "(AppsHomeView|AppsSidebarSection|AppsSettingsPage|AppsStore)\\.swift", "linePattern": "(appsStore\\.delete|func delete\\(|removeItem\\(at: dir\\)|Delete|removed from disk|cannot be undone|pin/delete)" }
+        { "pathPattern": "(AppsHomeView|AppsSidebarSection|AppsSettingsPage|AppsStore)\\.swift", "linePattern": "(appsStore\\.delete|delete\\(record\\)|func delete\\(|removeItem\\(at: dir\\)|Delete|removed from disk|cannot be undone|pin/delete)" }
       ]
     },
     {
@@ -202,7 +203,8 @@
         "repair": "Add exact confirmation or provider trash/undo evidence for Contacts and Calendar delete actions."
       },
       "sourcePatterns": [
-        { "pathPattern": "(Contacts|Calendar)/.*\\.swift", "linePattern": "(delete\\(|Delete|backend\\.delete|deleteEvent|eventID)" }
+        { "pathPattern": "(Contacts|Calendar)/.*\\.swift", "linePattern": "(delete\\(|Delete|backend\\.delete|deleteEvent|eventID)" },
+        { "pathPattern": "linux/app/src/lib/people_surface_model\\.ts", "linePattern": "claw contacts (update|archive) --json" }
       ]
     },
     {
@@ -248,7 +250,8 @@
       },
       "sourcePatterns": [
         { "pathPattern": "ClawJS/(ClawJSIndexClient|ClawJSMemoryClient|ClawJSProfileClient|ClawJSPublishingClient|ClawJSSessionsClient|ClawJSSecretsClient|ClawJSSecretsBackend)\\.swift", "linePattern": "(DELETE|delete|archive|purge)" },
-        { "pathPattern": "(MCP|Memory|Telegram|Profile|Index|Life)/.*\\.swift", "linePattern": "(delete|DELETE|trash|purge)" }
+        { "pathPattern": "(MCP|Memory|Telegram|Profile|Index|Life)/.*\\.swift", "linePattern": "(delete|DELETE|trash|purge)" },
+        { "pathPattern": "linux/app/src/lib/quickask_snippet_model\\.ts", "linePattern": "claw snippets delete <slug> --json" }
       ]
     },
     {
@@ -290,6 +293,7 @@
       "policyId": "host-agent-action-reversible-by-default",
       "targets": ["agent-action"],
       "status": "baseline_gap",
+      "required": false,
       "confirmation": "goal removal is destructive UI but needs explicit recovery/report classification",
       "recoveryOrReport": ["goal state can be reloaded from thread goal metadata when available"],
       "debt": {
@@ -415,7 +419,23 @@
       "confirmation": "restore is staged/mapped before apply; verify reports incompatibility before mutation",
       "recoveryOrReport": ["archive verification report", "restore graph"],
       "sourcePatterns": [
-        { "pathPattern": "PortableArchiveSettingsPage\\.swift", "linePattern": "(archive|restore graph|Verify archive)" }
+        { "pathPattern": "(PortableArchiveSettingsPage\\.swift|linux/app/src/(lib/portable_archive_model\\.ts|views/PortableArchiveSettings\\.tsx))", "linePattern": "(archive|restore graph|Verify archive|claw archive)" }
+      ]
+    },
+    {
+      "id": "windows-privacy-data-erase",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "policyId": "host-purge-human-only",
+      "targets": ["hard-purge", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "Windows privacy erase UI path exists; exact confirmation and recovery receipt evidence are outside this broker slice",
+      "recoveryOrReport": ["erase result item count", "settings page reports deleted item count"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Attach exact confirmation and per-item receipt evidence to Windows privacy erase before release closure."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "windows/Clawix\\.App/Views/Settings/PrivacyPage\\.xaml\\.cs", "linePattern": "(EraseKnownData|Deleted)" }
       ]
     },
     {
