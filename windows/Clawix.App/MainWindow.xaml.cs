@@ -52,7 +52,9 @@ public sealed partial class MainWindow : Window
         tray.OpenRequested += () => DispatcherQueue.TryEnqueue(() => Activate());
         tray.PairRequested += () => DispatcherQueue.TryEnqueue(() =>
         {
-            // Phase 4: open Settings -> Pairing.
+            Activate();
+            var win = new SettingsWindow("pairing");
+            win.Activate();
         });
         tray.QuitRequested += () => DispatcherQueue.TryEnqueue(Close);
         if (App.Services.Preferences.Get(WindowsPreferenceKeys.ShowInTray, true))

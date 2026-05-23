@@ -4,5 +4,9 @@ namespace Clawix.App.Views;
 
 public sealed partial class SettingsWindow : Window
 {
-    public SettingsWindow() { InitializeComponent(); }
+    public SettingsWindow(string initialPageTag = "general")
+    {
+        InitializeComponent();
+        SettingsSurface.NavigateTo(initialPageTag);
+    }
 }

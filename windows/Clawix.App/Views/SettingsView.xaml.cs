@@ -1,3 +1,4 @@
+using System.Linq;
 using Clawix.App.Views.Settings;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -7,24 +8,37 @@ namespace Clawix.App.Views;
 
 public sealed partial class SettingsView : UserControl
 {
+    private readonly NavigationView _nav;
+
     public SettingsView()
     {
         InitializeComponent();
-        Loaded += (_, _) =>
-        {
-            // Default to General. Use a NavigationView SelectionChanged
-            // listener for routing.
-            ContentFrame.Navigate(typeof(GeneralPage));
-        };
+        _nav = (NavigationView)Content;
+        _nav.SelectionChanged += Nav_SelectionChanged;
+        NavigateTo("general");
+    }
 
-        var nav = (NavigationView)Content;
-        nav.SelectionChanged += Nav_SelectionChanged;
-        nav.SelectedItem = nav.MenuItems[0];
+    public void NavigateTo(string tag)
+    {
+        foreach (var item in _nav.MenuItems.OfType<NavigationViewItem>())
+        {
+            if ((item.Tag as string) != tag) continue;
+            _nav.SelectedItem = item;
+            NavigateTag(tag);
+            return;
+        }
+
+        NavigateTag("general");
     }
 
     private void Nav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         if (args.SelectedItemContainer?.Tag is not string tag) return;
+        NavigateTag(tag);
+    }
+
+    private void NavigateTag(string tag)
+    {
         Type page = tag switch
         {
             "general"     => typeof(GeneralPage),
