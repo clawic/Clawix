@@ -33,6 +33,23 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
         XCTAssertFalse(store.isLoading)
     }
 
+    func testBotListFailureUsesClassifiedLocalizedMessage() async {
+        let store = TelegramBotsStore(
+            listBotsOperation: {
+                throw TestFailure(errorDescription: "The Internet connection appears to be offline.")
+            }
+        )
+
+        await store.refresh()
+
+        XCTAssertEqual(
+            store.lastError,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
+        XCTAssertFalse(store.isLoading)
+        XCTAssertTrue(store.bots.isEmpty)
+    }
+
     func testStartingSameCommandReloadCancelsStaleLoad() async {
         let slowStarted = expectation(description: "Slow command reload started")
         let slowCancelled = expectation(description: "Slow command reload cancelled")
@@ -373,4 +390,8 @@ final class TelegramBotsStoreCancellationTests: XCTestCase {
             ])
         )
     }
+}
+
+private struct TestFailure: LocalizedError {
+    let errorDescription: String?
 }

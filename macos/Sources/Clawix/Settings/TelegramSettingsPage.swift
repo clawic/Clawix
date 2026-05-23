@@ -313,7 +313,20 @@ private struct BotDetailView: View {
     @State private var commandsLoaded = false
 
     private var inflight: Bool { store.inflight.contains(bot.id) }
+    private var commandsReloading: Bool { store.reloadingCommands.contains(bot.id) }
+    private var chatsReloading: Bool { store.reloadingChats.contains(bot.id) }
     private var lastResult: ClawCliResult? { store.lastActionResult[bot.id] }
+    private var commandsReady: Bool { commandsLoaded && !commandsReloading }
+    private var commandRowsAreValid: Bool {
+        commandsDraft.allSatisfy { row in
+            let command = row.command.trimmingCharacters(in: .whitespacesAndNewlines)
+            let description = row.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return command.isEmpty || (!description.isEmpty && command.range(of: #"^[A-Za-z0-9_]{1,32}$"#, options: .regularExpression) != nil)
+        }
+    }
+    private var canSyncCommands: Bool {
+        commandsReady && !inflight && commandRowsAreValid
+    }
 
     var body: some View {
         ScrollView {
@@ -334,6 +347,10 @@ private struct BotDetailView: View {
         .onChange(of: bot.webhookUrl) { newValue in
             webhookURL = newValue ?? ""
         }
+        .onChange(of: store.commands[bot.id] ?? []) { _, newValue in
+            commandsDraft = newValue
+            commandsLoaded = true
+        }
     }
 
     private func load() {
@@ -341,7 +358,11 @@ private struct BotDetailView: View {
         webhookSecret = ""
         commandsLoaded = false
         commandsDraft = []
-        Task { await store.reloadCommands(bot) }
+        Task {
+            await store.reloadCommands(bot)
+            commandsDraft = store.commands[bot.id] ?? []
+            commandsLoaded = true
+        }
         Task { await store.reloadChats(bot) }
     }
 
@@ -437,14 +458,14 @@ private struct BotDetailView: View {
                         .font(BodyFont.system(size: 11.5))
                         .foregroundColor(Palette.textSecondary)
                     TextField("https://example.com/telegram", text: $webhookURL)
-                        .textFieldStyle(.roundedBorder)
+                        .sheetTextFieldStyle()
                         .disabled(inflight)
                     Text("Secret token (optional)")
                         .font(BodyFont.system(size: 11.5))
                         .foregroundColor(Palette.textSecondary)
                         .padding(.top, 4)
                     SecureField("Optional", text: $webhookSecret)
-                        .textFieldStyle(.roundedBorder)
+                        .sheetTextFieldStyle()
                         .disabled(inflight)
                     HStack(spacing: 10) {
                         Button("Set webhook") {
@@ -486,17 +507,17 @@ private struct BotDetailView: View {
                     EmptyView()
                 }
                 if commandsDraft.isEmpty {
-                    Text("No commands set. Add one and Sync to publish to Telegram.")
+                    Text(commandsReloading ? "Loading commands from Telegram…" : "No commands set. Add one and Sync to publish to Telegram.")
                         .font(BodyFont.system(size: 11.5))
                         .foregroundColor(Palette.textSecondary)
                 } else {
                     ForEach(Array(commandsDraft.enumerated()), id: \.offset) { idx, _ in
                         HStack(spacing: 8) {
                             TextField("start", text: $commandsDraft[idx].command)
-                                .textFieldStyle(.roundedBorder)
+                                .sheetTextFieldStyle()
                                 .frame(width: 120)
                             TextField("Description", text: $commandsDraft[idx].description)
-                                .textFieldStyle(.roundedBorder)
+                                .sheetTextFieldStyle()
                             Button {
                                 commandsDraft.remove(at: idx)
                             } label: {
@@ -504,23 +525,32 @@ private struct BotDetailView: View {
                             }
                             .buttonStyle(.plain)
                             .foregroundColor(Palette.textSecondary)
+                            .disabled(inflight || commandsReloading)
                         }
+                        .disabled(inflight || commandsReloading)
                     }
+                }
+                if !commandRowsAreValid {
+                    Text("Commands must be 1-32 letters, numbers, or underscores and each published command needs a description.")
+                        .font(BodyFont.system(size: 11))
+                        .foregroundColor(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 10) {
                     Button("Add row") {
                         commandsDraft.append(TelegramCommandSpec(command: "", description: ""))
                     }
                     .buttonStyle(.borderless)
+                    .disabled(inflight || commandsReloading)
 
                     Button("Sync to Telegram") {
                         Task {
-                            let cleaned = commandsDraft.filter { !$0.command.isEmpty }
+                            let cleaned = commandsDraft.filter { !$0.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                             await store.saveCommands(bot, commands: cleaned)
                         }
                     }
                     .buttonStyle(.borderless)
-                    .disabled(inflight)
+                    .disabled(!canSyncCommands)
 
                     Button("Reload") {
                         Task {
@@ -530,6 +560,11 @@ private struct BotDetailView: View {
                         }
                     }
                     .buttonStyle(.borderless)
+                    .disabled(inflight || commandsReloading)
+
+                    if commandsReloading {
+                        ProgressView().controlSize(.small)
+                    }
 
                     Spacer()
                 }
@@ -556,10 +591,14 @@ private struct BotDetailView: View {
                     .buttonStyle(.borderless)
                     .font(BodyFont.system(size: 11.5, wght: 500))
                     .foregroundColor(Palette.textPrimary)
+                    .disabled(inflight || chatsReloading)
+                    if chatsReloading {
+                        ProgressView().controlSize(.small)
+                    }
                 }
 
                 if chats.isEmpty {
-                    Text("No chats observed yet. Once polling is on or a webhook fires, chats will appear here.")
+                    Text(chatsReloading ? "Loading chats from Telegram…" : "No chats observed yet. Once polling is on or a webhook fires, chats will appear here.")
                         .font(BodyFont.system(size: 11.5))
                         .foregroundColor(Palette.textSecondary)
                 } else {
@@ -641,7 +680,7 @@ private struct BotDetailView: View {
                             .foregroundColor(Palette.textPrimary)
                     }
                     if !result.stderr.isEmpty {
-                        Text(result.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
+                        Text(telegramFailureMessage(result.stderr, surface: "settings.telegram.actionResult"))
                             .font(BodyFont.system(size: 11))
                             .foregroundColor(result.ok ? Palette.textSecondary : .orange)
                             .fixedSize(horizontal: false, vertical: true)
@@ -697,15 +736,15 @@ private struct AddBotSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 fieldGroup(label: "Secret name (required)") {
                     TextField("telegram_bot_token", text: $secretName)
-                        .textFieldStyle(.roundedBorder)
+                        .sheetTextFieldStyle()
                 }
                 fieldGroup(label: "Account ID (optional)") {
                     TextField("default", text: $accountId)
-                        .textFieldStyle(.roundedBorder)
+                        .sheetTextFieldStyle()
                 }
                 fieldGroup(label: "Label (optional)") {
                     TextField("Support bot", text: $label)
-                        .textFieldStyle(.roundedBorder)
+                        .sheetTextFieldStyle()
                 }
             }
 
@@ -747,6 +786,7 @@ private struct AddBotSheet: View {
     }
 
     private func connect() async {
+        guard !inflight else { return }
         inflight = true
         defer { inflight = false }
         let result = await store.registerBot(
@@ -779,33 +819,39 @@ private struct AddBotSheet: View {
     }
 
     private func userFacingTelegramFailure(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "Telegram connection failed." }
-        if trimmed.localizedCaseInsensitiveContains("command not found"),
-           trimmed.localizedCaseInsensitiveContains("secrets-proxy") {
-            return "Secrets proxy is not installed or is not executable."
-        }
+        telegramFailureMessage(raw, surface: "settings.telegram.registerBot")
+    }
+}
 
-        let lines = trimmed
-            .split(whereSeparator: \.isNewline)
-            .map(String.init)
-        if let firstError = lines.first(where: { $0.localizedCaseInsensitiveContains("error:") }) {
-            return cleanErrorPrefix(firstError)
-        }
-        if let first = lines.first {
-            return cleanErrorPrefix(first)
-        }
-        return String(trimmed.prefix(240))
+private func telegramFailureMessage(_ raw: String, surface: String) -> String {
+    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else {
+        return UserFacingFailure.displayMessage(for: "telegram connection failed", surface: surface)
+    }
+    if trimmed.localizedCaseInsensitiveContains("command not found"),
+       trimmed.localizedCaseInsensitiveContains("secrets-proxy") {
+        return UserFacingFailure.displayMessage(for: "telegram secrets-proxy service is not running", surface: surface)
     }
 
-    private func cleanErrorPrefix(_ raw: String) -> String {
-        var message = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        while message.localizedCaseInsensitiveComparePrefix("error:") {
-            message.removeFirst("error:".count)
-            message = message.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        return message.isEmpty ? "Telegram connection failed." : message
+    let lines = trimmed
+        .split(whereSeparator: \.isNewline)
+        .map(String.init)
+    if let firstError = lines.first(where: { $0.localizedCaseInsensitiveContains("error:") }) {
+        return UserFacingFailure.displayMessage(for: cleanTelegramErrorPrefix(firstError), surface: surface)
     }
+    if let first = lines.first {
+        return UserFacingFailure.displayMessage(for: cleanTelegramErrorPrefix(first), surface: surface)
+    }
+    return UserFacingFailure.displayMessage(for: String(trimmed.prefix(240)), surface: surface)
+}
+
+private func cleanTelegramErrorPrefix(_ raw: String) -> String {
+    var message = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    while message.localizedCaseInsensitiveComparePrefix("error:") {
+        message.removeFirst("error:".count)
+        message = message.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    return message.isEmpty ? "telegram connection failed" : message
 }
 
 private extension String {
@@ -838,6 +884,7 @@ private struct SendMessageSheet: View {
             TextEditor(text: $text)
                 .font(BodyFont.system(size: 13))
                 .frame(minHeight: 120)
+                .disabled(inflight)
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -878,13 +925,17 @@ private struct SendMessageSheet: View {
     }
 
     private func send() async {
+        guard !inflight else { return }
         inflight = true
         defer { inflight = false }
         await store.sendMessage(bot, chatId: chat.chatId, text: text)
         if let envelope = store.lastActionResult[bot.id], envelope.ok {
             dismiss()
         } else if let envelope = store.lastActionResult[bot.id] {
-            failure = envelope.stderr.isEmpty ? "CLI exited non-zero." : envelope.stderr
+            failure = telegramFailureMessage(
+                envelope.stderr.isEmpty ? "telegram cli failure" : envelope.stderr,
+                surface: "settings.telegram.sendMessage"
+            )
         }
     }
 }

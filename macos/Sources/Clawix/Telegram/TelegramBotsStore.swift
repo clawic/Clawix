@@ -27,6 +27,11 @@ final class TelegramBotsStore: ObservableObject {
     /// stderr / stdout if a CLI call failed. Keyed by bot.id.
     @Published private(set) var lastActionResult: [String: ClawCliResult] = [:]
 
+    /// Per-bot reload markers so Settings can disable reload/publish
+    /// controls while it is reconciling state from the sidecar.
+    @Published private(set) var reloadingCommands: Set<String> = []
+    @Published private(set) var reloadingChats: Set<String> = []
+
     /// Per-bot fetched chats. Populated lazily when the user opens the
     /// detail pane. Keyed by bot.id.
     @Published private(set) var chats: [String: [TelegramKnownChat]] = [:]
@@ -162,9 +167,14 @@ final class TelegramBotsStore: ObservableObject {
             self.isLoading = false
         } catch {
             guard isCurrentRefresh(generation: generation) else { return }
-            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.lastError = Self.failureMessage(for: error, surface: "settings.telegram.bots.refresh")
             self.isLoading = false
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     // MARK: - Actions
@@ -246,6 +256,12 @@ final class TelegramBotsStore: ObservableObject {
     }
 
     private func runReloadCommands(_ bot: TelegramBot, key: ReloadKey, generation: Int) async {
+        reloadingCommands.insert(bot.id)
+        defer {
+            if isCurrentReload(key: key, generation: generation) {
+                reloadingCommands.remove(bot.id)
+            }
+        }
         do {
             let envelope = try await reloadCommandsOperation(bot)
             try Task.checkCancellation()
@@ -296,6 +312,12 @@ final class TelegramBotsStore: ObservableObject {
         key: ReloadKey,
         generation: Int
     ) async {
+        reloadingChats.insert(bot.id)
+        defer {
+            if isCurrentReload(key: key, generation: generation) {
+                reloadingChats.remove(bot.id)
+            }
+        }
         do {
             let envelope = try await reloadChatsOperation(bot, query)
             try Task.checkCancellation()
@@ -388,6 +410,12 @@ final class TelegramBotsStore: ObservableObject {
             bumpReloadGeneration(for: key)
             reloadTasks[key]?.cancel()
             reloadTasks[key] = nil
+            switch key.kind {
+            case .commands:
+                reloadingCommands.remove(key.botId)
+            case .chats:
+                reloadingChats.remove(key.botId)
+            }
         }
     }
 
