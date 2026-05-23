@@ -26,7 +26,7 @@
     </Grid>
     <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search chats" Margin="6,4,6,8" />
     <ListView Grid.Row="2" x:Name="ChatList"
-              ItemsSource="{x:Bind Chats, Mode=OneWay}"
+              ItemsSource="{x:Bind Sessions, Mode=OneWay}"
               SelectionChanged="ChatList_SelectionChanged"
               SelectionMode="Single">
       <ListView.ItemTemplate>

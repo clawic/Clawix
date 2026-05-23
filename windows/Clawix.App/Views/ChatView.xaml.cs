@@ -19,6 +19,7 @@ public sealed partial class ChatView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         var state = App.Services.State;
+        state.ComposerFocusRequested += () => DispatcherQueue.TryEnqueue(Composer.FocusInput);
         state.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(state.CurrentMessages))

@@ -35,6 +35,8 @@ public sealed partial class SidebarView : UserControl
                     RateLimits.RenderCredits(state.RateLimits?.Credits);
                 });
         };
+        Sessions.Clear();
+        foreach (var c in state.Sessions) Sessions.Add(c);
         BridgeStatusText.Text = state.BridgeStateLabel;
         RateLimits.Render(state.RateLimits?.Primary, state.RateLimits?.Secondary);
         RateLimits.RenderCredits(state.RateLimits?.Credits);
@@ -46,9 +48,10 @@ public sealed partial class SidebarView : UserControl
             await App.Services.State.SelectChatAsync(chat);
     }
 
-    private void NewSession_Click(object sender, RoutedEventArgs e)
+    private void NewChat_Click(object sender, RoutedEventArgs e)
     {
-        // Phase 4: open ProjectEditorSheet to pick the cwd, then send `newChat` frame.
+        ChatList.SelectedItem = null;
+        App.Services.State.StartNewChat();
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)

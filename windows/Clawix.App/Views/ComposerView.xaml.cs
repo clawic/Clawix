@@ -10,6 +10,11 @@ public sealed partial class ComposerView : UserControl
         InitializeComponent();
     }
 
+    public void FocusInput()
+    {
+        InputBox.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
+    }
+
     private async void Send_Click(object sender, RoutedEventArgs e)
     {
         var text = InputBox.Text.Trim();

@@ -17,6 +17,8 @@ public sealed partial class AppState : ObservableObject
     private readonly ILogger<AppState> _logger;
     private DaemonClient? _client;
 
+    public event Action? ComposerFocusRequested;
+
     [ObservableProperty]
     private List<WireSession> _sessions = [];
 
@@ -109,6 +111,13 @@ public sealed partial class AppState : ObservableObject
         CurrentMessages = [];
         return _client?.SendAsync(new BridgeFrame(new BridgeBody.OpenSession(chat.Id, BridgeConstants.InitialPageLimit)), CancellationToken.None)
             ?? Task.CompletedTask;
+    }
+
+    public void StartNewChat()
+    {
+        CurrentChat = null;
+        CurrentMessages = [];
+        ComposerFocusRequested?.Invoke();
     }
 
     public Task SendMessageAsync(string text)
