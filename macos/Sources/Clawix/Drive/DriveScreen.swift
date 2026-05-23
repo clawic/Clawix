@@ -179,7 +179,7 @@ struct DriveScreen: View {
                     store.setView(view)
                 } label: {
                     HStack {
-                        Image(systemName: iconFor(view))
+                        IconImage(iconFor(view), size: 12)
                         Text(label(for: view))
                         Spacer()
                         Text(String(count(for: view)))
@@ -189,7 +189,7 @@ struct DriveScreen: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(store.currentView == view ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .background(store.currentView == view ? Color.white.opacity(0.10) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -509,7 +509,7 @@ struct DriveItemTile: View {
                 }
             }
             .frame(height: 110)
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(isSelected ? Palette.pastelBlue : .clear, lineWidth: 2))
             Text(item.name).lineLimit(2).multilineTextAlignment(.center).font(.caption)
         }
         .task(id: item.id) {
