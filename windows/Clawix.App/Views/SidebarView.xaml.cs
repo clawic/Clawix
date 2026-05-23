@@ -87,6 +87,21 @@ public sealed partial class SidebarView : UserControl
             await App.Services.State.SetPinnedAsync(chat, !chat.IsPinned);
     }
 
+    private async void RenameChat_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not WireSession chat) return;
+
+        var dialog = new ChatRenameSheet
+        {
+            XamlRoot = XamlRoot,
+            ChatTitle = chat.Title,
+        };
+        var result = await dialog.ShowAsync();
+        if (result != ContentDialogResult.Primary) return;
+
+        await App.Services.State.RenameChatAsync(chat, dialog.ChatTitle);
+    }
+
     private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _selectedProject = ProjectList.SelectedItem as WireProject;

@@ -82,6 +82,10 @@ public sealed class BridgeSessionDispatchParityTests
         await WaitUntilAsync(() => host.PinCalls.Count == 2);
         Assert.Equal(("session-pin", false), host.PinCalls[1]);
 
+        await SendAsync(client, new BridgeBody.RenameSession("session-pin", "Renamed chat"));
+        await WaitUntilAsync(() => host.RenameCalls.Count == 1);
+        Assert.Equal(("session-pin", "Renamed chat"), host.RenameCalls[0]);
+
         await SendAsync(client, new BridgeBody.RequestClawJSServiceStatuses());
         var serviceStatuses = Assert.IsType<BridgeBody.ClawJSServiceStatusesSnapshot>((await ReceiveAsync(client)).Body);
         Assert.Single(serviceStatuses.Services);

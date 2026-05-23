@@ -23,6 +23,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public IReadOnlyList<WireProject> ProjectsCurrent { get; set; } = [];
     public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; set; } = [];
     public List<(string SessionId, bool Pinned)> PinCalls { get; } = new();
+    public List<(string SessionId, string Title)> RenameCalls { get; } = new();
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged;
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
@@ -77,7 +78,11 @@ public sealed class InMemoryEngineHost : IEngineHost
         PinCalls.Add((sessionId, pinned));
         return Task.CompletedTask;
     }
-    public Task HandleRenameAsync(string sessionId, string title, CancellationToken ct) => Task.CompletedTask;
+    public Task HandleRenameAsync(string sessionId, string title, CancellationToken ct)
+    {
+        RenameCalls.Add((sessionId, title));
+        return Task.CompletedTask;
+    }
     public Task<IReadOnlyList<WireProject>> HandleListProjectsAsync(CancellationToken ct)
         => Task.FromResult(ProjectsCurrent);
     public Task<(string? Content, bool IsMarkdown, string? Error)> HandleReadFileAsync(string path, CancellationToken ct)

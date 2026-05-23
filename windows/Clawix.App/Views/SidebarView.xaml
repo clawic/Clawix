@@ -47,9 +47,14 @@
               <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
               <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
             </StackPanel>
-            <Button Grid.Column="1" Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
-              <FontIcon Glyph="&#xE718;" />
-            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+              <Button Click="RenameChat_Click" Tag="{Binding}" ToolTipService.ToolTip="Rename chat">
+                <FontIcon Glyph="&#xE70F;" />
+              </Button>
+              <Button Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
+                <FontIcon Glyph="&#xE718;" />
+              </Button>
+            </StackPanel>
           </Grid>
         </DataTemplate>
       </ListView.ItemTemplate>
@@ -85,9 +90,14 @@
               <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
               <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
             </StackPanel>
-            <Button Grid.Column="1" Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
-              <FontIcon Glyph="&#xE718;" />
-            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+              <Button Click="RenameChat_Click" Tag="{Binding}" ToolTipService.ToolTip="Rename chat">
+                <FontIcon Glyph="&#xE70F;" />
+              </Button>
+              <Button Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
+                <FontIcon Glyph="&#xE718;" />
+              </Button>
+            </StackPanel>
           </Grid>
         </DataTemplate>
       </ListView.ItemTemplate>

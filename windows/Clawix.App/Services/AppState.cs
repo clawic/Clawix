@@ -157,6 +157,20 @@ public sealed partial class AppState : ObservableObject
         return _client.SendAsync(new BridgeFrame(body), CancellationToken.None);
     }
 
+    public Task RenameChatAsync(WireSession chat, string title)
+    {
+        var trimmed = title.Trim();
+        if (trimmed.Length == 0 || trimmed == chat.Title) return Task.CompletedTask;
+
+        var next = chat with { Title = trimmed };
+        Sessions = Sessions.Select(session => session.Id == chat.Id ? next : session).ToList();
+        if (CurrentChat?.Id == chat.Id)
+            CurrentChat = next;
+
+        return _client?.SendAsync(new BridgeFrame(new BridgeBody.RenameSession(chat.Id, trimmed)), CancellationToken.None)
+            ?? Task.CompletedTask;
+    }
+
     public Task SendMessageAsync(string text, IReadOnlyList<WireAttachment>? attachments = null)
     {
         if (_client is null) return Task.CompletedTask;
