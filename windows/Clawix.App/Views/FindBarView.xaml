@@ -5,11 +5,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Border Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="6" Padding="6">
     <StackPanel Orientation="Horizontal" Spacing="6">
-      <TextBox x:Name="QueryBox" PlaceholderText="Find" Width="220" />
-      <Button Content="Prev" />
-      <Button Content="Next" />
+      <TextBox x:Name="QueryBox" PlaceholderText="Find" Width="220" TextChanged="QueryBox_TextChanged" KeyDown="QueryBox_KeyDown" />
+      <Button x:Name="PreviousButton" Content="Prev" Click="PreviousButton_Click" />
+      <Button x:Name="NextButton" Content="Next" Click="NextButton_Click" />
       <TextBlock x:Name="MatchCount" VerticalAlignment="Center" Opacity="0.6" />
-      <Button Content="✕" />
+      <Button Content="✕" Click="CloseButton_Click" />
     </StackPanel>
   </Border>
 </UserControl>

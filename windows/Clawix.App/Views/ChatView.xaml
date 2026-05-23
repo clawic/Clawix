@@ -5,8 +5,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="using:Clawix.Core.Models"
     xmlns:views="using:Clawix.App.Views">
+  <UserControl.KeyboardAccelerators>
+    <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="OpenFind_Invoked" />
+  </UserControl.KeyboardAccelerators>
   <Grid>
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
@@ -18,7 +22,10 @@
                  FontWeight="SemiBold" FontSize="16" />
     </Border>
 
-    <ListView Grid.Row="1" x:Name="MessageList"
+    <views:FindBarView Grid.Row="1" x:Name="FindBar" Visibility="Collapsed"
+                       Margin="16,8,16,0" />
+
+    <ListView Grid.Row="2" x:Name="MessageList"
               ItemsSource="{x:Bind Messages, Mode=OneWay}"
               IsItemClickEnabled="False" SelectionMode="None"
               Padding="16,8">
@@ -32,6 +39,6 @@
       </ListView.ItemTemplate>
     </ListView>
 
-    <views:ComposerView Grid.Row="2" x:Name="Composer" />
+    <views:ComposerView Grid.Row="3" x:Name="Composer" />
   </Grid>
 </UserControl>
