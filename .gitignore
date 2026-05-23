@@ -39,11 +39,8 @@ xcuserdata/
 *.out
 *.err
 
-# Maintainer signing config. Never commit a real codesign identity.
-.signing.env
-.signing.env.local
-.signing.env.*
-!.signing.env.example
+# Local signing config. Never commit a real codesign identity.
+local-signing*.env
 ios/LocalSigning.xcconfig
 .release-notes.md
 

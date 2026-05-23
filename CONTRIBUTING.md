@@ -21,12 +21,12 @@ Requirements: macOS 14+, Swift 5.9+, Xcode Command Line Tools.
 bash macos/scripts/dev.sh
 ```
 
-For a stable codesigned dev build (so macOS keeps your TCC grants between rebuilds), create a `.signing.env` file at the repo root with your codesign identity and bundle id. See [README.md](./README.md#stable-signing-recommended-for-daily-dev) for the format. The file is in `.gitignore`.
+For a stable codesigned dev build (so macOS keeps your TCC grants between rebuilds), set the signing environment described in [README.md](./README.md#stable-signing-recommended-for-daily-dev). Keep local signing files outside this public repo.
 
 ## Privacy and signing rules
 
-- Never commit a `.signing.env` file. It carries the maintainer's codesign identity and bundle id.
-- Never hard-code an Apple Team ID, an `Apple Development:` / `Apple Distribution:` literal, a real bundle id, or any other maintainer-specific value in source files. Read them from environment variables resolved by the build scripts.
+- Never commit local signing files. They carry codesign identities and bundle ids.
+- Never hard-code an Apple Team ID, an Apple signing identity literal, a real bundle id, or any other maintainer-specific value in source files. Read them from environment variables resolved by the build scripts.
 - Never construct `Info.plist` with a literal `CFBundleIdentifier`. The plist is generated in `build_app.sh` interpolating `${BUNDLE_ID}` from the environment.
 - Do not add an Xcode project with `DEVELOPMENT_TEAM` filled in. The field stays empty and is supplied by the script.
 
@@ -39,7 +39,10 @@ The hygiene gate (`macos/scripts/public_hygiene_check.sh`) blocks publishing whe
 
 ## Pull requests
 
-- Keep commit messages in `type(scope): description` form. Examples: `feat(mac/composer): add model menu popup`, `fix(mac/sidebar): resolve overlap on long names`, `chore(repo): update hygiene globs`.
+- Keep commit messages in `type(scope): description` form, written in English. Examples: `feat(mac/composer): add model menu popup`, `fix(mac/sidebar): resolve overlap on long names`, `chore(repo): update hygiene globs`.
+- Include a commit body for every non-trivial commit. Explain why the change
+  exists, what behavior or contract changed, and which validation was run or is
+  still pending.
 - Add a `Signed-off-by: Name <email>` line to commits under the lightweight
   [DCO](DCO). This certifies contribution provenance without adding a broad
   Contributor License Agreement.

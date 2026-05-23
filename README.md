@@ -91,14 +91,14 @@ Compiles debug, kills the previous instance, relaunches. Window position, size a
 
 ### Stable signing (recommended for daily dev)
 
-Create a `.signing.env` file at the repo root (or any parent directory) with your values:
+Set signing values in the environment, or point `CLAWIX_SIGNING_ENV_FILE` at a shell-compatible local file outside this repo:
 
 ```
 SIGN_IDENTITY="<codesign identity>"
 BUNDLE_ID="com.yourdomain.clawix"
 ```
 
-Both `dev.sh` and `build_app.sh` source it automatically. With a stable identity + bundle id, macOS remembers the TCC grants between rebuilds and stops re-prompting. The file is in `.gitignore`.
+Both `dev.sh` and `build_app.sh` read those values when present. With a stable identity + bundle id, macOS remembers the TCC grants between rebuilds and stops re-prompting. Keep any local env file outside the public tree.
 
 List your codesign identities with `security find-identity -v -p codesigning`. Any valid macOS codesign identity works.
 
@@ -138,7 +138,7 @@ The marketing version lives in [`macos/VERSION`](./macos/VERSION). It is the sin
 
 ## Privacy guarantee for contributors
 
-This repository never contains the maintainer's real codesign identity, Apple Team ID, or bundle id. They live in a `.signing.env` file kept outside the public tree. The hygiene gate (`macos/scripts/public_hygiene_check.sh`) blocks publishing if any of those values, or a `.signing.env`, leak into the public source. See [`AGENTS.md`](./AGENTS.md) and [`docs/host-ownership.md`](./docs/host-ownership.md) for the full set of rules contributors are expected to follow.
+This repository never contains the maintainer's real codesign identity, Apple Team ID, or bundle id. They live outside the public tree and are injected through environment variables. The hygiene gate (`macos/scripts/public_hygiene_check.sh`) blocks publishing if those values or private workflow paths leak into the public source. See [`AGENTS.md`](./AGENTS.md) and [`docs/host-ownership.md`](./docs/host-ownership.md) for the full set of rules contributors are expected to follow.
 
 ## Contributing
 
