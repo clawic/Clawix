@@ -25,12 +25,12 @@ struct ProfileEditor: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             tabs
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color.black)
+        .background(Palette.background)
         .task { await store.bootstrap() }
         .onDisappear {
             store.cancelSurfaceWork()
@@ -62,7 +62,7 @@ struct ProfileEditor: View {
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(isSelected ? Color.white.opacity(0.07) : .clear)
+                                .fill(isSelected ? Color.overlay(0.07) : .clear)
                         )
                 }
                 .buttonStyle(.plain)
@@ -105,7 +105,7 @@ struct ProfileEditor: View {
                                 .padding(.horizontal, 10).padding(.vertical, 6)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(Color.white.opacity(0.05))
+                                        .fill(Color.overlay(0.05))
                                 )
                             Button("Generate profile") {
                                 Task {
@@ -145,7 +145,7 @@ struct ProfileEditor: View {
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.05))
+                                .fill(Color.overlay(0.05))
                         )
                     Button("Apply") {
                         Task {
@@ -182,7 +182,7 @@ struct ProfileEditor: View {
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.05))
+                                .fill(Color.overlay(0.05))
                         )
                     Button("Create group") {
                         Task {
@@ -326,7 +326,7 @@ private struct MnemonicCard: View {
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
         }
     }
@@ -344,7 +344,7 @@ private struct GroupRow: View {
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 }
@@ -368,7 +368,7 @@ private struct BlockRow: View {
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 }

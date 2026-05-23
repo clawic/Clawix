@@ -8,20 +8,20 @@ struct PeerProfileView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
-                Divider().background(Color.white.opacity(0.06))
+                Divider().background(Color.overlay(0.06))
                 feedSection
             }
             .padding(20)
         }
         .thinScrollers()
-        .background(Color.black)
+        .background(Palette.background)
     }
 
     private var header: some View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                 Text(initials).font(.system(size: 22, weight: .semibold)).kerning(-0.4)
             }
             .frame(width: 72, height: 72)
@@ -63,7 +63,7 @@ struct PeerProfileView: View {
                     .padding(.horizontal, 12).padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.white.opacity(0.04))
+                            .fill(Color.overlay(0.04))
                     )
                 }
             }
