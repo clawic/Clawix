@@ -373,6 +373,18 @@ enum MarkdownParseCache {
             )
         }
         if let renderKey {
+            if phase == .settled, let cached = cache.get(for: text) {
+                PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+                let hit = cached.markingCacheHit()
+                return Result(
+                    document: hit,
+                    cacheHit: true,
+                    parseMs: 0,
+                    annotateMs: 0,
+                    reusedBlockCount: hit.reusedBlockCount,
+                    reparsedCharacterCount: 0
+                )
+            }
             let document = incrementalCache.document(
                 for: text,
                 key: renderKey,
@@ -397,6 +409,9 @@ enum MarkdownParseCache {
             } else if document.reusedBlockCount > 0 {
                 PerfSignpost.renderMarkdown.event("parse.incremental.reused_blocks", document.reusedBlockCount)
                 PerfSignpost.renderMarkdown.event("parse.incremental.tail_chars", document.reparsedCharacterCount)
+            }
+            if phase == .settled, !document.cacheHit {
+                cache.set(document, for: text, cost: documentCacheCost(document))
             }
             return Result(
                 document: document,
@@ -556,6 +571,7 @@ struct AssistantMarkdownText: View {
     /// re-evaluates and tears down the `TimelineView` once nothing is
     /// animating any more.
     @State private var animationTick: Int = 0
+    private static let lazyBlockThreshold = 80
 
     init(
         text: String,
@@ -576,6 +592,7 @@ struct AssistantMarkdownText: View {
     }
 
     var body: some View {
+        let _ = RenderProbe.tick("AssistantMarkdownText")
         let now = Date()
         let animating = StreamingFade.isAnimating(
             checkpoints: checkpoints,
@@ -629,48 +646,51 @@ struct AssistantMarkdownText: View {
 
     @ViewBuilder
     private func blocksView(_ blocks: [IndexedAnnotatedBlock], checkpoints: [StreamCheckpoint], now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if checkpoints.isEmpty {
-                ForEach(blocks) { item in
-                    blockView(
-                        item.block,
+        if checkpoints.isEmpty, blocks.count >= Self.lazyBlockThreshold {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                settledBlocks(blocks, now: now)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 14) {
+                if checkpoints.isEmpty {
+                    settledBlocks(blocks, now: now)
+                } else {
+                    let split = AssistantMarkdownAnimationSplit.splitStableAndAnimatedBlocks(
+                        blocks,
                         checkpoints: checkpoints,
-                        now: now,
-                        codeBlockOrdinal: item.codeBlockOrdinal
+                        now: now
                     )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            } else {
-                let split = AssistantMarkdownAnimationSplit.splitStableAndAnimatedBlocks(
-                    blocks,
-                    checkpoints: checkpoints,
-                    now: now
-                )
-                ForEach(split.stable) { item in
-                    blockView(
-                        item.block,
-                        checkpoints: [],
-                        now: now,
-                        codeBlockOrdinal: item.codeBlockOrdinal
-                    )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                if !split.animated.isEmpty {
-                    TimelineView(.animation) { ctx in
-                        VStack(alignment: .leading, spacing: 14) {
-                            ForEach(split.animated) { item in
-                                blockView(
-                                    item.block,
-                                    checkpoints: checkpoints,
-                                    now: ctx.date,
-                                    codeBlockOrdinal: item.codeBlockOrdinal
-                                )
+                    settledBlocks(split.stable, now: now)
+                    if !split.animated.isEmpty {
+                        TimelineView(.animation) { ctx in
+                            VStack(alignment: .leading, spacing: 14) {
+                                ForEach(split.animated) { item in
+                                    blockView(
+                                        item.block,
+                                        checkpoints: checkpoints,
+                                        now: ctx.date,
+                                        codeBlockOrdinal: item.codeBlockOrdinal
+                                    )
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func settledBlocks(_ blocks: [IndexedAnnotatedBlock], now: Date) -> some View {
+        ForEach(blocks) { item in
+            blockView(
+                item.block,
+                checkpoints: [],
+                now: now,
+                codeBlockOrdinal: item.codeBlockOrdinal
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

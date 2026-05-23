@@ -90,6 +90,32 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertEqual(split.animated.map(\.id), ["animated"])
     }
 
+    func testSettledRenderKeyReusesGlobalPrewarmCache() {
+        let text = """
+        # Prewarm \(UUID().uuidString)
+
+        | Shape | Count |
+        | --- | ---: |
+        | table | 1 |
+
+        ```swift
+        let cached = true
+        ```
+        """
+
+        let warmed = MarkdownParseCache.parse(text)
+        XCTAssertFalse(warmed.cacheHit)
+
+        let keyed = MarkdownParseCache.parse(
+            text,
+            renderKey: .custom("message:\(UUID().uuidString)"),
+            phase: .settled
+        )
+
+        XCTAssertTrue(keyed.cacheHit)
+        XCTAssertEqual(keyed.blocks.map(\.id), warmed.blocks.map(\.id))
+    }
+
     func testAppendOnlyTextReusesStableBlockIds() {
         let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
         let first = "First paragraph.\n\nSecond paragraph."
