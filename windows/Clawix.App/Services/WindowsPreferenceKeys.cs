@@ -14,4 +14,9 @@ public static class WindowsPreferenceKeys
     public const string PrivacySendCrashReports = "privacy.sendCrashReports";
     public const string PrivacyShareAnonymousTelemetry = "privacy.shareAnonymousTelemetry";
     public const string PrivacyAllowTrainingOnConversations = "privacy.allowTrainingOnConversations";
+    public const string ModelDefault = "model.default";
+    public const string ModelReasoningEffort = "model.reasoningEffort";
+    public const string ModelTemperature = "model.temperature";
+    public const string ModelMaxOutputTokens = "model.maxOutputTokens";
+    public const string ModelStreamByTokens = "model.streamByTokens";
 }

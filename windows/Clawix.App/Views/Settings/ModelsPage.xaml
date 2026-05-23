@@ -6,11 +6,17 @@
   <ScrollViewer Padding="24">
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Models" FontSize="22" FontWeight="SemiBold" />
-      <ComboBox Header="Default model" PlaceholderText="Codex Spark">
+      <ComboBox x:Name="DefaultModelCombo"
+                Header="Default model"
+                PlaceholderText="Codex Spark"
+                SelectionChanged="DefaultModelCombo_SelectionChanged">
         <ComboBoxItem>Codex Spark</ComboBoxItem>
         <ComboBoxItem>Codex Pro</ComboBoxItem>
       </ComboBox>
-      <ComboBox Header="Reasoning effort" PlaceholderText="Auto">
+      <ComboBox x:Name="ReasoningEffortCombo"
+                Header="Reasoning effort"
+                PlaceholderText="Auto"
+                SelectionChanged="ReasoningEffortCombo_SelectionChanged">
         <ComboBoxItem>Auto</ComboBoxItem>
         <ComboBoxItem>Low</ComboBoxItem>
         <ComboBoxItem>Medium</ComboBoxItem>
@@ -18,9 +24,19 @@
       </ComboBox>
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
-          <NumberBox Header="Temperature" Value="0.7" SmallChange="0.1" />
-          <NumberBox Header="Max output tokens" Value="4096" />
-          <ToggleSwitch Header="Stream by tokens (off = stream by chunks)" IsOn="True" />
+          <NumberBox x:Name="TemperatureBox"
+                     Header="Temperature"
+                     SmallChange="0.1"
+                     Minimum="0"
+                     Maximum="2"
+                     ValueChanged="TemperatureBox_ValueChanged" />
+          <NumberBox x:Name="MaxOutputTokensBox"
+                     Header="Max output tokens"
+                     Minimum="1"
+                     ValueChanged="MaxOutputTokensBox_ValueChanged" />
+          <ToggleSwitch x:Name="StreamByTokensSwitch"
+                        Header="Stream by tokens (off = stream by chunks)"
+                        Toggled="StreamByTokensSwitch_Toggled" />
         </StackPanel>
       </Expander>
     </StackPanel>
