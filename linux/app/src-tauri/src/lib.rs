@@ -64,8 +64,18 @@ pub fn run() {
             commands::get_chats,
             commands::get_projects,
             commands::open_session,
+            commands::load_older_messages,
             commands::send_message,
             commands::interrupt_turn,
+            commands::edit_prompt,
+            commands::pin_session,
+            commands::unpin_session,
+            commands::archive_session,
+            commands::unarchive_session,
+            commands::rename_session,
+            commands::read_file,
+            commands::request_generated_image,
+            commands::request_audio,
             commands::start_pairing,
             commands::list_audio_inputs,
             commands::start_dictation,
@@ -123,6 +133,19 @@ mod commands {
         client.open_session(&session_id).await.map_err(|e| e.to_string())
     }
 
+    #[tauri::command]
+    pub async fn load_older_messages(
+        session_id: String,
+        before_message_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client
+            .load_older_messages(&session_id, &before_message_id)
+            .await
+            .map_err(|e| e.to_string())
+    }
+
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct SendMessageArgs {
@@ -149,6 +172,93 @@ mod commands {
     ) -> Result<(), String> {
         let client = state.daemon.lock().await;
         client.interrupt_turn(&session_id).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn edit_prompt(
+        session_id: String,
+        message_id: String,
+        text: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client
+            .edit_prompt(&session_id, &message_id, text.trim())
+            .await
+            .map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn pin_session(
+        session_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.set_pinned(&session_id, true).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn unpin_session(
+        session_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.set_pinned(&session_id, false).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn archive_session(
+        session_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.set_archived(&session_id, true).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn unarchive_session(
+        session_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.set_archived(&session_id, false).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn rename_session(
+        session_id: String,
+        title: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.rename_session(&session_id, title.trim()).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn read_file(
+        path: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.read_file(&path).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn request_generated_image(
+        path: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.request_generated_image(&path).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn request_audio(
+        audio_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.request_audio(&audio_id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]

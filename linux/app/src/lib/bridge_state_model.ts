@@ -25,6 +25,38 @@ export function appendMessage(
   return { ...bySession, [id]: [...current, message] };
 }
 
+export function appendErrorMessage(
+  bySession: Record<string, unknown>,
+  sessionId: unknown,
+  content: string
+): Record<string, unknown> {
+  const id = stringValue(sessionId);
+  const trimmed = content.trim();
+  if (!id || !trimmed) return bySession;
+
+  return appendMessage(bySession, id, {
+    id: `local-error-${Date.now()}`,
+    role: "assistant",
+    content: trimmed,
+    isError: true,
+    streamingFinished: true
+  });
+}
+
+export function prependMessagesPage(
+  bySession: Record<string, unknown>,
+  sessionId: unknown,
+  messages: unknown
+): Record<string, unknown> {
+  const id = stringValue(sessionId);
+  if (!id || !Array.isArray(messages)) return bySession;
+
+  const current = Array.isArray(bySession[id]) ? bySession[id] as unknown[] : [];
+  const seen = new Set(messages.filter(isRecord).map((message) => stringValue(message.id)).filter(Boolean));
+  const tail = current.filter((message) => !isRecord(message) || !seen.has(stringValue(message.id)));
+  return { ...bySession, [id]: [...messages, ...tail] };
+}
+
 export function applyStreamingMessage(
   bySession: Record<string, unknown>,
   frame: UnknownRecord
@@ -46,6 +78,40 @@ export function applyStreamingMessage(
   }
 
   return { ...bySession, [sessionId]: updated };
+}
+
+export function editPromptMessage(
+  bySession: Record<string, unknown>,
+  sessionId: string,
+  messageId: string,
+  content: string
+): Record<string, unknown> {
+  const current = Array.isArray(bySession[sessionId]) ? bySession[sessionId] as unknown[] : [];
+  const index = current.findIndex((message) => isRecord(message) && message.id === messageId);
+  if (index < 0) return bySession;
+
+  const edited = current.slice(0, index + 1);
+  const target = edited[index];
+  edited[index] = isRecord(target) ? { ...target, content } : target;
+  return { ...bySession, [sessionId]: edited };
+}
+
+export function updateSessionFlags(
+  sessions: unknown[],
+  sessionId: string,
+  flags: { isPinned?: boolean; isArchived?: boolean; pinned?: boolean; archived?: boolean }
+): unknown[] {
+  return sessions.map((session) => {
+    if (!isRecord(session) || session.id !== sessionId) return session;
+    return { ...session, ...flags };
+  });
+}
+
+export function updateSessionTitle(sessions: unknown[], sessionId: string, title: string): unknown[] {
+  return sessions.map((session) => {
+    if (!isRecord(session) || session.id !== sessionId) return session;
+    return { ...session, title };
+  });
 }
 
 function streamingMessage(message: UnknownRecord, frame: UnknownRecord): UnknownRecord {

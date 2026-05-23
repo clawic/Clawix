@@ -63,8 +63,24 @@ impl DaemonClient {
         self.send_intent(serde_json::json!({
             "type": "openSession",
             "sessionId": session_id,
+            "limit": 60,
         }))
         .await
+    }
+
+    pub async fn load_older_messages(
+        &self,
+        session_id: &str,
+        before_message_id: &str,
+    ) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "loadOlderMessages",
+            "sessionId": session_id,
+            "beforeMessageId": before_message_id,
+            "limit": 40,
+        }))
+        .await?;
+        Ok(())
     }
 
     pub async fn send_message(
@@ -88,6 +104,72 @@ impl DaemonClient {
         self.send_intent(serde_json::json!({
             "type": "interruptTurn",
             "sessionId": session_id
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn edit_prompt(&self, session_id: &str, message_id: &str, text: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "editPrompt",
+            "sessionId": session_id,
+            "messageId": message_id,
+            "text": text
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn set_pinned(&self, session_id: &str, pinned: bool) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": if pinned { "pinSession" } else { "unpinSession" },
+            "sessionId": session_id
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn set_archived(&self, session_id: &str, archived: bool) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": if archived { "archiveSession" } else { "unarchiveSession" },
+            "sessionId": session_id
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn rename_session(&self, session_id: &str, title: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "renameSession",
+            "sessionId": session_id,
+            "title": title
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn read_file(&self, path: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "readFile",
+            "path": path
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn request_generated_image(&self, path: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "requestGeneratedImage",
+            "path": path
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn request_audio(&self, audio_id: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "requestAudio",
+            "audioId": audio_id
         }))
         .await?;
         Ok(())

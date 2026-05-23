@@ -1,32 +1,95 @@
-import { For, Show, createMemo, createSignal, onMount } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { createVirtualizer } from "@tanstack/solid-virtual";
-import { daemonStore, loadChats, sendMessage } from "../lib/daemon_ws";
+import { daemonStore, editPrompt, loadChats, loadOlderMessages, openSession, readFile, requestAudio, requestGeneratedImage, sendMessage } from "../lib/daemon_ws";
+import { filePathsForMessage, formatDurationMs, generatedImagePathsForMessage } from "../lib/chat_media_model";
 import { renderCachedMarkdown } from "../lib/markdown";
+
+interface WorkItem {
+  paths?: string[];
+  generatedImagePath?: string;
+}
+
+interface TimelineEntry {
+  type: string;
+  items?: WorkItem[];
+}
 
 interface Message {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  timeline?: TimelineEntry[];
+  audioRef?: AudioRef;
   reasoningText?: string;
   streamingFinished?: boolean;
+}
+
+interface AudioRef {
+  id: string;
+  mimeType: string;
+  durationMs: number;
+}
+
+interface AudioSnapshot {
+  mimeType?: string;
+  base64?: string;
+  error?: string;
+}
+
+interface FileSnapshot {
+  content?: string;
+  isMarkdown?: boolean;
+  error?: string;
+}
+
+interface GeneratedImageSnapshot {
+  dataBase64?: string;
+  mimeType?: string;
+  errorMessage?: string;
 }
 
 export default function ChatView() {
   const params = useParams<{ id?: string }>();
   const [composer, setComposer] = createSignal("");
+  const [editingMessageId, setEditingMessageId] = createSignal<string | null>(null);
+  const [editDraft, setEditDraft] = createSignal("");
+  const [fileViewerPath, setFileViewerPath] = createSignal<string | null>(null);
+  const [imageViewerPath, setImageViewerPath] = createSignal<string | null>(null);
   const [scrollEl, setScrollEl] = createSignal<HTMLDivElement | undefined>();
 
   onMount(() => {
     void loadChats();
   });
 
+  createEffect(() => {
+    const id = params.id;
+    daemonStore.setActiveSessionId(id ?? null);
+    if (id) void openSession(id);
+  });
+
+  const activeId = createMemo(() => params.id ?? daemonStore.activeSessionId() ?? "");
   const messages = createMemo<Message[]>(() => {
-    const id = params.id ?? daemonStore.activeSessionId() ?? "";
+    const id = activeId();
     if (!id) return [];
     return ((daemonStore.streamingMessages()[id] as Message[]) ?? []).filter(
       (m) => m && (m.role === "user" || m.role === "assistant")
     );
+  });
+  const hasMore = createMemo(() => {
+    const id = activeId();
+    return id ? daemonStore.hasMoreMessages()[id] === true : false;
+  });
+  const oldestMessageId = createMemo(() => messages()[0]?.id ?? "");
+  const activeFileSnapshot = createMemo(() => {
+    const path = fileViewerPath();
+    if (!path) return null;
+    return daemonStore.fileSnapshots()[path] as FileSnapshot | undefined;
+  });
+  const activeImageSnapshot = createMemo(() => {
+    const path = imageViewerPath();
+    if (!path) return null;
+    return daemonStore.generatedImages()[path] as GeneratedImageSnapshot | undefined;
   });
 
   const virtualizer = createMemo(() =>
@@ -46,6 +109,34 @@ export default function ChatView() {
     await sendMessage(text, params.id);
   }
 
+  function startEdit(message: Message) {
+    setEditingMessageId(message.id);
+    setEditDraft(message.content);
+  }
+
+  function cancelEdit() {
+    setEditingMessageId(null);
+    setEditDraft("");
+  }
+
+  async function submitEdit(message: Message) {
+    const sessionId = activeId();
+    const text = editDraft().trim();
+    if (!sessionId || !text) return;
+    await editPrompt(sessionId, message.id, text);
+    cancelEdit();
+  }
+
+  function openFile(path: string) {
+    setFileViewerPath(path);
+    if (!daemonStore.fileSnapshots()[path]) void readFile(path);
+  }
+
+  function openGeneratedImage(path: string) {
+    setImageViewerPath(path);
+    if (!daemonStore.generatedImages()[path]) void requestGeneratedImage(path);
+  }
+
   return (
     <section class="flex flex-col h-full">
       <header class="px-6 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
@@ -56,6 +147,17 @@ export default function ChatView() {
       </header>
 
       <div ref={(el) => setScrollEl(el)} class="flex-1 overflow-auto px-6 py-4">
+        <Show when={hasMore() && oldestMessageId()}>
+          <div class="max-w-2xl mx-auto pb-3 text-center">
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/40 text-xs text-zinc-600 dark:text-zinc-300 row-hover"
+              onClick={() => void loadOlderMessages(activeId(), oldestMessageId())}
+            >
+              Load earlier messages
+            </button>
+          </div>
+        </Show>
         <Show when={messages().length === 0}>
           <div class="h-full flex items-center justify-center text-zinc-400 text-sm">
             Start a conversation.
@@ -86,16 +188,101 @@ export default function ChatView() {
                     }}
                   >
                     <Show when={msg.role === "user"}>
-                      <div class="text-xs uppercase tracking-tighter2 text-zinc-500 mb-1">
-                        You
+                      <div class="mb-1 flex items-center justify-between gap-3">
+                        <div class="text-xs uppercase tracking-tighter2 text-zinc-500">
+                          You
+                        </div>
+                        <Show when={editingMessageId() !== msg.id}>
+                          <button
+                            type="button"
+                            class="px-2 py-1 rounded-md text-xs text-zinc-500 row-hover"
+                            onClick={() => startEdit(msg)}
+                          >
+                            Edit
+                          </button>
+                        </Show>
                       </div>
                     </Show>
-                    <div
-                      class="prose prose-sm dark:prose-invert max-w-none leading-relaxed"
-                      innerHTML={renderCachedMarkdown(msg.content)}
-                    />
+                    <Show
+                      when={editingMessageId() === msg.id}
+                      fallback={
+                        <div
+                          class="prose prose-sm dark:prose-invert max-w-none leading-relaxed"
+                          innerHTML={renderCachedMarkdown(msg.content)}
+                        />
+                      }
+                    >
+                      <div class="space-y-2">
+                        <textarea
+                          class="w-full resize-y rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-700 min-h-[96px]"
+                          value={editDraft()}
+                          onInput={(event) => setEditDraft(event.currentTarget.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" && !event.shiftKey) {
+                              event.preventDefault();
+                              void submitEdit(msg);
+                            }
+                            if (event.key === "Escape") cancelEdit();
+                          }}
+                        />
+                        <div class="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            class="px-3 py-1.5 rounded-lg text-xs text-zinc-500 row-hover"
+                            onClick={cancelEdit}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            class="px-3 py-1.5 rounded-lg bg-zinc-900 text-white text-xs font-medium dark:bg-zinc-100 dark:text-zinc-900 disabled:opacity-40"
+                            disabled={!editDraft().trim()}
+                            onClick={() => void submitEdit(msg)}
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </Show>
                     <Show when={msg.streamingFinished === false}>
                       <div class="mt-1 inline-block w-1.5 h-4 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />
+                    </Show>
+                    <Show when={msg.audioRef}>
+                      {(audioRef) => (
+                        <AudioBubble
+                          audioRef={audioRef()}
+                          snapshot={daemonStore.audioById()[audioRef().id] as AudioSnapshot | undefined}
+                        />
+                      )}
+                    </Show>
+                    <Show when={filePaths(msg).length > 0}>
+                      <div class="mt-3 flex flex-wrap gap-2">
+                        <For each={filePaths(msg)}>
+                          {(path) => (
+                            <button
+                              type="button"
+                              class="max-w-full truncate rounded-lg bg-zinc-100/70 px-2.5 py-1 text-xs font-mono text-zinc-600 row-hover dark:bg-zinc-800/40 dark:text-zinc-300"
+                              onClick={() => openFile(path)}
+                              title={path}
+                            >
+                              {fileName(path)}
+                            </button>
+                          )}
+                        </For>
+                      </div>
+                    </Show>
+                    <Show when={generatedImagePaths(msg).length > 0}>
+                      <div class="mt-3 grid max-w-md grid-cols-2 gap-2">
+                        <For each={generatedImagePaths(msg)}>
+                          {(path) => (
+                            <GeneratedImageTile
+                              path={path}
+                              snapshot={daemonStore.generatedImages()[path] as GeneratedImageSnapshot | undefined}
+                              onOpen={() => openGeneratedImage(path)}
+                            />
+                          )}
+                        </For>
+                      </div>
                     </Show>
                   </div>
                 </article>
@@ -104,6 +291,96 @@ export default function ChatView() {
           </For>
         </div>
       </div>
+
+      <Show when={fileViewerPath()}>
+        {(path) => (
+          <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-4 py-4 sm:items-center">
+            <div class="w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-xl bg-white shadow-xl dark:bg-zinc-950">
+              <header class="flex items-start justify-between gap-3 border-b border-zinc-200/60 px-4 py-3 dark:border-zinc-800/60">
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-medium">{fileName(path())}</div>
+                  <div class="truncate text-xs text-zinc-500">{path()}</div>
+                </div>
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-xs text-zinc-500 row-hover"
+                  onClick={() => setFileViewerPath(null)}
+                >
+                  Close
+                </button>
+              </header>
+              <div class="max-h-[64vh] overflow-auto p-4">
+                <Show
+                  when={activeFileSnapshot()}
+                  fallback={<div class="text-sm text-zinc-500">Loading...</div>}
+                >
+                  {(snapshot) => (
+                    <Show
+                      when={!snapshot().error}
+                      fallback={<div class="text-sm text-red-500">{snapshot().error}</div>}
+                    >
+                      <Show
+                        when={snapshot().isMarkdown}
+                        fallback={
+                          <pre class="whitespace-pre-wrap break-words text-xs leading-relaxed text-zinc-800 dark:text-zinc-200">
+                            {snapshot().content ?? ""}
+                          </pre>
+                        }
+                      >
+                        <div
+                          class="prose prose-sm dark:prose-invert max-w-none"
+                          innerHTML={renderCachedMarkdown(snapshot().content ?? "")}
+                        />
+                      </Show>
+                    </Show>
+                  )}
+                </Show>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
+
+      <Show when={imageViewerPath()}>
+        {(path) => (
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4">
+            <div class="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-zinc-950">
+              <header class="flex items-start justify-between gap-3 border-b border-zinc-200/60 px-4 py-3 dark:border-zinc-800/60">
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-medium">{fileName(path())}</div>
+                  <div class="truncate text-xs text-zinc-500">{path()}</div>
+                </div>
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-xs text-zinc-500 row-hover"
+                  onClick={() => setImageViewerPath(null)}
+                >
+                  Close
+                </button>
+              </header>
+              <div class="flex max-h-[78vh] items-center justify-center overflow-auto bg-zinc-950 p-4">
+                <Show
+                  when={activeImageSnapshot()}
+                  fallback={<div class="text-sm text-zinc-400">Loading...</div>}
+                >
+                  {(snapshot) => (
+                    <Show
+                      when={!snapshot().errorMessage && snapshot().dataBase64}
+                      fallback={<div class="text-sm text-red-300">{snapshot().errorMessage ?? "Image unavailable."}</div>}
+                    >
+                      <img
+                        class="max-h-[72vh] max-w-full rounded-lg object-contain"
+                        src={imageDataUrl(snapshot())}
+                        alt={fileName(path())}
+                      />
+                    </Show>
+                  )}
+                </Show>
+              </div>
+            </div>
+          </div>
+        )}
+      </Show>
 
       <form
         onSubmit={onSubmit}
@@ -132,5 +409,76 @@ export default function ChatView() {
         </div>
       </form>
     </section>
+  );
+}
+
+const filePaths = filePathsForMessage;
+const generatedImagePaths = generatedImagePathsForMessage;
+
+function fileName(path: string): string {
+  return path.split(/[\\/]/).filter(Boolean).at(-1) ?? path;
+}
+
+function imageDataUrl(snapshot: GeneratedImageSnapshot): string {
+  return `data:${snapshot.mimeType ?? "image/png"};base64,${snapshot.dataBase64 ?? ""}`;
+}
+
+function audioDataUrl(snapshot: AudioSnapshot): string {
+  return `data:${snapshot.mimeType ?? "audio/mp4"};base64,${snapshot.base64 ?? ""}`;
+}
+
+function AudioBubble(props: { audioRef: AudioRef; snapshot?: AudioSnapshot }) {
+  createEffect(() => {
+    if (!props.snapshot) void requestAudio(props.audioRef.id);
+  });
+
+  return (
+    <div class="mt-3 max-w-sm rounded-xl bg-zinc-100/70 px-3 py-2 dark:bg-zinc-800/40">
+      <div class="mb-2 text-xs text-zinc-500">{formatDurationMs(props.audioRef.durationMs)}</div>
+      <Show
+        when={props.snapshot?.base64}
+        fallback={<div class="text-xs text-zinc-500">{props.snapshot?.error ?? "Loading audio..."}</div>}
+      >
+        <audio
+          class="w-full"
+          controls
+          src={audioDataUrl(props.snapshot ?? { mimeType: props.audioRef.mimeType })}
+        />
+      </Show>
+    </div>
+  );
+}
+
+function GeneratedImageTile(props: {
+  path: string;
+  snapshot?: GeneratedImageSnapshot;
+  onOpen: () => void;
+}) {
+  createEffect(() => {
+    if (!props.snapshot) void requestGeneratedImage(props.path);
+  });
+
+  return (
+    <button
+      type="button"
+      class="aspect-video overflow-hidden rounded-lg bg-zinc-100 text-left row-hover dark:bg-zinc-800/50"
+      onClick={props.onOpen}
+      title={props.path}
+    >
+      <Show
+        when={props.snapshot?.dataBase64}
+        fallback={
+          <div class="flex h-full items-center justify-center px-2 text-center text-xs text-zinc-500">
+            {props.snapshot?.errorMessage ?? "Loading image..."}
+          </div>
+        }
+      >
+        <img
+          class="h-full w-full object-cover"
+          src={imageDataUrl(props.snapshot ?? {})}
+          alt={fileName(props.path)}
+        />
+      </Show>
+    </button>
   );
 }
