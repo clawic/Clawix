@@ -70,6 +70,28 @@ enum RolloutReader {
         var entries: [RolloutHistoryEntry]
         var lastTurnInterrupted: Bool
         var hasMoreBefore: Bool = false
+        /// Most recent `update_plan` checklist in the parsed window, if any.
+        /// Drives the thread-summary panel's Progress section. Last wins.
+        var latestPlan: [PlanStep]? = nil
+    }
+
+    /// Decode an `update_plan` tool call's `arguments` JSON
+    /// (`{"plan":[{"status","step"}]}`) into plan steps. Status strings are
+    /// `pending` / `in_progress` / `completed`.
+    static func parseUpdatePlan(_ arguments: Any?) -> [PlanStep]? {
+        let data: Data?
+        if let s = arguments as? String { data = s.data(using: .utf8) }
+        else if let dict = arguments as? [String: Any] { data = try? JSONSerialization.data(withJSONObject: dict) }
+        else { data = nil }
+        guard let data,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let plan = obj["plan"] as? [[String: Any]] else { return nil }
+        let steps = plan.compactMap { entry -> PlanStep? in
+            guard let step = entry["step"] as? String, !step.isEmpty else { return nil }
+            let status = PlanStep.Status(raw: (entry["status"] as? String) ?? "pending")
+            return PlanStep(step: step, status: status)
+        }
+        return steps.isEmpty ? nil : steps
     }
 
     /// Anything older than this without a closing event is treated as
@@ -262,6 +284,7 @@ enum RolloutReader {
         // events arrive in order on the same call_id, so we stash the
         // function_call payload here and resolve at mcp_tool_call_end.
         var pendingJS: [String: PendingJSCall] = [:]
+        var latestPlan: [PlanStep]? = nil
         // cwd captured from `session_meta`. Used to resolve relative
         // paths emitted by `apply_patch` (the new custom_tool_call shape
         // writes paths like `cualquiera.md`, not absolute) so the
@@ -472,6 +495,24 @@ enum RolloutReader {
                         code: "",
                         isReset: true
                     )
+                case "update_plan":
+                    // Chat-level checklist, not a per-message work item.
+                    // Keep the most recent one for the Progress panel.
+                    if let steps = Self.parseUpdatePlan(payload["arguments"]) {
+                        latestPlan = steps
+                    }
+                case "write_stdin", "read_thread_terminal":
+                    // The agent reading from / writing to the integrated
+                    // terminal. Surface it as terminal activity in the
+                    // timeline (rendered "Used the terminal").
+                    if seenCallIds.contains(callId) { continue }
+                    if pending == nil {
+                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    }
+                    pending?.appendOther(
+                        WorkItem(id: callId, kind: .dynamicTool(name: "the terminal"), status: .completed)
+                    )
+                    seenCallIds.insert(callId)
                 default:
                     continue
                 }
@@ -623,7 +664,7 @@ enum RolloutReader {
                   let last = lastParsedTimestamp else { return false }
             return now.timeIntervalSince(last) > interruptedThreshold
         }()
-        return ReadResult(entries: out, lastTurnInterrupted: interrupted)
+        return ReadResult(entries: out, lastTurnInterrupted: interrupted, latestPlan: latestPlan)
     }
 
     /// Clawix parses each shell command into one or more semantic actions

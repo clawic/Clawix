@@ -210,6 +210,11 @@ struct ContentTopChrome: View {
                 .anchorPreference(key: ChatActionsAnchorKey.self, value: .bounds) { $0 }
             }
             Spacer()
+            if currentChat != nil {
+                ThreadSummaryToggleButton()
+                    .padding(.top, 6)
+                    .padding(.trailing, 2)
+            }
             if showsTerminalToggle {
                 TerminalToggleButton()
                     .padding(.top, 6)

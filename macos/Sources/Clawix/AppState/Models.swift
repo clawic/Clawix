@@ -44,6 +44,10 @@ struct ChatMessage: Identifiable, Equatable {
     /// without media. Daemon ships these on the wire so iOS can render
     /// `[image]` thumbnails on the same bubble.
     var attachments: [WireAttachment]
+    /// True when this user message was sent with one or more browser
+    /// annotations, which redirect the agent toward the pinned page
+    /// elements. Drives the "Steered conversation" divider above the bubble.
+    var steeredByAnnotation: Bool
 
     init(
         id: UUID = UUID(),
@@ -60,7 +64,8 @@ struct ChatMessage: Identifiable, Equatable {
         reasoningCheckpoints: [UUID: [StreamCheckpoint]] = [:],
         reasoningPendingTails: [UUID: String] = [:],
         audioRef: WireAudioRef? = nil,
-        attachments: [WireAttachment] = []
+        attachments: [WireAttachment] = [],
+        steeredByAnnotation: Bool = false
     ) {
         self.id = id
         self.role = role
@@ -77,6 +82,7 @@ struct ChatMessage: Identifiable, Equatable {
         self.reasoningPendingTails = reasoningPendingTails
         self.audioRef = audioRef
         self.attachments = attachments
+        self.steeredByAnnotation = steeredByAnnotation
     }
 
     enum MessageRole { case user, assistant }
@@ -208,6 +214,23 @@ enum TimelineFamily: Equatable {
         default:                         return false
         }
     }
+}
+
+/// One step of the agent's plan, from an `update_plan` tool call. Rendered
+/// as a checklist in the thread-summary side panel's Progress section.
+struct PlanStep: Equatable {
+    enum Status: String, Equatable {
+        case pending
+        case inProgress = "in_progress"
+        case completed
+
+        init(raw: String) {
+            self = Status(rawValue: raw) ?? .pending
+        }
+    }
+
+    let step: String
+    let status: Status
 }
 
 struct ContextUsage: Equatable {

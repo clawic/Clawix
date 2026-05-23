@@ -452,6 +452,36 @@ extension AppState {
         currentSidebar = s
     }
 
+    /// Open the thread-summary panel (Progress / Changes / Sources /
+    /// Outputs / Terminal) as a right-sidebar tab. Single instance.
+    func openSummaryInSidebar() {
+        var s = currentSidebar
+        if let existing = s.items.first(where: {
+            if case .summary = $0 { return true }
+            return false
+        }) {
+            s.activeItemId = existing.id
+            s.isOpen = true
+            currentSidebar = s
+            return
+        }
+        let item = SidebarItem.summary(.init(id: UUID()))
+        s.items.append(item)
+        s.activeItemId = item.id
+        s.isOpen = true
+        currentSidebar = s
+    }
+
+    /// ⓘ toggle: if the summary tab is already the active, open panel, hide
+    /// the panel; otherwise open / focus the summary tab.
+    func toggleSummaryInSidebar() {
+        if isRightSidebarOpen, case .summary = activeSidebarItem {
+            closeBrowserPanel()
+            return
+        }
+        openSummaryInSidebar()
+    }
+
     @discardableResult
     func newBrowserTab(url: URL = URL(string: "about:blank")!) -> SidebarItem.WebPayload? {
         guard FeatureFlags.shared.isVisible(.browserUsage) else { return nil }

@@ -9,6 +9,7 @@ enum SidebarItem: Identifiable, Equatable, Codable {
     case chat(ChatPayload)
     case fileTree(FileTreePayload)
     case review(ReviewPayload)
+    case summary(SummaryPayload)
     case iosSimulator(IOSSimulatorPayload)
     case androidSimulator(AndroidSimulatorPayload)
 
@@ -24,6 +25,13 @@ enum SidebarItem: Identifiable, Equatable, Codable {
     /// identity; the working directory and diff are resolved live from
     /// the active chat / project each render.
     struct ReviewPayload: Equatable, Codable {
+        let id: UUID
+    }
+
+    /// Thread-summary tab (Progress / Changes / Sources / Outputs /
+    /// Terminal), aggregated live from the active chat's transcript and
+    /// plan. Identity-only; nothing chat-specific is persisted here.
+    struct SummaryPayload: Equatable, Codable {
         let id: UUID
     }
 
@@ -109,6 +117,7 @@ enum SidebarItem: Identifiable, Equatable, Codable {
         case .chat(let p): return p.id
         case .fileTree(let p): return p.id
         case .review(let p): return p.id
+        case .summary(let p): return p.id
         case .iosSimulator(let p): return p.id
         case .androidSimulator(let p): return p.id
         }
