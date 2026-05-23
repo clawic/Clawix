@@ -786,6 +786,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.localModels.defaultModel", "Local models default model", LocalModelsService.defaultModelKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.localModels.keepAlive", "Local models keep alive", LocalModelsService.keepAliveKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.localModels.contextLength", "Local models context length", LocalModelsService.contextLengthKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.localModels.advancedExpanded", "Local models advanced expanded", ClawixPersistentSurfaceKeys.localModelsAdvancedExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.updater.pendingBuild", "Pending update build", UpdaterController.pendingBuildKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.updater.pendingDisplay", "Pending update display", UpdaterController.pendingDisplayKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.hotkey", "Quick Ask hotkey", QuickAskHotkeyRegistrar.defaultsKey, PersistentSurfaceKind.preferenceKey),
@@ -1022,6 +1023,7 @@ enum ClawixPersistentSurfaceKeys {
     static let binaryPath = "ClawixBinaryPath"
     static let backgroundBridgeWasEnabled = "clawix.backgroundBridge.wasEnabled"
     static let appleLanguages = "AppleLanguages"
+    static let localModelsAdvancedExpanded = "localModels.advancedExpanded"
     static let quickAskDefaultModel = "quickAsk.defaultModel"
     static let quickAskAdvancedExpanded = "quickAsk.advancedExpanded"
     static let swiftSurfaceRunnerEnv = "CLAWIX_SWIFT_SURFACE_RUNNER"
