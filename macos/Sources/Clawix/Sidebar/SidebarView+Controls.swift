@@ -71,6 +71,7 @@ struct SidebarButton: View {
         .sidebarHover { hovered = $0 }
         .accessibilityLabel(localizedTitle)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .clxControl("sidebar.\(title)", role: "button", label: localizedTitle)
     }
 
 
