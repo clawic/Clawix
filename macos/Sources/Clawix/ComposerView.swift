@@ -587,6 +587,10 @@ struct ComposerView: View {
 
     private var composerStack: some View {
         VStack(spacing: 8) {
+            // Functional notice when the account is near or at a usage
+            // window limit. Renders nothing otherwise.
+            UsageLimitBar()
+
             // Active skills chip row. Renders only when at least one
             // skill is active in the current chat (resolved across
             // global → project → chat). Sits above the composer so the
