@@ -7,8 +7,25 @@ enum SidebarItem: Identifiable, Equatable, Codable {
     case web(WebPayload)
     case file(FilePayload)
     case chat(ChatPayload)
+    case fileTree(FileTreePayload)
+    case review(ReviewPayload)
     case iosSimulator(IOSSimulatorPayload)
     case androidSimulator(AndroidSimulatorPayload)
+
+    /// Project file-tree browser tab. Only the identity is stored; the
+    /// tree resolves its root from the active project at render time, so
+    /// the same persisted tab follows project switches without holding a
+    /// stale path.
+    struct FileTreePayload: Equatable, Codable {
+        let id: UUID
+    }
+
+    /// Git review / changes tab. Like the file tree it carries only its
+    /// identity; the working directory and diff are resolved live from
+    /// the active chat / project each render.
+    struct ReviewPayload: Equatable, Codable {
+        let id: UUID
+    }
 
     /// Side-chat tab. The `id` doubles as the underlying `Chat.id` of
     /// the silently-forked conversation so the tab and the chat share
@@ -90,6 +107,8 @@ enum SidebarItem: Identifiable, Equatable, Codable {
         case .web(let p):  return p.id
         case .file(let p): return p.id
         case .chat(let p): return p.id
+        case .fileTree(let p): return p.id
+        case .review(let p): return p.id
         case .iosSimulator(let p): return p.id
         case .androidSimulator(let p): return p.id
         }

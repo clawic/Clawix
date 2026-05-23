@@ -21,6 +21,16 @@ struct BrowserView: View {
         return nil
     }
 
+    private var activeFileTree: SidebarItem.FileTreePayload? {
+        if case .fileTree(let p) = appState.activeSidebarItem { return p }
+        return nil
+    }
+
+    private var activeReview: SidebarItem.ReviewPayload? {
+        if case .review(let p) = appState.activeSidebarItem { return p }
+        return nil
+    }
+
     private var activeIOSSimulator: SidebarItem.IOSSimulatorPayload? {
         if case .iosSimulator(let p) = appState.activeSidebarItem { return p }
         return nil
@@ -50,14 +60,24 @@ struct BrowserView: View {
                                 controller.reload()
                             }
                         }
+                        BrowserWebsiteApprovalCard(controller: controller)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .animation(.easeOut(duration: 0.16), value: controller.pendingWebsiteApproval)
                 } else if let payload = activeFile {
                     FileViewerPanel(path: payload.path)
                         .id(payload.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeChat {
                     ChatView(chatId: payload.id, isSideChat: true)
+                        .id(payload.id)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let payload = activeFileTree {
+                    SidebarFileTreeView()
+                        .id(payload.id)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let payload = activeReview {
+                    ReviewChangesPanel()
                         .id(payload.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeIOSSimulator {
@@ -160,61 +180,9 @@ struct BrowserView: View {
     private static var focusSequence: UInt64 = 0
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            LucideIcon(.globe, size: 19.5)
-                .foregroundColor(Color(white: 0.40))
-            Text("No tabs open")
-                .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.55))
-            Button {
-                appState.newBrowserTab()
-            } label: {
-                Text("New tab")
-                    .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color(white: 0.20))
-                    )
-            }
-            .buttonStyle(.plain)
-
-            if flags.isVisible(.simulators) {
-                Button {
-                    appState.openIOSSimulator()
-                } label: {
-                    Text("iOS Simulator")
-                        .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color(white: 0.20))
-                        )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    appState.openAndroidSimulator()
-                } label: {
-                    Text("Android Emulator")
-                        .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color(white: 0.20))
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Palette.background)
+        SidePanelLauncher()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Palette.background)
     }
 }
 

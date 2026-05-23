@@ -586,10 +586,14 @@ struct RightSidebarAddMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            row(id: "open", icon: "magnifyingglass", title: "Open file", shortcut: "⌘P")
-            MenuStandardDivider()
-                .padding(.vertical, 4)
+            row(id: "files", icon: "files", title: "Open file", shortcut: "⌘P")
+            row(id: "review", icon: "review", title: "Review changes", shortcut: "")
+            if appState.canHostIntegratedTerminal {
+                row(id: "terminal", icon: "terminal", title: "Terminal", shortcut: "⌘J")
+            }
             if flags.isVisible(.browserUsage) {
+                MenuStandardDivider()
+                    .padding(.vertical, 4)
                 row(id: "browser", icon: "globe", title: "Browser", shortcut: "⌘T")
             }
             if flags.isVisible(.simulators) {
@@ -606,6 +610,12 @@ struct RightSidebarAddMenu: View {
     private func row(id: String, icon: String, title: LocalizedStringKey, shortcut: String) -> some View {
         Button {
             switch id {
+            case "files":
+                appState.openFileTreeInSidebar()
+            case "review":
+                appState.openReviewInSidebar()
+            case "terminal":
+                appState.openIntegratedTerminal()
             case "browser":
                 appState.openBrowser()
             case "iosSimulator":
@@ -619,10 +629,12 @@ struct RightSidebarAddMenu: View {
         } label: {
             HStack(spacing: MenuStyle.rowIconLabelSpacing) {
                 Group {
-                    if icon == "magnifyingglass" {
-                        SearchIcon(size: 11)
-                    } else {
-                        LucideIcon.auto(icon, size: 11)
+                    switch icon {
+                    case "magnifyingglass": SearchIcon(size: 11)
+                    case "files":           FolderStackIcon(size: 12)
+                    case "review":          GitCompareIcon(size: 12)
+                    case "terminal":        TerminalIcon(size: 12)
+                    default:                LucideIcon.auto(icon, size: 11)
                     }
                 }
                 .foregroundColor(MenuStyle.rowIcon)

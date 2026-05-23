@@ -158,6 +158,14 @@ private struct SidebarItemPill: View {
             // is a silent fork at heart.
             BranchArrowsIconView(color: Color(white: 0.78), lineWidth: 1.0)
                 .frame(width: 14, height: 14)
+        case .fileTree:
+            FolderStackIcon(size: 13)
+                .foregroundColor(Color(white: 0.78))
+                .frame(width: 14, height: 14)
+        case .review:
+            GitCompareIcon(size: 13)
+                .foregroundColor(Color(white: 0.78))
+                .frame(width: 14, height: 14)
         case .iosSimulator:
             LucideIcon(.appWindow, size: 13)
                 .foregroundColor(Color(white: 0.78))
@@ -187,6 +195,10 @@ private struct SidebarItemPill: View {
                 return chat.title
             }
             return "Side chat"
+        case .fileTree:
+            return L10n.t("Files")
+        case .review:
+            return L10n.t("Changes")
         case .iosSimulator(let p):
             return p.deviceName
         case .androidSimulator(let p):
@@ -468,6 +480,10 @@ struct BrowserMoreOptionsMenu: View {
                 trailingCheck: controller.mobileMode
             ) {
                 controller.toggleMobileMode()
+                isOpen = false
+            }
+            simpleRow(id: "openExternal", title: "Open in default browser") {
+                controller.openInDefaultBrowser()
                 isOpen = false
             }
 

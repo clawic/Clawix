@@ -357,6 +357,101 @@ extension AppState {
         currentSidebar = s
     }
 
+    /// Best-effort working directory for the active chat / project, used
+    /// by the file-tree and review side-panel surfaces. Prefers the chat's
+    /// own project, then its recorded cwd, then the globally selected
+    /// project. Returns an expanded absolute path that exists on disk, or
+    /// nil when there is no real folder context.
+    var activeWorkingDirectory: String? {
+        func usable(_ raw: String?) -> String? {
+            guard let raw, !raw.isEmpty else { return nil }
+            let expanded = (raw as NSString).expandingTildeInPath
+            return FileManager.default.fileExists(atPath: expanded) ? expanded : nil
+        }
+        if let id = currentChatId, let chat = chat(byId: id) {
+            if let pid = chat.projectId,
+               let proj = projects.first(where: { $0.id == pid }),
+               let path = usable(proj.path) {
+                return path
+            }
+            if let path = usable(chat.cwd) { return path }
+        }
+        if let path = usable(selectedProject?.path) { return path }
+        return nil
+    }
+
+    /// Open (and reveal) the integrated bottom terminal for the active
+    /// chat / home route, spawning a first tab if none exists yet. Used by
+    /// the side-panel launcher's "Terminal" tile. No-ops on routes that
+    /// can't host the terminal panel.
+    func openIntegratedTerminal() {
+        let chatId: UUID
+        switch currentRoute {
+        case .chat(let id): chatId = id
+        case .home:         chatId = TerminalSessionStore.homeChatId
+        default:            return
+        }
+        let store = TerminalSessionStore.shared
+        store.ensureLoaded(chatId: chatId)
+        if store.tabs(for: chatId).isEmpty {
+            let cwd = chat(byId: chatId)?.cwd
+                ?? activeWorkingDirectory
+                ?? ClawixTerminalRoutes.userHomePath()
+            store.createTab(chatId: chatId, cwd: cwd)
+        }
+        SidebarPrefs.store.set(true, forKey: ClawixPersistentSurfaceKeys.terminalPanelOpen)
+    }
+
+    /// Whether the current route can host the integrated terminal panel.
+    /// Drives the enabled state of the launcher's "Terminal" tile.
+    var canHostIntegratedTerminal: Bool {
+        switch currentRoute {
+        case .chat, .home: return true
+        default:           return false
+        }
+    }
+
+    /// Open the project file-tree browser as a right-sidebar tab. Reuses
+    /// the chat's existing file-tree tab instead of stacking duplicates,
+    /// matching `openIOSSimulator`'s single-instance behaviour.
+    func openFileTreeInSidebar() {
+        var s = currentSidebar
+        if let existing = s.items.first(where: {
+            if case .fileTree = $0 { return true }
+            return false
+        }) {
+            s.activeItemId = existing.id
+            s.isOpen = true
+            currentSidebar = s
+            return
+        }
+        let item = SidebarItem.fileTree(.init(id: UUID()))
+        s.items.append(item)
+        s.activeItemId = item.id
+        s.isOpen = true
+        currentSidebar = s
+    }
+
+    /// Open the git review / changes panel as a right-sidebar tab. Single
+    /// instance per chat sidebar.
+    func openReviewInSidebar() {
+        var s = currentSidebar
+        if let existing = s.items.first(where: {
+            if case .review = $0 { return true }
+            return false
+        }) {
+            s.activeItemId = existing.id
+            s.isOpen = true
+            currentSidebar = s
+            return
+        }
+        let item = SidebarItem.review(.init(id: UUID()))
+        s.items.append(item)
+        s.activeItemId = item.id
+        s.isOpen = true
+        currentSidebar = s
+    }
+
     @discardableResult
     func newBrowserTab(url: URL = URL(string: "about:blank")!) -> SidebarItem.WebPayload? {
         guard FeatureFlags.shared.isVisible(.browserUsage) else { return nil }

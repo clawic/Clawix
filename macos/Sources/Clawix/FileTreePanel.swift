@@ -122,6 +122,119 @@ struct FileTreePanel: View {
     }
 }
 
+// MARK: - File tree (right side-panel surface)
+//
+// Same lazy browser as `FileTreePanel`, laid out to fill the right side
+// panel column instead of a fixed modal. Reachable from the side-panel
+// launcher's "Files" tile, the `+` menu, and ⇧⌘E. Resolves its root from
+// the active chat's project (falling back to the selected project) so the
+// tree follows whatever conversation is in front.
+
+struct SidebarFileTreeView: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var filter: String = ""
+
+    private var rootPath: String? {
+        if let path = appState.activeWorkingDirectory { return path }
+        if let path = appState.selectedProject?.path, !path.isEmpty {
+            let expanded = (path as NSString).expandingTildeInPath
+            if FileManager.default.fileExists(atPath: expanded) { return expanded }
+        }
+        return nil
+    }
+
+    private func filteredFiles(path: String) -> [URL] {
+        let query = filter.lowercased()
+        return Array(
+            ProjectFileIndex.shared.files(forProject: path)
+                .filter { $0.lastPathComponent.lowercased().contains(query) }
+                .prefix(60)
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Text(L10n.t("Files"))
+                    .font(BodyFont.system(size: 13.5, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                if let name = projectName {
+                    Text(name)
+                        .font(BodyFont.system(size: 11.5))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            if let path = rootPath {
+                TextField(L10n.t("Filter files"), text: $filter)
+                    .textFieldStyle(.plain)
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textPrimary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        if filter.isEmpty {
+                            ForEach(FileTreeScanner.children(of: URL(fileURLWithPath: path, isDirectory: true)), id: \.path) { url in
+                                FileTreeEntry(url: url, depth: 0) { open($0) }
+                            }
+                        } else {
+                            let matches = filteredFiles(path: path)
+                            if matches.isEmpty {
+                                Text(L10n.t("No matching files"))
+                                    .font(BodyFont.system(size: 12.5))
+                                    .foregroundColor(Palette.textSecondary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                            } else {
+                                ForEach(matches, id: \.path) { url in
+                                    FileTreeEntry(url: url, depth: 0) { open($0) }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .thinScrollers()
+            } else {
+                VStack(spacing: 8) {
+                    LucideIcon(.folder, size: 26)
+                        .foregroundColor(Color.white.opacity(0.28))
+                    Text(L10n.t("No project selected"))
+                        .font(BodyFont.system(size: 13))
+                        .foregroundColor(Palette.textSecondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.background)
+    }
+
+    private var projectName: String? {
+        if let id = appState.currentChatId,
+           let chat = appState.chat(byId: id),
+           let pid = chat.projectId,
+           let proj = appState.projects.first(where: { $0.id == pid }) {
+            return proj.name
+        }
+        return appState.selectedProject?.name
+    }
+
+    private func open(_ url: URL) {
+        appState.openFileInSidebar(url.path)
+    }
+}
+
 private struct FileTreeEntry: View {
     let url: URL
     let depth: Int
