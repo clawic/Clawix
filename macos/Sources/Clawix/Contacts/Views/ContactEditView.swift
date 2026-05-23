@@ -58,7 +58,7 @@ struct ContactEditView: View {
                     onSave(draft)
                 }
                 .buttonStyle(.plain)
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .font(.system(size: 12, weight: .semibold))
                 .padding(.horizontal, 18)
                 .frame(height: 26)
@@ -118,7 +118,7 @@ struct ContactEditView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
                         .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)
@@ -167,7 +167,7 @@ struct ContactEditView: View {
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
-                        .fill(Color.white.opacity(0.025))
+                        .fill(Color.overlay(0.025))
                         .overlay(
                             RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
                                 .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)

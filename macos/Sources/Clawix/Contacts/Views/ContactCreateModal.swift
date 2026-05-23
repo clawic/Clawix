@@ -53,7 +53,7 @@ struct ContactCreateModal: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.sheet, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 }

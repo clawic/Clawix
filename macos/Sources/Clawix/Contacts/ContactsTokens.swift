@@ -8,15 +8,15 @@ enum ContactsTokens {
         static let subSidebar  = Color(red: 26/255, green: 26/255, blue: 28/255)
         static let listColumn  = Color(red: 25/255, green: 26/255, blue: 27/255)
         static let sectionHeader = Color(red: 22/255, green: 22/255, blue: 24/255).opacity(0.9)
-        static let rowHover    = Color.white.opacity(0.05)
-        static let rowSelected = Color.white.opacity(0.09)
+        static let rowHover    = Color.overlay(0.05)
+        static let rowSelected = Color.overlay(0.09)
         static let inputBg     = Color(red: 20/255, green: 21/255, blue: 22/255)
     }
 
     enum Divider {
         static let hairline = Color(red: 56/255, green: 56/255, blue: 56/255)
         static let seam     = Color(red: 113/255, green: 113/255, blue: 113/255).opacity(0.35)
-        static let fieldRow = Color.white.opacity(0.06)
+        static let fieldRow = Color.overlay(0.06)
     }
 
     enum Ink {

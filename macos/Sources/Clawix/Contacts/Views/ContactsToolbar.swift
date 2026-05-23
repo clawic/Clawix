@@ -38,7 +38,7 @@ struct ContactsToolbar: View {
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
-                        .fill(Color.white.opacity(store.isReadOnly ? 0 : 0.04))
+                        .fill(Color.overlay(store.isReadOnly ? 0 : 0.04))
                 )
         }
         .buttonStyle(.plain)
@@ -136,7 +136,7 @@ struct ContactsToolbar: View {
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.row, style: .continuous)
-                        .fill(Color.white.opacity(store.selectedContact == nil ? 0 : 0.04))
+                        .fill(Color.overlay(store.selectedContact == nil ? 0 : 0.04))
                 )
         }
         .buttonStyle(.plain)

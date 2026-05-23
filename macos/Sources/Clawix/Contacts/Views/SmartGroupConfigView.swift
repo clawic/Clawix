@@ -17,7 +17,7 @@ struct SmartGroupConfigView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.sheet, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 
@@ -38,7 +38,7 @@ struct SmartGroupConfigView: View {
                 Task { await store.saveSmartGroup(draft); onClose() }
             }
             .buttonStyle(.plain)
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .font(.system(size: 12, weight: .semibold))
             .padding(.horizontal, 14)
             .frame(height: 24)

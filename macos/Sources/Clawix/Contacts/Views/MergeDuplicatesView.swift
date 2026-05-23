@@ -17,7 +17,7 @@ struct MergeDuplicatesView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.sheet, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 
@@ -72,7 +72,7 @@ struct MergeDuplicatesView: View {
                 Task { await store.performMerge(); onClose() }
             }
             .buttonStyle(.plain)
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .font(.system(size: 12, weight: .semibold))
             .padding(.horizontal, 18)
             .frame(height: 26)
@@ -124,7 +124,7 @@ struct MergeDuplicatesView: View {
         .frame(width: 200, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
                 .overlay(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
                         .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)

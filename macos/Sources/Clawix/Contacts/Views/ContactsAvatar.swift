@@ -23,7 +23,7 @@ struct ContactsAvatar: View {
                     .fill(ContactsTokens.AvatarPalette.color(for: contact.id))
                 Text(contact.initials)
                     .font(.system(size: size * 0.42, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
             }
         }
         .frame(width: size, height: size)

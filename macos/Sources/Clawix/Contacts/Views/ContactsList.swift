@@ -106,7 +106,7 @@ struct ContactsList: View {
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.chip, style: .continuous)
                         .fill(ContactsTokens.Accent.primary)
                 )
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .font(.system(size: 12, weight: .semibold))
                 .disabled(store.isReadOnly)
                 .help(store.isReadOnly ? "Read-only" : "Merge Selected")

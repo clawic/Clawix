@@ -110,7 +110,7 @@ struct ContactDetail: View {
                     .frame(height: 22)
                     .background(
                         RoundedRectangle(cornerRadius: ContactsTokens.Radius.chip, style: .continuous)
-                            .fill(Color.white.opacity(0.05))
+                            .fill(Color.overlay(0.05))
                             .overlay(
                                 RoundedRectangle(cornerRadius: ContactsTokens.Radius.chip, style: .continuous)
                                     .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)
@@ -135,7 +135,7 @@ struct ContactDetail: View {
         }
         .background(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
                         .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)
@@ -157,7 +157,7 @@ struct ContactDetail: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: ContactsTokens.Radius.card, style: .continuous)
                         .stroke(ContactsTokens.Divider.hairline, lineWidth: 0.5)
@@ -213,7 +213,7 @@ private struct ContactFieldRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, ContactsTokens.Spacing.fieldRowVertical)
         .frame(minHeight: ContactsTokens.Geometry.fieldRowMinHeight)
-        .background(Color.white.opacity(hovered ? 0.03 : 0))
+        .background(Color.overlay(hovered ? 0.03 : 0))
         .onHover { h in
             withAnimation(ContactsTokens.Motion.hover) { hovered = h }
         }
