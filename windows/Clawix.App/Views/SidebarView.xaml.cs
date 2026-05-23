@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Clawix.Core;
 using Clawix.Core.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -8,6 +9,7 @@ namespace Clawix.App.Views;
 public sealed partial class SidebarView : UserControl
 {
     public ObservableCollection<WireSession> Sessions { get; } = new();
+    private IReadOnlyList<WireSession> _allSessions = [];
 
     public SidebarView()
     {
@@ -23,8 +25,8 @@ public sealed partial class SidebarView : UserControl
             if (args.PropertyName == nameof(state.Sessions))
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    Sessions.Clear();
-                    foreach (var c in state.Sessions) Sessions.Add(c);
+                    _allSessions = state.Sessions;
+                    RefreshSessions();
                 });
             if (args.PropertyName == nameof(state.BridgeStateLabel))
                 DispatcherQueue.TryEnqueue(() => BridgeStatusText.Text = state.BridgeStateLabel);
@@ -35,8 +37,8 @@ public sealed partial class SidebarView : UserControl
                     RateLimits.RenderCredits(state.RateLimits?.Credits);
                 });
         };
-        Sessions.Clear();
-        foreach (var c in state.Sessions) Sessions.Add(c);
+        _allSessions = state.Sessions;
+        RefreshSessions();
         BridgeStatusText.Text = state.BridgeStateLabel;
         RateLimits.Render(state.RateLimits?.Primary, state.RateLimits?.Secondary);
         RateLimits.RenderCredits(state.RateLimits?.Credits);
@@ -52,6 +54,25 @@ public sealed partial class SidebarView : UserControl
     {
         ChatList.SelectedItem = null;
         App.Services.State.StartNewChat();
+    }
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        RefreshSessions();
+    }
+
+    private void RefreshSessions()
+    {
+        var selectedId = (ChatList.SelectedItem as WireSession)?.Id;
+        var filtered = SessionSearch.Filter(_allSessions, SearchBox.Text);
+        Sessions.Clear();
+        WireSession? selected = null;
+        foreach (var chat in filtered)
+        {
+            Sessions.Add(chat);
+            if (chat.Id == selectedId) selected = chat;
+        }
+        ChatList.SelectedItem = selected;
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)

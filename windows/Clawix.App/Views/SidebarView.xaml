@@ -24,7 +24,7 @@
         <FontIcon Glyph="&#xE713;" />
       </Button>
     </Grid>
-    <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search chats" Margin="6,4,6,8" />
+    <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search chats" Margin="6,4,6,8" TextChanged="SearchBox_TextChanged" />
     <ListView Grid.Row="2" x:Name="ChatList"
               ItemsSource="{x:Bind Sessions, Mode=OneWay}"
               SelectionChanged="ChatList_SelectionChanged"
