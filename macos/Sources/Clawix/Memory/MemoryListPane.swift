@@ -68,16 +68,16 @@ struct MemoryListPane: View {
     private var searchBar: some View {
         HStack(spacing: 8) {
             IconImage("magnifyingglass", size: 12)
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             TextField("Search memories", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .onSubmit(onSearchSubmit)
             if isSearching {
                 ProgressView()
                     .controlSize(.small)
-                    .tint(.white.opacity(0.7))
+                    .tint(Color.overlay(0.7))
             }
             if !searchText.isEmpty {
                 IconCircleButton(symbol: "xmark", size: 18, symbolSize: 9, action: onSearchClear)
@@ -87,7 +87,7 @@ struct MemoryListPane: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
     }
 
@@ -99,10 +99,10 @@ struct MemoryListPane: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.overlay(0.7))
             Text(subtitle)
                 .font(BodyFont.system(size: 11.5, wght: 400))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.overlay(0.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 12)
@@ -129,7 +129,7 @@ struct MemoryListRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(note.title)
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .lineLimit(2)
                     HStack(spacing: 6) {
                         Text(typeLabel)
@@ -137,23 +137,23 @@ struct MemoryListRow: View {
                             .foregroundColor(kindColor)
                         if let scope = scopeLabel {
                             Text("·")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundColor(Color.overlay(0.3))
                             Text(scope)
                                 .font(BodyFont.system(size: 10.5, wght: 500))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(Color.overlay(0.5))
                         }
                         if let date = dateLabel {
                             Text("·")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundColor(Color.overlay(0.3))
                             Text(date)
                                 .font(BodyFont.system(size: 10.5, wght: 500))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         }
                     }
                     if !note.body.isEmpty {
                         Text(snippet(of: note.body))
                             .font(BodyFont.system(size: 11.5, wght: 400))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                             .lineLimit(1)
                     }
                 }
@@ -221,8 +221,8 @@ struct MemoryListRow: View {
     }
 
     private var backgroundFill: Color {
-        if isSelected { return Color.white.opacity(0.10) }
-        if hovered    { return Color.white.opacity(0.045) }
+        if isSelected { return Color.overlay(0.10) }
+        if hovered    { return Color.overlay(0.045) }
         return .clear
     }
 }
@@ -239,17 +239,17 @@ private struct MemorySearchResultRow: View {
                 HStack(spacing: 6) {
                     Text(result.title)
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .lineLimit(1)
                     Spacer()
                     Text(String(format: "%.2f", result.score))
                         .font(BodyFont.system(size: 10, wght: 500))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(Color.overlay(0.4))
                 }
                 if !result.excerpt.isEmpty {
                     Text(result.excerpt)
                         .font(BodyFont.system(size: 11.5, wght: 400))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                         .lineLimit(2)
                 }
             }
@@ -258,7 +258,7 @@ private struct MemorySearchResultRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.10) : (hovered ? Color.white.opacity(0.045) : .clear))
+                    .fill(isSelected ? Color.overlay(0.10) : (hovered ? Color.overlay(0.045) : .clear))
             )
         }
         .buttonStyle(.plain)

@@ -24,10 +24,10 @@ struct MemoryDetailPane: View {
     private var placeholder: some View {
         VStack(spacing: 8) {
             IconImage("brain", size: 28)
-                .foregroundColor(.white.opacity(0.25))
+                .foregroundColor(Color.overlay(0.25))
             Text("Select a memory")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.overlay(0.5))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -40,7 +40,7 @@ struct MemoryDetailPane: View {
                 if !displayBody(for: note).isEmpty {
                     Text(displayBody(for: note))
                         .font(BodyFont.system(size: 13.5, wght: 400))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
                 }
@@ -51,7 +51,7 @@ struct MemoryDetailPane: View {
                     HStack(spacing: 10) {
                         Text("Show original (before user edit)")
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(Color.overlay(0.7))
                         Spacer(minLength: 12)
                         PillToggle(isOn: $showOriginal)
                     }
@@ -67,11 +67,11 @@ struct MemoryDetailPane: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(note.title)
                 .font(BodyFont.system(size: 19, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .textSelection(.enabled)
             Text(note.id)
                 .font(BodyFont.system(size: 11, wght: 400))
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(Color.overlay(0.4))
                 .textSelection(.enabled)
         }
     }
@@ -95,11 +95,11 @@ struct MemoryDetailPane: View {
             ForEach(tags, id: \.self) { tag in
                 Text("#\(tag)")
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(.white.opacity(0.75))
+                    .foregroundColor(Color.overlay(0.75))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(
-                        Capsule().fill(Color.white.opacity(0.06))
+                        Capsule().fill(Color.overlay(0.06))
                     )
             }
         }
@@ -110,12 +110,12 @@ struct MemoryDetailPane: View {
             Button(action: { onEdit(note) }) {
                 Text("Edit")
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.10))
+                            .fill(Color.overlay(0.10))
                     )
             }
             .buttonStyle(.plain)
@@ -157,7 +157,7 @@ struct MemoryDetailPane: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
             .background(
-                Capsule().fill(Color.white.opacity(0.06))
+                Capsule().fill(Color.overlay(0.06))
             )
             .overlay(
                 Capsule().stroke(Palette.popupStroke, lineWidth: 0.5)

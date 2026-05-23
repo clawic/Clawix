@@ -18,7 +18,7 @@ struct MemoryCapturesView: View {
                     if pendingCaptures.isEmpty {
                         Text("No pending captures.")
                             .font(BodyFont.system(size: 12.5, wght: 500))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                             .padding(.top, 30)
                             .padding(.horizontal, 12)
                     }
@@ -28,7 +28,7 @@ struct MemoryCapturesView: View {
                     if !promotedCaptures.isEmpty {
                         Text("Promoted")
                             .font(BodyFont.system(size: 11, wght: 600))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(Color.overlay(0.5))
                             .padding(.top, 10)
                         ForEach(promotedCaptures) { capture in
                             captureCard(capture: capture, isPromoted: true, dimmed: true)
@@ -55,13 +55,13 @@ struct MemoryCapturesView: View {
                     Text("Back")
                         .font(BodyFont.system(size: 12, wght: 600))
                 }
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.overlay(0.7))
             }
             .buttonStyle(.plain)
             Spacer()
             Text("\(pendingCaptures.count) pending")
                 .font(BodyFont.system(size: 11, wght: 500))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.overlay(0.5))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -80,25 +80,25 @@ struct MemoryCapturesView: View {
             HStack(spacing: 6) {
                 Text(capture.sessionId ?? "session")
                     .font(BodyFont.system(size: 11.5, wght: 600))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                 if let captured = capture.capturedAt {
                     Text("·")
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundColor(Color.overlay(0.3))
                     Text(String(captured.prefix(19)).replacingOccurrences(of: "T", with: " "))
                         .font(BodyFont.system(size: 11, wght: 400))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                 }
                 Spacer()
                 if !isPromoted {
                     Button(action: { promote(capture) }) {
                         Text(promotingId == capture.id ? "Promoting…" : "Promote")
                             .font(BodyFont.system(size: 11.5, wght: 600))
-                            .foregroundColor(.black)
+                            .foregroundColor(Palette.background)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color.white.opacity(promotingId == capture.id ? 0.5 : 0.95))
+                                    .fill(Color.overlay(promotingId == capture.id ? 0.5 : 0.95))
                             )
                     }
                     .buttonStyle(.plain)
@@ -120,7 +120,7 @@ struct MemoryCapturesView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(dimmed ? 0.02 : 0.05))
+                .fill(Color.overlay(dimmed ? 0.02 : 0.05))
         )
         .opacity(dimmed ? 0.7 : 1)
         .id("\(capture.id)-\(capture.promotedAt ?? "pending")")
@@ -130,10 +130,10 @@ struct MemoryCapturesView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(BodyFont.system(size: 10.5, wght: 600))
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(Color.overlay(0.45))
             Text(text)
                 .font(BodyFont.system(size: 12, wght: 400))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(Color.overlay(0.8))
                 .lineLimit(3)
         }
     }

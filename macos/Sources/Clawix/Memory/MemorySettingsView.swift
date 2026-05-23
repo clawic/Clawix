@@ -35,13 +35,13 @@ struct MemorySettingsView: View {
                     Text("Back")
                         .font(BodyFont.system(size: 12, wght: 600))
                 }
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.overlay(0.7))
             }
             .buttonStyle(.plain)
             Spacer()
             Text("Memory settings")
                 .font(BodyFont.system(size: 12, wght: 600))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(Color.overlay(0.6))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -52,7 +52,7 @@ struct MemorySettingsView: View {
             HStack {
                 Text("Doctor")
                     .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                 Spacer()
                 Button(action: { Task { await store.runDoctor() } }) {
                     HStack(spacing: 6) {
@@ -63,11 +63,11 @@ struct MemorySettingsView: View {
                         Text(store.isDoctorLoading ? "Checking" : "Refresh")
                             .font(BodyFont.system(size: 11.5, wght: 500))
                     }
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Color.overlay(0.7))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
-                        Capsule().fill(Color.white.opacity(0.06))
+                        Capsule().fill(Color.overlay(0.06))
                     )
                 }
                 .buttonStyle(.plain)
@@ -88,7 +88,7 @@ struct MemorySettingsView: View {
                 ForEach(warnings, id: \.self) { warning in
                     Text("· " + warning)
                         .font(BodyFont.system(size: 11, wght: 400))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(Color.overlay(0.6))
                 }
             }
         }
@@ -96,7 +96,7 @@ struct MemorySettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
         .task {
             if store.doctor == nil { await store.runDoctor() }
@@ -107,13 +107,13 @@ struct MemorySettingsView: View {
         HStack {
             Text(label)
                 .font(BodyFont.system(size: 11.5, wght: 500))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             Spacer()
             Text(value)
                 .font(monospaced
                       ? BodyFont.system(size: 11.5, design: .monospaced)
                       : BodyFont.system(size: 11.5, wght: 500))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(Color.overlay(0.85))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
@@ -124,40 +124,40 @@ struct MemorySettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Utilities")
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             Button(action: revealMemoryFolder) {
                 Text("Reveal data folder in Finder")
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
             .buttonStyle(.plain)
             Button(action: openGraphView) {
                 Text("Open graph view in browser")
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
             .buttonStyle(.plain)
             Text("The Memory daemon serves a D3 force-directed graph view at http://127.0.0.1:24105/. The macOS app keeps the simpler list browser; the graph stays one click away when you want it.")
                 .font(BodyFont.system(size: 11, wght: 400))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 

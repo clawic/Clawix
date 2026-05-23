@@ -83,10 +83,10 @@ private struct MemoryScreenHeader: View {
         HStack(alignment: .center, spacing: 12) {
             HStack(spacing: 8) {
                 IconImage("brain", size: 16)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Color.overlay(0.9))
                 Text("Memory")
                     .font(BodyFont.system(size: 17, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                 statusPill
             }
             Spacer()
@@ -110,11 +110,11 @@ private struct MemoryScreenHeader: View {
             HStack(spacing: 6) {
                 Button(action: onRefresh) {
                     IconImage("arrow.clockwise", size: 12)
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                         .frame(width: 24, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color.white.opacity(0.05))
+                                .fill(Color.overlay(0.05))
                         )
                 }
                 .buttonStyle(.plain)
@@ -126,12 +126,12 @@ private struct MemoryScreenHeader: View {
                         Text("New")
                             .font(BodyFont.system(size: 12.5, wght: 600))
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(Palette.background)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.95))
+                            .fill(Color.overlay(0.95))
                     )
                 }
                 .buttonStyle(.plain)
@@ -157,7 +157,7 @@ private struct MemoryScreenHeader: View {
         }
         return Text(label)
             .font(BodyFont.system(size: 11, wght: 600))
-            .foregroundColor(.white.opacity(0.85))
+            .foregroundColor(Color.overlay(0.85))
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
             .background(
@@ -179,12 +179,12 @@ private struct MemorySectionButton: View {
         Button(action: action) {
             Text(title)
                 .font(BodyFont.system(size: 12.5, wght: 600))
-                .foregroundColor(isSelected ? .white : Color(white: hovered ? 0.92 : 0.7))
+                .foregroundColor(isSelected ? .white : (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.33, dark: 0.7)))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+                        .fill(isSelected ? Color.overlay(0.08) : (hovered ? Color.overlay(0.04) : .clear))
                 )
         }
         .buttonStyle(.plain)

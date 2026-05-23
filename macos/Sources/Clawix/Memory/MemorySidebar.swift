@@ -68,7 +68,7 @@ struct MemorySidebar: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Group by")
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
                 .padding(.leading, 4)
             SlidingSegmented(
                 selection: $groupBy,
@@ -102,7 +102,7 @@ struct MemorySidebar: View {
             if topicEntries.isEmpty {
                 Text("No memories yet.")
                     .font(BodyFont.system(size: 11.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(Color.overlay(0.4))
                     .padding(.leading, 10)
                     .padding(.top, 4)
             }
@@ -222,7 +222,7 @@ struct MemorySidebar: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(BodyFont.system(size: 11, wght: 600))
-            .foregroundColor(.white.opacity(0.55))
+            .foregroundColor(Color.overlay(0.55))
             .padding(.leading, 8)
             .padding(.top, 6)
     }
@@ -268,7 +268,7 @@ private struct MemorySidebarRow: View {
                 if let count {
                     Text(String(count))
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(isSelected ? 0.7 : 0.4))
+                        .foregroundColor(Color.overlay(isSelected ? 0.7 : 0.4))
                 }
             }
             .padding(.horizontal, 8)
@@ -286,16 +286,16 @@ private struct MemorySidebarRow: View {
 
     private var iconColor: Color {
         if isSelected { return .white }
-        return Color(white: hovered ? 0.85 : 0.65)
+        return (hovered ? Color.gray(light: 0.20, dark: 0.85) : Color.gray(light: 0.38, dark: 0.65))
     }
 
     private var labelColor: Color {
-        isSelected ? .white : Color(white: hovered ? 0.95 : 0.85)
+        isSelected ? .white : (hovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.20, dark: 0.85))
     }
 
     private var backgroundFill: Color {
-        if isSelected { return Color.white.opacity(0.08) }
-        if hovered    { return Color.white.opacity(0.04) }
+        if isSelected { return Color.overlay(0.08) }
+        if hovered    { return Color.overlay(0.04) }
         return .clear
     }
 }

@@ -48,7 +48,7 @@ struct MemoryCodexInjectionCard: View {
                             .padding(.vertical, 5)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color.white.opacity(0.06))
+                                    .fill(Color.overlay(0.06))
                             )
                     }
                     .buttonStyle(.plain)
@@ -59,10 +59,10 @@ struct MemoryCodexInjectionCard: View {
             if isInjected {
                 ZStack(alignment: .topLeading) {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(white: 0.06))
+                        .fill(Color.gray(light: 0.96, dark: 0.06))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.08), lineWidth: 0.5)
                         )
                     TextEditor(text: $bodyText)
                         .font(BodyFont.system(size: 12, design: .monospaced))
@@ -92,7 +92,7 @@ struct MemoryCodexInjectionCard: View {
                             .padding(.vertical, 6)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color.white.opacity(isDirty ? 0.12 : 0.06))
+                                    .fill(Color.overlay(isDirty ? 0.12 : 0.06))
                             )
                     }
                     .buttonStyle(.plain)

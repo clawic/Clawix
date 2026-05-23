@@ -37,7 +37,7 @@ struct MemoryEditSheet: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Kind")
                             .font(BodyFont.system(size: 11, wght: 600))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                         SlidingSegmented(
                             selection: $noteKind,
                             options: [("memory", "Memory"), ("entity", "Entity")]
@@ -47,7 +47,7 @@ struct MemoryEditSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Memory class")
                                 .font(BodyFont.system(size: 11, wght: 600))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.overlay(0.55))
                             SettingsDropdown(
                                 options: Self.memoryClasses.map { ($0, $0.capitalized) },
                                 selection: $memoryClass
@@ -75,7 +75,7 @@ struct MemoryEditSheet: View {
             footer
         }
         .frame(width: 560, height: 540)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
         .onAppear { populate() }
     }
 
@@ -83,7 +83,7 @@ struct MemoryEditSheet: View {
         HStack {
             Text(headerTitle)
                 .font(BodyFont.system(size: 14, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             Spacer()
             IconCircleButton(symbol: "xmark", size: 22, symbolSize: 12, action: onDismiss)
         }
@@ -109,16 +109,16 @@ struct MemoryEditSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             TextField(placeholder, text: binding)
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
         }
     }
@@ -127,16 +127,16 @@ struct MemoryEditSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Body (markdown)")
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             TextEditor(text: $bodyText)
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(8)
                 .frame(minHeight: 140)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
         }
     }
@@ -147,7 +147,7 @@ struct MemoryEditSheet: View {
             Button(action: onDismiss) {
                 Text("Cancel")
                     .font(BodyFont.system(size: 12.5, wght: 600))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
             }
@@ -155,12 +155,12 @@ struct MemoryEditSheet: View {
             Button(action: save) {
                 Text(saving ? "Saving…" : "Save")
                     .font(BodyFont.system(size: 12.5, wght: 600))
-                    .foregroundColor(.black)
+                    .foregroundColor(Palette.background)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(saving ? 0.5 : 0.95))
+                            .fill(Color.overlay(saving ? 0.5 : 0.95))
                     )
             }
             .buttonStyle(.plain)
