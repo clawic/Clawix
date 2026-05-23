@@ -51,7 +51,7 @@ final class RemoteAccessSettingsStoreCancellationTests: XCTestCase {
         await second?.value
 
         XCTAssertEqual(savedDeviceId, "fresh-device")
-        XCTAssertEqual(store.status, .info("This Mac is registered as fresh-device. Refresh token stashed locally."))
+        XCTAssertEqual(store.status, .info("This Mac is registered as fresh-device. Refresh token stored locally."))
         XCTAssertFalse(store.inFlight)
     }
 

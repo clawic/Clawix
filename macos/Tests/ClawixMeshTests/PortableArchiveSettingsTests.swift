@@ -32,7 +32,14 @@ final class PortableArchiveSettingsTests: XCTestCase {
 
         XCTAssertFalse(page.contains("@State private var state"))
         XCTAssertFalse(page.contains("state = ."))
+        XCTAssertFalse(page.contains("PortableArchiveActionStatus(label: \"Pending\")"))
         XCTAssertTrue(page.contains("PortableArchiveActionStatus"))
+        XCTAssertTrue(page.contains("private enum PortableArchiveAction: CaseIterable"))
+        XCTAssertTrue(page.contains("Blocked until the signed host route returns a dry-run archive plan and approval evidence."))
+        XCTAssertTrue(page.contains("External pending until a completed restore report exists; Settings does not synthesize one."))
+        XCTAssertTrue(page.contains("Source: claw archive restore --signed-host"))
+        XCTAssertTrue(page.contains("Source: PortableArchiveRestoreReport from signed host"))
+        XCTAssertTrue(page.contains(".accessibilityHint(Text(\"\\(reason) \\(source)\"))"))
         XCTAssertTrue(page.contains("signed host route returns dry-run and result evidence"))
     }
 }

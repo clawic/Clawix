@@ -50,14 +50,65 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(registry.contains("quickAskAdvancedExpanded"))
     }
 
+    func testPersonalizationBlocksSaveUntilInstructionsFileLoads() throws {
+        let page = try readSource("Settings/SettingsView+PersonalizationPage.swift")
+        let instructionsFile = try readSource("CodexInstructionsFile.swift")
+
+        XCTAssertTrue(page.contains("@State private var isSaving: Bool = false"))
+        XCTAssertTrue(page.contains("private var canSave: Bool { didLoad && isDirty && !isSaving }"))
+        XCTAssertTrue(page.contains("isEditable: didLoad && !isSaving"))
+        XCTAssertTrue(page.contains("Button(\"Retry\") { load() }"))
+        XCTAssertTrue(page.contains("ProgressView()"))
+        XCTAssertTrue(page.contains(".disabled(!canSave)"))
+        XCTAssertTrue(page.contains("guard canSave else { return }"))
+        XCTAssertTrue(page.contains("guard didLoad else {"))
+        XCTAssertTrue(page.contains("instructions = savedSnapshot"))
+
+        XCTAssertTrue(instructionsFile.contains("let current = try read()"))
+        XCTAssertFalse(instructionsFile.contains("(try? read()) ?? \"\""))
+    }
+
+    func testCodexInjectionCardsBlockMutationUntilInstructionsFileLoads() throws {
+        let memory = try readSource("Memory/MemoryCodexInjectionCard.swift")
+        let secrets = try readSource("Secrets/SecretsCodexInjectionCard.swift")
+
+        for source in [memory, secrets] {
+            XCTAssertTrue(source.contains("@State private var isWorking = false"))
+            XCTAssertTrue(source.contains("private var canMutate: Bool { didLoad && !isWorking }"))
+            XCTAssertTrue(source.contains("private var canSave: Bool { canMutate && isDirty }"))
+            XCTAssertTrue(source.contains("guard canMutate else { return }"))
+            XCTAssertTrue(source.contains("guard canSave else { return }"))
+            XCTAssertTrue(source.contains("ProgressView()"))
+            XCTAssertTrue(source.contains("Button(\"Retry\") { load() }"))
+            XCTAssertTrue(source.contains(".disabled(!canMutate)"))
+            XCTAssertTrue(source.contains(".disabled(!canSave)"))
+            XCTAssertTrue(source.contains("didLoad = true"))
+            XCTAssertTrue(source.contains("didLoad = false"))
+        }
+
+        XCTAssertTrue(memory.contains("accessibilityLabel: \"Memory Codex injection\""))
+        XCTAssertTrue(memory.contains("Writes or removes the Memory block in AGENTS.md."))
+        XCTAssertTrue(secrets.contains(".accessibilityLabel(Text(\"Secrets Codex injection\"))"))
+        XCTAssertTrue(secrets.contains(".accessibilityHint(Text(\"Writes or removes the Secrets block in AGENTS.md.\"))"))
+    }
+
     func testConfigurationScopeIsPersistedAndProjectConfigIsDisabledWithoutProject() throws {
         let source = try readSource("Settings/SettingsView+ConfigurationPage.swift")
+        let controls = try readSource("Settings/SettingsView+Controls.swift")
         let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
 
         XCTAssertFalse(source.contains("@State private var configScope"))
         XCTAssertTrue(source.contains("@AppStorage(ClawixPersistentSurfaceKeys.settingsConfigurationScope)"))
+        XCTAssertTrue(source.contains("@State private var configActionFeedback: SettingsUtilities.ActionFeedback?"))
+        XCTAssertTrue(source.contains("InfoBanner(text: configActionFeedback.message, kind: configActionFeedback.kind)"))
         XCTAssertTrue(source.contains("projectConfigUnavailable"))
         XCTAssertTrue(source.contains(".disabled(openingConfig || projectConfigUnavailable)"))
+        XCTAssertTrue(source.contains("configActionFeedback = await SettingsUtilities.openConfigToml"))
+        XCTAssertTrue(source.contains("configActionFeedback = SettingsUtilities.revealDiagnosticsFolder()"))
+        XCTAssertTrue(controls.contains("struct ActionFeedback"))
+        XCTAssertTrue(controls.contains("static func openConfigToml(scope: String, selectedProject: Project?) async -> ActionFeedback"))
+        XCTAssertTrue(controls.contains("static func revealDiagnosticsFolder() -> ActionFeedback"))
+        XCTAssertTrue(controls.contains("failureMessage(for: error, surface: \"settings.config.open\")"))
         XCTAssertTrue(registry.contains("clawix.prefs.settings.configurationScope"))
         XCTAssertTrue(registry.contains("settingsConfigurationScope"))
     }
@@ -153,11 +204,18 @@ final class SettingsSurfaceTruthTests: XCTestCase {
 
         XCTAssertTrue(source.contains("@State private var actionInFlight: Set<UUID>"))
         XCTAssertTrue(source.contains("@State private var appsError: String?"))
+        XCTAssertTrue(source.contains("@State private var appsStatus: String?"))
+        XCTAssertTrue(source.contains("@State private var appsStatusKind: InfoBanner.Kind = .ok"))
         XCTAssertTrue(source.contains("InfoBanner(text: appsError, kind: .error)"))
+        XCTAssertTrue(source.contains("InfoBanner(text: appsStatus, kind: appsStatusKind)"))
         XCTAssertTrue(source.contains("runAppMutation(record)"))
         XCTAssertTrue(source.contains("isBusy: actionInFlight.contains(record.id)"))
         XCTAssertTrue(source.contains(".disabled(isBusy)"))
         XCTAssertTrue(source.contains("ProgressView()"))
+        XCTAssertTrue(source.contains("setAppsStatus(message, kind: .ok)"))
+        XCTAssertTrue(source.contains("setAppsStatus(message, kind: .error)"))
+        XCTAssertTrue(source.contains("L10n.t(\"Workspace variant default set\")"))
+        XCTAssertTrue(source.contains("L10n.t(\"User variant default cleared\")"))
         XCTAssertTrue(source.contains("Settings only opens and edits the local managed folder."))
     }
 
@@ -231,6 +289,7 @@ final class SettingsSurfaceTruthTests: XCTestCase {
 
         XCTAssertTrue(source.contains("@State private var activeScreenToolAction: String?"))
         XCTAssertTrue(source.contains("@State private var screenToolActionMessage: String?"))
+        XCTAssertTrue(source.contains("@State private var exportDirectoryPanelInFlight = false"))
         XCTAssertTrue(source.contains("@State private var screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)"))
         XCTAssertTrue(source.contains("InfoBanner("))
         XCTAssertTrue(source.contains("Screen Tools are disabled by feature flags"))
@@ -240,6 +299,12 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(source.contains("screenRecordingStatus.blockedReason"))
         XCTAssertTrue(source.contains("ProgressView()"))
         XCTAssertTrue(source.contains(".disabled(activeScreenToolAction != nil || !service.featureVisible)"))
+        XCTAssertTrue(source.contains(".disabled(exportDirectoryPanelInFlight || !service.featureVisible)"))
+        XCTAssertTrue(source.contains("guard !exportDirectoryPanelInFlight else { return }"))
+        XCTAssertTrue(source.contains("screenToolActionMessage = L10n.t(\"Export location unchanged.\")"))
+        XCTAssertTrue(source.contains("L10n.t(\"Export location updated to %@\")"))
+        XCTAssertTrue(source.contains("Choose Screen Tools export location"))
+        XCTAssertTrue(source.contains("Stores the local folder used for screenshots, recordings, OCR captures, pins, and capture history."))
         XCTAssertTrue(source.contains("runScreenToolAction(id: id, action: action)"))
         XCTAssertTrue(source.contains("host-policy blocks through the app status channel"))
     }
@@ -288,6 +353,28 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(registry.contains("clawix.prefs.dictation.vadEnabled"))
     }
 
+    func testDictationBackupExportImportExposeBusyErrorAndConfirmation() throws {
+        let source = try readSource("Dictation/TranscriptHistoryUI.swift")
+
+        XCTAssertTrue(source.contains("@State private var statusKind: InfoBanner.Kind = .ok"))
+        XCTAssertTrue(source.contains("@State private var operationInFlight = false"))
+        XCTAssertTrue(source.contains(".disabled(operationInFlight)"))
+        XCTAssertTrue(source.contains("ProgressView()"))
+        XCTAssertTrue(source.contains("InfoBanner(text: status, kind: statusKind)"))
+        XCTAssertTrue(source.contains("guard !operationInFlight else { return }"))
+        XCTAssertTrue(source.contains("requestImportConfirmation(chosen)"))
+        XCTAssertTrue(source.contains("appState.pendingConfirmation = ConfirmationRequest"))
+        XCTAssertTrue(source.contains("Import preview is not available for this legacy dictation settings format."))
+        XCTAssertTrue(source.contains("private func importConfirmedJSON(_ chosen: URL)"))
+        XCTAssertTrue(source.contains("SettingsUtilities.failureMessage(for: error, surface: \"settings.dictation.exportTranscripts\")"))
+        XCTAssertTrue(source.contains("SettingsUtilities.failureMessage(for: error, surface: \"settings.dictation.exportSettings\")"))
+        XCTAssertTrue(source.contains("SettingsUtilities.failureMessage(for: error, surface: \"settings.dictation.importSettings\")"))
+        XCTAssertTrue(source.contains("SettingsUtilities.failureMessage(for: error, surface: \"settings.dictation.saveExport\")"))
+        XCTAssertTrue(source.contains("L10n.t(\"Export failed: %@\")"))
+        XCTAssertTrue(source.contains("L10n.t(\"Import failed: %@\")"))
+        XCTAssertTrue(source.contains("L10n.t(\"Saved to %@.\")"))
+    }
+
     func testDatabaseWorkbenchProfilesExposePersistenceErrors() throws {
         let page = try readSource("Database/DatabaseWorkbenchSettingsPage.swift")
         let store = try readSource("Database/DatabaseConnectionProfiles.swift")
@@ -299,6 +386,27 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(store.contains("lastPersistenceError = \"Connection profiles could not be saved:"))
         XCTAssertTrue(page.contains("profiles.lastPersistenceError"))
         XCTAssertTrue(page.contains("InfoBanner(text: error, kind: .error)"))
+    }
+
+    func testDatabaseWorkbenchActionsExposeVisibleStatusAndBusyState() throws {
+        let page = try readSource("Database/DatabaseWorkbenchSettingsPage.swift")
+        let operations = try readSource("Database/DatabaseWorkbenchOperations.swift")
+
+        XCTAssertTrue(page.contains("@State private var activeProfileAction: UUID?"))
+        XCTAssertTrue(page.contains("@State private var activeOperationKind: DatabaseWorkbenchOperationKind?"))
+        XCTAssertTrue(page.contains("@State private var databaseWorkbenchMessage: String?"))
+        XCTAssertTrue(page.contains("InfoBanner(text: databaseWorkbenchMessage, kind: databaseWorkbenchMessageKind)"))
+        XCTAssertTrue(page.contains("guard activeProfileAction == nil, activeOperationKind == nil else { return }"))
+        XCTAssertTrue(page.contains("ProgressView()"))
+        XCTAssertTrue(page.contains(".disabled(isDisabled)"))
+        XCTAssertTrue(page.contains("databaseWorkbenchMessageKind = .danger"))
+        XCTAssertTrue(page.contains("clearActiveProfileAction(profile.id)"))
+        XCTAssertTrue(page.contains("clearActiveOperation(kind)"))
+        XCTAssertTrue(page.contains("LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare"))
+
+        XCTAssertTrue(operations.contains("EXTERNAL PENDING:"))
+        XCTAssertTrue(operations.contains("validateLocalImportFile"))
+        XCTAssertTrue(operations.contains("localImportMaxBytes"))
     }
 
     func testDatabaseWorkbenchSettingsDefaultsAreRegistered() throws {
@@ -351,10 +459,22 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(source.contains(".disabled(store.inFlight)"))
         XCTAssertTrue(source.contains("static func isCoordinatorURLValid(_ raw: String) -> Bool"))
         XCTAssertFalse(source.contains("Button(\"Forget this Mac on the coordinator\")"))
-        XCTAssertTrue(source.contains("Button(\"Forget local pairing\")"))
+        XCTAssertTrue(source.contains("label: \"Forget local pairing\""))
         XCTAssertTrue(source.contains("L10n.t(\"Magic link sent to %@. Open it on this Mac, then paste the token below.\")"))
         XCTAssertTrue(source.contains("L10n.t(\"This Mac is registered as %@. Refresh token stored locally.\")"))
         XCTAssertTrue(source.contains("L10n.t(\"Local pairing forgotten. Revoke the device from the coordinator's Devices page to fully unpair.\")"))
+    }
+
+    func testRemoteAccessSettingsRendersFullRemoteProjectionReadiness() throws {
+        let source = try readSource("Settings/RemoteAccessSettingsPage.swift")
+
+        XCTAssertTrue(source.contains("snapshot.externalReadinessStatus"))
+        XCTAssertTrue(source.contains("snapshot.blockedExternalRequirementSummary"))
+        XCTAssertTrue(source.contains("snapshot.closureBlockersSummary"))
+        XCTAssertTrue(source.contains("snapshot.providerDeviceE2ESummary"))
+        XCTAssertFalse(source.contains("/v1/remote/"))
+        XCTAssertFalse(source.contains("/v1/gateway/"))
+        XCTAssertFalse(source.contains("/v1/sync/"))
     }
 
     func testGeneralSettingsDoNotExposeDeveloperOnlyFakeToggles() throws {
@@ -378,11 +498,26 @@ final class SettingsSurfaceTruthTests: XCTestCase {
 
     func testMCPRowsExposeDisabledAndAccessibleToggleState() throws {
         let source = try readSource("Settings/SettingsView+MCPPage.swift")
+        let editor = try readSource("MCP/MCPEditorSheet.swift")
+        let store = try readSource("MCP/MCPServersStore.swift")
 
-        XCTAssertTrue(source.contains("isBusy: store.isLoading || store.isSaving"))
+        XCTAssertTrue(source.contains("private var isBusy: Bool { store.isLoading || store.isSaving }"))
+        XCTAssertTrue(source.contains("guard !isBusy else { return }"))
+        XCTAssertTrue(source.contains("MCPEmptyState(onAdd:"))
+        XCTAssertTrue(source.contains(".disabled(isBusy)"))
         XCTAssertTrue(source.contains("accessibilityLabel: \"Enable MCP server\""))
         XCTAssertTrue(source.contains("accessibilityHint: \"Turns this MCP server on or off.\""))
-        XCTAssertTrue(source.contains(".disabled(isBusy)"))
+
+        XCTAssertTrue(editor.contains("@State private var mutationInFlight: Bool = false"))
+        XCTAssertTrue(editor.contains("!mutationInFlight, !store.isSaving"))
+        XCTAssertTrue(editor.contains("ProgressView()"))
+        XCTAssertTrue(editor.contains("let saved = await store.upsertAndWait(draft)"))
+        XCTAssertTrue(editor.contains("let deleted = await store.deleteAndWait(initial)"))
+        XCTAssertTrue(editor.contains(".disabled(mutationInFlight)"))
+
+        XCTAssertTrue(store.contains("func upsertAndWait(_ server: MCPServerConfig) async -> Bool"))
+        XCTAssertTrue(store.contains("func deleteAndWait(_ server: MCPServerConfig) async -> Bool"))
+        XCTAssertTrue(store.contains("private func replaceServersAndWait(_ snapshot: [MCPServerConfig]) async -> Bool"))
     }
 
     func testBrowserHistoryPolicyIsBlockedUntilConsumed() throws {
@@ -404,8 +539,24 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(page.contains("BrowserPermissionPolicy.allowedDomains"))
         XCTAssertTrue(page.contains("guard !clearingBrowsingData else { return }"))
         XCTAssertTrue(page.contains(".disabled(clearingBrowsingData)"))
+        XCTAssertTrue(page.contains("ProgressView()"))
+        XCTAssertTrue(page.contains("selected.statusLabel"))
+        XCTAssertTrue(page.contains("WebKit reported completion for %@. Settings does not receive per-site deletion counts."))
+        XCTAssertTrue(page.contains("Browser storage clear completed."))
+        XCTAssertTrue(page.contains("@State private var isMutating = false"))
+        XCTAssertTrue(page.contains("private var canAddDomain: Bool"))
+        XCTAssertTrue(page.contains("guard canAddDomain else { return }"))
+        XCTAssertTrue(page.contains("InfoBanner(text: error, kind: .error)"))
+        XCTAssertTrue(page.contains(".disabled(isMutating)"))
+        XCTAssertTrue(page.contains("accessibilityLabel(Text(\"Add browser domain\"))"))
+        XCTAssertTrue(page.contains("Remove %@ from browser permissions"))
+        XCTAssertTrue(page.contains("Adds the domain to this persisted browser permission list."))
+        XCTAssertTrue(page.contains("Removes the domain from this persisted browser permission list."))
         XCTAssertFalse(page.contains("\\(selected.rawValue) completed."))
-        XCTAssertTrue(page.contains("L10n.t(\"Browsing data cleared.\")"))
+        XCTAssertFalse(page.contains("L10n.t(\"Browsing data cleared.\")"))
+        XCTAssertTrue(page.contains("private extension BrowserPermissionPolicy.BrowserStorageKind"))
+        XCTAssertTrue(page.contains("L10n.t(\"Enter a valid domain such as example.com.\")"))
+        XCTAssertTrue(page.contains("L10n.t(\"Added %@\")"))
 
         XCTAssertTrue(policy.contains("static func decision(for url: URL) -> BrowserNavigationDecision"))
         XCTAssertTrue(policy.contains("if hostMatches(url, domains: blockedDomains) { return .block }"))
@@ -415,14 +566,110 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(registry.contains("clawix.prefs.browser.websiteApproval"))
         XCTAssertTrue(registry.contains("clawix.prefs.browser.blockedDomains"))
         XCTAssertTrue(registry.contains("clawix.prefs.browser.allowedDomains"))
+        XCTAssertTrue(registry.contains("clawix.prefs.browser.agentControlEnabled"))
+        XCTAssertTrue(registry.contains("clawix.prefs.browser.annotationScreenshots"))
+    }
+
+    func testUsageSettingsExposeRuntimeLoadingErrorAndEmptySnapshotStates() throws {
+        let page = try readSource("Settings/SettingsView+UsagePage.swift")
+        let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
+
+        XCTAssertTrue(page.contains("@AppStorage(ClawixPersistentSurfaceKeys.usageDisplayMode)"))
+        XCTAssertTrue(page.contains("@State private var usageRefreshInFlight = false"))
+        XCTAssertTrue(page.contains("@State private var usageRefreshError: String?"))
+        XCTAssertTrue(page.contains("@State private var usageRefreshCompleted = false"))
+        XCTAssertTrue(page.contains("usageStatus"))
+        XCTAssertTrue(page.contains("ProgressView()"))
+        XCTAssertTrue(page.contains("InfoBanner(text: usageRefreshError, kind: .error)"))
+        XCTAssertTrue(page.contains("The runtime did not return a rate-limit snapshot for this account."))
+        XCTAssertTrue(page.contains("guard await appState.ensureAgentRuntimeReady(reason: .usageSurface) else"))
+        XCTAssertTrue(page.contains("Agent runtime is unavailable: %@"))
+        XCTAssertTrue(page.contains("await clawix.refreshBackendMetadata(reason: .usageSurface)"))
+        XCTAssertTrue(page.contains("usageRefreshCompleted && !hasAnyUsageData"))
+        XCTAssertTrue(page.contains("Usage limits are unavailable because the agent runtime could not be reached."))
+        XCTAssertTrue(registry.contains("clawix.prefs.settings.usageDisplayMode"))
+        XCTAssertTrue(registry.contains("usageDisplayMode"))
+    }
+
+    func testAppshotsSettingsReflectPermissionsAndRegisteredPersistence() throws {
+        let page = try readSource("Settings/AppshotsSettingsPage.swift")
+        let settings = try readSource("Appshots/AppshotSettings.swift")
+        let monitor = try readSource("Appshots/AppshotHotkeyMonitor.swift")
+        let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
+
+        XCTAssertTrue(page.contains("@AppStorage(AppshotSettings.enabledKey)"))
+        XCTAssertTrue(page.contains("@AppStorage(AppshotSettings.hotkeyKey)"))
+        XCTAssertTrue(page.contains("private var captureBlockedReason: String?"))
+        XCTAssertTrue(page.contains("private var hotkeyBlockedReason: String?"))
+        XCTAssertTrue(page.contains("private var enabledBinding: Binding<Bool>"))
+        XCTAssertTrue(page.contains("if newValue, let reason = captureBlockedReason"))
+        XCTAssertTrue(page.contains("enabled = false"))
+        XCTAssertTrue(page.contains("L10n.t(\"Appshots are blocked until permission is granted. %@\")"))
+        XCTAssertTrue(page.contains("L10n.t(\"Appshots are enabled but blocked until permission is granted. %@\")"))
+        XCTAssertTrue(page.contains("L10n.t(\"The global appshot hotkey is inactive until permission is granted. %@\")"))
+        XCTAssertTrue(page.contains("InfoBanner(text: message, kind: .error)"))
+        XCTAssertTrue(page.contains("NativeMacPermissionBroker.status(for: .screenRecording)"))
+        XCTAssertTrue(page.contains("NativeMacPermissionBroker.status(for: .accessibility)"))
+        XCTAssertTrue(page.contains("NativeMacPermissionBroker.status(for: .inputMonitoring)"))
+        XCTAssertTrue(monitor.contains("NativeMacPermissionBroker.status(for: .inputMonitoring).isGranted"))
+        XCTAssertTrue(settings.contains("static let enabledKey = \"appshots.enabled\""))
+        XCTAssertTrue(settings.contains("static let hotkeyKey = \"appshots.hotkey\""))
+        XCTAssertTrue(registry.contains("clawix.prefs.appshots.enabled"))
+        XCTAssertTrue(registry.contains("clawix.prefs.appshots.hotkey"))
+    }
+
+    func testComputerUseSettingsDoNotExposeUnconsumedLockedUseToggle() throws {
+        let page = try readSource("HostActions/ComputerUseSettingsPage.swift")
+        let store = try readSource("HostActions/ComputerUseSettingsStore.swift")
+        let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
+
+        XCTAssertTrue(page.contains("@StateObject private var settings = ComputerUseSettings.shared"))
+        XCTAssertTrue(page.contains("InfoBanner(text: error, kind: .error)"))
+        XCTAssertTrue(page.contains("settings.allowedAppsLoadError"))
+        XCTAssertTrue(page.contains("ComputerUseCapabilityStatusRow"))
+        XCTAssertTrue(page.contains("Blocked until the signed host consumes lock-screen state and the persisted locked-use policy."))
+        XCTAssertFalse(page.contains("isOn: $settings.lockedUseEnabled"))
+        XCTAssertTrue(page.contains("isOn: $settings.anyAppEnabled"))
+        XCTAssertTrue(page.contains(".accessibilityLabel(Text(\"Remove \\(app.name) from always-allowed apps\"))"))
+
+        XCTAssertTrue(store.contains("@Published private(set) var allowedAppsLoadError: String?"))
+        XCTAssertTrue(store.contains("@Published private(set) var policySyncError: String?"))
+        XCTAssertFalse(store.contains("let decoded = try? JSONDecoder().decode([AlwaysAllowedApp].self"))
+        XCTAssertTrue(store.contains("try JSONDecoder().decode([AlwaysAllowedApp].self, from: data)"))
+        XCTAssertTrue(store.contains("surface: \"settings.computerUse.allowedApps.load\""))
+        XCTAssertTrue(store.contains("allowedAppsLoadError = nil"))
+        XCTAssertTrue(store.contains("try ComputerUsePolicyStore.save(policy, to: ComputerUsePolicyStore.defaultURL())"))
+        XCTAssertFalse(store.contains("try? ComputerUsePolicyStore.save"))
+        XCTAssertTrue(store.contains("policySyncError = SettingsUtilities.failureMessage(for: error, surface: \"settings.computerUse.policySync\")"))
+        XCTAssertTrue(store.contains("enum Keys"))
+        XCTAssertTrue(page.contains("L10n.t(\"Remove %@ from always-allowed apps\")"))
+
+        XCTAssertTrue(registry.contains("clawix.prefs.computerUse.anyAppEnabled"))
+        XCTAssertTrue(registry.contains("clawix.prefs.computerUse.lockedUseEnabled"))
+        XCTAssertTrue(registry.contains("clawix.prefs.computerUse.alwaysAllowedApps"))
     }
 
     func testLocalModelsAdvancedDisclosureIsPersistedAndRegistered() throws {
         let page = try readSource("LocalModels/LocalModelsPage.swift")
+        let diagnostics = try readSource("LocalModels/LocalModelsDiagnosticsSection.swift")
         let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
 
         XCTAssertFalse(page.contains("@State var advancedExpanded"))
         XCTAssertTrue(page.contains("@AppStorage(ClawixPersistentSurfaceKeys.localModelsAdvancedExpanded)"))
+        XCTAssertTrue(page.contains("@State private var uninstallInFlight = false"))
+        XCTAssertTrue(page.contains("@State private var runtimeActionError: String?"))
+        XCTAssertTrue(page.contains("InfoBanner(text: runtimeActionError, kind: .error)"))
+        XCTAssertTrue(page.contains("InfoBanner(text: launchAgentError, kind: .error)"))
+        XCTAssertTrue(page.contains("ProgressView()"))
+        XCTAssertTrue(page.contains(".disabled(uninstallInFlight || isRuntimeBusy)"))
+        XCTAssertTrue(page.contains("guard !isRuntimeBusy else { return }"))
+        XCTAssertTrue(page.contains("private func uninstallRuntime() async"))
+        XCTAssertTrue(page.contains("try LocalModelsRuntimeInstaller.shared.uninstall()"))
+        XCTAssertTrue(page.contains("settings.localModels.runtime.uninstall"))
+        XCTAssertFalse(page.contains("try? LocalModelsRuntimeInstaller.shared.uninstall()"))
+        XCTAssertTrue(diagnostics.contains("isEnabled: Bool = true"))
+        XCTAssertTrue(diagnostics.contains("isWorking: Bool = false"))
+        XCTAssertTrue(diagnostics.contains(".disabled(!isEnabled)"))
         XCTAssertTrue(registry.contains("clawix.prefs.localModels.advancedExpanded"))
         XCTAssertTrue(registry.contains("localModelsAdvancedExpanded"))
     }
@@ -533,6 +780,23 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(router.contains("// case .appearance:      AppearancePage()"))
     }
 
+    func testPortableArchiveSettingsExposeOnlySignedHostBlockedStates() throws {
+        let source = try readSource("Settings/PortableArchiveSettingsPage.swift")
+
+        XCTAssertTrue(source.contains("private enum PortableArchiveAction: CaseIterable"))
+        XCTAssertTrue(source.contains("Portable archive contracts are documented, but Settings cannot execute export, verify, preview, restore, or report actions until a signed host route returns dry-run and result evidence."))
+        XCTAssertTrue(source.contains("Blocked until the signed host route returns a dry-run archive plan and approval evidence."))
+        XCTAssertTrue(source.contains("Blocked until Settings receives a verification report from the signed host route."))
+        XCTAssertTrue(source.contains("Blocked until the signed host route returns an import preview without applying changes."))
+        XCTAssertTrue(source.contains("Blocked until import preview, verification, signed-host proof, explicit approval, and exact target confirmation all pass."))
+        XCTAssertTrue(source.contains("External pending until a completed restore report exists; Settings does not synthesize one."))
+        XCTAssertTrue(source.contains("Source: claw archive plan/export --signed-host"))
+        XCTAssertTrue(source.contains("Source: claw archive restore --signed-host"))
+        XCTAssertTrue(source.contains("Source: PortableArchiveRestoreReport from signed host"))
+        XCTAssertTrue(source.contains(".accessibilityHint(Text(\"\\(reason) \\(source)\"))"))
+        XCTAssertFalse(source.contains("PortableArchiveActionStatus(label: \"Pending\")"))
+    }
+
     func testHostsWorkspaceAddExposesLoadingStateAndRegisteredPersistence() throws {
         let page = try readSource("Settings/HostsPage.swift")
         let detail = try readSource("Settings/HostDetailView.swift")
@@ -541,12 +805,19 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         let registry = try readSource("Persistence/PersistentSurfaceRegistry.swift")
 
         XCTAssertTrue(page.contains("@State private var workspaceAddInFlight = false"))
-        XCTAssertTrue(page.contains("guard !workspaceAddInFlight else { return }"))
+        XCTAssertTrue(page.contains("@State private var workspaceAddPanelInFlight = false"))
+        XCTAssertTrue(page.contains("@State private var workspaceActionMessage: String?"))
+        XCTAssertTrue(page.contains("guard !workspaceAddInFlight, !workspaceAddPanelInFlight else { return }"))
+        XCTAssertTrue(page.contains("workspaceAddPanelInFlight = true"))
+        XCTAssertTrue(page.contains("workspaceAddPanelInFlight = false"))
         XCTAssertTrue(page.contains("workspaceAddInFlight = true"))
         XCTAssertTrue(page.contains("defer { workspaceAddInFlight = false }"))
         XCTAssertTrue(page.contains("ProgressView()"))
-        XCTAssertTrue(page.contains(".disabled(workspaceAddInFlight)"))
-        XCTAssertTrue(page.contains("accessibilityHint(Text(workspaceAddInFlight ?"))
+        XCTAssertTrue(page.contains("InfoBanner(text: message, kind: workspaceActionMessageKind)"))
+        XCTAssertTrue(page.contains(".disabled(workspaceAddInFlight || workspaceAddPanelInFlight)"))
+        XCTAssertTrue(page.contains("accessibilityHint(Text(workspaceAddInFlight || workspaceAddPanelInFlight ?"))
+        XCTAssertTrue(page.contains("L10n.t(\"Trusted workspace unchanged.\")"))
+        XCTAssertTrue(page.contains("L10n.t(\"Trusted workspace added: %@\")"))
         XCTAssertTrue(store.contains("nonisolated static let workspacesDefaultsKey"))
         XCTAssertTrue(store.contains("Self.saveRemoteWorkspaces(defaultRemoteWorkspaces)"))
         XCTAssertTrue(registry.contains("clawix.prefs.mesh.remoteWorkspaces"))
@@ -559,6 +830,14 @@ final class SettingsSurfaceTruthTests: XCTestCase {
         XCTAssertTrue(editor.contains("guard canCommit else { return }"))
         XCTAssertTrue(editor.contains("guard !pairingInFlight else { return }"))
         XCTAssertTrue(editor.contains("guard !sshInFlight else { return }"))
+        XCTAssertTrue(editor.contains("String(format: L10n.t(\"Linked with %@\")"))
+        XCTAssertTrue(editor.contains("String(format: L10n.t(\"Added %@\")"))
+        XCTAssertFalse(editor.contains("Hetzner"))
+        XCTAssertTrue(editor.contains("accessibilityLabel: L10n.t(\"Pairing token\")"))
+        XCTAssertTrue(editor.contains("L10n.t(\"SSH private key\")"))
+        XCTAssertTrue(editor.contains("L10n.t(\"SSH password\")"))
+        XCTAssertTrue(editor.contains(".accessibilityLabel(Text(accessibilityLabel))"))
+        XCTAssertTrue(editor.contains(".accessibilityHint(Text(accessibilityHint))"))
     }
 
     func testShortcutSettingsExposeOnlyPersistedRegisteredBindings() throws {

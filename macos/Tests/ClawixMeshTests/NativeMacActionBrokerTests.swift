@@ -51,6 +51,34 @@ final class NativeMacActionBrokerTests: XCTestCase {
         XCTAssertEqual(events[0].outcome, "requires_approval")
     }
 
+    func testSensitiveMutationFailsClosedWhenAuditCannotBeWritten() throws {
+        let runner = RecordingMacActionRunner()
+        let defaults = try makeDefaults()
+        let auditDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("native-mac-action-unwritable-audit-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: auditDirectory, withIntermediateDirectories: true)
+
+        let receipt = NativeMacActionBroker.evaluate(
+            NativeMacActionRequest(
+                requestId: "macreq_test_audit_fail_closed",
+                capabilityId: "mac.text.inject",
+                actorId: "owner",
+                origin: .ownerCLI,
+                arguments: ["text": "private dictated content"],
+                approved: true
+            ),
+            defaults: defaults,
+            auditURL: auditDirectory,
+            runner: runner
+        )
+
+        XCTAssertEqual(receipt.outcome, .blocked)
+        XCTAssertEqual(receipt.error, "Mac Control audit write failed; action was not executed.")
+        XCTAssertTrue(runner.nativeCalls.isEmpty)
+        XCTAssertTrue(runner.processCalls.isEmpty)
+        XCTAssertTrue(runner.appleScriptCalls.isEmpty)
+    }
+
     func testApprovedShortcutRunUsesShortcutsCLI() throws {
         let runner = RecordingMacActionRunner()
         let defaults = try makeDefaults()
