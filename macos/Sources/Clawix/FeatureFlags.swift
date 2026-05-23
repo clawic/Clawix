@@ -79,6 +79,7 @@ enum AppFeature: Equatable, CaseIterable {
     case screenTools
     case macUtilities
     case macControl
+    case computerUse
     case databaseWorkbench
     case marketplace
     case calendar
@@ -96,7 +97,7 @@ enum AppFeature: Equatable, CaseIterable {
              .browserUsage, .git, .remoteMesh, .apps,
              .design, .life, .skills, .skillCollections, .claw,
              .identity, .telegram, .screenTools, .macUtilities, .macControl,
-             .databaseWorkbench, .marketplace, .calendar, .contacts,
+             .computerUse, .databaseWorkbench, .marketplace, .calendar, .contacts,
              .database, .index, .iotHome, .agents, .openCode:
             return .stable
         case .publishing:
@@ -139,6 +140,7 @@ enum AppFeature: Equatable, CaseIterable {
         case .screenTools: return "clawix.feature.screenTools"
         case .macUtilities: return "clawix.feature.macUtilities"
         case .macControl: return "clawix.feature.macControl"
+        case .computerUse: return "clawix.feature.computerUse"
         case .databaseWorkbench: return "clawix.feature.databaseWorkbench"
         case .marketplace: return "clawix.feature.marketplace"
         case .calendar: return "clawix.feature.calendar"
