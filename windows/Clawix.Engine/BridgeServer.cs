@@ -30,14 +30,14 @@ public sealed class BridgeServer : IAsyncDisposable
     public BridgeServer(
         IEngineHost host,
         PairingService pairing,
-        ILogger<BridgeServer> logger,
+        ILogger<BridgeServer>? logger = null,
         IPAddress? bindAddress = null,
         ushort? port = null,
         BonjourPublisher? bonjour = null)
     {
         _host = host;
         _pairing = pairing;
-        _logger = logger;
+        _logger = logger ?? SilentLogger<BridgeServer>.Instance;
         _bindAddress = bindAddress ?? IPAddress.Loopback;
         _port = port ?? pairing.Port;
         _bonjour = bonjour;
@@ -89,5 +89,23 @@ public sealed class BridgeServer : IAsyncDisposable
         if (_aspHost is not null) _aspHost.Dispose();
         if (_bonjour is not null) await _bonjour.DisposeAsync();
         _aspHost = null;
+    }
+
+    private sealed class SilentLogger<T> : ILogger<T>
+    {
+        public static readonly SilentLogger<T> Instance = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => false;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+        }
     }
 }

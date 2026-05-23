@@ -170,9 +170,48 @@ public sealed class BridgeSession
                 await SendAsync(new BridgeFrame(new BridgeBody.GeneratedImageSnapshot(rgi.Path, g.DataBase64, g.MimeType, g.Error)), ct);
                 break;
 
+            case BridgeBody.RequestRolloutAttachment rra:
+                var attachment = await _host.HandleRequestRolloutAttachmentAsync(rra.AttachmentId, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.RolloutAttachmentSnapshot(rra.AttachmentId, attachment.DataBase64, attachment.MimeType, attachment.Error)), ct);
+                break;
+
             case BridgeBody.RequestRateLimits when _clientKind == ClientKind.Desktop:
                 var rl = _host.BridgeRateLimitsCurrent;
                 await SendAsync(new BridgeFrame(new BridgeBody.RateLimitsSnapshot(rl.Snapshot, rl.ByLimitId)), ct);
+                break;
+
+            case BridgeBody.RequestClawJSServiceStatuses:
+                await SendAsync(new BridgeFrame(new BridgeBody.ClawJSServiceStatusesSnapshot(_host.ClawJSServiceStatusesCurrent)), ct);
+                break;
+
+            case BridgeBody.AudioRegister ar:
+                var register = await _host.HandleAudioRegisterAsync(ar.RequestId, ar.Request, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioRegisterResult(ar.RequestId, register.Asset, register.Error)), ct);
+                break;
+
+            case BridgeBody.AudioAttachTranscript aat:
+                var attached = await _host.HandleAudioAttachTranscriptAsync(aat.RequestId, aat.AudioId, aat.Transcript, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioAttachTranscriptResult(aat.RequestId, attached.Transcript, attached.Error)), ct);
+                break;
+
+            case BridgeBody.AudioGet ag:
+                var get = await _host.HandleAudioGetAsync(ag.RequestId, ag.AudioId, ag.AppId, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioGetResult(ag.RequestId, get.Asset, get.Error)), ct);
+                break;
+
+            case BridgeBody.AudioGetBytes agb:
+                var bytes = await _host.HandleAudioGetBytesAsync(agb.RequestId, agb.AudioId, agb.AppId, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioBytesResult(agb.RequestId, bytes.AudioBase64, bytes.MimeType, bytes.DurationMs, bytes.Error)), ct);
+                break;
+
+            case BridgeBody.AudioList al:
+                var list = await _host.HandleAudioListAsync(al.RequestId, al.Filter, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioListResult(al.RequestId, list.List, list.Error)), ct);
+                break;
+
+            case BridgeBody.AudioDelete ad:
+                var delete = await _host.HandleAudioDeleteAsync(ad.RequestId, ad.AudioId, ad.AppId, ct);
+                await SendAsync(new BridgeFrame(new BridgeBody.AudioDeleteResult(ad.RequestId, delete.Deleted, delete.Error)), ct);
                 break;
 
             default:

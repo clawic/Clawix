@@ -18,6 +18,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public IReadOnlyList<WireSession> BridgeSessionsCurrent => _sessions;
     public (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) BridgeRateLimitsCurrent
         => (null, new Dictionary<string, WireRateLimitSnapshot>());
+    public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; set; } = [];
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged { add { } remove { } }
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
@@ -51,4 +52,18 @@ public sealed class InMemoryEngineHost : IEngineHost
         => Task.FromResult<(string?, string?, string?)>((null, null, "stub"));
     public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestGeneratedImageAsync(string path, CancellationToken ct)
         => Task.FromResult<(string?, string?, string?)>((null, null, "stub"));
+    public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestRolloutAttachmentAsync(string attachmentId, CancellationToken ct)
+        => Task.FromResult<(string?, string?, string?)>(("cm9sbG91dA==", "text/plain", null));
+    public Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioRegisterAsync(string requestId, WireAudioRegisterRequest request, CancellationToken ct)
+        => Task.FromResult<(WireAudioAssetWithTranscripts?, string?)>((null, "audio catalog unavailable"));
+    public Task<(WireAudioTranscript? Transcript, string? Error)> HandleAudioAttachTranscriptAsync(string requestId, string audioId, WireAudioAttachTranscriptInput transcript, CancellationToken ct)
+        => Task.FromResult<(WireAudioTranscript?, string?)>((null, "audio catalog unavailable"));
+    public Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioGetAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult<(WireAudioAssetWithTranscripts?, string?)>((null, "audio catalog unavailable"));
+    public Task<(string? AudioBase64, string? MimeType, int? DurationMs, string? Error)> HandleAudioGetBytesAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult<(string?, string?, int?, string?)>((null, null, null, "audio catalog unavailable"));
+    public Task<(WireAudioListResult? List, string? Error)> HandleAudioListAsync(string requestId, WireAudioListFilter filter, CancellationToken ct)
+        => Task.FromResult<(WireAudioListResult?, string?)>((null, "audio catalog unavailable"));
+    public Task<(bool Deleted, string? Error)> HandleAudioDeleteAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult((false, "audio catalog unavailable"));
 }

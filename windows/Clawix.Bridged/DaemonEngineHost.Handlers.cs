@@ -78,6 +78,9 @@ public sealed partial class DaemonEngineHost
     public Task<(string? AudioBase64, string? MimeType, string? Error)> HandleRequestAudioAsync(string audioId, CancellationToken ct)
         => Task.FromResult<(string?, string?, string?)>((null, null, "Audio storage not yet available on Windows"));
 
+    public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestRolloutAttachmentAsync(string attachmentId, CancellationToken ct)
+        => Task.FromResult<(string?, string?, string?)>((null, null, "Rollout attachment is not available on this host"));
+
     public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestGeneratedImageAsync(string path, CancellationToken ct)
     {
         try
@@ -97,4 +100,24 @@ public sealed partial class DaemonEngineHost
             return Task.FromResult<(string?, string?, string?)>((null, null, ex.Message));
         }
     }
+
+    public Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioRegisterAsync(string requestId, WireAudioRegisterRequest request, CancellationToken ct)
+        => Task.FromResult<(WireAudioAssetWithTranscripts?, string?)>((null, AudioCatalogUnavailableMessage));
+
+    public Task<(WireAudioTranscript? Transcript, string? Error)> HandleAudioAttachTranscriptAsync(string requestId, string audioId, WireAudioAttachTranscriptInput transcript, CancellationToken ct)
+        => Task.FromResult<(WireAudioTranscript?, string?)>((null, AudioCatalogUnavailableMessage));
+
+    public Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioGetAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult<(WireAudioAssetWithTranscripts?, string?)>((null, AudioCatalogUnavailableMessage));
+
+    public Task<(string? AudioBase64, string? MimeType, int? DurationMs, string? Error)> HandleAudioGetBytesAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult<(string?, string?, int?, string?)>((null, null, null, AudioCatalogUnavailableMessage));
+
+    public Task<(WireAudioListResult? List, string? Error)> HandleAudioListAsync(string requestId, WireAudioListFilter filter, CancellationToken ct)
+        => Task.FromResult<(WireAudioListResult?, string?)>((null, AudioCatalogUnavailableMessage));
+
+    public Task<(bool Deleted, string? Error)> HandleAudioDeleteAsync(string requestId, string audioId, string appId, CancellationToken ct)
+        => Task.FromResult((false, AudioCatalogUnavailableMessage));
+
+    private const string AudioCatalogUnavailableMessage = "Audio catalog service is not configured on this host.";
 }

@@ -35,6 +35,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     {
         get { lock (_stateLock) return _rateLimits; }
     }
+    public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent => [];
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged;
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
