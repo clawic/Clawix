@@ -55,7 +55,10 @@ public sealed partial class MainWindow : Window
             // Phase 4: open Settings -> Pairing.
         });
         tray.QuitRequested += () => DispatcherQueue.TryEnqueue(Close);
-        tray.Show();
+        if (App.Services.Preferences.Get(WindowsPreferenceKeys.ShowInTray, true))
+            tray.Show();
+        else
+            tray.Hide();
     }
 
     private void OpenQuickAsk() => DispatcherQueue.TryEnqueue(QuickAskWindow.ShowOrFocus);

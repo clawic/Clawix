@@ -1,3 +1,4 @@
+using Clawix.App.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -9,6 +10,9 @@ public sealed partial class GeneralPage : Page
     {
         InitializeComponent();
         StartAtLogin.IsOn = App.Services.AutoStart.IsEnabled;
+        ShowInTray.IsOn = App.Services.Preferences.Get(WindowsPreferenceKeys.ShowInTray, true);
+        ApplyTrayVisibility(ShowInTray.IsOn);
+
         StartAtLogin.Toggled += (_, _) =>
         {
             if (StartAtLogin.IsOn)
@@ -20,6 +24,18 @@ public sealed partial class GeneralPage : Page
             }
             else App.Services.AutoStart.Disable();
         };
+
+        ShowInTray.Toggled += (_, _) =>
+        {
+            App.Services.Preferences.Set(WindowsPreferenceKeys.ShowInTray, ShowInTray.IsOn);
+            ApplyTrayVisibility(ShowInTray.IsOn);
+        };
+    }
+
+    private static void ApplyTrayVisibility(bool visible)
+    {
+        if (visible) App.Services.Tray.Show();
+        else App.Services.Tray.Hide();
     }
 
     private void RevealConfig_Click(object sender, RoutedEventArgs e)

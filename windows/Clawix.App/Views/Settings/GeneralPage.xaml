@@ -9,7 +9,7 @@
 
       <!-- Visible: top-level toggles users care about -->
       <ToggleSwitch x:Name="StartAtLogin" Header="Start Clawix at login" />
-      <ToggleSwitch x:Name="ShowInTray" Header="Show in system tray" IsOn="True" />
+      <ToggleSwitch x:Name="ShowInTray" Header="Show in system tray" />
       <ComboBox Header="Theme" PlaceholderText="System default">
         <ComboBoxItem>System default</ComboBoxItem>
         <ComboBoxItem>Light</ComboBoxItem>
