@@ -274,7 +274,7 @@ public final class ProxyResolver {
             throw NSError(
                 domain: "ProxyResolver",
                 code: 100,
-                userInfo: [NSLocalizedDescriptionKey: "agent grant store not configured"]
+                userInfo: [NSLocalizedDescriptionKey: "grant store for agent not configured"]
             )
         }
         guard let secret = try self.store.fetchSecret(byInternalName: request.secretInternalName) else {

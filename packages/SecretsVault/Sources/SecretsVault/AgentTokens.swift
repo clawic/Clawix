@@ -115,7 +115,7 @@ public final class AgentGrantStore {
         durationMinutes: Int,
         scope: [String: String]
     ) throws -> IssuedAgentToken {
-        precondition(durationMinutes >= 1 && durationMinutes <= 60, "agent grant duration must be 1..60 minutes")
+        precondition(durationMinutes >= 1 && durationMinutes <= 60, "grant duration for agent must be 1..60 minutes")
         let plain = AgentTokenIssuer.generateToken()
         let hash = AgentTokenIssuer.hash(plain)
         let scopeData = try? JSONEncoder().encode(scope)

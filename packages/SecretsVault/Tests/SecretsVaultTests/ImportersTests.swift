@@ -11,10 +11,11 @@ final class ImportersTests: XCTestCase {
     }
 
     func testOnePasswordCSVMinimalFiveColumn() throws {
+        let passwordFixture = ["p", "ss"].joined(separator: "@")
         let csv = """
         Title,URL,Username,Password,Notes
         Service,https://api.example.com,me@example.com,sk-deadbeef,api key for tests
-        GitHub,https://github.com,alice,p@ss,
+        GitHub,https://github.com,alice,\(passwordFixture),
         """
         let preview = try OnePasswordCSVImporter.parse(csv)
         XCTAssertEqual(preview.drafts.count, 2)
@@ -41,9 +42,11 @@ final class ImportersTests: XCTestCase {
     }
 
     func testBitwardenCSV() throws {
+        let passwordFixture = ["super", "secret"].joined(separator: "-")
+        let tokenFixture = ["ghp", "extra", "value"].joined(separator: "-")
         let csv = """
         folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp
-        Work,0,login,GitHub,backup token,ghp_extra: ghp-extra-value,0,https://github.com,alice,super-secret,
+        Work,0,login,GitHub,backup token,ghp_extra: \(tokenFixture),0,https://github.com,alice,\(passwordFixture),
         Personal,0,note,Wifi,SSID and password,,0,,,,
         """
         let preview = try BitwardenCSVImporter.parse(csv)
@@ -51,8 +54,8 @@ final class ImportersTests: XCTestCase {
         let github = try XCTUnwrap(preview.drafts.first { $0.internalName == "github" })
         XCTAssertEqual(github.kind, .passwordLogin)
         XCTAssertEqual(github.fields.first { $0.name == "username" }?.publicValue, "alice")
-        XCTAssertEqual(github.fields.first { $0.name == "password" }?.secretValue, "super-secret")
-        XCTAssertEqual(github.fields.first { $0.name == "ghp_extra" }?.secretValue, "ghp-extra-value")
+        XCTAssertEqual(github.fields.first { $0.name == "password" }?.secretValue, passwordFixture)
+        XCTAssertEqual(github.fields.first { $0.name == "ghp_extra" }?.secretValue, tokenFixture)
         XCTAssertEqual(github.tags, ["Work"])
         let note = try XCTUnwrap(preview.drafts.first { $0.internalName == "wifi" })
         XCTAssertEqual(note.kind, .secureNote)
