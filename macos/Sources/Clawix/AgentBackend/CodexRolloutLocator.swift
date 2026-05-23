@@ -3,9 +3,7 @@ import Foundation
 enum CodexRolloutLocator {
     static func find(
         threadId: String,
-        sessionsRoot: URL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".codex", isDirectory: true)
-            .appendingPathComponent("sessions", isDirectory: true),
+        sessionsRoot: URL = ClawixAgentBackendRoutes.codexSessionsDirectory(),
         fileManager: FileManager = .default
     ) -> URL? {
         let needle = threadId.trimmingCharacters(in: .whitespacesAndNewlines)
