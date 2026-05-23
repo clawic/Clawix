@@ -6,16 +6,23 @@
   <ScrollViewer Padding="24">
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Dictation" FontSize="22" FontWeight="SemiBold" />
-      <ToggleSwitch x:Name="EnableSwitch" Header="Enable dictation" />
-      <ComboBox x:Name="ModelCombo" Header="Whisper model" PlaceholderText="Choose model">
+      <ToggleSwitch x:Name="EnableSwitch" Header="Enable dictation" Toggled="EnableSwitch_Toggled" />
+      <ComboBox x:Name="ModelCombo" Header="Whisper model" PlaceholderText="Choose model" SelectionChanged="ModelCombo_SelectionChanged">
         <ComboBoxItem Content="tiny" />
         <ComboBoxItem Content="base" />
         <ComboBoxItem Content="small" />
         <ComboBoxItem Content="medium" />
       </ComboBox>
-      <ComboBox x:Name="LanguageCombo" Header="Language" PlaceholderText="Auto detect" />
-      <ToggleSwitch x:Name="EnhanceSwitch" Header="Enhance with cloud model" />
-      <ToggleSwitch x:Name="PowerSwitch" Header="Power mode (replace selected text)" />
+      <ComboBox x:Name="LanguageCombo" Header="Language" PlaceholderText="Auto detect" SelectionChanged="LanguageCombo_SelectionChanged">
+        <ComboBoxItem Content="Auto detect" Tag="" />
+        <ComboBoxItem Content="English" Tag="en" />
+        <ComboBoxItem Content="Spanish" Tag="es" />
+        <ComboBoxItem Content="French" Tag="fr" />
+        <ComboBoxItem Content="German" Tag="de" />
+        <ComboBoxItem Content="Japanese" Tag="ja" />
+      </ComboBox>
+      <ToggleSwitch x:Name="EnhanceSwitch" Header="Enhance with cloud model" Toggled="EnhanceSwitch_Toggled" />
+      <ToggleSwitch x:Name="PowerSwitch" Header="Power mode (replace selected text)" Toggled="PowerSwitch_Toggled" />
     </StackPanel>
   </ScrollViewer>
 </Page>

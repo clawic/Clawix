@@ -3,4 +3,9 @@ namespace Clawix.App.Services;
 public static class WindowsPreferenceKeys
 {
     public const string ShowInTray = "windows.showInTray";
+    public const string DictationEnabled = "dictation.enabled";
+    public const string DictationModel = "dictation.model";
+    public const string DictationLanguage = "dictation.language";
+    public const string DictationEnhancementEnabled = "dictation.enhancement.enabled";
+    public const string DictationPowerModeEnabled = "dictation.powerMode.enabled";
 }
