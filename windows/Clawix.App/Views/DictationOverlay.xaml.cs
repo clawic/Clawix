@@ -6,5 +6,14 @@ namespace Clawix.App.Views;
 public sealed partial class DictationOverlay : UserControl
 {
     public DictationOverlay() { InitializeComponent(); }
-    private void Stop_Click(object sender, RoutedEventArgs e) { /* Phase 4 */ }
+
+    public event Action? StopRequested;
+
+    private void Stop_Click(object sender, RoutedEventArgs e)
+    {
+        StopBtn.IsEnabled = false;
+        Status.Text = "Stopping...";
+        StopRequested?.Invoke();
+        Visibility = Visibility.Collapsed;
+    }
 }
