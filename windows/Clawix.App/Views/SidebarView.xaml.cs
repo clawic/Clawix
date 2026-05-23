@@ -81,6 +81,12 @@ public sealed partial class SidebarView : UserControl
         App.Services.State.StartNewChat();
     }
 
+    private async void TogglePin_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is WireSession chat)
+            await App.Services.State.SetPinnedAsync(chat, !chat.IsPinned);
+    }
+
     private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _selectedProject = ProjectList.SelectedItem as WireProject;

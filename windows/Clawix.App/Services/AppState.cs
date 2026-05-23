@@ -143,6 +143,20 @@ public sealed partial class AppState : ObservableObject
         ComposerFocusRequested?.Invoke();
     }
 
+    public Task SetPinnedAsync(WireSession chat, bool pinned)
+    {
+        var next = chat with { IsPinned = pinned };
+        Sessions = Sessions.Select(session => session.Id == chat.Id ? next : session).ToList();
+        if (CurrentChat?.Id == chat.Id)
+            CurrentChat = next;
+
+        if (_client is null) return Task.CompletedTask;
+        BridgeBody body = pinned
+            ? new BridgeBody.PinSession(chat.Id)
+            : new BridgeBody.UnpinSession(chat.Id);
+        return _client.SendAsync(new BridgeFrame(body), CancellationToken.None);
+    }
+
     public Task SendMessageAsync(string text, IReadOnlyList<WireAttachment>? attachments = null)
     {
         if (_client is null) return Task.CompletedTask;

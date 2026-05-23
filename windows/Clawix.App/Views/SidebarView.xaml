@@ -38,10 +38,19 @@
               SelectionMode="Single">
       <ListView.ItemTemplate>
         <DataTemplate x:DataType="models:WireSession">
-          <StackPanel Padding="6,4">
-            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
-            <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
-          </StackPanel>
+          <Grid Padding="6,4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <Button Grid.Column="1" Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
+              <FontIcon Glyph="&#xE718;" />
+            </Button>
+          </Grid>
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
@@ -67,10 +76,19 @@
               SelectionMode="Single">
       <ListView.ItemTemplate>
         <DataTemplate x:DataType="models:WireSession">
-          <StackPanel Padding="6,4">
-            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
-            <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
-          </StackPanel>
+          <Grid Padding="6,4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <Button Grid.Column="1" Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
+              <FontIcon Glyph="&#xE718;" />
+            </Button>
+          </Grid>
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>

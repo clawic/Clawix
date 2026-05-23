@@ -74,6 +74,14 @@ public sealed class BridgeSessionDispatchParityTests
         Assert.Equal("Windows Parity", projects.Projects[0].Title);
         Assert.True(projects.Projects[0].HasGitRepo);
 
+        await SendAsync(client, new BridgeBody.PinSession("session-pin"));
+        await WaitUntilAsync(() => host.PinCalls.Count == 1);
+        Assert.Equal(("session-pin", true), host.PinCalls[0]);
+
+        await SendAsync(client, new BridgeBody.UnpinSession("session-pin"));
+        await WaitUntilAsync(() => host.PinCalls.Count == 2);
+        Assert.Equal(("session-pin", false), host.PinCalls[1]);
+
         await SendAsync(client, new BridgeBody.RequestClawJSServiceStatuses());
         var serviceStatuses = Assert.IsType<BridgeBody.ClawJSServiceStatusesSnapshot>((await ReceiveAsync(client)).Body);
         Assert.Single(serviceStatuses.Services);
@@ -252,6 +260,16 @@ public sealed class BridgeSessionDispatchParityTests
     {
         var bytes = BridgeCoder.EncodeBytes(new BridgeFrame(body));
         return socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> predicate)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        while (!predicate())
+        {
+            timeout.Token.ThrowIfCancellationRequested();
+            await Task.Delay(10, timeout.Token);
+        }
     }
 
     private static async Task<BridgeFrame> ReceiveAsync(ClientWebSocket socket)
