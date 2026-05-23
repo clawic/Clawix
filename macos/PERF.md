@@ -72,6 +72,7 @@ that gap with static code-reading guesses.
 | `ResourceSampler` | `Sources/Clawix/Diagnostics/ResourceSampler.swift` | explicit diagnostics only | RSS, footprint, %CPU once per second after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1`, or one-shot rescue/diagnostics exports |
 | `HangDetector` | `Sources/Clawix/Diagnostics/HangDetector.swift` | explicit diagnostics only | Runloop-level main-thread stalls > `CLAWIX_HANG_MS` (default 250 ms) after `CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1` or `CLAWIX_FORCE_HANG_DETECTOR=1` |
 | `MetricKitObserver` | `Sources/Clawix/Diagnostics/MetricKitObserver.swift` | yes | Apple's own daily payloads (launch time, hitch ratio, hangs with backtraces, app exit reasons) |
+| `diagnostics.export` | `Sources/Clawix/Diagnostics/FeedbackDialogView.swift`, rescue exporters | manual | Redacted support/feedback report writes and artifact-reference counts |
 | `streamingPerfLog` | `Sources/Clawix/StreamingFade.swift` | yes (toggle in source) | Streaming pipeline per-message timings via `Logger("stream-perf")` |
 | `perf-workout.sh` phase markers | `scripts/perf-workout.sh` | manual | Repeatable phase boundaries in `/tmp/clawix-renders.log` for before/after comparisons |
 | `LaunchMilestones` | `Sources/Clawix/Diagnostics/LaunchMilestones.swift` | yes | One-shot startup release milestones for `process_start -> first_chat_interactive` |
@@ -113,6 +114,7 @@ All capture artifacts land in one place when you run `perf-capture.sh`:
 | `secrets.crypto` | (reserved for KDF / AEAD work) | (call sites added when needed) |
 | `hang` | `Diagnostics/HangDetector.swift` | One `main-stalled` event per stall, value = ms |
 | `resource` | `Diagnostics/ResourceSampler.swift` | `rss_mb`, `footprint_mb`, `cpu_pct` once per second after explicit diagnostics activation |
+| `diagnostics.export` | `Diagnostics/FeedbackDialogView.swift` and rescue exporters | Report/export write events, reference counts, and redaction-aware handoff artifacts |
 
 Add a new category by editing `Signposts.swift`, registering it in
 the table above, and only then emitting from a call site. The ad-hoc

@@ -22,7 +22,7 @@ final class MetricKitObserver: NSObject, @unchecked Sendable {
 
     private static let log = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.example.clawix",
-        category: "metrickit"
+        category: ClawixDiagnosticLogCategory.metricKit
     )
 
     func install() {
@@ -48,7 +48,7 @@ final class MetricKitObserver: NSObject, @unchecked Sendable {
         do {
             try data.write(to: url, options: .atomic)
             Self.log.info(
-                "MetricKit \(prefix, privacy: .public) saved at \(url.path, privacy: .public) (\(data.count, privacy: .public) bytes)"
+                "MetricKit \(prefix, privacy: .public) saved as \(url.lastPathComponent, privacy: .public) (\(data.count, privacy: .public) bytes)"
             )
         } catch {
             Self.log.error(

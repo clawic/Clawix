@@ -399,5 +399,6 @@ struct ContentView: View {
         }
         .overlay(CommandPaletteOverlay(appState: appState))
         .overlay(ImagePreviewOverlay(appState: appState))
+        .overlay(FeedbackOverlay(appState: appState))
     }
 }

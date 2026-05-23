@@ -5,6 +5,10 @@ struct HelpMenuCommands: View {
     @ObservedObject var appState: AppState
 
     var body: some View {
+        Button(L10n.t("Send Feedback…")) {
+            appState.isFeedbackOpen = true
+        }
+
         Button("Send feedback about \(appDisplayName) to Apple") {
             HelpMenuActions.sendFeedbackToApple()
         }

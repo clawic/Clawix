@@ -26,7 +26,7 @@ enum ResourceSampler {
 
     private static let log = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.example.clawix",
-        category: "resource-sampler"
+        category: ClawixDiagnosticLogCategory.resource
     )
 
     struct Sample: Codable {

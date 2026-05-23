@@ -41,7 +41,7 @@ enum HangDetector {
 
     private static let log = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "com.example.clawix",
-        category: "hang"
+        category: ClawixDiagnosticLogCategory.hang
     )
 
     static func shouldStartFromEnvironment(

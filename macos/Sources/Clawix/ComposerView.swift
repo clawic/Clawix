@@ -170,6 +170,8 @@ struct ComposerView: View {
                                     appState.selectedProject = nil
                                 } else if cmd.id == "files" {
                                     showFiles = true
+                                } else if cmd.id == "pet" {
+                                    PetController.shared.toggle()
                                 }
                             },
                             onHover: { cmd in

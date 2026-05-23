@@ -36,6 +36,7 @@ enum PerfSignpost: String, CaseIterable {
     case secretsCrypto = "secrets.crypto"
     case hang = "hang"
     case resource = "resource"
+    case diagnosticsExport = "diagnostics.export"
 
     private static let subsystem: String = Bundle.main.bundleIdentifier ?? "com.example.clawix"
 

@@ -20,6 +20,11 @@ if [[ -x "$ROOT_DIR/scripts/doc_alignment_check.sh" ]]; then
   "$ROOT_DIR/scripts/doc_alignment_check.sh"
 fi
 
+if [[ -f "$ROOT_DIR/scripts/privacy_artifact_safety_check.mjs" ]]; then
+  node "$ROOT_DIR/scripts/privacy_artifact_safety_check.mjs" --fixtures >/dev/null
+  node "$ROOT_DIR/scripts/privacy_artifact_safety_check.mjs" --public-artifacts >/dev/null
+fi
+
 COMMON_GLOBS=(
   --glob '!**/.build/**'
   --glob '!**/build/**'

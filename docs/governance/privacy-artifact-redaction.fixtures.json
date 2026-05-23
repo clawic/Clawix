@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "clawix-privacy-artifact-redaction-fixtures",
+  "status": "synthetic_sensitive_templates_not_evidence",
+  "validatorPath": "scripts/privacy_artifact_safety_check.mjs",
+  "safeSyntheticArtifacts": [
+    {
+      "id": "safe-public-report",
+      "kind": "report",
+      "summary": "Synthetic validation completed with private roots represented by aliases only.",
+      "evidenceRefs": ["private-codex-ui-baselines:coverage/sidebar-row.json"],
+      "redaction": {
+        "containsSecrets": false,
+        "containsPrivatePaths": false,
+        "containsRawTrace": false,
+        "containsPromptContent": false
+      }
+    }
+  ],
+  "sensitiveSyntheticArtifacts": [
+    {
+      "id": "prompt-token-path-session",
+      "kind": "trace",
+      "payload": {
+        "prompt": {
+          "segments": ["Draft a private plan ", "using the user's confidential launch notes."]
+        },
+        "authorization": {
+          "segments": ["Bearer ", "sk-", "testtemplate0000000000000000"]
+        },
+        "secretRef": {
+          "segments": ["secret", "://provider/openai/main"]
+        },
+        "path": {
+          "segments": [
+            "/Users/",
+            "sensitive/.codex/sessions/2026/05/23/",
+            "rollout-",
+            "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
+          ]
+        },
+        "bundle_id": {
+          "segments": ["com.", "clawix.private.real"]
+        },
+        "teamId": {
+          "segments": ["TEAM_ID: ", "ABCDE", "12345"]
+        }
+      },
+      "expectedRedactions": [
+        "<redacted:content>",
+        "Bearer <redacted:secret>",
+        "<redacted:secret-ref>",
+        "<redacted:codex-session>",
+        "<redacted:bundle-id>",
+        "<redacted:team-id>"
+      ]
+    },
+    {
+      "id": "raw-report-and-key",
+      "kind": "report",
+      "payload": {
+        "trace": {
+          "segments": ["The private user report ", "includes unreleased product details."]
+        },
+        "path": {
+          "segments": ["file://", "/Users/", "sensitive/Desktop/report.md"]
+        },
+        "token": {
+          "segments": ["ghp_", "1234567890abcdefghijklmnopqrst"]
+        },
+        "keyMaterial": {
+          "segments": ["-----BEGIN PRIVATE KEY-----", "\\nabc\\n", "-----END PRIVATE KEY-----"]
+        }
+      },
+      "expectedRedactions": [
+        "\"trace\":\"<redacted:content>\"",
+        "<redacted:file-url>",
+        "<redacted:secret>",
+        "<redacted:private-key>"
+      ]
+    }
+  ]
+}

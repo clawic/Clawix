@@ -225,6 +225,8 @@ final class AppState: ObservableObject {
     @Published var pinnedItems: [PinnedItem] = []
     @Published var isLeftSidebarOpen: Bool = AppState.sidebarDefaults.object(forKey: AppState.leftSidebarOpenKey) as? Bool ?? true
     @Published var isCommandPaletteOpen: Bool = false
+    /// Drives the centered Send-feedback modal (Help → Send Feedback).
+    @Published var isFeedbackOpen: Bool = false
     /// When non-nil, the global search popup is currently scoped to
     /// this project. The sidebar's per-project "View all" footer sets
     /// this and routes to `.search` so the same popup the user already
