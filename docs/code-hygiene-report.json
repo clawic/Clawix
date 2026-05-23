@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "program": "code-hygiene",
-  "generatedAt": "2026-05-22",
+  "generatedAt": "2026-05-23",
   "status": "active",
   "blockingFindings": 0,
   "reportOnlyFindings": 6,
@@ -9,11 +9,11 @@
   "auditScope": "tracked",
   "fileInventory": {
     "source": "git ls-files",
-    "count": 2578,
-    "pathHash": "sha256:1883e1ba58a5188881b59693bb9ca1bf975bf9b252042980da8f47d6df005b31"
+    "count": 2668,
+    "pathHash": "sha256:54cec5aaf2d4e3520e67feae0427c3748b7f33c0b5a618a5c7b2c4e490e410c5"
   },
   "lastAuditSummary": {
-    "scannedFiles": 2578,
+    "scannedFiles": 2668,
     "todoFindings": 0,
     "duplicateAssetGroups": 6,
     "duplicateAssetFiles": 12,
