@@ -69,6 +69,15 @@ let package = Package(
                 // top-level statements, which is what the daemon needs.
                 .unsafeFlags(["-parse-as-library"])
             ]
+        ),
+        .testTarget(
+            name: "clawix-bridge-tests",
+            dependencies: [
+                "clawix-bridge",
+                .product(name: "ClawixCore", package: "ClawixCore"),
+                .product(name: "ClawixEngine", package: "ClawixEngine")
+            ],
+            path: "Tests/clawix-bridge-tests"
         )
     ]
 )

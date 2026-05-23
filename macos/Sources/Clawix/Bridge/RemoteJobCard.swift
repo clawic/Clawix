@@ -11,6 +11,7 @@ struct RemoteJobCard: View {
     private static let visibleEventLimit = 50
 
     let state: RemoteJobUIState
+    var remoteProjectionState: ClawJSRemoteProjectionStore.State = .idle
     var onDismiss: () -> Void = {}
 
     @State private var eventsExpanded = true
@@ -18,6 +19,7 @@ struct RemoteJobCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            remoteProjectionBanner
 
             if isWorkspaceDeniedError {
                 InfoBanner(
@@ -84,6 +86,36 @@ struct RemoteJobCard: View {
                 .accessibilityLabel("Dismiss")
             } else {
                 ProgressView().controlSize(.small)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var remoteProjectionBanner: some View {
+        switch remoteProjectionState {
+        case .idle, .loading:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Checking ClawJS remote contracts")
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+        case .unavailable(let message):
+            InfoBanner(text: message, kind: .danger)
+        case .available(let snapshot):
+            HStack(spacing: 8) {
+                LucideIcon(.workflow, size: 11)
+                    .foregroundColor(Palette.textSecondary)
+                Text("Framework routes \(snapshot.requiredRoutes.count - snapshot.missingRouteIds.count)/\(snapshot.requiredRoutes.count)")
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                Text("readiness \(snapshot.externalReadinessStatus)")
+                    .font(BodyFont.system(size: 11, wght: 600))
+                    .foregroundColor(Palette.textTertiary)
+                Spacer()
+                Text(snapshot.blockedExternalRequirementSummary)
+                    .font(BodyFont.system(size: 11, wght: 600))
+                    .foregroundColor(Palette.textTertiary)
             }
         }
     }

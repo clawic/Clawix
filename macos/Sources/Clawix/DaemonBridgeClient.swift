@@ -34,7 +34,7 @@ final class DaemonBridgeClient {
         // iOS bridge client (BridgeClient.makeEndpoint) hit the same
         // wall and switched to NWEndpoint.url(URL("ws://host:port/"));
         // do the same here so the macOS desktop client doesn't break.
-        let url = URL(string: "ws://127.0.0.1:\(pairing.port)/")!
+        let url = ClawixBridgeEndpointResolver.webSocketURL(port: pairing.port)
         let connection = NWConnection(to: .url(url), using: parameters)
         self.connection = connection
         connection.stateUpdateHandler = { [weak self] state in

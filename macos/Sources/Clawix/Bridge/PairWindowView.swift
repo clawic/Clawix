@@ -11,6 +11,7 @@ struct PairWindowView: View {
     @State private var token: String = ""
     @State private var bridgeLease: BridgeDemandLease?
     @StateObject private var backgroundBridge: BackgroundBridgeService = .shared
+    @StateObject private var remoteProjectionStore = ClawJSRemoteProjectionStore()
 
     private var pairing: PairingService {
         appState.sharedBridgePairingService()
@@ -51,6 +52,8 @@ struct PairWindowView: View {
                     .strokeBorder(Color.overlay(0.10), lineWidth: 0.5)
             )
 
+            remoteReadinessCard
+
             HStack(spacing: 10) {
                 Button(action: rotate) {
                     Text("Rotate token")
@@ -67,15 +70,17 @@ struct PairWindowView: View {
             Spacer()
         }
         .padding(28)
-        .frame(width: 360, height: 540)
+        .frame(width: 360, height: 610)
         .background(Color.gray(light: 0.96, dark: 0.06).ignoresSafeArea())
         .onAppear {
             if bridgeLease == nil {
                 bridgeLease = appState.acquireLocalBridge(reason: .pairing)
             }
+            remoteProjectionStore.load()
             refresh()
         }
         .onDisappear {
+            remoteProjectionStore.cancel()
             bridgeLease?.release()
             bridgeLease = nil
         }
@@ -99,6 +104,46 @@ struct PairWindowView: View {
                 .truncationMode(.middle)
             Spacer()
         }
+    }
+
+    @ViewBuilder
+    private var remoteReadinessCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Framework remote readiness")
+                .font(BodyFont.system(size: 11, wght: 700))
+                .foregroundStyle(Color.overlay(0.58))
+            switch remoteProjectionStore.state {
+            case .idle, .loading:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Checking ClawJS remote contracts")
+                        .font(BodyFont.system(size: 11.5, wght: 500))
+                        .foregroundStyle(Color.overlay(0.55))
+                }
+            case .unavailable(let message):
+                Text(message)
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundStyle(Color.red.opacity(0.75))
+                    .lineLimit(2)
+            case .available(let snapshot):
+                row(label: "Routes", value: "\(snapshot.requiredRoutes.count - snapshot.missingRouteIds.count)/\(snapshot.requiredRoutes.count)")
+                row(label: "Pending", value: "\(snapshot.externalPendingCount) external")
+                row(label: "Readiness", value: snapshot.externalReadinessStatus)
+                row(label: "Closure", value: snapshot.closureBlockersSummary)
+                row(label: "E2E plan", value: snapshot.providerDeviceE2ESummary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.overlay(0.035))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.overlay(0.08), lineWidth: 0.5)
+        )
     }
 
     private func refresh() {

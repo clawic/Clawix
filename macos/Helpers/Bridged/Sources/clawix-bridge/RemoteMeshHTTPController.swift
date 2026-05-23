@@ -141,16 +141,16 @@ final class RemoteMeshHTTPController {
         if let tail = PairingService.currentTailscaleIPv4() {
             endpoints.append(RemoteEndpoint(kind: "tailscale", host: tail, bridgePort: Int(bridgePort), httpPort: Int(httpPort)))
         }
-        endpoints.append(RemoteEndpoint(kind: "loopback", host: "127.0.0.1", bridgePort: Int(bridgePort), httpPort: Int(httpPort)))
+        endpoints.append(RemoteEndpoint(kind: "loopback", host: ClawixBridgeEndpointResolver.loopbackHost, bridgePort: Int(bridgePort), httpPort: Int(httpPort)))
         return endpoints
     }
 
     private func linkPeer(_ input: LinkInput) async throws -> PeerRecord {
-        let identityURL = URL(string: "http://\(input.host):\(input.httpPort)/v1/mesh/identity")!
+        let identityURL = RemoteMeshEndpointResolver.url(host: input.host, httpPort: input.httpPort, path: ClawixMeshRoute.identity)
         let (identityData, _) = try await URLSession.shared.data(from: identityURL)
         let remoteIdentity = try RemoteMeshCodec.decoder.decode(NodeIdentity.self, from: identityData)
         let localIdentity = try identityPayload()
-        let pairURL = URL(string: "http://\(input.host):\(input.httpPort)/v1/mesh/pair")!
+        let pairURL = RemoteMeshEndpointResolver.url(host: input.host, httpPort: input.httpPort, path: ClawixMeshRoute.pair)
         var req = URLRequest(url: pairURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -164,7 +164,7 @@ final class RemoteMeshHTTPController {
             RemoteEndpoint(
                 kind: "linked",
                 host: input.host,
-                bridgePort: input.bridgePort ?? 24080,
+                bridgePort: input.bridgePort ?? Int(ClawixBridgeEndpointResolver.defaultWebSocketPort),
                 httpPort: input.httpPort
             ),
             at: 0
@@ -194,7 +194,7 @@ final class RemoteMeshHTTPController {
 
     private func postEncrypted<T: Decodable>(_ envelope: RemoteMeshSignedEnvelope, to peer: PeerRecord, path: String) async throws -> T {
         guard let endpoint = preferredEndpoint(peer) else { throw RemoteMeshError.peerNotFound }
-        let url = URL(string: "http://\(endpoint.host):\(endpoint.httpPort)\(path)")!
+        let url = RemoteMeshEndpointResolver.url(host: endpoint.host, httpPort: endpoint.httpPort, path: path)
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -206,6 +206,23 @@ final class RemoteMeshHTTPController {
         return try RemoteMeshCodec.decoder.decode(T.self, from: data)
     }
 
+}
+
+enum RemoteMeshEndpointResolver {
+    static func url(host: String, httpPort: Int, path: String) -> URL {
+        var components = URLComponents()
+        components.scheme = "http"
+        components.host = host
+        components.port = httpPort
+        components.path = path.hasPrefix("/") ? path : "/\(path)"
+        guard let url = components.url else {
+            preconditionFailure("Invalid remote mesh URL for \(host):\(httpPort)\(path)")
+        }
+        return url
+    }
+}
+
+extension RemoteMeshHTTPController {
     private func encrypted<T: Encodable>(_ value: T, to peer: PeerRecord, path: String, method: String) throws -> HTTPResponse {
         let envelope = try identity.seal(value, for: peer, path: path, method: method)
         return try json(envelope)

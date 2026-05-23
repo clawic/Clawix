@@ -124,6 +124,16 @@ struct ClawJSSessionsClient {
         let totalActiveVisible: Int
     }
 
+    struct QuickSwitchSessionsResponse: Decodable, Equatable {
+        let items: [SessionRecord]
+        let total: Int
+        let query: String
+        let limit: Int
+        let offset: Int
+        let source: String
+        let searchedMessageHistory: Bool
+    }
+
     struct MessagesResponse: Decodable {
         let items: [MessageRecord]
     }
@@ -311,6 +321,27 @@ struct ClawJSSessionsClient {
         return response
     }
 
+    func quickSwitchSessions(
+        query: String? = nil,
+        projectId: String? = nil,
+        projectPath: String? = nil,
+        includeArchived: Bool? = nil,
+        limit: Int? = nil,
+        offset: Int? = nil
+    ) async throws -> QuickSwitchSessionsResponse {
+        var items: [URLQueryItem] = []
+        if let query { items.append(URLQueryItem(name: "q", value: query)) }
+        if let projectId { items.append(URLQueryItem(name: "projectId", value: projectId)) }
+        if let projectPath { items.append(URLQueryItem(name: "projectPath", value: projectPath)) }
+        if let includeArchived { items.append(URLQueryItem(name: "includeArchived", value: includeArchived ? "true" : "false")) }
+        if let limit { items.append(URLQueryItem(name: "limit", value: "\(limit)")) }
+        if let offset { items.append(URLQueryItem(name: "offset", value: "\(offset)")) }
+        return try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sidebar/quick-switch",
+            queryItems: items
+        )
+    }
+
     func getSession(id: String, includeMessages: Bool = false) async throws -> SessionWithMessages {
         let query = includeMessages ? [URLQueryItem(name: "includeMessages", value: "true")] : []
         if includeMessages {
@@ -365,7 +396,8 @@ struct ClawJSSessionsClient {
         query: String,
         projectId: String? = nil,
         projectPath: String? = nil,
-        limit: Int = 50
+        limit: Int = 50,
+        offset: Int? = nil
     ) async throws -> [SearchHit] {
         var items = [
             URLQueryItem(name: "q", value: query),
@@ -373,6 +405,7 @@ struct ClawJSSessionsClient {
         ]
         if let projectId { items.append(URLQueryItem(name: "projectId", value: projectId)) }
         if let projectPath { items.append(URLQueryItem(name: "projectPath", value: projectPath)) }
+        if let offset { items.append(URLQueryItem(name: "offset", value: "\(offset)")) }
         let response: SearchResponse = try await request(
             "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/search",
             queryItems: items

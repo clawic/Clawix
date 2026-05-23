@@ -48,6 +48,8 @@ enum ClawJSAsyncProcessRunner {
     static func run(
         executable: String,
         arguments: [String],
+        currentDirectoryURL: URL? = nil,
+        environment: [String: String]? = nil,
         timeoutNanoseconds: UInt64 = 2_000_000_000
     ) async throws -> ClawJSAsyncProcessResult {
         guard FileManager.default.isExecutableFile(atPath: executable) else {
@@ -57,6 +59,8 @@ enum ClawJSAsyncProcessRunner {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
+        process.currentDirectoryURL = currentDirectoryURL
+        process.environment = environment
 
         let pipe = Pipe()
         process.standardOutput = pipe

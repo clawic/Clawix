@@ -725,6 +725,21 @@ final class OpenCodeDaemonEngineHost: EngineHost {
     }
 }
 
+private enum OpenCodeLoopbackEndpoint {
+    static let host = "127.0.0.1"
+
+    static func origin(port: UInt16) -> URL {
+        var components = URLComponents()
+        components.scheme = "http"
+        components.host = host
+        components.port = Int(port)
+        guard let url = components.url else {
+            preconditionFailure("Invalid OpenCode loopback origin for port \(port)")
+        }
+        return url
+    }
+}
+
 private final class OpenCodeClient {
     private let baseURL: URL
     private let process: Process?
@@ -757,11 +772,11 @@ private final class OpenCodeClient {
                 "--host", "api.deepseek.com",
                 "--env", "DEEPSEEK_API_KEY={{\(deepseekSecretName)}}",
                 "--",
-                binary, "serve", "--hostname", "127.0.0.1", "--port", "\(port)"
+                binary, "serve", "--hostname", OpenCodeLoopbackEndpoint.host, "--port", "\(port)"
             ]
         } else {
             proc.executableURL = URL(fileURLWithPath: binary)
-            proc.arguments = ["serve", "--hostname", "127.0.0.1", "--port", "\(port)"]
+            proc.arguments = ["serve", "--hostname", OpenCodeLoopbackEndpoint.host, "--port", "\(port)"]
         }
         if (defaults.string(forKey: "ClawixPermissionMode") ?? "") == "fullAccess" {
             proc.arguments?.append("--dangerously-skip-permissions")
@@ -776,7 +791,7 @@ private final class OpenCodeClient {
         }
         try proc.run()
         let client = OpenCodeClient(
-            baseURL: URL(string: "http://127.0.0.1:\(port)")!,
+            baseURL: OpenCodeLoopbackEndpoint.origin(port: port),
             process: proc
         )
         try await client.waitUntilReady()

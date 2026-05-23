@@ -30,8 +30,8 @@ struct MeshTargetPill: View {
 
         var iconSize: CGFloat {
             switch self {
-            case .projectRow: return 11
-            case .toolbarCompact: return 11
+            case .projectRow: return 14
+            case .toolbarCompact: return 16
             }
         }
     }

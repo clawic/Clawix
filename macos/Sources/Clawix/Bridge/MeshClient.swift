@@ -1,5 +1,6 @@
 import Foundation
 import ClawixCore
+import ClawixEngine
 
 // HTTP wrapper around the local daemon's `/v1/mesh/*` endpoints. The daemon
 // (clawix-bridge) listens on loopback at the HTTP port; the Mac app
@@ -59,13 +60,13 @@ struct MeshClient: MeshClienting {
     /// for this; if the user runs the daemon on a non-default port
     /// they set the override below from the menu bar Dev tooling or
     /// via E2E tests.
-    static let defaultHTTPPort: UInt16 = 24081
+    static let defaultHTTPPort: UInt16 = ClawixBridgeEndpointResolver.defaultHTTPPort
 
     let baseURL: URL
     private let session: URLSession
 
-    init(host: String = "127.0.0.1", port: UInt16 = MeshClient.resolvedHTTPPort()) {
-        self.baseURL = URL(string: "http://\(host):\(port)")!
+    init(host: String = ClawixBridgeEndpointResolver.loopbackHost, port: UInt16 = MeshClient.resolvedHTTPPort()) {
+        self.baseURL = ClawixBridgeEndpointResolver.httpOrigin(host: host, port: port)
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = 8
         cfg.timeoutIntervalForResource = 12
