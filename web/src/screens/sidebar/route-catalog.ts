@@ -63,7 +63,7 @@ export const MAC_SIDEBAR_TOOL_ENTRIES: RouteCatalogEntry[] = [
   { route: "secrets", label: "Secrets", section: "tools", macToolId: "secrets", macRoute: "secretsHome", webSurface: "implemented" },
   { route: "memory", label: "Memory", section: "tools", macToolId: "memory", macRoute: "memoryHome", webSurface: "implemented" },
   { route: "database", label: "Database", section: "tools", macToolId: "database", macRoute: "databaseHome", webSurface: "implemented" },
-  { route: "index", label: "Index", section: "tools", macToolId: "index", macRoute: "indexHome", webSurface: "companion" },
+  { route: "index", label: "Index", section: "tools", macToolId: "index", macRoute: "indexHome", webSurface: "implemented" },
   { route: "mac-care", label: "Mac Care", section: "tools", macToolId: "macCare", macRoute: "macCare", webSurface: "companion" },
   { route: "marketplace", label: "Marketplace", section: "tools", macToolId: "marketplace", macRoute: "marketplaceHome", webSurface: "companion" },
   { route: "photos", label: "Photos", section: "tools", macToolId: "photos", macRoute: "drivePhotos", webSurface: "implemented" },

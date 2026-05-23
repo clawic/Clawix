@@ -50,6 +50,7 @@ describe("web route catalog", () => {
     expect(routeEntry("personalities").webSurface).toBe("implemented");
     expect(routeEntry("skill-collections").webSurface).toBe("implemented");
     expect(routeEntry("connections").webSurface).toBe("implemented");
+    expect(routeEntry("index").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });
