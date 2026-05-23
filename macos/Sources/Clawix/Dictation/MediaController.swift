@@ -1,16 +1,10 @@
 import Foundation
-import AppKit
 
 /// Mutes system audio output while a dictation session is active so a
 /// running video, music track, or notification beep doesn't bleed into
 /// the microphone (especially with built-in mics or AirPods).
 ///
-/// Uses macOS's system-level "output muted" setting via AppleScript:
-/// `set volume output muted true/false`. Going through the system mute
-/// rather than per-device Core Audio properties means the same call
-/// works for built-in speakers, USB DACs and Bluetooth outputs without
-/// per-device fallbacks (some Bluetooth devices reject the
-/// `kAudioDevicePropertyMute` write but always honour the system mute).
+/// Mute state is read and written through the native Mac action broker.
 ///
 /// We track whether *we* did the muting so we never unmute audio that
 /// the user had already muted before starting dictation. After stop,
@@ -31,6 +25,8 @@ final class MediaController {
     nonisolated static let resumeDelayKey = "dictation.muteResumeDelaySeconds"
 
     private let defaults: UserDefaults
+    private let runner: NativeMacActionCommandRunning
+    private let auditURL: URL?
     private var resumeWorkItem: DispatchWorkItem?
     /// Tracks a deferred mute scheduled via `muteAfter(_:)` so it can
     /// be cancelled if the session ends before it fires (would
@@ -40,9 +36,16 @@ final class MediaController {
     /// user might already have output muted before starting dictation;
     /// we leave that alone and restore nothing in that case.
     private var didMute: Bool = false
+    private var muteReceiptId: String?
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        runner: NativeMacActionCommandRunning = NativeMacActionProcessRunner(),
+        auditURL: URL? = nil
+    ) {
         self.defaults = defaults
+        self.runner = runner
+        self.auditURL = auditURL
         // First-run defaults. Match the common dictation-tool default
         // so users migrating across tools see consistent behaviour.
         if defaults.object(forKey: Self.enabledKey) == nil {
@@ -93,8 +96,9 @@ final class MediaController {
             didMute = false
             return
         }
-        if setMuted(true) {
+        if let receipt = setMuted(true) {
             didMute = true
+            muteReceiptId = receipt.receiptId
         }
     }
 
@@ -108,8 +112,9 @@ final class MediaController {
         deferredMuteItem = nil
         resumeWorkItem?.cancel()
         resumeWorkItem = nil
-        guard didMute else { return }
+        guard didMute, muteReceiptId != nil else { return }
         didMute = false
+        muteReceiptId = nil
         _ = setMuted(false)
     }
 
@@ -150,39 +155,61 @@ final class MediaController {
         let delay = TimeInterval(resumeDelaySeconds)
         let work = DispatchWorkItem { [weak self] in
             _ = self?.setMuted(false)
+            self?.muteReceiptId = nil
         }
         resumeWorkItem?.cancel()
         resumeWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
-    // MARK: - AppleScript bridge
+    // MARK: - Broker bridge
 
     /// Returns `true` if currently muted, `false` if not, `nil` if the
-    /// query failed (sandbox blocked the AppleScript, etc.).
+    /// brokered query failed.
     private func currentMutedState() -> Bool? {
-        let source = "output muted of (get volume settings)"
-        guard let script = NSAppleScript(source: source) else { return nil }
-        var errorDict: NSDictionary?
-        let result = script.executeAndReturnError(&errorDict)
-        if errorDict != nil { return nil }
-        // AppleScript returns booleans as typeTrue/typeFalse or
-        // typeBoolean; booleanValue normalizes all of them.
-        return result.booleanValue
+        let receipt = NativeMacActionBroker.evaluate(
+            brokerRequest(capabilityId: "mac.audio.mute.status"),
+            auditURL: auditURL,
+            runner: runner
+        )
+        guard receipt.outcome == .executed, let raw = receipt.outputs.first?.lowercased() else {
+            logBrokerFailure("mute status", receipt)
+            return nil
+        }
+        if raw.contains("muted") && !raw.contains("unmuted") { return true }
+        if raw.contains("unmuted") || raw.contains("false") { return false }
+        return nil
     }
 
     /// Returns `true` if the system mute write succeeded.
     @discardableResult
-    private func setMuted(_ muted: Bool) -> Bool {
-        let value = muted ? "true" : "false"
-        let source = "set volume output muted \(value)"
-        guard let script = NSAppleScript(source: source) else { return false }
-        var errorDict: NSDictionary?
-        _ = script.executeAndReturnError(&errorDict)
-        if let err = errorDict {
-            NSLog("[Clawix.MediaController] mute=\(muted) failed: \(err)")
-            return false
+    private func setMuted(_ muted: Bool) -> NativeMacActionReceipt? {
+        let receipt = NativeMacActionBroker.evaluate(
+            brokerRequest(capabilityId: "mac.audio.mute.set", arguments: ["muted": String(muted)]),
+            auditURL: auditURL,
+            runner: runner
+        )
+        guard receipt.outcome == .executed else {
+            logBrokerFailure("mute set", receipt)
+            return nil
         }
-        return true
+        return receipt
+    }
+
+    private func brokerRequest(
+        capabilityId: String,
+        arguments: [String: String] = [:]
+    ) -> NativeMacActionRequest {
+        NativeMacActionRequest(
+            capabilityId: capabilityId,
+            actorId: "clawix.dictation",
+            origin: .userUI,
+            actorKind: "user_ui",
+            arguments: arguments
+        )
+    }
+
+    private func logBrokerFailure(_ action: String, _ receipt: NativeMacActionReceipt) {
+        NSLog("[Clawix.MediaController] broker \(action) failed with outcome=\(receipt.outcome.rawValue)")
     }
 }

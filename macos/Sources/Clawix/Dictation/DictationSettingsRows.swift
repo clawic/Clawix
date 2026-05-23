@@ -187,7 +187,10 @@ struct DSPDownloadProgressBar: View {
             Capsule(style: .continuous)
                 .fill(Color.overlay(0.10))
             Capsule(style: .continuous)
-                .fill(Color.white)
+                // Progress fill, not a surface: high-contrast neutral that
+                // reads on the track in both modes (a literal white fill
+                // disappears against the light-mode track).
+                .fill(Color.gray(light: 0.32, dark: 0.95))
                 .frame(width: max(trackHeight, trackWidth * clamped))
                 .opacity(clamped > 0 ? 1 : 0)
                 .animation(.easeInOut(duration: 0.6), value: clamped)

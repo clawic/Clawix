@@ -1,18 +1,15 @@
 import Foundation
-import AppKit
 
 /// Pauses the currently playing media app while a dictation session is
 /// active and resumes only that app afterwards. Complementary to
 /// `MediaController` (which mutes system output): pausing keeps the
 /// track in place rather than letting it advance silently.
 ///
-/// AppleScript is used for the player IPC because it's the only path
-/// that works for both Music.app (no MediaRemote scripting interface)
-/// and Spotify.app (well-known scriptable). Apps that aren't running
-/// are skipped — we never auto-launch a media app the user closed.
+/// Player IPC is owned by the native Mac action broker. Clawix keeps only
+/// session coordination and never directly targets media apps.
 ///
 /// Only one app is paused per session (the first one we find playing
-/// in the priority order Music → Spotify → Podcasts) so resume can't
+/// in the broker target priority order Music → Podcasts → TV) so resume can't
 /// accidentally start an app that wasn't playing in the first place.
 @MainActor
 final class PlaybackController {
@@ -23,15 +20,24 @@ final class PlaybackController {
     nonisolated static let resumeDelayKey = "dictation.pauseResumeDelaySeconds"
 
     private let defaults: UserDefaults
+    private let runner: NativeMacActionCommandRunning
+    private let auditURL: URL?
     private var resumeWorkItem: DispatchWorkItem?
     /// Identifier of the app we paused (`Music`, `Spotify`,
     /// `Podcasts`). Nil when no pause happened.
     private var pausedApp: String?
+    private var pauseReceiptId: String?
 
-    private static let candidateApps: [String] = ["Music", "Spotify", "Podcasts"]
+    private static let candidateApps: [String] = ["Music", "Podcasts", "TV"]
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        runner: NativeMacActionCommandRunning = NativeMacActionProcessRunner(),
+        auditURL: URL? = nil
+    ) {
         self.defaults = defaults
+        self.runner = runner
+        self.auditURL = auditURL
         // Default OFF: this is more intrusive than muting. The mute
         // toggle covers the noise problem; pause is for users who'd
         // rather not lose their place in the track.
@@ -57,91 +63,86 @@ final class PlaybackController {
         resumeWorkItem = nil
 
         for app in Self.candidateApps {
-            guard isAppRunning(app) else { continue }
-            guard isPlaying(app: app) else { continue }
-            if pause(app: app) {
+            guard playbackState(app: app) == "playing" else { continue }
+            if let receipt = pause(app: app) {
                 pausedApp = app
+                pauseReceiptId = receipt.receiptId
                 break
             }
         }
     }
 
     func resumeAfterDelay() {
-        guard let app = pausedApp else {
+        guard let app = pausedApp, pauseReceiptId != nil else {
             resumeWorkItem?.cancel()
             resumeWorkItem = nil
             return
         }
         pausedApp = nil
+        pauseReceiptId = nil
         let delay = TimeInterval(resumeDelaySeconds)
         let work = DispatchWorkItem { [weak self] in
-            _ = self?.play(app: app)
+            _ = self?.resume(app: app)
         }
         resumeWorkItem?.cancel()
         resumeWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
-    // MARK: - AppleScript helpers
+    // MARK: - Broker helpers
 
-    private func isAppRunning(_ name: String) -> Bool {
-        // `is running` doesn't auto-launch the app like a `tell`-block
-        // would, so it's safe to evaluate even on apps the user has
-        // closed.
-        let source = "tell application \"System Events\" to (name of processes) contains \"\(name)\""
-        return runBoolScript(source) ?? false
-    }
-
-    /// Returns `true` only if the app reports a "playing" state. Music,
-    /// Spotify and Podcasts all expose a `player state` property; Music
-    /// uses `playing` (lowercase enum) while Spotify uses `playing` as
-    /// well, so the same comparison works for both.
-    private func isPlaying(app: String) -> Bool {
-        let source = """
-        tell application \"\(app)\"
-            try
-                if player state is playing then
-                    return true
-                else
-                    return false
-                end if
-            on error
-                return false
-            end try
-        end tell
-        """
-        return runBoolScript(source) ?? false
-    }
-
-    @discardableResult
-    private func pause(app: String) -> Bool {
-        runVoidScript("tell application \"\(app)\" to pause")
-    }
-
-    @discardableResult
-    private func play(app: String) -> Bool {
-        // `play` resumes from the last position (won't start a new
-        // track) on Music and Spotify both.
-        runVoidScript("tell application \"\(app)\" to play")
-    }
-
-    private func runBoolScript(_ source: String) -> Bool? {
-        guard let script = NSAppleScript(source: source) else { return nil }
-        var errorDict: NSDictionary?
-        let result = script.executeAndReturnError(&errorDict)
-        if errorDict != nil { return nil }
-        return result.booleanValue
-    }
-
-    @discardableResult
-    private func runVoidScript(_ source: String) -> Bool {
-        guard let script = NSAppleScript(source: source) else { return false }
-        var errorDict: NSDictionary?
-        _ = script.executeAndReturnError(&errorDict)
-        if let err = errorDict {
-            NSLog("[Clawix.PlaybackController] script failed: \(err)")
-            return false
+    private func playbackState(app: String) -> String? {
+        let receipt = NativeMacActionBroker.evaluate(
+            brokerRequest(capabilityId: "mac.media.playback.status", app: app),
+            auditURL: auditURL,
+            runner: runner
+        )
+        guard receipt.outcome == .executed else {
+            logBrokerFailure("playback status", receipt)
+            return nil
         }
-        return true
+        return receipt.outputs.first?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    @discardableResult
+    private func pause(app: String) -> NativeMacActionReceipt? {
+        let receipt = NativeMacActionBroker.evaluate(
+            brokerRequest(capabilityId: "mac.media.playback.pause", app: app),
+            auditURL: auditURL,
+            runner: runner
+        )
+        guard receipt.outcome == .executed else {
+            logBrokerFailure("playback pause", receipt)
+            return nil
+        }
+        return receipt
+    }
+
+    @discardableResult
+    private func resume(app: String) -> NativeMacActionReceipt? {
+        let receipt = NativeMacActionBroker.evaluate(
+            brokerRequest(capabilityId: "mac.media.playback.resume", app: app),
+            auditURL: auditURL,
+            runner: runner
+        )
+        guard receipt.outcome == .executed else {
+            logBrokerFailure("playback resume", receipt)
+            return nil
+        }
+        return receipt
+    }
+
+    private func brokerRequest(capabilityId: String, app: String) -> NativeMacActionRequest {
+        NativeMacActionRequest(
+            capabilityId: capabilityId,
+            actorId: "clawix.dictation",
+            origin: .userUI,
+            actorKind: "user_ui",
+            arguments: ["app": app]
+        )
+    }
+
+    private func logBrokerFailure(_ action: String, _ receipt: NativeMacActionReceipt) {
+        NSLog("[Clawix.PlaybackController] broker \(action) failed with outcome=\(receipt.outcome.rawValue)")
     }
 }

@@ -494,6 +494,8 @@ private struct TranscriptCleanupView: View {
 private struct TranscriptBackupView: View {
     @EnvironmentObject private var appState: AppState
     @State private var status: String?
+    @State private var statusKind: InfoBanner.Kind = .ok
+    @State private var operationInFlight = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -517,23 +519,29 @@ private struct TranscriptBackupView: View {
                     importJSON()
                 }
             }
+            .disabled(operationInFlight)
+
+            if operationInFlight {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Working on dictation backup…")
+                        .font(BodyFont.system(size: 11.5, wght: 600))
+                        .foregroundColor(Palette.textSecondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text("Working on dictation backup"))
+            }
 
             if let status {
-                Text(status)
-                    .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Palette.textPrimary)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.gray(light: 0.96, dark: 0.06))
-                    )
+                InfoBanner(text: status, kind: statusKind)
             }
         }
         .padding(20)
     }
 
     private func requestExportReview(_ onConfirm: @escaping () -> Void) {
+        guard !operationInFlight else { return }
         LegalSafetyStore.shared.requestSensitiveActionReview(
             action: .exportShare,
             appState: appState,
@@ -542,33 +550,88 @@ private struct TranscriptBackupView: View {
     }
 
     private func exportCSV() async {
+        guard !operationInFlight else { return }
+        operationInFlight = true
+        status = nil
+        defer { operationInFlight = false }
         do {
             let url = try await DictationExportService.exportTranscripts()
             saveCopyOf(url, suggestedName: "clawix-transcripts.csv")
         } catch {
-            status = "Export failed: \(error.localizedDescription)"
+            setStatus(
+                String(
+                    format: L10n.t("Export failed: %@"),
+                    locale: AppLocale.current,
+                    SettingsUtilities.failureMessage(for: error, surface: "settings.dictation.exportTranscripts")
+                ),
+                kind: .error
+            )
         }
     }
 
     private func exportJSON() {
+        guard !operationInFlight else { return }
+        operationInFlight = true
+        status = nil
+        defer { operationInFlight = false }
         do {
             let url = try DictationExportService.exportSettings()
             saveCopyOf(url, suggestedName: "clawix-dictation-settings.json")
         } catch {
-            status = "Export failed: \(error.localizedDescription)"
+            setStatus(
+                String(
+                    format: L10n.t("Export failed: %@"),
+                    locale: AppLocale.current,
+                    SettingsUtilities.failureMessage(for: error, surface: "settings.dictation.exportSettings")
+                ),
+                kind: .error
+            )
         }
     }
 
     private func importJSON() {
+        guard !operationInFlight else { return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let chosen = panel.url else { return }
+        requestImportConfirmation(chosen)
+    }
+
+    private func requestImportConfirmation(_ chosen: URL) {
+        appState.pendingConfirmation = ConfirmationRequest(
+            title: "Import dictation settings?",
+            body: "Import preview is not available for this legacy dictation settings format. Review the selected file before confirming. The import will overwrite matching dictation preferences and will not import API keys.",
+            confirmLabel: "Import",
+            isDestructive: true,
+            onConfirm: { importConfirmedJSON(chosen) }
+        )
+    }
+
+    private func importConfirmedJSON(_ chosen: URL) {
+        guard !operationInFlight else { return }
+        operationInFlight = true
+        status = nil
+        defer { operationInFlight = false }
         do {
             let count = try DictationExportService.importSettings(from: chosen)
-            status = "Imported \(count) keys. Restart Clawix for the changes to take full effect."
+            setStatus(
+                String(
+                    format: L10n.t("Imported %lld keys. Restart Clawix for the changes to take full effect."),
+                    locale: AppLocale.current,
+                    count
+                ),
+                kind: .ok
+            )
         } catch {
-            status = "Import failed: \(error.localizedDescription)"
+            setStatus(
+                String(
+                    format: L10n.t("Import failed: %@"),
+                    locale: AppLocale.current,
+                    SettingsUtilities.failureMessage(for: error, surface: "settings.dictation.importSettings")
+                ),
+                kind: .error
+            )
         }
     }
 
@@ -581,9 +644,28 @@ private struct TranscriptBackupView: View {
                 try FileManager.default.removeItem(at: dest)
             }
             try FileManager.default.copyItem(at: source, to: dest)
-            status = "Saved to \(dest.lastPathComponent)."
+            setStatus(
+                String(
+                    format: L10n.t("Saved to %@."),
+                    locale: AppLocale.current,
+                    dest.lastPathComponent
+                ),
+                kind: .ok
+            )
         } catch {
-            status = "Save failed: \(error.localizedDescription)"
+            setStatus(
+                String(
+                    format: L10n.t("Save failed: %@"),
+                    locale: AppLocale.current,
+                    SettingsUtilities.failureMessage(for: error, surface: "settings.dictation.saveExport")
+                ),
+                kind: .error
+            )
         }
+    }
+
+    private func setStatus(_ message: String, kind: InfoBanner.Kind) {
+        status = message
+        statusKind = kind
     }
 }
