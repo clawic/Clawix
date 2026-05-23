@@ -324,7 +324,7 @@ extension SystemTelemetryBridgeTests {
     }
 
     @MainActor
-    func testHistoryGraphViewRendersNativeBitmap() throws {
+    func testHistoryGraphViewRendersNativeBitmap() {
         let history = SystemTelemetryHistory(
             metricKey: "system.cpu.load1",
             rangeMS: 3_600_000,
@@ -345,7 +345,7 @@ extension SystemTelemetryBridgeTests {
         )
         let view = SystemTelemetryHistoryGraphView(history: history, title: "CPU")
         let size = SystemTelemetryHistoryGraphView.preferredSize
-        let rep = try XCTUnwrap(NSBitmapImageRep(
+        guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,
             pixelsWide: Int(size.width),
             pixelsHigh: Int(size.height),
@@ -356,7 +356,10 @@ extension SystemTelemetryBridgeTests {
             colorSpaceName: .deviceRGB,
             bytesPerRow: 0,
             bitsPerPixel: 0
-        ))
+        ) else {
+            XCTFail("Expected bitmap image rep for native history graph rendering")
+            return
+        }
         rep.size = size
 
         view.cacheDisplay(in: view.bounds, to: rep)

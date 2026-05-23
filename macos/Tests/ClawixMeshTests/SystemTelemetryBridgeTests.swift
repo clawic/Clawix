@@ -1777,4 +1777,13 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         ])
     }
 
+    private static let splitMenuBarCoverageMarkers = [
+        "testMenuBarModelLoadsHistoryGraphForChartWidgets",
+        "testHistoryGraphViewRendersNativeBitmap",
+        "Hardware Overview",
+        "testMonitorRecorderRecordsHostSnapshotThroughClawCLI",
+        "minimum_interval",
+        "testMonitorRecorderReportsUnavailableWithoutHostCommand",
+    ]
+
 }
