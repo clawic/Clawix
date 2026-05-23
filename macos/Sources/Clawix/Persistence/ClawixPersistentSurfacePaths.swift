@@ -1,8 +1,30 @@
 import Foundation
 
 enum ClawixPersistentSurfacePaths {
+    /// Per-instance state isolation seam. When `CLAWIX_STATE_ROOT` is set it
+    /// acts as a private home for this process and every writable state path
+    /// resolves under it, so parallel agent instances launched by the dev
+    /// provisioner never collide on Application Support, ~/.clawix, ~/.claw,
+    /// logs or caches. Unset in normal user builds, where paths resolve to the
+    /// real Library/home locations. The display-only `userVisible*` strings
+    /// below are intentionally not redirected.
+    static func instanceStateRoot(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> URL? {
+        guard let raw = environment["CLAWIX_STATE_ROOT"], !raw.isEmpty else { return nil }
+        return URL(fileURLWithPath: (raw as NSString).expandingTildeInPath, isDirectory: true)
+    }
+
     static func applicationSupportRoot() throws -> URL {
-        try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        if let root = instanceStateRoot() {
+            let url = root
+                .appendingPathComponent(components.library, isDirectory: true)
+                .appendingPathComponent(components.applicationSupport, isDirectory: true)
+                .appendingPathComponent(components.clawix, isDirectory: true)
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            return url
+        }
+        return try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent(components.clawix, isDirectory: true)
     }
 
@@ -15,13 +37,13 @@ enum ClawixPersistentSurfacePaths {
     }
 
     static func homeChild(_ child: String, isDirectory: Bool = true) -> URL {
-        userHomeDirectory()
+        (instanceStateRoot() ?? userHomeDirectory())
             .appendingPathComponent(components.clawixHome, isDirectory: true)
             .appendingPathComponent(child, isDirectory: isDirectory)
     }
 
     static func frameworkGlobalRoot() -> URL {
-        userHomeDirectory()
+        (instanceStateRoot() ?? userHomeDirectory())
             .appendingPathComponent(components.clawHome, isDirectory: true)
     }
 
@@ -106,13 +128,29 @@ enum ClawixPersistentSurfacePaths {
     }
 
     static func logsRoot() throws -> URL {
-        try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        if let root = instanceStateRoot() {
+            let url = root
+                .appendingPathComponent(components.library, isDirectory: true)
+                .appendingPathComponent(components.logs, isDirectory: true)
+                .appendingPathComponent(components.clawix, isDirectory: true)
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            return url
+        }
+        return try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent(components.logs, isDirectory: true)
             .appendingPathComponent(components.clawix, isDirectory: true)
     }
 
     static func cacheRoot() throws -> URL {
-        try FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        if let root = instanceStateRoot() {
+            let url = root
+                .appendingPathComponent(components.library, isDirectory: true)
+                .appendingPathComponent(components.caches, isDirectory: true)
+                .appendingPathComponent(components.devCache, isDirectory: true)
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            return url
+        }
+        return try FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent(components.devCache, isDirectory: true)
     }
 

@@ -8,7 +8,10 @@ enum ClawixHostBootstrapRoutes {
     static let registryFileName = "registry.json"
 
     static func userHomeDirectory() -> URL {
-        ClawixUserHomeRoutes.directory()
+        // Honor the per-instance state root so parallel agent instances each
+        // register their host under an isolated registry instead of racing on
+        // the shared ~/Library/Application Support/Claw/hosts/registry.json.
+        ClawixPersistentSurfacePaths.instanceStateRoot() ?? ClawixUserHomeRoutes.directory()
     }
 
     static func applicationSupportDirectory(homeDirectory explicitHomeDirectory: URL? = nil) -> URL {
