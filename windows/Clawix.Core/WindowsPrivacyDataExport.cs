@@ -15,6 +15,14 @@ public sealed record WindowsPrivacyExportResult(
     string ManifestPath,
     IReadOnlyList<WindowsPrivacyExportFile> Files);
 
+public sealed record WindowsPrivacyEraseItem(
+    string RelativePath,
+    bool Deleted,
+    string? Error);
+
+public sealed record WindowsPrivacyEraseResult(
+    IReadOnlyList<WindowsPrivacyEraseItem> Items);
+
 public static class WindowsPrivacyDataExport
 {
     private static readonly Regex JsonSecretFields = new(
@@ -30,6 +38,17 @@ public static class WindowsPrivacyDataExport
     public static string DefaultExportRoot()
     {
         return Path.Combine(DefaultDataRoot(), "exports");
+    }
+
+    public static WindowsPrivacyEraseResult EraseKnownData(string dataRoot)
+    {
+        var items = new List<WindowsPrivacyEraseItem>();
+        foreach (var relativePath in KnownRelativePaths())
+        {
+            items.Add(DeleteFile(dataRoot, relativePath));
+        }
+        items.Add(DeleteDirectory(dataRoot, "exports"));
+        return new WindowsPrivacyEraseResult(items);
     }
 
     public static WindowsPrivacyExportResult ExportKnownData(
@@ -92,6 +111,36 @@ public static class WindowsPrivacyDataExport
         catch (Exception ex)
         {
             return new WindowsPrivacyExportFile(Path.GetFileName(relativePath), relativePath, false, 0, ex.GetType().Name);
+        }
+    }
+
+    private static WindowsPrivacyEraseItem DeleteFile(string dataRoot, string relativePath)
+    {
+        var path = Path.Combine(dataRoot, relativePath);
+        if (!File.Exists(path)) return new WindowsPrivacyEraseItem(relativePath, false, "missing");
+        try
+        {
+            File.Delete(path);
+            return new WindowsPrivacyEraseItem(relativePath, true, null);
+        }
+        catch (Exception ex)
+        {
+            return new WindowsPrivacyEraseItem(relativePath, false, ex.GetType().Name);
+        }
+    }
+
+    private static WindowsPrivacyEraseItem DeleteDirectory(string dataRoot, string relativePath)
+    {
+        var path = Path.Combine(dataRoot, relativePath);
+        if (!Directory.Exists(path)) return new WindowsPrivacyEraseItem(relativePath, false, "missing");
+        try
+        {
+            Directory.Delete(path, recursive: true);
+            return new WindowsPrivacyEraseItem(relativePath, true, null);
+        }
+        catch (Exception ex)
+        {
+            return new WindowsPrivacyEraseItem(relativePath, false, ex.GetType().Name);
         }
     }
 

@@ -1,4 +1,5 @@
 using Clawix.App.Services;
+using Clawix.App.Views;
 using Clawix.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -17,6 +18,7 @@ public sealed partial class PrivacyPage : Page
 
     private void LoadSettings()
     {
+        _loading = true;
         if (App.Services.Preferences.Get(
             WindowsPreferenceKeys.PrivacySendCrashReports,
             PrivacySettingsDefaults.SendCrashReports))
@@ -74,5 +76,21 @@ public sealed partial class PrivacyPage : Page
         App.Services.Shell.Open(export.DirectoryPath);
         var included = export.Files.Count(file => file.Included);
         PrivacyStatusText.Text = $"Exported {included} local data files.";
+    }
+
+    private async void EraseData_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ConfirmationDialog { XamlRoot = XamlRoot };
+        dialog.Configure(
+            "Erase local data",
+            "This deletes Windows settings, pairing data, pairing publication settings, and local privacy exports. Logs and vault data are not affected.");
+        var result = await dialog.ShowAsync();
+        if (result != ContentDialogResult.Primary) return;
+
+        App.Services.Preferences.Clear();
+        var erase = WindowsPrivacyDataExport.EraseKnownData(WindowsPrivacyDataExport.DefaultDataRoot());
+        var deleted = erase.Items.Count(item => item.Deleted);
+        PrivacyStatusText.Text = $"Erased {deleted} local data items.";
+        LoadSettings();
     }
 }

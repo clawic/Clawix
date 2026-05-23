@@ -22,7 +22,7 @@
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <Button Content="Export all my data..." Click="ExportData_Click" />
-          <Button Content="Erase all local data..." Style="{ThemeResource AccentButtonStyle}" />
+          <Button Content="Erase all local data..." Style="{ThemeResource AccentButtonStyle}" Click="EraseData_Click" />
         </StackPanel>
       </Expander>
     </StackPanel>

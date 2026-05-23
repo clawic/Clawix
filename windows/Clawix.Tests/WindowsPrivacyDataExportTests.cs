@@ -60,4 +60,32 @@ public sealed class WindowsPrivacyDataExportTests
             if (Directory.Exists(exportRoot)) Directory.Delete(exportRoot, recursive: true);
         }
     }
+
+    [Fact]
+    public void EraseKnownData_DeletesKnownFilesAndExportsOnly()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"privacy-erase-root-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "settings.json"), "{}");
+            File.WriteAllText(Path.Combine(root, "pairing.json"), "{}");
+            File.WriteAllText(Path.Combine(root, "pairing-publication.json"), "{}");
+            Directory.CreateDirectory(Path.Combine(root, "exports", "old"));
+            File.WriteAllText(Path.Combine(root, "logs.txt"), "keep");
+
+            var result = WindowsPrivacyDataExport.EraseKnownData(root);
+
+            Assert.DoesNotContain(result.Items, item => item.Error is not null && item.Error != "missing");
+            Assert.False(File.Exists(Path.Combine(root, "settings.json")));
+            Assert.False(File.Exists(Path.Combine(root, "pairing.json")));
+            Assert.False(File.Exists(Path.Combine(root, "pairing-publication.json")));
+            Assert.False(Directory.Exists(Path.Combine(root, "exports")));
+            Assert.True(File.Exists(Path.Combine(root, "logs.txt")));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
 }
