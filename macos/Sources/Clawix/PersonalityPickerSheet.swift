@@ -21,7 +21,7 @@ struct PersonalityPickerSheet: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -82,7 +82,7 @@ private struct PersonalityRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected || hovered ? Color.white.opacity(0.06) : Palette.cardFill)
+                    .fill(isSelected || hovered ? Color.overlay(0.06) : Palette.cardFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(isSelected ? Palette.pastelBlue.opacity(0.4) : Palette.border,

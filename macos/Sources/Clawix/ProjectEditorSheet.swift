@@ -29,11 +29,11 @@ struct ProjectEditorSheet: View {
                      ? String(localized: "Edit project", bundle: AppLocale.bundle, locale: AppLocale.current)
                      : String(localized: "New project", bundle: AppLocale.bundle, locale: AppLocale.current))
                     .font(BodyFont.system(size: 20, weight: .medium))
-                    .foregroundColor(Color(white: 0.97))
+                    .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                 Spacer()
                 Button(action: onClose) {
                     LucideIcon(.x, size: 13)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -49,7 +49,7 @@ struct ProjectEditorSheet: View {
                     TextField("My project", text: $name)
                         .textFieldStyle(.plain)
                         .font(BodyFont.system(size: 13.5, wght: 500))
-                        .foregroundColor(Color(white: 0.94))
+                        .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                         .focused($nameFocused)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 9)
@@ -61,7 +61,7 @@ struct ProjectEditorSheet: View {
                         TextField(ProjectFolderPathResolver.sampleProjectFolderDisplayPath, text: $path)
                             .textFieldStyle(.plain)
                             .font(BodyFont.system(size: 13, wght: 500))
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                             .focused($pathFocused)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 9)
@@ -96,7 +96,7 @@ struct ProjectEditorSheet: View {
                             Text(L10n.chatsAutoGroupedByPath(pathMatchCount))
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                         }
-                        .foregroundColor(Color(white: 0.50))
+                        .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                     }
                 }
             }
@@ -185,17 +185,17 @@ struct ProjectEditorSheet: View {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 700))
                 .tracking(0.6)
-                .foregroundColor(Color(white: 0.50))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             content()
         }
     }
 
     private var textFieldBackground: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(white: 0.18))
+            .fill(Color.gray(light: 0.905, dark: 0.18))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.06), lineWidth: 0.5)
             )
     }
 }

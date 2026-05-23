@@ -18,15 +18,15 @@ struct ProjectRenameSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Rename project")
                         .font(BodyFont.system(size: 20, weight: .medium))
-                        .foregroundColor(Color(white: 0.97))
+                        .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                     Text("Keep it short and recognizable")
                         .font(BodyFont.system(size: 13, wght: 500))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 }
                 Spacer()
                 Button(action: onClose) {
                     LucideIcon(.x, size: 13)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }

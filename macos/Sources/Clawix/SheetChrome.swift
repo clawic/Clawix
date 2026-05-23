@@ -11,7 +11,7 @@ extension View {
                 VisualEffectBlur(material: .hudWindow,
                                  blendingMode: .behindWindow,
                                  state: .active)
-                Color(white: 0.10).opacity(0.78)
+                Color.gray(light: 0.95, dark: 0.10).opacity(0.78)
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
@@ -29,12 +29,12 @@ struct SheetPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(BodyFont.system(size: 13.5, wght: 500))
-            .foregroundColor(.black)
+            .foregroundColor(Palette.background)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.85 : 1.0))
+                    .fill(Color.overlay(configuration.isPressed ? 0.85 : 1.0))
             )
             .contentShape(Rectangle())
             .opacity(enabled ? 1.0 : 0.45)
@@ -55,15 +55,15 @@ private struct SheetCancelButtonLabel: View {
     var body: some View {
         configuration.label
             .font(BodyFont.system(size: 13.5, wght: 500))
-            .foregroundColor(Color(white: configuration.isPressed ? 0.70 : 0.94))
+            .foregroundColor((configuration.isPressed ? Color.gray(light: 0.33, dark: 0.70) : Color.gray(light: 0.12, dark: 0.94)))
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(hovered ? 0.05 : 0.0))
+                    .fill(Color.overlay(hovered ? 0.05 : 0.0))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(hovered ? 0.18 : 0.13), lineWidth: 0.7)
+                            .stroke(Color.overlay(hovered ? 0.18 : 0.13), lineWidth: 0.7)
                     )
             )
             .contentShape(Rectangle())
@@ -85,13 +85,13 @@ private struct SheetDestructiveButtonLabel: View {
     var body: some View {
         configuration.label
             .font(BodyFont.system(size: 13, wght: 600))
-            .foregroundColor(Color(red: 0.95, green: 0.42, blue: 0.42)
+            .foregroundColor(Palette.danger
                 .opacity(configuration.isPressed ? 0.75 : 1.0))
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Color(red: 0.95, green: 0.42, blue: 0.42).opacity(hovered ? 0.10 : 0.0))
+                    .fill(Palette.danger.opacity(hovered ? 0.10 : 0.0))
             )
             .contentShape(Rectangle())
             .onHover { hovered = $0 }
@@ -104,15 +104,15 @@ struct SheetTextFieldStyle: ViewModifier {
         content
             .textFieldStyle(.plain)
             .font(BodyFont.system(size: 14, wght: 500))
-            .foregroundColor(Color(white: 0.96))
+            .foregroundColor(Color.gray(light: 0.10, dark: 0.96))
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.6)
                     )
             )
     }

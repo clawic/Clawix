@@ -80,11 +80,11 @@ private struct LegalConsentToggle: View {
             HStack(alignment: .top, spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(isOn ? Color(red: 0.30, green: 0.55, blue: 1.0) : Color.white.opacity(0.08))
+                        .fill(isOn ? Color(red: 0.30, green: 0.55, blue: 1.0) : Color.overlay(0.08))
                         .frame(width: 18, height: 18)
                     if isOn {
                         LucideIcon(.check, size: 12)
-                            .foregroundColor(.white)
+                            .foregroundColor(Palette.textPrimary)
                     }
                 }
                 Text(text)

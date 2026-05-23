@@ -23,7 +23,7 @@ struct AppIconImage: View {
                     .interpolation(.high)
             } else {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color(white: 0.20))
+                    .fill(Color.gray(light: 0.88, dark: 0.20))
             }
         }
         .frame(width: size, height: size)
@@ -61,7 +61,7 @@ struct EditorPickerDropdown: View {
                 HStack(spacing: 5) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(Color(white: 0.22))
+                            .fill(Color.gray(light: 0.87, dark: 0.22))
                         AppIconImage(
                             bundleId: triggerEditor.bundleId,
                             fallbackPath: triggerEditor.fallbackPath,
@@ -71,7 +71,7 @@ struct EditorPickerDropdown: View {
                     .frame(width: 22, height: 22)
 
                     LucideIcon(.chevronDown, size: 13)
-                        .foregroundColor(Color(white: 0.60))
+                        .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
@@ -79,7 +79,7 @@ struct EditorPickerDropdown: View {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(
                             (hoverTrigger || isOpen)
-                                ? Color.white.opacity(MenuStyle.rowHoverIntensity)
+                                ? Color.overlay(MenuStyle.rowHoverIntensity)
                                 : Color.clear
                         )
                 )
