@@ -5,6 +5,7 @@ import SwiftUI
 enum SettingsCategory: String, CaseIterable, Identifiable {
     case general
     // case appearance  // hidden temporarily
+    case appshots
     case configuration
     case personalization
     case shortcuts
@@ -22,6 +23,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case portableArchive
     case macUtilities
     case macControl
+    case computerUse
     case databaseWorkbench
     case secrets
     case legalSafety
@@ -36,6 +38,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         switch self {
         case .general:          return "General"
         // case .appearance:       return "Appearance"
+        case .appshots:         return "Appshots"
         case .configuration:    return "Settings"
         case .personalization:  return "Personalization"
         case .shortcuts:        return "Keyboard Shortcuts"
@@ -53,6 +56,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .portableArchive:  return "Data"
         case .macUtilities:     return "Mac Utilities"
         case .macControl:       return "Mac Control"
+        case .computerUse:      return "Computer Use"
         case .databaseWorkbench: return "Database Workbench"
         case .secrets:          return "Secrets"
         case .legalSafety:      return "Legal & Safety"
@@ -67,6 +71,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         switch self {
         case .general:          return "house"
         // case .appearance:       return "circle.lefthalf.filled"
+        case .appshots:         return "macwindow"
         case .configuration:    return "slider.horizontal.3"
         case .personalization:  return "person.crop.circle"
         case .shortcuts:        return "keyboard"
@@ -84,6 +89,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .portableArchive:  return "archivebox"
         case .macUtilities:     return "bolt"
         case .macControl:       return "laptopcomputer"
+        case .computerUse:      return "macwindow.on.rectangle"
         case .databaseWorkbench: return "cylinder.split.1x2"
         case .secrets:          return "lock.shield"
         case .legalSafety:      return "exclamationmark.shield"
@@ -108,6 +114,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .screenTools:      return .screenTools
         case .macUtilities:     return .macUtilities
         case .macControl:       return .macControl
+        case .computerUse:      return .computerUse
         case .databaseWorkbench: return .databaseWorkbench
         case .identity:         return .identity
         case .claw:           return .claw
@@ -279,6 +286,7 @@ struct SettingsContent: View {
                     switch resolvedCategory {
                     case .general:         GeneralPage()
                     // case .appearance:      AppearancePage()
+                    case .appshots:        AppshotsSettingsPage()
                     case .configuration:   ConfigurationPage()
                     case .personalization: PersonalizationPage()
                     case .shortcuts:       ShortcutsSettingsPage()
@@ -294,6 +302,7 @@ struct SettingsContent: View {
                     case .portableArchive: PortableArchiveSettingsPage()
                     case .macUtilities:    MacUtilitiesSettingsPage()
                     case .macControl:      MacControlSettingsPage()
+                    case .computerUse:     ComputerUseSettingsPage()
                     case .databaseWorkbench: DatabaseWorkbenchSettingsPage()
                     case .mcp:             MCPPage()
                     case .machines:        HostsPage()

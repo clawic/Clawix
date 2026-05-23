@@ -9,14 +9,16 @@ extension AppState {
         guard !trimmed.isEmpty || !attachments.isEmpty else { return }
 
         let mentions = attachments.map { "@\($0.url.path)" }.joined(separator: " ")
-        let combined: String
-        if trimmed.isEmpty {
-            combined = mentions
-        } else if mentions.isEmpty {
-            combined = trimmed
-        } else {
-            combined = mentions + "\n\n" + trimmed
-        }
+        // Appshots carry the captured window's text (incl. offscreen) inline
+        // so the agent reads both the screenshot (the @-mention image) and the
+        // full text content.
+        let appshotContext = Self.appshotContext(for: attachments)
+        // Browser annotations carry the pinned comment and the page it was
+        // taken on inline, alongside the screenshot they ride in as.
+        let annotationContext = Self.browserAnnotationContext(for: attachments)
+        let combined = [mentions, appshotContext, annotationContext, trimmed]
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
 
         let userMsg = ChatMessage(role: .user, content: combined, timestamp: Date())
         let chatId: UUID
@@ -758,6 +760,40 @@ extension AppState {
 
     func removeComposerAttachment(id: UUID) {
         composer.attachments.removeAll { $0.id == id }
+    }
+
+    /// Builds the inline text context for any appshot attachments: a header
+    /// naming the source app/window followed by the window's text content
+    /// (including text that was scrolled offscreen at capture time).
+    static func appshotContext(for attachments: [ComposerAttachment]) -> String {
+        let blocks = attachments.compactMap { attachment -> String? in
+            guard let appshot = attachment.appshot else { return nil }
+            var header = "[Appshot — \(appshot.appName)"
+            if let title = appshot.windowTitle, !title.isEmpty {
+                header += " · \"\(title)\""
+            }
+            header += "]"
+            let text = appshot.windowText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return text.isEmpty ? header : header + "\n" + text
+        }
+        return blocks.joined(separator: "\n\n")
+    }
+
+    /// Builds the inline text context for any browser-annotation attachments:
+    /// a header naming the marker and the page it was pinned on, followed by
+    /// the user's comment.
+    static func browserAnnotationContext(for attachments: [ComposerAttachment]) -> String {
+        let blocks = attachments.compactMap { attachment -> String? in
+            guard let annotation = attachment.annotation else { return nil }
+            var header = "[Browser annotation \(annotation.marker) — "
+            if let title = annotation.pageTitle, !title.isEmpty {
+                header += "\(title) · "
+            }
+            header += "\(annotation.pageURL)]"
+            let comment = annotation.comment.trimmingCharacters(in: .whitespacesAndNewlines)
+            return comment.isEmpty ? header : header + "\n" + comment
+        }
+        return blocks.joined(separator: "\n\n")
     }
 
     /// Pulls keyboard focus back into the composer text field. Used by

@@ -129,6 +129,11 @@ struct ClawixApp: App {
             // .onAppear) so the panel works the very first time the user
             // hits the global hotkey, even before any window appears.
             QuickAskController.shared.attach(appState: state)
+            // Same back-reference for the appshot double-modifier trigger so
+            // ⌘+⌘ stages a window capture even before any view appears. The
+            // monitors themselves are installed from
+            // `applicationDidFinishLaunching` (gated behind the enable flag).
+            AppshotHotkeyMonitor.shared.attach(appState: state)
             // Wire the integrated terminal panel's keyboard shortcuts.
             // Toggle (Ctrl+`), new tab, close tab, next/prev tab, split
             // vertical/horizontal. Installed once; the resolver pulls the
@@ -188,7 +193,6 @@ struct ClawixApp: App {
                 // SwiftUI Text nodes cache their resolved string until
                 // the locale changes; re-keying forces a fresh lookup.
                 .id(appState.preferredLanguage.rawValue)
-                .preferredColorScheme(.dark)
                 .frame(minWidth: mainWindowMinSize.width, minHeight: mainWindowMinSize.height)
                 .task {
                     await Task.yield()
@@ -241,6 +245,8 @@ struct ClawixApp: App {
                 Divider()
                 DatabaseWorkbenchCommands(appState: appState)
             }
+        }
+        .commands {
             CommandGroup(replacing: .help) {
                 HelpMenuCommands(appState: appState)
             }
@@ -249,7 +255,6 @@ struct ClawixApp: App {
         WindowGroup("Pair iPhone", id: "clawix-pair") {
             PairWindowView()
                 .environmentObject(appState)
-                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 360, height: 540)
         .windowResizability(.contentSize)
@@ -306,7 +311,6 @@ struct ClawixToolApp: App {
                 .environmentObject(agentStore)
                 .environment(\.locale, appState.preferredLanguage.locale)
                 .id(appState.preferredLanguage.rawValue)
-                .preferredColorScheme(.dark)
                 .frame(minWidth: 720, minHeight: 480)
                 .task {
                     await Task.yield()
@@ -829,7 +833,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         ClawixHostBootstrap.runOnce()
 
-        NSApp.appearance = NSAppearance(named: .darkAqua)
+        // Install the user-chosen interface appearance (system / light /
+        // dark). Replaces the old hardcoded dark lock; the persisted
+        // default is still dark, so existing installs are unchanged.
+        AppAppearance.applyPersisted()
         NSApp.windows.forEach(configure)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.windows.forEach(self.configure)
@@ -887,6 +894,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // opts in from Settings → Voice to Text.
         DictationOverlay.shared.install(coordinator: DictationCoordinator.shared)
         DictationHotkeyMonitor.shared.bootstrap(coordinator: DictationCoordinator.shared)
+        // Install the appshot double-modifier monitor if the user enabled
+        // appshots in a previous session. No-op on a fresh install (default
+        // disabled), so the global flagsChanged monitor stays uninstalled
+        // until opt-in, matching the dictation monitor's policy.
+        AppshotHotkeyMonitor.shared.refreshRegistration()
         SearchEntrypointShortcutsInstaller.installIfNeeded()
     }
 

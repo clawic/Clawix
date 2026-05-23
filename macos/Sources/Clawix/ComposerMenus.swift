@@ -903,8 +903,8 @@ struct AddMenuPopup: View {
 
             if let onAppSnapshot, AppSnapshotCapture.shared.hasTarget {
                 AddMenuRow(
-                    icon: "camera.viewfinder",
-                    label: L10n.t("Attach app window"),
+                    icon: "macwindow",
+                    label: L10n.attachApp(AppSnapshotCapture.shared.targetAppName),
                     trailing: nil,
                     highlighted: false
                 ) {

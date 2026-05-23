@@ -1,4 +1,5 @@
 import XCTest
+import ClawixCore
 @testable import Clawix
 
 @MainActor
@@ -73,6 +74,46 @@ final class ComposerAttachmentLifecycleTests: XCTestCase {
         XCTAssertEqual(Data(base64Encoded: wire[0].dataBase64 ?? ""), imageData)
     }
 
+    func testBridgeAudioAttachmentOnlyNewChatRendersVoicePreviewWithoutService() throws {
+        let state = AppState()
+        state.chats = []
+        state.currentRoute = .home
+        state.daemonBridgeClient = nil
+        state.clawJSSessionsCanonicalActive = false
+        state.rescueDecision = RescueSurvivalPolicy.evaluate(
+            signals: [.bridgeRuntimeDown],
+            availableRuntimeCount: 0
+        )
+        let chatId = UUID()
+        let audio = WireAttachment(
+            id: "voice-fixture",
+            kind: .audio,
+            mimeType: "audio/m4a",
+            filename: "voice.m4a",
+            dataBase64: "not-base64"
+        )
+
+        state.newChatFromBridge(chatId: chatId, text: "", attachments: [audio])
+
+        let chat = try XCTUnwrap(state.chats.first)
+        XCTAssertEqual(chat.id, chatId)
+        XCTAssertEqual(chat.title, "Voice note")
+        let messages = try XCTUnwrap(state.chatStore.transcript(for: chatId)?.messages)
+        XCTAssertEqual(messages.first?.role, .user)
+        XCTAssertEqual(messages.first?.content, "[voice]")
+        XCTAssertNil(messages.first?.audioRef)
+        XCTAssertEqual(messages.last?.role, .assistant)
+        XCTAssertTrue(messages.last?.content.contains("Diagnostics are available") == true)
+        XCTAssertFalse(chat.hasActiveTurn)
+    }
+
+    func testComposerFilePickerIsWindowSheetNotBlockingAppModalPanel() throws {
+        let source = try readSource("ComposerView.swift")
+
+        XCTAssertTrue(source.contains("beginSheetModal(for: window)"))
+        XCTAssertFalse(source.contains("runModal()"))
+    }
+
     private func writeFixture(name: String, data: Data) throws -> URL {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("clawix-composer-attachment-\(UUID().uuidString)", isDirectory: true)
@@ -83,5 +124,14 @@ final class ComposerAttachmentLifecycleTests: XCTestCase {
             try? FileManager.default.removeItem(at: root)
         }
         return url
+    }
+
+    private func readSource(_ relativePath: String) throws -> String {
+        let macOSRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let url = macOSRoot.appendingPathComponent("Sources/Clawix/\(relativePath)")
+        return try String(contentsOf: url, encoding: .utf8)
     }
 }

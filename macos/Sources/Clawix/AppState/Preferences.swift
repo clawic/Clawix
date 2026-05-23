@@ -206,13 +206,48 @@ enum Personality: String, CaseIterable, Identifiable {
     }
 }
 
+/// Identity + text content of a captured app window (an "appshot"). When
+/// present on a `ComposerAttachment`, the chip renders the window-shot
+/// variant (thumbnail + app-icon badge + window title) and the window text
+/// rides along with the outgoing message.
+struct AppshotMetadata: Equatable {
+    let appName: String
+    let bundleId: String?
+    let windowTitle: String?
+    let windowText: String
+}
+
+/// A comment the user pinned on an element of the in-app browser. When
+/// present on a `ComposerAttachment`, the chip renders the annotation
+/// variant (page screenshot thumbnail + comment marker) and the comment
+/// rides along inline with the outgoing message.
+struct BrowserAnnotationMetadata: Equatable {
+    let pageTitle: String?
+    let pageURL: String
+    let comment: String
+    /// Numbered marker placed on the page where the user clicked.
+    let marker: Int
+}
+
 struct ComposerAttachment: Identifiable, Equatable {
     let id: UUID
     let url: URL
+    /// Non-nil when this attachment is an appshot (frontmost-window capture).
+    let appshot: AppshotMetadata?
+    /// Non-nil when this attachment is a browser annotation (a comment
+    /// pinned on a page element in the in-app browser).
+    let annotation: BrowserAnnotationMetadata?
 
-    init(id: UUID = UUID(), url: URL) {
+    init(
+        id: UUID = UUID(),
+        url: URL,
+        appshot: AppshotMetadata? = nil,
+        annotation: BrowserAnnotationMetadata? = nil
+    ) {
         self.id = id
         self.url = url
+        self.appshot = appshot
+        self.annotation = annotation
     }
 
     var filename: String { url.lastPathComponent }
@@ -220,6 +255,26 @@ struct ComposerAttachment: Identifiable, Equatable {
     var isImage: Bool {
         let imageExts: Set<String> = ["png", "jpg", "jpeg", "gif", "heic", "heif", "tiff", "tif", "bmp", "webp"]
         return imageExts.contains(url.pathExtension.lowercased())
+    }
+
+    var isAppshot: Bool { appshot != nil }
+
+    var isAnnotation: Bool { annotation != nil }
+
+    /// Label shown on the chip. Appshots prefer the window title, then the
+    /// app name; annotations prefer the comment; everything else falls back
+    /// to the file name.
+    var displayName: String {
+        if let appshot {
+            if let title = appshot.windowTitle, !title.isEmpty { return title }
+            return appshot.appName
+        }
+        if let annotation {
+            let comment = annotation.comment.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !comment.isEmpty { return comment }
+            return "Annotation \(annotation.marker)"
+        }
+        return filename
     }
 }
 

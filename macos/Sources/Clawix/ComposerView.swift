@@ -45,6 +45,7 @@ struct ComposerView: View {
     @State private var showWorktrees = false
     @State private var showSlashHelp = false
     @State private var showPersonality = false
+    @State private var filePickerPanel: NSOpenPanel?
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -646,24 +647,53 @@ struct ComposerView: View {
         panel.allowsMultipleSelection = true
         panel.canCreateDirectories = false
         panel.resolvesAliases = true
-        guard panel.runModal() == .OK else { return }
-        let urls = panel.urls
-        guard !urls.isEmpty else { return }
-        withAnimation(.easeInOut(duration: 0.20)) {
-            appState.addComposerAttachments(urls)
+        filePickerPanel = panel
+
+        let finish: (NSApplication.ModalResponse) -> Void = { response in
+            filePickerPanel = nil
+            guard response == .OK else { return }
+            let urls = panel.urls
+            guard !urls.isEmpty else { return }
+            withAnimation(.easeInOut(duration: 0.20)) {
+                appState.addComposerAttachments(urls)
+            }
+            appState.requestComposerFocus()
         }
-        appState.requestComposerFocus()
+
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) {
+            panel.beginSheetModal(for: window) { response in
+                DispatchQueue.main.async {
+                    finish(response)
+                }
+            }
+        } else {
+            panel.begin { response in
+                DispatchQueue.main.async {
+                    finish(response)
+                }
+            }
+        }
     }
 
     /// Captures the last non-Clawix foreground app's window and stages it as a
     /// composer attachment, so the user can hand the agent a picture of another
-    /// app from the "+" menu.
+    /// app from the "+" menu. First use surfaces the "Enable Appshots" modal;
+    /// once enabled, capture proceeds directly.
     private func attachAppSnapshot() {
-        guard let url = AppSnapshotCapture.shared.captureToFile() else { return }
-        withAnimation(.easeInOut(duration: 0.20)) {
-            appState.addComposerAttachments([url])
+        guard AppshotSettings.isEnabled else {
+            appState.pendingConfirmation = ConfirmationRequest(
+                title: "Enable Appshots",
+                body: "Appshots let you attach your current window to Clawix. Appshots include all window text, even what's scrolled out of view.",
+                confirmLabel: "Enable",
+                onConfirm: {
+                    AppshotSettings.isEnabled = true
+                    AppshotHotkeyMonitor.shared.refreshRegistration()
+                    appState.captureAppshotIntoComposer()
+                }
+            )
+            return
         }
-        appState.requestComposerFocus()
+        appState.captureAppshotIntoComposer()
     }
 
     private var composerStack: some View {
