@@ -22,6 +22,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     private List<WireSession> _sessions = [];
     private (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) _rateLimits = (null, new Dictionary<string, WireRateLimitSnapshot>());
     private List<WireClawJSServiceSnapshot> _serviceStatuses = ClawJSServiceStatusCatalog.InitialSnapshot();
+    private readonly AudioCatalogStore _audioCatalog = new(Paths.ClawixAudioCatalog);
 
     public DaemonEngineHost(CodexBackend backend, ILogger<DaemonEngineHost> logger)
     {
