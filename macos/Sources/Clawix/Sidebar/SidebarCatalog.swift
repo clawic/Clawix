@@ -79,8 +79,6 @@ enum SidebarToolsCatalog {
                          icon: .system("clock.arrow.circlepath"),    route: .driveRecent),
         SidebarToolEntry(id: "drive",     title: "Drive",     titleString: "Drive",
                          icon: .system("internaldrive"),             route: .driveAdmin),
-        SidebarToolEntry(id: "agents",    title: "Agents",    titleString: "Agents",
-                         icon: .clawixLogo,                          route: .agentsHome),
         SidebarToolEntry(id: "personalities", title: "Personalities", titleString: "Personalities",
                          icon: .system("theatermasks"),              route: .personalitiesHome),
         SidebarToolEntry(id: "skillCollections", title: "Skill Collections", titleString: "Skill Collections",
@@ -107,7 +105,6 @@ enum SidebarToolsCatalog {
         case "index":            return .index
         case "macCare":          return nil
         case "marketplace":      return .marketplace
-        case "agents":           return .agents
         case "personalities":    return .agents
         case "skillCollections": return .skillCollections
         case "connections":      return .agents

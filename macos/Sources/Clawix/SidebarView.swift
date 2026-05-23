@@ -151,6 +151,10 @@ struct SidebarView: View {
                 toolsSection
             }
 
+            if flags.isVisible(.agents) {
+                AgentsSidebarSection()
+            }
+
             if appsFeatureEnabled && flags.isVisible(.apps) {
                 AppsSidebarSection(appsStore: .shared)
             }

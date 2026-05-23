@@ -1,8 +1,12 @@
 import SwiftUI
 
-/// Sidebar section that exposes the user-enabled Life verticals. Peer
-/// of `DesignSidebarSection` / `AppsSidebarSection`; rendering follows
-/// the same compact row style as `SidebarToolsCatalog`.
+/// Sidebar section that exposes the user-enabled Life verticals. Peer of
+/// `DesignSidebarSection` / `AppsSidebarSection` and, like the rest of the
+/// sidebar, built from the canonical chrome: a `BasicSectionHeader` and
+/// nav rows whose metrics match `SidebarButton` / `DatabaseToolRow`
+/// (spacing 11, 15pt icon column, 13.5/500 label, 10/6 padding, radius 9,
+/// 0.78 → 0.92 → white icon tones). The body rides a `SidebarAccordion`
+/// so its open/close matches Pinned / Tools / Archived.
 struct LifeSidebarSection: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var store = LifeVerticalsStore.shared
@@ -11,99 +15,75 @@ struct LifeSidebarSection: View {
     @AppStorage(ClawixPersistentSurfaceKeys.sidebarLifeExpanded, store: SidebarPrefs.store)
     private var expanded: Bool = true
 
+    /// Estimated nav-row height for the accordion's target. Slightly under
+    /// the rendered height so `SidebarAccordion`'s measured height wins and
+    /// the open state lands on the content's exact size. Matches the value
+    /// the Tools section uses (`ToolsReorderableList.rowSlotHeight`).
+    private let rowHeight: CGFloat = 28
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-            if expanded {
-                content
+            BasicSectionHeader(
+                title: "Life",
+                expanded: $expanded,
+                leadingIcon: AnyView(LucideIcon.auto("heart", size: 13)),
+                trailingIcon: AnyView(configureButton)
+            )
+            SidebarAccordion(
+                expanded: expanded,
+                targetHeight: CGFloat(visibleVerticals.count + 1) * rowHeight
+                    + SidebarRowMetrics.sectionEdgePadding
+            ) {
+                VStack(alignment: .leading, spacing: 0) {
+                    LifeNavRow(
+                        title: "All verticals",
+                        icon: "circle",
+                        selected: isRouteSelected(.lifeHome),
+                        onTap: { appState.navigate(to: .lifeHome) }
+                    )
+                    ForEach(visibleVerticals, id: \.id) { entry in
+                        row(for: entry)
+                    }
+                    Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
+                }
+                .padding(.leading, 8)
             }
         }
-        .padding(.bottom, 6)
     }
 
-    private var header: some View {
-        Button(action: { expanded.toggle() }) {
-            HStack(spacing: 6) {
-                LucideIcon.auto(expanded ? "chevron.down" : "chevron.right", size: 9)
-                    .foregroundColor(Color.white.opacity(0.45))
-                    .frame(width: 14)
-                Text("Life")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color.white.opacity(0.55))
-                Spacer()
-                Button(action: { appState.navigate(to: .lifeSettings) }) {
-                    LucideIcon.auto("list.bullet", size: 11)
-                        .foregroundColor(Color.white.opacity(0.45))
-                }
-                .buttonStyle(.plain)
-                .help("Configure Life verticals")
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var content: some View {
-        VStack(spacing: 0) {
-            Button(action: { appState.navigate(to: .lifeHome) }) {
-                HStack(spacing: 8) {
-                    LucideIcon.auto("circle", size: 11)
-                        .foregroundColor(Color.white.opacity(0.55))
-                        .frame(width: 16)
-                    Text("All verticals")
-                        .font(.system(size: 12))
-                        .foregroundColor(isRouteSelected(.lifeHome)
-                                         ? Palette.textPrimary
-                                         : Palette.textSecondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(
-                    isRouteSelected(.lifeHome) ? Color.white.opacity(0.05) : Color.clear
-                )
+    /// Hover-reveal trailing affordance, mirroring the Pinned funnel /
+    /// Tools filter so the whole sidebar shares one header-icon language.
+    private var configureButton: some View {
+        HeaderHoverIcon(tooltip: "Configure Life verticals") {
+            appState.navigate(to: .lifeSettings)
+        } label: { color in
+            LucideIcon.auto("list.bullet", size: 13)
+                .foregroundColor(color)
+                .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            ForEach(visibleVerticals, id: \.id) { entry in
-                row(for: entry)
-            }
         }
     }
 
     private func row(for entry: LifeRegistryEntry) -> some View {
         let route = SidebarRoute.lifeVertical(id: entry.id)
-        let selected = isRouteSelected(route)
-        return Button(action: { appState.navigate(to: route) }) {
-            HStack(spacing: 8) {
-                LucideIcon.auto(iconName(for: entry), size: 11)
-                    .foregroundColor(Color.white.opacity(selected ? 0.85 : 0.55))
-                    .frame(width: 16)
-                Text(entry.label)
-                    .font(.system(size: 12))
-                    .foregroundColor(selected ? Palette.textPrimary : Palette.textSecondary)
-                Spacer()
-                if let label = entry.legalGuardLabel {
-                    Text(label)
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundColor(Color.orange.opacity(selected ? 0.90 : 0.65))
-                        .help(entry.legalGuardDescription ?? "")
-                }
-                if entry.status == .devOnly {
-                    Text("DEV")
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundColor(Color.white.opacity(0.35))
-                }
+        return LifeNavRow(
+            title: entry.label,
+            icon: iconName(for: entry),
+            selected: isRouteSelected(route),
+            onTap: { appState.navigate(to: route) }
+        ) {
+            if let label = entry.legalGuardLabel {
+                Text(label)
+                    .font(BodyFont.system(size: 10, wght: 600))
+                    .foregroundColor(Color.orange.opacity(0.78))
+                    .help(entry.legalGuardDescription ?? "")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .background(selected ? Color.white.opacity(0.05) : Color.clear)
-            .contentShape(Rectangle())
+            if entry.status == .devOnly {
+                Text("DEV")
+                    .font(BodyFont.system(size: 10, wght: 600))
+                    .foregroundColor(Color(white: 0.45))
+            }
         }
-        .buttonStyle(.plain)
     }
 
     private var visibleVerticals: [LifeRegistryEntry] {
@@ -200,5 +180,75 @@ struct LifeSidebarSection: View {
         case "ruler": return "viewfinder"
         default: return "circle"
         }
+    }
+}
+
+/// Canonical sidebar nav row for the Life section. Same metrics and tones
+/// as `DatabaseToolRow` / `SidebarButton`; an optional trailing slot holds
+/// per-vertical badges (legal guard, DEV).
+private struct LifeNavRow<Trailing: View>: View {
+    let title: String
+    let icon: String
+    let selected: Bool
+    let onTap: () -> Void
+    @ViewBuilder var trailing: () -> Trailing
+
+    @State private var hovered = false
+
+    init(
+        title: String,
+        icon: String,
+        selected: Bool,
+        onTap: @escaping () -> Void,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }
+    ) {
+        self.title = title
+        self.icon = icon
+        self.selected = selected
+        self.onTap = onTap
+        self.trailing = trailing
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 11) {
+                LucideIcon.auto(icon, size: 12.5)
+                    .frame(width: 15, height: 15)
+                    .foregroundColor(iconColor)
+                Text(title)
+                    .font(BodyFont.system(size: 13.5, wght: 500))
+                    .foregroundColor(labelColor)
+                    .lineLimit(1)
+                Spacer(minLength: 6)
+                trailing()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(backgroundFill)
+            )
+            .animation(.easeOut(duration: 0.12), value: hovered)
+        }
+        .buttonStyle(.plain)
+        .sidebarHover { hovered = $0 }
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var iconColor: Color {
+        if selected { return .white }
+        return Color(white: hovered ? 0.92 : 0.78)
+    }
+
+    private var labelColor: Color {
+        selected ? .white : Color(white: 0.92)
+    }
+
+    private var backgroundFill: Color {
+        if selected { return Color.white.opacity(0.06) }
+        if hovered  { return Color.white.opacity(0.035) }
+        return .clear
     }
 }

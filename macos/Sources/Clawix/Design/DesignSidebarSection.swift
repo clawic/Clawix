@@ -1,9 +1,12 @@
 import SwiftUI
 
 /// Top-level "Design" section in the sidebar. Peer of Apps / Pinned /
-/// Projects / Tools / Archived. Exposes three entry points: Styles
-/// (saved design recipes), Templates (parametrised pieces by category)
-/// and References (inspiration library).
+/// Projects / Tools / Archived, built from the canonical chrome: a
+/// `BasicSectionHeader` plus nav rows whose metrics match
+/// `SidebarButton` / `DatabaseToolRow` (spacing 11, 15pt icon column,
+/// 13.5/500 label, 10/6 padding, radius 9, 0.78 → 0.92 → white tones).
+/// Exposes three entry points: Styles (saved design recipes), Templates
+/// (parametrised pieces by category) and References (inspiration library).
 struct DesignSidebarSection: View {
     @EnvironmentObject var appState: AppState
     @ObservedObject var store: DesignStore = .shared
@@ -11,11 +14,23 @@ struct DesignSidebarSection: View {
     @AppStorage(ClawixPersistentSurfaceKeys.sidebarDesignExpanded, store: SidebarPrefs.store)
     private var expanded: Bool = true
 
+    /// Estimated nav-row height for the accordion target. Slightly under
+    /// the rendered height so the measured height wins and the open state
+    /// lands on the content's exact size (matches `ToolsReorderableList`).
+    private let rowHeight: CGFloat = 28
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader
-            if expanded {
-                VStack(alignment: .leading, spacing: 2) {
+            BasicSectionHeader(
+                title: "Design",
+                expanded: $expanded,
+                leadingIcon: AnyView(LucideIcon.auto("paintbrush", size: 13))
+            )
+            SidebarAccordion(
+                expanded: expanded,
+                targetHeight: 3 * rowHeight + SidebarRowMetrics.sectionEdgePadding
+            ) {
+                VStack(alignment: .leading, spacing: 0) {
                     DesignSidebarRow(
                         title: "Styles",
                         icon: "paintpalette",
@@ -37,38 +52,11 @@ struct DesignSidebarSection: View {
                         isSelected: isSelected(.designReferencesHome),
                         onOpen: { appState.navigate(to: .designReferencesHome) }
                     )
-                    Color.clear.frame(height: 9.75)
+                    Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
                 }
                 .padding(.leading, 8)
             }
         }
-    }
-
-    private var sectionHeader: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.16)) { expanded.toggle() }
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "paintbrush")
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .frame(width: 16, height: 16, alignment: .center)
-                Text("Design")
-                    .font(BodyFont.system(size: 12, wght: 600))
-                    .textCase(.uppercase)
-                    .tracking(0.4)
-                Spacer()
-                Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .opacity(0.45)
-            }
-            .foregroundColor(Color(white: 0.65))
-            .padding(.leading, 16)
-            .padding(.trailing, 9)
-            .padding(.top, 6)
-            .padding(.bottom, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private func isSelected(_ route: SidebarRoute) -> Bool {
@@ -87,37 +75,47 @@ private struct DesignSidebarRow: View {
 
     var body: some View {
         Button(action: onOpen) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(white: 0.78))
-                    .frame(width: 18, alignment: .center)
+            HStack(spacing: 11) {
+                LucideIcon.auto(icon, size: 12.5)
+                    .frame(width: 15, height: 15)
+                    .foregroundColor(iconColor)
                 Text(title)
-                    .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.92))
+                    .font(BodyFont.system(size: 13.5, wght: 500))
+                    .foregroundColor(labelColor)
                     .lineLimit(1)
-                Spacer()
+                Spacer(minLength: 6)
                 if count > 0 {
                     Text("\(count)")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.48))
+                        .foregroundColor(Color(white: 0.55))
                 }
             }
-            .padding(.leading, 8)
-            .padding(.trailing, 10)
-            .frame(height: 28)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(rowBackground)
             )
+            .animation(.easeOut(duration: 0.12), value: hovered)
         }
         .buttonStyle(.plain)
-        .onHover { hovered = $0 }
+        .sidebarHover { hovered = $0 }
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var iconColor: Color {
+        if isSelected { return .white }
+        return Color(white: hovered ? 0.92 : 0.78)
+    }
+
+    private var labelColor: Color {
+        isSelected ? .white : Color(white: 0.92)
     }
 
     private var rowBackground: Color {
-        if isSelected { return Color.white.opacity(0.07) }
+        if isSelected { return Color.white.opacity(0.06) }
         if hovered    { return Color.white.opacity(0.035) }
         return .clear
     }

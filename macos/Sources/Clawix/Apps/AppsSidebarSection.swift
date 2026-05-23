@@ -1,8 +1,12 @@
 import SwiftUI
 
-/// Top-level "Apps" section in the sidebar. Peer of Pinned/Projects/
-/// Tools/Archived. Shows up to N pinned + recently-used app rows; the
-/// header has an `All apps` button that opens the home grid.
+/// Top-level "Apps" section in the sidebar. Peer of Pinned / Projects /
+/// Tools / Archived, and built from the same canonical chrome: a
+/// `BasicSectionHeader` plus nav rows whose metrics match
+/// `SidebarButton` / `DatabaseToolRow` (spacing 11, 15pt icon column,
+/// 13.5/500 label, 10/6 padding, radius 9, 0.78 → 0.92 → white tones).
+/// The body rides a `SidebarAccordion` so its open/close matches the
+/// other sections.
 ///
 /// Lives outside `SidebarView.swift` so the sidebar file (~5k lines)
 /// doesn't grow another section worth of state. Glues into the
@@ -19,6 +23,11 @@ struct AppsSidebarSection: View {
     /// surfaces the full catalog when the user has more than this.
     private static let visibleLimit = 8
 
+    /// Estimated nav-row height for the accordion target. Slightly under
+    /// the rendered height so the measured height wins and the open state
+    /// lands on the content's exact size (matches `ToolsReorderableList`).
+    private let rowHeight: CGFloat = 28
+
     private var visibleApps: [AppRecord] {
         Array(appsStore.sortedApps.prefix(Self.visibleLimit))
     }
@@ -29,9 +38,14 @@ struct AppsSidebarSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader
-            if expanded {
-                VStack(alignment: .leading, spacing: 2) {
+            BasicSectionHeader(
+                title: "Apps",
+                expanded: $expanded,
+                leadingIcon: AnyView(LucideIcon.auto("square.grid.2x2", size: 13)),
+                trailingIcon: AnyView(allAppsButton)
+            )
+            SidebarAccordion(expanded: expanded, targetHeight: bodyHeight) {
+                VStack(alignment: .leading, spacing: 0) {
                     if visibleApps.isEmpty {
                         emptyHint
                     } else {
@@ -45,12 +59,10 @@ struct AppsSidebarSection: View {
                             )
                         }
                         if hasOverflow {
-                            allAppsButton
+                            allAppsRow
                         }
                     }
-                    // Match the trailing gap every other section uses
-                    // (`SidebarRowMetrics.sectionEdgePadding`, 9.75).
-                    Color.clear.frame(height: 9.75)
+                    Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
                 }
                 .padding(.leading, 8)
             }
@@ -67,71 +79,36 @@ struct AppsSidebarSection: View {
         }
     }
 
-    private var sectionHeader: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.16)) { expanded.toggle() }
-        } label: {
-            HStack(spacing: 8) {
-                IconImage("square.grid.2x2", size: 12.5)
-                    .frame(width: 16, height: 16, alignment: .center)
-                Text("Apps")
-                    .font(BodyFont.system(size: 13, wght: 600))
-                Spacer()
-                Button {
-                    appState.navigate(to: .appsHome)
-                } label: {
-                    Image(systemName: "square.grid.2x2.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .opacity(0.55)
-                }
-                .buttonStyle(.plain)
-                .help("All apps")
-                Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 9, weight: .bold))
-                    .opacity(0.45)
-            }
-            .foregroundColor(Color(white: 0.65))
-            .padding(.leading, 16)
-            .padding(.trailing, 9)
-            .padding(.top, 6)
-            .padding(.bottom, 4)
-            .contentShape(Rectangle())
+    private var bodyHeight: CGFloat {
+        let rows = visibleApps.isEmpty ? 1 : (visibleApps.count + (hasOverflow ? 1 : 0))
+        return CGFloat(rows) * rowHeight + SidebarRowMetrics.sectionEdgePadding
+    }
+
+    /// Hover-reveal trailing affordance, mirroring the Pinned funnel /
+    /// Tools filter so every section header shares one icon language.
+    private var allAppsButton: some View {
+        HeaderHoverIcon(tooltip: "All apps") {
+            appState.navigate(to: .appsHome)
+        } label: { color in
+            LucideIcon.auto("square.grid.2x2.fill", size: 13)
+                .foregroundColor(color)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private var emptyHint: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(Color(white: 0.45))
-            Text("Ask the agent to build one")
-                .font(BodyFont.system(size: 12.5, wght: 400))
-                .foregroundColor(Color(white: 0.50))
-        }
-        .padding(.leading, 26)
-        .padding(.vertical, 4)
+        Text("Ask the agent to build one")
+            .font(BodyFont.system(size: 13.5, wght: 500))
+            .foregroundColor(Color(white: 0.40))
+            .padding(.leading, 34)
+            .padding(.vertical, 4)
     }
 
-    private var allAppsButton: some View {
-        Button {
+    private var allAppsRow: some View {
+        AppsOverflowRow(count: appsStore.apps.count) {
             appState.navigate(to: .appsHome)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(white: 0.55))
-                    .frame(width: 18)
-                Text("All apps (\(appsStore.apps.count))")
-                    .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.70))
-                Spacer()
-            }
-            .padding(.leading, 8)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private func isSelected(_ record: AppRecord) -> Bool {
@@ -140,9 +117,42 @@ struct AppsSidebarSection: View {
     }
 }
 
-/// One row inside the sidebar Apps section. Visually consistent with
-/// the existing tool rows (Tasks/Notes/Drive) but adds a colored chip
-/// derived from the app's slug + pin/delete context menu.
+/// "All apps (N)" overflow entry. Canonical nav row metrics; reads as a
+/// quieter sibling of the app rows above it.
+private struct AppsOverflowRow: View {
+    let count: Int
+    let onTap: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 11) {
+                LucideIcon.auto("ellipsis.circle", size: 12.5)
+                    .frame(width: 15, height: 15)
+                    .foregroundColor(Color(white: hovered ? 0.92 : 0.78))
+                Text("All apps (\(count))")
+                    .font(BodyFont.system(size: 13.5, wght: 500))
+                    .foregroundColor(Color(white: 0.92))
+                    .lineLimit(1)
+                Spacer(minLength: 6)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(hovered ? Color.white.opacity(0.035) : .clear)
+            )
+            .animation(.easeOut(duration: 0.12), value: hovered)
+        }
+        .buttonStyle(.plain)
+        .sidebarHover { hovered = $0 }
+    }
+}
+
+/// One row inside the sidebar Apps section. Canonical nav-row metrics with
+/// the app's colored identity chip in the standard 15pt icon column, plus
+/// a pin indicator and a pin/delete context menu.
 private struct AppsSidebarRow: View {
     let record: AppRecord
     let isSelected: Bool
@@ -154,30 +164,30 @@ private struct AppsSidebarRow: View {
 
     var body: some View {
         Button(action: onOpen) {
-            HStack(spacing: 8) {
+            HStack(spacing: 11) {
                 iconChip
                 Text(record.name)
-                    .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.92))
+                    .font(BodyFont.system(size: 13.5, wght: 500))
+                    .foregroundColor(isSelected ? .white : Color(white: 0.92))
                     .lineLimit(1)
-                Spacer()
+                Spacer(minLength: 6)
                 if record.pinned {
                     Image(systemName: "pin.fill")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(Color(white: 0.45))
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(Color(white: 0.5))
                 }
             }
-            .padding(.leading, 8)
-            .padding(.trailing, 10)
-            .frame(height: 28)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(rowBackground)
             )
+            .animation(.easeOut(duration: 0.12), value: hovered)
         }
         .buttonStyle(.plain)
-        .onHover { hovered = $0 }
+        .sidebarHover { hovered = $0 }
         .contextMenu {
             Button(record.pinned ? "Unpin from sidebar" : "Pin to sidebar", action: onTogglePin)
             Divider()
@@ -186,25 +196,25 @@ private struct AppsSidebarRow: View {
     }
 
     private var rowBackground: Color {
-        if isSelected { return Color.white.opacity(0.07) }
+        if isSelected { return Color.white.opacity(0.06) }
         if hovered    { return Color.white.opacity(0.035) }
         return .clear
     }
 
     private var iconChip: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: 4.5, style: .continuous)
                 .fill(chipColor)
             if !record.icon.isEmpty {
                 Text(record.icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 10.5))
             } else {
                 Text(initials)
-                    .font(BodyFont.system(size: 9.5, wght: 700))
+                    .font(BodyFont.system(size: 8.5, wght: 700))
                     .foregroundColor(.white.opacity(0.92))
             }
         }
-        .frame(width: 18, height: 18)
+        .frame(width: 15, height: 15)
     }
 
     private var initials: String {
