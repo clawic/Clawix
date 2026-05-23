@@ -280,6 +280,91 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertGreaterThan(tableRows.count, AssistantTableView.largeTableRowThreshold)
     }
 
+    func testNestedListsPreserveHierarchyInBlockSignature() {
+        let markdown = """
+        - parent
+          - child
+            1. numbered child
+        - sibling
+        """
+
+        let parsed = MarkdownParseCache.parse(markdown)
+
+        XCTAssertEqual(blockSignatures(parsed.blocks), [
+            "ul:parent[ul:child[ol:numbered child]]|sibling"
+        ])
+    }
+
+    func testLongComplexMarkdownCachesAndKeepsAllHeavyShapes() {
+        let nonce = UUID().uuidString
+        let longBody = (0..<120)
+            .map { "Paragraph \($0) \(nonce) keeps enough prose to exercise the long markdown path with **bold** and `inline` atoms." }
+            .joined(separator: "\n\n")
+        let markdown = """
+        # Heavy response \(nonce)
+
+        \(longBody)
+
+        ```swift
+        struct Fixture {
+            let value: String
+        }
+        ```
+
+        - parent
+          - child
+            1. numbered child
+
+        | Name | Value |
+        | --- | --- |
+        | cache | hit |
+        | timeline | window |
+        """
+
+        let first = MarkdownParseCache.parse(markdown)
+        let second = MarkdownParseCache.parse(markdown)
+
+        XCTAssertFalse(first.cacheHit)
+        XCTAssertTrue(second.cacheHit)
+        XCTAssertGreaterThan(first.blocks.count, 100)
+        XCTAssertTrue(first.blocks.contains { if case .codeBlock = $0.block { return true }; return false })
+        XCTAssertTrue(first.blocks.contains { if case .table = $0.block { return true }; return false })
+        XCTAssertTrue(first.blocks.contains { blockContainsNestedList($0.block) })
+    }
+
+    func testAppendOnlyLongMarkdownReusesStableComplexBlocks() {
+        let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
+        let prefix = """
+        # Heavy streaming response
+
+        \(Array(0..<80).map { "Stable paragraph \($0)." }.joined(separator: "\n\n"))
+
+        ```bash
+        echo stable
+        ```
+
+        | Name | Value |
+        | --- | --- |
+        | before | append |
+        """
+        let appended = prefix + """
+
+        - appended
+          - nested
+
+        Final paragraph.
+        """
+
+        _ = MarkdownParseCache.parse(prefix, renderKey: key, phase: .streamingIntermediate)
+        let updated = MarkdownParseCache.parse(appended, renderKey: key, phase: .streamingIntermediate)
+
+        XCTAssertGreaterThan(updated.reusedBlockCount, 70)
+        XCTAssertLessThan(updated.reparsedCharacterCount, appended.count / 3)
+        XCTAssertTrue(updated.blocks.contains { if case .codeBlock = $0.block { return true }; return false })
+        XCTAssertTrue(updated.blocks.contains { if case .table = $0.block { return true }; return false })
+        XCTAssertTrue(updated.blocks.contains { blockContainsNestedList($0.block) })
+    }
+
     private func blockSignatures(_ blocks: [IndexedAnnotatedBlock]) -> [String] {
         blocks.map { item in
             switch item.block {
@@ -288,9 +373,9 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
             case .heading(let level, let line):
                 return "h\(level):\(lineText(line))"
             case .bulletList(let items):
-                return "ul:\(items.map(paragraphText).joined(separator: "|"))"
+                return "ul:\(items.map(listItemText).joined(separator: "|"))"
             case .numberedList(let items):
-                return "ol:\(items.map(paragraphText).joined(separator: "|"))"
+                return "ol:\(items.map(listItemText).joined(separator: "|"))"
             case .codeBlock(let language, let code):
                 return "code:\(language):\(code)"
             case .table(let headers, let rows):
@@ -312,6 +397,29 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
 
     private func paragraphText(_ paragraph: AnnotatedParagraph) -> String {
         paragraph.lines.map(lineText).joined(separator: "\n")
+    }
+
+    private func blockContainsNestedList(_ block: AnnotatedBlock) -> Bool {
+        switch block {
+        case .bulletList(let items), .numberedList(let items):
+            return items.contains { !$0.children.isEmpty }
+        default:
+            return false
+        }
+    }
+
+    private func listItemText(_ item: AnnotatedListItem) -> String {
+        let childText = item.children.map(nestedListText).joined()
+        return paragraphText(item.paragraph) + childText
+    }
+
+    private func nestedListText(_ list: AnnotatedNestedList) -> String {
+        switch list {
+        case .bullet(let items):
+            return "[ul:\(items.map(listItemText).joined(separator: "|"))]"
+        case .numbered(let items):
+            return "[ol:\(items.map(listItemText).joined(separator: "|"))]"
+        }
     }
 
     private func lineText(_ line: AnnotatedLine) -> String {

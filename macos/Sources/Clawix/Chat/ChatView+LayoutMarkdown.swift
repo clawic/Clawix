@@ -69,8 +69,8 @@ enum AssistantMarkdown {
     enum Block {
         case paragraph(Paragraph)
         case heading(level: Int, Line)
-        case bulletList(items: [Paragraph])
-        case numberedList(items: [Paragraph])
+        case bulletList(items: [ListItem])
+        case numberedList(items: [ListItem])
         case codeBlock(language: String, code: String)
         case table(headers: [Line], rows: [[Line]])
     }
@@ -81,6 +81,16 @@ enum AssistantMarkdown {
 
     struct Line {
         let atoms: [Atom]
+    }
+
+    struct ListItem {
+        let paragraph: Paragraph
+        let children: [NestedList]
+    }
+
+    enum NestedList {
+        case bullet(items: [ListItem])
+        case numbered(items: [ListItem])
     }
 
     struct BlockSlice {
@@ -169,42 +179,11 @@ enum AssistantMarkdown {
                 continue
             }
 
-            // Bullet list (-, *, +)
-            if isBulletPrefix(trimmed) {
+            if let (listBlock, consumed) = parseListBlock(at: i, lines: lines) {
                 let start = lines[i].start
-                var items: [Paragraph] = []
-                while i < lines.count {
-                    let raw = lines[i].text
-                    let t = raw.trimmingCharacters(in: .whitespaces)
-                    guard isBulletPrefix(t) else { break }
-                    let body = String(t.dropFirst(2))
-                    items.append(Paragraph(lines: [Line(atoms: parseAtoms(in: body))]))
-                    i += 1
-                }
-                let end = i > 0 ? lines[i - 1].endIncludingNewline : start
-                blocks.append(BlockSlice(
-                    block: .bulletList(items: items),
-                    sourceRange: start..<end
-                ))
-                continue
-            }
-
-            // Numbered list
-            if numberedRange(in: trimmed) != nil {
-                let start = lines[i].start
-                var items: [Paragraph] = []
-                while i < lines.count {
-                    let t = lines[i].text.trimmingCharacters(in: .whitespaces)
-                    guard let r = numberedRange(in: t) else { break }
-                    let body = String(t[r.upperBound...])
-                    items.append(Paragraph(lines: [Line(atoms: parseAtoms(in: body))]))
-                    i += 1
-                }
-                let end = i > 0 ? lines[i - 1].endIncludingNewline : start
-                blocks.append(BlockSlice(
-                    block: .numberedList(items: items),
-                    sourceRange: start..<end
-                ))
+                let end = lines[i + consumed - 1].endIncludingNewline
+                blocks.append(BlockSlice(block: listBlock, sourceRange: start..<end))
+                i += consumed
                 continue
             }
 
@@ -219,8 +198,7 @@ enum AssistantMarkdown {
                 if nt.isEmpty
                     || headingLevel(for: nt) != nil
                     || nt.hasPrefix("```")
-                    || isBulletPrefix(nt)
-                    || numberedRange(in: nt) != nil
+                    || listMarker(in: next) != nil
                     || isTableHeaderCandidate(nt, nextTrimmed: i + 1 < lines.count ? lines[i + 1].text.trimmingCharacters(in: .whitespaces) : nil) {
                     break
                 }
@@ -260,6 +238,106 @@ enum AssistantMarkdown {
 
     private static func numberedRange(in trimmed: String) -> Range<String.Index>? {
         trimmed.range(of: #"^\d+[.)]\s"#, options: .regularExpression)
+    }
+
+    private enum ListKind: Equatable {
+        case bullet
+        case numbered
+    }
+
+    private struct ListMarker {
+        let kind: ListKind
+        let indent: Int
+        let body: String
+    }
+
+    private static func parseListBlock(at start: Int, lines: [SourceLine]) -> (Block, Int)? {
+        guard let marker = listMarker(in: lines[start].text) else { return nil }
+        var index = start
+        let items = parseListItems(
+            lines: lines,
+            index: &index,
+            baseIndent: marker.indent,
+            kind: marker.kind
+        )
+        guard !items.isEmpty else { return nil }
+        switch marker.kind {
+        case .bullet:
+            return (.bulletList(items: items), index - start)
+        case .numbered:
+            return (.numberedList(items: items), index - start)
+        }
+    }
+
+    private static func parseListItems(
+        lines: [SourceLine],
+        index: inout Int,
+        baseIndent: Int,
+        kind: ListKind
+    ) -> [ListItem] {
+        var items: [ListItem] = []
+        while index < lines.count {
+            guard let marker = listMarker(in: lines[index].text) else { break }
+            if marker.indent < baseIndent { break }
+            if marker.indent > baseIndent {
+                break
+            }
+            guard marker.kind == kind else { break }
+
+            index += 1
+            var children: [NestedList] = []
+            while index < lines.count,
+                  let childMarker = listMarker(in: lines[index].text),
+                  childMarker.indent > baseIndent {
+                let childIndent = childMarker.indent
+                let childKind = childMarker.kind
+                let childItems = parseListItems(
+                    lines: lines,
+                    index: &index,
+                    baseIndent: childIndent,
+                    kind: childKind
+                )
+                guard !childItems.isEmpty else { break }
+                switch childKind {
+                case .bullet:
+                    children.append(.bullet(items: childItems))
+                case .numbered:
+                    children.append(.numbered(items: childItems))
+                }
+            }
+
+            items.append(ListItem(
+                paragraph: Paragraph(lines: [Line(atoms: parseAtoms(in: marker.body))]),
+                children: children
+            ))
+        }
+        return items
+    }
+
+    private static func listMarker(in raw: String) -> ListMarker? {
+        let indent = leadingIndent(in: raw)
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if isBulletPrefix(trimmed) {
+            return ListMarker(kind: .bullet, indent: indent, body: String(trimmed.dropFirst(2)))
+        }
+        if let range = numberedRange(in: trimmed) {
+            return ListMarker(kind: .numbered, indent: indent, body: String(trimmed[range.upperBound...]))
+        }
+        return nil
+    }
+
+    private static func leadingIndent(in raw: String) -> Int {
+        var count = 0
+        for character in raw {
+            if character == " " {
+                count += 1
+            } else if character == "\t" {
+                count += 4
+            } else {
+                break
+            }
+        }
+        return count
     }
 
     private struct SourceLine {
@@ -595,12 +673,26 @@ enum AssistantMarkdown {
         case .heading(_, let line):
             body(line)
         case .bulletList(let items), .numberedList(let items):
-            for p in items { p.lines.forEach(body) }
+            for item in items {
+                visitLines(in: item, body: body)
+            }
         case .table(let headers, let rows):
             headers.forEach(body)
             for row in rows { row.forEach(body) }
         case .codeBlock:
             break
+        }
+    }
+
+    private static func visitLines(in item: ListItem, body: (Line) -> Void) {
+        item.paragraph.lines.forEach(body)
+        for child in item.children {
+            switch child {
+            case .bullet(let items), .numbered(let items):
+                for childItem in items {
+                    visitLines(in: childItem, body: body)
+                }
+            }
         }
     }
 }

@@ -44,6 +44,11 @@ enum RenderProbe {
         isDebugBuild || ClawixEnv.isEnabled(ClawixEnv.renderProbe, in: environment)
     }
 
+    static func prepareLogFile(at path: String) {
+        guard !FileManager.default.fileExists(atPath: path) else { return }
+        FileManager.default.createFile(atPath: path, contents: nil)
+    }
+
     static func tick(_ name: String) {
         guard isEnabled else { return }
         queue.async {
@@ -91,7 +96,7 @@ enum RenderProbe {
         guard isEnabled, !didStart else { return }
         didStart = true
         windowStart = CFAbsoluteTimeGetCurrent()
-        try? "".write(toFile: path, atomically: true, encoding: .utf8)
+        prepareLogFile(at: path)
         // Timer.scheduledTimer needs a real run loop. The probe queue is
         // a serial DispatchQueue with no run loop attached, so schedule
         // the periodic flush on the main run loop instead.

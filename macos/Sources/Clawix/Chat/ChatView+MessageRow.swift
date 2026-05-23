@@ -129,7 +129,7 @@ struct MessageRow: View, Equatable {
     @State private var copyResetTask: Task<Void, Never>? = nil
     @State private var isEditing = false
     @State private var editDraft: String = ""
-    /// Toggled by the in-bubble "N mensajes anteriores" disclosure. The
+    /// Toggled by the in-bubble "N previous messages" disclosure. The
     /// hidden portion = every timeline entry up to and including the last
     /// `.tools` group; the visible portion is the closing reasoning chunk
     /// (the final answer Clawix writes after the work is done).

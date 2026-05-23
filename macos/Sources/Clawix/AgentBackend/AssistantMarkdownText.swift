@@ -49,11 +49,21 @@ struct AnnotatedParagraph: Equatable {
     let lines: [AnnotatedLine]
 }
 
+struct AnnotatedListItem {
+    let paragraph: AnnotatedParagraph
+    let children: [AnnotatedNestedList]
+}
+
+enum AnnotatedNestedList {
+    case bullet(items: [AnnotatedListItem])
+    case numbered(items: [AnnotatedListItem])
+}
+
 enum AnnotatedBlock {
     case paragraph(AnnotatedParagraph)
     case heading(level: Int, line: AnnotatedLine)
-    case bulletList(items: [AnnotatedParagraph])
-    case numberedList(items: [AnnotatedParagraph])
+    case bulletList(items: [AnnotatedListItem])
+    case numberedList(items: [AnnotatedListItem])
     case codeBlock(language: String, code: String)
     case table(headers: [AnnotatedLine], rows: [[AnnotatedLine]])
 }
@@ -82,6 +92,22 @@ func annotate(_ block: AssistantMarkdown.Block, with resolver: inout AtomOffsetR
         let hs = headers.map { annotate($0, with: &resolver, baseOffset: baseOffset) }
         let rs = rows.map { row in row.map { annotate($0, with: &resolver, baseOffset: baseOffset) } }
         return .table(headers: hs, rows: rs)
+    }
+}
+
+func annotate(_ item: AssistantMarkdown.ListItem, with resolver: inout AtomOffsetResolver, baseOffset: Int = 0) -> AnnotatedListItem {
+    AnnotatedListItem(
+        paragraph: annotate(item.paragraph, with: &resolver, baseOffset: baseOffset),
+        children: item.children.map { annotate($0, with: &resolver, baseOffset: baseOffset) }
+    )
+}
+
+func annotate(_ list: AssistantMarkdown.NestedList, with resolver: inout AtomOffsetResolver, baseOffset: Int = 0) -> AnnotatedNestedList {
+    switch list {
+    case .bullet(let items):
+        return .bullet(items: items.map { annotate($0, with: &resolver, baseOffset: baseOffset) })
+    case .numbered(let items):
+        return .numbered(items: items.map { annotate($0, with: &resolver, baseOffset: baseOffset) })
     }
 }
 
@@ -679,40 +705,29 @@ struct AssistantMarkdownText: View {
             .fixedSize(horizontal: false, vertical: true)
 
         case .bulletList(let items):
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Circle()
-                            .fill(color)
-                            .frame(width: 5, height: 5)
-                            .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
-                            .frame(width: 10, alignment: .leading)
-                        ParagraphFlow(paragraph: item, weight: weight, color: color, checkpoints: checkpoints, now: now, findQuery: findQuery) { url in
-                            appState.openLinkInBrowser(url)
-                        }
-                        .equatable()
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
+            AssistantMarkdownListView(
+                style: .bullet,
+                items: items,
+                weight: weight,
+                color: color,
+                checkpoints: checkpoints,
+                now: now,
+                findQuery: findQuery
+            ) { url in
+                appState.openLinkInBrowser(url)
             }
 
         case .numberedList(let items):
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(verbatim: "\(idx + 1).")
-                            .font(BodyFont.system(size: 13.5, wght: assistantWght(for: weight)))
-                            .foregroundColor(color)
-                            .fixedSize()
-                        ParagraphFlow(paragraph: item, weight: weight, color: color, checkpoints: checkpoints, now: now, findQuery: findQuery) { url in
-                            appState.openLinkInBrowser(url)
-                        }
-                        .equatable()
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
+            AssistantMarkdownListView(
+                style: .numbered,
+                items: items,
+                weight: weight,
+                color: color,
+                checkpoints: checkpoints,
+                now: now,
+                findQuery: findQuery
+            ) { url in
+                appState.openLinkInBrowser(url)
             }
 
         case .table(let headers, let rows):
@@ -749,6 +764,102 @@ struct IndexedAnnotatedBlock: Identifiable {
     let codeBlockOrdinal: Int
 }
 
+// MARK: - List
+
+enum AssistantMarkdownListStyle {
+    case bullet
+    case numbered
+}
+
+struct AssistantMarkdownListView: View {
+    let style: AssistantMarkdownListStyle
+    let items: [AnnotatedListItem]
+    let weight: Font.Weight
+    let color: Color
+    var checkpoints: [StreamCheckpoint] = []
+    var now: Date = .distantPast
+    var findQuery: String = ""
+    var depth: Int = 0
+    let onLinkTap: (URL) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: style == .bullet ? 4 : 6) {
+                        marker(for: idx)
+                        ParagraphFlow(
+                            paragraph: item.paragraph,
+                            weight: weight,
+                            color: color,
+                            checkpoints: checkpoints,
+                            now: now,
+                            findQuery: findQuery,
+                            onLinkTap: onLinkTap
+                        )
+                        .equatable()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    ForEach(Array(item.children.enumerated()), id: \.offset) { _, child in
+                        childList(child)
+                            .padding(.leading, 18)
+                    }
+                }
+            }
+        }
+        .padding(.leading, depth == 0 ? 0 : 2)
+    }
+
+    @ViewBuilder
+    private func marker(for index: Int) -> some View {
+        switch style {
+        case .bullet:
+            Circle()
+                .fill(color)
+                .frame(width: depth == 0 ? 5 : 4, height: depth == 0 ? 5 : 4)
+                .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
+                .frame(width: 10, alignment: .leading)
+        case .numbered:
+            Text(verbatim: "\(index + 1).")
+                .font(BodyFont.system(size: 13.5, wght: assistantWght(for: weight)))
+                .foregroundColor(color)
+                .fixedSize()
+                .frame(minWidth: 16, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func childList(_ child: AnnotatedNestedList) -> some View {
+        switch child {
+        case .bullet(let childItems):
+            AssistantMarkdownListView(
+                style: .bullet,
+                items: childItems,
+                weight: weight,
+                color: color,
+                checkpoints: checkpoints,
+                now: now,
+                findQuery: findQuery,
+                depth: depth + 1,
+                onLinkTap: onLinkTap
+            )
+        case .numbered(let childItems):
+            AssistantMarkdownListView(
+                style: .numbered,
+                items: childItems,
+                weight: weight,
+                color: color,
+                checkpoints: checkpoints,
+                now: now,
+                findQuery: findQuery,
+                depth: depth + 1,
+                onLinkTap: onLinkTap
+            )
+        }
+    }
+}
+
 // MARK: - Table
 
 /// Table block rendered with the same look as the reference UI: column
@@ -772,11 +883,14 @@ struct AssistantTableView: View {
 
     var body: some View {
         let columnCount = max(headers.count, rows.map { $0.count }.max() ?? 0)
-        if rows.count > Self.largeTableRowThreshold {
-            lazyTable(columnCount: columnCount)
-        } else {
-            gridTable(columnCount: columnCount)
+        ScrollView(.horizontal, showsIndicators: true) {
+            if rows.count > Self.largeTableRowThreshold {
+                lazyTable(columnCount: columnCount)
+            } else {
+                gridTable(columnCount: columnCount)
+            }
         }
+        .thinScrollers()
     }
 
     @ViewBuilder
