@@ -8,6 +8,8 @@ import { ZQrPayload, normaliseShortCode } from "../../bridge/frames";
 import { storage, StorageKeys } from "../../lib/storage";
 import { Button, TextField, Card } from "../../components/ui";
 import { ClawixLogoIcon } from "../../icons";
+import { t } from "../../localization/i18n";
+import { classifyUserFacingFailure, logUserFacingFailure } from "../../lib/user-facing-failure";
 
 export function PairingScreen() {
   const attach = useBridgeStore((s) => s.attach);
@@ -35,7 +37,11 @@ export function PairingScreen() {
   }, [attach, autoTried]);
 
   useEffect(() => {
-    if (conn.kind === "auth-failed") setError(conn.reason);
+    if (conn.kind === "auth-failed") {
+      const failure = classifyUserFacingFailure(conn.reason);
+      logUserFacingFailure("web.pairing.auth", failure);
+      setError(failure.message);
+    }
     if (conn.kind === "ready") setError(null);
   }, [conn]);
 
@@ -43,7 +49,7 @@ export function PairingScreen() {
     ev.preventDefault();
     const normalised = normaliseShortCode(code);
     if (normalised.replace(/-/g, "").length < 9) {
-      setError("Short code must be 9 letters/digits");
+      setError(t("Short code must be 9 letters/digits"));
       return;
     }
     setError(null);
@@ -94,7 +100,7 @@ export function PairingScreen() {
         <Card>
           <form onSubmit={submit} className="p-4 space-y-3">
             <label className="block">
-              <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>Short code</span>
+              <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{t("Short code")}</span>
               <TextField
                 autoFocus
                 value={code}
@@ -113,7 +119,7 @@ export function PairingScreen() {
 
             <div className="flex justify-end pt-2">
               <Button type="submit" variant="primary" disabled={connecting}>
-                {connecting ? "Connecting…" : "Connect"}
+                {connecting ? t("Connecting...") : t("Connect")}
               </Button>
             </div>
           </form>

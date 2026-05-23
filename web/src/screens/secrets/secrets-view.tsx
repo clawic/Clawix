@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyIcon } from "../../icons";
 import { PageHeader, Card, Button, TextField } from "../../components/ui";
 import { deriveArgon2id, bytesToHex, hexToBytes } from "../../lib/argon2";
+import { t } from "../../localization/i18n";
 
 export function SecretsView() {
   const [pass, setPass] = useState("");
@@ -31,7 +32,7 @@ export function SecretsView() {
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[560px] mx-auto pt-8 pb-12 px-6 space-y-5">
-          <PageHeader title="Secrets vault" subtitle="Local-first crypto with Mac parity." />
+          <PageHeader title={t("Secrets vault")} subtitle={t("Local-first crypto with Mac parity.")} />
           <Card>
             <div className="p-4 space-y-4">
               <div
@@ -69,7 +70,7 @@ export function SecretsView() {
                 type="password"
                 value={pass}
                 onChange={(e) => setPass(e.target.value)}
-                placeholder="Test passphrase"
+                placeholder={t("Test passphrase")}
               />
               <Button onClick={selfTest} disabled={busy} variant="primary">
                 {busy ? "Deriving…" : "Run Argon2 self-test"}

@@ -5,6 +5,7 @@ import { useBridgeStore } from "../../bridge/store";
 import { SlidingSegmented } from "../../components/sliding-segmented";
 import { PageHeader, SectionLabel, Card, CardDivider, Button } from "../../components/ui";
 import { storage, StorageKeys } from "../../lib/storage";
+import { t } from "../../localization/i18n";
 
 type Tab = "general" | "appearance" | "advanced";
 
@@ -69,20 +70,20 @@ function GeneralSettings() {
 
   return (
     <>
-      <SectionLabel>Connection</SectionLabel>
+      <SectionLabel>{t("Connection")}</SectionLabel>
       <Card>
-        <Row label="Paired with" hint={hostDisplayName ? `Currently bonded to ${hostDisplayName}` : "Not paired"}>
+        <Row label={t("Paired with")} hint={hostDisplayName ? `Currently bonded to ${hostDisplayName}` : "Not paired"}>
           <code style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{hostDisplayName ?? "—"}</code>
         </Row>
         <CardDivider />
-        <Row label="Device label" hint="Shown in the Mac app's connected peers list.">
+        <Row label={t("Device label")} hint="Shown in the Mac app's connected peers list.">
           <input
             value={deviceName}
             onChange={(e) => {
               setDeviceName(e.target.value);
               storage.set(StorageKeys.deviceName, e.target.value);
             }}
-            placeholder="Web"
+            placeholder={t("Web")}
             style={{
               height: 32,
               width: 220,
@@ -98,7 +99,7 @@ function GeneralSettings() {
           />
         </Row>
         <CardDivider />
-        <Row label="Unpair this browser" hint="Clears the local token. You will need to enter the short code again.">
+        <Row label={t("Unpair this browser")} hint="Clears the local token. You will need to enter the short code again.">
           <Button
             variant="destructive"
             onClick={() => {
@@ -114,16 +115,16 @@ function GeneralSettings() {
 
       <SectionLabel>Mac-only</SectionLabel>
       <Card>
-        <Row label="Global dictation hotkey">
-          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>Manage on Mac</span>
+        <Row label={t("Global dictation hotkey")}>
+          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{t("Manage on Mac")}</span>
         </Row>
         <CardDivider />
-        <Row label="Menu bar item">
-          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>Manage on Mac</span>
+        <Row label={t("Menu bar item")}>
+          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{t("Manage on Mac")}</span>
         </Row>
         <CardDivider />
-        <Row label="Open at login">
-          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>Manage on Mac</span>
+        <Row label={t("Open at login")}>
+          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{t("Manage on Mac")}</span>
         </Row>
       </Card>
     </>
@@ -133,13 +134,13 @@ function GeneralSettings() {
 function AppearanceSettings() {
   return (
     <>
-      <SectionLabel>Theme</SectionLabel>
+      <SectionLabel>{t("Theme")}</SectionLabel>
       <Card>
         <Row
-          label="Color scheme"
+          label={t("Color scheme")}
           hint="Web matches the Mac, which is dark-only by design."
         >
-          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>Always dark</span>
+          <span style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{t("Always dark")}</span>
         </Row>
       </Card>
     </>
@@ -153,32 +154,32 @@ function AdvancedSettings() {
 
   return (
     <>
-      <SectionLabel>Bridge runtime</SectionLabel>
+      <SectionLabel>{t("Bridge runtime")}</SectionLabel>
       <Card>
-        <Row label="Daemon state">
+        <Row label={t("Daemon state")}>
           <code style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{bridge.state}</code>
         </Row>
         <CardDivider />
-        <Row label="Chat count">
+        <Row label={t("Chat count")}>
           <code style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{bridge.chatCount}</code>
         </Row>
         <CardDivider />
-        <Row label="Connection">
+        <Row label={t("Connection")}>
           <code style={{ fontSize: 12, color: "var(--color-fg-secondary)" }}>{conn.kind}</code>
         </Row>
       </Card>
 
-      <SectionLabel>Rate limits</SectionLabel>
+      <SectionLabel>{t("Rate limits")}</SectionLabel>
       <Card>
         {!rl ? (
           <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--color-fg-secondary)" }}>
-            No data yet.
+            {t("No data yet.")}
           </div>
         ) : (
           <>
             {rl.primary && (
               <>
-                <Row label="Primary window">
+                <Row label={t("Primary window")}>
                   <code style={{ fontSize: 12 }}>{rl.primary.usedPercent}% used</code>
                 </Row>
                 {(rl.secondary || rl.credits) && <CardDivider />}
@@ -186,14 +187,14 @@ function AdvancedSettings() {
             )}
             {rl.secondary && (
               <>
-                <Row label="Secondary window">
+                <Row label={t("Secondary window")}>
                   <code style={{ fontSize: 12 }}>{rl.secondary.usedPercent}% used</code>
                 </Row>
                 {rl.credits && <CardDivider />}
               </>
             )}
             {rl.credits && (
-              <Row label="Credits">
+              <Row label={t("Credits")}>
                 <code
                   style={{
                     fontSize: 12,

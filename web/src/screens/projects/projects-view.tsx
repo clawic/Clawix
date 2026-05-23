@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useBridgeStore } from "../../bridge/store";
 import { FolderOpenIcon } from "../../icons";
 import { PageHeader, Card, CardDivider } from "../../components/ui";
+import { t } from "../../localization/i18n";
 
 export function ProjectsView() {
   const projects = useBridgeStore((s) => s.projects);
@@ -17,13 +18,13 @@ export function ProjectsView() {
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[720px] mx-auto pt-8 pb-12 px-6">
-          <PageHeader title="Projects" subtitle="The working directories your chats touched." />
+          <PageHeader title={t("Projects")} subtitle={t("The working directories your chats touched.")} />
           {projects.length === 0 ? (
             <div
               className="py-6"
               style={{ fontSize: 12.5, color: "var(--color-fg-secondary)" }}
             >
-              No projects yet. Start a chat with a working directory to see it here.
+              {t("No projects yet. Start a chat with a working directory to see it here.")}
             </div>
           ) : (
             <Card>

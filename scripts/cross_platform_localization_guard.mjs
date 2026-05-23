@@ -39,6 +39,7 @@ function walkFiles(dir, predicate, acc = []) {
 function isIgnoredLiteral(value) {
   const text = value.trim();
   if (!text) return true;
+  if (/^[?:]\s*[A-Za-z_$]/.test(text)) return true;
   if (/^[0-9%()_.\/\\:|+\-–—•×\s]+$/.test(text)) return true;
   if (/^#[0-9A-Fa-f]{3,8}$/.test(text)) return true;
   if (/^https?:\/\//.test(text)) return true;
@@ -240,7 +241,7 @@ function checkIosResources(root = rootDir) {
 function scanWebSource(root) {
   const findings = [];
   const files = walkFiles(path.join(root, "web/src"), (file) => /\.(tsx|jsx)$/.test(file));
-  const attrPattern = /\b(title|subtitle|placeholder|aria-label|action)\s*=\s*"([^"]+)"/g;
+  const attrPattern = /\b(title|subtitle|placeholder|aria-label|action|label)\s*=\s*"([^"]+)"/g;
   const jsxTextPattern = />([^<>{}]*[A-Za-z][^<>{}]*)</g;
   for (const file of files) {
     const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
@@ -251,6 +252,87 @@ function scanWebSource(root) {
     });
   }
   return findings;
+}
+
+function readWebMessages(root) {
+  const messagesPath = path.join(root, "web/src/localization/messages.json");
+  if (!fs.existsSync(messagesPath)) return null;
+  return {
+    file: path.relative(root, messagesPath),
+    messages: JSON.parse(fs.readFileSync(messagesPath, "utf8")),
+  };
+}
+
+function isTranslatableEnglish(value) {
+  return /[A-Za-z]{2,}/.test(value);
+}
+
+function checkWebResourceCompleteness(root) {
+  const loaded = readWebMessages(root);
+  if (!loaded) {
+    return [{ file: "web/src/localization/messages.json", reason: "missing web messages catalog" }];
+  }
+  const issues = [];
+  const localeSet = new Set(loaded.messages.supportedLocales ?? []);
+  const missingSupportedLocales = supportedLocales.filter((locale) => !localeSet.has(locale));
+  const extraSupportedLocales = [...localeSet].filter((locale) => !supportedLocales.includes(locale));
+  if (loaded.messages.sourceLanguage !== "en" || missingSupportedLocales.length || extraSupportedLocales.length) {
+    issues.push({
+      file: loaded.file,
+      key: "<catalog>",
+      missing: missingSupportedLocales,
+      extra: extraSupportedLocales,
+      reason: "supported locale set must match the app locale contract",
+    });
+  }
+  const allowedSame = loaded.messages.sameAsEnglishAllowed ?? {};
+  for (const [key, entry] of Object.entries(loaded.messages.strings ?? {})) {
+    const missing = supportedLocales.filter((locale) => {
+      return typeof entry?.[locale] !== "string" || entry[locale].trim().length === 0;
+    });
+    if (missing.length) {
+      issues.push({ file: loaded.file, key, missing, reason: "missing localized value" });
+      continue;
+    }
+    const allowedLocales = new Set(allowedSame[key] ?? []);
+    const sameAsEnglish = supportedLocales.filter((locale) => {
+      return locale !== "en" && entry[locale] === entry.en && isTranslatableEnglish(entry.en) && !allowedLocales.has(locale);
+    });
+    if (sameAsEnglish.length) {
+      issues.push({ file: loaded.file, key, missing: sameAsEnglish, reason: "unreviewed same-as-English localization" });
+    }
+  }
+  return issues;
+}
+
+function scanWebLocalizationReferences(root) {
+  const loaded = readWebMessages(root);
+  if (!loaded) return [];
+  const keys = new Set(Object.keys(loaded.messages.strings ?? {}));
+  const issues = [];
+  const files = walkFiles(path.join(root, "web/src"), (file) => /\.(ts|tsx|js|jsx)$/.test(file));
+  for (const file of files) {
+    if (file.endsWith("web/src/localization/i18n.ts")) continue;
+    const content = fs.readFileSync(file, "utf8");
+    for (const match of content.matchAll(/\bt\(\s*"((?:\\"|[^"])*)"/g)) {
+      const key = match[1].replace(/\\"/g, '"');
+      if (!keys.has(key)) {
+        issues.push({
+          file: path.relative(root, file),
+          line: lineNumberAt(content, match.index),
+          key,
+        });
+      }
+    }
+  }
+  return issues;
+}
+
+function checkWebResources(root = rootDir) {
+  return {
+    missingLocalizations: checkWebResourceCompleteness(root),
+    missingReferences: scanWebLocalizationReferences(root),
+  };
 }
 
 function scanAll(root = rootDir) {
@@ -333,6 +415,17 @@ function runSelfTest() {
     fs.writeFileSync(path.join(tmp, "android/app/src/main/res/values/strings.xml"), strings);
     for (const dir of androidLocaleDirs) fs.writeFileSync(path.join(tmp, "android/app/src/main/res", dir, "strings.xml"), strings);
     fs.writeFileSync(path.join(tmp, "web/src/app.tsx"), '<div title="Hello">World</div>\n');
+    fs.mkdirSync(path.join(tmp, "web/src/localization"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, "web/src/localization/messages.json"),
+      JSON.stringify({
+        sourceLanguage: "en",
+        supportedLocales,
+        strings: {
+          Hello: Object.fromEntries(supportedLocales.map((locale) => [locale, locale === "en" ? "Hello" : `Hello ${locale}`])),
+        },
+      }),
+    );
     const findings = scanAll(tmp);
     if (findings.length !== 4) throw new Error(`expected 4 findings, got ${findings.length}`);
     const androidResources = checkAndroidResources(tmp);
@@ -342,6 +435,10 @@ function runSelfTest() {
     const iosResources = checkIosResources(tmp);
     if (iosResources.missingLocalizations.length || iosResources.missingReferences.length) {
       throw new Error("expected iOS resources to be complete");
+    }
+    const webResources = checkWebResources(tmp);
+    if (webResources.missingLocalizations.length || webResources.missingReferences.length) {
+      throw new Error("expected Web resources to be complete");
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
@@ -363,12 +460,15 @@ const baseline = readBaseline();
 const comparison = compare(current, baseline);
 const androidResources = checkAndroidResources();
 const iosResources = checkIosResources();
+const webResources = checkWebResources();
 const ok = !comparison.baselineMissing &&
   comparison.newFindings.length === 0 &&
   androidResources.missingLocalizations.length === 0 &&
   androidResources.missingReferences.length === 0 &&
   iosResources.missingLocalizations.length === 0 &&
-  iosResources.missingReferences.length === 0;
+  iosResources.missingReferences.length === 0 &&
+  webResources.missingLocalizations.length === 0 &&
+  webResources.missingReferences.length === 0;
 const report = {
   ok,
   current: summarize(current),
@@ -377,6 +477,7 @@ const report = {
   resolvedFindings: comparison.resolvedFindings,
   androidResources,
   iosResources,
+  webResources,
 };
 
 if (jsonMode) {
@@ -414,6 +515,18 @@ if (jsonMode) {
   if (iosResources.missingReferences.length > 0) {
     console.error("iOS source references missing localized resources");
     for (const issue of iosResources.missingReferences.slice(0, 80)) {
+      console.error(`  ${issue.file}:${issue.line} ${issue.key}`);
+    }
+  }
+  if (webResources.missingLocalizations.length > 0) {
+    console.error("Web localized message catalog is incomplete");
+    for (const issue of webResources.missingLocalizations.slice(0, 80)) {
+      console.error(`  ${issue.file}: ${issue.key}: ${issue.reason} (${issue.missing?.join(", ") ?? ""})`);
+    }
+  }
+  if (webResources.missingReferences.length > 0) {
+    console.error("Web source references missing localized messages");
+    for (const issue of webResources.missingReferences.slice(0, 80)) {
       console.error(`  ${issue.file}:${issue.line} ${issue.key}`);
     }
   }

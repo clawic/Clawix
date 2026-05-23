@@ -13,6 +13,7 @@ import {
 } from "../../icons";
 import cx from "../../lib/cx";
 import { storage, StorageKeys } from "../../lib/storage";
+import { t } from "../../localization/i18n";
 
 interface Props {
   chatId: string | null;
@@ -151,7 +152,7 @@ export function Composer({ chatId, hasActiveTurn }: Props) {
                   onClick={() => setAttachments((cur) => cur.filter((x) => x.id !== a.id))}
                   className="size-5 grid place-items-center hover:bg-[rgba(255,255,255,0.08)]"
                   style={{ borderRadius: 6, color: "var(--color-fg-secondary)" }}
-                  aria-label="Remove attachment"
+                  aria-label={t("Remove attachment")}
                 >
                   ×
                 </button>
@@ -201,7 +202,7 @@ export function Composer({ chatId, hasActiveTurn }: Props) {
                 borderRadius: 999,
                 color: recording ? "var(--color-destructive)" : "var(--color-fg-secondary)",
               }}
-              title="Voice"
+              title={t("Voice")}
             >
               <MicIcon size={14} />
             </button>
@@ -216,7 +217,7 @@ export function Composer({ chatId, hasActiveTurn }: Props) {
               onClick={() => chatId && interruptTurn(chatId)}
               className="size-8 grid place-items-center transition-opacity"
               style={{ borderRadius: 999, background: "#ffffff" }}
-              title="Stop"
+              title={t("Stop")}
             >
               <StopSquircle size={12} color="#000" />
             </button>
@@ -226,7 +227,7 @@ export function Composer({ chatId, hasActiveTurn }: Props) {
               disabled={!text.trim() && attachments.length === 0}
               className="size-8 grid place-items-center transition-opacity disabled:opacity-40"
               style={{ borderRadius: 999, background: "#ffffff" }}
-              title="Send"
+              title={t("Send")}
             >
               <ArrowUpIcon size={14} color="#000" strokeWidth={2.6} />
             </button>

@@ -18,6 +18,7 @@ import { POMODORO_SOUND_OPTIONS, pomodoroSoundFrequency, pomodoroSoundWaveType }
 import { filterPomodoroLogs, parsePomodoroUrlCommand, pomodoroAnalyticsLogs, timerEndMainActionLabel } from "./pomodoro-view-model";
 import { storage } from "../../lib/storage";
 import cx from "../../lib/cx";
+import { t } from "../../localization/i18n";
 import {
   BracesIcon,
   CalendarIcon,
@@ -144,18 +145,18 @@ export function PomodoroView() {
       <div className="h-full flex min-h-0">
         <aside className="w-[250px] shrink-0 border-r border-[var(--color-border)] bg-[rgba(255,255,255,0.02)] p-3 flex flex-col gap-2">
           <div className="px-2 py-2">
-            <div className="text-[15px] font-bold">Pomodoro</div>
-            <div className="text-[11.5px] text-[var(--color-fg-secondary)]">Session parity workspace</div>
+            <div className="text-[15px] font-bold">{t("Pomodoro")}</div>
+            <div className="text-[11.5px] text-[var(--color-fg-secondary)]">{t("Session parity workspace")}</div>
           </div>
-          <PanelButton panel="timer" current={panel} icon={<ClockIcon size={15} />} label="Timer" onClick={setPanel} />
-          <PanelButton panel="analytics" current={panel} icon={<CalendarIcon size={15} />} label="Analytics" onClick={setPanel} />
-          <PanelButton panel="tasks" current={panel} icon={<ListChecksIcon size={15} />} label="To Do" onClick={setPanel} />
-          <PanelButton panel="categories" current={panel} icon={<CheckIcon size={15} />} label="Categories" onClick={setPanel} />
-          <PanelButton panel="profiles" current={panel} icon={<SettingsIcon size={15} />} label="Profile settings" onClick={setPanel} />
-          <PanelButton panel="blockers" current={panel} icon={<LockIcon size={15} />} label="Blockers" onClick={setPanel} />
-          <PanelButton panel="calendar" current={panel} icon={<CalendarIcon size={15} />} label="Calendar" onClick={setPanel} />
-          <PanelButton panel="automation" current={panel} icon={<BracesIcon size={15} />} label="Automation" onClick={setPanel} />
-          <PanelButton panel="settings" current={panel} icon={<SettingsIcon size={15} />} label="Settings" onClick={setPanel} />
+          <PanelButton panel="timer" current={panel} icon={<ClockIcon size={15} />} label={t("Timer")} onClick={setPanel} />
+          <PanelButton panel="analytics" current={panel} icon={<CalendarIcon size={15} />} label={t("Analytics")} onClick={setPanel} />
+          <PanelButton panel="tasks" current={panel} icon={<ListChecksIcon size={15} />} label={t("To Do")} onClick={setPanel} />
+          <PanelButton panel="categories" current={panel} icon={<CheckIcon size={15} />} label={t("Categories")} onClick={setPanel} />
+          <PanelButton panel="profiles" current={panel} icon={<SettingsIcon size={15} />} label={t("Profile settings")} onClick={setPanel} />
+          <PanelButton panel="blockers" current={panel} icon={<LockIcon size={15} />} label={t("Blockers")} onClick={setPanel} />
+          <PanelButton panel="calendar" current={panel} icon={<CalendarIcon size={15} />} label={t("Calendar")} onClick={setPanel} />
+          <PanelButton panel="automation" current={panel} icon={<BracesIcon size={15} />} label={t("Automation")} onClick={setPanel} />
+          <PanelButton panel="settings" current={panel} icon={<SettingsIcon size={15} />} label={t("Settings")} onClick={setPanel} />
           <div className="mt-auto rounded-[8px] border border-[var(--color-border)] p-3 text-[11.5px] text-[var(--color-fg-secondary)]">
             <div className="text-[var(--color-fg)]">{formatClock(state.active?.remainingSec ?? state.settings.sessionMinutes * 60)}</div>
             <div className="mt-1 flex items-center gap-1.5">
@@ -191,8 +192,8 @@ export function PomodoroView() {
       {state.miniPlayerOpen && (
         <div className="fixed right-5 top-5 z-50 w-[290px] rounded-[12px] border border-[var(--color-popup-stroke)] menu-backdrop shadow-[var(--shadow-menu)] p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[12px] text-[var(--color-fg-secondary)]">Mini Player</div>
-            <button className="icon-btn" onClick={() => dispatch({ type: "mini", value: false })} aria-label="Close mini player">
+            <div className="text-[12px] text-[var(--color-fg-secondary)]">{t("Mini Player")}</div>
+            <button className="icon-btn" onClick={() => dispatch({ type: "mini", value: false })} aria-label={t("Close mini player")}>
               <XIcon size={14} />
             </button>
           </div>
@@ -244,7 +245,7 @@ function TimerPanel({
             <input
               value={state.intentionDraft}
               onChange={(event) => dispatch({ type: "set-intention", value: event.target.value })}
-              placeholder="What do you want to focus on?"
+              placeholder={t("What do you want to focus on?")}
               className="h-10 w-[310px] rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-center text-[13px] outline-none"
             />
             <select
@@ -288,15 +289,15 @@ function TimerPanel({
 
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             {!active && (
-              <PrimaryButton icon={<PlayIcon size={15} />} label="Start Session" onClick={() => dispatch({ type: "start", now: Date.now() })} />
+              <PrimaryButton icon={<PlayIcon size={15} />} label={t("Start Session")} onClick={() => dispatch({ type: "start", now: Date.now() })} />
             )}
             {active?.mode === "focus" && (
               <>
-                <ActionButton icon={<PauseIcon size={14} />} label="Pause" onClick={() => dispatch({ type: "pause", now: Date.now() })} />
-                <PrimaryButton icon={<CheckIcon size={15} />} label="Finish" onClick={() => dispatch({ type: "finish", now: Date.now(), mood, notes: active.notes })} />
+                <ActionButton icon={<PauseIcon size={14} />} label={t("Pause")} onClick={() => dispatch({ type: "pause", now: Date.now() })} />
+                <PrimaryButton icon={<CheckIcon size={15} />} label={t("Finish")} onClick={() => dispatch({ type: "finish", now: Date.now(), mood, notes: active.notes })} />
                 <ActionButton
                   icon={<ZapIcon size={14} />}
-                  label="Break"
+                  label={t("Break")}
                   onClick={() => {
                     const now = Date.now();
                     dispatch({ type: "finish", now, mood, notes: active.notes });
@@ -306,10 +307,10 @@ function TimerPanel({
               </>
             )}
             {active?.mode === "paused" && (
-              <PrimaryButton icon={<PlayIcon size={15} />} label="Resume" onClick={() => dispatch({ type: "resume", now: Date.now() })} />
+              <PrimaryButton icon={<PlayIcon size={15} />} label={t("Resume")} onClick={() => dispatch({ type: "resume", now: Date.now() })} />
             )}
             {active?.mode === "break" && (
-              <PrimaryButton icon={<CheckIcon size={15} />} label="Save Break" onClick={() => dispatch({ type: "finish", now: Date.now() })} />
+              <PrimaryButton icon={<CheckIcon size={15} />} label={t("Save Break")} onClick={() => dispatch({ type: "finish", now: Date.now() })} />
             )}
             {active?.mode === "ended" && (
               <>
@@ -318,20 +319,20 @@ function TimerPanel({
                   label={timerEndMainActionLabel(state)}
                   onClick={() => dispatch({ type: "end-main-action", now: Date.now(), mood, notes: reflection || active.notes })}
                 />
-                <ActionButton icon={<PlayIcon size={14} />} label="Take Break" onClick={() => dispatch({ type: "break", now: Date.now() })} />
-                <ActionButton icon={<RefreshCwIcon size={14} />} label="Repeat" onClick={() => dispatch({ type: "start", now: Date.now(), intention: active.intention, categoryId: active.categoryId })} />
+                <ActionButton icon={<PlayIcon size={14} />} label={t("Take Break")} onClick={() => dispatch({ type: "break", now: Date.now() })} />
+                <ActionButton icon={<RefreshCwIcon size={14} />} label={t("Repeat")} onClick={() => dispatch({ type: "start", now: Date.now(), intention: active.intention, categoryId: active.categoryId })} />
               </>
             )}
             {active && (
               <>
-                <ActionButton icon={<MinusIcon size={14} />} label="-5 min" onClick={() => dispatch({ type: "adjust", now: Date.now(), delta: -5 })} />
-                <ActionButton icon={<PlusIcon size={14} />} label="+5 min" onClick={() => dispatch({ type: "adjust", now: Date.now(), delta: 5 })} />
-                <ActionButton icon={<TrashIcon size={14} />} label="Abandon" onClick={() => dispatch({ type: "abandon", now: Date.now() })} />
+                <ActionButton icon={<MinusIcon size={14} />} label={t("-5 min")} onClick={() => dispatch({ type: "adjust", now: Date.now(), delta: -5 })} />
+                <ActionButton icon={<PlusIcon size={14} />} label={t("+5 min")} onClick={() => dispatch({ type: "adjust", now: Date.now(), delta: 5 })} />
+                <ActionButton icon={<TrashIcon size={14} />} label={t("Abandon")} onClick={() => dispatch({ type: "abandon", now: Date.now() })} />
               </>
             )}
-            <ActionButton icon={<Maximize2Icon size={14} />} label="Mini Player" onClick={() => dispatch({ type: "mini", value: true })} />
+            <ActionButton icon={<Maximize2Icon size={14} />} label={t("Mini Player")} onClick={() => dispatch({ type: "mini", value: true })} />
             {state.lastAbandoned && (
-              <ActionButton icon={<Undo2Icon size={14} />} label="Undo abandon" onClick={() => dispatch({ type: "undo", now: Date.now() })} />
+              <ActionButton icon={<Undo2Icon size={14} />} label={t("Undo abandon")} onClick={() => dispatch({ type: "undo", now: Date.now() })} />
             )}
           </div>
 
@@ -339,14 +340,14 @@ function TimerPanel({
             <textarea
               value={active.notes}
               onChange={(event) => dispatch({ type: "note", value: event.target.value })}
-              placeholder="Write down your thoughts, learning, or distraction..."
+              placeholder={t("Write down your thoughts, learning, or distraction...")}
               className="mt-6 min-h-[90px] w-full max-w-[440px] rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] p-3 text-[13px] outline-none"
             />
           )}
 
           {active?.mode === "ended" && (
             <div className="mt-4 w-full max-w-[440px] rounded-[8px] border border-[var(--color-border)] bg-[rgba(255,255,255,0.03)] p-3">
-              <div className="mb-2 text-[12px] text-[var(--color-fg-secondary)]">Reflection mood</div>
+              <div className="mb-2 text-[12px] text-[var(--color-fg-secondary)]">{t("Reflection mood")}</div>
               <div className="flex gap-2">
                 {(["focused", "neutral", "distracted"] as Mood[]).map((m) => (
                   <button
@@ -361,7 +362,7 @@ function TimerPanel({
               <textarea
                 value={reflection}
                 onChange={(event) => setReflection(event.target.value)}
-                placeholder="What did you learn in this Session?"
+                placeholder={t("What did you learn in this Session?")}
                 className="mt-3 min-h-[80px] w-full rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] p-3 text-[13px] outline-none"
               />
             </div>
@@ -371,16 +372,16 @@ function TimerPanel({
         <div className="flex min-h-[680px] flex-col gap-4">
           <DayHeader state={state} dispatch={dispatch} />
           <StatsGrid state={state} />
-          <Card title="Active blockers" action={`${activeBlockers.length} active`}>
+          <Card title={t("Active blockers")} action={`${activeBlockers.length} active`}>
             {activeBlockers.length === 0 ? (
-              <EmptyText>No website, app, or team-chat blocker is active for this timer state.</EmptyText>
+              <EmptyText>{t("No website, app, or team-chat blocker is active for this timer state.")}</EmptyText>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {activeBlockers.map((entry) => <span key={entry} className="chip">{entry}</span>)}
               </div>
             )}
           </Card>
-          <Card title="Notices" action="In-app">
+          <Card title={t("Notices")} action="In-app">
             <div className="space-y-2">
               {state.notices.map((notice) => (
                 <div key={notice.id} className="rounded-[8px] bg-[rgba(255,255,255,0.035)] p-3">
@@ -388,7 +389,7 @@ function TimerPanel({
                   <div className="text-[11.5px] text-[var(--color-fg-secondary)]">{notice.detail}</div>
                 </div>
               ))}
-              {state.notices.length === 0 && <EmptyText>Timer notifications, overflow tests, and shortcut actions appear here.</EmptyText>}
+              {state.notices.length === 0 && <EmptyText>{t("Timer notifications, overflow tests, and shortcut actions appear here.")}</EmptyText>}
             </div>
           </Card>
           <Timeline state={state} />
@@ -403,22 +404,22 @@ function TasksPanel({ state, dispatch }: { state: PomodoroState; dispatch: React
   const [bulk, setBulk] = useState("");
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="To Do" subtitle="Local task planning with plain-text imports and local-only session notes." />
+      <Header title={t("To Do")} subtitle={t("Local task planning with plain-text imports and local-only session notes.")} />
       <div className="mt-5 grid grid-cols-[380px_1fr] gap-4">
-        <Card title="Add task" action="Today">
+        <Card title={t("Add task")} action={t("Today")}>
           <div className="flex gap-2">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" className="field flex-1" />
-            <PrimaryButton icon={<PlusIcon size={14} />} label="Add" onClick={() => { dispatch({ type: "task-add", title }); setTitle(""); }} />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("Task title")} className="field flex-1" />
+            <PrimaryButton icon={<PlusIcon size={14} />} label={t("Add")} onClick={() => { dispatch({ type: "task-add", title }); setTitle(""); }} />
           </div>
-          <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder="- Paste plain text tasks&#10;- One per line" className="field mt-3 min-h-[160px] w-full p-3" />
+          <textarea value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={t("- Paste plain text tasks&#10;- One per line")} className="field mt-3 min-h-[160px] w-full p-3" />
           <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton icon={<ListChecksIcon size={14} />} label="Import plain text" onClick={() => { dispatch({ type: "tasks-import", text: bulk }); setBulk(""); }} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Simulate Reminders sync" onClick={() => dispatch({ type: "task-add", title: "Reminder: review focus plan", source: "reminders" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Task import" onClick={() => dispatch({ type: "task-add", title: "Prepare focus list", source: "things" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Issue import" onClick={() => dispatch({ type: "task-add", title: "Ship Pomodoro parity", source: "linear" })} />
+            <ActionButton icon={<ListChecksIcon size={14} />} label={t("Import plain text")} onClick={() => { dispatch({ type: "tasks-import", text: bulk }); setBulk(""); }} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Simulate Reminders sync")} onClick={() => dispatch({ type: "task-add", title: "Reminder: review focus plan", source: "reminders" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Task import")} onClick={() => dispatch({ type: "task-add", title: "Prepare focus list", source: "things" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Issue import")} onClick={() => dispatch({ type: "task-add", title: "Ship Pomodoro parity", source: "linear" })} />
           </div>
         </Card>
-        <Card title="Today" action={`${state.tasks.filter((task) => !task.done).length} open`}>
+        <Card title={t("Today")} action={`${state.tasks.filter((task) => !task.done).length} open`}>
           <div className="space-y-2">
             {state.tasks.map((task) => (
               <div key={task.id} className="flex items-center gap-3 rounded-[8px] bg-[rgba(255,255,255,0.035)] p-3">
@@ -435,11 +436,11 @@ function TasksPanel({ state, dispatch }: { state: PomodoroState; dispatch: React
                   className="field h-8 w-16 text-right"
                   aria-label={`Estimate for ${task.title}`}
                 />
-                <ActionButton icon={<PlayIcon size={14} />} label="Start" onClick={() => dispatch({ type: "task-start", task, now: Date.now() })} />
-                <button className="icon-btn" onClick={() => dispatch({ type: "task-delete", id: task.id })} aria-label="Delete task"><TrashIcon size={14} /></button>
+                <ActionButton icon={<PlayIcon size={14} />} label={t("Start")} onClick={() => dispatch({ type: "task-start", task, now: Date.now() })} />
+                <button className="icon-btn" onClick={() => dispatch({ type: "task-delete", id: task.id })} aria-label={t("Delete task")}><TrashIcon size={14} /></button>
               </div>
             ))}
-            {state.tasks.length === 0 && <EmptyText>No tasks yet.</EmptyText>}
+            {state.tasks.length === 0 && <EmptyText>{t("No tasks yet.")}</EmptyText>}
           </div>
         </Card>
       </div>
@@ -453,14 +454,14 @@ function CategoriesPanel({ state, dispatch }: { state: PomodoroState; dispatch: 
   const categories = state.categories.filter((cat) => cat.name.toLowerCase().includes(filter.toLowerCase()));
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Categories" subtitle="Create, filter, edit color, archive, and use category IDs for URL-scheme style starts." />
+      <Header title={t("Categories")} subtitle={t("Create, filter, edit color, archive, and use category IDs for URL-scheme style starts.")} />
       <div className="mt-5 grid grid-cols-[360px_1fr] gap-4">
-        <Card title="New category" action="Custom colors">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Category name" className="field w-full" />
-          <PrimaryButton className="mt-3" icon={<PlusIcon size={14} />} label="Add new category" onClick={() => { dispatch({ type: "category-add", name }); setName(""); }} />
-          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter categories" className="field mt-4 w-full" />
+        <Card title={t("New category")} action={t("Custom colors")}>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Category name")} className="field w-full" />
+          <PrimaryButton className="mt-3" icon={<PlusIcon size={14} />} label={t("Add new category")} onClick={() => { dispatch({ type: "category-add", name }); setName(""); }} />
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={t("Filter categories")} className="field mt-4 w-full" />
         </Card>
-        <Card title="Active categories" action={`${categories.length} shown`}>
+        <Card title={t("Active categories")} action={`${categories.length} shown`}>
           <div className="space-y-2">
             {categories.map((cat) => (
               <div key={cat.id} className="flex items-center gap-3 rounded-[8px] bg-[rgba(255,255,255,0.035)] p-3">
@@ -481,45 +482,45 @@ function ProfilesPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
   const settings = state.settings;
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Profile Settings" subtitle="Rules can tune duration, notifications, website blockers and app blockers by intention/category." />
+      <Header title={t("Profile Settings")} subtitle={t("Rules can tune duration, notifications, website blockers and app blockers by intention/category.")} />
       <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <Card title="Session" action="Default profile">
-          <NumberRow label="Session duration (min)" value={settings.sessionMinutes} onChange={(v) => dispatch({ type: "settings", patch: { sessionMinutes: v } })} />
-          <NumberRow label="Short break (min)" value={settings.shortBreakMinutes} onChange={(v) => dispatch({ type: "settings", patch: { shortBreakMinutes: v } })} />
-          <NumberRow label="Long break (min)" value={settings.longBreakMinutes} onChange={(v) => dispatch({ type: "settings", patch: { longBreakMinutes: v } })} />
-          <NumberRow label="Long break after focus (min)" value={settings.longBreakAfterFocusMinutes} onChange={(v) => dispatch({ type: "settings", patch: { longBreakAfterFocusMinutes: v } })} />
-          <NumberRow label="Breaths before focus" value={settings.breathCount} onChange={(v) => dispatch({ type: "settings", patch: { breathCount: v } })} />
-          <Toggle label="Auto-start break after Session ends" checked={settings.autoStartBreak} onChange={(v) => dispatch({ type: "settings", patch: { autoStartBreak: v } })} />
-          <Toggle label="Auto-start Session after break ends" checked={settings.autoStartFocus} onChange={(v) => dispatch({ type: "settings", patch: { autoStartFocus: v } })} />
+        <Card title={t("Session")} action={t("Default profile")}>
+          <NumberRow label={t("Session duration (min)")} value={settings.sessionMinutes} onChange={(v) => dispatch({ type: "settings", patch: { sessionMinutes: v } })} />
+          <NumberRow label={t("Short break (min)")} value={settings.shortBreakMinutes} onChange={(v) => dispatch({ type: "settings", patch: { shortBreakMinutes: v } })} />
+          <NumberRow label={t("Long break (min)")} value={settings.longBreakMinutes} onChange={(v) => dispatch({ type: "settings", patch: { longBreakMinutes: v } })} />
+          <NumberRow label={t("Long break after focus (min)")} value={settings.longBreakAfterFocusMinutes} onChange={(v) => dispatch({ type: "settings", patch: { longBreakAfterFocusMinutes: v } })} />
+          <NumberRow label={t("Breaths before focus")} value={settings.breathCount} onChange={(v) => dispatch({ type: "settings", patch: { breathCount: v } })} />
+          <Toggle label={t("Auto-start break after Session ends")} checked={settings.autoStartBreak} onChange={(v) => dispatch({ type: "settings", patch: { autoStartBreak: v } })} />
+          <Toggle label={t("Auto-start Session after break ends")} checked={settings.autoStartFocus} onChange={(v) => dispatch({ type: "settings", patch: { autoStartFocus: v } })} />
           <SelectRow
-            label="Session end main action"
+            label={t("Session end main action")}
             value={settings.sessionMainAction}
             options={["restart", "break", "idle"]}
             onChange={(v) => dispatch({ type: "settings", patch: { sessionMainAction: v as PomodoroSettings["sessionMainAction"] } })}
           />
           <SelectRow
-            label="Break end main action"
+            label={t("Break end main action")}
             value={settings.breakMainAction}
             options={["start-session", "finish-break", "idle"]}
             onChange={(v) => dispatch({ type: "settings", patch: { breakMainAction: v as PomodoroSettings["breakMainAction"] } })}
           />
         </Card>
-        <Card title="Notification profile" action="Overflow">
-          <Toggle label="Ending soon notification" checked={settings.endingSoonEnabled} onChange={(v) => dispatch({ type: "settings", patch: { endingSoonEnabled: v } })} />
-          <NumberRow label="Ending soon duration (min)" value={settings.endingSoonMinutes} onChange={(v) => dispatch({ type: "settings", patch: { endingSoonMinutes: v } })} />
-          <Toggle label="Presence reminder" checked={settings.presenceEnabled} onChange={(v) => dispatch({ type: "settings", patch: { presenceEnabled: v } })} />
-          <Toggle label="Session overflow" checked={settings.sessionOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { sessionOverflowEnabled: v } })} />
-          <Toggle label="Pause overflow" checked={settings.pauseOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { pauseOverflowEnabled: v } })} />
-          <Toggle label="Break overflow" checked={settings.breakOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { breakOverflowEnabled: v } })} />
+        <Card title={t("Notification profile")} action={t("Overflow")}>
+          <Toggle label={t("Ending soon notification")} checked={settings.endingSoonEnabled} onChange={(v) => dispatch({ type: "settings", patch: { endingSoonEnabled: v } })} />
+          <NumberRow label={t("Ending soon duration (min)")} value={settings.endingSoonMinutes} onChange={(v) => dispatch({ type: "settings", patch: { endingSoonMinutes: v } })} />
+          <Toggle label={t("Presence reminder")} checked={settings.presenceEnabled} onChange={(v) => dispatch({ type: "settings", patch: { presenceEnabled: v } })} />
+          <Toggle label={t("Session overflow")} checked={settings.sessionOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { sessionOverflowEnabled: v } })} />
+          <Toggle label={t("Pause overflow")} checked={settings.pauseOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { pauseOverflowEnabled: v } })} />
+          <Toggle label={t("Break overflow")} checked={settings.breakOverflowEnabled} onChange={(v) => dispatch({ type: "settings", patch: { breakOverflowEnabled: v } })} />
           <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton icon={<ZapIcon size={14} />} label="Test ending soon" onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "ending-soon" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Test presence" onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "presence" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Test overflow" onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "overflow" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Test ending soon")} onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "ending-soon" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Test presence")} onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "presence" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Test overflow")} onClick={() => dispatch({ type: "notification-test", now: Date.now(), kind: "overflow" })} />
           </div>
         </Card>
       </div>
       <div className="mt-4">
-        <Card title="Example rules" action="Local">
+        <Card title={t("Example rules")} action={t("Local")}>
           <div className="grid grid-cols-2 gap-3 text-[12.5px] text-[var(--color-fg-secondary)]">
             <RuleText text='When intention contains "reading", use 30 min focus.' />
             <RuleText text="During break, block selected productivity apps." />
@@ -535,18 +536,18 @@ function ProfilesPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
 function BlockersPanel({ state, dispatch, activeBlockers }: { state: PomodoroState; dispatch: React.Dispatch<Action>; activeBlockers: string[] }) {
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Blockers" subtitle="Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed." />
+      <Header title={t("Blockers")} subtitle={t("Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed.")} />
       <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <WebsiteBlockerCard title="Website blocker" rule={state.settings.sessionWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { sessionWebBlocker: rule } })} />
-        <WebsiteBlockerCard title="Break website blocker" rule={state.settings.breakWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { breakWebBlocker: rule } })} />
-        <AppBlockerCard title="Session app blocker" enabled={state.settings.sessionAppBlocker.enabled} apps={state.settings.sessionAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { sessionAppBlocker: { enabled, apps } } })} />
-        <AppBlockerCard title="Break app blocker" enabled={state.settings.breakAppBlocker.enabled} apps={state.settings.breakAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { breakAppBlocker: { enabled, apps } } })} />
-        <Card title="Team chat blocker" action="Teams">
-          <Toggle label="Mute selected chat teams" checked={state.settings.slackBlockerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { slackBlockerEnabled: v } })} />
-          <textarea value={state.settings.slackTeams.join("\n")} onChange={(e) => dispatch({ type: "settings", patch: { slackTeams: e.target.value.split(/\r?\n/).filter(Boolean) } })} className="field mt-3 min-h-[120px] w-full p-3" placeholder="Team name per line" />
+        <WebsiteBlockerCard title={t("Website blocker")} rule={state.settings.sessionWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { sessionWebBlocker: rule } })} />
+        <WebsiteBlockerCard title={t("Break website blocker")} rule={state.settings.breakWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { breakWebBlocker: rule } })} />
+        <AppBlockerCard title={t("Session app blocker")} enabled={state.settings.sessionAppBlocker.enabled} apps={state.settings.sessionAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { sessionAppBlocker: { enabled, apps } } })} />
+        <AppBlockerCard title={t("Break app blocker")} enabled={state.settings.breakAppBlocker.enabled} apps={state.settings.breakAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { breakAppBlocker: { enabled, apps } } })} />
+        <Card title={t("Team chat blocker")} action={t("Teams")}>
+          <Toggle label={t("Mute selected chat teams")} checked={state.settings.slackBlockerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { slackBlockerEnabled: v } })} />
+          <textarea value={state.settings.slackTeams.join("\n")} onChange={(e) => dispatch({ type: "settings", patch: { slackTeams: e.target.value.split(/\r?\n/).filter(Boolean) } })} className="field mt-3 min-h-[120px] w-full p-3" placeholder={t("Team name per line")} />
         </Card>
-        <Card title="Currently enforced in app" action={`${activeBlockers.length}`}>
-          {activeBlockers.length ? activeBlockers.map((entry) => <div key={entry} className="chip mb-2">{entry}</div>) : <EmptyText>No active blocker for the current timer state.</EmptyText>}
+        <Card title={t("Currently enforced in app")} action={`${activeBlockers.length}`}>
+          {activeBlockers.length ? activeBlockers.map((entry) => <div key={entry} className="chip mb-2">{entry}</div>) : <EmptyText>{t("No active blocker for the current timer state.")}</EmptyText>}
         </Card>
       </div>
     </section>
@@ -561,11 +562,11 @@ function CalendarPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
   const scheduleItems = scheduledItemsForDate(state, state.selectedDate);
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Calendar" subtitle="Daily planning surface with scheduled tasks, logged Sessions, breaks and projected timer block." />
+      <Header title={t("Calendar")} subtitle={t("Daily planning surface with scheduled tasks, logged Sessions, breaks and projected timer block.")} />
       <div className="mt-5 grid grid-cols-[380px_1fr] gap-4">
         <div className="space-y-4">
-          <Card title="Schedule Session" action="Local">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Focus title" className="field w-full" />
+          <Card title={t("Schedule Session")} action={t("Local")}>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("Focus title")} className="field w-full" />
             <div className="mt-3 grid grid-cols-2 gap-2">
               <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="field" />
               <input type="number" min={1} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="field" />
@@ -576,25 +577,25 @@ function CalendarPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
             <PrimaryButton
               className="mt-3"
               icon={<PlusIcon size={14} />}
-              label="Add scheduled Session"
+              label={t("Add scheduled Session")}
               onClick={() => dispatch({ type: "schedule-add", now: Date.now(), title, categoryId, startTime, durationMinutes: duration })}
             />
           </Card>
-          <Card title="Calendar integration" action="Local">
-            <Toggle label="Show calendar on Session" checked={true} onChange={() => undefined} />
-            <Toggle label="Show Sessions on Apple calendar" checked={false} onChange={() => dispatch({ type: "notice", now: Date.now(), title: "Apple Calendar sync", detail: "External calendar write is disabled in this local example." })} />
-            <Toggle label="Apple Reminder integration" checked={state.settings.developerTodoPreview} onChange={(v) => dispatch({ type: "settings", patch: { developerTodoPreview: v } })} />
-            <NumberRow label="Default calendar duration (min)" value={state.settings.sessionMinutes} onChange={(v) => dispatch({ type: "settings", patch: { sessionMinutes: v } })} />
+          <Card title={t("Calendar integration")} action={t("Local")}>
+            <Toggle label={t("Show calendar on Session")} checked={true} onChange={() => undefined} />
+            <Toggle label={t("Show Sessions on system calendar")} checked={false} onChange={() => dispatch({ type: "notice", now: Date.now(), title: "System calendar sync", detail: "External calendar write is disabled in this local example." })} />
+            <Toggle label={t("System reminders integration")} checked={state.settings.developerTodoPreview} onChange={(v) => dispatch({ type: "settings", patch: { developerTodoPreview: v } })} />
+            <NumberRow label={t("Default calendar duration (min)")} value={state.settings.sessionMinutes} onChange={(v) => dispatch({ type: "settings", patch: { sessionMinutes: v } })} />
           </Card>
         </div>
         <div className="space-y-4">
           <DayHeader state={state} dispatch={dispatch} />
-          <Card title="Planned Sessions" action={`${scheduleItems.length} scheduled`}>
+          <Card title={t("Planned Sessions")} action={`${scheduleItems.length} scheduled`}>
             <div className="space-y-2">
               {scheduleItems.map((item) => (
                 <ScheduleRow key={item.id} item={item} state={state} dispatch={dispatch} />
               ))}
-              {scheduleItems.length === 0 && <EmptyText>No scheduled Sessions for this day.</EmptyText>}
+              {scheduleItems.length === 0 && <EmptyText>{t("No scheduled Sessions for this day.")}</EmptyText>}
             </div>
           </Card>
           <Timeline state={state} large />
@@ -620,9 +621,9 @@ function AutomationPanel({ state, dispatch }: { state: PomodoroState; dispatch: 
   }, null, 2);
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Automation" subtitle="Shortcuts, URL scheme, AppleScript and window tracker equivalents for this Pomodoro example." />
+      <Header title={t("Automation")} subtitle={t("Shortcuts, URL scheme, AppleScript and window tracker equivalents for this Pomodoro example.")} />
       <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <Card title="Shortcuts" action="Actions">
+        <Card title={t("Shortcuts")} action={t("Actions")}>
           {shortcuts.map((shortcut) => (
             <button
               key={shortcut}
@@ -633,27 +634,27 @@ function AutomationPanel({ state, dispatch }: { state: PomodoroState; dispatch: 
             </button>
           ))}
         </Card>
-        <Card title="Current Session JSON" action="Copy source">
+        <Card title={t("Current Session JSON")} action={t("Copy source")}>
           <pre className="max-h-[300px] overflow-auto rounded-[8px] bg-black p-3 text-[11px] text-[var(--color-fg-secondary)]">{shortcutJson}</pre>
         </Card>
-        <Card title="URL scheme" action="session://">
+        <Card title={t("URL scheme")} action={t("session://")}>
           <CodeLine value={`session://start?intention=${encodeURIComponent(state.intentionDraft || "Focus")}&category=${state.categoryId}`} />
           <CodeLine value="session://pause" />
           <CodeLine value="session://finish" />
           <CodeLine value="session://break" />
-          <div className="mt-3 text-[11.5px] text-[var(--color-fg-secondary)]">Local command URLs</div>
+          <div className="mt-3 text-[11.5px] text-[var(--color-fg-secondary)]">{t("Local command URLs")}</div>
           <CodeLine value={`${localUrlBase}&session=start&intention=${encodeURIComponent(state.intentionDraft || "Focus")}&category=${state.categoryId}`} />
           <CodeLine value={`${localUrlBase}&session=pause`} />
           <CodeLine value={`${localUrlBase}&session=finish`} />
           <CodeLine value={`${localUrlBase}&session=break`} />
           <CodeLine value={`${localUrlBase}&session=status`} />
         </Card>
-        <Card title="Window tracker" action={state.settings.windowTrackerEnabled ? "Enabled" : "Off"}>
-          <Toggle label="Enable window tracker" checked={state.settings.windowTrackerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { windowTrackerEnabled: v } })} />
+        <Card title={t("Window tracker")} action={state.settings.windowTrackerEnabled ? "Enabled" : "Off"}>
+          <Toggle label={t("Enable window tracker")} checked={state.settings.windowTrackerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { windowTrackerEnabled: v } })} />
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <input value={trackerApp} onChange={(e) => setTrackerApp(e.target.value)} className="field" placeholder="App name" />
-            <input value={trackerWindow} onChange={(e) => setTrackerWindow(e.target.value)} className="field" placeholder="Window keyword" />
-            <input value={trackerIntention} onChange={(e) => setTrackerIntention(e.target.value)} className="field" placeholder="Suggested intention" />
+            <input value={trackerApp} onChange={(e) => setTrackerApp(e.target.value)} className="field" placeholder={t("App name")} />
+            <input value={trackerWindow} onChange={(e) => setTrackerWindow(e.target.value)} className="field" placeholder={t("Window keyword")} />
+            <input value={trackerIntention} onChange={(e) => setTrackerIntention(e.target.value)} className="field" placeholder={t("Suggested intention")} />
             <select value={trackerCategory} onChange={(e) => setTrackerCategory(e.target.value)} className="field">
               {state.categories.filter((cat) => !cat.archived).map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
@@ -661,12 +662,12 @@ function AutomationPanel({ state, dispatch }: { state: PomodoroState; dispatch: 
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton
               icon={<PlusIcon size={14} />}
-              label="Add tracker rule"
+              label={t("Add tracker rule")}
               onClick={() => dispatch({ type: "tracker-add", now: Date.now(), appName: trackerApp, windowTitle: trackerWindow, categoryId: trackerCategory, intention: trackerIntention })}
             />
             <ActionButton
               icon={<ZapIcon size={14} />}
-              label="Test tracker match"
+              label={t("Test tracker match")}
               onClick={() => dispatch({ type: "tracker-test", now: Date.now(), appName: trackerApp, windowTitle: trackerWindow })}
             />
           </div>
@@ -677,10 +678,10 @@ function AutomationPanel({ state, dispatch }: { state: PomodoroState; dispatch: 
                   <div className="truncate text-[12.5px]">{rule.appName} / {rule.windowTitle}</div>
                   <div className="text-[11.5px] text-[var(--color-fg-secondary)]">{rule.intention}</div>
                 </div>
-                <button className="icon-btn" onClick={() => dispatch({ type: "tracker-delete", now: Date.now(), id: rule.id })} aria-label="Delete tracker rule"><TrashIcon size={14} /></button>
+                <button className="icon-btn" onClick={() => dispatch({ type: "tracker-delete", now: Date.now(), id: rule.id })} aria-label={t("Delete tracker rule")}><TrashIcon size={14} /></button>
               </div>
             ))}
-            {state.settings.windowTrackers.length === 0 && <EmptyText>No tracker rules yet.</EmptyText>}
+            {state.settings.windowTrackers.length === 0 && <EmptyText>{t("No tracker rules yet.")}</EmptyText>}
           </div>
         </Card>
       </div>
@@ -699,9 +700,9 @@ function ScheduleRow({ item, state, dispatch }: { item: PomodoroScheduleItem; st
           {formatScheduleTime(item.startMinutes)} / {item.durationMinutes} min / {category?.name ?? item.categoryId}
         </div>
       </div>
-      {item.started && <span className="chip">started</span>}
-      <ActionButton icon={<PlayIcon size={14} />} label="Start" onClick={() => dispatch({ type: "schedule-start", now: Date.now(), id: item.id })} />
-      <button className="icon-btn" onClick={() => dispatch({ type: "schedule-delete", now: Date.now(), id: item.id })} aria-label="Delete scheduled Session"><TrashIcon size={14} /></button>
+      {item.started && <span className="chip">{t("started")}</span>}
+      <ActionButton icon={<PlayIcon size={14} />} label={t("Start")} onClick={() => dispatch({ type: "schedule-start", now: Date.now(), id: item.id })} />
+      <button className="icon-btn" onClick={() => dispatch({ type: "schedule-delete", now: Date.now(), id: item.id })} aria-label={t("Delete scheduled Session")}><TrashIcon size={14} /></button>
     </div>
   );
 }
@@ -709,55 +710,55 @@ function ScheduleRow({ item, state, dispatch }: { item: PomodoroScheduleItem; st
 function SettingsPanel({ state, dispatch }: { state: PomodoroState; dispatch: React.Dispatch<Action> }) {
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Settings" subtitle="General, notification, sound, menubar, window, display, account, support and developer controls." />
+      <Header title={t("Settings")} subtitle={t("General, notification, sound, menubar, window, display, account, support and developer controls.")} />
       <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <Card title="General" action="Timer">
-          <NumberRow label="Daily goal (min)" value={state.settings.dailyGoalMinutes} onChange={(v) => dispatch({ type: "settings", patch: { dailyGoalMinutes: v } })} />
-          <NumberRow label="Snap timer interval (min)" value={state.settings.snapIntervalMinutes} onChange={(v) => dispatch({ type: "settings", patch: { snapIntervalMinutes: v } })} />
-          <Toggle label="Auto-start Session when suggestion is selected" checked={state.settings.autoStartSuggestion} onChange={(v) => dispatch({ type: "settings", patch: { autoStartSuggestion: v } })} />
-          <Toggle label="Ask for reflection when Session has ended" checked={state.settings.askReflection} onChange={(v) => dispatch({ type: "settings", patch: { askReflection: v } })} />
-          <Toggle label="Launch at login" checked={state.settings.launchAtLogin} onChange={(v) => dispatch({ type: "settings", patch: { launchAtLogin: v } })} />
+        <Card title={t("General")} action={t("Timer")}>
+          <NumberRow label={t("Daily goal (min)")} value={state.settings.dailyGoalMinutes} onChange={(v) => dispatch({ type: "settings", patch: { dailyGoalMinutes: v } })} />
+          <NumberRow label={t("Snap timer interval (min)")} value={state.settings.snapIntervalMinutes} onChange={(v) => dispatch({ type: "settings", patch: { snapIntervalMinutes: v } })} />
+          <Toggle label={t("Auto-start Session when suggestion is selected")} checked={state.settings.autoStartSuggestion} onChange={(v) => dispatch({ type: "settings", patch: { autoStartSuggestion: v } })} />
+          <Toggle label={t("Ask for reflection when Session has ended")} checked={state.settings.askReflection} onChange={(v) => dispatch({ type: "settings", patch: { askReflection: v } })} />
+          <Toggle label={t("Launch at login")} checked={state.settings.launchAtLogin} onChange={(v) => dispatch({ type: "settings", patch: { launchAtLogin: v } })} />
         </Card>
-        <Card title="Background sound" action={state.settings.backgroundSoundEnabled ? "On" : "Off"}>
-          <Toggle label="Play background sound" checked={state.settings.backgroundSoundEnabled} onChange={(v) => dispatch({ type: "settings", patch: { backgroundSoundEnabled: v } })} />
-          <SelectRow label="Session sound" value={state.settings.sessionSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionSound: v } })} />
-          <RangeRow label="Session volume" value={state.settings.sessionVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionVolume: v } })} />
-          <SelectRow label="Session end sound" value={state.settings.sessionEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndSound: v } })} />
-          <RangeRow label="Session end volume" value={state.settings.sessionEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndVolume: v } })} />
-          <SelectRow label="Break sound" value={state.settings.breakSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakSound: v } })} />
-          <RangeRow label="Break volume" value={state.settings.breakVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakVolume: v } })} />
-          <SelectRow label="Break end sound" value={state.settings.breakEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakEndSound: v } })} />
-          <RangeRow label="Break end volume" value={state.settings.breakEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakEndVolume: v } })} />
+        <Card title={t("Background sound")} action={state.settings.backgroundSoundEnabled ? "On" : "Off"}>
+          <Toggle label={t("Play background sound")} checked={state.settings.backgroundSoundEnabled} onChange={(v) => dispatch({ type: "settings", patch: { backgroundSoundEnabled: v } })} />
+          <SelectRow label={t("Session sound")} value={state.settings.sessionSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionSound: v } })} />
+          <RangeRow label={t("Session volume")} value={state.settings.sessionVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionVolume: v } })} />
+          <SelectRow label={t("Session end sound")} value={state.settings.sessionEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndSound: v } })} />
+          <RangeRow label={t("Session end volume")} value={state.settings.sessionEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndVolume: v } })} />
+          <SelectRow label={t("Break sound")} value={state.settings.breakSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakSound: v } })} />
+          <RangeRow label={t("Break volume")} value={state.settings.breakVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakVolume: v } })} />
+          <SelectRow label={t("Break end sound")} value={state.settings.breakEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakEndSound: v } })} />
+          <RangeRow label={t("Break end volume")} value={state.settings.breakEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakEndVolume: v } })} />
           <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton icon={<ZapIcon size={14} />} label="Preview session" onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "session" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Preview session end" onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "session-end" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Preview break" onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "break" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Preview break end" onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "break-end" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Preview session")} onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "session" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Preview session end")} onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "session-end" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Preview break")} onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "break" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label={t("Preview break end")} onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "break-end" })} />
           </div>
         </Card>
-        <Card title="Menubar and Dock" action="Chrome">
-          <Toggle label="Show duration on menubar" checked={state.settings.menuShowDuration} onChange={(v) => dispatch({ type: "settings", patch: { menuShowDuration: v } })} />
-          <Toggle label="Show category on menubar" checked={state.settings.menuShowCategory} onChange={(v) => dispatch({ type: "settings", patch: { menuShowCategory: v } })} />
-          <Toggle label="Show total focus time today" checked={state.settings.menuShowTodayTotal} onChange={(v) => dispatch({ type: "settings", patch: { menuShowTodayTotal: v } })} />
-          <Toggle label="Show icon on dock" checked={state.settings.showDockIcon} onChange={(v) => dispatch({ type: "settings", patch: { showDockIcon: v } })} />
+        <Card title={t("Menubar and Dock")} action={t("Chrome")}>
+          <Toggle label={t("Show duration on menubar")} checked={state.settings.menuShowDuration} onChange={(v) => dispatch({ type: "settings", patch: { menuShowDuration: v } })} />
+          <Toggle label={t("Show category on menubar")} checked={state.settings.menuShowCategory} onChange={(v) => dispatch({ type: "settings", patch: { menuShowCategory: v } })} />
+          <Toggle label={t("Show total focus time today")} checked={state.settings.menuShowTodayTotal} onChange={(v) => dispatch({ type: "settings", patch: { menuShowTodayTotal: v } })} />
+          <Toggle label={t("Show icon on dock")} checked={state.settings.showDockIcon} onChange={(v) => dispatch({ type: "settings", patch: { showDockIcon: v } })} />
         </Card>
-        <Card title="Window" action="Mini player">
-          <Toggle label="Keep app on top" checked={state.settings.keepWindowOnTop} onChange={(v) => dispatch({ type: "settings", patch: { keepWindowOnTop: v } })} />
-          <Toggle label="Keep app on top while on break" checked={state.settings.keepWindowOnTopOnBreak} onChange={(v) => dispatch({ type: "settings", patch: { keepWindowOnTopOnBreak: v } })} />
-          <Toggle label="Show on all spaces" checked={state.settings.showOnAllSpaces} onChange={(v) => dispatch({ type: "settings", patch: { showOnAllSpaces: v } })} />
-          <Toggle label="Minimize when Session starts" checked={state.settings.minimizeWhenStarted} onChange={(v) => dispatch({ type: "settings", patch: { minimizeWhenStarted: v } })} />
-          <PrimaryButton className="mt-3" icon={<Maximize2Icon size={14} />} label="Toggle Mini Player" onClick={() => dispatch({ type: "mini", value: !state.miniPlayerOpen })} />
+        <Card title={t("Window")} action={t("Mini player")}>
+          <Toggle label={t("Keep app on top")} checked={state.settings.keepWindowOnTop} onChange={(v) => dispatch({ type: "settings", patch: { keepWindowOnTop: v } })} />
+          <Toggle label={t("Keep app on top while on break")} checked={state.settings.keepWindowOnTopOnBreak} onChange={(v) => dispatch({ type: "settings", patch: { keepWindowOnTopOnBreak: v } })} />
+          <Toggle label={t("Show on all spaces")} checked={state.settings.showOnAllSpaces} onChange={(v) => dispatch({ type: "settings", patch: { showOnAllSpaces: v } })} />
+          <Toggle label={t("Minimize when Session starts")} checked={state.settings.minimizeWhenStarted} onChange={(v) => dispatch({ type: "settings", patch: { minimizeWhenStarted: v } })} />
+          <PrimaryButton className="mt-3" icon={<Maximize2Icon size={14} />} label={t("Toggle Mini Player")} onClick={() => dispatch({ type: "mini", value: !state.miniPlayerOpen })} />
         </Card>
-        <Card title="Display and language" action={state.settings.theme}>
-          <SelectRow label="Theme" value={state.settings.theme} options={["system", "dark", "light"]} onChange={(v) => dispatch({ type: "settings", patch: { theme: v as PomodoroSettings["theme"] } })} />
-          <SelectRow label="Language" value={state.settings.language} options={["en", "es", "fr", "de", "ja", "ko", "pt-BR"]} onChange={(v) => dispatch({ type: "settings", patch: { language: v } })} />
-          <Toggle label="Local keyboard shortcuts" checked={state.settings.localShortcutsEnabled} onChange={(v) => dispatch({ type: "settings", patch: { localShortcutsEnabled: v } })} />
-          <Toggle label="Global keyboard shortcuts" checked={state.settings.globalShortcutsEnabled} onChange={(v) => dispatch({ type: "settings", patch: { globalShortcutsEnabled: v } })} />
+        <Card title={t("Display and language")} action={state.settings.theme}>
+          <SelectRow label={t("Theme")} value={state.settings.theme} options={["system", "dark", "light"]} onChange={(v) => dispatch({ type: "settings", patch: { theme: v as PomodoroSettings["theme"] } })} />
+          <SelectRow label={t("Language")} value={state.settings.language} options={["en", "es", "fr", "de", "ja", "ko", "pt-BR"]} onChange={(v) => dispatch({ type: "settings", patch: { language: v } })} />
+          <Toggle label={t("Local keyboard shortcuts")} checked={state.settings.localShortcutsEnabled} onChange={(v) => dispatch({ type: "settings", patch: { localShortcutsEnabled: v } })} />
+          <Toggle label={t("Global keyboard shortcuts")} checked={state.settings.globalShortcutsEnabled} onChange={(v) => dispatch({ type: "settings", patch: { globalShortcutsEnabled: v } })} />
         </Card>
-        <Card title="Account and support" action="Local">
-          <ActionButton icon={<RefreshCwIcon size={14} />} label="Rebuild analytics data" onClick={() => dispatch({ type: "notice", now: Date.now(), title: "Analytics rebuilt", detail: "Local logs were recalculated." })} />
-          <ActionButton className="mt-2" icon={<DownloadIcon size={14} />} label="Export data" onClick={() => download("session-export.json", JSON.stringify(state, null, 2), "application/json")} />
-          <ActionButton className="mt-2" icon={<EllipsisIcon size={14} />} label="Support request" onClick={() => dispatch({ type: "notice", now: Date.now(), title: "Support", detail: "Support action captured locally." })} />
+        <Card title={t("Account and support")} action={t("Local")}>
+          <ActionButton icon={<RefreshCwIcon size={14} />} label={t("Rebuild analytics data")} onClick={() => dispatch({ type: "notice", now: Date.now(), title: "Analytics rebuilt", detail: "Local logs were recalculated." })} />
+          <ActionButton className="mt-2" icon={<DownloadIcon size={14} />} label={t("Export data")} onClick={() => download("session-export.json", JSON.stringify(state, null, 2), "application/json")} />
+          <ActionButton className="mt-2" icon={<EllipsisIcon size={14} />} label={t("Support request")} onClick={() => dispatch({ type: "notice", now: Date.now(), title: "Support", detail: "Support action captured locally." })} />
         </Card>
       </div>
     </section>
@@ -797,10 +798,10 @@ function Card({ title, action, children }: { title: string; action?: string; chi
 function WebsiteBlockerCard({ title, rule, onChange }: { title: string; rule: BlockerRule; onChange: (rule: BlockerRule) => void }) {
   return (
     <Card title={title} action={rule.type === "deny" ? "Deny list" : "Allow list"}>
-      <Toggle label="Enable website blocker" checked={rule.enabled} onChange={(v) => onChange({ ...rule, enabled: v })} />
-      <SelectRow label="Type" value={rule.type} options={["deny", "allow"]} onChange={(v) => onChange({ ...rule, type: v as BlockerRule["type"] })} />
-      <textarea value={rule.entries} onChange={(e) => onChange({ ...rule, entries: e.target.value })} className="field mt-3 min-h-[130px] w-full p-3" placeholder="example.com&#10;social.example" />
-      <div className="mt-2 text-[11.5px] text-[var(--color-fg-secondary)]">Entries are enforced as an in-app active blocker list for this example.</div>
+      <Toggle label={t("Enable website blocker")} checked={rule.enabled} onChange={(v) => onChange({ ...rule, enabled: v })} />
+      <SelectRow label={t("Type")} value={rule.type} options={["deny", "allow"]} onChange={(v) => onChange({ ...rule, type: v as BlockerRule["type"] })} />
+      <textarea value={rule.entries} onChange={(e) => onChange({ ...rule, entries: e.target.value })} className="field mt-3 min-h-[130px] w-full p-3" placeholder={t("example.com&#10;social.example")} />
+      <div className="mt-2 text-[11.5px] text-[var(--color-fg-secondary)]">{t("Entries are enforced as an in-app active blocker list for this example.")}</div>
     </Card>
   );
 }
@@ -808,8 +809,8 @@ function WebsiteBlockerCard({ title, rule, onChange }: { title: string; rule: Bl
 function AppBlockerCard({ title, enabled, apps, onChange }: { title: string; enabled: boolean; apps: string[]; onChange: (enabled: boolean, apps: string[]) => void }) {
   return (
     <Card title={title} action={`${apps.length} apps`}>
-      <Toggle label="Enable app blocker" checked={enabled} onChange={(v) => onChange(v, apps)} />
-      <textarea value={apps.join("\n")} onChange={(e) => onChange(enabled, e.target.value.split(/\r?\n/).filter(Boolean))} className="field mt-3 min-h-[130px] w-full p-3" placeholder="App name per line" />
+      <Toggle label={t("Enable app blocker")} checked={enabled} onChange={(v) => onChange(v, apps)} />
+      <textarea value={apps.join("\n")} onChange={(e) => onChange(enabled, e.target.value.split(/\r?\n/).filter(Boolean))} className="field mt-3 min-h-[130px] w-full p-3" placeholder={t("App name per line")} />
     </Card>
   );
 }

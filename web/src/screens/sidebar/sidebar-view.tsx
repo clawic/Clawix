@@ -14,6 +14,7 @@ import {
   ChevronRightIcon,
 } from "../../icons";
 import cx from "../../lib/cx";
+import { t } from "../../localization/i18n";
 
 interface Props {
   selectedChatId: string | null;
@@ -40,7 +41,7 @@ export function SidebarView({ selectedChatId, onSelect, onNew }: Props) {
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-          title="New chat"
+          title={t("New chat")}
         >
           <PlusIcon size={14} />
         </button>
@@ -58,7 +59,7 @@ export function SidebarView({ selectedChatId, onSelect, onNew }: Props) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
+            placeholder={t("Search")}
             spellCheck={false}
             className="flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-[var(--color-fg-tertiary)]"
             style={{ fontVariationSettings: '"wght" 600' }}
@@ -68,7 +69,7 @@ export function SidebarView({ selectedChatId, onSelect, onNew }: Props) {
 
       <div className="thin-scroll flex-1 overflow-y-auto px-2 pb-3 space-y-3">
         {pinned.length > 0 && (
-          <SidebarGroup label="Pinned" icon={<PinIcon size={11} />}>
+          <SidebarGroup label={t("Pinned")} icon={<PinIcon size={11} />}>
             {pinned.map((c) => (
               <SidebarRow
                 key={c.id}
@@ -80,9 +81,9 @@ export function SidebarView({ selectedChatId, onSelect, onNew }: Props) {
           </SidebarGroup>
         )}
 
-        <SidebarGroup label="Recent">
+        <SidebarGroup label={t("Recent")}>
           {recent.length === 0 && (
-            <div className="px-2 py-2 text-[12px] text-[var(--color-fg-tertiary)]">No chats yet</div>
+            <div className="px-2 py-2 text-[12px] text-[var(--color-fg-tertiary)]">{t("No chats yet")}</div>
           )}
           {recent.map((c) => (
             <SidebarRow

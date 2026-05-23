@@ -16,6 +16,7 @@ import {
 import type { PomodoroAction as Action } from "./pomodoro-reducer";
 import cx from "../../lib/cx";
 import { ArrowLeftIcon, ArrowRightIcon, DownloadIcon } from "../../icons";
+import { t } from "../../localization/i18n";
 
 export function AnalyticsPanel({
   state,
@@ -34,8 +35,8 @@ export function AnalyticsPanel({
     <section className="h-full overflow-auto thin-scroll p-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[18px] font-bold">Analytics</div>
-          <div className="text-[12px] text-[var(--color-fg-secondary)]">Daily, weekly and monthly totals, category distribution, mood split, notes and exports.</div>
+          <div className="text-[18px] font-bold">{t("Analytics")}</div>
+          <div className="text-[12px] text-[var(--color-fg-secondary)]">{t("Daily, weekly and monthly totals, category distribution, mood split, notes and exports.")}</div>
         </div>
         <div className="flex gap-2">
           <DownloadButton filename="session-export.csv" data={csv} label="CSV" mime="text/csv" />
@@ -46,10 +47,10 @@ export function AnalyticsPanel({
         <div className="space-y-4">
           <DayHeader state={state} dispatch={dispatch} />
           <StatsGrid state={state} logs={analyticsLogs} />
-          <Card title="Category distribution" action={rangeLabel}>
+          <Card title={t("Category distribution")} action={rangeLabel}>
             <Distribution state={state} logs={analyticsLogs} />
           </Card>
-          <Card title="Mood" action={rangeLabel}>
+          <Card title={t("Mood")} action={rangeLabel}>
             <MoodDistribution logs={visibleLogs} />
           </Card>
         </div>
@@ -60,9 +61,9 @@ export function AnalyticsPanel({
               onChange={(event) => dispatch({ type: "report-range", value: event.target.value as PomodoroReportRange })}
               className="h-8 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-[12px]"
             >
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
+              <option value="day">{t("Day")}</option>
+              <option value="week">{t("Week")}</option>
+              <option value="month">{t("Month")}</option>
             </select>
             <label className="flex items-center gap-2 text-[12px] text-[var(--color-fg-secondary)]">
               <input type="checkbox" checked={state.notesOnly} onChange={(event) => dispatch({ type: "notes-only", value: event.target.checked })} />
@@ -73,16 +74,16 @@ export function AnalyticsPanel({
               onChange={(event) => dispatch({ type: "report-filter", value: event.target.value as PomodoroState["reportFilter"] })}
               className="h-8 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-[12px]"
             >
-              <option value="all">All</option>
-              <option value="focus">Focus</option>
-              <option value="break">Break</option>
-              <option value="notes">Notes</option>
+              <option value="all">{t("All")}</option>
+              <option value="focus">{t("Focus")}</option>
+              <option value="break">{t("Break")}</option>
+              <option value="notes">{t("Notes")}</option>
             </select>
           </div>
-          <Card title="Timeline" action={`${rangeLabel} / ${visibleLogs.length} rows`}>
+          <Card title={t("Timeline")} action={`${rangeLabel} / ${visibleLogs.length} rows`}>
             <div className="space-y-2">
               {visibleLogs.map((log) => <LogRow key={log.id} log={log} state={state} />)}
-              {visibleLogs.length === 0 && <EmptyText>No sessions match this range/filter.</EmptyText>}
+              {visibleLogs.length === 0 && <EmptyText>{t("No sessions match this range/filter.")}</EmptyText>}
             </div>
           </Card>
         </div>
@@ -96,7 +97,7 @@ export function Timeline({ state, large }: { state: PomodoroState; large?: boole
   const scheduleItems = scheduledItemsForDate(state, state.selectedDate);
   const projected = state.active && sameDay(state.active.startAt, state.selectedDate) ? state.active : null;
   return (
-    <Card title="Timeline" action={large ? "Day view" : "Current day"}>
+    <Card title={t("Timeline")} action={large ? "Day view" : "Current day"}>
       <div className={cx("relative overflow-hidden rounded-[8px] border border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.18)]", large ? "h-[560px]" : "h-[220px]")}>
         {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
           <div key={hour} className="absolute left-0 right-0 border-t border-[rgba(255,255,255,0.06)]" style={{ top: `${((hour - 9) / 9) * 100}%` }}>
@@ -123,12 +124,12 @@ export function DayHeader({ state, dispatch }: { state: PomodoroState; dispatch:
   return (
     <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
       <div className="flex items-center justify-between">
-        <button className="icon-btn" onClick={() => shift(-1)} aria-label="Previous day"><ArrowLeftIcon size={14} /></button>
+        <button className="icon-btn" onClick={() => shift(-1)} aria-label={t("Previous day")}><ArrowLeftIcon size={14} /></button>
         <div className="text-center">
           <div className="text-[13px] font-bold">{state.selectedDate === dateKey(Date.now()) ? "Today" : state.selectedDate}</div>
           <div className="text-[11px] text-[var(--color-fg-secondary)]">{selected.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
         </div>
-        <button className="icon-btn" onClick={() => shift(1)} aria-label="Next day"><ArrowRightIcon size={14} /></button>
+        <button className="icon-btn" onClick={() => shift(1)} aria-label={t("Next day")}><ArrowRightIcon size={14} /></button>
       </div>
     </div>
   );
@@ -143,12 +144,12 @@ export function StatsGrid({ state, logs }: { state: PomodoroState; logs?: Pomodo
   const distracted = rangeLogs.filter((log) => log.mood === "distracted").length;
   return (
     <div className="grid grid-cols-3 gap-3">
-      <Stat label="Total focus" value={formatDuration(focus)} />
-      <Stat label="Total break" value={formatDuration(breaks)} />
-      <Stat label="Focus/break" value={`${Math.round(focus / 60)}/${Math.max(1, Math.round(breaks / 60))}`} />
-      <Stat label="Focused" value={`${focused}`} />
-      <Stat label="Neutral" value={`${neutral}`} />
-      <Stat label="Distracted" value={`${distracted}`} />
+      <Stat label={t("Total focus")} value={formatDuration(focus)} />
+      <Stat label={t("Total break")} value={formatDuration(breaks)} />
+      <Stat label={t("Focus/break")} value={`${Math.round(focus / 60)}/${Math.max(1, Math.round(breaks / 60))}`} />
+      <Stat label={t("Focused")} value={`${focused}`} />
+      <Stat label={t("Neutral")} value={`${neutral}`} />
+      <Stat label={t("Distracted")} value={`${distracted}`} />
     </div>
   );
 }
@@ -202,7 +203,7 @@ function Distribution({ state, logs }: { state: PomodoroState; logs?: PomodoroLo
           </div>
         );
       })}
-      {total === 0 && <EmptyText>No focus distribution yet.</EmptyText>}
+      {total === 0 && <EmptyText>{t("No focus distribution yet.")}</EmptyText>}
     </div>
   );
 }

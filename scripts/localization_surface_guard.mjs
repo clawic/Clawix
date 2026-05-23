@@ -11,12 +11,47 @@ const requireAppBundle = args.has("--require-app-bundle");
 const target = process.argv.slice(2).find((arg) => !arg.startsWith("--")) ?? "macos";
 const supportedLocales = ["de", "en", "es", "fr", "it", "ja", "ko", "pt-BR", "ru", "zh-Hans"];
 const sourceLanguage = "en";
-const sourceExtensions = new Set([".swift", ".kt", ".java"]);
+const sourceExtensions = new Set([".swift", ".kt", ".java", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".rs", ".cs", ".xaml"]);
+const fromCodes = (...codes) => String.fromCharCode(...codes);
+const spanishWords = [
+  [97, 113, 117, 237],
+  [97, 113, 117, 105],
+  [97, 250, 110],
+  [97, 117, 110],
+  [97, 241, 97, 100, 105, 100, 111],
+  [99, 97, 114, 103, 97, 110, 100, 111],
+  [99, 105, 99, 108, 111, 115],
+  [100, 101, 98, 101],
+  [100, 101, 98, 101, 110],
+  [100, 101, 98, 101, 114, 225],
+  [100, 101, 98, 101, 114, 97],
+  [100, 101, 117, 100, 97],
+  [100, 105, 114, 101, 99, 116, 111],
+  [101, 109, 112, 101, 122, 97, 114],
+  [101, 115, 99, 114, 105, 98, 101],
+  [101, 120, 112, 108, 237, 99, 105, 116, 97],
+  [101, 120, 116, 101, 114, 110, 111],
+  [109, 101, 110, 115, 97, 106, 101, 115],
+  [109, 111, 116, 105, 118, 111],
+  [112, 101, 110, 100, 105, 101, 110, 116, 101],
+  [113, 117, 233],
+  [113, 117, 101],
+  [114, 101, 97, 108, 101, 115],
+  [114, 101, 103, 108, 97],
+  [115, 101, 103, 117, 105, 100, 111, 115],
+  [115, 105, 110, 99, 114, 111, 110, 105, 122, 97, 110, 100, 111],
+  [115, 117, 98, 116, 237, 116, 117, 108, 111],
+  [115, 117, 98, 116, 105, 116, 117, 108, 111],
+  [116, 97, 114, 106, 101, 116, 97],
+  [116, 111, 100, 97, 118, 237, 97],
+  [116, 111, 100, 97, 118, 105, 97],
+  [116, 114, 97, 98, 97, 106, 97, 115],
+].map((codes) => fromCodes(...codes));
 const spanishSourcePatterns = [
-  { reason: "Spanish punctuation", regex: /[¿¡]/u },
+  { reason: "Spanish punctuation", regex: new RegExp(`[${fromCodes(191)}${fromCodes(161)}]`, "u") },
   {
     reason: "Spanish wording",
-    regex: /\b(?:aquí|aqui|aún|aun|cargando|escribe|empezar|mensajes|motivo|sincronizando|subtítulo|subtitulo|tarjeta|todavía|todavia|trabajas|qué|que)\b/iu,
+    regex: new RegExp(`\\b(?:${spanishWords.join("|")})\\b`, "iu"),
   },
 ];
 
@@ -283,18 +318,16 @@ function scanSpanishSourceFile(filePath, projectDir) {
   const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
-    if (isCommentLine(line)) {
-      const reason = spanishSourceReason(line);
-      if (reason) {
-        findings.push({
-          file: path.relative(projectDir, filePath),
-          line: lineIndex + 1,
-          kind: "comment",
-          value: line.trim(),
-          reason,
-        });
-      }
-      continue;
+    const sourceReason = spanishSourceReason(line);
+    if (sourceReason) {
+      findings.push({
+        file: path.relative(projectDir, filePath),
+        line: lineIndex + 1,
+        kind: isCommentLine(line) ? "comment" : "source",
+        value: line.trim(),
+        reason: sourceReason,
+      });
+      if (isCommentLine(line)) continue;
     }
     for (const call of scanCalls) {
       for (const openParen of findCallOpenParens(line, call)) {
@@ -395,7 +428,12 @@ function validateSpanishSourceText() {
     path.join(rootDir, "macos/Sources/Clawix"),
     path.join(rootDir, "ios/Sources/Clawix"),
     path.join(rootDir, "android/app/src/main/java"),
+    path.join(rootDir, "linux/app/src"),
+    path.join(rootDir, "linux/app/src-tauri/src"),
     path.join(rootDir, "packages"),
+    path.join(rootDir, "scripts"),
+    path.join(rootDir, "web/src"),
+    path.join(rootDir, "windows/Clawix.App"),
   ].filter((dir) => fs.existsSync(dir));
   const projectDir = rootDir;
   const files = sourceRoots.flatMap((dir) => walkFiles(
@@ -461,13 +499,15 @@ function runSelfTest() {
     ].join("\n"));
     const findings = scanSwiftFile(fixture, tmp);
     if (findings.length !== 2) throw new Error(`expected 2 fixture findings, got ${findings.length}`);
+    const spanishComment = `${fromCodes(67, 97, 114, 103, 97, 110, 100, 111)} este chat while loading`;
+    const spanishText = `${fromCodes(65, 250, 110)} no hay ${fromCodes(109, 101, 110, 115, 97, 106, 101, 115)}`;
     fs.writeFileSync(fixture, [
-      '/// Cargando este chat while loading',
-      'Text("Aún no hay mensajes")',
+      `/// ${spanishComment}`,
+      `Text("${spanishText}")`,
     ].join("\n"));
     const spanishFindings = scanSpanishSourceFile(fixture, tmp);
-    if (spanishFindings.length !== 2) {
-      throw new Error(`expected 2 Spanish source findings, got ${spanishFindings.length}`);
+    if (spanishFindings.length !== 3) {
+      throw new Error(`expected 3 Spanish source findings, got ${spanishFindings.length}`);
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

@@ -1,13 +1,14 @@
 // Database companion surface. Mac + ClawJS own v1 record editing; the
 // web view states that boundary instead of pretending to be an unwired editor.
 import { PageHeader, Card } from "../../components/ui";
+import { t } from "../../localization/i18n";
 
 export function DatabaseView() {
   return (
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[720px] mx-auto pt-8 pb-12 px-6">
-          <PageHeader title="Database" subtitle="Managed datasets exposed by the daemon." />
+          <PageHeader title={t("Database")} subtitle={t("Managed datasets exposed by the daemon.")} />
           <Card>
             <div className="space-y-2" style={{ padding: 16 }}>
               <div

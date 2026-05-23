@@ -5,6 +5,7 @@ import { useBridgeStore } from "../../bridge/store";
 import { MessageBubble } from "./message-bubble";
 import { Composer } from "./composer";
 import { ClawixLogoIcon, ChatIcon } from "../../icons";
+import { t } from "../../localization/i18n";
 
 interface Props {
   chatId: string | null;
@@ -66,7 +67,7 @@ export function ChatView({ chatId }: Props) {
                 letterSpacing: "-0.02em",
               }}
             >
-              Start a new conversation
+              {t("Start a new conversation")}
             </div>
             <div
               style={{
@@ -76,8 +77,7 @@ export function ChatView({ chatId }: Props) {
                 fontVariationSettings: '"wght" 600',
               }}
             >
-              Pick a chat from the sidebar or write below to start a new one. Codex runs on your Mac;
-              this page is a window into it.
+              {t("Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.")}
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ export function ChatView({ chatId }: Props) {
               letterSpacing: "-0.01em",
             }}
           >
-            {chat?.title ?? "Untitled"}
+            {chat?.title ?? t("Untitled")}
           </h1>
         </div>
         {chat?.cwd && (
@@ -128,7 +128,7 @@ export function ChatView({ chatId }: Props) {
               className="text-center"
               style={{ fontSize: 11, color: "var(--color-fg-tertiary)" }}
             >
-              Loading older…
+              {t("Loading older...")}
             </div>
           )}
           {messages.length === 0 ? (
@@ -136,7 +136,7 @@ export function ChatView({ chatId }: Props) {
               className="text-center py-12"
               style={{ fontSize: 12.5, color: "var(--color-fg-secondary)" }}
             >
-              No messages yet
+              {t("No messages yet")}
             </div>
           ) : (
             messages.map((m) => <MessageBubble key={m.id} message={m} />)

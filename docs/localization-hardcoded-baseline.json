@@ -222,6 +222,48 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 146,
+      "kind": "label",
+      "value": "Total focus"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 147,
+      "kind": "label",
+      "value": "Total break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 148,
+      "kind": "label",
+      "value": "Focus/break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 149,
+      "kind": "label",
+      "value": "Focused"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 150,
+      "kind": "label",
+      "value": "Neutral"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 151,
+      "kind": "label",
+      "value": "Distracted"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
       "line": 205,
       "kind": "jsxText",
       "value": "No focus distribution yet."
@@ -243,6 +285,69 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 150,
+      "kind": "label",
+      "value": "Timer"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 151,
+      "kind": "label",
+      "value": "Analytics"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 152,
+      "kind": "label",
+      "value": "To Do"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 153,
+      "kind": "label",
+      "value": "Categories"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 154,
+      "kind": "label",
+      "value": "Profile settings"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 155,
+      "kind": "label",
+      "value": "Blockers"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 156,
+      "kind": "label",
+      "value": "Calendar"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 157,
+      "kind": "label",
+      "value": "Automation"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 158,
+      "kind": "label",
+      "value": "Settings"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 194,
       "kind": "jsxText",
       "value": "Mini Player"
@@ -260,6 +365,97 @@
       "line": 247,
       "kind": "placeholder",
       "value": "What do you want to focus on?"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 291,
+      "kind": "label",
+      "value": "Start Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 295,
+      "kind": "label",
+      "value": "Pause"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 296,
+      "kind": "label",
+      "value": "Finish"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 299,
+      "kind": "label",
+      "value": "Break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 309,
+      "kind": "label",
+      "value": "Resume"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 312,
+      "kind": "label",
+      "value": "Save Break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 321,
+      "kind": "label",
+      "value": "Take Break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 322,
+      "kind": "label",
+      "value": "Repeat"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 327,
+      "kind": "label",
+      "value": "-5 min"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 328,
+      "kind": "label",
+      "value": "+5 min"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 329,
+      "kind": "label",
+      "value": "Abandon"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 332,
+      "kind": "label",
+      "value": "Mini Player"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 334,
+      "kind": "label",
+      "value": "Undo abandon"
     },
     {
       "platform": "web",
@@ -348,6 +544,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 411,
+      "kind": "label",
+      "value": "Add"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 413,
       "kind": "placeholder",
       "value": "- Paste plain text tasks&#10;- One per line"
@@ -355,9 +558,44 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 415,
+      "kind": "label",
+      "value": "Import plain text"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 416,
+      "kind": "label",
+      "value": "Simulate Reminders sync"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 417,
+      "kind": "label",
+      "value": "Task import"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 418,
+      "kind": "label",
+      "value": "Issue import"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 421,
       "kind": "title",
       "value": "Today"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 438,
+      "kind": "label",
+      "value": "Start"
     },
     {
       "platform": "web",
@@ -411,6 +649,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 460,
+      "kind": "label",
+      "value": "Add new category"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 461,
       "kind": "placeholder",
       "value": "Filter categories"
@@ -453,6 +698,69 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 487,
+      "kind": "label",
+      "value": "Session duration (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 488,
+      "kind": "label",
+      "value": "Short break (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 489,
+      "kind": "label",
+      "value": "Long break (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 490,
+      "kind": "label",
+      "value": "Long break after focus (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 491,
+      "kind": "label",
+      "value": "Breaths before focus"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 492,
+      "kind": "label",
+      "value": "Auto-start break after Session ends"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 493,
+      "kind": "label",
+      "value": "Auto-start Session after break ends"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 495,
+      "kind": "label",
+      "value": "Session end main action"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 501,
+      "kind": "label",
+      "value": "Break end main action"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 507,
       "kind": "title",
       "value": "Notification profile"
@@ -463,6 +771,69 @@
       "line": 507,
       "kind": "action",
       "value": "Overflow"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 508,
+      "kind": "label",
+      "value": "Ending soon notification"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 509,
+      "kind": "label",
+      "value": "Ending soon duration (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 510,
+      "kind": "label",
+      "value": "Presence reminder"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 511,
+      "kind": "label",
+      "value": "Session overflow"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 512,
+      "kind": "label",
+      "value": "Pause overflow"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 513,
+      "kind": "label",
+      "value": "Break overflow"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 515,
+      "kind": "label",
+      "value": "Test ending soon"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 516,
+      "kind": "label",
+      "value": "Test presence"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 517,
+      "kind": "label",
+      "value": "Test overflow"
     },
     {
       "platform": "web",
@@ -537,6 +908,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 545,
+      "kind": "label",
+      "value": "Mute selected chat teams"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 546,
       "kind": "placeholder",
       "value": "Team name per line"
@@ -593,6 +971,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 579,
+      "kind": "label",
+      "value": "Add scheduled Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 583,
       "kind": "title",
       "value": "Calendar integration"
@@ -603,6 +988,34 @@
       "line": 583,
       "kind": "action",
       "value": "Local"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 584,
+      "kind": "label",
+      "value": "Show calendar on Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 585,
+      "kind": "label",
+      "value": "Show Sessions on system calendar"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 586,
+      "kind": "label",
+      "value": "System reminders integration"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 587,
+      "kind": "label",
+      "value": "Default calendar duration (min)"
     },
     {
       "platform": "web",
@@ -691,6 +1104,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 652,
+      "kind": "label",
+      "value": "Enable window tracker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 654,
       "kind": "placeholder",
       "value": "App name"
@@ -712,6 +1132,20 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 664,
+      "kind": "label",
+      "value": "Add tracker rule"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 669,
+      "kind": "label",
+      "value": "Test tracker match"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 680,
       "kind": "aria-label",
       "value": "Delete tracker rule"
@@ -729,6 +1163,13 @@
       "line": 702,
       "kind": "jsxText",
       "value": "started"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 703,
+      "kind": "label",
+      "value": "Start"
     },
     {
       "platform": "web",
@@ -768,9 +1209,135 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 715,
+      "kind": "label",
+      "value": "Daily goal (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 716,
+      "kind": "label",
+      "value": "Snap timer interval (min)"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 717,
+      "kind": "label",
+      "value": "Auto-start Session when suggestion is selected"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 718,
+      "kind": "label",
+      "value": "Ask for reflection when Session has ended"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 719,
+      "kind": "label",
+      "value": "Launch at login"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 721,
       "kind": "title",
       "value": "Background sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 722,
+      "kind": "label",
+      "value": "Play background sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 723,
+      "kind": "label",
+      "value": "Session sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 724,
+      "kind": "label",
+      "value": "Session volume"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 725,
+      "kind": "label",
+      "value": "Session end sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 726,
+      "kind": "label",
+      "value": "Session end volume"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 727,
+      "kind": "label",
+      "value": "Break sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 728,
+      "kind": "label",
+      "value": "Break volume"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 729,
+      "kind": "label",
+      "value": "Break end sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 730,
+      "kind": "label",
+      "value": "Break end volume"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 732,
+      "kind": "label",
+      "value": "Preview session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 733,
+      "kind": "label",
+      "value": "Preview session end"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 734,
+      "kind": "label",
+      "value": "Preview break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 735,
+      "kind": "label",
+      "value": "Preview break end"
     },
     {
       "platform": "web",
@@ -789,6 +1356,34 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 739,
+      "kind": "label",
+      "value": "Show duration on menubar"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 740,
+      "kind": "label",
+      "value": "Show category on menubar"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 741,
+      "kind": "label",
+      "value": "Show total focus time today"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 742,
+      "kind": "label",
+      "value": "Show icon on dock"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 744,
       "kind": "action",
       "value": "Mini player"
@@ -803,9 +1398,72 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 745,
+      "kind": "label",
+      "value": "Keep app on top"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 746,
+      "kind": "label",
+      "value": "Keep app on top while on break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 747,
+      "kind": "label",
+      "value": "Show on all spaces"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 748,
+      "kind": "label",
+      "value": "Minimize when Session starts"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 749,
+      "kind": "label",
+      "value": "Toggle Mini Player"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 751,
       "kind": "title",
       "value": "Display and language"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 752,
+      "kind": "label",
+      "value": "Theme"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 753,
+      "kind": "label",
+      "value": "Language"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 754,
+      "kind": "label",
+      "value": "Local keyboard shortcuts"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 755,
+      "kind": "label",
+      "value": "Global keyboard shortcuts"
     },
     {
       "platform": "web",
@@ -824,6 +1482,41 @@
     {
       "platform": "web",
       "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 758,
+      "kind": "label",
+      "value": "Rebuild analytics data"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 759,
+      "kind": "label",
+      "value": "Export data"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 760,
+      "kind": "label",
+      "value": "Support request"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 800,
+      "kind": "label",
+      "value": "Enable website blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 801,
+      "kind": "label",
+      "value": "Type"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
       "line": 802,
       "kind": "placeholder",
       "value": "example.com&#10;social.example"
@@ -834,6 +1527,13 @@
       "line": 803,
       "kind": "jsxText",
       "value": "Entries are enforced as an in-app active blocker list for this example."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 811,
+      "kind": "label",
+      "value": "Enable app blocker"
     },
     {
       "platform": "web",
@@ -887,9 +1587,37 @@
     {
       "platform": "web",
       "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 74,
+      "kind": "label",
+      "value": "Paired with"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 78,
+      "kind": "label",
+      "value": "Device label"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
       "line": 85,
       "kind": "placeholder",
       "value": "Web"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 101,
+      "kind": "label",
+      "value": "Unpair this browser"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 117,
+      "kind": "label",
+      "value": "Global dictation hotkey"
     },
     {
       "platform": "web",
@@ -901,9 +1629,23 @@
     {
       "platform": "web",
       "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 121,
+      "kind": "label",
+      "value": "Menu bar item"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
       "line": 122,
       "kind": "jsxText",
       "value": "Manage on Mac"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 125,
+      "kind": "label",
+      "value": "Open at login"
     },
     {
       "platform": "web",
@@ -922,6 +1664,13 @@
     {
       "platform": "web",
       "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 139,
+      "kind": "label",
+      "value": "Color scheme"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
       "line": 142,
       "kind": "jsxText",
       "value": "Always dark"
@@ -936,9 +1685,51 @@
     {
       "platform": "web",
       "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 158,
+      "kind": "label",
+      "value": "Daemon state"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 162,
+      "kind": "label",
+      "value": "Chat count"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 166,
+      "kind": "label",
+      "value": "Connection"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
       "line": 171,
       "kind": "jsxText",
       "value": "Rate limits"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 181,
+      "kind": "label",
+      "value": "Primary window"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 189,
+      "kind": "label",
+      "value": "Secondary window"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 196,
+      "kind": "label",
+      "value": "Credits"
     },
     {
       "platform": "web",
@@ -953,6 +1744,20 @@
       "line": 61,
       "kind": "placeholder",
       "value": "Search"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/sidebar/sidebar-view.tsx",
+      "line": 71,
+      "kind": "label",
+      "value": "Pinned"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/sidebar/sidebar-view.tsx",
+      "line": 83,
+      "kind": "label",
+      "value": "Recent"
     },
     {
       "platform": "web",

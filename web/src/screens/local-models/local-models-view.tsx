@@ -1,12 +1,13 @@
 // LocalModels mirror.
 import { PageHeader, Card } from "../../components/ui";
+import { t } from "../../localization/i18n";
 
 export function LocalModelsView() {
   return (
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[720px] mx-auto pt-8 pb-12 px-6">
-          <PageHeader title="Local models" subtitle="Ollama runtime exposed via the bridge." />
+          <PageHeader title={t("Local models")} subtitle={t("Ollama runtime exposed via the bridge.")} />
           <Card>
             <div className="space-y-2" style={{ padding: 16 }}>
               <div

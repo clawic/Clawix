@@ -1,12 +1,13 @@
 // MCP mirror.
 import { PageHeader, Card } from "../../components/ui";
+import { t } from "../../localization/i18n";
 
 export function McpView() {
   return (
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[720px] mx-auto pt-8 pb-12 px-6">
-          <PageHeader title="MCP servers" subtitle="Model Context Protocol endpoints." />
+          <PageHeader title={t("MCP servers")} subtitle={t("Model Context Protocol endpoints.")} />
           <Card>
             <div className="space-y-2" style={{ padding: 16 }}>
               <div
@@ -21,9 +22,9 @@ export function McpView() {
                   lineHeight: 1.55,
                 }}
               >
-                MCP server configuration is owned by the Mac app. Web edits require a dedicated MCP
-                wire frame; until then, manage servers from the Mac and the bridge will surface their
-                tools to your sessions automatically.
+                MCP server configuration is managed through the ClawJS MCP route from the signed
+                host. Web edits require a dedicated MCP wire frame; until then, manage servers from
+                the Mac and the bridge will surface their tools to your sessions automatically.
               </p>
             </div>
           </Card>
