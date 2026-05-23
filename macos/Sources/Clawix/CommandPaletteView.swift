@@ -154,7 +154,34 @@ struct CommandPaletteView: View {
         if let recent = recentChatsSection(query: q) {
             result.append((recent, recent.items))
         }
+        if let files = filesSection(query: q) {
+            result.append((files, files.items))
+        }
         return result
+    }
+
+    /// Project file search: when the user types, fuzzy-matches files in the
+    /// selected project by name and opens the chosen one. Cached + bounded via
+    /// `ProjectFileIndex` so it stays responsive in large repos.
+    private func filesSection(query q: String) -> PaletteSection? {
+        guard q.count >= 2 else { return nil }
+        let files = ProjectFileIndex.shared.files(forProject: appState.selectedProject?.path)
+        guard !files.isEmpty else { return nil }
+        let matches = files
+            .filter { $0.lastPathComponent.lowercased().contains(q) }
+            .prefix(8)
+        guard !matches.isEmpty else { return nil }
+        let items = matches.map { url -> PaletteItem in
+            let path = url.path
+            return PaletteItem(
+                id: "file-\(path)",
+                icon: "doc",
+                title: url.lastPathComponent,
+                shortcut: nil,
+                action: { $0.openFileInSidebar(path) }
+            )
+        }
+        return PaletteSection(id: "files", title: "Files", items: Array(items))
     }
 
     /// Recent chats surfaced inside the command menu so it doubles as a quick
