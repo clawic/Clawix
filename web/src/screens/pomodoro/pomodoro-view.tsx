@@ -1,58 +1,24 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
-  abandonTimer,
-  addScheduleItem,
-  addWindowTrackerRule,
-  adjustTimerMinutes,
   currentBlockers,
-  dateKey,
   defaultPomodoroState,
-  exportLogsCsv,
-  finishTimer,
   formatClock,
-  formatDuration,
   formatScheduleTime,
-  logInReportRange,
-  parsePlainTasks,
-  pauseTimer,
-  reportRangeLabel,
-  resumeTimer,
-  removeScheduleItem,
-  removeWindowTrackerRule,
-  runPomodoroShortcut,
-  runPomodoroUrlCommand,
-  runTimerEndMainAction,
-  sameDay,
   scheduledItemsForDate,
-  startBreak,
-  startFocus,
-  startScheduleItem,
-  testNotificationProfile,
-  testSoundProfile,
-  testWindowTracker,
-  tickPomodoro,
-  totalBreakSeconds,
-  totalFocusSeconds,
-  undoAbandon,
-  updateTaskEstimate,
   type BlockerRule,
   type Mood,
-  type PomodoroCategory,
-  type PomodoroLog,
-  type PomodoroReportRange,
   type PomodoroScheduleItem,
   type PomodoroSettings,
   type PomodoroShortcut,
-  type PomodoroSoundSlot,
   type PomodoroState,
-  type PomodoroTask,
-  type PomodoroUrlCommand,
 } from "./pomodoro-model";
+import { AnalyticsPanel, DayHeader, StatsGrid, Timeline } from "./pomodoro-analytics";
+import { pomodoroReducer, type PomodoroAction as Action } from "./pomodoro-reducer";
+import { POMODORO_SOUND_OPTIONS, pomodoroSoundFrequency, pomodoroSoundWaveType } from "./pomodoro-sound";
+import { filterPomodoroLogs, parsePomodoroUrlCommand, pomodoroAnalyticsLogs, timerEndMainActionLabel } from "./pomodoro-view-model";
 import { storage } from "../../lib/storage";
 import cx from "../../lib/cx";
 import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
   BracesIcon,
   CalendarIcon,
   CheckIcon,
@@ -85,211 +51,10 @@ type Panel =
   | "automation"
   | "settings";
 
-type Action =
-  | { type: "replace"; state: PomodoroState }
-  | { type: "tick"; now: number }
-  | { type: "set-intention"; value: string }
-  | { type: "set-category"; id: string }
-  | { type: "start"; now: number; intention?: string; categoryId?: string; minutes?: number }
-  | { type: "pause"; now: number }
-  | { type: "resume"; now: number }
-  | { type: "finish"; now: number; mood?: Mood; notes?: string }
-  | { type: "end-main-action"; now: number; mood?: Mood; notes?: string }
-  | { type: "break"; now: number; minutes?: number }
-  | { type: "abandon"; now: number }
-  | { type: "undo"; now: number }
-  | { type: "adjust"; now: number; delta: number }
-  | { type: "settings"; patch: Partial<PomodoroSettings> }
-  | { type: "category-add"; name: string }
-  | { type: "category-update"; category: PomodoroCategory }
-  | { type: "category-archive"; id: string }
-  | { type: "task-add"; title: string; source?: PomodoroTask["source"] }
-  | { type: "tasks-import"; text: string }
-  | { type: "task-toggle"; id: string }
-  | { type: "task-delete"; id: string }
-  | { type: "task-start"; task: PomodoroTask; now: number }
-  | { type: "task-estimate"; id: string; value: number }
-  | { type: "schedule-add"; now: number; title: string; categoryId: string; startTime: string; durationMinutes: number }
-  | { type: "schedule-start"; now: number; id: string }
-  | { type: "schedule-delete"; now: number; id: string }
-  | { type: "note"; value: string }
-  | { type: "selected-date"; value: string }
-  | { type: "notes-only"; value: boolean }
-  | { type: "report-filter"; value: PomodoroState["reportFilter"] }
-  | { type: "report-range"; value: PomodoroReportRange }
-  | { type: "mini"; value: boolean }
-  | { type: "notice"; now: number; title: string; detail: string }
-  | { type: "shortcut"; shortcut: PomodoroShortcut; now: number; intention?: string }
-  | { type: "url-command"; command: PomodoroUrlCommand; now: number; intention?: string; categoryId?: string }
-  | { type: "tracker-add"; now: number; appName: string; windowTitle: string; categoryId: string; intention: string }
-  | { type: "tracker-delete"; now: number; id: string }
-  | { type: "tracker-test"; now: number; appName: string; windowTitle: string }
-  | { type: "notification-test"; now: number; kind: "ending-soon" | "presence" | "overflow" }
-  | { type: "sound-test"; now: number; slot: PomodoroSoundSlot };
-
 const STORE_KEY = "pomodoro.sessionParity.v1";
-const COLORS = ["#ef5b5b", "#73a6ff", "#f1b85b", "#8bd196", "#c89cff", "#e98fb1", "#7ed7d1"];
-const SOUND_OPTIONS = ["Clock Ticking", "Ocean Waves", "Rain", "Brown Noise", "Kitchen Timer", "Gong", "None"];
-
-function soundFrequency(name: string): number {
-  switch (name) {
-    case "Ocean Waves":
-      return 180;
-    case "Rain":
-      return 320;
-    case "Brown Noise":
-      return 90;
-    case "Kitchen Timer":
-      return 1040;
-    case "Gong":
-      return 220;
-    case "Clock Ticking":
-    default:
-      return 880;
-  }
-}
-
-function soundWaveType(name: string): OscillatorType {
-  switch (name) {
-    case "Ocean Waves":
-    case "Gong":
-      return "sine";
-    case "Brown Noise":
-      return "sawtooth";
-    case "Rain":
-      return "square";
-    case "Clock Ticking":
-    case "Kitchen Timer":
-    default:
-      return "triangle";
-  }
-}
-
-function reducer(state: PomodoroState, action: Action): PomodoroState {
-  switch (action.type) {
-    case "replace":
-      return action.state;
-    case "tick":
-      return tickPomodoro(state, action.now);
-    case "set-intention":
-      return { ...state, intentionDraft: action.value };
-    case "set-category":
-      return { ...state, categoryId: action.id };
-    case "start":
-      return startFocus(state, action.now, action.intention, action.categoryId, action.minutes);
-    case "pause":
-      return pauseTimer(state, action.now);
-    case "resume":
-      return resumeTimer(state, action.now);
-    case "finish":
-      return finishTimer(state, action.now, action.mood, action.notes);
-    case "end-main-action":
-      return runTimerEndMainAction(state, action.now, action.mood, action.notes);
-    case "break":
-      return startBreak(state, action.now, action.minutes);
-    case "abandon":
-      return abandonTimer(state, action.now);
-    case "undo":
-      return undoAbandon(state, action.now);
-    case "adjust":
-      return adjustTimerMinutes(state, action.now, action.delta);
-    case "settings":
-      return { ...state, settings: { ...state.settings, ...action.patch } };
-    case "category-add": {
-      const name = action.name.trim();
-      if (!name) return state;
-      const category = {
-        id: `cat-${Date.now().toString(36)}`,
-        name,
-        color: COLORS[state.categories.length % COLORS.length]!,
-      };
-      return { ...state, categories: [...state.categories, category], categoryId: category.id };
-    }
-    case "category-update":
-      return {
-        ...state,
-        categories: state.categories.map((cat) => (cat.id === action.category.id ? action.category : cat)),
-      };
-    case "category-archive":
-      return {
-        ...state,
-        categories: state.categories.map((cat) => (cat.id === action.id ? { ...cat, archived: true } : cat)),
-      };
-    case "task-add": {
-      const title = action.title.trim();
-      if (!title) return state;
-      return {
-        ...state,
-        tasks: [
-          ...state.tasks,
-          {
-            id: `task-${Date.now().toString(36)}`,
-            title,
-            source: action.source ?? "manual",
-            categoryId: state.categoryId,
-            estimateMinutes: state.settings.sessionMinutes,
-            done: false,
-          },
-        ],
-      };
-    }
-    case "tasks-import":
-      return { ...state, tasks: [...state.tasks, ...parsePlainTasks(action.text, state.categoryId)] };
-    case "task-toggle":
-      return {
-        ...state,
-        tasks: state.tasks.map((task) => (task.id === action.id ? { ...task, done: !task.done } : task)),
-      };
-    case "task-delete":
-      return { ...state, tasks: state.tasks.filter((task) => task.id !== action.id) };
-    case "task-start":
-      return startFocus(state, action.now, action.task.title, action.task.categoryId, action.task.estimateMinutes);
-    case "task-estimate":
-      return updateTaskEstimate(state, action.id, action.value);
-    case "schedule-add":
-      return addScheduleItem(state, action.now, action.title, action.categoryId, action.startTime, action.durationMinutes);
-    case "schedule-start":
-      return startScheduleItem(state, action.now, action.id);
-    case "schedule-delete":
-      return removeScheduleItem(state, action.now, action.id);
-    case "note":
-      return state.active ? { ...state, active: { ...state.active, notes: action.value } } : state;
-    case "selected-date":
-      return { ...state, selectedDate: action.value };
-    case "notes-only":
-      return { ...state, notesOnly: action.value };
-    case "report-filter":
-      return { ...state, reportFilter: action.value };
-    case "report-range":
-      return { ...state, reportRange: action.value };
-    case "mini":
-      return { ...state, miniPlayerOpen: action.value };
-    case "notice":
-      return {
-        ...state,
-        notices: [{ id: `notice-${action.now}`, at: action.now, title: action.title, detail: action.detail }, ...state.notices].slice(0, 8),
-      };
-    case "shortcut":
-      return runPomodoroShortcut(state, action.shortcut, action.now, action.intention);
-    case "url-command":
-      return runPomodoroUrlCommand(state, action.command, action.now, action.intention, action.categoryId);
-    case "tracker-add":
-      return addWindowTrackerRule(state, action.now, action.appName, action.windowTitle, action.categoryId, action.intention);
-    case "tracker-delete":
-      return removeWindowTrackerRule(state, action.now, action.id);
-    case "tracker-test":
-      return testWindowTracker(state, action.now, action.appName, action.windowTitle);
-    case "notification-test":
-      return testNotificationProfile(state, action.now, action.kind);
-    case "sound-test":
-      return testSoundProfile(state, action.now, action.slot);
-    default:
-      return state;
-  }
-}
 
 export function PomodoroView() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => {
+  const [state, dispatch] = useReducer(pomodoroReducer, undefined, () => {
     const saved = storage.get<PomodoroState>(STORE_KEY);
     return saved ?? defaultPomodoroState();
   });
@@ -311,7 +76,7 @@ export function PomodoroView() {
   useEffect(() => {
     if (urlCommandApplied.current) return;
     urlCommandApplied.current = true;
-    const parsed = parseUrlCommand(window.location);
+    const parsed = parsePomodoroUrlCommand(window.location);
     if (parsed) dispatch({ type: "url-command", now: Date.now(), ...parsed });
   }, []);
 
@@ -348,8 +113,8 @@ export function PomodoroView() {
       ctx.close().catch(() => undefined);
       return;
     }
-    osc.type = soundWaveType(soundName);
-    osc.frequency.value = soundFrequency(soundName);
+    osc.type = pomodoroSoundWaveType(soundName);
+    osc.frequency.value = pomodoroSoundFrequency(soundName);
     gain.gain.value = state.active.mode === "break" ? state.settings.breakVolume * 0.04 : state.settings.sessionVolume * 0.04;
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -370,8 +135,8 @@ export function PomodoroView() {
   ]);
 
   const activeCategory = state.categories.find((cat) => cat.id === state.categoryId) ?? state.categories[0]!;
-  const visibleLogs = useMemo(() => filterLogs(state.logs, state), [state.logs, state.selectedDate, state.notesOnly, state.reportFilter, state.reportRange]);
-  const analyticsLogs = useMemo(() => state.logs.filter((log) => !log.abandoned && logInReportRange(log, state)), [state.logs, state.selectedDate, state.reportRange]);
+  const visibleLogs = useMemo(() => filterPomodoroLogs(state.logs, state), [state.logs, state.selectedDate, state.notesOnly, state.reportFilter, state.reportRange]);
+  const analyticsLogs = useMemo(() => pomodoroAnalyticsLogs(state), [state.logs, state.selectedDate, state.reportRange]);
   const activeBlockers = currentBlockers(state);
 
   return (
@@ -608,7 +373,7 @@ function TimerPanel({
           <StatsGrid state={state} />
           <Card title="Active blockers" action={`${activeBlockers.length} active`}>
             {activeBlockers.length === 0 ? (
-              <EmptyText>No website, app, or Slack blocker is active for this timer state.</EmptyText>
+              <EmptyText>No website, app, or team-chat blocker is active for this timer state.</EmptyText>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {activeBlockers.map((entry) => <span key={entry} className="chip">{entry}</span>)}
@@ -633,86 +398,12 @@ function TimerPanel({
   );
 }
 
-function AnalyticsPanel({
-  state,
-  dispatch,
-  visibleLogs,
-  analyticsLogs,
-}: {
-  state: PomodoroState;
-  dispatch: React.Dispatch<Action>;
-  visibleLogs: PomodoroLog[];
-  analyticsLogs: PomodoroLog[];
-}) {
-  const csv = exportLogsCsv(state);
-  const rangeLabel = reportRangeLabel(state);
-  return (
-    <section className="h-full overflow-auto thin-scroll p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[18px] font-bold">Analytics</div>
-          <div className="text-[12px] text-[var(--color-fg-secondary)]">Daily, weekly and monthly totals, category distribution, mood split, notes and exports.</div>
-        </div>
-        <div className="flex gap-2">
-          <DownloadButton filename="session-export.csv" data={csv} label="CSV" mime="text/csv" />
-          <DownloadButton filename="session-export.json" data={JSON.stringify(state.logs, null, 2)} label="JSON" mime="application/json" />
-        </div>
-      </div>
-      <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <div className="space-y-4">
-          <DayHeader state={state} dispatch={dispatch} />
-          <StatsGrid state={state} logs={analyticsLogs} />
-          <Card title="Category distribution" action={rangeLabel}>
-            <Distribution state={state} logs={analyticsLogs} />
-          </Card>
-          <Card title="Mood" action={rangeLabel}>
-            <MoodDistribution logs={visibleLogs} />
-          </Card>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <select
-              value={state.reportRange ?? "day"}
-              onChange={(event) => dispatch({ type: "report-range", value: event.target.value as PomodoroReportRange })}
-              className="h-8 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-[12px]"
-            >
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
-            </select>
-            <label className="flex items-center gap-2 text-[12px] text-[var(--color-fg-secondary)]">
-              <input type="checkbox" checked={state.notesOnly} onChange={(event) => dispatch({ type: "notes-only", value: event.target.checked })} />
-              Show notes only
-            </label>
-            <select
-              value={state.reportFilter}
-              onChange={(event) => dispatch({ type: "report-filter", value: event.target.value as PomodoroState["reportFilter"] })}
-              className="h-8 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-card)] px-2 text-[12px]"
-            >
-              <option value="all">All</option>
-              <option value="focus">Focus</option>
-              <option value="break">Break</option>
-              <option value="notes">Notes</option>
-            </select>
-          </div>
-          <Card title="Timeline" action={`${rangeLabel} / ${visibleLogs.length} rows`}>
-            <div className="space-y-2">
-              {visibleLogs.map((log) => <LogRow key={log.id} log={log} state={state} />)}
-              {visibleLogs.length === 0 && <EmptyText>No sessions match this range/filter.</EmptyText>}
-            </div>
-          </Card>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function TasksPanel({ state, dispatch }: { state: PomodoroState; dispatch: React.Dispatch<Action> }) {
   const [title, setTitle] = useState("");
   const [bulk, setBulk] = useState("");
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="To Do" subtitle="Local equivalent of Session 3 To Do, Apple Reminders, Things, Linear and plain-text imports." />
+      <Header title="To Do" subtitle="Local task planning with plain-text imports and local-only session notes." />
       <div className="mt-5 grid grid-cols-[380px_1fr] gap-4">
         <Card title="Add task" action="Today">
           <div className="flex gap-2">
@@ -723,8 +414,8 @@ function TasksPanel({ state, dispatch }: { state: PomodoroState; dispatch: React
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton icon={<ListChecksIcon size={14} />} label="Import plain text" onClick={() => { dispatch({ type: "tasks-import", text: bulk }); setBulk(""); }} />
             <ActionButton icon={<ZapIcon size={14} />} label="Simulate Reminders sync" onClick={() => dispatch({ type: "task-add", title: "Reminder: review focus plan", source: "reminders" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Things import" onClick={() => dispatch({ type: "task-add", title: "Things: prepare focus list", source: "things" })} />
-            <ActionButton icon={<ZapIcon size={14} />} label="Linear import" onClick={() => dispatch({ type: "task-add", title: "Linear: ship Pomodoro parity", source: "linear" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label="Task import" onClick={() => dispatch({ type: "task-add", title: "Prepare focus list", source: "things" })} />
+            <ActionButton icon={<ZapIcon size={14} />} label="Issue import" onClick={() => dispatch({ type: "task-add", title: "Ship Pomodoro parity", source: "linear" })} />
           </div>
         </Card>
         <Card title="Today" action={`${state.tasks.filter((task) => !task.done).length} open`}>
@@ -844,14 +535,14 @@ function ProfilesPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
 function BlockersPanel({ state, dispatch, activeBlockers }: { state: PomodoroState; dispatch: React.Dispatch<Action>; activeBlockers: string[] }) {
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
-      <Header title="Blockers" subtitle="Local, in-app equivalents for Session website, app and Slack blockers. No OS or browser permissions are changed." />
+      <Header title="Blockers" subtitle="Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed." />
       <div className="mt-5 grid grid-cols-[1fr_1fr] gap-4">
-        <WebsiteBlockerCard title="Session website blocker" rule={state.settings.sessionWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { sessionWebBlocker: rule } })} />
+        <WebsiteBlockerCard title="Website blocker" rule={state.settings.sessionWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { sessionWebBlocker: rule } })} />
         <WebsiteBlockerCard title="Break website blocker" rule={state.settings.breakWebBlocker} onChange={(rule) => dispatch({ type: "settings", patch: { breakWebBlocker: rule } })} />
         <AppBlockerCard title="Session app blocker" enabled={state.settings.sessionAppBlocker.enabled} apps={state.settings.sessionAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { sessionAppBlocker: { enabled, apps } } })} />
         <AppBlockerCard title="Break app blocker" enabled={state.settings.breakAppBlocker.enabled} apps={state.settings.breakAppBlocker.apps} onChange={(enabled, apps) => dispatch({ type: "settings", patch: { breakAppBlocker: { enabled, apps } } })} />
-        <Card title="Slack blocker" action="Teams">
-          <Toggle label="Mute selected Slack teams" checked={state.settings.slackBlockerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { slackBlockerEnabled: v } })} />
+        <Card title="Team chat blocker" action="Teams">
+          <Toggle label="Mute selected chat teams" checked={state.settings.slackBlockerEnabled} onChange={(v) => dispatch({ type: "settings", patch: { slackBlockerEnabled: v } })} />
           <textarea value={state.settings.slackTeams.join("\n")} onChange={(e) => dispatch({ type: "settings", patch: { slackTeams: e.target.value.split(/\r?\n/).filter(Boolean) } })} className="field mt-3 min-h-[120px] w-full p-3" placeholder="Team name per line" />
         </Card>
         <Card title="Currently enforced in app" action={`${activeBlockers.length}`}>
@@ -1015,22 +706,6 @@ function ScheduleRow({ item, state, dispatch }: { item: PomodoroScheduleItem; st
   );
 }
 
-function timerEndMainActionLabel(state: PomodoroState): string {
-  const activeKind = state.active?.kind ?? (state.active?.mode === "break" ? "break" : "focus");
-  if (activeKind === "break") {
-    return state.settings.breakMainAction === "start-session" ? "Start Session" : "Save Break";
-  }
-  switch (state.settings.sessionMainAction) {
-    case "break":
-      return "Take Break";
-    case "idle":
-      return "Save";
-    case "restart":
-    default:
-      return "Repeat";
-  }
-}
-
 function SettingsPanel({ state, dispatch }: { state: PomodoroState; dispatch: React.Dispatch<Action> }) {
   return (
     <section className="h-full overflow-auto thin-scroll p-6">
@@ -1045,13 +720,13 @@ function SettingsPanel({ state, dispatch }: { state: PomodoroState; dispatch: Re
         </Card>
         <Card title="Background sound" action={state.settings.backgroundSoundEnabled ? "On" : "Off"}>
           <Toggle label="Play background sound" checked={state.settings.backgroundSoundEnabled} onChange={(v) => dispatch({ type: "settings", patch: { backgroundSoundEnabled: v } })} />
-          <SelectRow label="Session sound" value={state.settings.sessionSound} options={SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionSound: v } })} />
+          <SelectRow label="Session sound" value={state.settings.sessionSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionSound: v } })} />
           <RangeRow label="Session volume" value={state.settings.sessionVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionVolume: v } })} />
-          <SelectRow label="Session end sound" value={state.settings.sessionEndSound} options={SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndSound: v } })} />
+          <SelectRow label="Session end sound" value={state.settings.sessionEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndSound: v } })} />
           <RangeRow label="Session end volume" value={state.settings.sessionEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { sessionEndVolume: v } })} />
-          <SelectRow label="Break sound" value={state.settings.breakSound} options={SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakSound: v } })} />
+          <SelectRow label="Break sound" value={state.settings.breakSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakSound: v } })} />
           <RangeRow label="Break volume" value={state.settings.breakVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakVolume: v } })} />
-          <SelectRow label="Break end sound" value={state.settings.breakEndSound} options={SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakEndSound: v } })} />
+          <SelectRow label="Break end sound" value={state.settings.breakEndSound} options={POMODORO_SOUND_OPTIONS} onChange={(v) => dispatch({ type: "settings", patch: { breakEndSound: v } })} />
           <RangeRow label="Break end volume" value={state.settings.breakEndVolume} onChange={(v) => dispatch({ type: "settings", patch: { breakEndVolume: v } })} />
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton icon={<ZapIcon size={14} />} label="Preview session" onClick={() => dispatch({ type: "sound-test", now: Date.now(), slot: "session" })} />
@@ -1115,146 +790,6 @@ function Card({ title, action, children }: { title: string; action?: string; chi
         {action && <div className="text-[11px] text-[var(--color-fg-secondary)]">{action}</div>}
       </div>
       {children}
-    </div>
-  );
-}
-
-function DayHeader({ state, dispatch }: { state: PomodoroState; dispatch: React.Dispatch<Action> }) {
-  const selected = new Date(`${state.selectedDate}T12:00:00`);
-  const shift = (days: number) => {
-    const next = new Date(selected);
-    next.setDate(selected.getDate() + days);
-    dispatch({ type: "selected-date", value: dateKey(next) });
-  };
-  return (
-    <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-card)] p-4">
-      <div className="flex items-center justify-between">
-        <button className="icon-btn" onClick={() => shift(-1)} aria-label="Previous day"><ArrowLeftIcon size={14} /></button>
-        <div className="text-center">
-          <div className="text-[13px] font-bold">{state.selectedDate === dateKey(Date.now()) ? "Today" : state.selectedDate}</div>
-          <div className="text-[11px] text-[var(--color-fg-secondary)]">{selected.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
-        </div>
-        <button className="icon-btn" onClick={() => shift(1)} aria-label="Next day"><ArrowRightIcon size={14} /></button>
-      </div>
-    </div>
-  );
-}
-
-function StatsGrid({ state, logs }: { state: PomodoroState; logs?: PomodoroLog[] }) {
-  const rangeLogs = logs ?? state.logs.filter((log) => sameDay(log.startAt, state.selectedDate) && !log.abandoned);
-  const focus = logs ? rangeLogs.filter((log) => log.kind === "focus").reduce((sum, log) => sum + log.durationSec, 0) : totalFocusSeconds(state, state.selectedDate);
-  const breaks = logs ? rangeLogs.filter((log) => log.kind === "break").reduce((sum, log) => sum + log.durationSec, 0) : totalBreakSeconds(state, state.selectedDate);
-  const focused = rangeLogs.filter((log) => log.mood === "focused").length;
-  const neutral = rangeLogs.filter((log) => log.mood === "neutral").length;
-  const distracted = rangeLogs.filter((log) => log.mood === "distracted").length;
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      <Stat label="Total focus" value={formatDuration(focus)} />
-      <Stat label="Total break" value={formatDuration(breaks)} />
-      <Stat label="Focus/break" value={`${Math.round(focus / 60)}/${Math.max(1, Math.round(breaks / 60))}`} />
-      <Stat label="Focused" value={`${focused}`} />
-      <Stat label="Neutral" value={`${neutral}`} />
-      <Stat label="Distracted" value={`${distracted}`} />
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[10px] border border-[var(--color-border)] bg-[var(--color-card)] p-3">
-      <div className="text-[18px] font-bold">{value}</div>
-      <div className="text-[11px] uppercase text-[var(--color-fg-secondary)]">{label}</div>
-    </div>
-  );
-}
-
-function Timeline({ state, large }: { state: PomodoroState; large?: boolean }) {
-  const logs = state.logs.filter((log) => sameDay(log.startAt, state.selectedDate) && !log.abandoned);
-  const scheduleItems = scheduledItemsForDate(state, state.selectedDate);
-  const projected = state.active && sameDay(state.active.startAt, state.selectedDate) ? state.active : null;
-  return (
-    <Card title="Timeline" action={large ? "Day view" : "Current day"}>
-      <div className={cx("relative overflow-hidden rounded-[8px] border border-[var(--color-border-subtle)] bg-[rgba(0,0,0,0.18)]", large ? "h-[560px]" : "h-[220px]")}>
-        {Array.from({ length: 9 }, (_, i) => i + 9).map((hour) => (
-          <div key={hour} className="absolute left-0 right-0 border-t border-[rgba(255,255,255,0.06)]" style={{ top: `${((hour - 9) / 9) * 100}%` }}>
-            <span className="ml-2 text-[10px] text-[var(--color-fg-tertiary)]">{hour}:00</span>
-          </div>
-        ))}
-        {scheduleItems.map((item) => <TimelineScheduleBlock key={item.id} item={item} state={state} />)}
-        {logs.map((log) => <TimelineBlock key={log.id} log={log} state={state} />)}
-        {projected && (
-          <div className="absolute left-[58%] w-[32%] rounded-[6px] border border-[rgba(239,91,91,0.55)] bg-[rgba(239,91,91,0.22)]" style={{ top: `${timeTop(projected.startAt)}%`, height: `${Math.max(6, projected.totalSec / 324)}%` }} />
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function TimelineScheduleBlock({ item, state }: { item: PomodoroScheduleItem; state: PomodoroState }) {
-  const category = state.categories.find((cat) => cat.id === item.categoryId);
-  return (
-    <div
-      className="absolute left-[58%] w-[32%] rounded-[6px] border border-[rgba(255,255,255,0.28)] px-2 py-1 text-[10px] text-white"
-      style={{
-        top: `${scheduleTop(item.startMinutes)}%`,
-        height: `${Math.max(6, item.durationMinutes / 5.4)}%`,
-        background: category?.color ? `${category.color}55` : "rgba(255,255,255,0.12)",
-      }}
-    >
-      <div className="truncate">{item.title}</div>
-    </div>
-  );
-}
-
-function TimelineBlock({ log, state }: { log: PomodoroLog; state: PomodoroState }) {
-  const category = state.categories.find((cat) => cat.id === log.categoryId);
-  return (
-    <div className="absolute left-[14%] w-[38%] rounded-[6px] px-2 py-1 text-[10px] text-white" style={{ top: `${timeTop(log.startAt)}%`, height: `${Math.max(6, log.durationSec / 324)}%`, background: category?.color ?? "#666" }}>
-      <div className="truncate">{log.kind === "break" ? "Break" : log.intention || "Focus"}</div>
-    </div>
-  );
-}
-
-function Distribution({ state, logs }: { state: PomodoroState; logs?: PomodoroLog[] }) {
-  const focusLogs = (logs ?? state.logs.filter((log) => sameDay(log.startAt, state.selectedDate) && !log.abandoned)).filter((log) => log.kind === "focus");
-  const total = focusLogs.reduce((sum, log) => sum + log.durationSec, 0);
-  return (
-    <div className="space-y-2">
-      {state.categories.map((cat) => {
-        const sec = focusLogs.filter((log) => log.categoryId === cat.id).reduce((sum, log) => sum + log.durationSec, 0);
-        if (!sec) return null;
-        return (
-          <div key={cat.id}>
-            <div className="flex justify-between text-[12px]"><span>{cat.name}</span><span>{formatDuration(sec)}</span></div>
-            <div className="mt-1 h-1.5 rounded-full bg-[rgba(255,255,255,0.08)]"><div className="h-full rounded-full" style={{ width: `${(sec / Math.max(1, total)) * 100}%`, background: cat.color }} /></div>
-          </div>
-        );
-      })}
-      {total === 0 && <EmptyText>No focus distribution yet.</EmptyText>}
-    </div>
-  );
-}
-
-function MoodDistribution({ logs }: { logs: PomodoroLog[] }) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {(["focused", "neutral", "distracted"] as Mood[]).map((mood) => <Stat key={mood} label={mood} value={`${logs.filter((log) => log.mood === mood).length}`} />)}
-    </div>
-  );
-}
-
-function LogRow({ log, state }: { log: PomodoroLog; state: PomodoroState }) {
-  const category = state.categories.find((cat) => cat.id === log.categoryId);
-  return (
-    <div className="rounded-[8px] bg-[rgba(255,255,255,0.035)] p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-[13px]">{log.kind === "break" ? "Break" : log.intention || "Focus"}</div>
-          <div className="text-[11px] text-[var(--color-fg-secondary)]">{category?.name ?? "No category"} / {formatDuration(log.durationSec)} / pauses {formatDuration(log.pausesSec)}</div>
-        </div>
-        <span className="chip">{log.mood ?? log.kind}</span>
-      </div>
-      {log.notes && <div className="mt-2 text-[12px] text-[var(--color-fg-secondary)]">{log.notes}</div>}
     </div>
   );
 }
@@ -1335,10 +870,6 @@ function PrimaryButton({ icon, label, onClick, className }: { icon: React.ReactN
   );
 }
 
-function DownloadButton({ filename, data, label, mime }: { filename: string; data: string; label: string; mime: string }) {
-  return <ActionButton icon={<DownloadIcon size={14} />} label={label} onClick={() => download(filename, data, mime)} />;
-}
-
 function CodeLine({ value }: { value: string }) {
   return <div className="mb-2 rounded-[8px] bg-black p-2 font-mono text-[11px] text-[var(--color-fg-secondary)]">{value}</div>;
 }
@@ -1349,46 +880,6 @@ function RuleText({ text }: { text: string }) {
 
 function EmptyText({ children }: { children: React.ReactNode }) {
   return <div className="text-[12px] text-[var(--color-fg-secondary)]">{children}</div>;
-}
-
-function filterLogs(logs: PomodoroLog[], state: PomodoroState): PomodoroLog[] {
-  return logs
-    .filter((log) => !log.abandoned && logInReportRange(log, state))
-    .filter((log) => !state.notesOnly || !!log.notes)
-    .filter((log) => {
-      if (state.reportFilter === "all") return true;
-      if (state.reportFilter === "notes") return !!log.notes;
-      return log.kind === state.reportFilter;
-    })
-    .sort((a, b) => b.startAt - a.startAt);
-}
-
-function parseUrlCommand(location: Location): { command: PomodoroUrlCommand; intention?: string; categoryId?: string } | null {
-  const params = new URLSearchParams(location.search);
-  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
-  const raw = params.get("session") ?? params.get("sessionAction") ?? hash.get("session") ?? hash.get("sessionAction");
-  if (!raw || !isUrlCommand(raw)) return null;
-  return {
-    command: raw,
-    intention: params.get("intention") ?? hash.get("intention") ?? undefined,
-    categoryId: params.get("category") ?? hash.get("category") ?? undefined,
-  };
-}
-
-function isUrlCommand(value: string): value is PomodoroUrlCommand {
-  return value === "start" || value === "pause" || value === "finish" || value === "break" || value === "abandon" || value === "status";
-}
-
-function timeTop(timestamp: number): number {
-  const date = new Date(timestamp);
-  const minutes = date.getHours() * 60 + date.getMinutes();
-  return scheduleTop(minutes);
-}
-
-function scheduleTop(minutes: number): number {
-  const start = 9 * 60;
-  const end = 18 * 60;
-  return Math.max(0, Math.min(100, ((minutes - start) / (end - start)) * 100));
 }
 
 function download(filename: string, data: string, mime: string) {

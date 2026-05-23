@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   abandonTimer,
   addScheduleItem,
@@ -28,6 +28,18 @@ import {
   undoAbandon,
   updateTaskEstimate,
 } from "../../src/screens/pomodoro/pomodoro-model";
+import { pomodoroReducer } from "../../src/screens/pomodoro/pomodoro-reducer";
+import {
+  POMODORO_SOUND_OPTIONS,
+  pomodoroSoundFrequency,
+  pomodoroSoundWaveType,
+} from "../../src/screens/pomodoro/pomodoro-sound";
+import {
+  filterPomodoroLogs,
+  parsePomodoroUrlCommand,
+  pomodoroAnalyticsLogs,
+  timerEndMainActionLabel,
+} from "../../src/screens/pomodoro/pomodoro-view-model";
 
 describe("pomodoro model", () => {
   it("starts, pauses, resumes and saves focus time", () => {
@@ -141,6 +153,24 @@ describe("pomodoro model", () => {
     expect(formatClock(65)).toBe("1:05");
   });
 
+  it("keeps extracted sound profiles equivalent to the view helpers", () => {
+    expect(POMODORO_SOUND_OPTIONS).toEqual([
+      "Clock Ticking",
+      "Ocean Waves",
+      "Rain",
+      "Brown Noise",
+      "Kitchen Timer",
+      "Gong",
+      "None",
+    ]);
+    expect(pomodoroSoundFrequency("Ocean Waves")).toBe(180);
+    expect(pomodoroSoundFrequency("Kitchen Timer")).toBe(1040);
+    expect(pomodoroSoundFrequency("Unknown")).toBe(880);
+    expect(pomodoroSoundWaveType("Gong")).toBe("sine");
+    expect(pomodoroSoundWaveType("Brown Noise")).toBe("sawtooth");
+    expect(pomodoroSoundWaveType("Unknown")).toBe("triangle");
+  });
+
   it("starts tasks with their edited estimate", () => {
     const now = Date.UTC(2026, 4, 12, 11, 30, 0);
     let state = defaultPomodoroState(now);
@@ -198,6 +228,122 @@ describe("pomodoro model", () => {
     state = runPomodoroShortcut(state, "Take a break", now + 180_000);
     expect(state.logs.at(-1)?.intention).toBe("Updated shortcut");
     expect(state.active?.mode).toBe("break");
+  });
+
+  it("keeps reducer actions equivalent to their model helpers", () => {
+    const now = Date.UTC(2026, 4, 12, 13, 30, 0);
+    const base = defaultPomodoroState(now);
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.123456);
+    try {
+      expect(pomodoroReducer(base, { type: "start", now, intention: "Reducer focus", categoryId: "general", minutes: 15 })).toEqual(
+        startFocus(base, now, "Reducer focus", "general", 15),
+      );
+
+      const active = startFocus(base, now, "Reducer focus", "general", 15);
+      expect(pomodoroReducer(active, { type: "adjust", now: now + 60_000, delta: 5 })).toEqual(
+        adjustTimerMinutes(active, now + 60_000, 5),
+      );
+      expect(pomodoroReducer(active, { type: "shortcut", shortcut: "Current status", now: now + 2_000 })).toEqual(
+        runPomodoroShortcut(active, "Current status", now + 2_000),
+      );
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("keeps extracted view-model log filtering equivalent to the view rules", () => {
+    const now = Date.UTC(2026, 4, 12, 13, 45, 0);
+    const state = defaultPomodoroState(now);
+    state.logs = [
+      {
+        id: "older-focus",
+        kind: "focus",
+        intention: "Older",
+        categoryId: "general",
+        startAt: new Date("2026-05-12T09:00:00").getTime(),
+        endAt: new Date("2026-05-12T09:25:00").getTime(),
+        durationSec: 25 * 60,
+        pausesSec: 0,
+        notes: "has notes",
+      },
+      {
+        id: "newer-break",
+        kind: "break",
+        intention: "Break",
+        categoryId: "general",
+        startAt: new Date("2026-05-12T10:00:00").getTime(),
+        endAt: new Date("2026-05-12T10:05:00").getTime(),
+        durationSec: 5 * 60,
+        pausesSec: 0,
+      },
+      {
+        id: "abandoned",
+        kind: "focus",
+        intention: "Abandoned",
+        categoryId: "general",
+        startAt: new Date("2026-05-12T11:00:00").getTime(),
+        endAt: new Date("2026-05-12T11:05:00").getTime(),
+        durationSec: 5 * 60,
+        pausesSec: 0,
+        abandoned: true,
+      },
+      {
+        id: "other-day",
+        kind: "focus",
+        intention: "Other day",
+        categoryId: "general",
+        startAt: new Date("2026-05-11T09:00:00").getTime(),
+        endAt: new Date("2026-05-11T09:25:00").getTime(),
+        durationSec: 25 * 60,
+        pausesSec: 0,
+      },
+    ];
+
+    expect(filterPomodoroLogs(state.logs, state).map((log) => log.id)).toEqual(["newer-break", "older-focus"]);
+    expect(pomodoroAnalyticsLogs(state).map((log) => log.id)).toEqual(["older-focus", "newer-break"]);
+
+    state.notesOnly = true;
+    expect(filterPomodoroLogs(state.logs, state).map((log) => log.id)).toEqual(["older-focus"]);
+
+    state.notesOnly = false;
+    state.reportFilter = "break";
+    expect(filterPomodoroLogs(state.logs, state).map((log) => log.id)).toEqual(["newer-break"]);
+  });
+
+  it("keeps extracted view-model URL parsing and timer labels equivalent", () => {
+    expect(parsePomodoroUrlCommand({ search: "?session=start&intention=Plan&category=deep-work", hash: "" })).toEqual({
+      command: "start",
+      intention: "Plan",
+      categoryId: "deep-work",
+    });
+    expect(parsePomodoroUrlCommand({ search: "", hash: "#sessionAction=pause&intention=Hash" })).toEqual({
+      command: "pause",
+      intention: "Hash",
+      categoryId: undefined,
+    });
+    expect(parsePomodoroUrlCommand({ search: "?session=unknown", hash: "" })).toBeNull();
+
+    const state = defaultPomodoroState(Date.UTC(2026, 4, 12, 14, 0, 0));
+    expect(timerEndMainActionLabel(state)).toBe("Repeat");
+    state.settings.sessionMainAction = "break";
+    expect(timerEndMainActionLabel(state)).toBe("Take Break");
+    state.active = {
+      mode: "ended",
+      kind: "break",
+      intention: "Break",
+      categoryId: "general",
+      startAt: Date.UTC(2026, 4, 12, 14, 0, 0),
+      endAt: Date.UTC(2026, 4, 12, 14, 5, 0),
+      totalSec: 5 * 60,
+      remainingSec: 0,
+      pausesSec: 0,
+      noticesSent: [],
+      notes: "",
+    };
+    state.settings.breakMainAction = "idle";
+    expect(timerEndMainActionLabel(state)).toBe("Save Break");
+    state.settings.breakMainAction = "start-session";
+    expect(timerEndMainActionLabel(state)).toBe("Start Session");
   });
 
   it("runs local URL scheme commands against the timer state", () => {
