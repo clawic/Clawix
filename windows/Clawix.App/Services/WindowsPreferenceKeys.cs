@@ -19,4 +19,7 @@ public static class WindowsPreferenceKeys
     public const string ModelTemperature = "model.temperature";
     public const string ModelMaxOutputTokens = "model.maxOutputTokens";
     public const string ModelStreamByTokens = "model.streamByTokens";
+    public const string McpServers = "mcp.servers";
+    public const string McpAutoStartServers = "mcp.autoStartServers";
+    public const string McpRequestTimeoutSeconds = "mcp.requestTimeoutSeconds";
 }

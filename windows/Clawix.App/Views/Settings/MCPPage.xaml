@@ -8,14 +8,21 @@
       <TextBlock Text="MCP servers" FontSize="22" FontWeight="SemiBold" />
       <TextBlock Opacity="0.7" Text="Model Context Protocol servers extend Codex with custom tools." TextWrapping="Wrap" />
       <ListView x:Name="ServerList" />
+      <TextBlock x:Name="McpStatusText" Opacity="0.7" TextWrapping="Wrap" />
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button Content="Add server" Style="{ThemeResource AccentButtonStyle}" />
+        <Button Content="Add server" Style="{ThemeResource AccentButtonStyle}" Click="AddServer_Click" />
         <Button Content="Edit config.toml" Click="OpenConfig_Click" />
       </StackPanel>
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
-          <ToggleSwitch Header="Auto-start MCP servers" />
-          <NumberBox Header="MCP request timeout (s)" Value="30" />
+          <ToggleSwitch x:Name="AutoStartSwitch"
+                        Header="Auto-start MCP servers"
+                        Toggled="AutoStartSwitch_Toggled" />
+          <NumberBox x:Name="RequestTimeoutBox"
+                     Header="MCP request timeout (s)"
+                     Minimum="1"
+                     Maximum="3600"
+                     ValueChanged="RequestTimeoutBox_ValueChanged" />
         </StackPanel>
       </Expander>
     </StackPanel>
