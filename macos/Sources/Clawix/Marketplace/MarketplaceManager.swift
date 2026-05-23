@@ -123,7 +123,7 @@ final class MarketplaceManager: ObservableObject {
         } catch is CancellationError {
         } catch {
             guard isCurrentRefresh(generation) else { return }
-            state = .error(error.localizedDescription)
+            state = .error(Self.failureMessage(for: error, surface: "marketplace.refresh"))
         }
         finishRefreshIfCurrent(generation)
     }
@@ -164,7 +164,7 @@ final class MarketplaceManager: ObservableObject {
             return
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
-            state = .error(error.localizedDescription)
+            state = .error(Self.failureMessage(for: error, surface: "marketplace.markRead"))
             finishActionIfCurrent(key: key, generation: generation)
         }
     }
@@ -192,11 +192,16 @@ final class MarketplaceManager: ObservableObject {
             return
         } catch {
             guard isCurrentAction(key: key, generation: generation) else { return }
-            state = .error(error.localizedDescription)
+            state = .error(Self.failureMessage(for: error, surface: "marketplace.intent.updateStatus"))
             finishActionIfCurrent(key: key, generation: generation)
             return
         }
         await refresh()
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     private func nextRefreshGeneration() -> Int {

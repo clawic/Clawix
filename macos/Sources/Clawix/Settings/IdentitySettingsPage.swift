@@ -10,6 +10,7 @@ struct IdentitySettingsPage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                statusSection
 
                 rootSection
                 devicesSection
@@ -46,13 +47,38 @@ struct IdentitySettingsPage: View {
         }
     }
 
+    @ViewBuilder
+    private var statusSection: some View {
+        switch manager.state {
+        case .idle:
+            EmptyView()
+        case .loading:
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text(L10n.t("Loading identity records from the marketplace index."))
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(.white.opacity(0.58))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(L10n.t("Loading identity records from the marketplace index"))
+        case .ready:
+            InfoBanner(
+                text: "Settings is read-only for identity records. Create, restore, revoke, and role-edit actions remain hidden until the marketplace exposes signed mutation routes.",
+                kind: .danger
+            )
+        case .error(let message):
+            InfoBanner(text: message, kind: .error)
+        }
+    }
+
     private var rootSection: some View {
         Section(title: "Your identity") {
             if manager.roots.isEmpty {
                 EmptyRow(
                     icon: "key",
                     title: "No identity yet",
-                    description: "Create your identity to publish offers, search, and sign matches. Backed by a recovery phrase you keep offline."
+                    description: "No local identity record was returned by the marketplace index. Creation stays hidden until a signed identity-create route is available."
                 )
             } else {
                 ForEach(manager.roots) { root in
@@ -72,7 +98,7 @@ struct IdentitySettingsPage: View {
                 EmptyRow(
                     icon: "monitor",
                     title: "No devices yet",
-                    description: "The Mac you are using is automatically registered as a device when you create your identity."
+                    description: "No trusted device records were returned. Device enrollment stays hidden until the marketplace exposes a signed registration route."
                 )
             } else {
                 ForEach(manager.devices) { device in
@@ -92,7 +118,7 @@ struct IdentitySettingsPage: View {
                 EmptyRow(
                     icon: "tag",
                     title: "No roles yet",
-                    description: "Create a role per area where you want to publish: real-estate seller, freelancer, dating, etc. Roles do not share reputation by default."
+                    description: "No role records were returned. Role creation and editing stay hidden until they write through marketplace mutation routes."
                 )
             } else {
                 ForEach(manager.roles) { role in
@@ -110,8 +136,8 @@ struct IdentitySettingsPage: View {
         Section(title: "Recovery") {
             EmptyRow(
                 icon: "shield",
-                title: "Recovery phrase",
-                description: "Your recovery phrase restores your identity on another Mac, iPhone or Android device. Keep it offline."
+                title: "Recovery",
+                description: "Recovery import and export are not exposed in Settings until secret storage, route validation, and signed restore receipts are wired."
             )
         }
     }
