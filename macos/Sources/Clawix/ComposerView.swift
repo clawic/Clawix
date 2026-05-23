@@ -49,8 +49,8 @@ struct ComposerView: View {
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
-    private let composerFill = Color(white: 0.135)
-    private let projectFill = Color(white: 0.085)
+    private let composerFill = Color.gray(light: 0.965, dark: 0.135)
+    private let projectFill = Color.gray(light: 0.93, dark: 0.085)
 
     private let composerMinContentHeight: CGFloat = 52
     private let composerMaxContentHeight: CGFloat = 412
@@ -140,6 +140,21 @@ struct ComposerView: View {
     /// clear `composer.text` and `composer.attachments` internally,
     /// so callers don't need to.
     private func dispatchSend() {
+        // While the agent is working, send queues a follow-up instead of
+        // interrupting the live turn. Queued messages dispatch
+        // automatically, oldest first, as each turn completes cleanly.
+        if queueTargetHasActiveTurn, canQueue, canSend, let chatId = queueChatId {
+            withAnimation(.easeInOut(duration: 0.20)) {
+                appState.enqueueMessage(
+                    text: composer.text,
+                    attachments: composer.attachments,
+                    forChatId: chatId
+                )
+                composer.text = ""
+                composer.attachments = []
+            }
+            return
+        }
         if let target = sideChatId {
             appState.sendMessage(forChatId: target, composer: composer)
         } else {
@@ -304,6 +319,39 @@ struct ComposerView: View {
             || !composer.attachments.isEmpty
     }
 
+    /// Chat the queue keys off: the side chat when this is a side-chat
+    /// composer, otherwise the chat under the current route.
+    private var queueChatId: UUID? {
+        sideChatId ?? currentComposerChatId
+    }
+
+    /// True when the chat this composer targets has a turn in flight, so a
+    /// send should queue a follow-up instead of starting a turn. Mirrors
+    /// `hasActiveTurn` of the target chat (not necessarily the routed one,
+    /// so a side-chat composer queues into its own chat).
+    private var queueTargetHasActiveTurn: Bool {
+        guard let chatId = queueChatId,
+              let chat = appState.chats.first(where: { $0.id == chatId }) else { return false }
+        return chat.hasActiveTurn
+    }
+
+    /// Queueing only applies to the mainstream agent flow. Local models and
+    /// remote-mesh turns don't share the completion plumbing that drains
+    /// the queue, so we leave their behavior untouched.
+    private var canQueue: Bool {
+        guard queueChatId != nil else { return false }
+        if appState.localModelName(forSelected: appState.selectedModel) != nil { return false }
+        if !appState.selectedMeshTarget.isLocal { return false }
+        return true
+    }
+
+    /// Count of follow-ups queued for the target chat. Drives the queued
+    /// rows' insert/remove animation.
+    private var queuedCount: Int {
+        guard let chatId = queueChatId else { return 0 }
+        return appState.queuedMessages[chatId]?.count ?? 0
+    }
+
     /// Default composer toolbar: + / permissions / model / mic / send.
     /// During transcription the mic button is replaced by a small spinner
     /// so the user sees that the recorded clip is being processed.
@@ -345,33 +393,33 @@ struct ComposerView: View {
                 HStack(spacing: 4) {
                     if flags.isVisible(.openCode), appState.selectedAgentRuntime == .opencode {
                         LucideIcon(.globe, size: 13)
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                             .accessibilityHidden(true)
                         Text(appState.openCodeModelSelection)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                     } else if let local = appState.localModelName(forSelected: appState.selectedModel) {
                         LucideIcon(.laptop, size: 13)
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                             .accessibilityHidden(true)
                         Text(local)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                     } else {
                         if appState.selectedSpeed == .fast {
                             LucideIcon(.zap, size: 13)
-                                .foregroundColor(Color(white: 0.92))
+                                .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                                 .accessibilityHidden(true)
                         }
                         Text(appState.selectedModel)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(white: 0.92))
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
                         Text(appState.selectedIntelligence.label)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Palette.textSecondary)
                     }
                     LucideIcon(.chevronDown, size: 13)
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Palette.textSecondary)
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
@@ -400,7 +448,7 @@ struct ComposerView: View {
                     startVoice()
                 } label: {
                     MicIcon(lineWidth: 1.5)
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .opacity(micHover ? 0.96 : 0.62)
                         .frame(width: 20, height: 20)
                         .frame(width: 28, height: 28)
@@ -414,12 +462,27 @@ struct ComposerView: View {
             }
 
             if activeTurnInChat {
+                // Type-ahead: when the agent is mid-turn and the draft has
+                // content, offer a secondary "queue" send next to Stop. The
+                // follow-up fires when the current turn finishes.
+                if queueTargetHasActiveTurn, canQueue, canSend {
+                    Button { dispatchSend() } label: {
+                        ArrowUpIcon(size: 14)
+                            .foregroundColor(Color.gray(light: 0.16, dark: 0.92))
+                            .frame(width: 30, height: 30)
+                            .background(Circle().fill(Color.overlay(0.14)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Queue message")
+                    .hoverHint(L10n.t("Send when the current response finishes"))
+                    .transition(.opacity)
+                }
                 Button { appState.interruptActiveTurn() } label: {
                     StopSquircle()
-                        .fill(Color(white: 0.06))
+                        .fill(Palette.background)
                         .frame(width: 14, height: 14)
                         .frame(width: 30, height: 30)
-                        .background(Circle().fill(Color.white))
+                        .background(Circle().fill(Palette.textPrimary))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Stop response")
@@ -427,9 +490,9 @@ struct ComposerView: View {
             } else {
                 Button { dispatchSend() } label: {
                     ArrowUpIcon(size: 14)
-                        .foregroundColor(canSend ? Color(white: 0.06) : Color.white.opacity(0.55))
+                        .foregroundColor(canSend ? Palette.background : Color.overlay(0.55))
                         .frame(width: 30, height: 30)
-                        .background(Circle().fill(canSend ? Color.white : Color.white.opacity(0.14)))
+                        .background(Circle().fill(canSend ? Palette.textPrimary : Color.overlay(0.14)))
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend)
@@ -456,7 +519,7 @@ struct ComposerView: View {
 
             Text(dictation.formattedElapsed)
                 .font(BodyFont.system(size: 12.5, design: .monospaced))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.30, dark: 0.78))
                 .monospacedDigit()
                 .padding(.horizontal, 2)
 
@@ -464,10 +527,10 @@ struct ComposerView: View {
                 stopAndAppendTranscription()
             } label: {
                 StopSquircle()
-                    .fill(Color(white: 0.92))
+                    .fill(Color.gray(light: 0.16, dark: 0.92))
                     .frame(width: 13, height: 13)
                     .frame(width: 28, height: 28)
-                    .background(Circle().fill(Color(white: 0.22)))
+                    .background(Circle().fill(Color.gray(light: 0.85, dark: 0.22)))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Stop recording")
@@ -477,9 +540,9 @@ struct ComposerView: View {
                 stopAndSend()
             } label: {
                 ArrowUpIcon(size: 14)
-                    .foregroundColor(Color(white: 0.06))
+                    .foregroundColor(Palette.background)
                     .frame(width: 30, height: 30)
-                    .background(Circle().fill(Color.white))
+                    .background(Circle().fill(Palette.textPrimary))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Send voice note")
@@ -493,11 +556,11 @@ struct ComposerView: View {
             addMenuOpen.toggle()
         } label: {
             PlusIcon(size: 24, lineWidth: 1.3)
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .opacity(active ? 0.96 : 0.62)
                 .frame(width: 30, height: 30)
                 .background(
-                    Circle().fill(Color.white.opacity(active ? 0.08 : 0.0))
+                    Circle().fill(Color.overlay(active ? 0.08 : 0.0))
                 )
                 .contentShape(Rectangle())
         }
@@ -536,7 +599,7 @@ struct ComposerView: View {
                     ))
                 } else {
                     LucideIcon.auto(appState.permissionMode.iconName, size: 13)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .transition(.opacity)
                 }
             }
@@ -579,12 +642,12 @@ struct ComposerView: View {
                     .lineLimit(1)
             }
             .fixedSize(horizontal: true, vertical: false)
-            .foregroundColor(Color(red: 0.62, green: 0.78, blue: 0.95))
+            .foregroundColor(Color.dynamic(light: Color(red: 0.20, green: 0.42, blue: 0.82), dark: Color(red: 0.62, green: 0.78, blue: 0.95)))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(red: 0.62, green: 0.78, blue: 0.95).opacity(0.10))
+                    .fill(Color.dynamic(light: Color(red: 0.20, green: 0.42, blue: 0.82), dark: Color(red: 0.62, green: 0.78, blue: 0.95)).opacity(0.10))
             )
             .contentShape(Rectangle())
         }
@@ -808,6 +871,21 @@ struct ComposerView: View {
     private var mainComposerStack: some View {
         VStack(spacing: -projectOverlap) {
             VStack(spacing: 0) {
+                if let chatId = queueChatId,
+                   let queued = appState.queuedMessages[chatId], !queued.isEmpty {
+                    QueuedMessagesRow(
+                        messages: queued,
+                        onRemove: { id in
+                            withAnimation(.easeInOut(duration: 0.20)) {
+                                appState.removeQueuedMessage(id: id, forChatId: chatId)
+                            }
+                        }
+                    )
+                    .padding(.horizontal, 9)
+                    .padding(.top, 9)
+                    .transition(.opacity)
+                }
+
                 if !composer.attachments.isEmpty {
                     ComposerAttachmentRow(
                         attachments: composer.attachments,
@@ -826,7 +904,7 @@ struct ComposerView: View {
                     if composer.text.isEmpty {
                         Text(placeholderText)
                             .font(BodyFont.system(size: 13, wght: 500))
-                            .foregroundColor(Color(white: 0.42))
+                            .foregroundColor(Color.gray(light: 0.52, dark: 0.42))
                             .padding(.horizontal, 13)
                             .padding(.top, 13)
                             .allowsHitTesting(false)
@@ -867,6 +945,7 @@ struct ComposerView: View {
                     .fill(composerFill)
             )
             .animation(.easeInOut(duration: 0.20), value: composer.attachments)
+            .animation(.easeInOut(duration: 0.20), value: queuedCount)
             .zIndex(1)
 
             if !chatMode {
@@ -881,7 +960,7 @@ struct ComposerView: View {
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                             LucideIcon(.chevronDown, size: 11)
                         }
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Palette.textSecondary)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Project picker")

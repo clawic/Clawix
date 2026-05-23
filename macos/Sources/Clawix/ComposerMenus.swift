@@ -288,11 +288,11 @@ struct ContextRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.07), lineWidth: 2.0)
+                .stroke(Color.overlay(0.07), lineWidth: 2.0)
             Circle()
                 .trim(from: 0, to: max(0.02, min(1.0, fraction)))
                 .stroke(
-                    Color(white: 0.92),
+                    Color.gray(light: 0.14, dark: 0.92),
                     style: StrokeStyle(lineWidth: 2.0, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -308,7 +308,7 @@ struct ContextTooltip: View {
         VStack(alignment: .center, spacing: 6) {
             Text("Context window:")
                 .font(BodyFont.system(size: 11.5, weight: .light))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
@@ -316,7 +316,7 @@ struct ContextTooltip: View {
             if usage.contextWindow != nil {
                 Text(percentLine)
                     .font(BodyFont.system(size: 12, weight: .light))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -324,14 +324,14 @@ struct ContextTooltip: View {
 
             Text(tokensLine)
                 .font(BodyFont.system(size: 12, weight: .light))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Clawix automatically compacts its context")
                 .font(BodyFont.system(size: 11.5, weight: .regular))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
@@ -638,7 +638,7 @@ struct ModelMenuPopup: View {
                 }
                 Text("Images use a visible fallback when the model cannot read them.")
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Color.gray(light: 0.43, dark: 0.58))
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -1093,9 +1093,9 @@ struct CompactMenuToggle: View {
     var body: some View {
         ZStack(alignment: .leading) {
             Capsule()
-                .fill(isOn ? Color(white: 0.92) : Color(white: 0.30))
+                .fill(isOn ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.85, dark: 0.30))
             Circle()
-                .fill(isOn ? Color(white: 0.18) : Color(white: 0.96))
+                .fill(isOn ? Color.gray(light: 0.905, dark: 0.18) : Color.gray(light: 0.10, dark: 0.96))
                 .frame(width: knobSize, height: knobSize)
                 .offset(x: isOn ? trackWidth - knobSize - knobInset : knobInset)
         }

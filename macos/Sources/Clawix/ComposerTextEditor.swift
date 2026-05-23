@@ -145,11 +145,11 @@ struct TranscribingSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(white: 0.28),
+                .stroke(Color.gray(light: 0.86, dark: 0.28),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
             Circle()
                 .trim(from: 0.0, to: 0.79)
-                .stroke(Color(white: 0.75),
+                .stroke(Color.gray(light: 0.28, dark: 0.75),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
                 .rotationEffect(.degrees(rotation))
         }
@@ -359,8 +359,8 @@ struct ComposerTextEditor: NSViewRepresentable, Equatable {
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.font = .systemFont(ofSize: 13)
-        textView.textColor = NSColor.white
-        textView.insertionPointColor = NSColor.white
+        textView.textColor = NSColor.dynamicGray(light: 0.12, dark: 1.0)
+        textView.insertionPointColor = NSColor.dynamicGray(light: 0.12, dark: 1.0)
         textView.allowsUndo = true
         textView.isRichText = false
         textView.usesFontPanel = false

@@ -286,5 +286,16 @@ extension AppState {
         // the freshly-arrived reply at a glance.
         syncLegacyChatFromStore(chatId: chatId)
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: lastMessage.id)
+
+        // A clean completion is the moment to release the next queued
+        // follow-up (type-ahead). Hop to the next runloop tick so the
+        // completion state fully settles before a new turn starts. We only
+        // drain on natural completion: interrupts and errors leave the
+        // queue intact so the user stays in control.
+        if queuedMessages[chatId] != nil {
+            Task { @MainActor [weak self] in
+                self?.dispatchNextQueuedMessage(forChatId: chatId)
+            }
+        }
     }
 }

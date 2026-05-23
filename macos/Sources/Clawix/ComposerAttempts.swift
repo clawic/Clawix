@@ -49,13 +49,13 @@ struct AttemptsSelector: View {
             ))
                 .font(BodyFont.system(size: 11.5, wght: 600))
                 .monospacedDigit()
-                .foregroundColor(active ? Palette.pastelBlue : Color.white.opacity(hovering ? 0.7 : 0.45))
+                .foregroundColor(active ? Palette.pastelBlue : Color.overlay(hovering ? 0.7 : 0.45))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(active ? Palette.pastelBlue.opacity(0.10)
-                                     : Color.white.opacity(hovering ? 0.06 : 0.0))
+                                     : Color.overlay(hovering ? 0.06 : 0.0))
                 )
                 .contentShape(Rectangle())
         }
