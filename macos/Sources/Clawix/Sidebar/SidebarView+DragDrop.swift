@@ -11,7 +11,7 @@ struct ChatDropTarget<Content: View>: View {
         content()
             .overlay(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(isTargeted ? Color(white: 0.30) : Color.clear)
+                    .fill(isTargeted ? Color.gray(light: 0.85, dark: 0.30) : Color.clear)
                     .allowsHitTesting(false)
             )
             .animation(.easeOut(duration: 0.10), value: isTargeted)
@@ -741,17 +741,17 @@ struct DragChipView: View {
     var body: some View {
         HStack(spacing: 10) {
             PinIcon(size: 12.5)
-                .foregroundColor(Color(white: 0.5))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.5))
                 .frame(width: 14, height: 14)
             Text(chat.title.isEmpty
                  ? String(localized: "Conversation", bundle: AppLocale.packageBundle)
                  : chat.title)
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: 0.82))
+                .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
                 .lineLimit(1)
             Spacer(minLength: 8)
             ArchiveIcon(size: 14.5)
-                .foregroundColor(Color(white: 0.5))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.5))
                 .frame(width: 14, height: 14)
                 .padding(.trailing, 2)
         }
@@ -761,7 +761,7 @@ struct DragChipView: View {
         .background(
             ZStack {
                 VisualEffectBlur(material: .sidebar, blendingMode: .behindWindow)
-                Color.white.opacity(0.035)
+                Color.overlay(0.035)
             }
             .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         )
@@ -780,11 +780,11 @@ struct ProjectDragChipView: View {
     var body: some View {
         HStack(spacing: 8) {
             FolderMorphIcon(size: 14.5, progress: 0, lineWidthScale: 1.027)
-                .foregroundColor(Color(white: 0.5))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.5))
                 .frame(width: 15, height: 15)
             Text(project.name)
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: 0.82))
+                .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
                 .lineLimit(1)
             Spacer(minLength: 8)
         }
@@ -794,7 +794,7 @@ struct ProjectDragChipView: View {
         .background(
             ZStack {
                 VisualEffectBlur(material: .sidebar, blendingMode: .behindWindow)
-                Color.white.opacity(0.035)
+                Color.overlay(0.035)
             }
             .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         )

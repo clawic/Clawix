@@ -48,12 +48,12 @@ struct SidebarButton: View {
                 if let shortcut {
                     Text(shortcut)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.78))
+                        .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
                         .background(
                             Capsule()
-                                .fill(Color(white: 0.32))
+                                .fill(Color.gray(light: 0.84, dark: 0.32))
                         )
                         .opacity(hovered ? 1 : 0)
                 }
@@ -76,19 +76,19 @@ struct SidebarButton: View {
 
     private var iconColor: Color {
         if isSelected { return .white }
-        return Color(white: hovered ? 0.92 : 0.78)
+        return (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78))
     }
 
     private var labelColor: Color {
-        isSelected ? .white : Color(white: 0.92)
+        isSelected ? .white : Color.gray(light: 0.14, dark: 0.92)
     }
 
     private var backgroundFill: Color {
         // Sidebar tabs (selected and hover) both use white-opacity so the
         // full-row glow stays soft; user preference outweighs the
         // wallpaper-tint side effect here.
-        if isSelected { return Color.white.opacity(0.06) }
-        if hovered    { return Color.white.opacity(0.035) }
+        if isSelected { return Color.overlay(0.06) }
+        if hovered    { return Color.overlay(0.035) }
         return .clear
     }
 }
@@ -205,7 +205,7 @@ struct SectionDisclosureChevron: View {
 
     var body: some View {
         LucideIcon(.chevronRight, size: 10)
-            .foregroundColor(Color(white: 0.78))
+            .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
             .frame(width: 14, height: 14, alignment: .center)
             .rotationEffect(.degrees(expanded ? 90 : 0))
             .animation(SidebarSection.chevronRotation, value: expanded)
@@ -245,16 +245,16 @@ struct CollapsibleSectionLabel: View {
     /// recede into a dim title so the rows below stand out.
     private var labelColor: Color {
         if expanded {
-            return Color(white: hovered ? 0.78 : 0.55)
+            return (hovered ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55))
         }
-        return Color(white: hovered ? 0.96 : 0.92)
+        return (hovered ? Color.gray(light: 0.10, dark: 0.96) : Color.gray(light: 0.14, dark: 0.92))
     }
 
     private var iconColor: Color {
         if expanded {
-            return Color(white: hovered ? 0.78 : 0.55)
+            return (hovered ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55))
         }
-        return Color(white: hovered ? 0.92 : 0.78)
+        return (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78))
     }
 
     var body: some View {
@@ -382,9 +382,9 @@ struct SectionTitleHairline: View {
         // endpoint stays alpha-0 because a hairline that disappears must
         // fade somewhere; the fade is local to the tail third while the
         // first ~70% nearest the word renders as a true solid line.
-        let solid = Color(white: 0.42)
-        let mid = Color(white: 0.36)
-        let clear = Color.white.opacity(0)
+        let solid = Color.gray(light: 0.52, dark: 0.42)
+        let mid = Color.gray(light: 0.56, dark: 0.36)
+        let clear = Color.overlay(0)
         let stops: [Gradient.Stop] = anchor == .trailing
             ? [
                 .init(color: clear, location: 0.0),
@@ -417,7 +417,7 @@ struct HeaderHoverIcon<Label: View>: View {
     @State private var hovered = false
 
     private var color: Color {
-        hovered ? Color(white: 0.96) : Color(white: 0.6)
+        hovered ? Color.gray(light: 0.10, dark: 0.96) : Color.gray(light: 0.42, dark: 0.6)
     }
 
     var body: some View {
@@ -550,7 +550,7 @@ struct RecentChatRow: View, Equatable {
                 } else {
                     Text(ageLabel)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
                         .frame(minWidth: 28, alignment: .trailing)
@@ -570,7 +570,7 @@ struct RecentChatRow: View, Equatable {
                 // on the glyph.
                 Button(action: callbacks.onArchive) {
                     ArchiveIcon(size: 15.5)
-                        .foregroundColor(archiveHovered ? Color(white: 0.94) : Color(white: 0.5))
+                        .foregroundColor(archiveHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.5))
                         .frame(width: 28, height: 22)
                         .contentShape(Rectangle())
                 }
@@ -592,7 +592,7 @@ struct RecentChatRow: View, Equatable {
             leadingIconView
             Text(verbatim: title)
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(isSelected ? .white : Color(white: 0.82))
+                .foregroundColor(isSelected ? .white : Color.gray(light: 0.23, dark: 0.82))
                 .lineLimit(1)
             Spacer(minLength: 8)
             trailingStatusView
@@ -671,18 +671,18 @@ struct RecentChatRow: View, Equatable {
         case .pin:
             pinToggleButton(
                 visible: true,
-                color: pinHovered ? .white : Color(white: 0.5),
+                color: pinHovered ? .white : Color.gray(light: 0.46, dark: 0.5),
                 help: L10n.t("Unpin")
             )
         case .pinOnHover:
             pinToggleButton(
                 visible: hovered,
-                color: pinHovered ? Color(white: 0.94) : Color(white: 0.5),
+                color: pinHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.5),
                 help: L10n.t("Pin")
             )
         case .bubble:
             LucideIcon(.messageCircle, size: 11)
-                .foregroundColor(Color(white: 0.58))
+                .foregroundColor(Color.gray(light: 0.43, dark: 0.58))
                 .frame(width: 14, height: 14)
         case .unarchive:
             unarchiveButton()
@@ -738,8 +738,8 @@ struct RecentChatRow: View, Equatable {
     private var rowBackground: Color {
         // Both selected and hover use white-opacity so the chat-row glow
         // stays soft and consistent with the rest of the sidebar tabs.
-        if isSelected { return Color.white.opacity(0.05) }
-        if hovered && !suppressHoverStyling { return Color.white.opacity(0.035) }
+        if isSelected { return Color.overlay(0.05) }
+        if hovered && !suppressHoverStyling { return Color.overlay(0.035) }
         return .clear
     }
 
@@ -754,11 +754,11 @@ struct SidebarChatRowSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(white: 0.28),
+                .stroke(Color.gray(light: 0.86, dark: 0.28),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
             Circle()
                 .trim(from: 0.0, to: 0.79)
-                .stroke(Color(white: 0.75),
+                .stroke(Color.gray(light: 0.28, dark: 0.75),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
                 .rotationEffect(.degrees(rotation))
         }

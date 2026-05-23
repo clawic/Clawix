@@ -195,7 +195,7 @@ struct SidebarView: View {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             Text(UserFacingEmptyState.pinnedChatsFiltered.message)
                                 .font(BodyFont.system(size: 13.5, wght: 500))
-                                .foregroundColor(Color(white: 0.40))
+                                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                                 .padding(.leading, 34)
                                 .padding(.vertical, 4)
                             Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
@@ -241,7 +241,7 @@ struct SidebarView: View {
                                       ? UserFacingEmptyState.chatsFiltered
                                       : UserFacingEmptyState.chats).message)
                                     .font(BodyFont.system(size: 13.5, wght: 500))
-                                    .foregroundColor(Color(white: 0.40))
+                                    .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                                     .padding(.leading, 34)
                                     .padding(.vertical, 4)
                             } else {
@@ -589,7 +589,7 @@ struct SidebarView: View {
                             }
                             Text(sidebarStore.snapshot.archivedLoading ? "Loading…" : "No archived chats")
                                 .font(BodyFont.system(size: 13.5, wght: 500))
-                                .foregroundColor(Color(white: 0.40))
+                                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                         }
                         .padding(.leading, 34)
                         .padding(.vertical, 4)
@@ -647,7 +647,7 @@ struct SidebarView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(UserFacingEmptyState.tools.message)
                     .font(BodyFont.system(size: 13.5, wght: 500))
-                    .foregroundColor(Color(white: 0.40))
+                    .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                     .padding(.leading, 34)
                     .padding(.vertical, 4)
                 Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
@@ -1010,13 +1010,13 @@ struct SidebarView: View {
                 HStack(spacing: 0) {
                     if let leadingIcon {
                         leadingIcon
-                            .foregroundColor(Color(white: 0.78))
+                            .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                             .frame(width: 15, height: 15, alignment: .center)
                             .padding(.trailing, 11)
                     }
                     Text(title)
                         .font(BodyFont.system(size: 13.5, wght: 500))
-                        .foregroundColor(Color(white: 0.92))
+                        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                 }
                 Spacer()
             }

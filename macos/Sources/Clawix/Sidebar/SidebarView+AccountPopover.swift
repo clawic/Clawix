@@ -12,10 +12,10 @@ struct SettingsBottomButton: View {
             HStack(spacing: 11) {
                 SettingsIcon(size: 16)
                     .frame(width: 15)
-                    .foregroundColor(open ? .white : Color(white: hovered ? 0.92 : 0.78))
+                    .foregroundColor(open ? .white : (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78)))
                 Text("Settings")
                     .font(BodyFont.system(size: 13.5, wght: 500))
-                    .foregroundColor(open ? .white : Color(white: 0.92))
+                    .foregroundColor(open ? .white : Color.gray(light: 0.14, dark: 0.92))
                 Spacer()
             }
             .padding(.horizontal, 10)
@@ -37,8 +37,8 @@ struct SettingsBottomButton: View {
         // full-row glow stays soft; the wallpaper-tint side effect is
         // accepted here because the user prefers the look to a stable
         // solid gray.
-        if open    { return Color.white.opacity(0.06) }
-        if hovered { return Color.white.opacity(0.035) }
+        if open    { return Color.overlay(0.06) }
+        if hovered { return Color.overlay(0.035) }
         return .clear
     }
 }

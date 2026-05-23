@@ -100,17 +100,17 @@ struct ProjectAccordion: View, Equatable {
                 // `RecentChatRow` uses `.onTapGesture` for selection.
                 HStack(spacing: 8) {
                     FolderMorphIcon(size: 14.5, progress: expanded ? 1 : 0, lineWidthScale: 1.027)
-                        .foregroundColor(Color(white: 0.5))
+                        .foregroundColor(Color.gray(light: 0.46, dark: 0.5))
                         .frame(width: 15, height: 15)
                         .animation(.easeOut(duration: 0.28), value: expanded)
                     Text(project.name)
                         .font(BodyFont.system(size: 13.5, wght: 500))
-                        .foregroundColor(Color(white: 0.94))
+                        .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                         .lineLimit(1)
                     if let label = project.folderState.label {
                         Text(label)
                             .font(BodyFont.system(size: 10.5, wght: 600))
-                            .foregroundColor(Color(white: 0.48))
+                            .foregroundColor(Color.gray(light: 0.50, dark: 0.48))
                             .lineLimit(1)
                     }
                     Spacer(minLength: 6)
@@ -132,7 +132,7 @@ struct ProjectAccordion: View, Equatable {
                 // disappears.
                 Button(action: onMenuToggle) {
                     LucideIcon(.ellipsis, size: 13)
-                        .foregroundColor(menuHovered || menuOpen ? Color(white: 0.94) : Color(white: 0.55))
+                        .foregroundColor(menuHovered || menuOpen ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.45, dark: 0.55))
                         .frame(width: 26, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -151,7 +151,7 @@ struct ProjectAccordion: View, Equatable {
                 // exactly on the strokes.
                 Button(action: onNewChat) {
                     ComposeIcon()
-                        .stroke(newChatHovered ? Color(white: 0.94) : Color(white: 0.50),
+                        .stroke(newChatHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.50),
                                 style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round))
                         .frame(width: 12.2, height: 12.2)
                         .frame(width: 28, height: 28)
@@ -165,7 +165,7 @@ struct ProjectAccordion: View, Equatable {
             .frame(height: 35)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(hovered || menuOpen ? Color.white.opacity(0.04) : Color.clear)
+                    .fill(hovered || menuOpen ? Color.overlay(0.04) : Color.clear)
             )
             .padding(.trailing, 3)
             .sidebarHover { hovered = $0 }
@@ -203,7 +203,7 @@ struct ProjectAccordion: View, Equatable {
                     if chats.isEmpty {
                         Text(UserFacingEmptyState.chats.message)
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(white: 0.40))
+                            .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                             .padding(.leading, 30)
                             .padding(.vertical, 4)
                     }
@@ -248,7 +248,7 @@ struct ProjectAccordionFooterRow: View {
         HStack(spacing: 0) {
             Text(label)
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: hovered ? 0.78 : 0.55))
+                .foregroundColor((hovered ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55)))
             Spacer(minLength: 6)
         }
         .padding(.leading, 33)

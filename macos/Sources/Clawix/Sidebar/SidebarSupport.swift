@@ -15,20 +15,20 @@ struct RescueRepairSidebarButton: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(summary.title)
                         .font(BodyFont.system(size: 13.5, wght: 500))
-                        .foregroundColor(Color(white: 0.92))
+                        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     Text(summary.detail)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.64))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.64))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 6)
                 if summary.pendingCount > 0 {
                     Text("\(summary.pendingCount)")
                         .font(BodyFont.system(size: 11, wght: 600))
-                        .foregroundColor(Color(white: 0.94))
+                        .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.white.opacity(0.08)))
+                        .background(Capsule().fill(Color.overlay(0.08)))
                 }
             }
             .padding(.horizontal, 10)
@@ -36,7 +36,7 @@ struct RescueRepairSidebarButton: View {
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(hovered ? Color.white.opacity(0.035) : Color.white.opacity(0.018))
+                    .fill(hovered ? Color.overlay(0.035) : Color.overlay(0.018))
             )
         }
         .buttonStyle(.plain)
@@ -49,7 +49,7 @@ struct RescueRepairSidebarButton: View {
         case .diagnosticsOnly: return Color(red: 1.0, green: 0.60, blue: 0.38)
         case .ephemeralChat: return Color(red: 0.92, green: 0.70, blue: 0.34)
         case .degraded: return Color(red: 0.78, green: 0.78, blue: 0.78)
-        case .normal: return Color(white: 0.78)
+        case .normal: return Color.gray(light: 0.27, dark: 0.78)
         }
     }
 }
@@ -434,7 +434,7 @@ func copySidebarStringToPasteboard(_ value: String) {
 /// line they just picked up. Width is the row's measured width, padding
 /// and corner radius mirror `RecentChatRow.body`, and the background
 /// pairs the sidebar's `VisualEffectBlur` with the same hover overlay
-/// (`Color.white.opacity(0.035)`) so the chip composites against the
+/// (`Color.overlay(0.035)`) so the chip composites against the
 /// desktop the same way the row composites against the sidebar.
 /// No stroke; any extra outline shifts the perceived width away from
 /// the row underneath.
