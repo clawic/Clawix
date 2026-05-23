@@ -20,7 +20,7 @@ public sealed partial class MainWindow : Window
         ApplyThemePreference();
         ApplyBackdropPreference();
         ExtendsContentIntoTitleBar = true;
-        LoginGate.SignInRequested += OpenAccountSettings;
+        LoginGate.SignInRequested += StartBackendLogin;
         LoginGate.ContinueRequested += ShowShell;
         Activated += OnActivated;
         App.Services.Preferences.Changed += OnPreferenceChanged;
@@ -93,6 +93,19 @@ public sealed partial class MainWindow : Window
     {
         var win = new SettingsWindow("account");
         win.Activate();
+    }
+
+    private void StartBackendLogin()
+    {
+        try
+        {
+            LoginGate.SetStatus(App.Services.Auth.StartLogin());
+            OpenAccountSettings();
+        }
+        catch (Exception ex)
+        {
+            LoginGate.SetStatus($"Could not start sign-in flow: {ex.Message}");
+        }
     }
 
     private void WireSystemTray()

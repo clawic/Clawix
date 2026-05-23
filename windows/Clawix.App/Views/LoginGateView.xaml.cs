@@ -10,6 +10,8 @@ public sealed partial class LoginGateView : UserControl
     public event Action? SignInRequested;
     public event Action? ContinueRequested;
 
+    public void SetStatus(string message) => StatusText.Text = message;
+
     private void SignIn_Click(object sender, RoutedEventArgs e)
     {
         SignInRequested?.Invoke();

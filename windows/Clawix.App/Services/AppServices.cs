@@ -21,6 +21,7 @@ public sealed class AppServices
     public required AppState State { get; init; }
     public required BackgroundBridgeService Bridge { get; init; }
     public required PairingService Pairing { get; init; }
+    public required WindowsBackendAuthService Auth { get; init; }
     public required ShellService Shell { get; init; }
     public required ClipboardService Clipboard { get; init; }
     public required WindowsSecretsVaultService Secrets { get; init; }
@@ -59,6 +60,7 @@ public sealed class AppServices
             Preferences = prefs,
             Credentials = credentials,
             Pairing = pairing,
+            Auth = new WindowsBackendAuthService(),
             Bridge = bridge,
             State = state,
             Shell = new ShellService(),

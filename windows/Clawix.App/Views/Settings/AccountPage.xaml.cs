@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Text.Json;
 using Clawix.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -19,8 +17,8 @@ public sealed partial class AccountPage : Page
 
     private void RefreshAccount()
     {
-        _authPath = WindowsBackendAuthReader.DefaultAuthPath();
-        _profile = WindowsBackendAuthReader.Read(_authPath);
+        _authPath = App.Services.Auth.AuthPath;
+        _profile = App.Services.Auth.ReadProfile();
         if (_profile.IsSignedIn)
         {
             AccountInfo.Severity = InfoBarSeverity.Success;
@@ -78,9 +76,8 @@ public sealed partial class AccountPage : Page
             "The local auth file will be removed, then the backend sign-in flow will start so the runtime can issue fresh tokens.");
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
 
-        DeleteAuthFile();
+        StatusText.Text = App.Services.Auth.RotateRefreshToken();
         RefreshAccount();
-        StartLogin();
     }
 
     private async Task SignOutAsync()
@@ -89,8 +86,7 @@ public sealed partial class AccountPage : Page
         dlg.Configure("Sign out", "The local auth file will be removed from this Windows account.");
         if (await dlg.ShowAsync() != ContentDialogResult.Primary) return;
 
-        DeleteAuthFile();
-        StatusText.Text = "Signed out.";
+        StatusText.Text = App.Services.Auth.SignOut();
         RefreshAccount();
     }
 
@@ -98,13 +94,7 @@ public sealed partial class AccountPage : Page
     {
         try
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "codex",
-                Arguments = "login",
-                UseShellExecute = true,
-            });
-            StatusText.Text = "Sign-in flow started. Refresh this page after the browser flow finishes.";
+            StatusText.Text = App.Services.Auth.StartLogin();
         }
         catch (Exception ex)
         {
@@ -112,42 +102,5 @@ public sealed partial class AccountPage : Page
         }
     }
 
-    private void DeleteAuthFile()
-    {
-        try
-        {
-            if (File.Exists(_authPath))
-                File.Delete(_authPath);
-        }
-        catch (Exception ex)
-        {
-            StatusText.Text = $"Could not remove auth file: {ex.Message}";
-        }
-    }
-
-    private string TokenSummary()
-    {
-        if (!File.Exists(_authPath))
-            return "No local auth file found.";
-
-        try
-        {
-            using var doc = JsonDocument.Parse(File.ReadAllText(_authPath));
-            if (!doc.RootElement.TryGetProperty("tokens", out var tokens)
-                || tokens.ValueKind != JsonValueKind.Object)
-                return "No token object found.";
-
-            var names = tokens.EnumerateObject()
-                .Select(property => $"{property.Name}: [stored]")
-                .Order(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-            return names.Length == 0
-                ? "No tokens found."
-                : string.Join(Environment.NewLine, names);
-        }
-        catch (Exception ex)
-        {
-            return $"Could not read token metadata: {ex.Message}";
-        }
-    }
+    private string TokenSummary() => App.Services.Auth.TokenSummary();
 }
