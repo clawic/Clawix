@@ -30,7 +30,7 @@ struct IndexIcon: View {
                 path.addLine(to: end)
                 context.stroke(
                     path,
-                    with: .color(.white.opacity(0.92)),
+                    with: .color(Color.overlay(0.92)),
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
             }
@@ -40,7 +40,7 @@ struct IndexIcon: View {
             underline.addLine(to: CGPoint(x: 16.5 * scale, y: 16.4 * scale))
             context.stroke(
                 underline,
-                with: .color(.white.opacity(0.55)),
+                with: .color(Color.overlay(0.55)),
                 style: StrokeStyle(lineWidth: 1.0 * scale, lineCap: .round)
             )
         }

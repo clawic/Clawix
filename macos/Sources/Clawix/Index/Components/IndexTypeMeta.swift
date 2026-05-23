@@ -51,7 +51,7 @@ enum IndexTypeCatalog {
             typeName: typeName,
             displayName: typeName.capitalized,
             lucideName: "tag",
-            accent: Color(white: 0.66),
+            accent: Color.gray(light: 0.37, dark: 0.66),
             kind: .data
         )
     }

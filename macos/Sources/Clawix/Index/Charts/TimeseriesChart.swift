@@ -48,7 +48,7 @@ struct TimeseriesChart: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
         )
     }
 }
@@ -93,11 +93,11 @@ private struct ChartCanvas: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(formatValue(maxValue))
                             .font(BodyFont.system(size: 10, wght: 500))
-                            .foregroundColor(.white.opacity(0.45))
+                            .foregroundColor(Color.overlay(0.45))
                         Spacer()
                         Text(formatValue(minValue))
                             .font(BodyFont.system(size: 10, wght: 500))
-                            .foregroundColor(.white.opacity(0.45))
+                            .foregroundColor(Color.overlay(0.45))
                     }
                     .padding(.vertical, 2)
                     Spacer()

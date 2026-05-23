@@ -28,7 +28,7 @@ struct SearchesTabView: View {
         HStack {
             Text("\(store.searches.count) saved searches")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             Spacer()
             Button(action: onCreate) {
                 HStack(spacing: 6) {
@@ -37,8 +37,8 @@ struct SearchesTabView: View {
                         .font(BodyFont.system(size: 12, wght: 500))
                 }
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.08)))
-                .foregroundColor(.white)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.08)))
+                .foregroundColor(Palette.textPrimary)
             }
             .buttonStyle(.plain)
         }
@@ -96,16 +96,16 @@ private struct SearchRow: View {
         Button(action: onSelect) {
             HStack(alignment: .top, spacing: 12) {
                 LucideIcon.auto("magnifyingglass", size: 13)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Color.overlay(0.7))
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(search.name)
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                     if let prompt = search.promptTemplate {
                         Text(prompt)
                             .font(BodyFont.system(size: 11, wght: 400))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                             .lineLimit(2)
                     }
                 }
@@ -119,21 +119,21 @@ private struct SearchRow: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.10))
+                            .fill(Color.overlay(0.10))
                     )
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                 }
                 .buttonStyle(.plain)
 
                 Button(action: onDelete) {
                     LucideIcon.auto("trash", size: 11)
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(Color.overlay(0.4))
                         .padding(7)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(isSelected ? Color.white.opacity(0.06) : (hovered ? Color.white.opacity(0.03) : .clear))
+            .background(isSelected ? Color.overlay(0.06) : (hovered ? Color.overlay(0.03) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -165,7 +165,7 @@ private struct SearchDetailPane: View {
                         if search.criteria.isEmpty {
                             Text("(no criteria)")
                                 .font(BodyFont.system(size: 12, wght: 400))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         } else {
                             ForEach(criteriaRows, id: \.key) { row in
                                 CriterionRow(key: row.key, value: row.value)
@@ -175,7 +175,7 @@ private struct SearchDetailPane: View {
                             SectionTitle(text: "Prompt template")
                             Text(prompt)
                                 .font(BodyFont.system(size: 12, wght: 400))
-                                .foregroundColor(.white.opacity(0.82))
+                                .foregroundColor(Color.overlay(0.82))
                                 .lineSpacing(2)
                         }
                         SectionTitle(text: "Recent runs")
@@ -183,7 +183,7 @@ private struct SearchDetailPane: View {
                         if runs.isEmpty {
                             Text(L10n.t("No runs yet."))
                                 .font(BodyFont.system(size: 12, wght: 400))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         } else {
                             ForEach(runs) { run in
                                 RunSummaryRow(run: run)
@@ -196,7 +196,7 @@ private struct SearchDetailPane: View {
             } else {
                 Text("Select a search.")
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(.white.opacity(0.40))
+                    .foregroundColor(Color.overlay(0.40))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -209,7 +209,7 @@ private struct SectionTitle: View {
         Text(text.uppercased())
             .font(BodyFont.system(size: 10.5, wght: 700))
             .kerning(0.5)
-            .foregroundColor(.white.opacity(0.50))
+            .foregroundColor(Color.overlay(0.50))
     }
 }
 
@@ -220,11 +220,11 @@ private struct CriterionRow: View {
         HStack(alignment: .top, spacing: 8) {
             Text(key)
                 .font(BodyFont.system(size: 11.5, wght: 600))
-                .foregroundColor(.white.opacity(0.72))
+                .foregroundColor(Color.overlay(0.72))
                 .frame(width: 110, alignment: .leading)
             Text(stringify(value))
                 .font(BodyFont.system(size: 11.5, wght: 400))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(Color.overlay(0.85))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -255,20 +255,20 @@ struct RunSummaryRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(run.status.capitalized)
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                 Text("\(run.entitiesSeen) entities · \(run.observationsCount) obs · \(run.alertsFired) alerts")
                     .font(BodyFont.system(size: 10.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.50))
+                    .foregroundColor(Color.overlay(0.50))
             }
             Spacer()
             if let started = run.startedAt {
                 Text(started.prefix(16))
                     .font(BodyFont.system(size: 10.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundColor(Color.overlay(0.45))
             }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.03)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.03)))
     }
     private var statusColor: Color {
         switch run.status {
@@ -295,13 +295,13 @@ struct SearchEditorSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("New search")
                 .font(BodyFont.system(size: 17, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             FormField(label: "Name") {
-                TextField("", text: $name, prompt: Text("Leather shoes size 47").foregroundColor(.white.opacity(0.4)))
+                TextField("", text: $name, prompt: Text("Leather shoes size 47").foregroundColor(Color.overlay(0.4)))
                     .textFieldStyle(.plain)
                     .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
-                    .foregroundColor(.white)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
+                    .foregroundColor(Palette.textPrimary)
             }
             FormField(label: "Target type") {
                 Picker("", selection: $typeName) {
@@ -318,20 +318,20 @@ struct SearchEditorSheet: View {
             FormField(label: "Criteria (JSON)") {
                 TextEditor(text: $criteriaText)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .frame(height: 88)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
             }
             FormField(label: "Prompt template") {
                 TextEditor(text: $promptTemplate)
                     .font(.system(size: 12.5))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .frame(height: 90)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
             }
             if let error {
                 Text(error).font(BodyFont.system(size: 11.5, wght: 500)).foregroundColor(.red)
@@ -339,16 +339,16 @@ struct SearchEditorSheet: View {
             HStack {
                 Spacer()
                 Button("Cancel", action: onDismiss).buttonStyle(.plain)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(Color.overlay(0.7))
                 Button {
                     Task { await save() }
                 } label: {
                     Text(saving ? "Saving…" : "Save")
                         .font(BodyFont.system(size: 12.5, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 14).padding(.vertical, 7)
                         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.5)))
-                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
                 }
                 .buttonStyle(.plain)
                 .disabled(saving || name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -356,7 +356,7 @@ struct SearchEditorSheet: View {
         }
         .padding(20)
         .frame(width: 480)
-        .background(Color(white: 0.135))
+        .background(Color.gray(light: 0.94, dark: 0.135))
     }
 
     private func save() async {
@@ -406,7 +406,7 @@ private struct FormField<Content: View>: View {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 600))
                 .kerning(0.4)
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.overlay(0.5))
             content
         }
     }

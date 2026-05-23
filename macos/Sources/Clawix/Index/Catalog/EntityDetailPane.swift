@@ -40,13 +40,13 @@ struct EntityDetailPane: View {
 
     private var placeholder: some View {
         VStack(spacing: 8) {
-            IndexIcon(size: 36).foregroundColor(.white.opacity(0.25))
+            IndexIcon(size: 36).foregroundColor(Color.overlay(0.25))
             Text("Select an entity")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(Color.overlay(0.45))
             Text("Tap any card on the left to inspect it here.")
                 .font(BodyFont.system(size: 11, wght: 400))
-                .foregroundColor(.white.opacity(0.30))
+                .foregroundColor(Color.overlay(0.30))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
         }
@@ -77,7 +77,7 @@ struct EntityDetailPane: View {
         } else {
             ProgressView()
                 .controlSize(.small)
-                .tint(.white)
+                .tint(Palette.textPrimary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -119,22 +119,22 @@ private struct DetailHeader: View {
                         .foregroundColor(meta.accent)
                     Text(meta.displayName)
                         .font(BodyFont.system(size: 10.5, wght: 600))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                 }
                 Text(detail.entity.title ?? detail.entity.identityKey)
                     .font(BodyFont.system(size: 16, wght: 700))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                     .lineLimit(3)
                 HStack(spacing: 8) {
                     if let url = detail.entity.sourceUrl {
                         Text(URL(string: url)?.host?.replacingOccurrences(of: "www.", with: "") ?? url)
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                             .lineLimit(1)
                     }
                     Text("Last seen \(relativeTime(detail.entity.lastSeenAt))")
                         .font(BodyFont.system(size: 11, wght: 400))
-                        .foregroundColor(.white.opacity(0.40))
+                        .foregroundColor(Color.overlay(0.40))
                 }
                 if !detail.tags.isEmpty {
                     HStack(spacing: 6) {
@@ -172,7 +172,7 @@ private struct DetailHeader: View {
                 )
                 .overlay(
                     LucideIcon.auto(meta.lucideName, size: 22)
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                 )
             }
         }
@@ -186,12 +186,12 @@ private struct TagBadge: View {
     var body: some View {
         Text(tag.name)
             .font(BodyFont.system(size: 10.5, wght: 600))
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.10))
+                    .fill(Color.overlay(0.10))
             )
     }
 }
@@ -225,12 +225,12 @@ private struct DetailTabStrip: View {
                     Button { activeTab = tab } label: {
                         Text(title)
                             .font(BodyFont.system(size: 11.5, wght: tab == activeTab ? 600 : 500))
-                            .foregroundColor(tab == activeTab ? .white : .white.opacity(0.6))
+                            .foregroundColor(tab == activeTab ? .white : Color.overlay(0.6))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(tab == activeTab ? Color.white.opacity(0.10) : Color.clear)
+                                    .fill(tab == activeTab ? Color.overlay(0.10) : Color.clear)
                             )
                     }
                     .buttonStyle(.plain)
@@ -297,32 +297,32 @@ private struct ObservationsSection: View {
                     HStack {
                         Text(relativeTime(observation.observedAt))
                             .font(BodyFont.system(size: 12, wght: 600))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundColor(Color.overlay(0.85))
                         Spacer()
                         if !observation.changedFields.isEmpty {
                             Text(observation.changedFields.joined(separator: ", "))
                                 .font(BodyFont.system(size: 10.5, wght: 500))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.overlay(0.55))
                                 .lineLimit(1)
                         }
                     }
                     if let url = observation.sourceUrl {
                         Text(URL(string: url)?.host ?? url)
                             .font(BodyFont.system(size: 10.5, wght: 400))
-                            .foregroundColor(.white.opacity(0.40))
+                            .foregroundColor(Color.overlay(0.40))
                             .lineLimit(1)
                     }
                 }
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
             }
             if observations.isEmpty {
                 Text(L10n.t("No observations yet."))
                     .font(BodyFont.system(size: 12, wght: 400))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundColor(Color.overlay(0.45))
             }
         }
     }
@@ -335,21 +335,21 @@ private struct RelationsSection: View {
             if !detail.relationsFrom.isEmpty {
                 Text("This entity is linked to")
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
                 ForEach(detail.relationsFrom) { rel in
                     Text("→ \(rel.relationType) → \(rel.toEntityId)")
                         .font(BodyFont.system(size: 12, wght: 500))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                 }
             }
             if !detail.relationsTo.isEmpty {
                 Text("Pointed at by")
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
                 ForEach(detail.relationsTo) { rel in
                     Text("← \(rel.relationType) ← \(rel.fromEntityId)")
                         .font(BodyFont.system(size: 12, wght: 500))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                 }
             }
         }
@@ -365,7 +365,7 @@ private struct RawJSONSection: View {
         )).flatMap { String(data: $0, encoding: .utf8) } ?? "(failed to serialize)"
         return Text(json)
             .font(.system(size: 11, design: .monospaced))
-            .foregroundColor(.white.opacity(0.85))
+            .foregroundColor(Color.overlay(0.85))
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
@@ -386,13 +386,13 @@ private struct TimeseriesSection: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(prettyFieldName(field))
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             TimeseriesChart(points: points)
                 .frame(height: 160)
             if points.isEmpty {
                 Text(L10n.t("No history yet for this field. Run the Search again or wait for the next Monitor fire."))
                     .font(BodyFont.system(size: 11, wght: 400))
-                    .foregroundColor(.white.opacity(0.50))
+                    .foregroundColor(Color.overlay(0.50))
             }
         }
         .task(id: field) { await onLoad() }
@@ -414,9 +414,9 @@ private struct OpenSourceUrlRow: View {
             .padding(.vertical, 7)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
             )
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
         }
         .buttonStyle(.plain)
         .padding(.top, 6)
@@ -433,10 +433,10 @@ private struct EntityAttributeRow: View {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 600))
                 .kerning(0.4)
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(Color.overlay(0.45))
             Text(value)
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(.white.opacity(0.92))
+                .foregroundColor(Color.overlay(0.92))
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -448,7 +448,7 @@ private struct DescriptionBlock: View {
     var body: some View {
         Text(text)
             .font(BodyFont.system(size: 12.5, wght: 400))
-            .foregroundColor(.white.opacity(0.78))
+            .foregroundColor(Color.overlay(0.78))
             .lineSpacing(2)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -565,11 +565,11 @@ private struct Metric: View {
         VStack(spacing: 2) {
             Text(formatCount(value))
                 .font(BodyFont.system(size: 13, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             Text(label.uppercased())
                 .font(BodyFont.system(size: 9.5, wght: 600))
                 .kerning(0.3)
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(Color.overlay(0.45))
         }
     }
 }
@@ -814,17 +814,17 @@ private struct ReviewOverview: View {
                 HStack(spacing: 6) {
                     ForEach(0..<5, id: \.self) { idx in
                         LucideIcon.auto("star", size: 14)
-                            .foregroundColor(Double(idx) < rating ? Color.orange : Color.white.opacity(0.15))
+                            .foregroundColor(Double(idx) < rating ? Color.orange : Color.overlay(0.15))
                     }
                     Text(String(format: "%.1f", rating))
                         .font(BodyFont.system(size: 13, wght: 700))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                 }
             }
             if let title = entity.data["title"]?.asString {
                 Text(title)
                     .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
             }
             if let text = entity.data["content_text"]?.asString {
                 DescriptionBlock(text: text)

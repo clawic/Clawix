@@ -99,15 +99,15 @@ struct IndexEmptyState: View {
     var body: some View {
         VStack(spacing: 8) {
             LucideIcon.auto(systemImage, size: 28)
-                .foregroundColor(.white.opacity(0.30))
+                .foregroundColor(Color.overlay(0.30))
                 .frame(width: 36, height: 36)
             Text(title)
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(.white.opacity(0.68))
+                .foregroundColor(Color.overlay(0.68))
                 .fixedSize(horizontal: false, vertical: true)
             Text(description)
                 .font(BodyFont.system(size: 11, wght: 400))
-                .foregroundColor(.white.opacity(0.42))
+                .foregroundColor(Color.overlay(0.42))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: 320)
@@ -128,14 +128,14 @@ private struct IndexHeaderBar: View {
             HStack(alignment: .center, spacing: 12) {
                 HStack(spacing: 8) {
                     IndexIcon(size: 18)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(Color.overlay(0.9))
                     Text("Index")
                         .font(BodyFont.system(size: 17, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                     if store.unreadAlerts > 0 {
                         Text("\(store.unreadAlerts)")
                             .font(BodyFont.system(size: 11, wght: 600))
-                            .foregroundColor(.black)
+                            .foregroundColor(Palette.background)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
@@ -155,19 +155,19 @@ private struct IndexHeaderBar: View {
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.overlay(0.08))
                     )
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                 }
                 .buttonStyle(.plain)
 
                 Button(action: onRefresh) {
                     LucideIcon.auto("arrow.triangle.2.circlepath", size: 12)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(Color.overlay(0.7))
                         .padding(6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                 }
                 .buttonStyle(.plain)
@@ -209,10 +209,10 @@ private struct IndexLoadingView: View {
         VStack(spacing: 8) {
             ProgressView()
                 .controlSize(.regular)
-                .tint(.white.opacity(0.7))
+                .tint(Color.overlay(0.7))
             Text("Loading Index…")
                 .font(BodyFont.system(size: 12, wght: 400))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(Color.overlay(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

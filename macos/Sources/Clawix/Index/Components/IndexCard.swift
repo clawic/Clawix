@@ -36,10 +36,10 @@ struct IndexEntityCard: View {
         Button(action: onSelect) {
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
 
                 VStack(alignment: .leading, spacing: 0) {
@@ -53,17 +53,17 @@ struct IndexEntityCard: View {
                                 .foregroundColor(meta.accent)
                             Text(meta.typeName.capitalized)
                                 .font(BodyFont.system(size: 10.5, wght: 500))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.overlay(0.55))
                         }
                         Text(title)
                             .font(BodyFont.system(size: 13, wght: 600))
-                            .foregroundColor(.white.opacity(0.92))
+                            .foregroundColor(Color.overlay(0.92))
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                         if let subtitle = subtitle {
                             Text(subtitle)
                                 .font(BodyFont.system(size: 11, wght: 400))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.overlay(0.55))
                                 .lineLimit(1)
                         }
                     }
@@ -101,7 +101,7 @@ struct IndexEntityCard: View {
                 )
                 .overlay(
                     LucideIcon.auto(meta.lucideName, size: 30)
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(Color.overlay(0.6))
                 )
             }
 
@@ -116,7 +116,7 @@ struct IndexEntityCard: View {
                 if let priceLabel = priceLabel {
                     Text(priceLabel)
                         .font(BodyFont.system(size: 11.5, wght: 700))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                 }
                 if let ratingLabel = ratingLabel {
                     HStack(spacing: 3) {
@@ -124,7 +124,7 @@ struct IndexEntityCard: View {
                         Text(ratingLabel)
                             .font(BodyFont.system(size: 11.5, wght: 600))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                 }
                 Spacer()
             }

@@ -28,7 +28,7 @@ struct MonitorsTabView: View {
         HStack {
             Text("\(store.monitors.count) monitors")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
             Spacer()
             Button(action: { showCreateSheet = true }) {
                 HStack(spacing: 6) {
@@ -37,8 +37,8 @@ struct MonitorsTabView: View {
                         .font(BodyFont.system(size: 12, wght: 500))
                 }
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.08)))
-                .foregroundColor(.white)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.08)))
+                .foregroundColor(Palette.textPrimary)
             }
             .buttonStyle(.plain)
         }
@@ -99,15 +99,15 @@ private struct MonitorRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(monitor.name ?? searchName)
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                     HStack(spacing: 8) {
                         Text(monitor.cronHuman ?? monitor.cronExpr)
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(.white.opacity(0.65))
+                            .foregroundColor(Color.overlay(0.65))
                         if let next = monitor.nextFireAt {
                             Text("· next \(next.prefix(16))")
                                 .font(BodyFont.system(size: 11, wght: 400))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         }
                     }
                 }
@@ -118,14 +118,14 @@ private struct MonitorRow: View {
                         Text("Fire now")
                     }
                     .font(BodyFont.system(size: 11.5, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.white.opacity(0.10)))
+                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.overlay(0.10)))
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(isSelected ? Color.white.opacity(0.06) : (hovered ? Color.white.opacity(0.03) : .clear))
+            .background(isSelected ? Color.overlay(0.06) : (hovered ? Color.overlay(0.03) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -150,17 +150,17 @@ private struct MonitorDetailPane: View {
                         SectionTitle(text: "Schedule")
                         Text(monitor.cronHuman ?? monitor.cronExpr)
                             .font(BodyFont.system(size: 13, wght: 500))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundColor(Color.overlay(0.85))
                         if let next = monitor.nextFireAt {
                             Text("Next fire \(next)")
                                 .font(BodyFont.system(size: 11, wght: 400))
-                                .foregroundColor(.white.opacity(0.55))
+                                .foregroundColor(Color.overlay(0.55))
                         }
                         SectionTitle(text: "Alert rules")
                         if monitor.alertRules.isEmpty {
                             Text(L10n.t("No rules defined."))
                                 .font(BodyFont.system(size: 12, wght: 400))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         } else {
                             ForEach(Array(monitor.alertRules.enumerated()), id: \.offset) { _, rule in
                                 AlertRuleRow(rule: rule)
@@ -171,7 +171,7 @@ private struct MonitorDetailPane: View {
                         if runs.isEmpty {
                             Text(L10n.t("No runs yet."))
                                 .font(BodyFont.system(size: 12, wght: 400))
-                                .foregroundColor(.white.opacity(0.45))
+                                .foregroundColor(Color.overlay(0.45))
                         } else {
                             ForEach(runs) { run in
                                 RunSummaryRow(run: run)
@@ -184,7 +184,7 @@ private struct MonitorDetailPane: View {
             } else {
                 Text("Select a monitor.")
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(.white.opacity(0.40))
+                    .foregroundColor(Color.overlay(0.40))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -197,7 +197,7 @@ private struct SectionTitle: View {
         Text(text.uppercased())
             .font(BodyFont.system(size: 10.5, wght: 700))
             .kerning(0.5)
-            .foregroundColor(.white.opacity(0.50))
+            .foregroundColor(Color.overlay(0.50))
     }
 }
 
@@ -207,13 +207,13 @@ private struct AlertRuleRow: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(humanRule)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(Color.overlay(0.85))
             Text(rule.id)
                 .font(.system(size: 10.5, design: .monospaced))
-                .foregroundColor(.white.opacity(0.35))
+                .foregroundColor(Color.overlay(0.35))
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.04)))
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.04)))
     }
     private var humanRule: String {
         switch rule.when {
@@ -261,7 +261,7 @@ private struct MonitorEditorSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("New monitor")
                 .font(BodyFont.system(size: 17, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             FormField(label: "Source search") {
                 Picker("", selection: $searchId) {
                     Text("Pick a saved search").tag("")
@@ -273,44 +273,44 @@ private struct MonitorEditorSheet: View {
                 .pickerStyle(.menu)
             }
             FormField(label: "Name (optional)") {
-                TextField("", text: $name, prompt: Text("Daily wishlist price tracker").foregroundColor(.white.opacity(0.4)))
+                TextField("", text: $name, prompt: Text("Daily wishlist price tracker").foregroundColor(Color.overlay(0.4)))
                     .textFieldStyle(.plain)
                     .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
-                    .foregroundColor(.white)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
+                    .foregroundColor(Palette.textPrimary)
             }
             FormField(label: "Cron expression") {
-                TextField("", text: $cron, prompt: Text("0 9 * * *").foregroundColor(.white.opacity(0.4)))
+                TextField("", text: $cron, prompt: Text("0 9 * * *").foregroundColor(Color.overlay(0.4)))
                     .textFieldStyle(.plain)
                     .padding(8)
                     .font(.system(size: 12, design: .monospaced))
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
-                    .foregroundColor(.white)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
+                    .foregroundColor(Palette.textPrimary)
             }
             FormField(label: "Alert rules (JSON array)") {
                 TextEditor(text: $alertRulesJSON)
                     .font(.system(size: 11.5, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .frame(height: 120)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.05)))
             }
             if let error {
                 Text(error).font(BodyFont.system(size: 11.5, wght: 500)).foregroundColor(.red)
             }
             HStack {
                 Spacer()
-                Button("Cancel", action: onDismiss).buttonStyle(.plain).foregroundColor(.white.opacity(0.7))
+                Button("Cancel", action: onDismiss).buttonStyle(.plain).foregroundColor(Color.overlay(0.7))
                 Button {
                     Task { await save() }
                 } label: {
                     Text(saving ? "Saving…" : "Save")
                         .font(BodyFont.system(size: 12.5, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 14).padding(.vertical, 7)
                         .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.5)))
-                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
                 }
                 .buttonStyle(.plain)
                 .disabled(saving || searchId.isEmpty)
@@ -318,7 +318,7 @@ private struct MonitorEditorSheet: View {
         }
         .padding(20)
         .frame(width: 480)
-        .background(Color(white: 0.135))
+        .background(Color.gray(light: 0.94, dark: 0.135))
     }
 
     private func save() async {
@@ -362,7 +362,7 @@ private struct FormField<Content: View>: View {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 600))
                 .kerning(0.4)
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(Color.overlay(0.5))
             content
         }
     }

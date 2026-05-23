@@ -56,7 +56,7 @@ private struct SectionTitle: View {
         Text(text.uppercased())
             .font(BodyFont.system(size: 10.5, wght: 700))
             .kerning(0.5)
-            .foregroundColor(.white.opacity(0.50))
+            .foregroundColor(Color.overlay(0.50))
             .padding(.top, 6)
     }
 }
@@ -75,30 +75,30 @@ private struct AlertRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(headline)
                     .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                 if let summary {
                     Text(summary)
                         .font(BodyFont.system(size: 11.5, wght: 400))
-                        .foregroundColor(.white.opacity(0.60))
+                        .foregroundColor(Color.overlay(0.60))
                 }
                 if let entity {
                     Text(entity.title ?? entity.identityKey)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(0.78))
+                        .foregroundColor(Color.overlay(0.78))
                         .lineLimit(1)
                 }
                 Text(alert.ts.prefix(19))
                     .font(BodyFont.system(size: 10.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.40))
+                    .foregroundColor(Color.overlay(0.40))
             }
             Spacer()
             if let onAck {
                 Button(action: onAck) {
                     Text("Ack")
                         .font(BodyFont.system(size: 11.5, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.white.opacity(0.10)))
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.overlay(0.10)))
                 }
                 .buttonStyle(.plain)
             }
@@ -106,7 +106,7 @@ private struct AlertRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(alert.ackAt == nil ? Color.white.opacity(0.05) : Color.white.opacity(0.02))
+                .fill(alert.ackAt == nil ? Color.overlay(0.05) : Color.overlay(0.02))
         )
     }
 

@@ -77,7 +77,7 @@ private struct TypeSidebar: View {
                     lucideName: "rectangle.stack",
                     count: allTotal,
                     isSelected: store.snapshot.entityCriteria.type == nil,
-                    accent: .white.opacity(0.7)
+                    accent: Color.overlay(0.7)
                 ) {
                     store.selectTypeFilter(nil)
                 }
@@ -144,7 +144,7 @@ private struct CatalogSectionHeader: View {
         Text(title)
             .font(BodyFont.system(size: 10, wght: 600))
             .kerning(0.6)
-            .foregroundColor(.white.opacity(0.40))
+            .foregroundColor(Color.overlay(0.40))
             .padding(.top, 14)
             .padding(.bottom, 4)
             .padding(.horizontal, 10)
@@ -168,19 +168,19 @@ private struct TypeRow: View {
                     .frame(width: 18)
                 Text(title)
                     .font(BodyFont.system(size: 13, wght: isSelected ? 600 : 500))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.78))
+                    .foregroundColor(isSelected ? .white : Color.overlay(0.78))
                 Spacer()
                 if count > 0 {
                     Text("\(count)")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(Color.overlay(0.45))
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+                    .fill(isSelected ? Color.overlay(0.08) : (hovered ? Color.overlay(0.04) : .clear))
             )
             .contentShape(Rectangle())
         }
@@ -203,14 +203,14 @@ private struct TagRow: View {
                     .frame(width: 10, height: 10)
                 Text(tag.name)
                     .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.78))
+                    .foregroundColor(isSelected ? .white : Color.overlay(0.78))
                 Spacer()
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+                    .fill(isSelected ? Color.overlay(0.08) : (hovered ? Color.overlay(0.04) : .clear))
             )
             .contentShape(Rectangle())
         }
@@ -228,7 +228,7 @@ private struct TagRow: View {
                 return Color(red: r, green: g, blue: b)
             }
         }
-        return Color(white: 0.55)
+        return Color.gray(light: 0.45, dark: 0.55)
     }
 }
 
@@ -242,21 +242,21 @@ private struct CollectionRow: View {
         Button(action: onTap) {
             HStack(spacing: 10) {
                 LucideIcon.auto("square.stack.3d.up", size: 13)
-                    .foregroundColor(.white.opacity(0.70))
+                    .foregroundColor(Color.overlay(0.70))
                     .frame(width: 18)
                 Text(collection.name)
                     .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.78))
+                    .foregroundColor(isSelected ? .white : Color.overlay(0.78))
                 Spacer()
                 Text("\(collection.memberCount)")
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundColor(Color.overlay(0.45))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.04) : .clear))
+                    .fill(isSelected ? Color.overlay(0.08) : (hovered ? Color.overlay(0.04) : .clear))
             )
             .contentShape(Rectangle())
         }
@@ -274,17 +274,17 @@ private struct CatalogToolbar: View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
                 LucideIcon.auto("magnifyingglass", size: 12)
-                    .foregroundColor(.white.opacity(0.5))
-                TextField("", text: $query, prompt: Text("Search entities…").foregroundColor(.white.opacity(0.4)))
+                    .foregroundColor(Color.overlay(0.5))
+                TextField("", text: $query, prompt: Text("Search entities…").foregroundColor(Color.overlay(0.4)))
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 12.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Color.overlay(0.9))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.overlay(0.05))
             )
 
             Spacer()
@@ -393,17 +393,17 @@ private struct EntityListRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entity.title ?? entity.sourceUrl ?? entity.identityKey)
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                         .lineLimit(1)
                     HStack(spacing: 6) {
                         Text(entity.typeName.capitalized)
                             .font(BodyFont.system(size: 11, wght: 500))
                             .foregroundColor(IndexTypeCatalog.meta(for: entity.typeName).accent)
                         Text("·")
-                            .foregroundColor(.white.opacity(0.30))
+                            .foregroundColor(Color.overlay(0.30))
                         Text(domain(from: entity.sourceUrl))
                             .font(BodyFont.system(size: 11, wght: 400))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                             .lineLimit(1)
                     }
                 }
@@ -411,14 +411,14 @@ private struct EntityListRow: View {
                 if let price = entity.data["price"]?.asNumber {
                     Text(String(format: "%.2f", price))
                         .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(
                 Rectangle()
-                    .fill(isSelected ? Color.white.opacity(0.08) : (hovered ? Color.white.opacity(0.03) : .clear))
+                    .fill(isSelected ? Color.overlay(0.08) : (hovered ? Color.overlay(0.03) : .clear))
             )
             .contentShape(Rectangle())
         }
