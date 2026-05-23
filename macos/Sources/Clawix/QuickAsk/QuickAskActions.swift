@@ -171,21 +171,15 @@ enum QuickAskActions {
 
     // MARK: - Helpers
 
-    /// Path under `~/Library/Caches/Clawix-Captures/` so successive
-    /// captures don't collide and `/tmp` doesn't fill up.
+    /// Path under the QuickAsk capture cache so successive captures don't
+    /// collide and temporary storage stays out of `/tmp`.
     private static func captureFileURL(prefix: String) -> URL {
-        let dir = FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
-            .first!
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.captures, isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let stamp = Int(Date().timeIntervalSince1970)
-        return dir.appendingPathComponent("\(prefix)-\(stamp).png")
+        QuickAskCaptureRoutes.captureFileURLWithTemporaryFallback(prefix: prefix)
     }
 
     private static func runScreencapture(args: [String], completion: @escaping () -> Void) {
         let task = Process()
-        task.launchPath = "/usr/sbin/screencapture"
+        task.launchPath = ClawixCaptureToolRoutes.screencaptureCLI
         task.arguments = args
         task.terminationHandler = { _ in
             DispatchQueue.main.async { completion() }

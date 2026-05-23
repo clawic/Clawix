@@ -4,9 +4,9 @@ import AppKit
 
 /// In-line camera sheet that replaces the previous Photo Booth fallback.
 /// Presents a webcam preview, a circular shutter button, and a cancel
-/// affordance. On capture, encodes the still as PNG to a tmp URL under
-/// `~/Library/Caches/Clawix-Captures/` and hands it to the caller as an
-/// attachment URL. Dismissal without capture leaves no side effect.
+/// affordance. On capture, encodes the still as PNG to the QuickAsk capture
+/// cache and hands it to the caller as an attachment URL. Dismissal without
+/// capture leaves no side effect.
 struct QuickAskCameraSheet: View {
     @Binding var isPresented: Bool
     /// Called once with the on-disk URL of the captured PNG. Not called
@@ -200,17 +200,10 @@ private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegat
                 completion(nil)
                 return
             }
-            let dir = FileManager.default
-                .urls(for: .cachesDirectory, in: .userDomainMask)
-                .first?
-                .appendingPathComponent(ClawixPersistentSurfacePaths.components.captures, isDirectory: true)
-            guard let dir else {
+            guard let url = QuickAskCaptureRoutes.captureFileURL(prefix: "camera") else {
                 completion(nil)
                 return
             }
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let stamp = Int(Date().timeIntervalSince1970 * 1000)
-            let url = dir.appendingPathComponent("camera-\(stamp).png")
             do {
                 try png.write(to: url)
                 completion(url)

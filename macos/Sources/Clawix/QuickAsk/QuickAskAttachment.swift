@@ -16,7 +16,7 @@ struct QuickAskAttachment: Identifiable, Equatable {
     enum Kind: String, Equatable {
         /// Picked from the `+` menu's "Load file" / "Load photo" entries.
         case file
-        /// `screencapture` PNG dropped into Caches/Clawix-Captures.
+        /// `screencapture` PNG dropped into the QuickAsk capture cache.
         case screenshot
         /// In-line AVFoundation snap saved to a temp URL.
         case camera

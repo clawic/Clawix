@@ -111,7 +111,7 @@ struct ViewMenuCommands: View {
         guard let currentChatId else { return }
         let cwd = terminalStore.activeTab(for: currentChatId)?.initialCwd
             ?? appState.chat(byId: currentChatId)?.cwd
-            ?? NSHomeDirectory()
+            ?? ClawixTerminalRoutes.userHomePath()
         terminalStore.createTab(chatId: currentChatId, cwd: cwd)
         SidebarPrefs.store.set(true, forKey: ClawixPersistentSurfaceKeys.terminalPanelOpen)
     }

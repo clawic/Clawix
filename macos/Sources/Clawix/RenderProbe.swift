@@ -3,8 +3,8 @@ import ClawixCore
 
 // Diagnostic only. Tracks SwiftUI body re-evaluations and (optionally) the
 // CPU cost of expensive functions. Aggregates both into a single line per
-// window in /tmp/clawix-renders.log so it's easy to eyeball where the
-// sidebar is burning cycles.
+// window in the configured diagnostic temp log so it's easy to eyeball where
+// the sidebar is burning cycles.
 //
 // Two APIs:
 //   RenderProbe.tick("ViewName")
@@ -29,13 +29,9 @@ enum RenderProbe {
     nonisolated(unsafe) private static var windowStart = CFAbsoluteTimeGetCurrent()
     nonisolated(unsafe) private static var lastActivityAt: CFAbsoluteTime?
     private static let path: String = {
-        guard let role = Bundle.main.infoDictionary?["CLXAppRole"] as? String,
-              !role.isEmpty
-        else { return "/tmp/clawix-renders.log" }
-        let suffix = role
-            .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-            .replacingOccurrences(of: ".", with: "-")
-        return "/tmp/clawix-renders-\(suffix.isEmpty ? "aux" : suffix).log"
+        ClawixDiagnosticLogRoutes.renderProbeLogPath(
+            role: Bundle.main.infoDictionary?["CLXAppRole"] as? String
+        )
     }()
     private static let flushInterval: TimeInterval = 0.5
     private static let hitchActivityWindow: TimeInterval = 3.0

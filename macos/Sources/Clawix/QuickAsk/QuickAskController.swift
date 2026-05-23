@@ -16,8 +16,8 @@ final class QuickAskController: ObservableObject {
     private var pasteEventMonitor: Any?
 
     private let defaults = UserDefaults.standard
-    private let bottomCenterKey = "quickAsk.bottomCenter"
-    private let chatIdKey = "quickAsk.activeChatId"
+    nonisolated static let bottomCenterKey = "quickAsk.bottomCenter"
+    nonisolated static let chatIdKey = "quickAsk.activeChatId"
     private let defaultModelKey = "quickAsk.defaultModel"
 
     weak var appState: AppState?
@@ -165,7 +165,7 @@ final class QuickAskController: ObservableObject {
     static let didShowNotification = Notification.Name("QuickAskDidShow")
 
     private init() {
-        if let raw = defaults.string(forKey: chatIdKey),
+        if let raw = defaults.string(forKey: Self.chatIdKey),
            let id = UUID(uuidString: raw) {
             self.activeChatId = id
         }
@@ -224,7 +224,7 @@ final class QuickAskController: ObservableObject {
             // attachment URL — the chip's previewText becomes a
             // "Clipboard:" prelude on submit.
             let preview = String(text.prefix(80))
-            let placeholderURL = URL(fileURLWithPath: "/dev/null")
+            let placeholderURL = QuickAskCaptureRoutes.placeholderAttachmentURL()
             addAttachment(QuickAskAttachment(
                 url: placeholderURL,
                 kind: .clipboard,
@@ -499,9 +499,9 @@ final class QuickAskController: ObservableObject {
 
     private func persistActiveChat() {
         if let id = activeChatId {
-            defaults.set(id.uuidString, forKey: chatIdKey)
+            defaults.set(id.uuidString, forKey: Self.chatIdKey)
         } else {
-            defaults.removeObject(forKey: chatIdKey)
+            defaults.removeObject(forKey: Self.chatIdKey)
         }
     }
 
@@ -671,14 +671,9 @@ final class QuickAskController: ObservableObject {
     }
 
     private func persistPasteboardBytes(_ data: Data, ext: String) -> URL? {
-        let dir = FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.captures, isDirectory: true)
-        guard let dir else { return nil }
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let stamp = Int(Date().timeIntervalSince1970 * 1000)
-        let url = dir.appendingPathComponent("paste-\(stamp).\(ext)")
+        guard let url = QuickAskCaptureRoutes.captureFileURL(prefix: "paste", fileExtension: ext) else {
+            return nil
+        }
         do {
             try data.write(to: url)
             return url
@@ -811,11 +806,11 @@ final class QuickAskController: ObservableObject {
             x: frame.midX,
             y: frame.minY + Self.shadowMargin
         )
-        defaults.set(NSStringFromPoint(bottomCenter), forKey: bottomCenterKey)
+        defaults.set(NSStringFromPoint(bottomCenter), forKey: Self.bottomCenterKey)
     }
 
     private func restoreBottomCenter() -> NSPoint? {
-        if let raw = defaults.string(forKey: bottomCenterKey) {
+        if let raw = defaults.string(forKey: Self.bottomCenterKey) {
             let point = NSPointFromString(raw)
             if isPointOnAnyScreen(point) { return point }
             return nil

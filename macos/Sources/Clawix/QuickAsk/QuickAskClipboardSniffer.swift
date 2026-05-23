@@ -99,14 +99,9 @@ enum QuickAskClipboardSniffer {
     }
 
     private static func persistPasteboardBytes(_ data: Data, ext: String) -> URL? {
-        let dir = FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.captures, isDirectory: true)
-        guard let dir else { return nil }
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let stamp = Int(Date().timeIntervalSince1970 * 1000)
-        let url = dir.appendingPathComponent("clipboard-\(stamp).\(ext)")
+        guard let url = QuickAskCaptureRoutes.captureFileURL(prefix: "clipboard", fileExtension: ext) else {
+            return nil
+        }
         do {
             try data.write(to: url)
             return url
