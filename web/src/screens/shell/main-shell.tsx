@@ -9,7 +9,8 @@ import { SidebarShell } from "../../components/shell/sidebar-shell";
 import { RightSidebarShell } from "../../components/shell/right-sidebar-shell";
 import { ContentShell } from "../../components/shell/content-shell";
 import { ResizableDivider } from "../../components/shell/resizable-divider";
-import { RouteSwitcher, type AppRoute } from "../sidebar/route-switcher";
+import { RouteSwitcher } from "../sidebar/route-switcher";
+import { type AppRoute, routeEntry } from "../sidebar/route-catalog";
 import { SidebarView } from "../sidebar/sidebar-view";
 import { ChatView } from "../chat/chat-view";
 import { SettingsView } from "../settings/settings-view";
@@ -20,6 +21,7 @@ import { DatabaseView } from "../database/database-view";
 import { PomodoroView } from "../pomodoro/pomodoro-view";
 import { McpView } from "../mcp/mcp-view";
 import { LocalModelsView } from "../local-models/local-models-view";
+import { SurfaceRouteView } from "../surfaces/surface-route-view";
 import { VersionMismatchBanner } from "./version-mismatch";
 
 // Mac-side constants (ContentView.swift:4-15).
@@ -113,6 +115,7 @@ export function MainShell() {
           {route === "mcp" && <McpView />}
           {route === "local-models" && <LocalModelsView />}
           {route === "settings" && <SettingsView />}
+          {isCatalogSurfaceRoute(route) && <SurfaceRouteView entry={routeEntry(route)} />}
         </ContentShell>
 
         {rightSidebarOpen && (
@@ -132,4 +135,18 @@ export function MainShell() {
       </div>
     </div>
   );
+}
+
+function isCatalogSurfaceRoute(route: AppRoute): boolean {
+  return ![
+    "chat",
+    "projects",
+    "memory",
+    "secrets",
+    "database",
+    "pomodoro",
+    "mcp",
+    "local-models",
+    "settings",
+  ].includes(route);
 }
