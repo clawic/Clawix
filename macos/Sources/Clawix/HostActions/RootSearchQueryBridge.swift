@@ -72,6 +72,7 @@ enum RootSearchQueryBridge {
     struct ClawSearchCommandRunner {
         var run: ([String]) throws -> Data
     }
+    private static let maxSearchResponseBytes = 1_048_576
 
     static func query(
         _ rawQuery: String,
@@ -93,6 +94,10 @@ enum RootSearchQueryBridge {
         }
 
         let output = try (runner ?? defaultRunner()).run(args)
+        guard output.count <= Self.maxSearchResponseBytes else {
+            throw RootSearchQueryBridgeError.invalidResponse
+        }
+        // hot-path-ok maxBytes=1048576 reason=root search command returns one bounded results envelope
         let response = try JSONDecoder().decode(RootSearchQueryResponse.self, from: output)
         guard response.ok else { throw RootSearchQueryBridgeError.invalidResponse }
         return response
@@ -119,6 +124,10 @@ enum RootSearchQueryBridge {
             "--json",
         ]
         let output = try (runner ?? defaultRunner()).run(args)
+        guard output.count <= Self.maxSearchResponseBytes else {
+            throw RootSearchQueryBridgeError.invalidActionPlan
+        }
+        // hot-path-ok maxBytes=1048576 reason=root search action plan command returns one bounded envelope
         let response = try JSONDecoder().decode(RootSearchActionPlanResponse.self, from: output)
         guard response.ok else { throw RootSearchQueryBridgeError.invalidActionPlan }
         return response.data.plan
@@ -160,11 +169,16 @@ enum RootSearchQueryBridge {
             process.standardOutput = stdout
             process.standardError = stderr
             try process.run()
+            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            let err = stderr.fileHandleForReading.readDataToEndOfFile()
+            // hot-path-ok maxBytes=1048576 reason=root search helper command returns one bounded output envelope
             process.waitUntilExit()
 
-            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            guard data.count <= RootSearchQueryBridge.maxSearchResponseBytes,
+                  err.count <= RootSearchQueryBridge.maxSearchResponseBytes else {
+                throw RootSearchQueryBridgeError.commandFailed("Root Search query output exceeded the local size limit.")
+            }
             if process.terminationStatus != 0 {
-                let err = stderr.fileHandleForReading.readDataToEndOfFile()
                 let message = String(data: err.isEmpty ? data : err, encoding: .utf8)
                     ?? "Root Search query failed."
                 throw RootSearchQueryBridgeError.commandFailed(message)

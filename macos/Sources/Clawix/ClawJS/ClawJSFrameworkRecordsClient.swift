@@ -69,6 +69,7 @@ struct ClawJSFrameworkRecordsClient {
     private struct Envelope<T: Decodable>: Decodable {
         let data: T
     }
+    private static let maxFrameworkRecordsOutputBytes = 1_048_576
 
     static let shared = ClawJSFrameworkRecordsClient()
 
@@ -333,15 +334,31 @@ struct ClawJSFrameworkRecordsClient {
     }
 
     private static func connectionJson(_ connection: Connection, secretRef: String?) throws -> String {
-        let data = try encoder.encode(connection)
-        guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return String(data: data, encoding: .utf8) ?? "{}"
+        guard let secretRef else {
+            return try json(connection)
         }
-        if let secretRef {
-            object["secretRef"] = secretRef
+        struct ConnectionRecord: Encodable {
+            let id: String
+            let service: ConnectionService
+            let label: String
+            let scopes: [String]
+            let lastSyncAt: Date?
+            let createdAt: Date
+            let updatedAt: Date
+            let secretRef: String
+
+            init(connection: Connection, secretRef: String) {
+                self.id = connection.id
+                self.service = connection.service
+                self.label = connection.label
+                self.scopes = connection.scopes
+                self.lastSyncAt = connection.lastSyncAt
+                self.createdAt = connection.createdAt
+                self.updatedAt = connection.updatedAt
+                self.secretRef = secretRef
+            }
         }
-        let merged = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-        return String(data: merged, encoding: .utf8) ?? "{}"
+        return try json(ConnectionRecord(connection: connection, secretRef: secretRef))
     }
 
     @MainActor
@@ -364,7 +381,14 @@ struct ClawJSFrameworkRecordsClient {
         try process.run()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let err = stderr.fileHandleForReading.readDataToEndOfFile()
+        // hot-path-ok maxBytes=1048576 reason=legacy sync framework records call returns one bounded helper envelope
         process.waitUntilExit()
+        guard data.count <= Self.maxFrameworkRecordsOutputBytes,
+              err.count <= Self.maxFrameworkRecordsOutputBytes else {
+            throw NSError(domain: "ClawJSFrameworkRecordsClient", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "claw framework records output exceeded the local size limit"
+            ])
+        }
         guard process.terminationStatus == 0 else {
             let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw framework records failed"
             throw NSError(domain: "ClawJSFrameworkRecordsClient", code: Int(process.terminationStatus), userInfo: [
@@ -429,9 +453,16 @@ struct ClawJSFrameworkRecordsClient {
         try process.run()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let err = stderr.fileHandleForReading.readDataToEndOfFile()
+        // hot-path-ok maxBytes=1048576 reason=background framework records call returns one bounded helper envelope
         process.waitUntilExit()
         if cancellation.isCancelled {
             throw CancellationError()
+        }
+        guard data.count <= ClawJSFrameworkRecordsClient.maxFrameworkRecordsOutputBytes,
+              err.count <= ClawJSFrameworkRecordsClient.maxFrameworkRecordsOutputBytes else {
+            throw NSError(domain: "ClawJSFrameworkRecordsClient", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "claw framework records output exceeded the local size limit"
+            ])
         }
         guard process.terminationStatus == 0 else {
             let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw framework records failed"

@@ -28,6 +28,8 @@ final class IoTDiscoveryFeed: NSObject, ObservableObject {
     private var task: URLSessionDataTask?
     private var session: URLSession!
     private var buffer = Data()
+    private static let maxSSEBufferBytes = 1_048_576
+    private static let maxSSEEventBytes = 262_144
 
     override init() {
         super.init()
@@ -70,6 +72,8 @@ final class IoTDiscoveryFeed: NSObject, ObservableObject {
         guard envelope.type == "iot.discovery.found" else { return }
         guard let payload = envelope.payload,
               let deviceData = try? JSONSerialization.data(withJSONObject: payload["device"] ?? [:], options: []),
+              deviceData.count <= Self.maxSSEEventBytes,
+              // hot-path-ok maxBytes=262144 reason=iot discovery device payload is capped before decode
               let device = try? JSONDecoder().decode(DiscoveredDevice.self, from: deviceData) else {
             return
         }
@@ -114,6 +118,11 @@ extension IoTDiscoveryFeed: URLSessionDataDelegate {
 
     private func handleChunk(_ chunk: Data) {
         buffer.append(chunk)
+        if buffer.count > Self.maxSSEBufferBytes {
+            buffer.removeAll(keepingCapacity: false)
+            note(error: "Discovery stream event exceeded the local size limit.")
+            return
+        }
         while let range = buffer.range(of: Data("\n\n".utf8)) {
             let raw = buffer.subdata(in: 0..<range.lowerBound)
             buffer.removeSubrange(0..<range.upperBound)
@@ -139,6 +148,8 @@ extension IoTDiscoveryFeed: URLSessionDataDelegate {
         if dataLine.isEmpty {
             payload = nil
         } else if let bytes = dataLine.data(using: .utf8),
+                  bytes.count <= Self.maxSSEEventBytes,
+                  // hot-path-ok maxBytes=262144 reason=iot discovery SSE event data is capped before JSON parse
                   let json = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] {
             payload = json
         } else {

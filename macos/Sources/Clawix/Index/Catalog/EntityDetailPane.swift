@@ -839,11 +839,18 @@ private struct ReviewOverview: View {
 
 private struct GenericOverview: View {
     let entity: ClawJSIndexClient.Entity
+    private let visibleRows: [(key: String, value: AnyJSON?)]
+
+    init(entity: ClawJSIndexClient.Entity) {
+        self.entity = entity
+        // hot-path-ok maxItems=200 reason=index entity overview renders a bounded attribute preview outside body
+        self.visibleRows = entity.data.keys.sorted().prefix(200).map { key in (key: key, value: entity.data[key]) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(entity.data.keys.sorted()), id: \.self) { key in
-                let value = entity.data[key]
-                EntityAttributeRow(label: key, value: previewString(value))
+            ForEach(visibleRows, id: \.key) { row in
+                EntityAttributeRow(label: row.key, value: previewString(row.value))
             }
         }
     }

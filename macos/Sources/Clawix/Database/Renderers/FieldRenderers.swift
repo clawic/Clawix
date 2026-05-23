@@ -470,6 +470,7 @@ private struct JSONForm: View {
     @Binding var value: DBJSON
     @State private var text: String = ""
     @State private var isValid: Bool = true
+    private static let maxEditableJSONBytes = 262_144
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             TextEditor(text: Binding(
@@ -477,6 +478,8 @@ private struct JSONForm: View {
                 set: { newValue in
                     text = newValue
                     if let data = newValue.data(using: .utf8),
+                       data.count <= Self.maxEditableJSONBytes,
+                       // hot-path-ok maxBytes=262144 reason=database JSON editor parses only bounded field text
                        let json = try? JSONSerialization.jsonObject(with: data, options: [.allowFragments]) {
                         value = DBJSON.wrap(json)
                         isValid = true
@@ -595,7 +598,7 @@ private struct FileForm: View {
     private func openFile(id: String) async {
         do {
             let data = try await manager.client.downloadFile(fileId: id)
-            let temp = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("\(id)-preview")
+            let temp = ClawixDatabaseRoutes.downloadedFilePreviewURL(fileId: id)
             try data.write(to: temp)
             NSWorkspace.shared.open(temp)
         } catch {

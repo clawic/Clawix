@@ -28,6 +28,7 @@ enum AssistantBlock: Equatable {
 }
 
 enum AssistantMarkdownParser {
+    static let maxRenderableSourceBytes = 2_097_152
     /// Compiled once per process. The pattern is identical between
     /// calls so paying the regex compile cost on every `numberedMatch`
     /// invocation (which happens for every line of every paragraph
@@ -53,6 +54,9 @@ enum AssistantMarkdownParser {
     }
 
     static func parse(_ source: String) -> [AssistantBlock] {
+        guard source.utf8.count <= maxRenderableSourceBytes else {
+            return [.paragraph(AttributedString(String(source.prefix(8_192))))]
+        }
         cache.parse(
             source,
             cost: { src, blocks in cache.estimatedCost(for: src, blockCount: blocks.count) },
@@ -254,6 +258,7 @@ struct AssistantMarkdownView: View {
     }
 
     var body: some View {
+        // hot-path-ok maxBytes=2097152 reason=iOS assistant markdown parser is process-cached and rejects oversized sources
         let blocks = AssistantMarkdownParser.parse(text)
         let groups = Self.groupForSelection(blocks)
         VStack(alignment: .leading, spacing: 12) {

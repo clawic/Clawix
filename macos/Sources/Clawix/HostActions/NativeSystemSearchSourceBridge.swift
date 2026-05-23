@@ -56,6 +56,7 @@ struct NativeSystemSearchIndexResult: Decodable, Equatable {
 }
 
 enum NativeSystemSearchSourceBridge {
+    private static let maxClawSearchOutputBytes = 1_048_576
     static let sourceId = "native.system"
 
     struct ClawSearchCommandRunner {
@@ -195,7 +196,14 @@ enum NativeSystemSearchSourceBridge {
             try process.run()
             let data = stdout.fileHandleForReading.readDataToEndOfFile()
             let err = stderr.fileHandleForReading.readDataToEndOfFile()
+            // hot-path-ok maxBytes=1048576 reason=native system search indexing command returns one bounded JSON envelope
             process.waitUntilExit()
+            guard data.count <= Self.maxClawSearchOutputBytes,
+                  err.count <= Self.maxClawSearchOutputBytes else {
+                throw NSError(domain: "NativeSystemSearchSourceBridge", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "native system Search indexing output exceeded the local size limit"
+                ])
+            }
             guard process.terminationStatus == 0 else {
                 let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "native system Search indexing failed"
                 throw NSError(domain: "NativeSystemSearchSourceBridge", code: Int(process.terminationStatus), userInfo: [

@@ -43,6 +43,7 @@ struct ClawJSProjectHandoffClient {
     }
 
     nonisolated static let defaultWorkspaceId = "clawix-local"
+    private static let maxProjectHandoffOutputBytes = 1_048_576
 
     static let shared = ClawJSProjectHandoffClient()
 
@@ -127,10 +128,11 @@ struct ClawJSProjectHandoffClient {
             process.arguments = [cliScriptPath] + args
             process.currentDirectoryURL = workspaceURL
             process.environment = environment
-            process.standardOutput = Pipe()
-            process.standardError = Pipe()
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
             do {
                 try process.run()
+                // hot-path-ok maxBytes=1048576 reason=detached best-effort project handoff has bounded helper output and runs off main actor
                 process.waitUntilExit()
             } catch {
                 // The local project row remains the UI source of truth.
@@ -163,7 +165,14 @@ struct ClawJSProjectHandoffClient {
         try process.run()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let err = stderr.fileHandleForReading.readDataToEndOfFile()
+        // hot-path-ok maxBytes=1048576 reason=project handoff command returns one bounded JSON envelope
         process.waitUntilExit()
+        guard data.count <= Self.maxProjectHandoffOutputBytes,
+              err.count <= Self.maxProjectHandoffOutputBytes else {
+            throw NSError(domain: "ClawJSProjectHandoffClient", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "claw project handoff output exceeded the local size limit"
+            ])
+        }
         guard process.terminationStatus == 0 else {
             let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw project handoff failed"
             throw NSError(domain: "ClawJSProjectHandoffClient", code: Int(process.terminationStatus), userInfo: [

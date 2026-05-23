@@ -54,6 +54,7 @@ final class ClawJSDriveRealtimeClient {
     private var reconnectAttempt = 0
     private var bearerToken: String?
     private var stopped = false
+    private static let maxRealtimeEnvelopeBytes = 262_144
 
     var onEvent: ((Event) -> Void)?
     var onConnect: (() -> Void)?
@@ -138,6 +139,8 @@ final class ClawJSDriveRealtimeClient {
         @unknown default: text = nil
         }
         guard let text, let data = text.data(using: .utf8) else { return }
+        guard data.count <= Self.maxRealtimeEnvelopeBytes else { return }
+        // hot-path-ok maxBytes=262144 reason=drive realtime websocket envelope is capped before JSON decode
         guard let env = try? JSONDecoder().decode(Envelope.self, from: data) else { return }
         if env.type == "ping" {
             sendPong()

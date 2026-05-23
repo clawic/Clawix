@@ -2,7 +2,7 @@ import { For, Show, createMemo, createSignal, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { daemonStore, loadChats, sendMessage } from "../lib/daemon_ws";
-import { renderMarkdown } from "../lib/markdown";
+import { renderCachedMarkdown } from "../lib/markdown";
 
 interface Message {
   id: string;
@@ -92,7 +92,7 @@ export default function ChatView() {
                     </Show>
                     <div
                       class="prose prose-sm dark:prose-invert max-w-none leading-relaxed"
-                      innerHTML={renderMarkdown(msg.content)}
+                      innerHTML={renderCachedMarkdown(msg.content)}
                     />
                     <Show when={msg.streamingFinished === false}>
                       <div class="mt-1 inline-block w-1.5 h-4 bg-zinc-400 dark:bg-zinc-500 animate-pulse" />

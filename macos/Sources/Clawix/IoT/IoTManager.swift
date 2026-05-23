@@ -60,6 +60,8 @@ final class IoTManager: NSObject, ObservableObject {
     private var sseTask: URLSessionDataTask?
     private var sseSession: URLSession!
     private var sseBuffer = Data()
+    private static let maxSSEBufferBytes = 1_048_576
+    private static let maxSSEEventBytes = 262_144
 
     init(
         client: (any IoTClienting)? = nil,
@@ -675,9 +677,14 @@ extension IoTManager: URLSessionDataDelegate {
 
     private func ingestSSEChunk(_ chunk: Data) {
         sseBuffer.append(chunk)
+        if sseBuffer.count > Self.maxSSEBufferBytes {
+            sseBuffer.removeAll(keepingCapacity: false)
+            return
+        }
         while let range = sseBuffer.range(of: Data("\n\n".utf8)) {
             let raw = sseBuffer.subdata(in: 0..<range.lowerBound)
             sseBuffer.removeSubrange(0..<range.upperBound)
+            guard raw.count <= Self.maxSSEEventBytes else { continue }
             guard let text = String(data: raw, encoding: .utf8) else { continue }
             var type: String?
             var dataLine = ""
@@ -694,6 +701,8 @@ extension IoTManager: URLSessionDataDelegate {
             if dataLine.isEmpty {
                 payload = nil
             } else if let bytes = dataLine.data(using: .utf8),
+                      bytes.count <= Self.maxSSEEventBytes,
+                      // hot-path-ok maxBytes=262144 reason=iot manager SSE event data is capped before JSON parse
                       let json = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] {
                 payload = json
             } else {

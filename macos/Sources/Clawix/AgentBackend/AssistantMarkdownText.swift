@@ -299,6 +299,7 @@ final class AssistantMarkdownIncrementalCache: @unchecked Sendable {
 /// while text grows, but oversized intermediates are returned without
 /// being retained.
 enum MarkdownParseCache {
+    private static let maxRenderableSourceBytes = 2_097_152
     fileprivate static let cache = MarkdownBlockCache<AssistantMarkdownDocument>(
         countLimit: 512,
         totalCostLimit: 32 * 1024 * 1024,
@@ -334,6 +335,17 @@ enum MarkdownParseCache {
         renderKey: AssistantMarkdownRenderKey? = nil,
         phase: MarkdownParseCachePhase = .settled
     ) -> Result {
+        guard text.utf8.count <= maxRenderableSourceBytes else {
+            let document = buildFullDocument(String(text.prefix(8_192)), idPrefix: "bounded")
+            return Result(
+                document: document,
+                cacheHit: false,
+                parseMs: 0,
+                annotateMs: 0,
+                reusedBlockCount: 0,
+                reparsedCharacterCount: 0
+            )
+        }
         if let renderKey {
             let document = incrementalCache.document(
                 for: text,
@@ -442,6 +454,7 @@ enum MarkdownParseCache {
         PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
         return PerfSignpost.renderMarkdown.interval("parse") {
             let parseT0 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
+            // hot-path-ok maxBytes=2097152 reason=macOS assistant markdown parser rejects oversized sources before parse
             let slices = AssistantMarkdown.parseBlockSlices(text)
             let parseT1 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
             let annotated = annotateBlocks(

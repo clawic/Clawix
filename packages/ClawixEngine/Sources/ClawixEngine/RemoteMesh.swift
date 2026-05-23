@@ -42,6 +42,9 @@ public struct RemoteMeshSignedEnvelope: Codable, Sendable {
 }
 
 public final class RemoteMeshStore: @unchecked Sendable {
+    public static let maxStoredEventsPerJob = 500
+    public static let maxStoredEventsTotal = 5_000
+
     public let root: URL
     private let peersURL: URL
     private let workspacesURL: URL
@@ -151,15 +154,32 @@ public final class RemoteMeshStore: @unchecked Sendable {
     }
 
     public func events(jobId: String) -> [RemoteJobEvent] {
-        (lockedRead([RemoteJobEvent].self, from: eventsURL) ?? []).filter { $0.jobId == jobId }
+        Array((lockedRead([RemoteJobEvent].self, from: eventsURL) ?? [])
+            .filter { $0.jobId == jobId }
+            .suffix(Self.maxStoredEventsPerJob))
     }
 
     public func append(event: RemoteJobEvent) {
         lock.withLock {
             var all = readUnlocked([RemoteJobEvent].self, from: eventsURL) ?? []
             all.append(event)
+            all = Self.trimEvents(all)
             writeUnlocked(all, to: eventsURL)
         }
+    }
+
+    private static func trimEvents(_ events: [RemoteJobEvent]) -> [RemoteJobEvent] {
+        var countsByJob: [String: Int] = [:]
+        var retained: [RemoteJobEvent] = []
+        retained.reserveCapacity(min(events.count, maxStoredEventsTotal))
+        for event in events.reversed() {
+            let count = countsByJob[event.jobId, default: 0]
+            guard count < maxStoredEventsPerJob else { continue }
+            countsByJob[event.jobId] = count + 1
+            retained.append(event)
+            if retained.count >= maxStoredEventsTotal { break }
+        }
+        return retained.reversed()
     }
 
     private func lockedRead<T: Decodable>(_ type: T.Type, from url: URL) -> T? {

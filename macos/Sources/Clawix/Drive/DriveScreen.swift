@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ImageIO
 import UniformTypeIdentifiers
 
 /// Adaptive 3-pane Drive screen: folder breadcrumbs + content grid/list +
@@ -349,13 +350,14 @@ struct DriveGridView: View {
     let items: [ClawJSDriveClient.DriveItem]
     @Binding var selectedId: String?
     let store: DriveStore
+    private static let visibleItemLimit = 200
 
     private let columns = [GridItem(.adaptive(minimum: 140, maximum: 220), spacing: 12)]
 
     var body: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(items) { item in
+                ForEach(items.prefix(Self.visibleItemLimit)) { item in
                     DriveItemTile(item: item, store: store, isSelected: selectedId == item.id)
                         .onTapGesture(count: 2) {
                             if item.kind == "folder" { store.setParent(item.id) }
@@ -491,6 +493,7 @@ struct DriveItemTile: View {
     let store: DriveStore
     let isSelected: Bool
     @State private var thumbnail: NSImage?
+    private static let thumbnailMaxPixelSize = 256
 
     var body: some View {
         VStack(spacing: 6) {
@@ -511,11 +514,31 @@ struct DriveItemTile: View {
         }
         .task(id: item.id) {
             if (item.mimeType ?? "").starts(with: "image/") {
-                if let data = await store.thumbnail(for: item.id, size: 256), let img = NSImage(data: data) {
+                if let data = await store.thumbnail(for: item.id, size: Self.thumbnailMaxPixelSize),
+                   let img = Self.downsampledImage(from: data, maxPixelSize: Self.thumbnailMaxPixelSize) {
                     thumbnail = img
                 }
             }
         }
+    }
+
+    private static func downsampledImage(from data: Data, maxPixelSize: Int) -> NSImage? {
+        guard let source = CGImageSourceCreateWithData(
+            data as CFData,
+            [kCGImageSourceShouldCache: false] as CFDictionary
+        ) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
     }
 
     private var placeholderIconName: String {

@@ -78,6 +78,7 @@ enum NetworkControlBridgeError: LocalizedError {
 }
 
 final class NetworkControlBridge {
+    fileprivate static let maxCommandResponseBytes = 1_048_576
     private let execute: @Sendable (CommandRequest) async -> CommandResponse
 
     init(execute: @escaping @Sendable (CommandRequest) async -> CommandResponse) {
@@ -300,6 +301,10 @@ final class NetworkControlBridge {
     }
 
     private static func commandResponse(from data: Data) throws -> CommandResponse {
+        guard data.count <= Self.maxCommandResponseBytes else {
+            throw NetworkControlBridgeError.invalidPayload("Network control CLI output exceeded the local size limit.")
+        }
+        // hot-path-ok maxBytes=1048576 reason=network control CLI returns one bounded JSON envelope
         guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw NetworkControlBridgeError.invalidPayload("Network control CLI returned invalid JSON.")
         }
@@ -423,7 +428,12 @@ private final class NetworkControlCLIRunner {
             try process.run()
             let data = stdout.fileHandleForReading.readDataToEndOfFile()
             let err = stderr.fileHandleForReading.readDataToEndOfFile()
+            // hot-path-ok maxBytes=1048576 reason=network control process runs on detached utility task with bounded output
             process.waitUntilExit()
+            guard data.count <= NetworkControlBridge.maxCommandResponseBytes,
+                  err.count <= NetworkControlBridge.maxCommandResponseBytes else {
+                throw NetworkControlBridgeError.invalidPayload("Network control CLI output exceeded the local size limit.")
+            }
 
             guard process.terminationStatus == 0 else {
                 let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "network control CLI failed"
@@ -467,6 +477,7 @@ final class NetworkControlModel: ObservableObject {
 
 struct NetworkControlCenterView: View {
     @ObservedObject var model: NetworkControlModel
+    private static let visibleEventLimit = 100
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -524,7 +535,7 @@ struct NetworkControlCenterView: View {
                 }
 
                 Section("Recent") {
-                    ForEach(model.events) { event in
+                    ForEach(model.events.prefix(Self.visibleEventLimit)) { event in
                         HStack {
                             Text(event.decision)
                             Text(event.endpointValue)

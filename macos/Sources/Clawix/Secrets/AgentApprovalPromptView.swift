@@ -14,6 +14,9 @@ struct AgentApprovalPromptView: View {
     let onDeny: () -> Void
 
     @State private var denyReason: String = ""
+    private var scopeRows: [(key: String, value: String)] {
+        pending.request.scope.sorted(by: { $0.key < $1.key }).map { (key: $0.key, value: $0.value) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -32,8 +35,8 @@ struct AgentApprovalPromptView: View {
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                                 .foregroundColor(Palette.textSecondary)
                             VStack(alignment: .leading, spacing: 3) {
-                                ForEach(pending.request.scope.sorted(by: { $0.key < $1.key }), id: \.key) { (k, v) in
-                                    Text("\(k) = \(v)")
+                                ForEach(scopeRows, id: \.key) { row in
+                                    Text("\(row.key) = \(row.value)")
                                         .font(.system(size: 11.5, design: .monospaced))
                                         .foregroundColor(Palette.textPrimary)
                                 }

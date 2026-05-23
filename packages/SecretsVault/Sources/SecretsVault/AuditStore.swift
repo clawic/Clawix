@@ -365,28 +365,33 @@ public final class AuditStore {
     }
 
     public func verifyIntegrity() throws -> AuditIntegrityReport {
-        let events = try database.read { db in
-            try AuditEventRecord.order(Column("timestamp").asc).fetchAll(db)
-        }
         var prev = chainGenesis
-        for event in events {
-            if event.prevHash != prev {
-                return AuditIntegrityReport(totalEvents: events.count, firstBrokenAt: event.id)
+        return try database.read { db in
+            let cursor = try AuditEventRecord
+                .order(Column("timestamp").asc)
+                .fetchCursor(db)
+            var totalEvents = 0
+            var firstBrokenAt: EntityID?
+            while let event = try cursor.next() {
+                totalEvents += 1
+                if firstBrokenAt == nil, event.prevHash != prev {
+                    firstBrokenAt = event.id
+                }
+                let canonical = Self.canonicalClear(
+                    id: event.id, accountId: event.accountId,
+                    secretId: event.secretId, vaultId: event.vaultId, versionId: event.versionId,
+                    kind: event.kind, timestamp: event.timestamp, source: event.source,
+                    success: event.success, deviceId: event.deviceId, sessionId: event.sessionId,
+                    prevHash: event.prevHash
+                )
+                let recomputed = self.computeSelfHash(canonical: canonical, ciphertext: event.payloadCiphertext)
+                if firstBrokenAt == nil, recomputed != event.selfHash {
+                    firstBrokenAt = event.id
+                }
+                prev = event.selfHash
             }
-            let canonical = Self.canonicalClear(
-                id: event.id, accountId: event.accountId,
-                secretId: event.secretId, vaultId: event.vaultId, versionId: event.versionId,
-                kind: event.kind, timestamp: event.timestamp, source: event.source,
-                success: event.success, deviceId: event.deviceId, sessionId: event.sessionId,
-                prevHash: event.prevHash
-            )
-            let recomputed = computeSelfHash(canonical: canonical, ciphertext: event.payloadCiphertext)
-            if recomputed != event.selfHash {
-                return AuditIntegrityReport(totalEvents: events.count, firstBrokenAt: event.id)
-            }
-            prev = event.selfHash
+            return AuditIntegrityReport(totalEvents: totalEvents, firstBrokenAt: firstBrokenAt)
         }
-        return AuditIntegrityReport(totalEvents: events.count, firstBrokenAt: nil)
     }
 
     private func computeSelfHash(canonical: Data, ciphertext: Data) -> Data {

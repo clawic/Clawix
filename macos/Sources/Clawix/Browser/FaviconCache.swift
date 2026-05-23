@@ -1,15 +1,16 @@
 import AppKit
 import CryptoKit
 import Foundation
+import ImageIO
 import os
 
 /// Two-tier cache for favicon bitmaps, modeled after how a real browser
 /// keeps icons warm: an in-memory `NSCache` for instant hits while the
 /// app is running, and a persistent on-disk store under
-/// `~/Library/Caches/Clawix/Favicons/` so a freshly launched app shows
-/// the icon for any host you've already visited without a network round
-/// trip. Concurrent requests for the same URL are coalesced so a tab
-/// strip with five tabs pointing to the same host fires a single fetch.
+/// the app cache so a freshly launched app shows the icon for any host you've
+/// already visited without a network round trip. Concurrent requests for the
+/// same URL are coalesced so a tab strip with five tabs pointing to the same
+/// host fires a single fetch.
 ///
 /// On top of the two tiers, hosts that returned no usable favicon are
 /// recorded with a `.miss` sentinel so the UI doesn't chase a 404 every
@@ -28,15 +29,11 @@ final class FaviconCache: @unchecked Sendable {
 
     private let negativeTTL: TimeInterval = 60 * 60 * 24
     private let diskMaxAge: TimeInterval = 60 * 24 * 60 * 60
+    private let maxDecodedPixelSize = 64
 
     private init() {
         memory.countLimit = 2048
-        let caches = FileManager.default.urls(
-            for: .cachesDirectory, in: .userDomainMask
-        ).first ?? FileManager.default.temporaryDirectory
-        directory = caches
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.favicons, isDirectory: true)
+        directory = ClawixCacheRoutes.faviconsDirectory()
         try? FileManager.default.createDirectory(
             at: directory, withIntermediateDirectories: true
         )
@@ -58,7 +55,7 @@ final class FaviconCache: @unchecked Sendable {
         if let hit = memory.object(forKey: key(for: url)) { return hit }
         let fileURL = diskURL(for: url)
         guard let data = try? Data(contentsOf: fileURL, options: .mappedIfSafe),
-              let img = NSImage(data: data) else { return nil }
+              let img = Self.downsampledImage(from: data, maxPixelSize: maxDecodedPixelSize) else { return nil }
         memory.setObject(img, forKey: key(for: url))
         return img
     }
@@ -147,7 +144,7 @@ final class FaviconCache: @unchecked Sendable {
     private func load(url: URL) async -> NSImage? {
         let fileURL = diskURL(for: url)
         if let data = try? Data(contentsOf: fileURL),
-           let img = NSImage(data: data) {
+           let img = Self.downsampledImage(from: data, maxPixelSize: maxDecodedPixelSize) {
             return img
         }
         do {
@@ -163,7 +160,7 @@ final class FaviconCache: @unchecked Sendable {
                 writeNegative(for: url)
                 return nil
             }
-            guard let img = NSImage(data: data) else {
+            guard let img = Self.downsampledImage(from: data, maxPixelSize: maxDecodedPixelSize) else {
                 writeNegative(for: url)
                 return nil
             }
@@ -176,6 +173,25 @@ final class FaviconCache: @unchecked Sendable {
             writeNegative(for: url)
             return nil
         }
+    }
+
+    private static func downsampledImage(from data: Data, maxPixelSize: Int) -> NSImage? {
+        guard let source = CGImageSourceCreateWithData(
+            data as CFData,
+            [kCGImageSourceShouldCache: false] as CFDictionary
+        ) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
+        return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
     }
 
     private func isFreshNegative(for url: URL) -> Bool {

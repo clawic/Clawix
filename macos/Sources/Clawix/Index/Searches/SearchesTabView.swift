@@ -149,6 +149,12 @@ private struct SearchDetailPane: View {
         guard let id = searchId else { return nil }
         return store.searches.first { $0.id == id }
     }
+    private var criteriaRows: [(key: String, value: AnyJSON)] {
+        guard let search else { return [] }
+        return search.criteria.keys.sorted().map { key in
+            (key: key, value: search.criteria[key] ?? .null)
+        }
+    }
 
     var body: some View {
         Group {
@@ -161,8 +167,8 @@ private struct SearchDetailPane: View {
                                 .font(BodyFont.system(size: 12, wght: 400))
                                 .foregroundColor(.white.opacity(0.45))
                         } else {
-                            ForEach(Array(search.criteria.keys.sorted()), id: \.self) { key in
-                                CriterionRow(key: key, value: search.criteria[key] ?? .null)
+                            ForEach(criteriaRows, id: \.key) { row in
+                                CriterionRow(key: row.key, value: row.value)
                             }
                         }
                         if let prompt = search.promptTemplate {

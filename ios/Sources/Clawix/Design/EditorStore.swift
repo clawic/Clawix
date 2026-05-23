@@ -1,11 +1,11 @@
 import Combine
 import Foundation
+import ImageIO
 import UIKit
 
 /// iOS port of the editor document store. Same on-disk shape as the
 /// desktop store (`~/.claw/design/documents/<id>/document.json`),
-/// only difference is image dimension probing uses `UIImage` instead of
-/// `NSImage`.
+/// only difference is image dimension probing uses iOS image metadata.
 @MainActor
 final class EditorStore: ObservableObject {
     static let shared = EditorStore()
@@ -112,9 +112,9 @@ final class EditorStore: ObservableObject {
         try fileManager.copyItem(at: sourceURL, to: dest)
         var width: Double?
         var height: Double?
-        if let data = try? Data(contentsOf: dest), let image = UIImage(data: data) {
-            width = Double(image.size.width)
-            height = Double(image.size.height)
+        if let dimensions = Self.imageDimensions(at: dest) {
+            width = dimensions.width
+            height = dimensions.height
         }
         return SlotAssetValue(filename: filename, width: width, height: height)
     }
@@ -128,11 +128,30 @@ final class EditorStore: ObservableObject {
         try data.write(to: dest, options: .atomic)
         var width: Double?
         var height: Double?
-        if let image = UIImage(data: data) {
-            width = Double(image.size.width)
-            height = Double(image.size.height)
+        if let dimensions = Self.imageDimensions(from: data) {
+            width = dimensions.width
+            height = dimensions.height
         }
         return SlotAssetValue(filename: filename, width: width, height: height)
+    }
+
+    private static func imageDimensions(at url: URL) -> CGSize? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return imageDimensions(from: source)
+    }
+
+    private static func imageDimensions(from data: Data) -> CGSize? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return imageDimensions(from: source)
+    }
+
+    private static func imageDimensions(from source: CGImageSource) -> CGSize? {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
+              let height = properties[kCGImagePropertyPixelHeight] as? NSNumber else {
+            return nil
+        }
+        return CGSize(width: width.doubleValue, height: height.doubleValue)
     }
 
     func assetURL(for document: EditorDocument, value: SlotAssetValue) -> URL {

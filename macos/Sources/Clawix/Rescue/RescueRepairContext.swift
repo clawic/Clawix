@@ -196,7 +196,7 @@ enum RescueRepairContextBuilder {
 
     private static func redact(_ text: String) -> String {
         var redacted = text.replacingOccurrences(
-            of: #"/Users/[^\s"'`]+"#,
+            of: ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern,
             with: "[redacted_path]",
             options: .regularExpression
         )
@@ -219,6 +219,7 @@ struct RescueEvolutionCommandClient {
     struct CommandRunner {
         var run: ([String]) throws -> Data
     }
+    private static let maxEvolutionOutputBytes = 1_048_576
 
     private let runner: CommandRunner
 
@@ -274,7 +275,14 @@ struct RescueEvolutionCommandClient {
         try process.run()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
         let err = stderr.fileHandleForReading.readDataToEndOfFile()
+        // hot-path-ok maxBytes=1048576 reason=rescue evolution command returns one bounded JSON envelope
         process.waitUntilExit()
+        guard data.count <= Self.maxEvolutionOutputBytes,
+              err.count <= Self.maxEvolutionOutputBytes else {
+            throw NSError(domain: "RescueEvolutionCommandClient", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "claw evolution output exceeded the local size limit"
+            ])
+        }
         guard process.terminationStatus == 0 else {
             let message = String(data: err.isEmpty ? data : err, encoding: .utf8) ?? "claw evolution failed"
             throw NSError(domain: "RescueEvolutionCommandClient", code: Int(process.terminationStatus), userInfo: [
