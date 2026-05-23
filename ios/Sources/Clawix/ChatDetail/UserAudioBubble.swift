@@ -171,12 +171,10 @@ struct UserAudioBubble: View {
     }
 
     private func cacheAudio(audioId: String, data: Data, mimeType: String) throws -> URL {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let dir = caches.appendingPathComponent("clawix-audio", isDirectory: true)
+        let dir = ClawixTemporaryRoutes.audioPlaybackCacheDirectory()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let ext = audioFileExtension(for: mimeType)
-        let url = dir.appendingPathComponent("\(audioId).\(ext)")
+        let url = ClawixTemporaryRoutes.audioPlaybackCacheURL(audioId: audioId, fileExtension: ext)
         try data.write(to: url, options: .atomic)
         return url
     }

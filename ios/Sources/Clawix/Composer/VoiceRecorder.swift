@@ -87,8 +87,7 @@ final class VoiceRecorder: ObservableObject {
         }
         #endif
 
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clawix_voice_\(Int(Date().timeIntervalSince1970)).m4a")
+        let url = ClawixTemporaryRoutes.voiceRecordingURL()
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
             AVSampleRateKey: 44_100,

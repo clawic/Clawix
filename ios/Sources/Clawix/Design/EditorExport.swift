@@ -16,10 +16,7 @@ enum EditorExport {
     }
 
     static func tempURL(format: Format, suggestedName: String) -> URL {
-        let base = suggestedName.isEmpty ? "Untitled" : suggestedName
-        return FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(base)-\(UUID().uuidString.prefix(6))")
-            .appendingPathExtension(format.rawValue)
+        ClawixTemporaryRoutes.designExportURL(fileExtension: format.rawValue, suggestedName: suggestedName)
     }
 
     static func writeHTML(_ html: String, to url: URL) throws {
