@@ -40,6 +40,9 @@ public sealed partial class AppState : ObservableObject
     [ObservableProperty]
     private Dictionary<string, WireRateLimitSnapshot> _rateLimitsByLimitId = new(StringComparer.Ordinal);
 
+    [ObservableProperty]
+    private List<WireClawJSServiceSnapshot> _clawJSServiceStatuses = [];
+
     public AppState(BackgroundBridgeService bridge, ILogger<AppState> logger)
     {
         _bridge = bridge;
@@ -58,6 +61,7 @@ public sealed partial class AppState : ObservableObject
         await _client.ConnectAsync(ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.ListSessions()), ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.RequestRateLimits()), ct);
+        await _client.SendAsync(new BridgeFrame(new BridgeBody.RequestClawJSServiceStatuses()), ct);
     }
 
     public void ApplyFrame(BridgeFrame frame)
@@ -95,6 +99,16 @@ public sealed partial class AppState : ObservableObject
                 break;
             case BridgeBody.RateLimitsUpdated rl:
                 ApplyRateLimits(rl.Snapshot, rl.ByLimitId);
+                break;
+            case BridgeBody.ClawJSServiceStatusesSnapshot css:
+                ClawJSServiceStatuses = css.Services.ToList();
+                break;
+            case BridgeBody.ClawJSServiceStatusUpdated csu:
+                ClawJSServiceStatuses = ClawJSServiceStatuses
+                    .Where(service => service.Id != csu.Service.Id)
+                    .Prepend(csu.Service)
+                    .OrderBy(service => service.Id, StringComparer.Ordinal)
+                    .ToList();
                 break;
         }
     }
