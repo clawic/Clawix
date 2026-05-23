@@ -42,6 +42,10 @@ describe("web route catalog", () => {
     expect(routeEntry("notes").webSurface).toBe("implemented");
     expect(routeEntry("calendar").webSurface).toBe("implemented");
     expect(routeEntry("contacts").webSurface).toBe("implemented");
+    expect(routeEntry("photos").webSurface).toBe("implemented");
+    expect(routeEntry("documents").webSurface).toBe("implemented");
+    expect(routeEntry("recent").webSurface).toBe("implemented");
+    expect(routeEntry("drive").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });
