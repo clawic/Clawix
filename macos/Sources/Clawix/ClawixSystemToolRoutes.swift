@@ -12,6 +12,7 @@ enum ClawixSystemToolRoutes {
     static let sbinDirectory = "/sbin"
 
     static let envCLI = usrBinTool("env")
+    static let gitCLI = usrBinTool("git")
     static let xcrunCLI = usrBinTool("xcrun")
     static let tarCLI = usrBinTool("tar")
     static let pmsetCLI = usrBinTool("pmset")

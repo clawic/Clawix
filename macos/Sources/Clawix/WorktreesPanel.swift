@@ -23,7 +23,7 @@ enum WorktreeReader {
     static func list(projectPath: String?) -> [WorktreeEntry] {
         guard let projectPath, !projectPath.isEmpty else { return [] }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.executableURL = URL(fileURLWithPath: ClawixSystemToolRoutes.gitCLI)
         process.arguments = ["-C", projectPath, "worktree", "list", "--porcelain"]
         let pipe = Pipe()
         process.standardOutput = pipe
