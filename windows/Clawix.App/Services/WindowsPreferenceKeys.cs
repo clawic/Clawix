@@ -22,4 +22,6 @@ public static class WindowsPreferenceKeys
     public const string McpServers = "mcp.servers";
     public const string McpAutoStartServers = "mcp.autoStartServers";
     public const string McpRequestTimeoutSeconds = "mcp.requestTimeoutSeconds";
+    public const string UpdatesAutoInstall = "updates.autoInstall";
+    public const string UpdatesDevChannel = "updates.devChannel";
 }

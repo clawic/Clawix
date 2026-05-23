@@ -8,11 +8,16 @@
       <TextBlock Text="Updates" FontSize="22" FontWeight="SemiBold" />
       <TextBlock x:Name="VersionText" Opacity="0.7" />
       <Button Content="Check for updates now" Click="Check_Click" Style="{ThemeResource AccentButtonStyle}" />
-      <ToggleSwitch Header="Auto-install updates" IsOn="True" />
+      <TextBlock x:Name="UpdateStatusText" Opacity="0.7" TextWrapping="Wrap" />
+      <ToggleSwitch x:Name="AutoInstallSwitch"
+                    Header="Auto-install updates"
+                    Toggled="AutoInstallSwitch_Toggled" />
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <TextBox Header="Appcast URL" IsReadOnly="True" />
-          <ToggleSwitch Header="Subscribe to dev-only update channel" />
+          <ToggleSwitch x:Name="DevChannelSwitch"
+                        Header="Subscribe to dev-only update channel"
+                        Toggled="DevChannelSwitch_Toggled" />
         </StackPanel>
       </Expander>
     </StackPanel>
