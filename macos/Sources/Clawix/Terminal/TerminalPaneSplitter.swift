@@ -26,7 +26,7 @@ struct TerminalPaneSplitter: View {
 
     var body: some View {
         Rectangle()
-            .fill(Color.white.opacity(hovered ? 0.18 : 0.0))
+            .fill(Color.overlay(hovered ? 0.18 : 0.0))
             .frame(
                 width: axis == .horizontal ? thickness : nil,
                 height: axis == .horizontal ? nil : thickness

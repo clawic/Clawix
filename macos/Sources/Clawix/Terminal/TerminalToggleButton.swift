@@ -16,13 +16,13 @@ struct TerminalToggleButton: View {
             LucideIcon(.terminal, size: 13)
                 .foregroundColor(open
                     ? Palette.textPrimary
-                    : Color(white: hovered ? 0.78 : 0.55))
+                    : (hovered ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55)))
                 .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(open
-                            ? Color(white: 0.16)
-                            : (hovered ? Color(white: 0.12) : Color.clear))
+                            ? Color.gray(light: 0.92, dark: 0.16)
+                            : (hovered ? Color.gray(light: 0.945, dark: 0.12) : Color.clear))
                 )
                 .contentShape(Rectangle())
         }

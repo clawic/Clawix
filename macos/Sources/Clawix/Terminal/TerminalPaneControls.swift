@@ -32,7 +32,7 @@ struct TerminalPaneControls: View {
                 .fill(Color.black.opacity(0.55))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.7)
                 )
         )
         .opacity(hovered ? 1.0 : 0.55)
@@ -57,11 +57,11 @@ private struct PaneControlButton: View {
     var body: some View {
         Button(action: action) {
             icon
-                .foregroundColor(Color(white: hovered ? 0.95 : 0.75))
+                .foregroundColor((hovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.28, dark: 0.75)))
                 .frame(width: 20, height: 20)
                 .background(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.10 : 0.0))
+                        .fill(Color.overlay(hovered ? 0.10 : 0.0))
                 )
                 .contentShape(Rectangle())
         }

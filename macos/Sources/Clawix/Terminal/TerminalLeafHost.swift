@@ -106,12 +106,12 @@ struct TerminalLeafHost: View {
                     case .bottom: return CGRect(x: 0, y: h / 2, width: w, height: h / 2)
                     }
                 }()
-                Color.white.opacity(0.12)
+                Color.overlay(0.12)
                     .frame(width: rect.width, height: rect.height)
                     .offset(x: rect.minX, y: rect.minY)
                     .overlay(
                         Rectangle()
-                            .stroke(Color.white.opacity(0.32), lineWidth: 0.7)
+                            .stroke(Color.overlay(0.32), lineWidth: 0.7)
                             .frame(width: rect.width, height: rect.height)
                             .offset(x: rect.minX, y: rect.minY),
                         alignment: .topLeading

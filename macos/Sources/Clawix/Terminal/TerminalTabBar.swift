@@ -67,7 +67,7 @@ struct TerminalTabBar: View {
         // Thin vertical capsule that appears between chips while a drag
         // hovers, telegraphing the drop landing position.
         RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-            .fill(Color.white.opacity(0.55))
+            .fill(Color.overlay(0.55))
             .frame(width: dropIndicatorIndex == index ? 2 : 0, height: 22)
             .opacity(dropIndicatorIndex == index ? 1 : 0)
             .animation(.easeOut(duration: 0.10), value: dropIndicatorIndex)
@@ -207,9 +207,9 @@ private struct TerminalTabChip: View {
     }
 
     private var chipFill: Color {
-        if isActive { return Color.white.opacity(0.08) }
-        if hovered { return Color.white.opacity(0.05) }
-        return Color.white.opacity(0.04)
+        if isActive { return Color.overlay(0.08) }
+        if hovered { return Color.overlay(0.05) }
+        return Color.overlay(0.04)
     }
 
     @ViewBuilder
@@ -218,9 +218,9 @@ private struct TerminalTabChip: View {
             Button(action: onClose) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.18))
+                        .fill(Color.overlay(0.18))
                     LucideIcon(.x, size: 7.5)
-                        .foregroundColor(Color.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                 }
                 .frame(width: 14, height: 14)
                 .contentShape(Circle())
@@ -230,7 +230,7 @@ private struct TerminalTabChip: View {
             .accessibilityLabel(Text(verbatim: "Close terminal tab \(ordinal): \(label)"))
         } else {
             TerminalIcon(size: 13)
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .frame(width: 14, height: 14)
         }
     }
@@ -243,11 +243,11 @@ private struct NewTerminalButton: View {
     var body: some View {
         Button(action: action) {
             LucideIcon(.plus, size: 13)
-                .foregroundColor(Color(white: hovered ? 0.95 : 0.65))
+                .foregroundColor((hovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.38, dark: 0.65)))
                 .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.08 : 0.0))
+                        .fill(Color.overlay(hovered ? 0.08 : 0.0))
                 )
                 .contentShape(Rectangle())
         }

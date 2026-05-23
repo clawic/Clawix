@@ -87,7 +87,7 @@ final class TerminalScrollIndicator: NSView {
         let rect = NSRect(x: track.minX, y: thumbY, width: track.width, height: thumbHeight)
         let radius = thickness / 2
         let alpha: CGFloat = hovered ? 0.18 : 0.10
-        NSColor(white: 1.0, alpha: alpha).setFill()
+        NSColor.dynamicGray(light: 0.0, dark: 1.0, alpha: alpha).setFill()
         NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
     }
 }
