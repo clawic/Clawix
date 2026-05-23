@@ -38,7 +38,10 @@ public sealed class Vault : IDisposable
         var nonce = Aead.RandomBytes(Aead.NonceLength);
         var wrapped = Aead.Encrypt(itemKey, nonce, Encoding.UTF8.GetBytes(value));
         var keyNonce = Aead.RandomBytes(Aead.NonceLength);
-        var wrappedKey = Aead.Encrypt(_masterKey, keyNonce, itemKey);
+        var wrappedKeyCipher = Aead.Encrypt(_masterKey, keyNonce, itemKey);
+        var wrappedKey = new byte[keyNonce.Length + wrappedKeyCipher.Length];
+        Buffer.BlockCopy(keyNonce, 0, wrappedKey, 0, keyNonce.Length);
+        Buffer.BlockCopy(wrappedKeyCipher, 0, wrappedKey, keyNonce.Length, wrappedKeyCipher.Length);
         Array.Clear(itemKey);
 
         using var cmd = _db.Connection.CreateCommand();

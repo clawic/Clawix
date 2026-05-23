@@ -54,7 +54,12 @@ public sealed class SecretsVaultTests
 
             var listed = v.List();
             Assert.Equal(2, listed.Count);
-            Assert.Contains(listed, s => s.Label == "OPENAI_API_KEY" && s.Kind == SecretKind.ApiKey);
+            var apiKey = Assert.Single(listed, s => s.Label == "OPENAI_API_KEY" && s.Kind == SecretKind.ApiKey);
+            Assert.Equal("sk-xxxxx", v.Reveal(apiKey));
+
+            v.Lock();
+            Assert.False(v.IsUnlocked);
+            Assert.Throws<InvalidOperationException>(() => v.Reveal(apiKey));
         }
         finally { try { File.Delete(path); } catch { } }
     }
