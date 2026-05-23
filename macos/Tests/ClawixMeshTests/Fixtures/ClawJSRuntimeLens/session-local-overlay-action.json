@@ -1,7 +1,7 @@
 {
   "ok": true,
   "data": {
-    "runtimeId": "example",
+    "runtimeId": "hermes",
     "domain": "sessions",
     "action": "pin",
     "status": "local_overlay_applied",
@@ -10,7 +10,7 @@
     "writesLocalOverlay": true,
     "result": {
       "id": "2026/05/21/runtime-session",
-      "overlayThreadId": "runtime:example:sessions:2026%2F05%2F21%2Fruntime-session",
+      "overlayThreadId": "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session",
       "pinned": true,
       "receipt": {
         "requestId": "appstate-test",

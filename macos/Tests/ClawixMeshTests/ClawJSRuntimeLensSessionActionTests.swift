@@ -131,14 +131,14 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         })
 
         let result = try await client.setSessionPinned(
-            runtime: .example,
+            runtime: .hermes,
             sessionId: "2026/05/21/runtime-session",
             pinned: true
         )
 
         XCTAssertEqual(requested, [[
             "runtime",
-            "example",
+            "hermes",
             "sessions",
             "pin",
             "--session-key",
@@ -148,7 +148,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.status, "local_overlay_applied")
         XCTAssertEqual(result.writesRuntime, false)
         XCTAssertEqual(result.writesLocalOverlay, true)
-        XCTAssertEqual(result.result.overlayThreadId, "runtime:example:sessions:2026%2F05%2F21%2Fruntime-session")
+        XCTAssertEqual(result.result.overlayThreadId, "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session")
         XCTAssertEqual(result.result.receipt?.hostId, "runtime-portal")
     }
 }
