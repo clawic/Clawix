@@ -79,28 +79,30 @@ final class AgentStore: ObservableObject {
     private var reloadGeneration = 0
 
     private static func defaultHome() -> URL {
-        if let override = ProcessInfo.processInfo.environment[ClawEnv.home],
-           !override.isEmpty {
-            return URL(fileURLWithPath: (override as NSString).expandingTildeInPath)
-        }
-        let url = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
-        return url
+        ClawixAgentStoreRoutes.frameworkHome()
     }
 
     // MARK: - Layout helpers
 
-    private var agentsDir: URL          { home.appendingPathComponent("agents", isDirectory: true) }
-    private var personalitiesDir: URL   { home.appendingPathComponent("personalities", isDirectory: true) }
-    private var collectionsDir: URL     { home.appendingPathComponent("skill-collections", isDirectory: true) }
-    private var connectionsDir: URL     { home.appendingPathComponent("connections", isDirectory: true) }
-    private var presetsDir: URL         { home.appendingPathComponent("presets", isDirectory: true) }
-    private var publicMemoryDir: URL    { home.appendingPathComponent("memory", isDirectory: true) }
+    private var agentsDir: URL          { ClawixAgentStoreRoutes.agentsDirectory(frameworkHome: home) }
+    private var personalitiesDir: URL   { ClawixAgentStoreRoutes.personalitiesDirectory(frameworkHome: home) }
+    private var collectionsDir: URL     { ClawixAgentStoreRoutes.skillCollectionsDirectory(frameworkHome: home) }
+    private var connectionsDir: URL     { ClawixAgentStoreRoutes.connectionsDirectory(frameworkHome: home) }
+    private var presetsDir: URL         { ClawixAgentStoreRoutes.presetsDirectory(frameworkHome: home) }
+    private var publicMemoryDir: URL    { ClawixAgentStoreRoutes.publicMemoryDirectory(frameworkHome: home) }
 
-    private func dir(forAgent id: String) -> URL          { agentsDir.appendingPathComponent(id, isDirectory: true) }
-    private func dir(forAgentPersonality id: String) -> URL    { personalitiesDir.appendingPathComponent(id, isDirectory: true) }
-    private func dir(forCollection id: String) -> URL     { collectionsDir.appendingPathComponent(id, isDirectory: true) }
-    private func dir(forConnection id: String) -> URL     { connectionsDir.appendingPathComponent(id, isDirectory: true) }
+    private func dir(forAgent id: String) -> URL {
+        ClawixAgentStoreRoutes.agentDirectory(agentId: id, agentsDirectory: agentsDir)
+    }
+    private func dir(forAgentPersonality id: String) -> URL {
+        ClawixAgentStoreRoutes.personalityDirectory(personalityId: id, personalitiesDirectory: personalitiesDir)
+    }
+    private func dir(forCollection id: String) -> URL {
+        ClawixAgentStoreRoutes.collectionDirectory(collectionId: id, collectionsDirectory: collectionsDir)
+    }
+    private func dir(forConnection id: String) -> URL {
+        ClawixAgentStoreRoutes.connectionDirectory(connectionId: id, connectionsDirectory: connectionsDir)
+    }
 
     private func ensureDirectories() {
         for url in [agentsDir, personalitiesDir, collectionsDir, connectionsDir, presetsDir, publicMemoryDir] {
@@ -914,11 +916,15 @@ final class AgentStore: ObservableObject {
         }
 
         return await Task.detached(priority: .utility) {
-            AgentSnapshot(
-                agents: loadAgents(from: home.appendingPathComponent("agents", isDirectory: true)),
-                personalities: loadPersonalities(from: home.appendingPathComponent("personalities", isDirectory: true)),
-                skillCollections: loadCollections(from: home.appendingPathComponent("skill-collections", isDirectory: true)),
-                connections: loadConnections(from: home.appendingPathComponent("connections", isDirectory: true))
+            let agentsDirectory = ClawixAgentStoreRoutes.agentsDirectory(frameworkHome: home)
+            let personalitiesDirectory = ClawixAgentStoreRoutes.personalitiesDirectory(frameworkHome: home)
+            let collectionsDirectory = ClawixAgentStoreRoutes.skillCollectionsDirectory(frameworkHome: home)
+            let connectionsDirectory = ClawixAgentStoreRoutes.connectionsDirectory(frameworkHome: home)
+            return AgentSnapshot(
+                agents: loadAgents(from: agentsDirectory),
+                personalities: loadPersonalities(from: personalitiesDirectory),
+                skillCollections: loadCollections(from: collectionsDirectory),
+                connections: loadConnections(from: connectionsDirectory)
             )
         }.value
     }
@@ -974,7 +980,7 @@ final class AgentStore: ObservableObject {
     func appendAudit(_ entry: AgentAuditEntry, on agentId: String) {
         let folder = dir(forAgent: agentId)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let url = folder.appendingPathComponent("audit.log")
+        let url = ClawixAgentStoreRoutes.auditLogFile(agentDirectory: folder)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         guard let data = try? encoder.encode(entry),

@@ -531,9 +531,7 @@ final class DatabaseWorkbenchOperationStore: ObservableObject {
             }
 
             let targetURL = URL(fileURLWithPath: target)
-            let temporaryURL = targetURL
-                .deletingLastPathComponent()
-                .appendingPathComponent("\(targetURL.lastPathComponent).restore-\(UUID().uuidString).tmp")
+            let temporaryURL = ClawixDatabaseRoutes.restoreReplacementURL(for: targetURL)
             defer { try? fileManager.removeItem(at: temporaryURL) }
             try fileManager.copyItem(atPath: source, toPath: temporaryURL.path)
             _ = try fileManager.replaceItemAt(targetURL, withItemAt: temporaryURL)

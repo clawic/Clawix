@@ -57,7 +57,7 @@ enum DriveTools {
 
     static func read(itemId: String) async throws -> Data {
         let store = try require()
-        let temp = FileManager.default.temporaryDirectory.appendingPathComponent("\(itemId)-\(UUID().uuidString)")
+        let temp = ClawixDriveRoutes.readTempURL(itemId: itemId)
         try await store.client.downloadItem(itemId, to: temp)
         try await store.client.markViewed(itemId)
         defer { try? FileManager.default.removeItem(at: temp) }

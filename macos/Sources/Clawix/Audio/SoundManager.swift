@@ -198,15 +198,8 @@ enum CustomSoundLibrary {
 
     static func storageDirectory() throws -> URL {
         let fm = FileManager.default
-        let support = try fm.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let dir = support
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.dictationSounds, isDirectory: true)
+        let support = try ClawixAudioRoutes.applicationSupportRoot(fileManager: fm)
+        let dir = ClawixAudioRoutes.dictationSoundsDirectoryURL(applicationSupportRoot: support)
         if !fm.fileExists(atPath: dir.path) {
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
         }

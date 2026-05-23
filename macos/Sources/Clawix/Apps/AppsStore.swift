@@ -34,7 +34,7 @@ final class AppsStore: ObservableObject {
 
     private let rootURL: URL
     private let fileManager: FileManager
-    private let manifestName = "manifest.json"
+    private let manifestName = ClawixFrameworkResourceRoutes.appManifestFileName
     private let loadOperation: LoadOperation
     private let packageTrustPolicy: AppPackageTrustPolicy
     private var eventStream: FSEventStreamRef?
@@ -87,7 +87,8 @@ final class AppsStore: ObservableObject {
     /// `~/.claw/apps`. Apps are framework resources; Clawix only renders
     /// the human UI and app webview shell.
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
-        ClawixPersistentSurfacePaths.frameworkGlobalChild("apps", isDirectory: true)
+        _ = fileManager
+        return ClawixFrameworkResourceRoutes.appsRootURL()
     }
 
     /// Bring `apps` in sync with whatever currently lives on disk. This

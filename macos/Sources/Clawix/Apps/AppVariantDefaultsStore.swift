@@ -171,6 +171,8 @@ extension SidebarRoute {
             return "memory"
         case .indexHome:
             return "index"
+        case .macCare:
+            return "mac-care"
         case .marketplaceHome:
             return "marketplace"
         case .driveAdmin:

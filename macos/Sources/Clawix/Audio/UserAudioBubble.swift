@@ -130,8 +130,10 @@ struct UserAudioBubble: View {
                     return
                 }
                 let ext = AudioCatalogRegistration.fileExtension(for: payload.mimeType)
-                let url = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("clawix-replay-\(self.audioRef.id).\(ext)")
+                let url = ClawixAudioRoutes.replayFileURL(
+                    audioId: self.audioRef.id,
+                    fileExtension: ext
+                )
                 try? payload.data.write(to: url, options: .atomic)
                 self.displayURL = url
                 if let p = try? AVAudioPlayer(contentsOf: url) {

@@ -23,7 +23,7 @@ final class EditorStore: ObservableObject {
 
     private let rootURL: URL
     private let fileManager: FileManager
-    private let manifestName = "document.json"
+    private let manifestName = ClawixFrameworkResourceRoutes.editorDocumentFileName
     private let loadOperation: LoadOperation
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
@@ -50,12 +50,16 @@ final class EditorStore: ObservableObject {
     }
 
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
-        ClawixPersistentSurfacePaths.frameworkGlobalChild("design", isDirectory: true)
-            .appendingPathComponent("documents", isDirectory: true)
+        _ = fileManager
+        return ClawixFrameworkResourceRoutes.editorDocumentsRootURL()
     }
 
-    func documentDir(for id: String) -> URL { rootURL.appendingPathComponent(id) }
-    func documentManifestURL(for id: String) -> URL { documentDir(for: id).appendingPathComponent(manifestName) }
+    func documentDir(for id: String) -> URL {
+        ClawixFrameworkResourceRoutes.editorDocumentDirectory(documentId: id, documentsRootURL: rootURL)
+    }
+    func documentManifestURL(for id: String) -> URL {
+        ClawixFrameworkResourceRoutes.editorDocumentManifestURL(documentDirectory: documentDir(for: id))
+    }
     func document(id: String) -> EditorDocument? { documents.first(where: { $0.id == id }) }
 
     func reloadFromDisk() {

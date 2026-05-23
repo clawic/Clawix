@@ -342,8 +342,7 @@ struct DatabaseClient {
         contentType: String
     ) throws -> MultipartUploadBody {
         let boundary = "----DatabaseClientBoundary\(UUID().uuidString)"
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clawix-database-upload-\(UUID().uuidString)", isDirectory: false)
+        let tempURL = ClawixDatabaseRoutes.multipartUploadBodyURL()
         FileManager.default.createFile(atPath: tempURL.path, contents: nil)
         let output = try FileHandle(forWritingTo: tempURL)
         do {
@@ -374,8 +373,7 @@ struct DatabaseClient {
     }
 
     private static func writeTemporaryUploadSource(data: Data) throws -> URL {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clawix-database-upload-source-\(UUID().uuidString)", isDirectory: false)
+        let tempURL = ClawixDatabaseRoutes.uploadSourceURL()
         try data.write(to: tempURL, options: .atomic)
         return tempURL
     }

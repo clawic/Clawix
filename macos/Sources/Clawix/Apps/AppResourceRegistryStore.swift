@@ -1,37 +1,20 @@
 import Foundation
 
 struct AppResourceRegistryStore: Sendable {
-    static let stateFileName = ClawixPersistentSurfacePaths.components.resourcesStateFile
+    static let stateFileName = ClawixAppResourceRoutes.stateFileName
 
     let directory: URL
 
     static func defaultDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
-        if let configured = environment["CLAW_RESOURCES_DIR"]?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !configured.isEmpty {
-            return expandHome(configured)
-        }
-        if let clawHome = environment["CLAW_HOME"]?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !clawHome.isEmpty {
-            return expandHome(clawHome).appendingPathComponent("resources", isDirectory: true)
-        }
-        return FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawHome, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.resources, isDirectory: true)
+        ClawixAppResourceRoutes.defaultDirectory(environment: environment)
     }
 
     static func expandHome(_ value: String) -> URL {
-        if value == "~" {
-            return FileManager.default.homeDirectoryForCurrentUser
-        }
-        if value.hasPrefix("~/") {
-            return FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(String(value.dropFirst(2)))
-        }
-        return URL(fileURLWithPath: value)
+        ClawixAppResourceRoutes.expandHome(value)
     }
 
     var stateURL: URL {
-        directory.appendingPathComponent(Self.stateFileName, isDirectory: false)
+        ClawixAppResourceRoutes.stateFileURL(directory: directory)
     }
 
     func list(status: String? = nil, kind: String? = nil) throws -> [AppResourceRecord] {

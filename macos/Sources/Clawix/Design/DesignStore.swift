@@ -68,15 +68,20 @@ final class DesignStore: ObservableObject {
     }
 
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
-        ClawixPersistentSurfacePaths.frameworkGlobalChild("design", isDirectory: true)
+        _ = fileManager
+        return ClawixFrameworkResourceRoutes.designRootURL()
     }
 
-    var stylesRootURL: URL { rootURL.appendingPathComponent("styles") }
-    var templatesRootURL: URL { rootURL.appendingPathComponent("templates") }
-    var referencesRootURL: URL { rootURL.appendingPathComponent("references") }
+    var stylesRootURL: URL { ClawixFrameworkResourceRoutes.stylesRootURL(designRootURL: rootURL) }
+    var templatesRootURL: URL { ClawixFrameworkResourceRoutes.templatesRootURL(designRootURL: rootURL) }
+    var referencesRootURL: URL { ClawixFrameworkResourceRoutes.referencesRootURL(designRootURL: rootURL) }
 
-    func styleDir(for id: String) -> URL { stylesRootURL.appendingPathComponent(id) }
-    func referenceDir(for id: String) -> URL { referencesRootURL.appendingPathComponent(id) }
+    func styleDir(for id: String) -> URL {
+        ClawixFrameworkResourceRoutes.styleDirectory(styleId: id, stylesRootURL: stylesRootURL)
+    }
+    func referenceDir(for id: String) -> URL {
+        ClawixFrameworkResourceRoutes.referenceDirectory(referenceId: id, referencesRootURL: referencesRootURL)
+    }
 
     // MARK: - Public lookups
 
@@ -330,14 +335,17 @@ final class DesignStore: ObservableObject {
     }
 
     private func writeStyle(_ manifest: StyleManifest) throws {
-        let dir = stylesRootURL.appendingPathComponent(manifest.id)
+        let dir = styleDir(for: manifest.id)
         try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         let payload = try DesignSerializer.writeStyle(manifest)
         try payload.data(using: .utf8)?.write(to: dir.appendingPathComponent("STYLE.md"), options: .atomic)
     }
 
     private func writeTemplate(_ manifest: TemplateManifest) throws {
-        let dir = templatesRootURL.appendingPathComponent(manifest.id)
+        let dir = ClawixFrameworkResourceRoutes.templateDirectory(
+            templateId: manifest.id,
+            templatesRootURL: templatesRootURL
+        )
         try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         let payload = try DesignSerializer.writeTemplate(manifest)
         try payload.data(using: .utf8)?.write(to: dir.appendingPathComponent("TEMPLATE.md"), options: .atomic)
@@ -356,9 +364,9 @@ final class DesignStore: ObservableObject {
 
     private static func loadSnapshot(rootURL: URL) async throws -> DesignSnapshot {
         try await Task.detached(priority: .utility) {
-            let stylesRootURL = rootURL.appendingPathComponent("styles")
-            let templatesRootURL = rootURL.appendingPathComponent("templates")
-            let referencesRootURL = rootURL.appendingPathComponent("references")
+            let stylesRootURL = ClawixFrameworkResourceRoutes.stylesRootURL(designRootURL: rootURL)
+            let templatesRootURL = ClawixFrameworkResourceRoutes.templatesRootURL(designRootURL: rootURL)
+            let referencesRootURL = ClawixFrameworkResourceRoutes.referencesRootURL(designRootURL: rootURL)
             let styles = readAllStyles(from: stylesRootURL)
             try Task.checkCancellation()
             let templates = readAllTemplates(from: templatesRootURL)

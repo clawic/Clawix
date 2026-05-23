@@ -337,7 +337,7 @@ struct ReferencesHomeView: View {
     }
 
     private func ingest(imageData: Data, suggestedName: String) {
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("clawix-drop-\(UUID().uuidString).png")
+        let tempURL = ClawixDesignRoutes.droppedImageURL()
         do {
             try imageData.write(to: tempURL)
             ingest(localURL: tempURL)
