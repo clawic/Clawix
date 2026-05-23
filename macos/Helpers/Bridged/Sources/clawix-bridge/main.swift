@@ -813,7 +813,9 @@ final class DaemonEngineHost: EngineHost {
             let root = URL(fileURLWithPath: NSTemporaryDirectory())
                 .appendingPathComponent("clawix-attachments", isDirectory: true)
                 .appendingPathComponent("dictation", isDirectory: true)
-            let url = root.appendingPathComponent("\(requestId).\(ext)")
+            let url = root.appendingPathComponent(
+                "\(safeBridgeAudioPathComponent(requestId)).\(safeBridgeAudioPathComponent(ext))"
+            )
             do {
                 try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
                 guard let data = Data(base64Encoded: audioBase64) else {
@@ -821,6 +823,7 @@ final class DaemonEngineHost: EngineHost {
                     return
                 }
                 try data.write(to: url, options: .atomic)
+                defer { try? FileManager.default.removeItem(at: url) }
                 let text = try await TranscriptionService.shared.transcribe(
                     fileURL: url,
                     using: model,

@@ -19,7 +19,8 @@ enum QuickAskDiag {
     }()
 
     static func log(_ message: String) {
-        let line = "[\(formatter.string(from: Date()))] \(message)\n"
+        let safeMessage = ClawixDiagnosticRedactor.redact(message)
+        let line = "[\(formatter.string(from: Date()))] \(safeMessage)\n"
         queue.async {
             guard let data = line.data(using: .utf8) else { return }
             rotateIfNeeded(addingBytes: UInt64(data.count))

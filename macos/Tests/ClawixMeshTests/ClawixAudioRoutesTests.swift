@@ -24,6 +24,27 @@ final class ClawixAudioRoutesTests: XCTestCase {
         XCTAssertFalse(bubbleSource.contains("clawix-replay-\\(self.audioRef.id).\\(ext)"))
     }
 
+    func testAudioTemporaryRoutesSanitizePathComponents() {
+        let temporaryDirectory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+
+        XCTAssertEqual(
+            ClawixAudioRoutes.replayFileURL(
+                audioId: "../voice/private",
+                fileExtension: "m4a/../../secret",
+                temporaryDirectory: temporaryDirectory
+            ).path,
+            "/tmp/clawix-replay-voice_private.m4a_______secret"
+        )
+        XCTAssertEqual(
+            ClawixAudioRoutes.dictationSpoolFileURL(
+                requestId: "../request/private",
+                fileExtension: "wav/../../secret",
+                temporaryDirectory: temporaryDirectory
+            ).path,
+            "/tmp/clawix-attachments/dictation/request_private.wav_______secret"
+        )
+    }
+
     func testDictationAudioSpoolTemporaryRouteIsCentralized() throws {
         let engineHostSource = try readSource("AppState/EngineHost.swift")
         let temporaryDirectory = URL(fileURLWithPath: "/tmp", isDirectory: true)
@@ -49,6 +70,20 @@ final class ClawixAudioRoutesTests: XCTestCase {
         XCTAssertFalse(engineHostSource.contains("NSTemporaryDirectory()"))
         XCTAssertFalse(engineHostSource.contains("\"clawix-attachments\""))
         XCTAssertFalse(engineHostSource.contains("\"dictation\""))
+    }
+
+    func testDictationSpoolFilesAreCleanedOnTranscriptionCompletionPaths() throws {
+        let appStateHostSource = try readSource("AppState/EngineHost.swift")
+        let daemonMainSource = try readHelperSource("main.swift")
+        let daemonIngestSource = try readHelperSource("DaemonAudioIngest.swift")
+
+        XCTAssertTrue(appStateHostSource.contains("defer { try? FileManager.default.removeItem(at: url) }"))
+        XCTAssertTrue(daemonMainSource.contains("defer { try? FileManager.default.removeItem(at: url) }"))
+        XCTAssertTrue(daemonIngestSource.contains("defer { try? FileManager.default.removeItem(at: tmpURL) }"))
+        XCTAssertTrue(daemonIngestSource.contains("audio attachment decode failed"))
+        XCTAssertFalse(daemonIngestSource.contains("audio attachment decode failed id="))
+        XCTAssertTrue(daemonMainSource.contains("safeBridgeAudioPathComponent(requestId)"))
+        XCTAssertTrue(daemonIngestSource.contains("safeBridgeAudioPathComponent(first.id)"))
     }
 
     func testDictationSoundsStorageRouteIsCentralized() throws {
@@ -77,6 +112,23 @@ final class ClawixAudioRoutesTests: XCTestCase {
             .deletingLastPathComponent()
             .appendingPathComponent(ClawixPersistentSurfacePaths.components.sources, isDirectory: true)
             .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
+        return try String(
+            contentsOf: root.appendingPathComponent(relativePath, isDirectory: false),
+            encoding: .utf8
+        )
+    }
+
+    private func readHelperSource(_ relativePath: String) throws -> String {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let macosRoot = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let root = macosRoot
+            .appendingPathComponent("Helpers", isDirectory: true)
+            .appendingPathComponent("Bridged", isDirectory: true)
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent("clawix-bridge", isDirectory: true)
         return try String(
             contentsOf: root.appendingPathComponent(relativePath, isDirectory: false),
             encoding: .utf8

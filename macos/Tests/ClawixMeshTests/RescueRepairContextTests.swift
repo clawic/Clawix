@@ -74,10 +74,12 @@ final class RescueRepairContextTests: XCTestCase {
     func testRescueRedactionUsesCentralUserHomeRoutePattern() throws {
         let routesSource = try readSource("ClawixUserHomeRoutes.swift")
         let rescueSource = try readSource("Rescue/RescueRepairContext.swift")
+        let diagnosticsSource = try readSource("Diagnostics/DiagnosticReportSupport.swift")
 
         XCTAssertEqual(ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern, #"/Users/[^\s"'`]+"#)
         XCTAssertTrue(routesSource.contains("absoluteUsersPathRedactionPattern"))
-        XCTAssertTrue(rescueSource.contains("ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern"))
+        XCTAssertTrue(diagnosticsSource.contains("ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern"))
+        XCTAssertTrue(rescueSource.contains("ClawixDiagnosticRedactor.redact(text)"))
         XCTAssertFalse(rescueSource.contains(##"of: #"/Users/[^\s"'`]+"#"##))
     }
 

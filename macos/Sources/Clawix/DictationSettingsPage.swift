@@ -165,7 +165,7 @@ struct DictationSettingsPage: View {
             SettingsCard {
                 ToggleRow(
                     title: "Remove filler words",
-                    detail: "Strip \"uh\", \"um\", \"este\", \"o sea\" and similar across multiple languages",
+                    detail: LocalizedStringKey(L10n.t("Strip filler words across multiple languages")),
                     isOn: $fillerWordsEnabled
                 )
             }

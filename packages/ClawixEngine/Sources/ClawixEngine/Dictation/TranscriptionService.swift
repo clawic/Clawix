@@ -287,7 +287,8 @@ public actor TranscriptionService {
     /// (same `/tmp/clawix-hotkey.log`) so we can diff one continuous
     /// timeline when reproducing dictation bugs.
     public nonisolated static func trace(_ message: String) {
-        let line = "\(Date()) ts: \(message)\n"
+        let safeMessage = BridgeLog.redactForDiagnostics(message)
+        let line = "\(Date()) ts: \(safeMessage)\n"
         guard let data = line.data(using: .utf8) else { return }
         let url = URL(fileURLWithPath: "/tmp/clawix-hotkey.log")
         if let handle = try? FileHandle(forWritingTo: url) {

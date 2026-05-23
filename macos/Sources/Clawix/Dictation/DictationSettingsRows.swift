@@ -150,7 +150,7 @@ struct PermissionRow: View {
                 .foregroundColor(Palette.textSecondary)
         case .notDetermined:
             DSPSecondaryButton(label: "Request Access", action: request)
-        case .denied:
+        case .denied, .restricted, .revoked:
             DSPSecondaryButton(label: "Open Settings", action: openSettings)
         }
     }
@@ -158,7 +158,8 @@ struct PermissionRow: View {
     private var dotColor: Color {
         switch status {
         case .granted:       return Color(red: 0.27, green: 0.74, blue: 0.42)
-        case .denied:        return Color(red: 0.94, green: 0.36, blue: 0.36)
+        case .denied, .restricted, .revoked:
+            return Color(red: 0.94, green: 0.36, blue: 0.36)
         case .notDetermined: return Color(white: 0.55)
         }
     }

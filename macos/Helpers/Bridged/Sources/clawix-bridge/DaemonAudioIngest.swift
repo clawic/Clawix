@@ -28,7 +28,7 @@ extension DaemonEngineHost {
         for attachment in attachments {
             guard let dataBase64 = attachment.dataBase64,
                   let data = Data(base64Encoded: dataBase64) else {
-                BridgeLog.write("audio attachment decode failed id=\(attachment.id)")
+                BridgeLog.write("audio attachment decode failed")
                 continue
             }
             let transcript = normalizedTranscript.isEmpty ? (fallbackTranscript ?? "") : normalizedTranscript
@@ -67,7 +67,7 @@ extension DaemonEngineHost {
             .appendingPathComponent("ingest", isDirectory: true)
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         let ext = AudioCatalogRegistration.fileExtension(for: first.mimeType)
-        let tmpURL = tmpDir.appendingPathComponent("\(first.id).\(ext)")
+        let tmpURL = tmpDir.appendingPathComponent("\(safeBridgeAudioPathComponent(first.id)).\(safeBridgeAudioPathComponent(ext))")
         try? data.write(to: tmpURL, options: Data.WritingOptions.atomic)
         defer { try? FileManager.default.removeItem(at: tmpURL) }
         return try? await TranscriptionService.shared.transcribe(
@@ -76,4 +76,5 @@ extension DaemonEngineHost {
             language: nil
         )
     }
+
 }

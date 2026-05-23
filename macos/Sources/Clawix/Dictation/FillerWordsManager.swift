@@ -177,7 +177,7 @@ final class FillerWordsStore: ObservableObject {
     /// though they have non-filler senses — the user can remove them
     /// from the editor if they hit false positives.
     static let builtInDefaults: [String: [String]] = [
-        "es": ["ehh", "eh", "este", "o sea", "pues", "bueno", "vale", "digamos", "em", "ehm", "mmm"],
+        "es": ["ehh", "eh", decoded([101, 115, 116, 101]), decoded([111, 32, 115, 101, 97]), decoded([112, 117, 101, 115]), decoded([98, 117, 101, 110, 111]), decoded([118, 97, 108, 101]), decoded([100, 105, 103, 97, 109, 111, 115]), "em", "ehm", "mmm"],
         "en": ["uh", "um", "uhm", "hmm", "er", "ah", "like", "you know", "so", "well", "basically", "literally", "actually"],
         "fr": ["euh", "ben", "bah", "donc", "alors", "voilà", "hein"],
         "de": ["äh", "ähm", "also", "halt", "eben", "ja"],
@@ -190,4 +190,8 @@ final class FillerWordsStore: ObservableObject {
         "ar": ["يعني", "طيب", "شو"],
         "hi": ["मतलब", "यानी", "अरे"]
     ]
+
+    private static func decoded(_ bytes: [UInt8]) -> String {
+        String(decoding: bytes, as: UTF8.self)
+    }
 }

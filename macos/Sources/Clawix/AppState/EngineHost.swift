@@ -129,6 +129,7 @@ extension AppState: EngineHost {
                     withIntermediateDirectories: true
                 )
                 try data.write(to: url, options: .atomic)
+                defer { try? FileManager.default.removeItem(at: url) }
                 let activeRaw = UserDefaults.standard.string(
                     forKey: DictationModelStore.activeModelDefaultsKey
                 ) ?? ""
@@ -138,7 +139,6 @@ extension AppState: EngineHost {
                     using: model,
                     language: language
                 )
-                try? FileManager.default.removeItem(at: url)
                 reply(text, nil)
             } catch {
                 reply("", error.localizedDescription)

@@ -144,6 +144,34 @@ final class UserImageThumbnailLoaderTests: XCTestCase {
         XCTAssertEqual(result.sourceBytes, 0)
     }
 
+    func testMissingFileThumbnailFailsWithoutCachingPlaceholder() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("missing-\(UUID().uuidString).png")
+
+        let first = await UserImageThumbnailLoader.shared.thumbnail(for: .file(url))
+        let second = await UserImageThumbnailLoader.shared.thumbnail(for: .file(url))
+
+        XCTAssertNil(first.image)
+        XCTAssertNil(second.image)
+        XCTAssertFalse(first.cacheHit)
+        XCTAssertFalse(second.cacheHit)
+    }
+
+    func testCorruptImagePreviewFailsGracefullyWithoutCacheHit() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("corrupt-\(UUID().uuidString).png")
+        try Data("not an image".utf8).write(to: url, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let first = await UserImageThumbnailLoader.shared.thumbnail(for: .file(url))
+        let second = await UserImageThumbnailLoader.shared.thumbnail(for: .file(url))
+
+        XCTAssertNil(first.image)
+        XCTAssertNil(second.image)
+        XCTAssertFalse(first.cacheHit)
+        XCTAssertFalse(second.cacheHit)
+    }
+
     private static func writeFixture(width: Int, height: Int) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("clawix-thumbnail-\(UUID().uuidString).png")

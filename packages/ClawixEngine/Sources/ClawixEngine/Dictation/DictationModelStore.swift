@@ -117,7 +117,7 @@ public final class DictationModelStore: ObservableObject {
         downloadProgress[model] = 0
         downloadErrors[model] = nil
 
-        fputs("[Clawix.dictation] download begin variant=\(model.whisperKitVariant)\n", stderr)
+        Self.writeDiagnostic("[Clawix.dictation] download begin variant=\(model.whisperKitVariant)")
 
         let task = Task { [weak self] in
             do {
@@ -127,14 +127,14 @@ public final class DictationModelStore: ObservableObject {
                         let fraction = progress.fractionCompleted
                         let completed = progress.completedUnitCount
                         let total = progress.totalUnitCount
-                        fputs("[Clawix.dictation] progress \(model.rawValue) \(Int(fraction * 100))% (\(completed)/\(total))\n", stderr)
+                        Self.writeDiagnostic("[Clawix.dictation] progress \(model.rawValue) \(Int(fraction * 100))% (\(completed)/\(total))")
                         Task { @MainActor in
                             self?.downloadProgress[model] = fraction
                         }
                     }
                 )
                 try Task.checkCancellation()
-                fputs("[Clawix.dictation] download finished variant=\(model.whisperKitVariant)\n", stderr)
+                Self.writeDiagnostic("[Clawix.dictation] download finished variant=\(model.whisperKitVariant)")
                 await MainActor.run {
                     guard let self else { return }
                     self.inFlight[model] = nil
@@ -146,10 +146,10 @@ public final class DictationModelStore: ObservableObject {
                 let cancelled = Self.isCancellation(error)
                 let message = error.localizedDescription
                 if cancelled {
-                    fputs("[Clawix.dictation] download \(model.rawValue) cancelled\n", stderr)
+                    Self.writeDiagnostic("[Clawix.dictation] download \(model.rawValue) cancelled")
                 } else {
-                    fputs("[Clawix.dictation] download \(model.rawValue) failed: \(message)\n", stderr)
-                    fputs("[Clawix.dictation] error detail: \(String(reflecting: error))\n", stderr)
+                    Self.writeDiagnostic("[Clawix.dictation] download \(model.rawValue) failed: \(message)")
+                    Self.writeDiagnostic("[Clawix.dictation] error detail: \(String(reflecting: error))")
                 }
                 await MainActor.run {
                     guard let self else { return }
@@ -214,6 +214,11 @@ public final class DictationModelStore: ObservableObject {
     /// `NSURLErrorCancelled` as the same "user asked to stop" signal,
     /// since `WhisperKit.download` may surface either depending on
     /// where in the pipeline we cut it off.
+    private nonisolated static func writeDiagnostic(_ message: String) {
+        let safe = BridgeLog.redactForDiagnostics(message)
+        fputs("\(safe)\n", stderr)
+    }
+
     private nonisolated static func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }
         let nsError = error as NSError

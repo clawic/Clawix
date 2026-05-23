@@ -35,7 +35,7 @@ final class LocalModelsDaemon: ObservableObject {
     @Published private(set) var state: State = .stopped
 
     private var process: Process?
-    private var logHandle: FileHandle?
+    private var logSink: ClawixRedactedProcessLogSink?
 
     /// `true` when an external owner (LaunchAgent, manual `ollama serve`)
     /// is already listening on `port`. We attach as a client and never
@@ -179,11 +179,10 @@ final class LocalModelsDaemon: ObservableObject {
 
         // Append-mode write handle so we don't truncate previous runs'
         // logs when Clawix restarts.
-        let handle = try FileHandle(forWritingTo: Self.logFileURL)
-        try handle.seekToEnd()
-        process.standardOutput = handle
-        process.standardError = handle
-        self.logHandle = handle
+        let logSink = try ClawixRedactedProcessLogSink(logURL: Self.logFileURL)
+        process.standardOutput = logSink.stdoutPipe
+        process.standardError = logSink.stderrPipe
+        self.logSink = logSink
 
         process.terminationHandler = { [weak self] proc in
             Task { @MainActor [weak self] in
@@ -193,8 +192,8 @@ final class LocalModelsDaemon: ObservableObject {
                     ? .stopped
                     : .crashed(message: "Runtime exited with status \(status).")
                 self.process = nil
-                try? self.logHandle?.close()
-                self.logHandle = nil
+                self.logSink?.close()
+                self.logSink = nil
             }
         }
 

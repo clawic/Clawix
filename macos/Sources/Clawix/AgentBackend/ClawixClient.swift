@@ -266,7 +266,7 @@ actor ClawixClient {
             PerfSignpost.ipcClient.event("decode.failed")
             // Not all server output is JSON-RPC: log it and move on.
             if let log = stderrLogHandle, let s = String(data: data, encoding: .utf8) {
-                try? log.write(contentsOf: Data("[stdout-non-json] \(s)\n".utf8))
+                writeRedacted("[stdout-non-json] \(s)\n", to: log)
             }
             return
         }
@@ -347,7 +347,7 @@ actor ClawixClient {
             PerfSignpost.ipcClient.event("frame.rejected.bytes", bytes)
         }
         if let log = stderrLogHandle {
-            try? log.write(contentsOf: Data("[stdout-frame-error] \(String(describing: error))\n".utf8))
+            writeRedacted("[stdout-frame-error] \(String(describing: error))\n", to: log)
         }
         process?.terminate()
         process = nil
@@ -403,7 +403,14 @@ actor ClawixClient {
     }
 
     private func writeStderr(_ data: Data) {
-        try? stderrLogHandle?.write(contentsOf: data)
+        guard let log = stderrLogHandle else { return }
+        let text = String(decoding: data, as: UTF8.self)
+        writeRedacted(text, to: log)
+    }
+
+    private func writeRedacted(_ text: String, to log: FileHandle) {
+        let redacted = ClawixDiagnosticRedactor.redact(text)
+        try? log.write(contentsOf: Data(redacted.utf8))
     }
 
     private func openStderrLog() {

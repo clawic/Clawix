@@ -981,9 +981,15 @@ final class AgentStore: ObservableObject {
         let folder = dir(forAgent: agentId)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let url = ClawixAgentStoreRoutes.auditLogFile(agentDirectory: folder)
+        var safeEntry = entry
+        safeEntry.actorAgentId = ClawixDiagnosticRedactor.redact(entry.actorAgentId)
+        safeEntry.subjectAgentId = entry.subjectAgentId.map(ClawixDiagnosticRedactor.redact)
+        safeEntry.action = ClawixDiagnosticRedactor.redact(entry.action)
+        safeEntry.result = ClawixDiagnosticRedactor.redact(entry.result)
+        safeEntry.note = entry.note.map(ClawixDiagnosticRedactor.redact)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        guard let data = try? encoder.encode(entry),
+        guard let data = try? encoder.encode(safeEntry),
               let line = String(data: data, encoding: .utf8) else { return }
         let appended = line + "\n"
         if FileManager.default.fileExists(atPath: url.path),

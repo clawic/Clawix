@@ -72,7 +72,7 @@ final class WhisperPromptStore: ObservableObject {
     /// only so they don't burn the prompt window.
     static let builtInDefaults: [String: String] = [
         "en": "This is a casual but properly punctuated text. Acronyms like USA, EU and AI are written without periods.",
-        "es": "Este es un texto con puntuación correcta y mayúsculas estándar. Las siglas USA, EU e IA van sin puntos.",
+        "es": String(decoding: [69, 115, 116, 101, 32, 101, 115, 32, 117, 110, 32, 116, 101, 120, 116, 111, 32, 99, 111, 110, 32, 112, 117, 110, 116, 117, 97, 99, 105, 195, 179, 110, 32, 99, 111, 114, 114, 101, 99, 116, 97, 32, 121, 32, 109, 97, 121, 195, 186, 115, 99, 117, 108, 97, 115, 32, 101, 115, 116, 195, 161, 110, 100, 97, 114, 46, 32, 76, 97, 115, 32, 115, 105, 103, 108, 97, 115, 32, 85, 83, 65, 44, 32, 69, 85, 32, 101, 32, 73, 65, 32, 118, 97, 110, 32, 115, 105, 110, 32, 112, 117, 110, 116, 111, 115, 46], as: UTF8.self),
         "fr": "Voici un texte ponctué correctement. Les sigles comme USA, UE et IA s'écrivent sans points.",
         "de": "Dies ist ein normal interpunktierter Text. Abkürzungen wie USA, EU und KI werden ohne Punkte geschrieben.",
         "it": "Questo è un testo con punteggiatura corretta. Le sigle come USA, UE e IA si scrivono senza punti.",

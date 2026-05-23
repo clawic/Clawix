@@ -125,7 +125,8 @@ final class DictationHotkeyMonitor {
     private static let debugLogURL = ClawixDiagnosticLogRoutes.hotkeyDebugLogURL
 
     private static func debug(_ message: String) {
-        let line = "\(Date()) \(message)\n"
+        let safeMessage = ClawixDiagnosticRedactor.redact(message)
+        let line = "\(Date()) \(safeMessage)\n"
         if let data = line.data(using: .utf8) {
             if let handle = try? FileHandle(forWritingTo: debugLogURL) {
                 handle.seekToEndOfFile()
@@ -292,8 +293,8 @@ final class DictationHotkeyMonitor {
     /// over the Settings sheet (not as an invisible modal during cold
     /// start, the regression that triggered the frozen-input bug). On
     /// `.granted` we register immediately; on `.notDetermined` we ask
-    /// IOKit to prompt and the user re-toggles to retry; on `.denied`
-    /// we open the Privacy pane so they can enable Clawix manually.
+    /// IOKit to prompt and the user re-toggles to retry; blocked states
+    /// open the Privacy pane so they can enable Clawix manually.
     func requestPermissionAndRegister(coordinator: DictationCoordinator) {
         switch DictationPermissions.inputMonitoring() {
         case .granted:
@@ -304,7 +305,7 @@ final class DictationHotkeyMonitor {
             // re-runs `register()` on the next user toggle, so once
             // permission lands the global monitor comes online without
             // a relaunch.
-        case .denied:
+        case .denied, .restricted, .revoked:
             DictationPermissions.openInputMonitoringSettings()
         }
     }

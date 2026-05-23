@@ -22,4 +22,20 @@ final class BridgeLogRedactionTests: XCTestCase {
         XCTAssertTrue(redacted.contains("prompt=<redacted:content>"))
         XCTAssertTrue(redacted.contains("Bearer <redacted>"))
     }
+
+    func testRedactsDictationTraceAndErrorDetails() {
+        let apiKey = "sk-" + "testtemplate1111111111111111"
+        let privatePath = "/Users/" + "sensitive/.codex/goals/private.json"
+        let input = """
+        trace: user said copy my private launch plan
+        download failed at \(privatePath) with token=\(apiKey)
+        """
+
+        let redacted = BridgeLog.redactForDiagnostics(input)
+
+        XCTAssertFalse(redacted.contains("private launch plan"))
+        XCTAssertFalse(redacted.contains(privatePath))
+        XCTAssertFalse(redacted.contains(apiKey))
+        XCTAssertTrue(redacted.contains("trace=<redacted:content>"))
+    }
 }

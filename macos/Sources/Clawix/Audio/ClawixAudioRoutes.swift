@@ -25,7 +25,7 @@ enum ClawixAudioRoutes {
         fileExtension: String,
         temporaryDirectory: URL = temporaryDirectory()
     ) -> URL {
-        temporaryDirectory.appendingPathComponent("\(replayPrefix)-\(audioId).\(fileExtension)")
+        temporaryDirectory.appendingPathComponent("\(replayPrefix)-\(safePathComponent(audioId)).\(safePathComponent(fileExtension))")
     }
 
     static func dictationSpoolDirectoryURL(
@@ -42,12 +42,22 @@ enum ClawixAudioRoutes {
         temporaryDirectory: URL = temporaryDirectory()
     ) -> URL {
         dictationSpoolDirectoryURL(temporaryDirectory: temporaryDirectory)
-            .appendingPathComponent("\(requestId).\(fileExtension)")
+            .appendingPathComponent("\(safePathComponent(requestId)).\(safePathComponent(fileExtension))")
     }
 
     static func dictationSoundsDirectoryURL(applicationSupportRoot: URL) -> URL {
         applicationSupportRoot
             .appendingPathComponent(appSupportDirectoryName, isDirectory: true)
             .appendingPathComponent(dictationSoundsDirectoryName, isDirectory: true)
+    }
+
+    private static func safePathComponent(_ raw: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let scalars = raw.unicodeScalars.map { scalar -> Character in
+            allowed.contains(scalar) ? Character(scalar) : "_"
+        }
+        let sanitized = String(scalars)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        return sanitized.isEmpty ? "audio" : sanitized
     }
 }

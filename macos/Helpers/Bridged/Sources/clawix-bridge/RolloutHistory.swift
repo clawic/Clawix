@@ -248,5 +248,15 @@ func audioExtension(mimeType: String) -> String {
     }
 }
 
+func safeBridgeAudioPathComponent(_ raw: String) -> String {
+    let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+    let scalars = raw.unicodeScalars.map { scalar -> Character in
+        allowed.contains(scalar) ? Character(scalar) : "_"
+    }
+    let sanitized = String(scalars)
+        .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+    return sanitized.isEmpty ? "audio" : sanitized
+}
+
 // `AttachmentSpooler` lives in ClawixCore so the macOS GUI bridge and
 // this daemon share the same temp-file layout for inline image inputs.

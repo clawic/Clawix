@@ -30,6 +30,8 @@ final class ClawixDiagnosticStorageRoutesTests: XCTestCase {
         XCTAssertTrue(samplerSource.contains("ClawixDiagnosticStorageRoutes.diagnosticsFileURL"))
         XCTAssertFalse(samplerSource.contains("appendingPathComponent(\"Diagnostics\""))
         XCTAssertFalse(metricKitSource.contains("~/Library/Application Support/<bundleId>/Diagnostics/"))
+        XCTAssertFalse(metricKitSource.contains("url.path, privacy: .public"))
+        XCTAssertTrue(metricKitSource.contains("url.lastPathComponent, privacy: .public"))
     }
 
     private func readSource(_ relativePath: String) throws -> String {

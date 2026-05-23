@@ -861,7 +861,7 @@ final class DictationCoordinator: ObservableObject {
                 } else {
                     self.fail(with: "Microphone permission was denied")
                 }
-            case .denied:
+            case .denied, .restricted, .revoked:
                 self.fail(with: "Microphone permission is denied")
                 DictationPermissions.openMicrophoneSettings()
             }
@@ -1198,10 +1198,8 @@ final class DictationCoordinator: ObservableObject {
                 // at fault. Lives in ~/.clawix/tmp/dictation-audio-debug/
                 // and is never auto-cleaned; the user can wipe it.
                 let debugURL = DictationAudioStorage.writeEmptyTranscriptDebugWAV(samples: samples)
-                fputs(
-                    "[Clawix.dictation] empty transcript: dur=\(String(format: "%.2f", durationSeconds))s samples=\(samples.count) rms=\(String(format: "%.4f", rms)) peak=\(String(format: "%.4f", peak)) lang=\(language ?? "auto") debugWAV=\(debugURL?.path ?? "nil")\n",
-                    stderr
-                )
+                let diagnostic = "[Clawix.dictation] empty transcript: dur=\(String(format: "%.2f", durationSeconds))s samples=\(samples.count) rms=\(String(format: "%.4f", rms)) peak=\(String(format: "%.4f", peak)) lang=\(language ?? "auto") debugWAV=\(debugURL?.path ?? "nil")"
+                fputs("\(ClawixDiagnosticRedactor.redact(diagnostic))\n", stderr)
                 if isVeryShort {
                     // Silent — accidental tap, don't bother the user.
                 } else if isLowEnergy {

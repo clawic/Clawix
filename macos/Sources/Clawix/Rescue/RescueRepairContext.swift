@@ -129,15 +129,8 @@ enum RescueRepairContextBuilder {
     }
 
     private static func safeDiagnosticReference(for url: URL) -> RescueDiagnosticReference {
-        let name = url.lastPathComponent.isEmpty ? "diagnostic" : url.lastPathComponent
-        return RescueDiagnosticReference(name: redact(name), kind: diagnosticKind(for: name))
-    }
-
-    private static func diagnosticKind(for name: String) -> String {
-        if name.contains("resource") { return "resource" }
-        if name.contains("receipt") { return "receipt" }
-        if name.contains("log") { return "log" }
-        return "diagnostic"
+        let reference = DiagnosticArtifactClassifier.reference(for: url)
+        return RescueDiagnosticReference(name: reference.name, kind: reference.kind)
     }
 
     private static func offlineSafeActions() -> [RescueRepairAction] {
@@ -195,22 +188,7 @@ enum RescueRepairContextBuilder {
     }
 
     private static func redact(_ text: String) -> String {
-        var redacted = text.replacingOccurrences(
-            of: ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern,
-            with: "[redacted_path]",
-            options: .regularExpression
-        )
-        redacted = redacted.replacingOccurrences(
-            of: #"\b(?:sk|pk|rk|ghp|github_pat|xox[baprs])-[A-Za-z0-9_\-]{8,}\b"#,
-            with: "[redacted_secret]",
-            options: .regularExpression
-        )
-        redacted = redacted.replacingOccurrences(
-            of: #"\b(prompt|input|message)\s*[:=]\s*("[^"]*"|'[^']*'|[^\n\r;]+)"#,
-            with: "$1: [redacted_prompt]",
-            options: .regularExpression
-        )
-        return redacted
+        ClawixDiagnosticRedactor.redact(text)
     }
 }
 
