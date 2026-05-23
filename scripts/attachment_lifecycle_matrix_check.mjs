@@ -57,6 +57,8 @@ for (const type of matrix.attachmentTypes ?? []) {
   }
   if (!validStatus.has(type.validationState)) {
     fail(`${type.id}: validationState must be one of ${Array.from(validStatus).join(", ")}`);
+  } else if (type.validationState !== "validated") {
+    fail(`${type.id}: validationState must be validated for attachment lifecycle closure`);
   }
   assertNonEmptyString(type.surface, `${type.id}.surface`);
   assertNonEmptyString(type.description, `${type.id}.description`);
@@ -72,6 +74,8 @@ for (const type of matrix.attachmentTypes ?? []) {
     }
     if (!validStatus.has(caseValue.status)) {
       fail(`${type.id}.${caseId}: status must be one of ${Array.from(validStatus).join(", ")}`);
+    } else if (caseValue.status !== "validated") {
+      fail(`${type.id}.${caseId}: status must be validated for attachment lifecycle closure`);
     }
     assertEvidence(caseValue, `${type.id}.${caseId}`);
     assertNonEmptyString(caseValue.fixture, `${type.id}.${caseId}.fixture`);
@@ -88,6 +92,23 @@ for (const section of ["privacy", "simulatedChatSend"]) {
     fail(`${section}.status must be one of ${Array.from(validStatus).join(", ")}`);
   }
   assertEvidence(value, section);
+}
+
+const realAppValidation = matrix.realAppValidation;
+if (!realAppValidation || typeof realAppValidation !== "object") {
+  fail("realAppValidation section is required");
+} else {
+  if (!validStatus.has(realAppValidation.status)) {
+    fail(`realAppValidation.status must be one of ${Array.from(validStatus).join(", ")}`);
+  }
+  assertEvidence(realAppValidation, "realAppValidation");
+  if (!Array.isArray(realAppValidation.remaining)) {
+    fail("realAppValidation.remaining must be an array");
+  } else {
+    for (const [index, remaining] of realAppValidation.remaining.entries()) {
+      assertNonEmptyString(remaining, `realAppValidation.remaining[${index}]`);
+    }
+  }
 }
 
 const doc = fs.readFileSync(docPath, "utf8");

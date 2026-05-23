@@ -15,15 +15,17 @@
       "support": "supported",
       "surface": "macos composer",
       "description": "Image selected or dropped as a composer file, rendered as a chip, previewed as a thumbnail, sent as a path mention plus inline image bytes when the bridge path is active.",
-      "validationState": "partial",
+      "validationState": "validated",
       "cases": {
         "happy_path": {
           "status": "validated",
           "evidence": [
             "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testLargeFileThumbnailIsDownsampled",
-            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText"
+            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText",
+            "macos/Tests/ClawixMeshTests/ComposerFileDropPolicyTests.swift:testDropPolicyStagesImageAndFileFixturesThroughComposerPath",
+            "Real app fixture validation 2026-05-23: picker selected sample.png and composer rendered image thumbnail chip with remove control; no chat send"
           ],
-          "fixture": "generated PNG fixture"
+          "fixture": "generated PNG fixture and dropped-image.png fixture"
         },
         "error_path": {
           "status": "validated",
@@ -36,14 +38,18 @@
         "cancellation": {
           "status": "validated",
           "evidence": [
-            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testAlreadyCancelledTaskDoesNotPopulateCache"
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testAlreadyCancelledTaskDoesNotPopulateCache",
+            "macos/Tests/ClawixMeshTests/ComposerFileDropPolicyTests.swift:testDropPolicyRejectsEmptyDropsWithoutComposerMutation",
+            "Real app fixture validation 2026-05-23: file picker opened on fixture directory and Cancel returned to composer without attachment chips"
           ],
-          "fixture": "generated PNG fixture"
+          "fixture": "generated PNG fixture and empty drop fixture"
         },
         "cleanup": {
           "status": "validated",
           "evidence": [
-            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testCleanupRemovesScopedTemporaryFiles"
+            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testCleanupRemovesScopedTemporaryFiles",
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAddRemoveDeduplicatesAndCancelsBeforeSend",
+            "Real app fixture validation 2026-05-23: sample.png attachment remove control cleared the composer chip and disabled send after all attachments were removed"
           ],
           "fixture": "temporary scoped attachment directory"
         },
@@ -108,19 +114,21 @@
       "support": "supported",
       "surface": "Clawix bridge v1",
       "description": "Audio attachment sent over the bridge, registered for replay, and represented in chat as a voice/audio user message.",
-      "validationState": "partial",
+      "validationState": "validated",
       "cases": {
         "happy_path": {
           "status": "validated",
           "evidence": [
-            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessageCarriesAudioAttachment"
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessageCarriesAudioAttachment",
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testBridgeAudioAttachmentOnlyNewChatRendersVoicePreviewWithoutService"
           ],
-          "fixture": "inline base64 audio bytes"
+          "fixture": "inline base64 audio bytes and invalid audio preview fixture"
         },
         "error_path": {
           "status": "validated",
           "evidence": [
-            "macos/Tests/ClawixMeshTests/ClawixAudioRoutesTests.swift:testDictationSpoolFilesAreCleanedOnTranscriptionCompletionPaths"
+            "macos/Tests/ClawixMeshTests/ClawixAudioRoutesTests.swift:testDictationSpoolFilesAreCleanedOnTranscriptionCompletionPaths",
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testBridgeAudioAttachmentOnlyNewChatRendersVoicePreviewWithoutService"
           ],
           "fixture": "invalid audio base64 decode path and privacy-safe log source check"
         },
@@ -154,14 +162,16 @@
       "support": "supported",
       "surface": "macos composer",
       "description": "Non-image file staged by path and rendered as a file mention chip instead of inline bridge bytes.",
-      "validationState": "partial",
+      "validationState": "validated",
       "cases": {
         "happy_path": {
           "status": "validated",
           "evidence": [
-            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText"
+            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText",
+            "macos/Tests/ClawixMeshTests/ComposerFileDropPolicyTests.swift:testDropPolicyStagesImageAndFileFixturesThroughComposerPath",
+            "Real app fixture validation 2026-05-23: picker selected sample.txt and sample.xyz, composer rendered both as file chips with remove controls; no chat send"
           ],
-          "fixture": "synthetic path mention fixture"
+          "fixture": "synthetic path mention fixture and dropped-file.xyz fixture"
         },
         "error_path": {
           "status": "validated",
@@ -175,14 +185,17 @@
         "cancellation": {
           "status": "validated",
           "evidence": [
-            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAddRemoveDeduplicatesAndCancelsBeforeSend"
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAddRemoveDeduplicatesAndCancelsBeforeSend",
+            "macos/Tests/ClawixMeshTests/ComposerFileDropPolicyTests.swift:testDropPolicyRejectsEmptyDropsWithoutComposerMutation",
+            "Real app fixture validation 2026-05-23: file picker Cancel left composer empty before any file mention was added"
           ],
-          "fixture": "remove-before-send host flow"
+          "fixture": "remove-before-send host flow and empty drop fixture"
         },
         "cleanup": {
           "status": "validated",
           "evidence": [
-            "macos/Sources/Clawix/AppState/MessageSending.swift:removeComposerAttachment"
+            "macos/Sources/Clawix/AppState/MessageSending.swift:removeComposerAttachment",
+            "Real app fixture validation 2026-05-23: removing sample.txt and sample.xyz cleared file chips before send"
           ],
           "fixture": "composer removal path"
         },
@@ -254,6 +267,21 @@
       "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAttachmentOnlySendStaysLocalAndClearsComposerWhenRuntimeUnavailable",
       "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testWireAttachmentsIncludeOnlyImageBytesForSimulatedBridgeSend",
       "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessage"
+    ]
+  },
+  "realAppValidation": {
+    "status": "partial",
+    "evidence": [
+      "2026-05-23 real-app check passed: mode real, one canonical Clawix PID, stable signature, build 2924",
+      "2026-05-23 final real-app machine check passed after relaunch: mode real, one canonical Clawix PID, stable signature, build 2928",
+      "2026-05-23 Computer Use preflight passed for the canonical Clawix app",
+      "2026-05-23 fixture-only picker/render/remove flow validated sample.png, sample.txt, sample.xyz without sending a prompt",
+      "2026-05-23 launcher rebuilt and installed canonical /Applications/Clawix.app build 2974 in current .app-mode=dummy; Computer Use preflight passed against pid 96656",
+      "2026-05-23 visible picker regression validated on build 2974: Cancel returned to composer without quitting; sample.png rendered as image chip; sample.xyz and sample.txt rendered as file chips; remove controls cleared composer and Send returned disabled"
+    ],
+    "remaining": [
+      "Rerun real-app validation after .app-mode is intentionally switched back to real through the private mode policy; current machine check is blocked by .app-mode=dummy",
+      "No real audio transcription service call was made; live-service transcription is external pending by validation policy"
     ]
   }
 }
