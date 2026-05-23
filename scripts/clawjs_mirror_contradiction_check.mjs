@@ -250,9 +250,9 @@ const mirrorGroups = [
   },
   {
     topic: "naming",
-    sibling: ["docs/adr/0001-naming-and-stability-surfaces.md", "docs/naming-style-guide.md"],
+    sibling: ["docs/adr/0048-naming-and-stability-surfaces.md", "docs/naming-style-guide.md"],
     local: ["docs/adr/0002-naming-and-stability-surfaces.md", "docs/naming-style-guide.md", "docs/decision-map.md"],
-    references: ["docs/adr/0001-naming-and-stability-surfaces.md", "docs/naming-style-guide.md"],
+    references: ["docs/adr/0048-naming-and-stability-surfaces.md", "docs/naming-style-guide.md"],
     siblingRequired: [
       "Framework/product name: `ClawJS`",
       "Public APIs live under `/v1/...`",
@@ -266,7 +266,7 @@ const mirrorGroups = [
   },
   {
     topic: "route graph",
-    sibling: ["docs/adr/0012-surface-route-graph.md"],
+    sibling: ["docs/adr/0049-surface-route-graph.md"],
     local: ["docs/adr/0011-surface-route-graph.md", "docs/decision-map.md"],
     references: [],
     siblingRequired: [
@@ -373,11 +373,11 @@ for (const [relativePath, snippet] of [
   ["docs/agent-rules/index.md", "scripts/clawjs_mirror_contradiction_check.mjs"],
   ["docs/agent-rules/index.md", "--release"],
   ["scripts/test.sh", "scripts/clawjs_mirror_contradiction_check.mjs"],
-  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
-  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
-  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
-  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
-  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release'],
+  ["docs/governance/release-readiness.manifest.json", "scripts/clawjs_mirror_contradiction_check.mjs"],
+  ["macos/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs"],
+  ["ios/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs"],
+  ["linux/scripts/build_release_appimage.sh", "scripts/release_readiness_check.mjs"],
+  ["linux/scripts/build_release_deb.sh", "scripts/release_readiness_check.mjs"],
 ]) {
   requireSnippet(rootDir, relativePath, snippet, "local guardrail routing");
 }

@@ -93,6 +93,10 @@ function buildApprovalFixture() {
   const allowlist = readJson("docs/ui/visual-model-allowlist.manifest.json");
   allowlist.allowedVisualModels = [];
   writeJson(allowlistPath, allowlist);
+  const visualScopesPath = path.join(fixtureRoot, "docs/ui/visual-change-scopes.manifest.json");
+  const visualScopes = readJson("docs/ui/visual-change-scopes.manifest.json");
+  visualScopes.activeScopes = [];
+  writeJson(visualScopesPath, visualScopes);
   return fixtureRoot;
 }
 

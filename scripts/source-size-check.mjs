@@ -58,6 +58,7 @@ function isGenerated(filePath) {
 function shouldIgnore(relativePath, dirent) {
   const normalized = `/${toPosix(relativePath)}`;
   if (dirent.isDirectory() && IGNORED_DIRS.has(dirent.name)) return true;
+  if (dirent.isDirectory() && dirent.name.startsWith(".build-")) return true;
   return IGNORED_PATH_PARTS.some((part) => normalized.includes(part));
 }
 
@@ -196,9 +197,11 @@ function runSelfTest() {
   try {
     fs.mkdirSync(path.join(tempRoot, "docs"), { recursive: true });
     fs.mkdirSync(path.join(tempRoot, "src"), { recursive: true });
+    fs.mkdirSync(path.join(tempRoot, ".build-scratch", "checkouts", "pkg"), { recursive: true });
     fs.mkdirSync(path.join(tempRoot, "node_modules", "pkg"), { recursive: true });
     fs.writeFileSync(path.join(tempRoot, "src", "small.ts"), "ok\n");
     fs.writeFileSync(path.join(tempRoot, "src", "generated.ts"), `// @generated\n${"x\n".repeat(3000)}`);
+    fs.writeFileSync(path.join(tempRoot, ".build-scratch", "checkouts", "pkg", "large.ts"), "x\n".repeat(3000));
     fs.writeFileSync(path.join(tempRoot, "node_modules", "pkg", "large.ts"), "x\n".repeat(3000));
     fs.writeFileSync(path.join(tempRoot, "src", "known.ts"), "x\n".repeat(1300));
     fs.writeFileSync(path.join(tempRoot, "docs", "source-size-baseline.json"), JSON.stringify({

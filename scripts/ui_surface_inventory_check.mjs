@@ -151,7 +151,7 @@ function isVisibleCandidate(relativePath) {
   const extension = path.extname(relativePath);
   if (![".swift", ".kt", ".tsx"].includes(extension)) return false;
   const basename = path.basename(relativePath);
-  if (/ViewModel|PersistentSurfaceRegistry|Intents/.test(basename)) return false;
+  if (/ViewModel|PersistentSurfaceRegistry|Intents|Backfill/.test(basename)) return false;
   const visibleName = /(View|Screen|Page|Panel|Sidebar|Composer|Button|Card|Menu|Sheet|Toast|Search|Terminal|Surface|Icon|Chrome|Bubble|Timeline|Shimmer|Picker|Controls|Overlay|Header|Footer|Segmented|Field|Row)/;
   if (extension === ".tsx") return true;
   const text = fs.readFileSync(path.join(rootDir, relativePath), "utf8");

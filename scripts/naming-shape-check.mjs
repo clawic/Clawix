@@ -16,6 +16,14 @@ const requiredDocs = [
 
 const criticalVocabularySurfaces = [
   "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyAudioCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyBaseCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyTags.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeCoder.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeFrameCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgePayloadKeys.swift",
+  "packages/ClawixCore/Sources/ClawixCore/WireRateLimits.swift",
   "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.md",
   "android/app/src/main/java/com/example/clawix/android/core/BridgeProtocol.kt",
   "android/app/src/main/java/com/example/clawix/android/core/BridgeFrameEncoding.kt",
@@ -44,13 +52,23 @@ const allowedBroadSymbolContexts = [
   "InputMethodManager",
   "PackageManager",
   "WindowManager",
+  "DomainData",
+  "serviceDataDirectoryURL",
+  "testRefreshFailureLeavesPreviousDataAndPublishesError",
+  "testSettingsDataSurfaceIncludesPortableArchiveStatesAndSignedHostGate",
+  "fixtureData",
 ];
 // Ecosystem/UI terms where the broad word is part of the precise domain phrase.
 const allowedBroadSymbolPhrases = [
   ["Database", "Manager"],
   ["File", "Manager"],
+  ["Domain", "Data"],
   ["Input", "Method", "Manager"],
   ["Package", "Manager"],
+  ["Previous", "Data"],
+  ["Settings", "Data", "Surface"],
+  ["fixture", "Data"],
+  ["service", "Data", "Directory", "URL"],
   ["Window", "Manager"],
   ["Info", "Banner"],
   ["Info", "Icon"],

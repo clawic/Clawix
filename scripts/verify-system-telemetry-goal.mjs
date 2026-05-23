@@ -122,8 +122,36 @@ function resolveClawCliForSeeding() {
   return ["claw"];
 }
 
+const persistentSurfacePathCache = new Map();
+
+function expandPersistentSurfacePath(value) {
+  if (value.startsWith("~/")) return path.join(os.homedir(), value.slice(2));
+  return value;
+}
+
+function persistentSurfaceNodePath(nodeId) {
+  if (persistentSurfacePathCache.has(nodeId)) return persistentSurfacePathCache.get(nodeId);
+  try {
+    const manifest = readJson("docs/persistent-surface-clawix.manifest.json");
+    const node = manifest.nodes?.find((entry) => entry.id === nodeId);
+    assert(node && typeof node.path === "string", `persistent surface manifest: missing ${nodeId} path`);
+    const resolved = node?.path ? expandPersistentSurfacePath(node.path) : path.join(os.tmpdir(), "clawix-missing-persistent-surface", nodeId);
+    persistentSurfacePathCache.set(nodeId, resolved);
+    return resolved;
+  } catch (error) {
+    fail(`persistent surface manifest: failed to resolve ${nodeId}: ${error.message}`);
+    const unresolved = path.join(os.tmpdir(), "clawix-missing-persistent-surface", nodeId);
+    persistentSurfacePathCache.set(nodeId, unresolved);
+    return unresolved;
+  }
+}
+
+function appTelemetrySupportRoot() {
+  return persistentSurfaceNodePath("clawix.embeddedRuntimeDistribution");
+}
+
 function appTelemetryEnvironment() {
-  const supportRoot = path.join(os.homedir(), "Library", "Application Support", "Clawix", "clawjs");
+  const supportRoot = appTelemetrySupportRoot();
   return {
     HOME: path.join(supportRoot, "home"),
     CLAW_WORKSPACE: path.join(supportRoot, "workspace"),
@@ -135,7 +163,7 @@ function appTelemetryEnvironment() {
 }
 
 function appMonitorDatabasePath() {
-  return path.join(os.homedir(), "Library", "Application Support", "Clawix", "clawjs", "monitor.sqlite");
+  return path.join(appTelemetrySupportRoot(), "monitor.sqlite");
 }
 
 function readAppMonitorMetricStats() {
@@ -1459,7 +1487,11 @@ function assertStatusItemAndRecorder() {
 }
 
 function assertSwiftTestCoverage() {
-  const testFile = "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTests.swift";
+  const testFiles = [
+    "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTests.swift",
+    "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeMenuBarTests.swift",
+  ];
+  const testCoverage = testFiles.map((file) => read(file)).join("\n");
   for (const snippet of [
     "testDecodesSnapshotPolicySamplesAndUnavailableMetrics",
     "testDecodesHistoryChartPayload",
@@ -1494,7 +1526,7 @@ function assertSwiftTestCoverage() {
     "context.weather.temperature",
     "metricKeys\": .string(\"[REDACTED]\")",
   ]) {
-    requireSnippet(testFile, snippet);
+    assert(testCoverage.includes(snippet), `${testFiles.join(", ")}: missing ${JSON.stringify(snippet)}`);
   }
 }
 

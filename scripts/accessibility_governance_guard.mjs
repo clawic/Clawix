@@ -14,6 +14,7 @@ const allowedFlags = new Set([
   "--simulate-missing-generated-field",
   "--simulate-missing-detector-axis",
   "--simulate-private-data-leak",
+  "--simulate-private-alias-without-evidence",
 ]);
 const errors = [];
 
@@ -42,6 +43,8 @@ const generatedContractFields = [
   "timeAlternative",
   "validationEvidence",
 ];
+const evidenceStatuses = ["contract_declared", "verified_public", "verified_private", "external_pending"];
+const evidenceRefTypes = new Set(["path", "command", "hash", "attestation", "capture", "log", "validation"]);
 
 for (const arg of rawArgs) {
   if (arg.startsWith("--") && !allowedFlags.has(arg)) {
@@ -129,6 +132,25 @@ function requireExactStringSet(values, label, expectedValues) {
   return seen;
 }
 
+function validateEvidenceRef(ref, label) {
+  if (!ref || typeof ref !== "object" || Array.isArray(ref)) {
+    fail(`${label} entries must be objects`);
+    return;
+  }
+  if (!evidenceRefTypes.has(ref.type)) fail(`${label}.type must be one of ${[...evidenceRefTypes].join(", ")}`);
+  if (typeof ref.ref !== "string" || ref.ref.trim() === "") {
+    fail(`${label}.ref must be non-empty`);
+    return;
+  }
+  if (ref.ref.includes("/Users/") || ref.ref.includes("file://")) fail(`${label}.${ref.ref} must be public-safe`);
+  if (/\bfixture\b|synthetic_templates_not_evidence/iu.test(ref.ref)) fail(`${label}.${ref.ref} cannot cite fixtures or synthetic templates as real evidence`);
+  if (ref.type === "path" && !exists(ref.ref)) fail(`${label}.${ref.ref} path does not exist`);
+  if (ref.type === "hash" && !/^sha256:[a-f0-9]{64}$/u.test(ref.ref)) fail(`${label}.${ref.ref} must be sha256:<64 lowercase hex>`);
+  if ((ref.type === "command" || ref.type === "validation") && !/^(node scripts\/|bash scripts\/|bash macos\/scripts\/|bash ios\/scripts\/|bash linux\/scripts\/|pwsh windows\/scripts\/|npm run |swift test |claw verify )/u.test(ref.ref)) {
+    fail(`${label}.${ref.ref} must be a known validation command`);
+  }
+}
+
 function isFutureOrToday(value) {
   return typeof value === "string"
     && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -153,6 +175,17 @@ function validate(base = rootDir) {
   }
   if (rawArgs.includes("--simulate-missing-surface") && Array.isArray(surface?.coverage)) {
     surface.coverage = surface.coverage.filter((entry) => entry.surfaceId !== "web-screens");
+  }
+  if (rawArgs.includes("--simulate-private-alias-without-evidence") && Array.isArray(surface?.coverage)) {
+    surface.coverage.push({
+      surfaceId: "private-fixture",
+      platform: "macos",
+      axes: requiredAxes,
+      evidenceAlias: "private-a11y-fixture",
+      evidenceStatus: "verified_private",
+      checks: ["node scripts/accessibility_governance_guard.mjs"],
+      gaps: [],
+    });
   }
   if (rawArgs.includes("--simulate-expired-gap") && Array.isArray(surface?.coverage)) {
     surface.coverage[0] = surface.coverage[0] || {};
@@ -206,8 +239,9 @@ function validate(base = rootDir) {
   const inventoryIds = new Map(inventoryCoverage.map((entry) => [entry.id, entry.platform]));
   const coveredIds = new Set();
   for (const entry of requireArray(surface, surfacePath, "coverage")) {
-    requireFields(entry, `${surfacePath}.coverage.${entry?.surfaceId || "<missing>"}`, ["surfaceId", "platform", "axes", "evidenceAlias", "checks", "gaps"]);
-    if (!inventoryIds.has(entry.surfaceId)) fail(`${surfacePath}.coverage references unknown surface ${entry.surfaceId}`);
+    requireFields(entry, `${surfacePath}.coverage.${entry?.surfaceId || "<missing>"}`, ["surfaceId", "platform", "axes", "evidenceAlias", "evidenceStatus", "checks", "gaps"]);
+    const syntheticPrivateFixture = isSelfTest && entry.surfaceId === "private-fixture";
+    if (!syntheticPrivateFixture && !inventoryIds.has(entry.surfaceId)) fail(`${surfacePath}.coverage references unknown surface ${entry.surfaceId}`);
     if (inventoryIds.has(entry.surfaceId) && inventoryIds.get(entry.surfaceId) !== entry.platform) {
       fail(`${surfacePath}.coverage.${entry.surfaceId}.platform must match visible surface inventory`);
     }
@@ -215,7 +249,23 @@ function validate(base = rootDir) {
     coveredIds.add(entry.surfaceId);
     requireExactStringSet(requireArray(entry, `${surfacePath}.coverage.${entry.surfaceId}`, "axes"), `${surfacePath}.coverage.${entry.surfaceId}.axes`, requiredAxes);
     requireIncludes(requireArray(entry, `${surfacePath}.coverage.${entry.surfaceId}`, "checks"), `${surfacePath}.coverage.${entry.surfaceId}.checks`, ["node scripts/accessibility_governance_guard.mjs"]);
-    for (const gap of requireArray(entry, `${surfacePath}.coverage.${entry.surfaceId}`, "gaps", { nonEmpty: false })) {
+    if (!evidenceStatuses.includes(entry.evidenceStatus)) {
+      fail(`${surfacePath}.coverage.${entry.surfaceId}.evidenceStatus must be one of ${evidenceStatuses.join(", ")}`);
+    }
+    const gaps = requireArray(entry, `${surfacePath}.coverage.${entry.surfaceId}`, "gaps", { nonEmpty: false });
+    if (gaps.length > 0 && entry.evidenceStatus !== "external_pending") {
+      fail(`${surfacePath}.coverage.${entry.surfaceId}.evidenceStatus must be external_pending while gaps remain`);
+    }
+    if ((entry.evidenceStatus === "verified_public" || entry.evidenceStatus === "verified_private") && (!Array.isArray(entry.evidenceRefs) || entry.evidenceRefs.length === 0)) {
+      fail(`${surfacePath}.coverage.${entry.surfaceId}.evidenceRefs must be non-empty for ${entry.evidenceStatus}`);
+    }
+    for (const ref of entry.evidenceRefs ?? []) validateEvidenceRef(ref, `${surfacePath}.coverage.${entry.surfaceId}.evidenceRefs`);
+    if (entry.evidenceStatus === "verified_private") {
+      const hasHash = (entry.evidenceRefs ?? []).some((ref) => ref.type === "hash");
+      const hasVerifier = (entry.evidenceRefs ?? []).some((ref) => ref.type === "validation" || ref.type === "command");
+      if (!hasHash || !hasVerifier) fail(`${surfacePath}.coverage.${entry.surfaceId}.verified_private evidence must include hash and verifier refs`);
+    }
+    for (const gap of gaps) {
       requireFields(gap, `${surfacePath}.coverage.${entry.surfaceId}.gaps.${gap?.id || "<missing>"}`, ["id", "axes", "status", "reason", "expires"]);
       if (gap.status !== "EXTERNAL PENDING") fail(`${surfacePath}.coverage.${entry.surfaceId}.gaps.${gap.id}.status must be EXTERNAL PENDING`);
       if (!isFutureOrToday(gap.expires)) fail(`${surfacePath}.coverage.${entry.surfaceId}.gaps.${gap.id}.expires must be an unexpired YYYY-MM-DD date`);
@@ -282,6 +332,7 @@ function runSelfTests() {
     ["--simulate-missing-generated-field", "agent-generated-ui.manifest.json.requiredContractFields must include focusHandoff"],
     ["--simulate-missing-detector-axis", "source-detectors.manifest.json.detectors axes must include agent-generated-ui"],
     ["--simulate-private-data-leak", "publicRepoMayStore must not include raw screenshot"],
+    ["--simulate-private-alias-without-evidence", "evidenceRefs must be non-empty for verified_private"],
   ];
   const scriptPath = path.relative(rootDir, new URL(import.meta.url).pathname);
   for (const [flag, expectedOutput] of selfTests) {

@@ -231,6 +231,10 @@ function summaryFor(counts) {
   return summary;
 }
 
+function totalOccurrencesForSummary(summary) {
+  return Object.values(summary).reduce((total, entry) => total + (entry?.occurrences ?? 0), 0);
+}
+
 function compareToBaseline(baseDir, findings, counts) {
   const failures = [];
   if (!exists(baseDir, baselineRelativePath)) {
@@ -250,6 +254,8 @@ function compareToBaseline(baseDir, findings, counts) {
 }
 
 function writeBaseline(baseDir, policy, counts) {
+  const summary = summaryFor(counts);
+  const current = totalOccurrencesForSummary(summary);
   const baseline = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -260,8 +266,28 @@ function writeBaseline(baseDir, policy, counts) {
       docs: "docs/**/*.md|json|yaml|yml",
       source: "UI copy-bearing source plus public protocol, schema, CLI, registry, route, host, relay, connector, sync, workspace, project, governance, and surface files",
     },
-    summary: summaryFor(counts),
+    summary,
     counts,
+    debtControl: {
+      ownerArea: "naming-governance",
+      expiresAt: "2026-08-19",
+      severity: "P2",
+      budget: {
+        metric: "protected_vocabulary_debt_hits",
+        unit: "hit",
+        current,
+        maxAllowed: current,
+        nextMaxAllowed: Math.max(0, current - 1),
+        target: 0,
+        cadence: "next_touch_or_expiry",
+      },
+      releaseEffect: {
+        mode: "blocks_growth",
+        targets: ["changed-work"],
+        gate: "node scripts/conceptual-vocabulary-guard.mjs",
+        reason: "Protected vocabulary baseline must shrink or block new conceptual drift.",
+      },
+    },
   };
   fs.writeFileSync(path.join(baseDir, baselineRelativePath), `${JSON.stringify(sortedObject(baseline), null, 2)}\n`);
 }

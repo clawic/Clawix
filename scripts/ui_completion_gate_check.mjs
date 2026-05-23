@@ -865,7 +865,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
         if (report.counts?.invalidCandidate !== 1 || report.counts?.candidate !== 0) {
           fail("scripts/ui_private_approval_verify.mjs --approval-status must classify malformed approval evidence as invalidCandidate, not candidate");
         }
-        const approval = report.records?.[0];
+        const approval = report.records?.find((record) => record?.state === "invalid-candidate");
         if (
           approval?.state !== "invalid-candidate" ||
           !approval?.missingOrInvalidFields?.includes("approvalHash")

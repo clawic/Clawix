@@ -11,6 +11,8 @@ const targetArg = args.find((arg) => arg.startsWith("--target="));
 const targetIndex = args.indexOf("--target");
 const releaseTarget = targetArg ? targetArg.slice("--target=".length) : (targetIndex >= 0 ? args[targetIndex + 1] : "all");
 const errors = [];
+const evidenceRefTypes = new Set(["path", "command", "hash", "attestation", "capture", "log", "validation"]);
+const declarativeEvidencePattern = /\b(must include|should include|requires?|required|pending|future|debe incluir|deben incluir|debera|deberá|checklist requires|release evidence includes|release evidence must include)\b/iu;
 
 function fail(message) {
   errors.push(message);
@@ -42,6 +44,30 @@ function inReleaseTarget(surface) {
   return releaseTarget === "all" || targets.includes("all") || targets.includes(releaseTarget);
 }
 
+function isFixtureRef(value) {
+  return /\bfixture\b|synthetic_templates_not_evidence/iu.test(String(value ?? ""));
+}
+
+function validateEvidenceRef(surface, fieldName, ref) {
+  const label = `${surface.id}.${fieldName}.evidenceRefs`;
+  if (!ref || typeof ref !== "object" || Array.isArray(ref)) {
+    fail(`${label} entries must be objects`);
+    return;
+  }
+  if (!evidenceRefTypes.has(ref.type)) fail(`${label}.type must be one of ${[...evidenceRefTypes].join(", ")}`);
+  if (typeof ref.ref !== "string" || ref.ref.trim() === "") {
+    fail(`${label}.ref must be non-empty`);
+    return;
+  }
+  if (ref.ref.includes("/Users/") || ref.ref.includes("file://")) fail(`${label}.${ref.ref} must be public-safe`);
+  if (isFixtureRef(ref.ref)) fail(`${label}.${ref.ref} cannot cite fixtures or synthetic templates as real evidence`);
+  if (ref.type === "path" && !exists(ref.ref)) fail(`${label}.${ref.ref} path does not exist`);
+  if (ref.type === "hash" && !/^sha256:[a-f0-9]{64}$/u.test(ref.ref)) fail(`${label}.${ref.ref} must be sha256:<64 lowercase hex>`);
+  if ((ref.type === "command" || ref.type === "validation") && !/^(node scripts\/|bash scripts\/|bash macos\/scripts\/|bash ios\/scripts\/|bash linux\/scripts\/|pwsh windows\/scripts\/|npm run |swift test |claw verify )/u.test(ref.ref)) {
+    fail(`${label}.${ref.ref} must be a known validation command`);
+  }
+}
+
 function validateControl(surface, fieldName) {
   const control = surface[fieldName];
   if (!control || typeof control !== "object" || Array.isArray(control)) {
@@ -53,6 +79,15 @@ function validateControl(surface, fieldName) {
   }
   if (typeof control.evidence !== "string" || control.evidence.trim() === "") {
     fail(`${surface.id}.${fieldName}.evidence must be non-empty`);
+  }
+  if (control.status === "pass") {
+    if (declarativeEvidencePattern.test(control.evidence)) {
+      fail(`${surface.id}.${fieldName}.evidence must cite real evidence, not a future requirement`);
+    }
+    if (!Array.isArray(control.evidenceRefs) || control.evidenceRefs.length === 0) {
+      fail(`${surface.id}.${fieldName}.evidenceRefs must be non-empty when status is pass`);
+    }
+    for (const ref of control.evidenceRefs ?? []) validateEvidenceRef(surface, fieldName, ref);
   }
   if (control.status !== "pass" && typeof control.exception !== "string") {
     fail(`${surface.id}.${fieldName} with ${control.status} must record an exception`);
@@ -135,7 +170,8 @@ function validateDocs() {
 }
 
 function validateReleaseWiring() {
-  requireSnippet("scripts/test.sh", "supply_chain_security_check.mjs");
+  requireSnippet("scripts/test.sh", "release_readiness_check.mjs");
+  requireSnippet("docs/governance/release-readiness.manifest.json", "supply_chain_security_check.mjs");
   for (const file of [
     "macos/scripts/build_release_app.sh",
     "ios/scripts/build_release_app.sh",
@@ -143,7 +179,7 @@ function validateReleaseWiring() {
     "linux/scripts/build_release_deb.sh",
     "windows/scripts/build-release.ps1",
   ]) {
-    requireSnippet(file, "supply_chain_security_check.mjs");
+    requireSnippet(file, "release_readiness_check.mjs");
   }
 }
 
@@ -173,18 +209,26 @@ function runSelfTest() {
       path: "RELEASING.md",
       releaseCritical: true,
       releaseTargets: ["all"],
-      lockfile: { status: "pass", evidence: "fixture" },
-      sbom: { status: "pass", evidence: "fixture" },
-      provenance: { status: "pass", evidence: "fixture" },
-      dependencyReview: { status: "pass", evidence: "fixture" },
-      vulnerabilityTriage: { status: "pass", evidence: "fixture" },
-      artifactIntegrity: { status: "pass", evidence: "fixture" },
-      malwareReview: { status: "pass", evidence: "fixture" },
+      lockfile: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      sbom: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      provenance: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      dependencyReview: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      vulnerabilityTriage: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      artifactIntegrity: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
+      malwareReview: { status: "pass", evidence: "RELEASING.md", evidenceRefs: [{ type: "path", ref: "RELEASING.md" }] },
     }],
   };
   errors.length = 0;
   validateManifest(manifest);
   assert.equal(errors.length, 0);
+  manifest.surfaces[0].sbom = { status: "pass", evidence: "release evidence must include CycloneDX JSON" };
+  errors.length = 0;
+  validateManifest(manifest);
+  assert(errors.some((error) => error.includes("must cite real evidence")));
+  manifest.surfaces[0].sbom = { status: "pass", evidence: "fixture", evidenceRefs: [{ type: "path", ref: "fixture" }] };
+  errors.length = 0;
+  validateManifest(manifest);
+  assert(errors.some((error) => error.includes("cannot cite fixtures")));
   manifest.surfaces[0].sbom = { status: "baseline_exception", evidence: "fixture", exception: "fixture" };
   const previousReleaseMode = releaseMode;
   releaseMode = true;

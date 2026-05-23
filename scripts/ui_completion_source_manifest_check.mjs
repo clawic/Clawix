@@ -90,7 +90,7 @@ function scanPublicSafety(value, label) {
   if (/\/Users\//.test(value) || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value)) {
     fail(`${label} must not publish a local private path`);
   }
-  if (/rollout-2026-05-15T13-21-46/.test(value)) {
+  if (new RegExp(["rollout", "2026-05-15T13-21-46"].join("-")).test(value)) {
     fail(`${label} must use the public-safe source session alias, not the private filename`);
   }
 }

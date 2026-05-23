@@ -1176,8 +1176,12 @@ for (const relativePath of requiredDocs) {
 if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
   const visualAuthEnv = visualAuthorizationEnv ? { [visualAuthorizationEnv]: visualAuthorizationValue } : {};
   const visualModelEnvObject = visualModelEnv && activeVisualModelIds.size > 0 ? { [visualModelEnv]: [...activeVisualModelIds][0] } : {};
+  const sanitizedSelfTestEnv = { ...process.env };
+  if (visualAuthorizationEnv) delete sanitizedSelfTestEnv[visualAuthorizationEnv];
+  if (visualModelEnv) delete sanitizedSelfTestEnv[visualModelEnv];
+  if (visualScopeEnv) delete sanitizedSelfTestEnv[visualScopeEnv];
   const baseSelfTestEnv = {
-    ...process.env,
+    ...sanitizedSelfTestEnv,
     CLAWIX_UI_GOVERNANCE_GUARD_SELF_TEST: "1",
   };
   const authorizedEnv = {

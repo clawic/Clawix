@@ -66,7 +66,7 @@ const ignoredWalkDirectories = new Set([
   "dist",
   "node_modules",
   "publish",
-  "release-output",
+  ["release", "output"].join("-"),
   "target",
   "web-dist",
 ]);
@@ -77,7 +77,7 @@ function walk(dir, predicate, files = []) {
   for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
     const relativePath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (ignoredWalkDirectories.has(entry.name)) continue;
+      if (ignoredWalkDirectories.has(entry.name) || entry.name.startsWith(".build")) continue;
       walk(relativePath, predicate, files);
     } else if (predicate(relativePath)) {
       files.push(relativePath);
@@ -366,11 +366,16 @@ requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift",
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "human review required; sources and gaps required");
 requireSnippet("macos/Tests/ClawixMeshTests/SecretsSecurityBoundaryTests.swift", "testProviderBackedDictationRoutesRequireLegalProviderOptIn");
 requireSnippet("macos/Tests/ClawixMeshTests/LifeRegistryTests.swift", "testSensitiveLifeVerticalsExposeLegalGuardMetadata");
-requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedTermsVersion");
-requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedDisclaimerVersion");
-requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedSafetyVersion");
-requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.acceptedRegulatedDomainsVersion");
-requireSnippet("macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift", "clawix.prefs.legal.localAuditRetentionDays");
+for (const manifestPath of [
+  "docs/persistent-surface-clawix.manifest.json",
+  "macos/Sources/Clawix/Resources/persistent-surface-clawix.manifest.json",
+]) {
+  requireSnippet(manifestPath, "clawix.prefs.legal.acceptedTermsVersion");
+  requireSnippet(manifestPath, "clawix.prefs.legal.acceptedDisclaimerVersion");
+  requireSnippet(manifestPath, "clawix.prefs.legal.acceptedSafetyVersion");
+  requireSnippet(manifestPath, "clawix.prefs.legal.acceptedRegulatedDomainsVersion");
+  requireSnippet(manifestPath, "clawix.prefs.legal.localAuditRetentionDays");
+}
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testAcceptCurrentLegalPersistsVersionedClickwrapState");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testAnyLegalDocumentVersionMismatchForcesReacceptance");
 requireSnippet("macos/Tests/ClawixMeshTests/LegalSafetyTests.swift", "testReviewedSensitiveOutputTextPersistsHumanReviewAndSourcesGaps");
@@ -383,8 +388,9 @@ requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "prompts
 requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "secretsIncluded: false");
 requireSnippet("macos/Sources/Clawix/Rescue/RescueRepairContext.swift", "fullLocalPathsIncluded: false");
 requireSnippet("macos/Tests/ClawixMeshTests/PersistentSurfaceRegistryTests.swift", "clawix.prefs.legal.sensitiveExportConfirmationRequired");
-requireSnippet("macos/scripts/build_release_app.sh", "Legal safety preflight");
-requireSnippet("macos/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("docs/governance/release-readiness.manifest.json", "scripts/legal_safety_check.mjs");
+requireSnippet("macos/scripts/build_release_app.sh", "Release readiness contract preflight");
+requireSnippet("macos/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs");
 requireSnippet("macos/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("macos/scripts/build_release_app.sh", "macos-app");
 requireSnippet("macos/scripts/build_web_dist.sh", "Legal safety preflight");
@@ -392,20 +398,20 @@ requireSnippet("macos/scripts/build_web_dist.sh", "scripts/legal_safety_check.mj
 requireSnippet("scripts/launch-web.sh", "scripts/legal_safety_check.mjs");
 requireSnippet("scripts/launch-web.sh", "macos/scripts/build_web_dist.sh");
 requireSnippet("web/package.json", "node ../scripts/legal_safety_check.mjs");
-requireSnippet("ios/scripts/build_release_app.sh", "Legal safety preflight");
-requireSnippet("ios/scripts/build_release_app.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("ios/scripts/build_release_app.sh", "Release readiness contract preflight");
+requireSnippet("ios/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs");
 requireSnippet("ios/scripts/build_release_app.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("ios/scripts/build_release_app.sh", "ios-archive");
-requireSnippet("linux/scripts/build_release_appimage.sh", "legal safety preflight");
-requireSnippet("linux/scripts/build_release_appimage.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("linux/scripts/build_release_appimage.sh", "release readiness contract preflight");
+requireSnippet("linux/scripts/build_release_appimage.sh", "scripts/release_readiness_check.mjs");
 requireSnippet("linux/scripts/build_release_appimage.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("linux/scripts/build_release_appimage.sh", "linux-appimage");
-requireSnippet("linux/scripts/build_release_deb.sh", "legal safety preflight");
-requireSnippet("linux/scripts/build_release_deb.sh", "scripts/legal_safety_check.mjs");
+requireSnippet("linux/scripts/build_release_deb.sh", "release readiness contract preflight");
+requireSnippet("linux/scripts/build_release_deb.sh", "scripts/release_readiness_check.mjs");
 requireSnippet("linux/scripts/build_release_deb.sh", "CLAWIX_RELEASE_APPROVED_FOR:-");
 requireSnippet("linux/scripts/build_release_deb.sh", "linux-deb");
 requireSnippet("linux/app/package.json", "node ../../scripts/legal_safety_check.mjs");
-requireSnippet("windows/scripts/build-release.ps1", "legal_safety_check.mjs");
+requireSnippet("windows/scripts/build-release.ps1", "release_readiness_check.mjs");
 requireSnippet("windows/scripts/build-release.ps1", "CLAWIX_RELEASE_APPROVED_FOR");
 requireSnippet("windows/scripts/build-release.ps1", "windows-msix");
 

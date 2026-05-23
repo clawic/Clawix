@@ -280,11 +280,15 @@ if (manifest && args.has("--simulate-duplicate-scope-pattern") && Array.isArray(
   if (scope) scope.patterns.push(scope.patterns[0]);
 }
 if (manifest && args.has("--simulate-duplicate-scope-change-kind") && Array.isArray(manifest.activeScopes)) {
-  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.changeKinds) && candidate.changeKinds[0]);
+  const scope =
+    manifest.activeScopes.find((candidate) => candidate?.id === "simulated-scope" && Array.isArray(candidate?.changeKinds) && candidate.changeKinds[0]) ??
+    manifest.activeScopes.find((candidate) => Array.isArray(candidate?.changeKinds) && candidate.changeKinds[0]);
   if (scope) scope.changeKinds.push(scope.changeKinds[0]);
 }
 if (manifest && args.has("--simulate-duplicate-scope-file") && Array.isArray(manifest.activeScopes)) {
-  const scope = manifest.activeScopes.find((candidate) => Array.isArray(candidate?.files) && candidate.files[0]);
+  const scope =
+    manifest.activeScopes.find((candidate) => candidate?.id === "simulated-scope" && Array.isArray(candidate?.files) && candidate.files[0]) ??
+    manifest.activeScopes.find((candidate) => Array.isArray(candidate?.files) && candidate.files[0]);
   if (scope) scope.files.push(scope.files[0]);
 }
 requireFields(manifest, manifestPath, [

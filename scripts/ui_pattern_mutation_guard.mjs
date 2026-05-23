@@ -594,8 +594,12 @@ if (visualHits.length > 0 && visualAuthorized) {
 if (errors.length === 0 && !isSelfTest && args.length === 0) {
   const visualAuthEnv = authorizationEnv ? { [authorizationEnv]: authorizationValue } : {};
   const visualModelEnv = modelEnv && activeModels.size > 0 ? { [modelEnv]: [...activeModels][0] } : {};
+  const sanitizedSelfTestEnv = { ...process.env };
+  if (authorizationEnv) delete sanitizedSelfTestEnv[authorizationEnv];
+  if (modelEnv) delete sanitizedSelfTestEnv[modelEnv];
+  if (visualScopeEnv) delete sanitizedSelfTestEnv[visualScopeEnv];
   const baseSelfTestEnv = {
-    ...process.env,
+    ...sanitizedSelfTestEnv,
     CLAWIX_UI_PATTERN_MUTATION_GUARD_SELF_TEST: "1",
   };
   const authorizedEnv = {
