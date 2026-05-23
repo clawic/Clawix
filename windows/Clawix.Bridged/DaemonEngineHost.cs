@@ -21,6 +21,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     private BridgeRuntimeState _state = new BridgeRuntimeState.Booting();
     private List<WireSession> _sessions = [];
     private (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) _rateLimits = (null, new Dictionary<string, WireRateLimitSnapshot>());
+    private List<WireClawJSServiceSnapshot> _serviceStatuses = ClawJSServiceStatusCatalog.InitialSnapshot();
 
     public DaemonEngineHost(CodexBackend backend, ILogger<DaemonEngineHost> logger)
     {
@@ -35,7 +36,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     {
         get { lock (_stateLock) return _rateLimits; }
     }
-    public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent => [];
+    public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get { lock (_stateLock) return _serviceStatuses; } }
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged;
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
@@ -46,15 +47,18 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     public async Task BootstrapAsync(CancellationToken ct)
     {
         Transition(new BridgeRuntimeState.Syncing());
+        SetBackendBackedServiceState("starting");
         try
         {
             await _backend.CallAsync("initialize", new { client = "clawix-bridge-windows" }, ct);
             await RefreshSessionsAsync(ct);
+            SetBackendBackedServiceState("readyFromDaemon");
             Transition(new BridgeRuntimeState.Ready());
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "bootstrap failed");
+            SetBackendBackedServiceState("daemonUnavailable", ex.Message);
             Transition(new BridgeRuntimeState.Error(ex.Message));
         }
     }
@@ -63,6 +67,27 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     {
         lock (_stateLock) _state = next;
         BridgeStateChanged?.Invoke(next);
+    }
+
+    private void SetBackendBackedServiceState(string state, string? lastError = null)
+    {
+        foreach (var id in ClawJSServiceStatusCatalog.BackendBackedServiceIds)
+        {
+            UpsertServiceStatus(ClawJSServiceStatusCatalog.ForBackendBackedService(id, state, lastError));
+        }
+    }
+
+    private void UpsertServiceStatus(WireClawJSServiceSnapshot service)
+    {
+        lock (_stateLock)
+        {
+            _serviceStatuses = _serviceStatuses
+                .Where(item => !item.Id.Equals(service.Id, StringComparison.OrdinalIgnoreCase))
+                .Append(service)
+                .OrderBy(item => item.Port)
+                .ToList();
+        }
+        ClawJSServiceStatusChanged?.Invoke(service);
     }
 
     public async Task RefreshSessionsAsync(CancellationToken ct)
