@@ -6,15 +6,16 @@
     Title="New project"
     PrimaryButtonText="Create"
     SecondaryButtonText="Cancel"
-    DefaultButton="Primary">
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="False">
   <StackPanel Spacing="8">
-    <TextBox x:Name="TitleBox" PlaceholderText="Project name" />
+    <TextBox x:Name="TitleBox" PlaceholderText="Project name" TextChanged="Field_TextChanged" />
     <Grid ColumnSpacing="8">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <TextBox x:Name="CwdBox" Grid.Column="0" PlaceholderText="Working directory" />
+      <TextBox x:Name="CwdBox" Grid.Column="0" PlaceholderText="Working directory" TextChanged="Field_TextChanged" />
       <Button Grid.Column="1" Content="Browse..." Click="Browse_Click" />
     </Grid>
   </StackPanel>
