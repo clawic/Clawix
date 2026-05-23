@@ -33,7 +33,7 @@ struct MentionMenu: View {
             } else {
                 ThinScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(items) { item in
+                        ForEach(items.prefix(50)) { item in
                             MentionRow(
                                 item: item,
                                 isHighlighted: item.id == highlightedID,

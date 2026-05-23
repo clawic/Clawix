@@ -217,12 +217,10 @@ struct ClawixApp: App {
             CommandMenu(L10n.t("Chat")) {
                 ChatMenuCommands(appState: appState)
             }
-            CommandGroup(replacing: .saveItem) {}
-            CommandGroup(replacing: .printItem) {}
-            CommandGroup(replacing: .importExport) {}
-            // Drop SwiftUI's auto "Show/Hide Toolbar, Customize Toolbar"
-            // so the View menu only carries our items.
-            CommandGroup(replacing: .toolbar) {}
+            // Strip SwiftUI's auto Save/Print/Import-Export/Toolbar items.
+            // Bundled into one `Commands` value so the outer @CommandsBuilder
+            // stays under its 10-child limit.
+            DefaultMenuTrimCommands()
             CommandGroup(replacing: .sidebar) {
                 ViewMenuCommands(appState: appState)
             }
@@ -809,6 +807,19 @@ private struct MacUtilitiesMenuSection: View {
             return controller.keepAwakeEnabled ? "Keep Awake Off" : "Keep Awake On"
         }
         return action.title
+    }
+}
+
+/// Removes the menu items SwiftUI inserts by default that Clawix doesn't use
+/// (Save, Print, Import/Export, and the View → Show/Hide Toolbar group).
+/// Grouped into a single `Commands` value so the app's main `.commands`
+/// builder stays within the 10-child `@CommandsBuilder` limit.
+private struct DefaultMenuTrimCommands: Commands {
+    var body: some Commands {
+        CommandGroup(replacing: .saveItem) {}
+        CommandGroup(replacing: .printItem) {}
+        CommandGroup(replacing: .importExport) {}
+        CommandGroup(replacing: .toolbar) {}
     }
 }
 

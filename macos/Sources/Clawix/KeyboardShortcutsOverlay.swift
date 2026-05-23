@@ -134,14 +134,14 @@ struct KeyboardShortcutsOverlay: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(filtered) { group in
+                    ForEach(filtered.prefix(12)) { group in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(group.title)
                                 .font(BodyFont.system(size: 11, wght: 600))
                                 .foregroundColor(Palette.textSecondary)
                                 .padding(.horizontal, 18)
                                 .padding(.bottom, 2)
-                            ForEach(group.items) { item in
+                            ForEach(group.items.prefix(16)) { item in
                                 HStack {
                                     Text(item.label)
                                         .font(BodyFont.system(size: 12.5))

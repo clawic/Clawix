@@ -18,7 +18,7 @@ struct AutomationsView: View {
             Text(title)
                 .font(BodyFont.system(size: 13.5, wght: 600))
                 .foregroundColor(Palette.textSecondary)
-            ForEach(items) { automation in
+            ForEach(items.prefix(50)) { automation in
                 HStack(spacing: 12) {
                     Circle()
                         .fill(automation.isEnabled ? Palette.pastelBlue : Color.white.opacity(0.25))

@@ -68,7 +68,7 @@ struct InboxOverlay: View {
     private var list: some View {
         ScrollView {
             VStack(spacing: 1) {
-                ForEach(store.items) { item in
+                ForEach(store.items.prefix(100)) { item in
                     InboxRow(item: item) { open(item) }
                 }
             }

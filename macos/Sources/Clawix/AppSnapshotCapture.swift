@@ -59,6 +59,7 @@ final class AppSnapshotCapture: ObservableObject {
         process.arguments = ["-x", "-o", "-l", String(windowID), url.path]
         do {
             try process.run()
+            // hot-path-ok maxItems=1 reason=single user-triggered screencapture subprocess
             process.waitUntilExit()
         } catch {
             return nil

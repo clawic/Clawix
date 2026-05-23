@@ -431,7 +431,8 @@
         "repair": "Classify audio catalog delete UI, receipt, and recovery behavior."
       },
       "sourcePatterns": [
-        { "pathPattern": "(Audio|ClawixEngine/Sources/ClawixEngine/EngineHost|PersistentSurfaceRegistry).*\\.swift", "linePattern": "(DELETE|delete\\(|deleted|/v1/audio)" }
+        { "pathPattern": "(Audio|ClawixEngine/Sources/ClawixEngine/EngineHost|PersistentSurfaceRegistry).*\\.swift", "linePattern": "(DELETE|delete\\(|deleted|/v1/audio)" },
+        { "pathPattern": "windows/Clawix\\.Engine/BridgeSession\\.cs", "linePattern": "AudioDelete" }
       ]
     }
   ]

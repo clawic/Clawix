@@ -8,9 +8,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/ClawixApplication.kt",
       "riskKind": "cache",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -18,7 +18,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -34,7 +34,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -43,9 +43,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/ClawixApplication.kt",
       "riskKind": "snapshot",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -53,7 +53,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -69,7 +69,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -78,9 +78,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/bridge/BridgeState.kt",
       "riskKind": "snapshot",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -88,7 +88,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -104,7 +104,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -113,9 +113,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/bridge/BridgeState.kt",
       "riskKind": "transcript",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -123,7 +123,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -139,7 +139,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -148,9 +148,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/bridge/ProjectLabelsCache.kt",
       "riskKind": "cache",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -158,7 +158,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -174,7 +174,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -183,9 +183,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/bridge/UnreadChatsCache.kt",
       "riskKind": "cache",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -193,7 +193,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -209,7 +209,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -218,9 +218,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/composer/VoiceRecorder.kt",
       "riskKind": "transcript",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -228,7 +228,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -244,7 +244,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -253,9 +253,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/core/BridgeModels.kt",
       "riskKind": "timeline",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -263,7 +263,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -279,7 +279,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -288,9 +288,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/core/BridgeModels.kt",
       "riskKind": "transcript",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -298,7 +298,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -314,7 +314,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -323,9 +323,9 @@
       "path": "android/app/src/main/java/com/example/clawix/android/core/SnapshotCache.kt",
       "riskKind": "cache",
       "ownerArea": "android",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -333,7 +333,7 @@
       "debtControl": {
         "ownerArea": "android",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -349,7 +349,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -358,9 +358,9 @@
       "path": "cli/lib/postinstall.js",
       "riskKind": "buffer-concat",
       "ownerArea": "cli",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -368,7 +368,7 @@
       "debtControl": {
         "ownerArea": "cli",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -384,7 +384,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -393,9 +393,9 @@
       "path": "ios/Sources/Clawix/ChatDetail/ChatDetailView.swift",
       "riskKind": "cache",
       "ownerArea": "ios",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -403,7 +403,7 @@
       "debtControl": {
         "ownerArea": "ios",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -419,7 +419,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -428,9 +428,9 @@
       "path": "ios/Sources/Clawix/Composer/CameraCaptureView.swift",
       "riskKind": "queue",
       "ownerArea": "ios",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -438,7 +438,7 @@
       "debtControl": {
         "ownerArea": "ios",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -454,7 +454,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -463,9 +463,9 @@
       "path": "macos/Helpers/Bridged/Sources/clawix-bridge/RemoteMeshHTTPController.swift",
       "riskKind": "cache",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -473,7 +473,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -489,7 +489,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -498,9 +498,9 @@
       "path": "macos/Helpers/Bridged/Sources/clawix-bridge/RolloutHistory.swift",
       "riskKind": "timeline",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -508,7 +508,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -524,7 +524,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -533,9 +533,9 @@
       "path": "macos/Helpers/Bridged/Sources/clawix-bridge/main.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -543,7 +543,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -559,7 +559,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -568,9 +568,9 @@
       "path": "macos/Sources/Clawix/AgentBackend/AssistantMarkdownText.swift",
       "riskKind": "cache",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -578,7 +578,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -594,7 +594,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -603,9 +603,9 @@
       "path": "macos/Sources/Clawix/AgentBackend/AssistantMarkdownText.swift",
       "riskKind": "checkpoint",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -613,7 +613,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -629,7 +629,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -638,9 +638,9 @@
       "path": "macos/Sources/Clawix/AgentBackend/RolloutReader.swift",
       "riskKind": "timeline",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -648,7 +648,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -664,7 +664,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -673,9 +673,9 @@
       "path": "macos/Sources/Clawix/Agents/AgentStore.swift",
       "riskKind": "fanout",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -683,7 +683,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -699,7 +699,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -708,9 +708,9 @@
       "path": "macos/Sources/Clawix/AppState.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -718,7 +718,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -734,7 +734,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -743,9 +743,9 @@
       "path": "macos/Sources/Clawix/AppState.swift",
       "riskKind": "snapshot",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -753,7 +753,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -769,7 +769,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -778,9 +778,9 @@
       "path": "macos/Sources/Clawix/AppState/ChatHydration.swift",
       "riskKind": "transcript",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -788,7 +788,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -804,7 +804,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -813,9 +813,9 @@
       "path": "macos/Sources/Clawix/AppState/ConversationActions.swift",
       "riskKind": "snapshot",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -823,7 +823,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -839,7 +839,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -848,9 +848,9 @@
       "path": "macos/Sources/Clawix/AppState/MessageSending.swift",
       "riskKind": "whole-data-buffer",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -858,7 +858,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -874,7 +874,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -883,9 +883,9 @@
       "path": "macos/Sources/Clawix/Chat/ChatView+UserBubble.swift",
       "riskKind": "cache",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -893,7 +893,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -909,7 +909,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -918,9 +918,9 @@
       "path": "macos/Sources/Clawix/ClawJS/ClawJSSecretsBackend.swift",
       "riskKind": "log",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -928,7 +928,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -944,7 +944,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -953,9 +953,9 @@
       "path": "macos/Sources/Clawix/Diagnostics/HangDetector.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -963,7 +963,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -979,7 +979,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -988,9 +988,9 @@
       "path": "macos/Sources/Clawix/Diagnostics/ResourceSampler.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -998,7 +998,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1014,7 +1014,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1023,9 +1023,9 @@
       "path": "macos/Sources/Clawix/Dictation/MicLevelMeter.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1033,7 +1033,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1049,7 +1049,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1058,9 +1058,9 @@
       "path": "macos/Sources/Clawix/HostActions/MacControlCenter.swift",
       "riskKind": "timeline",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1068,7 +1068,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1084,7 +1084,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1093,9 +1093,9 @@
       "path": "macos/Sources/Clawix/Persistence/Database.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1103,7 +1103,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1119,7 +1119,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1128,9 +1128,9 @@
       "path": "macos/Sources/Clawix/QuickAsk/QuickAskDiag.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1138,7 +1138,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1154,7 +1154,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1163,9 +1163,9 @@
       "path": "macos/Sources/Clawix/Settings/SettingsView+PersonalizationPage.swift",
       "riskKind": "snapshot",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1173,7 +1173,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1189,7 +1189,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1198,9 +1198,9 @@
       "path": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift",
       "riskKind": "snapshot",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1208,7 +1208,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1224,7 +1224,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1233,9 +1233,9 @@
       "path": "macos/Sources/Clawix/Terminal/TerminalPersistence.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1243,7 +1243,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1259,7 +1259,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1268,9 +1268,9 @@
       "path": "macos/Tests/ClawixMeshTests/AgentStoreCancellationTests.swift",
       "riskKind": "fanout",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1278,7 +1278,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1294,7 +1294,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1303,9 +1303,9 @@
       "path": "macos/Tests/ClawixMeshTests/AppStateLazyDatabaseLaunchTests.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1313,7 +1313,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1329,7 +1329,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1338,9 +1338,9 @@
       "path": "macos/Tests/ClawixMeshTests/AppStateSyncCoordinatorTests.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1348,7 +1348,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1364,7 +1364,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1373,9 +1373,9 @@
       "path": "macos/Tests/ClawixMeshTests/AssistantMarkdownIncrementalCacheTests.swift",
       "riskKind": "cache",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1383,7 +1383,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1399,7 +1399,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1408,9 +1408,9 @@
       "path": "macos/Tests/ClawixMeshTests/BackendMetadataCacheTests.swift",
       "riskKind": "cache",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1418,7 +1418,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1434,7 +1434,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1443,9 +1443,9 @@
       "path": "macos/Tests/ClawixMeshTests/FakeMeshDaemon.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1453,7 +1453,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1469,7 +1469,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1478,9 +1478,9 @@
       "path": "macos/Tests/ClawixMeshTests/SidebarSnapshotProjectIDBackfillTests.swift",
       "riskKind": "queue",
       "ownerArea": "macos",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1488,7 +1488,7 @@
       "debtControl": {
         "ownerArea": "macos",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1504,7 +1504,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1513,9 +1513,9 @@
       "path": "packages/ClawixCore/Tests/ClawixCoreTests/MarkdownBlockCacheTests.swift",
       "riskKind": "cache",
       "ownerArea": "ClawixCore",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1523,7 +1523,7 @@
       "debtControl": {
         "ownerArea": "ClawixCore",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1539,7 +1539,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1548,9 +1548,9 @@
       "path": "packages/SecretsVault/Sources/SecretsVault/AuditStore.swift",
       "riskKind": "log",
       "ownerArea": "SecretsVault",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1558,7 +1558,7 @@
       "debtControl": {
         "ownerArea": "SecretsVault",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1574,7 +1574,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1583,9 +1583,9 @@
       "path": "packages/SecretsVault/Tests/SecretsVaultTests/AuditStoreTests.swift",
       "riskKind": "log",
       "ownerArea": "SecretsVault",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1593,7 +1593,7 @@
       "debtControl": {
         "ownerArea": "SecretsVault",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1609,7 +1609,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1618,9 +1618,9 @@
       "path": "scripts/ui_pattern_mutation_guard.mjs",
       "riskKind": "cache",
       "ownerArea": "scripts",
-      "reason": "Pre-existing retained-state or whole-buffer pattern found when Boundedness Guard P0 was introduced; new growth must declare bounds before landing.",
-      "limitKind": "historical-baseline",
-      "limitValue": "not yet audited; boundedness follow-up required before expanding this surface",
+      "reason": "Pre-existing retained-state or whole-buffer pattern tracked with one baseline entry; new growth must declare bounds before landing.",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Do not expand this retained state without adding a concrete bytes/count/age/active-window limit and cleanup, eviction, compaction, backpressure, pagination, or streaming policy.",
       "reference": "docs/governance/performance-governance.md#boundedness-guard-p0",
       "expiresAt": "2026-08-19",
@@ -1628,7 +1628,7 @@
       "debtControl": {
         "ownerArea": "scripts",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1644,7 +1644,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1654,8 +1654,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "ios-design",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1663,7 +1663,7 @@
       "debtControl": {
         "ownerArea": "ios-design",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1679,7 +1679,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1689,8 +1689,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "ios-chat",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1698,7 +1698,7 @@
       "debtControl": {
         "ownerArea": "ios-chat",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1714,7 +1714,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1724,8 +1724,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "agents",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1733,7 +1733,7 @@
       "debtControl": {
         "ownerArea": "agents",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1749,7 +1749,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1759,8 +1759,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "agents",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1768,7 +1768,7 @@
       "debtControl": {
         "ownerArea": "agents",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1784,7 +1784,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1794,8 +1794,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "command-palette",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1803,7 +1803,7 @@
       "debtControl": {
         "ownerArea": "command-palette",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1819,7 +1819,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1829,8 +1829,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "drive",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1838,7 +1838,7 @@
       "debtControl": {
         "ownerArea": "drive",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1854,7 +1854,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1864,8 +1864,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "network-control",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1873,7 +1873,7 @@
       "debtControl": {
         "ownerArea": "network-control",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1889,7 +1889,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1899,8 +1899,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "p2p-chat",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1908,7 +1908,7 @@
       "debtControl": {
         "ownerArea": "p2p-chat",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1924,7 +1924,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1934,8 +1934,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "secrets",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1943,7 +1943,7 @@
       "debtControl": {
         "ownerArea": "secrets",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1959,7 +1959,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -1969,8 +1969,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "secrets",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -1978,7 +1978,7 @@
       "debtControl": {
         "ownerArea": "secrets",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -1994,7 +1994,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -2004,8 +2004,8 @@
       "riskKind": "ui-foreach-over-unbounded-source",
       "ownerArea": "settings",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -2013,7 +2013,7 @@
       "debtControl": {
         "ownerArea": "settings",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -2029,7 +2029,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     },
@@ -2039,8 +2039,8 @@
       "riskKind": "full-file-split-over-large-source",
       "ownerArea": "private-validation",
       "reason": "Historical broad render/read found when Windowing/Pagination by Default was introduced; new growth must add cursor/window/batch/limit.",
-      "limitKind": "historical-baseline",
-      "limitValue": "existing behavior pending explicit visible window or batch limit",
+      "limitKind": "count",
+      "limitValue": "1 existing boundedness risk entry for this path/risk pair",
       "cleanupPolicy": "Replace with an explicit cursor/window/batch/limit or document a proven small maximum before expiry.",
       "reference": "performance-governance-windowing-2026-05-21",
       "expiresAt": "2026-08-19",
@@ -2048,7 +2048,7 @@
       "debtControl": {
         "ownerArea": "private-validation",
         "expiresAt": "2026-08-19",
-        "severity": "P0",
+        "severity": "P1",
         "budget": {
           "metric": "unbounded_risk_entries",
           "unit": "entry",
@@ -2064,7 +2064,7 @@
             "changed-work"
           ],
           "gate": "node scripts/boundedness_guard.mjs",
-          "reason": "P0 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
+          "reason": "P1 boundedness debt must block new growth until an explicit bound and cleanup policy replaces it."
         }
       }
     }
