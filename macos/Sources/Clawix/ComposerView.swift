@@ -41,6 +41,7 @@ struct ComposerView: View {
     @State private var showShortcuts = false
     @State private var showInbox = false
     @State private var showStatus = false
+    @State private var showFiles = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -167,6 +168,8 @@ struct ComposerView: View {
                                     modelMenuOpen = true
                                 } else if cmd.id == "chat" {
                                     appState.selectedProject = nil
+                                } else if cmd.id == "files" {
+                                    showFiles = true
                                 }
                             },
                             onHover: { cmd in
@@ -619,6 +622,10 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $showStatus) {
             StatusPanel { showStatus = false }
+                .environmentObject(appState)
+        }
+        .sheet(isPresented: $showFiles) {
+            FileTreePanel { showFiles = false }
                 .environmentObject(appState)
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)

@@ -83,7 +83,11 @@ enum SlashCommandCatalog {
         SlashCommand(id: "inbox",
                      label: "Inbox",
                      description: "Show the activity inbox",
-                     iconName: "tray")
+                     iconName: "tray"),
+        SlashCommand(id: "files",
+                     label: "Files",
+                     description: "Browse project files",
+                     iconName: "folder")
     ]
 
     static func filter(_ query: String, isVisible: (AppFeature) -> Bool) -> [SlashCommand] {
