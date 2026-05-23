@@ -29,5 +29,10 @@ final class PortableArchiveSettingsTests: XCTestCase {
         ] {
             XCTAssertTrue(page.contains(required), "missing \(required)")
         }
+
+        XCTAssertFalse(page.contains("@State private var state"))
+        XCTAssertFalse(page.contains("state = ."))
+        XCTAssertTrue(page.contains("PortableArchiveActionStatus"))
+        XCTAssertTrue(page.contains("signed host route returns dry-run and result evidence"))
     }
 }

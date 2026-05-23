@@ -43,6 +43,9 @@ enum SettingsUtilities {
 
 struct PillToggle: View {
     @Binding var isOn: Bool
+    var accessibilityLabel: LocalizedStringKey = "Toggle"
+    var accessibilityHint: LocalizedStringKey? = nil
+    @Environment(\.isEnabled) private var isEnabled
 
     private let trackWidth: CGFloat = 34
     private let trackHeight: CGFloat = 20
@@ -54,29 +57,41 @@ struct PillToggle: View {
     }
 
     private var trackFill: Color {
-        isOn ? Color(red: 0.16, green: 0.46, blue: 0.98) : Color(white: 0.22)
+        let enabledFill = isOn ? Color(red: 0.16, green: 0.46, blue: 0.98) : Color(white: 0.22)
+        return isEnabled ? enabledFill : Color(white: 0.16)
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            Capsule(style: .continuous)
-                .fill(trackFill)
-            Circle()
-                .fill(Color.white)
-                .frame(width: knobSize, height: knobSize)
-                .shadow(color: .black.opacity(0.20), radius: 1, x: 0, y: 1)
-                .offset(x: knobOffset)
-        }
-        .frame(width: trackWidth, height: trackHeight)
-        .contentShape(Capsule(style: .continuous))
-        .onTapGesture {
+        Button {
+            guard isEnabled else { return }
             withAnimation(.spring(response: 0.32, dampingFraction: 0.68)) {
                 isOn.toggle()
             }
+        } label: {
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(trackFill)
+                Circle()
+                    .fill(isEnabled ? Color.white : Color(white: 0.62))
+                    .frame(width: knobSize, height: knobSize)
+                    .shadow(color: .black.opacity(0.20), radius: 1, x: 0, y: 1)
+                    .offset(x: knobOffset)
+            }
+            .frame(width: trackWidth, height: trackHeight)
+            .contentShape(Capsule(style: .continuous))
         }
-        .accessibilityElement()
-        .accessibilityAddTraits(.isButton)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibilityLabel))
         .accessibilityValue(isOn ? Text("On") : Text("Off"))
+        .modifier(OptionalAccessibilityHint(hint: accessibilityHint))
+    }
+}
+
+private struct OptionalAccessibilityHint: ViewModifier {
+    let hint: LocalizedStringKey?
+
+    func body(content: Content) -> some View {
+        content.accessibilityHint(Text(hint ?? ""))
     }
 }
 

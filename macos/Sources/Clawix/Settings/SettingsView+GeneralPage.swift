@@ -3,29 +3,10 @@ import SwiftUI
 struct GeneralPage: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var flags: FeatureFlags
-    @State private var workMode: WorkMode = .daily
-    @State private var permDefault: Bool = true
-    @State private var permAuto: Bool = true
-    @State private var permFull: Bool = true
-    @State private var openTarget: String = "Ghostty"
-    @State private var showInMenuBar: Bool = true
-    @State private var preventSleep: Bool = true
     @StateObject private var backgroundBridge: BackgroundBridgeService = .shared
-    @State private var requireCmdEnter: Bool = false
-    @State private var speed: String = "Standard"
-    @State private var followBehavior: FollowBehavior = .queue
-    @State private var codeReview: CodeReview = .inline
-    @State private var dictionaryEntries: [String] = ["Jane Doe"]
-    @State private var recentDictations: [(stamp: String, text: String)] = [
-        ("May 1, 11:42", "OK, this is a test, let's see how it works."),
-        ("May 1, 11:35", "Hi, just testing how this works.")
-    ]
-    @State private var completionNotify: String = "Siempre"
-    @State private var permissionNotify: Bool = true
-    @State private var questionNotify: Bool = true
-    @State private var syncArchiveWithCodex: Bool = SyncSettings.syncArchiveWithCodex
-    @State private var syncRenamesWithCodex: Bool = SyncSettings.syncRenamesWithCodex
-    @State private var autoReloadOnFocus: Bool = SyncSettings.autoReloadOnFocus
+    @AppStorage(SyncSettings.archiveKey, store: SyncSettings.store) private var syncArchiveWithCodex = true
+    @AppStorage(SyncSettings.renamesKey, store: SyncSettings.store) private var syncRenamesWithCodex = true
+    @AppStorage(SyncSettings.autoReloadKey, store: SyncSettings.store) private var autoReloadOnFocus = false
 
     enum WorkMode: Hashable { case coding, daily }
     enum FollowBehavior: Hashable { case queue, drive }
@@ -55,48 +36,18 @@ struct GeneralPage: View {
 #endif
 
             if flags.developerSurfaces {
-                Text("Work mode")
-                    .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(Palette.textPrimary)
-                Text("Choose how much technical detail Clawix shows")
-                    .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Palette.textSecondary)
-                    .padding(.bottom, 14)
-
-                HStack(spacing: 12) {
-                    WorkModeCard(
-                        icon: "chevron.left.forwardslash.chevron.right",
-                        title: "For coding",
-                        subtitle: "More technical responses and finer control",
-                        isOn: workMode == .coding
-                    ) { workMode = .coding }
-                    WorkModeCard(
-                        icon: "bubble.left.and.bubble.right",
-                        title: "For daily work",
-                        subtitle: "Same power, fewer technical details...",
-                        isOn: workMode == .daily
-                    ) { workMode = .daily }
-                }
-                .padding(.bottom, 4)
-
-                SectionLabel(title: "Permissions")
+                SectionLabel(title: "Developer surface status")
                 SettingsCard {
-                    ToggleRow(
-                        title: "Default permissions",
-                        detail: "By default, Clawix can read and edit files in your workspace. It can request additional access when needed.",
-                        isOn: $permDefault
+                    GeneralCapabilityStatusRow(
+                        title: "Work mode presets",
+                        detail: "Hidden until runtime prompts and response-detail preferences consume a persisted setting.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    ToggleRow(
-                        title: "Automatic review",
-                        detail: "Clawix can read and edit files in your workspace. Clawix automatically reviews requests for additional access. Auto-review may make mistakes. Learn more about the elevated risks.",
-                        isOn: $permAuto
-                    )
-                    CardDivider()
-                    ToggleRow(
-                        title: "Full access",
-                        detail: "When Clawix runs with full access, it can edit any file on your computer and run commands over the network without your authorization. This significantly increases the risk of data loss, leaks, or unexpected behavior. Learn more about the elevated risks.",
-                        isOn: $permFull
+                    GeneralCapabilityStatusRow(
+                        title: "Permission defaults",
+                        detail: "Hidden until approvals, grants, and audit routes expose a single persisted policy source.",
+                        status: "Blocked"
                     )
                 }
             }
@@ -148,18 +99,16 @@ struct GeneralPage: View {
                 )
                 if flags.developerSurfaces {
                     CardDivider()
-                    DropdownRow(
+                    GeneralCapabilityStatusRow(
                         title: "Default open destination",
-                        detail: "Where files and folders open by default",
-                        options: [("Ghostty", "Ghostty"), ("Terminal", "Terminal"), ("VS Code", "VS Code")],
-                        selection: $openTarget,
-                        iconForOption: { openTargetIcon(for: $0) }
+                        detail: "Unavailable until file and folder open actions read a persisted destination route.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    ToggleRow(
+                    GeneralCapabilityStatusRow(
                         title: "Show in the menu bar",
-                        detail: "Keep Clawix in the macOS menu bar when the main window closes",
-                        isOn: $showInMenuBar
+                        detail: "Unavailable until the signed app lifecycle owns a persisted menu bar preference.",
+                        status: "Blocked"
                     )
                     CardDivider()
                     ActionPillRow(
@@ -171,41 +120,34 @@ struct GeneralPage: View {
                         onPrimary: {}
                     )
                     CardDivider()
-                    ToggleRow(
+                    GeneralCapabilityStatusRow(
                         title: "Prevent sleep during execution",
-                        detail: "Keep the computer awake while Clawix is running a chat",
-                        isOn: $preventSleep
+                        detail: "Unavailable until active generation owns a signed power assertion lifecycle.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    ToggleRow(
+                    GeneralCapabilityStatusRow(
                         title: "Require ⌘ + Return to send long prompts",
-                        detail: "When enabled, multi-line prompts require ⌘ + Return to send.",
-                        isOn: $requireCmdEnter
+                        detail: "Unavailable until the composer consumes a persisted send-policy setting.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    DropdownRow(
+                    GeneralCapabilityStatusRow(
                         title: "Speed",
-                        detail: "Choose how fast inference runs in chats, sub-agents and compaction. Fast uses more of the plan",
-                        options: [
-                            ("Standard", "Standard"),
-                            ("Fast", "Fast"),
-                            ("Auto", "Auto")
-                        ],
-                        selection: $speed
+                        detail: "Unavailable until runtime requests accept and report a persisted speed policy.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    SegmentedRow(
+                    GeneralCapabilityStatusRow(
                         title: "Follow-up behavior",
-                        detail: "Queue follow-up messages while Clawix runs, or steer the current run. Press ⌘Return to do the opposite for a single message.",
-                        options: [(.queue, L10n.t("Queue")), (.drive, L10n.t("Drive"))],
-                        selection: $followBehavior
+                        detail: "Unavailable until the chat queue exposes route evidence for queue and steering modes.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    SegmentedRow(
+                    GeneralCapabilityStatusRow(
                         title: "Code review",
-                        detail: "Start /review in the current chat when possible, or open a separate review chat",
-                        options: [(.inline, L10n.t("Inline")), (.detached, L10n.t("Detached"))],
-                        selection: $codeReview
+                        detail: "Unavailable until review launch routes declare inline and detached behavior.",
+                        status: "Blocked"
                     )
                 }
             }
@@ -215,25 +157,13 @@ struct GeneralPage: View {
                 ToggleRow(
                     title: "Sync archived chats with Codex",
                     detail: "When you archive or unarchive a chat, mirror that to Codex CLI. Disable to keep archive state local to this app. Reactivating sync does not propagate previous local-only changes.",
-                    isOn: Binding(
-                        get: { syncArchiveWithCodex },
-                        set: { newValue in
-                            syncArchiveWithCodex = newValue
-                            SyncSettings.syncArchiveWithCodex = newValue
-                        }
-                    )
+                    isOn: $syncArchiveWithCodex
                 )
                 CardDivider()
                 ToggleRow(
                     title: "Sync chat renames with Codex",
                     detail: "When you rename a chat, also update the title in Codex CLI. Disable to keep custom titles only in this app.",
-                    isOn: Binding(
-                        get: { syncRenamesWithCodex },
-                        set: { newValue in
-                            syncRenamesWithCodex = newValue
-                            SyncSettings.syncRenamesWithCodex = newValue
-                        }
-                    )
+                    isOn: $syncRenamesWithCodex
                 )
                 CardDivider()
                 PinsStorageNoticeRow()
@@ -244,54 +174,37 @@ struct GeneralPage: View {
             if flags.developerSurfaces {
                 SectionLabel(title: "Dictation")
                 SettingsCard {
-                    ActionPillRow(
+                    GeneralCapabilityStatusRow(
                         title: "Push-to-dictate keyboard shortcut",
-                        detail: "Hold down anywhere on the desktop to dictate where the cursor is",
-                        primaryLabel: "Set",
-                        trailingDisabled: "Off",
-                        isEnabled: false,
-                        onPrimary: {}
+                        detail: "Configure dictation shortcuts on the Voice to Text page, where recorder state and permissions are visible.",
+                        status: "Moved"
                     )
                     CardDivider()
-                    ActionPillRow(
+                    GeneralCapabilityStatusRow(
                         title: "Toggle dictation keyboard shortcut",
-                        detail: "Press once anywhere on the desktop to dictate, press again to stop",
-                        primaryLabel: "Set",
-                        trailingDisabled: "Off",
-                        isEnabled: false,
-                        onPrimary: {}
+                        detail: "Configure dictation shortcuts on the Voice to Text page, where recorder state and permissions are visible.",
+                        status: "Moved"
                     )
-                    CardDivider()
-                    DictionaryExpandableRow(entries: $dictionaryEntries)
-                    ForEach(Array(recentDictations.enumerated()), id: \.offset) { _, item in
-                        CardDivider()
-                        RecentDictationRow(stamp: item.stamp, text: item.text)
-                    }
                 }
 
                 SectionLabel(title: "Notifications")
                 SettingsCard {
-                    DropdownRow(
+                    GeneralCapabilityStatusRow(
                         title: "Enable completion notifications",
-                        detail: "Set when Clawix notifies you it has finished",
-                        options: [
-                            ("Siempre", "Siempre"),
-                            ("Solo en segundo plano", "Solo en segundo plano"),
-                            ("Nunca", "Nunca")
-                        ],
-                        selection: $completionNotify
+                        detail: "Unavailable until notification authorization and delivery policy share a persisted source.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    ToggleRow(
+                    GeneralCapabilityStatusRow(
                         title: "Enable permission notifications",
-                        detail: "Show alerts when notification permissions are required",
-                        isOn: $permissionNotify
+                        detail: "Unavailable until approval prompts report notification delivery state.",
+                        status: "Blocked"
                     )
                     CardDivider()
-                    ToggleRow(
+                    GeneralCapabilityStatusRow(
                         title: "Enable question notifications",
-                        detail: "Show alerts when your input is needed to continue",
-                        isOn: $questionNotify
+                        detail: "Unavailable until pending-question events expose a notification route.",
+                        status: "Blocked"
                     )
                 }
             }
@@ -300,14 +213,8 @@ struct GeneralPage: View {
             SettingsCard {
                 ToggleRow(
                     title: "Auto-refresh on focus",
-                    detail: "When enabled, reload chats from Codex when this app becomes the active window.",
-                    isOn: Binding(
-                        get: { autoReloadOnFocus },
-                        set: { newValue in
-                            autoReloadOnFocus = newValue
-                            SyncSettings.autoReloadOnFocus = newValue
-                        }
-                    )
+                    detail: "When enabled, reload chats from the Codex runtime when this app becomes the active window.",
+                    isOn: $autoReloadOnFocus
                 )
             }
 
@@ -318,6 +225,35 @@ struct GeneralPage: View {
         }
     }
 
+}
+
+private struct GeneralCapabilityStatusRow: View {
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let status: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            RowLabel(title: title, detail: detail)
+            Spacer(minLength: 12)
+            Text(status)
+                .font(BodyFont.system(size: 11, wght: 700))
+                .foregroundColor(Color.orange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.orange.opacity(0.12))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.orange.opacity(0.25), lineWidth: 0.5)
+                        )
+                )
+                .accessibilityLabel(Text(status))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
 }
 
 struct PinsStorageNoticeRow: View {

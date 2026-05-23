@@ -78,6 +78,7 @@ struct MCPPage: View {
                     ForEach(store.servers) { server in
                         MCPServerRow(
                             server: server,
+                            isBusy: store.isLoading || store.isSaving,
                             isOn: Binding(
                                 get: { server.enabled },
                                 set: { store.toggleEnabled(server, isOn: $0) }
@@ -91,10 +92,17 @@ struct MCPPage: View {
             }
 
             if let err = store.lastError {
-                Text(err)
-                    .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.45))
-                    .padding(.top, 12)
+                HStack(spacing: 10) {
+                    Text(err)
+                        .font(BodyFont.system(size: 11.5, wght: 500))
+                        .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.45))
+                    Button("Retry") {
+                        Task { await store.refresh() }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(store.isLoading)
+                }
+                .padding(.top, 12)
             }
         }
         .sheet(item: $sheet) { item in
@@ -124,6 +132,7 @@ struct MCPSheetItem: Identifiable {
 
 struct MCPServerRow: View {
     let server: MCPServerConfig
+    let isBusy: Bool
     @Binding var isOn: Bool
     let onConfigure: () -> Void
 
@@ -151,7 +160,13 @@ struct MCPServerRow: View {
             .buttonStyle(.plain)
             .onHover { configHovered = $0 }
             .hoverHint(L10n.t("Configure"))
-            PillToggle(isOn: $isOn)
+            .disabled(isBusy)
+            PillToggle(
+                isOn: $isOn,
+                accessibilityLabel: "Enable MCP server",
+                accessibilityHint: "Turns this MCP server on or off."
+            )
+            .disabled(isBusy)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
@@ -163,6 +178,7 @@ struct MCPServerRow: View {
                         .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
                 )
         )
+        .opacity(isBusy ? 0.72 : 1)
     }
 
     private var transportSummary: String {
@@ -182,7 +198,7 @@ struct MCPEmptyState: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            Text("No MCP servers connected yet.")
+            Text(UserFacingEmptyState.mcpServers.message)
                 .font(BodyFont.system(size: 12.5, wght: 500))
                 .foregroundColor(Palette.textSecondary)
             Button(action: onAdd) {

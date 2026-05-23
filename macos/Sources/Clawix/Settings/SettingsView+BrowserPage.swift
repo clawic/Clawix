@@ -2,7 +2,6 @@ import SwiftUI
 
 struct BrowserUsagePage: View {
     @AppStorage(BrowserPermissionPolicy.approvalStorageKey) private var approval: String = BrowserPermissionPolicy.Approval.alwaysAsk.rawValue
-    @AppStorage(ClawixPersistentSurfaceKeys.browserHistoryApproval) private var history: String = BrowserPermissionPolicy.Approval.alwaysAsk.rawValue
     @State private var browserStorage: BrowserPermissionPolicy.BrowserStorageKind = .all
     @State private var clearStatus: String?
     @State private var clearingBrowsingData = false
@@ -76,15 +75,10 @@ struct BrowserUsagePage: View {
                     selection: $approval
                 )
                 CardDivider()
-                DropdownRow(
+                BrowserPolicyStatusRow(
                     title: "History",
-                    detail: "Choose whether Clawix asks for approval before accessing your history",
-                    options: [
-                        (BrowserPermissionPolicy.Approval.alwaysAsk.rawValue, "Always ask"),
-                        (BrowserPermissionPolicy.Approval.alwaysAllow.rawValue, "Always allow"),
-                        (BrowserPermissionPolicy.Approval.alwaysBlock.rawValue, "Always block")
-                    ],
-                    selection: $history
+                    detail: "Unavailable until a browser-history route consumes this policy and reports approval state.",
+                    status: "Blocked"
                 )
             }
 
@@ -117,7 +111,6 @@ struct BrowserUsagePage: View {
             BrowserPermissionPolicy.Approval.alwaysBlock.rawValue,
         ]
         if !valid.contains(approval) { approval = BrowserPermissionPolicy.Approval.alwaysAsk.rawValue }
-        if !valid.contains(history) { history = BrowserPermissionPolicy.Approval.alwaysAsk.rawValue }
     }
 
     private func reloadDomains() {
@@ -134,6 +127,35 @@ struct BrowserUsagePage: View {
             clearStatus = "\(selected.rawValue) completed."
             ToastCenter.shared.show(clearStatus ?? "Browsing data cleared")
         }
+    }
+}
+
+private struct BrowserPolicyStatusRow: View {
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let status: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            RowLabel(title: title, detail: detail)
+            Spacer(minLength: 12)
+            Text(status)
+                .font(BodyFont.system(size: 11, wght: 700))
+                .foregroundColor(Color.orange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.orange.opacity(0.12))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.orange.opacity(0.25), lineWidth: 0.5)
+                        )
+                )
+                .accessibilityLabel(Text(status))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 }
 

@@ -103,7 +103,7 @@ struct ToggleRow: View {
         HStack(alignment: .center, spacing: 14) {
             RowLabel(title: title, detail: detail)
             Spacer(minLength: 12)
-            PillToggle(isOn: $isOn)
+            PillToggle(isOn: $isOn, accessibilityLabel: title, accessibilityHint: detail)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

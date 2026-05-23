@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ConfigurationPage: View {
     @EnvironmentObject var appState: AppState
-    @State private var depsEnabled: Bool = true
     @State private var configScope: String = "User settings"
 
     var body: some View {
@@ -83,10 +82,10 @@ struct ConfigurationPage: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 CardDivider()
-                ToggleRow(
-                    title: "Clawix dependencies",
-                    detail: "Allow Clawix to install and expose the bundled Node.js and Python tools",
-                    isOn: $depsEnabled
+                WorkspaceDependencyStatusRow(
+                    title: "Bundled dependencies",
+                    detail: "Bundled Node.js and Python tools are packaged with the app; Settings does not enable or install them directly.",
+                    status: "Packaged"
                 )
                 CardDivider()
                 ActionPillRow(
@@ -187,17 +186,69 @@ struct InlineCode: View {
 
 struct ReinstallRow: View {
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Reset and install workspace")
                     .font(BodyFont.system(size: 13, wght: 500))
                     .foregroundColor(Palette.textPrimary)
-                Text("Removes the local package, fetches it fresh, and reloads the tools")
+                Text("Unavailable here until a signed launcher route can reset dependencies with a dry-run report.")
                     .font(BodyFont.system(size: 11.5, wght: 500))
                     .foregroundColor(Palette.textSecondary)
             }
+            Spacer(minLength: 12)
+            Text("Blocked")
+                .font(BodyFont.system(size: 11.5, wght: 600))
+                .foregroundColor(Palette.textSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        )
+                )
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct WorkspaceDependencyStatusRow: View {
+    let title: LocalizedStringKey
+    let detail: String
+    let status: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textPrimary)
+                Text(verbatim: detail)
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 12)
+            Text(status)
+                .font(BodyFont.system(size: 11.5, wght: 600))
+                .foregroundColor(Palette.textSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        )
+                )
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
     }
 }

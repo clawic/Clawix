@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Mirrors `SecretsCodexInjectionCard` but for the Memory service.
+/// Mirrors the runtime instruction injection card but for the Memory service.
 /// Toggles the `<!-- clawix:memory-begin -->` block in
 /// `~/.codex/AGENTS.md` so any agent that reads that file learns how to
 /// call `claw memory save / search / get / conclude`.
@@ -15,7 +15,7 @@ struct MemoryCodexInjectionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Memory → Codex")
+            Text("Memory → Codex runtime")
                 .font(BodyFont.system(size: 13, wght: 600))
                 .foregroundColor(Palette.textPrimary)
             Text("Inject a paragraph into ~/.codex/AGENTS.md teaching agents how to use `claw memory`. The block is delimited by sentinel comments so flipping the toggle off removes only this block.")
@@ -24,19 +24,17 @@ struct MemoryCodexInjectionCard: View {
                 .padding(.bottom, 14)
 
             HStack(alignment: .top, spacing: 10) {
-                Toggle("", isOn: Binding(
+                PillToggle(isOn: Binding(
                     get: { isInjected },
                     set: { newValue in toggle(newValue: newValue) }
                 ))
-                .toggleStyle(.switch)
-                .labelsHidden()
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(isInjected ? "Codex injection is on" : "Codex injection is off")
+                    Text(isInjected ? "Codex runtime injection is on" : "Codex runtime injection is off")
                         .font(BodyFont.system(size: 12, wght: 600))
                         .foregroundColor(Palette.textPrimary)
                     Text(isInjected
-                         ? "Codex sees the memory paragraph at the top of every conversation."
-                         : "Turn on to teach Codex how to call `claw memory`.")
+                         ? "The Codex runtime sees the memory paragraph at the top of every conversation."
+                         : "Turn on to teach the Codex runtime how to call `claw memory`.")
                         .font(BodyFont.system(size: 11))
                         .foregroundColor(Palette.textSecondary)
                 }

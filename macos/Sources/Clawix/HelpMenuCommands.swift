@@ -9,7 +9,7 @@ struct HelpMenuCommands: View {
             appState.isFeedbackOpen = true
         }
 
-        Button("Send feedback about \(appDisplayName) to Apple") {
+        Button("Send feedback about \(appDisplayName) to the platform vendor") {
             HelpMenuActions.sendFeedbackToApple()
         }
 
@@ -21,10 +21,21 @@ struct HelpMenuCommands: View {
 
         Divider()
 
-        Button("Keyboard Shortcuts") {
+        Button("Command Palette") {
             appState.isCommandPaletteOpen = true
         }
-        .keyboardShortcut("/", modifiers: [.command])
+        .keyboardShortcut("k", modifiers: [.command])
+
+        Button("Keyboard Shortcuts") {
+            appState.isKeyboardShortcutsOpen = true
+        }
+        // ⌘? — i.e. ⇧⌘/ on a US layout.
+        .keyboardShortcut("/", modifiers: [.command, .shift])
+
+        Button("Start Performance Trace") {
+            PerfTraceController.shared.toggle()
+        }
+        .keyboardShortcut("s", modifiers: [.command, .shift])
     }
 }
 
@@ -35,6 +46,7 @@ enum HelpMenuActions {
     }
 
     static func sendFeedbackToApple() {
+        // Platform-vendor feedback endpoint for macOS system feedback.
         open("https://www.apple.com/feedback/macos.html")
     }
 }

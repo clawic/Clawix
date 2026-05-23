@@ -83,7 +83,7 @@ final class MCPServersStore: ObservableObject {
             finishLoadIfCurrent(generation)
         } catch {
             guard generation == loadGeneration else { return }
-            lastError = error.localizedDescription
+            lastError = userFacingError(error, surface: "settings.mcp.reload")
             finishLoadIfCurrent(generation)
         }
     }
@@ -141,7 +141,7 @@ final class MCPServersStore: ObservableObject {
             finishSaveIfCurrent(generation)
         } catch {
             guard generation == saveGeneration else { return }
-            lastError = error.localizedDescription
+            lastError = userFacingError(error, surface: "settings.mcp.save")
             finishSaveIfCurrent(generation)
         }
     }
@@ -156,5 +156,11 @@ final class MCPServersStore: ObservableObject {
         guard generation == saveGeneration else { return }
         isSaving = false
         saveTask = nil
+    }
+
+    private func userFacingError(_ error: Error, surface: String) -> String {
+        let failure = UserFacingFailure.classify(error.localizedDescription)
+        failure.log(surface: surface)
+        return failure.displayMessage
     }
 }

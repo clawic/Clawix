@@ -21,10 +21,21 @@ enum PortableArchiveUXState: String, CaseIterable {
         }
     }
 
+    var status: String {
+        switch self {
+        case .ready, .cacheWillRebuild:
+            return "Contract"
+        case .restoreComplete:
+            return "Report"
+        default:
+            return "Gate"
+        }
+    }
+
     var detail: String {
         switch self {
         case .ready:
-            return ".clawbackup can be planned, verified, previewed, and restored after approval."
+            return ".clawbackup can be planned, verified, previewed, and restored only through a signed host route with approval evidence."
         case .verificationFailed:
             return "The archive manifest, hashes, compatibility range, or restore graph did not verify."
         case .secretsRequireReauth:
@@ -42,8 +53,6 @@ enum PortableArchiveUXState: String, CaseIterable {
 }
 
 struct PortableArchiveSettingsPage: View {
-    @State private var state: PortableArchiveUXState = .ready
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             PageHeader(
@@ -51,7 +60,10 @@ struct PortableArchiveSettingsPage: View {
                 subtitle: "Export, verify, import, and restore full portable archives."
             )
 
-            InfoBanner(text: state.detail, kind: bannerKind)
+            InfoBanner(
+                text: "Portable archive contracts are documented, but Settings cannot execute export, verify, preview, restore, or report actions until a signed host route returns dry-run and result evidence.",
+                kind: .danger
+            )
                 .padding(.bottom, 10)
 
             archiveSection
@@ -70,9 +82,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: ".clawbackup includes canonical data, files, instructions, skills, sessions, audit metadata, policies, grants, and encrypted secrets envelopes."
                 )
             } trailing: {
-                IconChipButton(symbol: "archivebox", label: "Export", isPrimary: true) {
-                    state = .secretsRequireReauth
-                }
+                PortableArchiveActionStatus(label: "Blocked")
             }
             CardDivider()
             SettingsRow {
@@ -81,9 +91,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: "Check manifest.json, hashes, compatibility, external references, cache exclusions, and restore graph."
                 )
             } trailing: {
-                IconChipButton(symbol: "checkmark.shield", label: "Verify") {
-                    state = .ready
-                }
+                PortableArchiveActionStatus(label: "Blocked")
             }
             CardDivider()
             SettingsRow {
@@ -92,9 +100,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: "Show deterministic .clawexport and .clawbackup inventory, counts, restore report schema, redacted receipts, and referenced external sources."
                 )
             } trailing: {
-                IconChipButton(symbol: "doc.text.magnifyingglass", label: "Inspect") {
-                    state = .externalSourceReferenced
-                }
+                PortableArchiveActionStatus(label: "Blocked")
             }
         }
     }
@@ -109,9 +115,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: "Map archive contents into a new or selected target before anything is applied."
                 )
             } trailing: {
-                IconChipButton(symbol: "arrow.down.doc", label: "Preview") {
-                    state = .cacheWillRebuild
-                }
+                PortableArchiveActionStatus(label: "Blocked")
             }
             CardDivider()
             SettingsRow {
@@ -120,9 +124,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: "Apply only after successful verification, explicit approval, exact target confirmation, and signed-host proof for encrypted secrets."
                 )
             } trailing: {
-                IconChipButton(symbol: "arrow.counterclockwise", label: "Restore") {
-                    state = .restoreBlocked
-                }
+                PortableArchiveActionStatus(label: "Blocked")
             }
             CardDivider()
             SettingsRow {
@@ -131,9 +133,7 @@ struct PortableArchiveSettingsPage: View {
                     detail: "Review restored counts, target root, blocked reasons, approvals, file hashes, and redacted receipts."
                 )
             } trailing: {
-                IconChipButton(symbol: "doc.text", label: "Report") {
-                    state = .restoreComplete
-                }
+                PortableArchiveActionStatus(label: "Pending")
             }
         }
     }
@@ -149,22 +149,30 @@ struct PortableArchiveSettingsPage: View {
                 SettingsRow {
                     RowLabel(title: LocalizedStringKey(item.label), detail: LocalizedStringKey(item.detail))
                 } trailing: {
-                    Text(item == state ? "Current" : "")
-                        .font(BodyFont.system(size: 11.5, wght: 600))
-                        .foregroundColor(item == state ? Palette.textPrimary : .clear)
+                    PortableArchiveActionStatus(label: LocalizedStringKey(item.status))
                 }
             }
         }
     }
+}
 
-    private var bannerKind: InfoBanner.Kind {
-        switch state {
-        case .verificationFailed, .restoreBlocked:
-            return .error
-        case .secretsRequireReauth:
-            return .danger
-        default:
-            return .ok
-        }
+private struct PortableArchiveActionStatus: View {
+    let label: LocalizedStringKey
+
+    var body: some View {
+        Text(label)
+            .font(BodyFont.system(size: 11, wght: 700))
+            .foregroundColor(Color.orange)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.orange.opacity(0.12))
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(Color.orange.opacity(0.25), lineWidth: 0.5)
+                    )
+            )
+            .accessibilityLabel(Text(label))
     }
 }
