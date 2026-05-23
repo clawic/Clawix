@@ -94,6 +94,57 @@ func isComputerUseMcpServer(_ server: String) -> Bool {
     }
 }
 
+/// Computer Use can arrive either as a dedicated `computer_use` MCP server or as
+/// `computer_use.*`-prefixed tools on another server (the ClawJS MCP server
+/// exposes the action surface this way). Either form should render as Computer
+/// Use, so the timeline buckets it under the `computer_use` server.
+func isComputerUseTool(server: String, tool: String) -> Bool {
+    if isComputerUseMcpServer(server) { return true }
+    let normalizedTool = tool
+        .lowercased()
+        .split(separator: "@", maxSplits: 1)
+        .first
+        .map(String.init) ?? tool.lowercased()
+    return normalizedTool.hasPrefix("computer_use.")
+        || normalizedTool.hasPrefix("computer-use.")
+        || normalizedTool.hasPrefix("computeruse.")
+}
+
+/// Canonical server bucket for an MCP tool call. Computer Use tool calls collapse
+/// to a single `computer_use` bucket regardless of which server carried them so
+/// the timeline shows one "Used Computer Use" row with the grid icon.
+func mcpServerBucket(server: String, tool: String) -> String {
+    isComputerUseTool(server: server, tool: tool) ? "computer_use" : server
+}
+
+/// Human verb for a Computer Use action, used where an individual action line is
+/// shown. `active` is the in-progress form (e.g. "Looking" vs "Looked",
+/// "Clicking" vs "Clicked", "Typing" vs "Typed text").
+func computerUseActionVerb(tool: String, active: Bool) -> String {
+    var action = tool.lowercased()
+    if let dot = action.lastIndex(of: ".") {
+        action = String(action[action.index(after: dot)...])
+    }
+    switch action {
+    case "get_app_state", "app_state", "state", "list_apps", "list":
+        return active ? "Looking" : "Looked"
+    case "click":
+        return active ? "Clicking" : "Clicked"
+    case "type_text", "type":
+        return active ? "Typing" : "Typed text"
+    case "press_key", "key":
+        return active ? "Pressing" : "Pressed key"
+    case "scroll":
+        return active ? "Scrolling" : "Scrolled"
+    case "set_value":
+        return active ? "Setting value" : "Set value"
+    case "perform_action", "action":
+        return active ? "Acting" : "Performed action"
+    default:
+        return active ? "Using Computer Use" : "Used Computer Use"
+    }
+}
+
 private func normalizedMcpServer(_ server: String) -> String {
     var value = server
         .lowercased()

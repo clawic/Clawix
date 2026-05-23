@@ -118,7 +118,7 @@ enum ToolTimelinePresentation {
             case .webSearch:
                 webSearchCount += 1
             case .mcpTool(let server, let tool):
-                mcpTools.append((server, tool))
+                mcpTools.append((mcpServerBucket(server: server, tool: tool), tool))
             case .dynamicTool(let name):
                 let lower = name.lowercased()
                 if lower.contains("browser") {
@@ -551,8 +551,8 @@ private final class ToolTimelinePresentationCache {
                 fileChanges = max(1, paths.count)
             case .webSearch:
                 webSearchCount = 1
-            case .mcpTool(let server, _):
-                mcpServer = server
+            case .mcpTool(let server, let tool):
+                mcpServer = mcpServerBucket(server: server, tool: tool)
             case .dynamicTool(let name):
                 let lower = name.lowercased()
                 if lower.contains("browser") {

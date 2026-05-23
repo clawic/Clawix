@@ -115,4 +115,45 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(prettyMcpServer("mcp__computer_use__"), "Computer Use")
         XCTAssertTrue(isComputerUseMcpServer("computer-use@openai-bundled"))
     }
+
+    func testComputerUsePrefixedToolsOnAnyServerBucketAsComputerUse() {
+        // Tools exposed as computer_use.* on the ClawJS MCP server must still
+        // render as Computer Use, collapsed into one canonical row.
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(id: "cu-1", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.get_app_state"), status: .completed),
+            WorkItem(id: "cu-2", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.click"), status: .completed),
+            WorkItem(id: "cu-3", kind: .mcpTool(server: "computer_use", tool: "type_text"), status: .completed)
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "mcp0",
+                icon: "clawix.computerUse",
+                text: L10n.usedToolTimes("Computer Use", 3)
+            )
+        ])
+    }
+
+    func testIncrementalComputerUsePrefixedToolMatchesFullSnapshot() {
+        let groupID = UUID()
+        let first = WorkItem(id: "cu-a", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.click"), status: .completed)
+        let second = WorkItem(id: "cu-b", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.type_text"), status: .completed)
+        let seed = ToolTimelinePresentation.snapshot(groupID: groupID, items: [first])
+        let updated = ToolTimelinePresentation.updatedSnapshot(
+            groupID: groupID,
+            previousItems: [first],
+            currentSnapshot: seed,
+            applying: second
+        )
+        XCTAssertEqual(updated.aggregateRows, ToolTimelinePresentation.aggregateRows(for: [first, second]))
+        XCTAssertEqual(updated.aggregateRows.first?.icon, "clawix.computerUse")
+    }
+
+    func testComputerUseActionVerbsMatchSpecPhrasing() {
+        XCTAssertEqual(computerUseActionVerb(tool: "computer_use.get_app_state", active: true), "Looking")
+        XCTAssertEqual(computerUseActionVerb(tool: "computer_use.get_app_state", active: false), "Looked")
+        XCTAssertEqual(computerUseActionVerb(tool: "click", active: true), "Clicking")
+        XCTAssertEqual(computerUseActionVerb(tool: "computer_use.type_text", active: false), "Typed text")
+        XCTAssertEqual(computerUseActionVerb(tool: "press_key", active: true), "Pressing")
+    }
 }
