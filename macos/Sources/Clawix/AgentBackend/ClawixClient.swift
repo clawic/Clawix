@@ -20,6 +20,7 @@ enum ClawixClientError: Error, CustomStringConvertible {
     case decodingError(String)
     case frameTooLarge(bytes: Int, maxBytes: Int)
     case eventBufferOverflow(limit: Int)
+    case requestTimedOut(method: String, seconds: Int)
 
     var description: String {
         switch self {
@@ -39,6 +40,8 @@ enum ClawixClientError: Error, CustomStringConvertible {
             return "Backend JSON-RPC frame too large: \(bytes) bytes exceeds \(maxBytes) bytes."
         case .eventBufferOverflow(let limit):
             return "Backend JSON-RPC event stream overflowed its \(limit)-event buffer."
+        case .requestTimedOut(let method, let seconds):
+            return "Backend did not respond to \(method) within \(seconds)s."
         }
     }
 }
@@ -65,6 +68,7 @@ actor ClawixClient {
 
     private var nextRequestId: Int = 1
     private var pending: [Int: PendingResponse] = [:]
+    private var timeoutTasks: [Int: Task<Void, Never>] = [:]
 
     private var eventsContinuation: AsyncStream<ClawixServerEvent>.Continuation?
     nonisolated let events: AsyncStream<ClawixServerEvent>
@@ -149,6 +153,7 @@ actor ClawixClient {
         try? stderrLogHandle?.close()
         stderrLogHandle = nil
         // Fail any in-flight requests
+        cancelAllTimeouts()
         for response in pending.values { response.resume(throwing: ClawixClientError.notRunning) }
         pending.removeAll()
     }
@@ -160,13 +165,19 @@ actor ClawixClient {
         }
         process = nil
         eventCoalescer.reset()
+        cancelAllTimeouts()
         for response in pending.values { response.resume(throwing: ClawixClientError.notRunning) }
         pending.removeAll()
     }
 
     // MARK: - Public requests
 
-    func send<P: Encodable, R: Decodable>(method: String, params: P, expecting: R.Type) async throws -> R {
+    func send<P: Encodable, R: Decodable>(
+        method: String,
+        params: P,
+        expecting: R.Type,
+        timeoutNanos: UInt64 = ClawixRequestLimits.defaultTimeoutNanos
+    ) async throws -> R {
         guard process != nil else { throw ClawixClientError.notRunning }
         let id = nextRequestId
         nextRequestId += 1
@@ -192,13 +203,51 @@ actor ClawixClient {
                     continuation.resume(throwing: error)
                 }
             )
+            // Backstop so a request the backend never answers fails the
+            // conversation instead of hanging it forever. Turn output streams
+            // via notifications, so this bounds only the request ack, never the
+            // turn duration.
+            scheduleTimeout(id: id, method: method, nanos: timeoutNanos)
             do {
                 try writeFrame(req)
             } catch {
+                cancelTimeout(id: id)
                 _ = pending.removeValue(forKey: id)
                 continuation.resume(throwing: error)
             }
         }
+    }
+
+    // MARK: - Request timeout backstop
+
+    private func scheduleTimeout(id: Int, method: String, nanos: UInt64) {
+        let task = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: nanos)
+            if Task.isCancelled { return }
+            await self?.firePendingTimeout(id: id, method: method, nanos: nanos)
+        }
+        timeoutTasks[id] = task
+    }
+
+    private func cancelTimeout(id: Int) {
+        timeoutTasks.removeValue(forKey: id)?.cancel()
+    }
+
+    private func cancelAllTimeouts() {
+        for task in timeoutTasks.values { task.cancel() }
+        timeoutTasks.removeAll()
+    }
+
+    private func firePendingTimeout(id: Int, method: String, nanos: UInt64) {
+        timeoutTasks.removeValue(forKey: id)
+        guard let response = pending.removeValue(forKey: id) else { return }
+        if let log = stderrLogHandle {
+            writeRedacted("[request-timeout] \(method) id=\(id) after \(nanos / 1_000_000_000)s\n", to: log)
+        }
+        response.resume(throwing: ClawixClientError.requestTimedOut(
+            method: method,
+            seconds: Int(nanos / 1_000_000_000)
+        ))
     }
 
     func notify<P: Encodable>(method: String, params: P) throws {
@@ -276,6 +325,7 @@ actor ClawixClient {
             guard case .int(let intId) = id, let response = pending.removeValue(forKey: intId) else {
                 return
             }
+            cancelTimeout(id: intId)
             await response.resume(with: data)
             return
         }
@@ -353,6 +403,7 @@ actor ClawixClient {
         process = nil
         stdoutFramer.reset()
         eventCoalescer.reset()
+        cancelAllTimeouts()
         for response in pending.values { response.resume(throwing: error) }
         pending.removeAll()
     }
@@ -439,6 +490,14 @@ private final class WeakBox<T: AnyObject> {
 enum ClawixEventStreamLimits {
     static let eventBufferCount = 512
     static let maxCoalescedDeltaBytes = 64 * 1024
+}
+
+enum ClawixRequestLimits {
+    /// Backstop for a JSON-RPC request that never receives a response (the
+    /// backend wedged or died without delivering a termination signal). The
+    /// turn output itself streams via notifications, so this bounds only the
+    /// request ack, never the turn duration.
+    static let defaultTimeoutNanos: UInt64 = 120 * 1_000_000_000
 }
 
 struct ClawixServerEventCoalescer {
