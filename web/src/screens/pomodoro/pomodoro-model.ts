@@ -3,7 +3,6 @@ import {
   formatScheduleTime,
   includesFolded,
   makeId,
-  parseScheduleTime,
 } from "./pomodoro-helpers";
 import { defaultPomodoroCategories, defaultPomodoroSettings } from "./pomodoro-defaults";
 import {
@@ -14,18 +13,14 @@ import {
   profileStartDetail,
   pushNotice,
   remainingSeconds,
-  soundProfile,
   timerEndedDetail,
 } from "./pomodoro-engine-helpers";
 import type {
   Mood,
   PomodoroLog,
-  PomodoroScheduleItem,
   PomodoroShortcut,
-  PomodoroSoundSlot,
   PomodoroState,
   PomodoroUrlCommand,
-  WindowTrackerRule,
 } from "./pomodoro-types";
 
 export {
@@ -48,6 +43,19 @@ export {
   parsePlainTasks,
   updateTaskEstimate,
 } from "./pomodoro-tasks";
+export {
+  testNotificationProfile,
+  testSoundProfile,
+} from "./pomodoro-profile-actions";
+export {
+  addScheduleItem,
+  removeScheduleItem,
+  scheduledItemsForDate,
+} from "./pomodoro-schedule";
+export {
+  addWindowTrackerRule,
+  removeWindowTrackerRule,
+} from "./pomodoro-tracker";
 export type {
   BlockerRule,
   Mood,
@@ -290,38 +298,6 @@ export function tickPomodoro(state: PomodoroState, now: number): PomodoroState {
   };
 }
 
-export function testNotificationProfile(
-  state: PomodoroState,
-  now: number,
-  kind: "ending-soon" | "presence" | "overflow",
-): PomodoroState {
-  switch (kind) {
-    case "ending-soon":
-      return {
-        ...state,
-        notices: pushNotice(state, now, "Ending soon", `${state.settings.endingSoonMinutes} min remaining warning tested locally.`),
-      };
-    case "presence":
-      return {
-        ...state,
-        notices: pushNotice(state, now, "Presence reminder", "Local reminder to confirm you are still focused."),
-      };
-    case "overflow":
-      return {
-        ...state,
-        notices: pushNotice(state, now, "Overflow reminder", `${state.settings.overflowMinutes} min overflow threshold tested locally.`),
-      };
-  }
-}
-
-export function testSoundProfile(state: PomodoroState, now: number, slot: PomodoroSoundSlot): PomodoroState {
-  const profile = soundProfile(state, slot);
-  return {
-    ...state,
-    notices: pushNotice(state, now, "Sound preview", `${profile.label}: ${profile.name} at ${Math.round(profile.volume * 100)}%.`),
-  };
-}
-
 export function runTimerEndMainAction(
   state: PomodoroState,
   now: number,
@@ -349,62 +325,6 @@ export function runTimerEndMainAction(
   return saved;
 }
 
-function nextBreakMinutes(state: PomodoroState): number {
-  const totalFocusMinutes = totalFocusSecondsForBreak(state, state.selectedDate) / 60;
-  if (totalFocusMinutes >= state.settings.longBreakAfterFocusMinutes) {
-    return state.settings.longBreakMinutes;
-  }
-  return state.settings.shortBreakMinutes;
-}
-
-export function scheduledItemsForDate(state: PomodoroState, key: string): PomodoroScheduleItem[] {
-  return [...(state.schedules ?? [])]
-    .filter((item) => item.dateKey === key)
-    .sort((a, b) => a.startMinutes - b.startMinutes);
-}
-
-export function addScheduleItem(
-  state: PomodoroState,
-  now: number,
-  title: string,
-  categoryId = state.categoryId,
-  startTime = "09:00",
-  durationMinutes = state.settings.sessionMinutes,
-  source: PomodoroScheduleItem["source"] = "manual",
-): PomodoroState {
-  const cleanTitle = title.trim();
-  const startMinutes = parseScheduleTime(startTime);
-  if (!cleanTitle || startMinutes === null) {
-    return {
-      ...state,
-      schedules: state.schedules ?? [],
-      notices: pushNotice(state, now, "Calendar plan", "Title and valid start time are required."),
-    };
-  }
-  const item: PomodoroScheduleItem = {
-    id: makeId("schedule", now),
-    title: cleanTitle,
-    categoryId: categoryId || state.categoryId,
-    dateKey: state.selectedDate,
-    startMinutes,
-    durationMinutes: Math.max(1, Math.round(durationMinutes)),
-    source,
-  };
-  return {
-    ...state,
-    schedules: [...(state.schedules ?? []), item],
-    notices: pushNotice(state, now, "Calendar plan", `${cleanTitle} scheduled at ${formatScheduleTime(startMinutes)}.`),
-  };
-}
-
-export function removeScheduleItem(state: PomodoroState, now: number, id: string): PomodoroState {
-  return {
-    ...state,
-    schedules: (state.schedules ?? []).filter((item) => item.id !== id),
-    notices: pushNotice(state, now, "Calendar plan", "Scheduled block removed."),
-  };
-}
-
 export function startScheduleItem(state: PomodoroState, now: number, id: string): PomodoroState {
   const item = (state.schedules ?? []).find((schedule) => schedule.id === id);
   if (!item) {
@@ -422,52 +342,6 @@ export function startScheduleItem(state: PomodoroState, now: number, id: string)
   return {
     ...started,
     notices: pushNotice(started, now + 1, "Calendar plan", `Started scheduled block at ${formatScheduleTime(item.startMinutes)}.`),
-  };
-}
-
-export function addWindowTrackerRule(
-  state: PomodoroState,
-  now: number,
-  appName: string,
-  windowTitle: string,
-  categoryId = state.categoryId,
-  intention = state.intentionDraft,
-): PomodoroState {
-  const cleanApp = appName.trim();
-  const cleanWindow = windowTitle.trim();
-  const cleanIntention = intention.trim();
-  if (!cleanApp || !cleanWindow || !cleanIntention) {
-    return {
-      ...state,
-      notices: pushNotice(state, now, "Window tracker", "App, window keyword and intention are required."),
-    };
-  }
-  const rule: WindowTrackerRule = {
-    id: makeId("tracker", now),
-    appName: cleanApp,
-    windowTitle: cleanWindow,
-    categoryId,
-    intention: cleanIntention,
-  };
-  return {
-    ...state,
-    settings: {
-      ...state.settings,
-      windowTrackerEnabled: true,
-      windowTrackers: [...state.settings.windowTrackers, rule],
-    },
-    notices: pushNotice(state, now, "Window tracker", `Rule added for ${cleanApp}.`),
-  };
-}
-
-export function removeWindowTrackerRule(state: PomodoroState, now: number, id: string): PomodoroState {
-  return {
-    ...state,
-    settings: {
-      ...state.settings,
-      windowTrackers: state.settings.windowTrackers.filter((rule) => rule.id !== id),
-    },
-    notices: pushNotice(state, now, "Window tracker", "Rule removed."),
   };
 }
 
@@ -586,108 +460,4 @@ export function runPomodoroUrlCommand(
     case "status":
       return runPomodoroShortcut(state, "Current status", now, intention);
   }
-}
-
-function remainingSeconds(active: PomodoroActiveTimer, now: number): number {
-  if (active.mode === "paused") return active.remainingSec;
-  return Math.max(0, Math.ceil((active.endAt - now) / 1000));
-}
-
-function applyTimerNotificationRules(state: PomodoroState, now: number): PomodoroState {
-  const active = state.active;
-  if (!active) return state;
-  const kind = activeKind(active);
-  const sent = active.noticesSent ?? [];
-
-  if (active.mode === "focus" && state.settings.endingSoonEnabled) {
-    const remainingSec = remainingSeconds(active, now);
-    const threshold = Math.max(1, state.settings.endingSoonMinutes) * 60;
-    if (remainingSec > 0 && remainingSec <= threshold && !sent.includes("ending-soon")) {
-      return markTimerNotice(state, active, now, "ending-soon", "Ending soon", `${formatDuration(remainingSec)} remaining.`);
-    }
-  }
-
-  if (active.mode === "focus" && state.settings.presenceEnabled) {
-    const elapsedSec = Math.max(0, Math.round((now - active.startAt) / 1000));
-    const threshold = Math.max(60, Math.round(active.totalSec / 2));
-    if (elapsedSec >= threshold && !sent.includes("presence")) {
-      return markTimerNotice(state, active, now, "presence", "Presence reminder", active.intention || "Still focused?");
-    }
-  }
-
-  if (active.mode === "paused" && state.settings.pauseOverflowEnabled && active.pausedAt) {
-    const pausedSec = Math.max(0, Math.round((now - active.pausedAt) / 1000));
-    const threshold = Math.max(1, state.settings.overflowMinutes) * 60;
-    if (pausedSec >= threshold && !sent.includes("pause-overflow")) {
-      return markTimerNotice(state, active, now, "pause-overflow", "Pause overflow", `${formatDuration(pausedSec)} paused.`);
-    }
-  }
-
-  if (active.mode === "ended") {
-    const threshold = Math.max(1, state.settings.overflowMinutes) * 60;
-    const endedSec = Math.max(0, Math.round((now - active.endAt) / 1000));
-    const enabled = kind === "break" ? state.settings.breakOverflowEnabled : state.settings.sessionOverflowEnabled;
-    if (enabled && endedSec >= threshold && !sent.includes(`${kind}-overflow`)) {
-      return markTimerNotice(state, active, now, `${kind}-overflow`, kind === "break" ? "Break overflow" : "Session overflow", `${formatDuration(endedSec)} past timer end.`);
-    }
-  }
-
-  return state;
-}
-
-function markTimerNotice(
-  state: PomodoroState,
-  active: PomodoroActiveTimer,
-  now: number,
-  key: string,
-  title: string,
-  detail: string,
-): PomodoroState {
-  return {
-    ...state,
-    active: { ...active, noticesSent: [...(active.noticesSent ?? []), key] },
-    notices: pushNotice(state, now, title, detail),
-  };
-}
-
-function activeKind(active: PomodoroActiveTimer): "focus" | "break" {
-  return active.kind ?? (active.mode === "break" ? "break" : "focus");
-}
-
-function focusMinutesForProfile(intention: string, minutes: number): number {
-  if (intentionHas(intention, "reading")) return 30;
-  return minutes;
-}
-
-function profileStartDetail(state: PomodoroState, intention: string, categoryId: string, minutes: number): string {
-  const details = [intention || "Focus timer started."];
-  if (intentionHas(intention, "reading")) details.push("Profile rule: reading uses 30 min focus.");
-  if (intentionHas(intention, "learn")) details.push("Profile rule: learn disables blockers.");
-  const category = state.categories.find((cat) => cat.id === categoryId);
-  if (category?.name.toLowerCase() === "meeting") details.push("Profile rule: Meeting silences ending notifications.");
-  if (minutes !== state.settings.sessionMinutes) details.push(`${minutes} min`);
-  return details.join(" ");
-}
-
-function timerEndedDetail(state: PomodoroState, kind: "focus" | "break"): string {
-  const base = kind === "break" ? "Log the break or start a new focus." : "Write notes, save, or take a break.";
-  const profile = soundProfile(state, kind === "break" ? "break-end" : "session-end");
-  return `${base} End sound: ${profile.name} at ${Math.round(profile.volume * 100)}%.`;
-}
-
-function soundProfile(state: PomodoroState, slot: PomodoroSoundSlot): { label: string; name: string; volume: number } {
-  switch (slot) {
-    case "session":
-      return { label: "Session sound", name: state.settings.sessionSound, volume: state.settings.sessionVolume };
-    case "session-end":
-      return { label: "Session end sound", name: state.settings.sessionEndSound, volume: state.settings.sessionEndVolume };
-    case "break":
-      return { label: "Break sound", name: state.settings.breakSound, volume: state.settings.breakVolume };
-    case "break-end":
-      return { label: "Break end sound", name: state.settings.breakEndSound, volume: state.settings.breakEndVolume };
-  }
-}
-
-function pushNotice(state: PomodoroState, at: number, title: string, detail: string): PomodoroNotice[] {
-  return [{ id: makeId("notice", at), at, title, detail }, ...state.notices].slice(0, 8);
 }

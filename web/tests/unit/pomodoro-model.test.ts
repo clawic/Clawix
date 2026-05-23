@@ -11,6 +11,8 @@ import {
   logInReportRange,
   parsePlainTasks,
   pauseTimer,
+  removeScheduleItem,
+  removeWindowTrackerRule,
   resumeTimer,
   reportRangeLabel,
   scheduledItemsForDate,
@@ -48,6 +50,19 @@ import {
   parsePlainTasks as parsePlainTasksDirect,
   updateTaskEstimate as updateTaskEstimateDirect,
 } from "../../src/screens/pomodoro/pomodoro-tasks";
+import {
+  addScheduleItem as addScheduleItemDirect,
+  removeScheduleItem as removeScheduleItemDirect,
+  scheduledItemsForDate as scheduledItemsForDateDirect,
+} from "../../src/screens/pomodoro/pomodoro-schedule";
+import {
+  addWindowTrackerRule as addWindowTrackerRuleDirect,
+  removeWindowTrackerRule as removeWindowTrackerRuleDirect,
+} from "../../src/screens/pomodoro/pomodoro-tracker";
+import {
+  testNotificationProfile as testNotificationProfileDirect,
+  testSoundProfile as testSoundProfileDirect,
+} from "../../src/screens/pomodoro/pomodoro-profile-actions";
 
 describe("pomodoro model", () => {
   it("starts, pauses, resumes and saves focus time", () => {
@@ -186,6 +201,61 @@ describe("pomodoro model", () => {
     } finally {
       randomSpy.mockRestore();
       dateSpy.mockRestore();
+    }
+  });
+
+  it("keeps extracted schedule helpers equivalent to the model exports", () => {
+    const now = Date.UTC(2026, 4, 12, 19, 0, 0);
+    const base = defaultPomodoroState(now);
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.222222);
+    try {
+      const viaModel = addScheduleItem(base, now, "Calendar focus", "deep-work", "09:30", 45);
+      const viaDirect = addScheduleItemDirect(base, now, "Calendar focus", "deep-work", "09:30", 45);
+
+      expect(viaModel).toEqual(viaDirect);
+      expect(scheduledItemsForDate(viaModel, "2026-05-12")).toEqual(scheduledItemsForDateDirect(viaDirect, "2026-05-12"));
+      expect(removeScheduleItem(viaModel, now + 1_000, viaModel.schedules[0]!.id)).toEqual(
+        removeScheduleItemDirect(viaDirect, now + 1_000, viaDirect.schedules[0]!.id),
+      );
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("keeps extracted tracker helpers equivalent to the model exports", () => {
+    const now = Date.UTC(2026, 4, 12, 15, 0, 0);
+    const base = defaultPomodoroState(now);
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.333333);
+    try {
+      const viaModel = addWindowTrackerRule(base, now, "Safari", "Reading", "general", "Read docs");
+      const viaDirect = addWindowTrackerRuleDirect(base, now, "Safari", "Reading", "general", "Read docs");
+
+      expect(viaModel).toEqual(viaDirect);
+      expect(removeWindowTrackerRule(viaModel, now + 1_000, viaModel.settings.windowTrackers[0]!.id)).toEqual(
+        removeWindowTrackerRuleDirect(viaDirect, now + 1_000, viaDirect.settings.windowTrackers[0]!.id),
+      );
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("keeps extracted profile action helpers equivalent to the model exports", () => {
+    const now = Date.UTC(2026, 4, 12, 17, 0, 0);
+    const base = defaultPomodoroState(now);
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.444444);
+    try {
+      expect(testNotificationProfile(base, now, "ending-soon")).toEqual(
+        testNotificationProfileDirect(base, now, "ending-soon"),
+      );
+
+      const soundBase = defaultPomodoroState(now);
+      soundBase.settings.sessionEndSound = "Gong";
+      soundBase.settings.sessionEndVolume = 0.25;
+      expect(testSoundProfile(soundBase, now + 1_000, "session-end")).toEqual(
+        testSoundProfileDirect(soundBase, now + 1_000, "session-end"),
+      );
+    } finally {
+      randomSpy.mockRestore();
     }
   });
 
