@@ -215,7 +215,7 @@ struct MCPEditorSheet: View {
 
                 MCPSheetFieldLabel("Working directory")
                     .padding(.top, 6)
-                MCPSheetTextField(placeholder: "~/code",
+                MCPSheetTextField(placeholder: ClawixMCPRoutes.suggestedWorkingDirectoryDisplayPath,
                                   text: $draft.workingDirectory)
             }
         }

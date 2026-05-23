@@ -344,23 +344,9 @@ struct SettingsContent: View {
 /// the option name isn't a recognised app, so the dropdown row falls back to
 /// a plain text trigger.
 func openTargetIcon(for name: String) -> AnyView? {
-    let map: [String: (String, String)] = [
-        "Ghostty":  ("com.mitchellh.ghostty",
-                     "/Applications/Ghostty.app"),
-        "Terminal": ("com.apple.Terminal",
-                     "/System/Applications/Utilities/Terminal.app"),
-        "VS Code":  ("com.microsoft.VSCode",
-                     "/Applications/Visual Studio Code.app"),
-        "Cursor":   ("com.todesktop.230313mzl4w4u92",
-                     "/Applications/Cursor.app"),
-        "Finder":   ("com.apple.finder",
-                     "/System/Library/CoreServices/Finder.app"),
-        "Xcode":    ("com.apple.dt.Xcode",
-                     "/Applications/Xcode.app"),
-    ]
-    guard let entry = map[name] else { return nil }
+    guard let entry = ClawixKnownAppRoutes.route(named: name) else { return nil }
     return AnyView(
-        AppIconImage(bundleId: entry.0, fallbackPath: entry.1, size: 18)
+        AppIconImage(bundleId: entry.bundleId, fallbackPath: entry.fallbackPath, size: 18)
     )
 }
 

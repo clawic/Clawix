@@ -4,7 +4,7 @@ import AppKit
 /// Bridge / launchd plumbing reused from the menu bar item: open the
 /// daemon's stderr, kickstart it, and manage the standalone CLI menubar
 /// agent so it doesn't show a duplicate icon next to the GUI's own
-/// MenuBarExtra. Wraps `/bin/launchctl` because the GUI talks to the
+/// MenuBarExtra. Wraps launchd because the GUI talks to the
 /// same `clawix.bridge` agent the standalone CLI installs.
 enum BridgeAgentControl {
 
@@ -23,12 +23,10 @@ enum BridgeAgentControl {
     /// `cli/lib/platform.js`. Keep in sync.
     static let menubarLabel = "clawix.menubar"
 
-    private static let bridgeStderrPath = "/tmp/clawix-bridge.err"
-
     static func openLogs() {
-        let url = URL(fileURLWithPath: bridgeStderrPath)
+        let url = ClawixBridgeAgentRoutes.bridgeStderrURL
         guard FileManager.default.fileExists(atPath: url.path) else {
-            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: "/tmp")])
+            NSWorkspace.shared.activateFileViewerSelecting([ClawixBridgeAgentRoutes.tempDirectoryURL])
             return
         }
         // The daemon writes to a .err file, which macOS has no default
@@ -70,9 +68,8 @@ enum BridgeAgentControl {
         runLaunchctl(["print", "\(userDomain())/\(menubarLabel)"], capture: true).status == 0
     }
 
-    /// True if the user has the standalone CLI menubar plist installed
-    /// at `~/Library/LaunchAgents/clawix.menubar.plist`. Used at GUI
-    /// shutdown to decide whether to re-bootstrap it (the user only
+    /// True if the user has the standalone CLI menubar plist installed.
+    /// Used at GUI shutdown to decide whether to re-bootstrap it (the user only
     /// gets the file when they install the npm CLI, so absence means
     /// "they don't want this icon, leave them alone").
     static func isMenubarAgentInstalled() -> Bool {
@@ -103,13 +100,11 @@ enum BridgeAgentControl {
     }
 
     private static var menubarPlistPath: String {
-        ("~/Library/LaunchAgents/\(menubarLabel).plist" as NSString)
-            .expandingTildeInPath
+        ClawixBridgeAgentRoutes.launchAgentPlistPath(label: menubarLabel)
     }
 
     private static var bridgePlistPath: String {
-        ("~/Library/LaunchAgents/\(bridgeLabel).plist" as NSString)
-            .expandingTildeInPath
+        ClawixBridgeAgentRoutes.launchAgentPlistPath(label: bridgeLabel)
     }
 
     private static func userDomain() -> String {
@@ -122,7 +117,7 @@ enum BridgeAgentControl {
         capture: Bool = false
     ) -> (status: Int32, stdout: String) {
         let process = Process()
-        process.launchPath = "/bin/launchctl"
+        process.executableURL = URL(fileURLWithPath: ClawixBridgeAgentRoutes.launchctlCLI)
         process.arguments = args
         let outPipe: Pipe? = capture ? Pipe() : nil
         if let outPipe {

@@ -28,7 +28,7 @@ struct ContactDetail: View {
             ContactsAvatar(contact: contact,
                            size: ContactsTokens.Geometry.avatarHero,
                            hoverable: true)
-                .draggable(vCardURL ?? URL(fileURLWithPath: "/dev/null"))
+                .draggable(vCardURL ?? ClawixContactsRoutes.placeholderDragURL())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(contact.fullName)
@@ -167,16 +167,14 @@ struct ContactDetail: View {
 
     private var vCardURL: URL? {
         guard let data = store.encodeVCard(for: contact) else { return nil }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(contact.fullName).vcf")
+        let url = ClawixContactsRoutes.vCardExportURL(fullName: contact.fullName)
         try? data.write(to: url)
         return url
     }
 
     private func shareVCard() {
         guard let data = store.encodeVCard(for: contact) else { return }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(contact.fullName).vcf")
+        let url = ClawixContactsRoutes.vCardExportURL(fullName: contact.fullName)
         do {
             try data.write(to: url)
             NSWorkspace.shared.activateFileViewerSelecting([url])

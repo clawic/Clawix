@@ -146,8 +146,7 @@ struct ContactsToolbar: View {
 
     private func shareSelected() {
         guard let c = store.selectedContact, let data = store.encodeVCard(for: c) else { return }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(c.fullName).vcf")
+        let url = ClawixContactsRoutes.vCardExportURL(fullName: c.fullName)
         do {
             try data.write(to: url)
             NSWorkspace.shared.activateFileViewerSelecting([url])

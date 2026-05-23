@@ -374,7 +374,7 @@ final class ClawJSDriveClient {
     }
 
     func uploadBytes(_ data: Data, fileName: String, mimeType: String, parentId: String?) async throws -> DriveItemDetail {
-        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "-" + fileName)
+        let tmpURL = ClawixDriveRoutes.uploadBytesTempURL(fileName: fileName)
         try data.write(to: tmpURL)
         defer { try? FileManager.default.removeItem(at: tmpURL) }
         return try await upload(filePath: tmpURL, parentId: parentId)

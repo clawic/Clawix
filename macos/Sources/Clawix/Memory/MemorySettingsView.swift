@@ -152,9 +152,8 @@ struct MemorySettingsView: View {
     }
 
     private func revealMemoryFolder() {
-        let folder = ClawJSServiceManager.workspaceURL
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
-            .appendingPathComponent("memory", isDirectory: true)
+        let frameworkHome = ClawixAgentStoreRoutes.frameworkHome(workspaceURL: ClawJSServiceManager.workspaceURL)
+        let folder = ClawixAgentStoreRoutes.publicMemoryDirectory(frameworkHome: frameworkHome)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }

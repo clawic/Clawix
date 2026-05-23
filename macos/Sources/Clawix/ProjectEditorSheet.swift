@@ -58,7 +58,7 @@ struct ProjectEditorSheet: View {
 
                 fieldGroup("Folder") {
                     HStack(spacing: 8) {
-                        TextField("/Users/me/code/foo", text: $path)
+                        TextField(ProjectFolderPathResolver.sampleProjectFolderDisplayPath, text: $path)
                             .textFieldStyle(.plain)
                             .font(BodyFont.system(size: 13, wght: 500))
                             .foregroundColor(Color(white: 0.92))
