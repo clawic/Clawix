@@ -132,7 +132,7 @@ struct SkillsView: View {
             let formatter = RelativeDateTimeFormatter()
             return "Last synced \(formatter.localizedString(for: date, relativeTo: Date()))"
         } else {
-            return "Sync skills to ~/.codex/skills, ~/.hermes/skills, etc."
+            return "Sync skills to \(ClawixSkillsRoutes.defaultExternalDirectoriesSummary)"
         }
     }
 
@@ -279,7 +279,7 @@ struct SkillsView: View {
                 .foregroundColor(.primary)
             Text(hasAnyFilter
                  ? "Try clearing some filters above, or create a new skill."
-                 : "Create your first skill, or wait for the auto-importer to pull from ~/.codex/skills and ~/.hermes/skills.")
+                 : "Create your first skill, or wait for the auto-importer to pull from \(ClawixSkillsRoutes.defaultExternalDirectoriesSummary).")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

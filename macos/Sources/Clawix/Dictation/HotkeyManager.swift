@@ -122,18 +122,17 @@ final class DictationHotkeyMonitor {
 
     private let bindings: [Binding]
 
-    private static let debugLogPath = "/tmp/clawix-hotkey.log"
+    private static let debugLogURL = ClawixDiagnosticLogRoutes.hotkeyDebugLogURL
 
     private static func debug(_ message: String) {
         let line = "\(Date()) \(message)\n"
         if let data = line.data(using: .utf8) {
-            let url = URL(fileURLWithPath: debugLogPath)
-            if let handle = try? FileHandle(forWritingTo: url) {
+            if let handle = try? FileHandle(forWritingTo: debugLogURL) {
                 handle.seekToEndOfFile()
                 handle.write(data)
                 try? handle.close()
             } else {
-                try? data.write(to: url)
+                try? data.write(to: debugLogURL)
             }
         }
     }

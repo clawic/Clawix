@@ -108,7 +108,7 @@ final class TerminalSessionStore: ObservableObject {
     /// to `$HOME`. Returns the new tab id.
     @discardableResult
     func createTab(chatId: UUID, cwd: String?) -> UUID {
-        let resolved = cwd?.isEmpty == false ? cwd! : NSHomeDirectory()
+        let resolved = cwd?.isEmpty == false ? cwd! : ClawixTerminalRoutes.userHomePath()
         let position = (tabsByChat[chatId]?.count ?? 0)
         let tab = TerminalTab.makeInitial(chatId: chatId, cwd: resolved, position: position)
         for leaf in tab.layout.leaves {

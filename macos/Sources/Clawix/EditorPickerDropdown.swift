@@ -8,22 +8,7 @@ struct EditorOption: Identifiable, Hashable {
     let fallbackPath: String
 }
 
-private let clawixEditors: [EditorOption] = [
-    .init(bundleId: "com.microsoft.VSCode", name: "VS Code",
-          fallbackPath: "/Applications/Visual Studio Code.app"),
-    .init(bundleId: "com.todesktop.230313mzl4w4u92", name: "Cursor",
-          fallbackPath: "/Applications/Cursor.app"),
-    .init(bundleId: "com.apple.finder", name: "Finder",
-          fallbackPath: "/System/Library/CoreServices/Finder.app"),
-    .init(bundleId: "com.apple.Terminal", name: "Terminal",
-          fallbackPath: "/System/Applications/Utilities/Terminal.app"),
-    .init(bundleId: "com.mitchellh.ghostty", name: "Ghostty",
-          fallbackPath: "/Applications/Ghostty.app"),
-    .init(bundleId: "com.apple.dt.Xcode", name: "Xcode",
-          fallbackPath: "/Applications/Xcode.app"),
-    .init(bundleId: "com.google.android.studio", name: "Android Studio",
-          fallbackPath: "/Applications/Android Studio.app"),
-]
+private let clawixEditors = ClawixKnownAppRoutes.editorPickerOptions
 
 struct AppIconImage: View {
     let bundleId: String

@@ -94,6 +94,6 @@ enum TerminalShortcutsInstaller {
         if let active = store.activeTab(for: chatId) {
             return active.initialCwd
         }
-        return NSHomeDirectory()
+        return ClawixTerminalRoutes.userHomePath()
     }
 }

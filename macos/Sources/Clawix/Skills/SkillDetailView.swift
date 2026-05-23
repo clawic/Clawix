@@ -399,7 +399,7 @@ struct SkillDetailView: View {
     // MARK: - Sync targets
 
     private func syncBlock(_ skill: SkillSpec) -> some View {
-        sectionCard(title: "Sync to other agents", subtitle: "Materialise this skill in other agents' home dirs (~/.codex/skills, ~/.hermes/skills, …) via symlinks. They consume it as a normal SKILL.md.") {
+        sectionCard(title: "Sync to other agents", subtitle: "Materialise this skill in other agents' home dirs (\(ClawixSkillsRoutes.defaultExternalDirectoriesSummary)) via symlinks. They consume it as a normal SKILL.md.") {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(store?.syncTargets ?? []) { target in
                     HStack {

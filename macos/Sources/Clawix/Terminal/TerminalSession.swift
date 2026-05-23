@@ -147,7 +147,7 @@ final class TerminalSession: ObservableObject, Identifiable {
             status = .starting
         }
 
-        let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+        let shell = ClawixTerminalRoutes.resolvedShell(environment: ProcessInfo.processInfo.environment)
         let env = TerminalSession.composeEnvironment()
 
         let loginName = "-" + URL(fileURLWithPath: shell).lastPathComponent
@@ -171,7 +171,7 @@ final class TerminalSession: ObservableObject, Identifiable {
         if FileManager.default.fileExists(atPath: expanded) {
             return expanded
         }
-        return NSHomeDirectory()
+        return ClawixTerminalRoutes.userHomePath()
     }
 
     private static func composeEnvironment() -> [String] {
@@ -206,7 +206,7 @@ final class TerminalSession: ObservableObject, Identifiable {
 
     nonisolated private static func runShellCommand(_ command: String, cwd: String) -> String {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.executableURL = URL(fileURLWithPath: ClawixTerminalRoutes.defaultShell)
         process.arguments = ["-lc", command]
         process.currentDirectoryURL = URL(fileURLWithPath: cwd)
 

@@ -76,7 +76,7 @@ struct TerminalTabBar: View {
     private func preferredCwd() -> String {
         store.activeTab(for: chatId)?.initialCwd
             ?? appState.chat(byId: chatId)?.cwd
-            ?? NSHomeDirectory()
+            ?? ClawixTerminalRoutes.userHomePath()
     }
 
     @ViewBuilder

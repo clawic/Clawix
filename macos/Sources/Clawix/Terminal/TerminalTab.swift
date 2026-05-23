@@ -59,7 +59,7 @@ struct TerminalTab: Identifiable, Equatable, Codable {
     /// generic "shell" label is intentionally avoided.
     static func deriveLabel(from cwd: String) -> String {
         let expanded = (cwd as NSString).expandingTildeInPath
-        if expanded == NSHomeDirectory() { return "~" }
+        if expanded == ClawixTerminalRoutes.userHomePath() { return "~" }
         let url = URL(fileURLWithPath: expanded)
         let base = url.lastPathComponent
         if base.isEmpty || base == "/" { return "/" }

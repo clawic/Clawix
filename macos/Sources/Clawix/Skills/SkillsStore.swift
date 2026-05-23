@@ -527,40 +527,7 @@ final class SkillsStore: ObservableObject {
     }
 
     private func installSeedSyncTargets() {
-        syncTargets = [
-            SkillSyncTarget(
-                id: "codex",
-                label: "Codex CLI",
-                home: NSString("~/.codex/skills").expandingTildeInPath,
-                mode: .symlink,
-                lastSyncedAt: nil,
-                lastError: nil
-            ),
-            SkillSyncTarget(
-                id: "hermes",
-                label: "HermesAgent",
-                home: NSString("~/.hermes/skills").expandingTildeInPath,
-                mode: .symlink,
-                lastSyncedAt: nil,
-                lastError: nil
-            ),
-            SkillSyncTarget(
-                id: "openclaude",
-                label: "OpenClaude",
-                home: NSString("~/.openclaude/skills").expandingTildeInPath,
-                mode: .symlink,
-                lastSyncedAt: nil,
-                lastError: nil
-            ),
-            SkillSyncTarget(
-                id: "cursor",
-                label: "Cursor",
-                home: NSString("~/.cursor/skills").expandingTildeInPath,
-                mode: .symlink,
-                lastSyncedAt: nil,
-                lastError: nil
-            )
-        ]
+        syncTargets = ClawixSkillsRoutes.defaultSyncTargets()
     }
 
     // MARK: - Skill Collections bridge

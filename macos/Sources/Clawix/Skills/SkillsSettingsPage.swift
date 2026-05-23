@@ -141,8 +141,9 @@ struct SkillsSettingsPage: View {
     private var externalDirsCard: some View {
         sectionCard(title: "External dirs (read-only discovery)", subtitle: "Where the auto-importer looks for skills built by other agents. Pulled into your central library on first sight; originals replaced with symlinks back.") {
             VStack(alignment: .leading, spacing: 6) {
-                externalDirRow(path: "~/.codex/skills", agent: "Codex CLI")
-                externalDirRow(path: "~/.hermes/skills", agent: "HermesAgent")
+                ForEach(Array(ClawixSkillsRoutes.defaultExternalDirectories.prefix(2))) { directory in
+                    externalDirRow(path: directory.displayPath, agent: directory.label)
+                }
                 Text("Add custom dirs by editing ~/.claw/config.yaml — UI for arbitrary dirs ships in the next iteration.")
                     .font(.system(size: 10.5))
                     .foregroundColor(.secondary)

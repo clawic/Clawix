@@ -49,7 +49,7 @@ struct TerminalPanel: View {
     private func ensureAtLeastOneTab(chatId overrideId: UUID? = nil) {
         let target = overrideId ?? chatId
         if store.tabs(for: target).isEmpty {
-            let cwd = appState.chat(byId: target)?.cwd ?? NSHomeDirectory()
+            let cwd = appState.chat(byId: target)?.cwd ?? ClawixTerminalRoutes.userHomePath()
             store.createTab(chatId: target, cwd: cwd)
         }
     }

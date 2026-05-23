@@ -1,8 +1,8 @@
 import Foundation
 
 /// CSV / JSON export entry points (#26). Both produce a temporary
-/// file in `NSTemporaryDirectory()` and return the URL; UI saves it
-/// via `NSSavePanel`.
+/// file through `DictationExportRoutes` and return the URL; UI saves
+/// it via `NSSavePanel`.
 @MainActor
 enum DictationExportService {
 
@@ -29,8 +29,7 @@ enum DictationExportService {
             csv.append(parts.joined(separator: ","))
             csv.append("\n")
         }
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("clawix-transcripts-\(Date().timeIntervalSince1970).csv")
+        let url = DictationExportRoutes.transcriptsExportURL()
         try csv.write(to: url, atomically: true, encoding: .utf8)
         return url
     }
@@ -87,8 +86,7 @@ enum DictationExportService {
             withJSONObject: payload,
             options: [.prettyPrinted, .sortedKeys]
         )
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("clawix-dictation-settings-\(Date().timeIntervalSince1970).json")
+        let url = DictationExportRoutes.settingsExportURL()
         try data.write(to: url, options: .atomic)
         return url
     }
