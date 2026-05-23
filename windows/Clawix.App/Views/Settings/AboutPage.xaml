@@ -7,14 +7,21 @@
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="About Clawix" FontSize="22" FontWeight="SemiBold" />
       <TextBlock x:Name="VersionText" />
-      <HyperlinkButton Content="Open source license" />
-      <HyperlinkButton Content="Privacy policy" />
-      <HyperlinkButton Content="Report an issue" />
+      <HyperlinkButton Content="Open source license" Click="OpenLicense_Click" />
+      <HyperlinkButton Content="Privacy policy" Click="OpenPrivacy_Click" />
+      <HyperlinkButton Content="Report an issue" Click="ReportIssue_Click" />
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <Button Content="Open log folder" Click="OpenLogs_Click" />
-          <Button Content="Run diagnostics" />
-          <Button Content="Copy diagnostics report to clipboard" />
+          <Button Content="Run diagnostics" Click="RunDiagnostics_Click" />
+          <Button Content="Copy diagnostics report to clipboard" Click="CopyDiagnostics_Click" />
+          <TextBlock x:Name="DiagnosticsStatusText" Opacity="0.7" />
+          <TextBox x:Name="DiagnosticsReportBox"
+                   AcceptsReturn="True"
+                   IsReadOnly="True"
+                   MinHeight="180"
+                   TextWrapping="Wrap"
+                   Visibility="Collapsed" />
         </StackPanel>
       </Expander>
     </StackPanel>
