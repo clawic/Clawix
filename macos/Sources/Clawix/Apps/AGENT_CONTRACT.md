@@ -136,7 +136,7 @@ The host also writes `packageProvenance` on import:
   "packageProvenance": {
     "importedAt": "2026-05-20T01:14:00Z",
     "importedBy": "Local User",
-    "sourcePath": "/Users/me/Downloads/focus-panel",
+    "sourcePath": "<local-import-folder>/focus-panel",
     "sourceSlug": "focus-panel",
     "sourceOriginClass": "localUserAuthored",
     "packageKind": "folder",

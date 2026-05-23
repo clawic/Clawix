@@ -218,6 +218,13 @@ final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase
         XCTAssertEqual(model.rows.last?.title, "First Panel · Package imported")
     }
 
+    func testAgentContractUsesNeutralImportPathExample() throws {
+        let contractSource = try readSource("Apps/AGENT_CONTRACT.md")
+
+        XCTAssertTrue(contractSource.contains(#""sourcePath": "<local-import-folder>/focus-panel""#))
+        XCTAssertFalse(contractSource.contains(#""sourcePath": "/Users/me/Downloads/focus-panel""#))
+    }
+
     func testUnknownCapabilitiesBlockActivation() {
         let record = AppRecord(
             slug: "unknown-panel",
@@ -309,5 +316,19 @@ final class AppCustomSurfaceTrustPolicyTests: AppCustomSurfaceCapabilityTestCase
             protectedRoutePolicy: .variantOnly
         )
         XCTAssertEqual(AppCapabilityCatalog.protectedRouteViolations(for: variant), [])
+    }
+
+    private func readSource(_ relativePath: String) throws -> String {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let root = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.sources, isDirectory: true)
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
+        return try String(
+            contentsOf: root.appendingPathComponent(relativePath, isDirectory: false),
+            encoding: .utf8
+        )
     }
 }
