@@ -33,18 +33,7 @@ struct PublishingHomeView: View {
         }
         .background(Palette.background)
         .task {
-            let services = ClawJSServiceDemandPolicy.services(
-                for: .publishingHome,
-                isVisible: FeatureFlags.shared.isVisible
-            )
-            let lease = await ClawJSServiceManager.shared.acquire(
-                services: services,
-                reason: .route("publishing"),
-                consumer: "route.publishing"
-            )
-            defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             if store.state == .idle { store.bootstrap() }
-            await ClawJSServiceManager.holdDemandUntilCancelled()
         }
         .onDisappear {
             store.cancelSurfaceWork()
