@@ -58,6 +58,8 @@ for file in \
   "docs/adr-operational-coverage.manifest.json" \
   "docs/adr-operational-coverage-exceptions.json" \
   "docs/interface-matrix.md" \
+  "docs/platform-feature-parity.md" \
+  "docs/platform-feature-parity.manifest.json" \
   "docs/interface-surface-clawix.registry.json" \
   "docs/naming-style-guide.md" \
   "docs/agentic-naming-guide.md" \
@@ -167,6 +169,7 @@ for file in \
   "scripts/constitution-assertions-check.mjs" \
   "scripts/constitution-sync-check.mjs" \
   "scripts/release_readiness_check.mjs" \
+  "scripts/platform_feature_parity_check.mjs" \
   "scripts/no-irreversible-data-loss-check.mjs" \
   "scripts/supply_chain_security_check.mjs"
 do
@@ -215,7 +218,11 @@ require_snippet "docs/constitution-map.md" "scripts/constitution-sync-check.mjs"
 require_snippet "docs/constitution-map.md" "docs/governance/release-readiness.md"
 require_snippet "RELEASING.md" "release_readiness_check.mjs --target <target>"
 require_snippet "docs/governance/release-readiness.md" "V1 Release Readiness"
+require_snippet "docs/governance/release-readiness.md" "Platform product parity"
 require_snippet "docs/governance/release-readiness.manifest.json" '"scope": "v1-central-promises"'
+require_snippet "docs/platform-feature-parity.md" "macOS feature"
+require_snippet "docs/platform-feature-parity.manifest.json" '"scope": "v1-platform-product-parity"'
+require_snippet "scripts/test.sh" "platform_feature_parity_check.mjs"
 require_snippet "docs/decision-map.md" "governance identity and scope model"
 require_snippet "docs/decision-map.md" "workspace, project, folder, and manifest boundary"
 require_snippet "docs/data-storage-boundary.md" "Governance bindings owned by ClawJS"
