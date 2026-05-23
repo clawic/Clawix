@@ -3,6 +3,7 @@
 // daemon, and exposes Rust commands to the SolidJS frontend.
 
 mod chat_db;
+mod bridge_endpoint;
 mod daemon_client;
 mod dictation;
 mod selection_sniffer;

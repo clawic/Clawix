@@ -3,8 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { daemonStore, requestClawJSServiceStatuses, requestRateLimits } from "../lib/daemon_ws";
 import { rateLimitRows, type RateLimitSnapshot } from "../lib/rate_limits_model";
 import { serviceStatusRows, type ServiceStatus } from "../lib/service_status_model";
+import IntegrationSettings from "./IntegrationSettings";
+import PortableArchiveSettings from "./PortableArchiveSettings";
+import RuntimeSettings from "./RuntimeSettings";
 
-type Tab = "general" | "appearance" | "advanced";
+type Tab = "general" | "appearance" | "data" | "integrations" | "runtime" | "advanced";
 
 interface DaemonStatus {
   installed: boolean;
@@ -52,7 +55,7 @@ export default function SettingsView() {
       <header class="flex h-14 items-center gap-4 border-b border-zinc-200/70 px-6 dark:border-zinc-800/70">
         <h1 class="text-[15px] font-semibold">Settings</h1>
         <nav class="inline-flex rounded-lg bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-900">
-          <For each={["general", "appearance", "advanced"] as const}>
+          <For each={["general", "appearance", "data", "integrations", "runtime", "advanced"] as const}>
             {(item) => (
               <button
                 type="button"
@@ -84,6 +87,15 @@ export default function SettingsView() {
           </Show>
           <Show when={tab() === "appearance"}>
             <AppearanceSettings theme={theme()} setTheme={setTheme} persist={persist} />
+          </Show>
+          <Show when={tab() === "data"}>
+            <PortableArchiveSettings />
+          </Show>
+          <Show when={tab() === "integrations"}>
+            <IntegrationSettings />
+          </Show>
+          <Show when={tab() === "runtime"}>
+            <RuntimeSettings />
           </Show>
           <Show when={tab() === "advanced"}>
             <AdvancedSettings status={status()} persist={persist} />
@@ -320,11 +332,19 @@ function Row(props: { label: string; hint?: string; children: any }) {
 }
 
 function titleForTab(tab: Tab): string {
-  return tab === "general" ? "General" : tab === "appearance" ? "Appearance" : "Advanced";
+  if (tab === "general") return "General";
+  if (tab === "appearance") return "Appearance";
+  if (tab === "data") return "Data";
+  if (tab === "integrations") return "Integrations";
+  if (tab === "runtime") return "Runtime";
+  return "Advanced";
 }
 
 function subtitleForTab(tab: Tab): string {
   if (tab === "general") return "Pairing, identity, and keyboard controls.";
   if (tab === "appearance") return "Theme and display preferences.";
+  if (tab === "data") return "Export, verify, import, and restore portable archives.";
+  if (tab === "integrations") return "MCP servers, provider accounts, and model routing.";
+  if (tab === "runtime") return "Runtime adapter selection and local model availability.";
   return "Bridge runtime, rate limits, services, and diagnostics.";
 }

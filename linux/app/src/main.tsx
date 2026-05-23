@@ -4,6 +4,12 @@ import { Router, Route } from "@solidjs/router";
 import App from "./App";
 import ChatView from "./views/ChatView";
 import ChatCollectionView from "./views/ChatCollectionView";
+import AgentLibraryView from "./views/AgentLibraryView";
+import AppStudioView from "./views/AppStudioView";
+import DataSurfaceView from "./views/DataSurfaceView";
+import MarketplaceView from "./views/MarketplaceView";
+import PeopleView from "./views/PeopleView";
+import FrameworkSurfaceView from "./views/FrameworkSurfaceView";
 import SettingsView from "./views/SettingsView";
 import BridgePairing from "./views/BridgePairing";
 import VaultManagement from "./views/VaultManagement";
@@ -23,6 +29,12 @@ render(
       <Route path="/pinned" component={ChatCollectionView} />
       <Route path="/projects" component={ChatCollectionView} />
       <Route path="/projects/:projectId" component={ChatCollectionView} />
+      <Route path="/agents" component={AgentLibraryView} />
+      <Route path="/apps" component={AppStudioView} />
+      <Route path="/database" component={DataSurfaceView} />
+      <Route path="/marketplace" component={MarketplaceView} />
+      <Route path="/people" component={PeopleView} />
+      <Route path="/claw" component={FrameworkSurfaceView} />
       <Route path="/archived" component={ChatCollectionView} />
       <Route path="/chats/:id" component={ChatView} />
       <Route path="/settings" component={SettingsView} />

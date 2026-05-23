@@ -1,6 +1,6 @@
 // WebSocket client to the local `clawix-bridge` daemon. Mirrors what
-// the Mac GUI's DaemonBridgeClient does: connects to ws://127.0.0.1:24080,
-// sends the auth frame with the bridge token from
+// the Mac GUI's DaemonBridgeClient does: connects to the canonical loopback
+// bridge endpoint, sends the auth frame with the bridge token from
 // `~/.clawix/state/bridge-token`, and dispatches inbound frames as Tauri
 // events the SolidJS frontend subscribes to.
 
@@ -16,7 +16,6 @@ use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::{debug, info, warn};
 
-const DEFAULT_PORT: u16 = 24080;
 const BRIDGE_SCHEMA_VERSION: u8 = 1;
 const RECONNECT_BACKOFF_MS: u64 = 1500;
 const FRAME_BATCH_WINDOW_MS: u64 = 16;
@@ -339,10 +338,15 @@ impl DaemonClient {
 
 pub async fn connect_and_run(client: Arc<Mutex<DaemonClient>>, app: AppHandle) -> Result<()> {
     loop {
-        let url = url::Url::parse(&format!("ws://127.0.0.1:{}/", DEFAULT_PORT))?;
+        let url = crate::bridge_endpoint::bridge_websocket_url(
+            crate::bridge_endpoint::DEFAULT_BRIDGE_PORT,
+        )?;
         match tokio_tungstenite::connect_async(url.as_str()).await {
             Ok((ws, _)) => {
-                info!("daemon connected at {DEFAULT_PORT}");
+                info!(
+                    "daemon connected at {}",
+                    crate::bridge_endpoint::DEFAULT_BRIDGE_PORT
+                );
                 let (mut write, mut read) = ws.split();
                 let (tx, mut rx) = tokio::sync::mpsc::channel::<Message>(64);
                 {
@@ -473,7 +477,7 @@ fn pairing_host() -> String {
             socket.local_addr()
         })
         .map(|addr| addr.ip().to_string())
-        .unwrap_or_else(|_| "127.0.0.1".to_string())
+        .unwrap_or_else(|_| crate::bridge_endpoint::LOOPBACK_HOST.to_string())
 }
 
 fn uuid_v4() -> String {

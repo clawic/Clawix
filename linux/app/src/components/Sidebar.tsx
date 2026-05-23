@@ -62,6 +62,41 @@ export function Sidebar(props: Props) {
           <span>Projects</span>
           <span class="text-xs text-zinc-500">{model().projects.length}</span>
         </A>
+        <A
+          href="/agents"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          Agents
+        </A>
+        <A
+          href="/apps"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          Apps
+        </A>
+        <A
+          href="/database"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          Database
+        </A>
+        <A
+          href="/marketplace"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          Marketplace
+        </A>
+        <A
+          href="/people"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          People
+        </A>
       </nav>
 
       <div class="flex-1 overflow-y-auto px-2 space-y-0.5">
@@ -129,6 +164,13 @@ export function Sidebar(props: Props) {
           activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
         >
           Vault
+        </A>
+        <A
+          href="/claw"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          Claw
         </A>
         <A
           href="/settings"
