@@ -3,36 +3,39 @@ import XCTest
 
 final class SecretsSecurityBoundaryTests: XCTestCase {
     func testSecretsServiceDoesNotUseDiskAdminTokenFallback() throws {
-        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let directorySource = try readSource("ClawJS/ClawJSServiceDirectoryResolver.swift")
+        let policySource = try readSource("ClawJS/ClawJSServiceSupervisorPolicy.swift")
 
         XCTAssertFalse(
-            source.contains("adminTokenFromTokenFile(for: .secrets)"),
+            supervisorSource.contains("adminTokenFromTokenFile(for: .secrets)"),
             "Secrets clients must not recover bearer/admin tokens from disk."
         )
         XCTAssertFalse(
-            source.contains("writeAdminToken"),
+            supervisorSource.contains("writeAdminToken") || directorySource.contains("writeAdminToken"),
             "The supervisor must not write per-session admin tokens to .admin-token files."
         )
         XCTAssertTrue(
-            source.contains("for tokenURL in staleAdminTokenURLs(for: service)"),
+            directorySource.contains("for tokenURL in staleAdminTokenURLs(for: service)"),
             "Launching token-authenticated services must remove known stale .admin-token files."
         )
         XCTAssertFalse(
-            source.contains("legacyClawWorkspace"),
+            directorySource.contains("legacyClawWorkspace"),
             "Secrets launch cleanup must not keep retired .clawjs sidecar token compatibility."
         )
         XCTAssertTrue(
-            source.contains("if adminTokenEnvVar[service] != nil { return false }"),
+            policySource.contains("!requiresSessionAdminToken(service)"),
             "Token-authenticated services must not adopt an existing local sidecar through a disk bearer token."
         )
     }
 
     func testSecretsServiceDoesNotExposeTokensInEnvironment() throws {
-        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let source = try readSource("ClawJS/ClawJSServiceEnvironmentBuilder.swift")
+        let tokenSource = try readSource("ClawJS/ClawJSServiceTokenVault.swift")
         let environmentBody = try extractFunctionBody(
-            named: "private nonisolated static func environment(",
+            named: "static func environment(",
             from: source,
-            until: "    private nonisolated static func secretsBootstrapPayload"
+            until: "    static func iotEnvironment("
         )
 
         XCTAssertTrue(
@@ -40,7 +43,7 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
             "Secrets launch should use an anonymous bootstrap channel instead of token-bearing environment variables."
         )
         XCTAssertTrue(
-            source.contains("hostAssertionKeyBase64"),
+            tokenSource.contains("hostAssertionKeyBase64"),
             "Secrets host assertions must be bootstrapped over stdin alongside signed-host material."
         )
         XCTAssertFalse(
@@ -62,15 +65,21 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     }
 
     func testIntegratedServiceTokensUseStdinBootstrapNotEnvironmentOrDisk() throws {
-        let source = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let tokenSource = try readSource("ClawJS/ClawJSServiceTokenVault.swift")
+        let launchAdapterSource = try readSource("ClawJS/ClawJSServiceLaunchAdapter.swift")
+        let environmentSource = try readSource("ClawJS/ClawJSServiceEnvironmentBuilder.swift")
         let environmentBody = try extractFunctionBody(
-            named: "private nonisolated static func environment(",
-            from: source,
-            until: "    private nonisolated static func secretsBootstrapPayload"
+            named: "static func environment(",
+            from: environmentSource,
+            until: "    static func iotEnvironment("
         )
 
         XCTAssertTrue(
-            source.contains("localAdminBootstrapPayload(adminToken: adminToken)"),
+            tokenSource.contains("static func localAdminBootstrapPayload(adminToken: String) throws -> Data"),
+            "Database, Drive, Index, Audio, Sessions, and Publishing tokens must be encoded as a local-admin stdin bootstrap payload."
+        )
+        XCTAssertTrue(
+            launchAdapterSource.contains("ClawJSServiceTokenVault.localAdminBootstrapPayload(adminToken: adminToken)"),
             "Database, Drive, Index, Audio, Sessions, and Publishing tokens must be sent through anonymous stdin bootstrap."
         )
         XCTAssertTrue(
@@ -91,11 +100,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
             )
         }
         XCTAssertTrue(
-            source.contains("env.removeValue(forKey: \"CLAW_SECRETS_KEK_BASE64\")"),
+            environmentSource.contains("env.removeValue(forKey: \"CLAW_SECRETS_KEK_BASE64\")"),
             "Host bootstrapping should scrub inherited token/KEK environment variables before spawning services."
         )
         XCTAssertFalse(
-            source.contains(".appendingPathComponent(\".admin-token\", isDirectory: false)\n        try Data(token.utf8).write"),
+            tokenSource.contains(".appendingPathComponent(\".admin-token\", isDirectory: false)\n        try Data(token.utf8).write"),
             "Integrated service tokens must not be persisted to .admin-token files."
         )
         XCTAssertFalse(
@@ -105,7 +114,8 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
     }
 
     func testSecretsServiceUsesKeychainPlatformKeyForKekBootstrap() throws {
-        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let launchAdapterSource = try readSource("ClawJS/ClawJSServiceLaunchAdapter.swift")
+        let tokenSource = try readSource("ClawJS/ClawJSServiceTokenVault.swift")
         let clientSource = try readSource("ClawJS/ClawJSSecretsClient.swift")
         let lockScreenSource = try readSource("Secrets/SecretsLockScreen.swift")
         let reauthSource = try readSource("Secrets/SecretsReauthentication.swift")
@@ -117,11 +127,11 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         let devScript = try readProjectSource("scripts/dev.sh")
 
         XCTAssertTrue(
-            supervisorSource.contains("SecretsPlatformKey.loadOrCreate()"),
+            launchAdapterSource.contains("SecretsPlatformKey.loadOrCreate()"),
             "Secrets launch must provide a host-protected platform KEK to the ClawJS vault."
         )
         XCTAssertTrue(
-            supervisorSource.contains("payload[\"kekBase64\"] = platformKey.base64EncodedString()"),
+            tokenSource.contains("payload[\"kekBase64\"] = platformKey.base64EncodedString()"),
             "The platform KEK should travel only in the anonymous bootstrap payload."
         )
         XCTAssertTrue(
@@ -343,11 +353,39 @@ final class SecretsSecurityBoundaryTests: XCTestCase {
         let instructionsSource = try readSource("CodexInstructionsFile.swift")
         let memorySource = try readSource("Memory/MemoryCodexInjectionCard.swift")
         let secretsSource = try readSource("Secrets/SecretsCodexInjectionCard.swift")
+        let home = URL(fileURLWithPath: "/Users/demo", isDirectory: true)
+        let codexDirectory = CodexInstructionsRoutes.codexDirectoryURL(homeDirectory: home)
 
         XCTAssertTrue(
             instructionsSource.contains("enum CodexPersonalizationBlock"),
             "Clawix personalization must have an explicit sentinel block identity."
         )
+        XCTAssertEqual(CodexInstructionsRoutes.codexDirectoryName, ".codex")
+        XCTAssertEqual(CodexInstructionsRoutes.agentsFileName, "AGENTS.md")
+        XCTAssertEqual(CodexInstructionsRoutes.temporaryAgentsFilePrefix, "AGENTS.md.tmp")
+        XCTAssertFalse(CodexInstructionsRoutes.userHomeDirectory().path.isEmpty)
+        XCTAssertEqual(codexDirectory.path, "/Users/demo/.codex")
+        XCTAssertEqual(
+            CodexInstructionsRoutes.agentsFileURL(codexDirectory: codexDirectory).path,
+            "/Users/demo/.codex/AGENTS.md"
+        )
+        XCTAssertEqual(
+            CodexInstructionsRoutes.temporaryAgentsFileURL(
+                processIdentifier: 123,
+                id: "abcdefghi",
+                codexDirectory: codexDirectory
+            ).path,
+            "/Users/demo/.codex/AGENTS.md.tmp.123.abcdefgh"
+        )
+        XCTAssertTrue(instructionsSource.contains("CodexInstructionsRoutes.agentsFileURL()"))
+        XCTAssertTrue(instructionsSource.contains("CodexInstructionsRoutes.temporaryAgentsFileURL(codexDirectory: dir)"))
+        XCTAssertTrue(instructionsSource.contains("static func userHomeDirectory() -> URL"))
+        XCTAssertTrue(instructionsSource.contains("ClawixUserHomeRoutes.directory()"))
+        XCTAssertTrue(instructionsSource.contains("explicitHomeDirectory ?? userHomeDirectory()"))
+        XCTAssertFalse(instructionsSource.contains("FileManager.default.homeDirectoryForCurrentUser"))
+        XCTAssertFalse(instructionsSource.contains("homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser"))
+        XCTAssertFalse(instructionsSource.contains("appendingPathComponent(\".codex/AGENTS.md\")"))
+        XCTAssertFalse(instructionsSource.contains("appendingPathComponent(\"AGENTS.md.tmp."))
         XCTAssertTrue(
             personalizationSource.contains("CodexInstructionsFile.sentinelBlockBody(id: CodexPersonalizationBlock.id)"),
             "The Personalization page must read only Clawix's AGENTS.md sentinel block, not the whole Codex file."

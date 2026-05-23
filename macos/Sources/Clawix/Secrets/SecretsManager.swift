@@ -427,9 +427,8 @@ final class SecretsManager: ObservableObject {
             return nil
         }
 
-        let binDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("bin", isDirectory: true)
-        let linkURL = binDir.appendingPathComponent("claw", isDirectory: false)
+        let binDir = ClawixSecretsRoutes.shellBinDirectory()
+        let linkURL = ClawixSecretsRoutes.clawCLISymlinkURL(binDirectory: binDir)
         do {
             try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: linkURL.path) {

@@ -325,9 +325,7 @@ struct SecretsSettingsPage: View {
 
     private var symlinkInstalled: Bool {
         FileManager.default.fileExists(
-            atPath: FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("bin/claw", isDirectory: false)
-                .path
+            atPath: ClawixSecretsRoutes.clawCLISymlinkURL().path
         )
     }
 

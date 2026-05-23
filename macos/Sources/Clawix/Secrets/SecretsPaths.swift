@@ -3,30 +3,19 @@ import Foundation
 enum SecretsPaths {
     static let deviceIdKey = "clawix.secrets.deviceId"
 
-    /// Secrets directory. Honors `CLAWIX_SECRETS_DIR` so dummy mode (and tests)
-    /// can sandbox Secrets away from the user's real Application Support
-    /// folder. Without it the real production location is used.
+    /// Secrets directory. Honors the override route so dummy mode and tests can
+    /// sandbox Secrets away from the user's real Application Support folder.
+    /// Without it the real production location is used.
     static var directory: URL {
-        if let override = ProcessInfo.processInfo.environment["CLAWIX_SECRETS_DIR"],
-           !override.isEmpty {
-            let expanded = (override as NSString).expandingTildeInPath
-            return URL(fileURLWithPath: expanded, isDirectory: true)
-        }
-        let base = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        ).first!
-        return base
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.secrets, isDirectory: true)
+        ClawixSecretsRoutes.directoryURL()
     }
 
     static var databaseFile: URL {
-        directory.appendingPathComponent(ClawixPersistentSurfacePaths.components.secretsDatabase)
+        ClawixSecretsRoutes.databaseFileURL(directory: directory)
     }
 
     static var proxySocketFile: URL {
-        directory.appendingPathComponent("proxy.sock")
+        ClawixSecretsRoutes.proxySocketFileURL(directory: directory)
     }
 
     static func ensureDirectory() throws {
