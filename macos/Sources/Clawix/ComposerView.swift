@@ -34,6 +34,7 @@ struct ComposerView: View {
     @State private var projectMenuOpen = false
     @State private var projectEditorContext: ProjectEditorContext?
     @State private var slashHighlightID: String? = nil
+    @State private var mentionHighlightID: String? = nil
     @State private var meshTargetMenuOpen = false
     @State private var composerContentHeight: CGFloat = 52
     @State private var planSuggestionDismissed = false
@@ -85,6 +86,51 @@ struct ComposerView: View {
     }
 
     private var slashOpen: Bool { slashQuery != nil }
+
+    // MARK: - @ mention
+
+    /// Trailing `@token` in the draft, at a word boundary, if present.
+    private var mentionMatch: (range: Range<String.Index>, query: String)? {
+        let text = composer.text
+        guard let range = text.range(of: "@[^\\s@]*$", options: .regularExpression) else { return nil }
+        if range.lowerBound > text.startIndex {
+            let before = text[text.index(before: range.lowerBound)]
+            if !before.isWhitespace { return nil }
+        }
+        let query = String(text[text.index(after: range.lowerBound)..<range.upperBound])
+        return (range, query)
+    }
+
+    /// Project files matching the active mention token (fuzzy by name).
+    private var mentionItems: [MentionFileItem] {
+        guard let match = mentionMatch,
+              let projectPath = appState.selectedProject?.path, !projectPath.isEmpty else { return [] }
+        let query = match.query.lowercased()
+        let files = ProjectFileIndex.shared.files(forProject: projectPath)
+        let matched = query.isEmpty
+            ? Array(files.prefix(8))
+            : Array(files.filter { $0.lastPathComponent.lowercased().contains(query) }.prefix(8))
+        let root = projectPath.hasSuffix("/") ? projectPath : projectPath + "/"
+        return matched.map { url in
+            let rel = url.path.hasPrefix(root) ? String(url.path.dropFirst(root.count)) : url.lastPathComponent
+            return MentionFileItem(
+                id: url.path,
+                name: url.lastPathComponent,
+                detail: (rel as NSString).deletingLastPathComponent,
+                relativePath: rel,
+                url: url
+            )
+        }
+    }
+
+    private var mentionOpen: Bool { !slashOpen && mentionMatch != nil && !mentionItems.isEmpty }
+
+    private func insertMention(_ item: MentionFileItem) {
+        guard let match = mentionMatch else { return }
+        composer.text.replaceSubrange(match.range, with: "@\(item.relativePath) ")
+        mentionHighlightID = nil
+        appState.requestComposerFocus()
+    }
 
     /// Sends the current draft. Routes to the side-chat-aware variant
     /// when this composer drives a side chat tab, falls through to the
@@ -199,6 +245,25 @@ struct ComposerView: View {
                 }
                 .allowsHitTesting(slashOpen)
             }
+            .overlay(alignment: .topLeading) {
+                GeometryReader { proxy in
+                    if mentionOpen {
+                        MentionMenu(
+                            items: mentionItems,
+                            highlightedID: mentionHighlightID ?? mentionItems.first?.id,
+                            onSelect: { item in insertMention(item) },
+                            onHover: { item in mentionHighlightID = item.id }
+                        )
+                        .frame(width: proxy.size.width)
+                        .reportsComposerPopupRect()
+                        .alignmentGuide(.top) { d in d[.bottom] + 8 }
+                        .alignmentGuide(.leading) { d in d[.leading] }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .transition(.softNudge(y: 4))
+                    }
+                }
+                .allowsHitTesting(mentionOpen)
+            }
         .onChange(of: composer.text) {
             let ids = slashCommands.map(\.id)
             if let current = slashHighlightID, !ids.contains(current) {
@@ -209,6 +274,7 @@ struct ComposerView: View {
             if !slashOpen { slashHighlightID = nil }
         }
         .animation(.easeOut(duration: 0.20), value: slashOpen)
+        .animation(.easeOut(duration: 0.20), value: mentionOpen)
     }
 
     // MARK: - Toolbars
@@ -651,7 +717,11 @@ struct ComposerView: View {
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
         .onChange(of: composer.text) {
-            if !chatMode, composer.text == "@", !mentionFilePickerActive {
+            // With a project, "@" opens the inline mention menu (see
+            // `mentionOpen`); without one there are no files to mention, so
+            // fall back to the file picker as before.
+            if !chatMode, composer.text == "@", !mentionFilePickerActive,
+               appState.selectedProject == nil {
                 openFilePickerFromMentionTrigger()
             }
             // Reset the user's "X" once the trigger word leaves the
