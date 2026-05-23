@@ -42,6 +42,17 @@ final class AdvancedSettings {
         didSet { defaults.set(runningBadge, forKey: Keys.runningBadge) }
     }
 
+    /// Remember the unsent composer text per chat across navigation and
+    /// relaunch, so a half-written prompt is restored when you return.
+    var draftPersistence: Bool {
+        didSet { defaults.set(draftPersistence, forKey: Keys.draftPersistence) }
+    }
+
+    /// A success haptic when a turn finishes while you are in the chat.
+    var completionHaptic: Bool {
+        didSet { defaults.set(completionHaptic, forKey: Keys.completionHaptic) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.enabled = defaults.bool(forKey: Keys.enabled)
@@ -52,17 +63,23 @@ final class AdvancedSettings {
         self.queuedDrafts = defaults.object(forKey: Keys.queuedDrafts) as? Bool ?? true
         self.commandPalette = defaults.object(forKey: Keys.commandPalette) as? Bool ?? true
         self.runningBadge = defaults.object(forKey: Keys.runningBadge) as? Bool ?? true
+        self.draftPersistence = defaults.object(forKey: Keys.draftPersistence) as? Bool ?? true
+        self.completionHaptic = defaults.object(forKey: Keys.completionHaptic) as? Bool ?? true
     }
 
     /// `true` only when the master switch and the feature flag are both on.
     var queuedDraftsActive: Bool { enabled && queuedDrafts }
     var commandPaletteActive: Bool { enabled && commandPalette }
     var runningBadgeActive: Bool { enabled && runningBadge }
+    var draftPersistenceActive: Bool { enabled && draftPersistence }
+    var completionHapticActive: Bool { enabled && completionHaptic }
 
     private enum Keys {
         static let enabled = "clawix.advanced.enabled"
         static let queuedDrafts = "clawix.advanced.queuedDrafts"
         static let commandPalette = "clawix.advanced.commandPalette"
         static let runningBadge = "clawix.advanced.runningBadge"
+        static let draftPersistence = "clawix.advanced.draftPersistence"
+        static let completionHaptic = "clawix.advanced.completionHaptic"
     }
 }

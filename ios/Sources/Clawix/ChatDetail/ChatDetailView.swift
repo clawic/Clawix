@@ -181,6 +181,13 @@ struct ChatDetailView: View {
                         isFreshChat = hasLoaded && messages.isEmpty
                     }
                     wireBridgeTranscription()
+                    // Advanced mode: restore a half-written prompt for
+                    // this chat. Only when the composer is empty so a
+                    // value already in flight is never clobbered.
+                    if advanced.draftPersistenceActive, composerText.isEmpty {
+                        let saved = ComposerDraftStore.load(chatId: chatId)
+                        if !saved.isEmpty { composerText = saved }
+                    }
                 }
                 .topBarBlurFade(height: 135)
                 .safeAreaInset(edge: .top, spacing: 0) {
@@ -230,9 +237,22 @@ struct ChatDetailView: View {
             }
             // Advanced mode: drain the follow-up queue as turns finish.
             // Fires `initial: true` too so a draft queued just before the
-            // turn ended (or restored on reopen) still flushes.
-            .onChange(of: chat?.hasActiveTurn ?? false, initial: true) { _, active in
-                if !active { flushNextQueuedDraftIfNeeded() }
+            // turn ended (or restored on reopen) still flushes. On a real
+            // true->false transition (never the initial fire, where
+            // wasActive == isActive) emit a completion haptic.
+            .onChange(of: chat?.hasActiveTurn ?? false, initial: true) { wasActive, isActive in
+                if wasActive, !isActive, advanced.completionHapticActive {
+                    Haptics.success()
+                }
+                if !isActive { flushNextQueuedDraftIfNeeded() }
+            }
+            // Advanced mode: persist the unsent prompt per chat. Clearing
+            // the composer on send/queue saves an empty string, which the
+            // store treats as a delete, so no stale draft survives a send.
+            .onChange(of: composerText) { _, newValue in
+                if advanced.draftPersistenceActive {
+                    ComposerDraftStore.save(newValue, chatId: chatId)
+                }
             }
             #if canImport(UIKit)
             .fullScreenCover(item: $imageViewer) { selection in

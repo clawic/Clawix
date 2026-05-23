@@ -1093,6 +1093,20 @@ private struct SettingsSheet: View {
                     iconName: "circle.dotted",
                     isOn: $advanced.runningBadge
                 )
+                rowDivider
+                toggleRow(
+                    title: L10n.t("Keep drafts"),
+                    subtitle: L10n.t("Restore an unsent prompt when you reopen a chat."),
+                    iconName: "tray.full",
+                    isOn: $advanced.draftPersistence
+                )
+                rowDivider
+                toggleRow(
+                    title: L10n.t("Completion haptic"),
+                    subtitle: L10n.t("Buzz when a turn finishes while you are in the chat."),
+                    iconName: "waveform",
+                    isOn: $advanced.completionHaptic
+                )
             }
         }
         .glassRounded(radius: AppLayout.cardCornerRadius)
