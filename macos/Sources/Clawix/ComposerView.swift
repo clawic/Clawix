@@ -42,6 +42,7 @@ struct ComposerView: View {
     @State private var showInbox = false
     @State private var showStatus = false
     @State private var showFiles = false
+    @State private var showWorktrees = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -172,6 +173,8 @@ struct ComposerView: View {
                                     showFiles = true
                                 } else if cmd.id == "pet" {
                                     PetController.shared.toggle()
+                                } else if cmd.id == "worktrees" {
+                                    showWorktrees = true
                                 }
                             },
                             onHover: { cmd in
@@ -632,6 +635,10 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $showFiles) {
             FileTreePanel { showFiles = false }
+                .environmentObject(appState)
+        }
+        .sheet(isPresented: $showWorktrees) {
+            WorktreesPanel { showWorktrees = false }
                 .environmentObject(appState)
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
