@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { publicSafetyErrors, sanitizedErrorDetails } from "./privacy-redaction.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(import.meta.url);
@@ -27,32 +28,10 @@ function fail(message, details = undefined) {
   process.exit(1);
 }
 
-function publicSafetyErrors(value) {
-  const serialized = JSON.stringify(value);
-  const checks = [
-    ["/Users/", "packet contains a private filesystem path"],
-    ["file://", "packet contains a file URL"],
-    ["secret://", "packet contains a raw secret reference"],
-    ["-----BEGIN", "packet contains key material marker"],
-    ["sk-", "packet contains raw API key marker"],
-    ["AKIA", "packet contains raw access key marker"],
-  ];
-  return checks
-    .filter(([pattern]) => serialized.includes(pattern))
-    .map(([, message]) => message);
-}
-
 function compileSchema() {
   const schema = readJson(schemaPath);
   const ajv = new Ajv2020({ allErrors: true, validateFormats: false, strict: false });
   return { ajv, validate: ajv.compile(schema) };
-}
-
-function assertPublicSafePacket(packet, label) {
-  const serialized = JSON.stringify(packet);
-  if (serialized.includes("/Users/")) {
-    fail(`${label}: packet contains a private filesystem path`);
-  }
 }
 
 function parseTime(value) {
@@ -62,7 +41,7 @@ function parseTime(value) {
 
 function evidencePacketErrors(packet, compiled) {
   const errors = [];
-  errors.push(...publicSafetyErrors(packet));
+  errors.push(...publicSafetyErrors(packet, "packet"));
   if (!compiled.validate(packet)) {
     errors.push(`schema: ${compiled.ajv.errorsText(compiled.validate.errors)}`);
   }
@@ -140,7 +119,7 @@ function validatePacket(packet, label) {
   const compiled = compileSchema();
   const errors = evidencePacketErrors(packet, compiled);
   if (errors.length > 0) {
-    fail(`${label}: packet does not conform to system telemetry external evidence requirements`, errors.join("; "));
+    fail(`${label}: packet does not conform to system telemetry external evidence requirements`, sanitizedErrorDetails(errors));
   }
   return { laneId: packet.laneId, repoScope: packet.repoScope };
 }

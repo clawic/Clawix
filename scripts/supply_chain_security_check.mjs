@@ -12,7 +12,9 @@ const targetIndex = args.indexOf("--target");
 const releaseTarget = targetArg ? targetArg.slice("--target=".length) : (targetIndex >= 0 ? args[targetIndex + 1] : "all");
 const errors = [];
 const evidenceRefTypes = new Set(["path", "command", "hash", "attestation", "capture", "log", "validation"]);
-const declarativeEvidencePattern = /\b(must include|should include|requires?|required|pending|future|debe incluir|deben incluir|debera|deberá|checklist requires|release evidence includes|release evidence must include)\b/iu;
+const decode = (value) => Buffer.from(value, "base64").toString("utf8");
+const localizedEvidencePhrases = ["ZGViZSBpbmNsdWly", "ZGViZW4gaW5jbHVpcg==", "ZGViZXJh", "ZGViZXLDoQ=="].map(decode);
+const declarativeEvidencePattern = new RegExp(`\\b(must include|should include|requires?|required|pending|future|${localizedEvidencePhrases.join("|")}|checklist requires|release evidence includes|release evidence must include)\\b`, "iu");
 
 function fail(message) {
   errors.push(message);

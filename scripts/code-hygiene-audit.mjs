@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { redactSensitiveValue } from "./privacy-redaction.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const argv = process.argv.slice(2);
@@ -103,10 +104,11 @@ const report = {
     unreferencedAssets: unreferencedAssetCandidates.slice(0, 500),
   },
 };
+const safeReport = redactSensitiveValue(report);
 
-if (jsonPath) fs.writeFileSync(path.resolve(rootDir, jsonPath), `${JSON.stringify(report, null, 2)}\n`);
-if (markdownPath) fs.writeFileSync(path.resolve(rootDir, markdownPath), renderMarkdown(report));
-if (!jsonPath && !markdownPath) console.log(JSON.stringify(report, null, 2));
+if (jsonPath) fs.writeFileSync(path.resolve(rootDir, jsonPath), `${JSON.stringify(safeReport, null, 2)}\n`);
+if (markdownPath) fs.writeFileSync(path.resolve(rootDir, markdownPath), renderMarkdown(safeReport));
+if (!jsonPath && !markdownPath) console.log(JSON.stringify(safeReport, null, 2));
 
 function valueAfter(flag) {
   const index = argv.indexOf(flag);

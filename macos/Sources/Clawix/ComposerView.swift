@@ -175,6 +175,12 @@ struct ComposerView: View {
                                     PetController.shared.toggle()
                                 } else if cmd.id == "worktrees" {
                                     showWorktrees = true
+                                } else if cmd.id == "side" {
+                                    if let chatId = currentComposerChatId {
+                                        _ = appState.openInSideChat(parentChatId: chatId)
+                                    }
+                                } else if cmd.id == "memories" {
+                                    appState.navigate(to: .memoryHome)
                                 }
                             },
                             onHover: { cmd in

@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { assertPublicSafe } from "./privacy-redaction.mjs";
 
 const require = createRequire(import.meta.url);
 const Ajv2020Module = require("ajv/dist/2020");
@@ -159,6 +160,7 @@ function mergePatch(base, patch) {
 
 export function validatePacket(packet, compiledSchema = compileSchema()) {
   if (!packet || typeof packet !== "object" || Array.isArray(packet)) fail("packet must be an object");
+  assertPublicSafe(packet, "SDK-first external evidence packet");
   if (!compiledSchema.validate(packet)) fail(`schema validation failed: ${compiledSchema.ajv.errorsText(compiledSchema.validate.errors)}`);
   requireOnlyKeys(packet, packetKeys, "packet");
   const runAuthorization = requireOnlyKeys(packet.runAuthorization, runAuthorizationKeys, "runAuthorization");

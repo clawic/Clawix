@@ -95,7 +95,15 @@ enum SlashCommandCatalog {
         SlashCommand(id: "worktrees",
                      label: "Worktrees",
                      description: "Browse git worktrees",
-                     iconName: "arrow.triangle.branch")
+                     iconName: "arrow.triangle.branch"),
+        SlashCommand(id: "side",
+                     label: "Side chat",
+                     description: "Open a side conversation off this chat",
+                     iconName: "bubble.left.and.bubble.right"),
+        SlashCommand(id: "memories",
+                     label: "Memories",
+                     description: "Open your memories",
+                     iconName: "brain")
     ]
 
     static func filter(_ query: String, isVisible: (AppFeature) -> Bool) -> [SlashCommand] {

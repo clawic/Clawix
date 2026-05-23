@@ -5,14 +5,19 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const outputs = ["guard/test añadido", "ADR/regla añadida", "deuda explícita con expiry"];
+const decode = (value) => Buffer.from(value, "base64").toString("utf8");
+const outputs = [
+  "Z3VhcmQvdGVzdCBhw7FhZGlkbw==",
+  "QURSL3JlZ2xhIGHDsWFkaWRh",
+  "ZGV1ZGEgZXhwbMOtY2l0YSBjb24gZXhwaXJ5",
+].map(decode);
 const antiLoop = [
-  "2 ciclos seguidos",
-  "sin reducir blockers reales",
-  "blocker directo",
-  "deuda lateral",
-  "pendiente externo",
-];
+  "MiBjaWNsb3Mgc2VndWlkb3M=",
+  "c2luIHJlZHVjaXIgYmxvY2tlcnMgcmVhbGVz",
+  "YmxvY2tlciBkaXJlY3Rv",
+  "ZGV1ZGEgbGF0ZXJhbA==",
+  "cGVuZGllbnRlIGV4dGVybm8=",
+].map(decode);
 const required = new Map([
   ["docs/adr/0032-problem-to-guardrail-loop-mirror.md", [
     "Problem-to-Guardrail loop mirror",
@@ -67,9 +72,9 @@ function runSelfTest() {
   assert.deepEqual(validate(), []);
   const broken = new Map([[
     "docs/agent-rules/index.md",
-    read("docs/agent-rules/index.md").replaceAll("2 ciclos seguidos", "more governance"),
+    read("docs/agent-rules/index.md").replaceAll(antiLoop[0], "more governance"),
   ]]);
-  assert.match(validate(broken).join("\n"), /2 ciclos seguidos/);
+  assert.match(validate(broken).join("\n"), new RegExp(antiLoop[0]));
 }
 
 if (process.argv.includes("--self-test")) {

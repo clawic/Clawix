@@ -22,8 +22,11 @@ test-results/
 test-results-*/
 artifacts/
 coverage/
+.playwright-cli/
 .tmp/
 .tmp-*/
+linux/app/dist/
+linux/app/node_modules/
 docs/codebase-manifest.json
 packages/*/.build/
 packages/*/build/

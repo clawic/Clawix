@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { assertPublicSafe as assertPublicSafeValue } from "./privacy-redaction.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const require = createRequire(import.meta.url);
@@ -37,13 +38,11 @@ function assert(condition, message) {
 }
 
 function assertPublicSafe(value, label) {
-  const serialized = JSON.stringify(value);
-  assert(!serialized.includes("/Users/"), `${label}: contains a private filesystem path`);
-  assert(!serialized.includes("file://"), `${label}: contains a file URL`);
-  assert(!serialized.includes("secret://"), `${label}: contains a raw secret reference`);
-  assert(!serialized.includes("-----BEGIN"), `${label}: contains key material marker`);
-  assert(!serialized.includes("sk-"), `${label}: contains raw API key marker`);
-  assert(!serialized.includes("AKIA"), `${label}: contains raw access key marker`);
+  try {
+    assertPublicSafeValue(value, label);
+  } catch (error) {
+    assert(false, error.message);
+  }
 }
 
 function compileSchema(schemaPath) {

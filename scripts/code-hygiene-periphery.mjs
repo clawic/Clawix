@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { redactSensitiveValue } from "./privacy-redaction.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const peripheryVersion = "3.7.4";
@@ -95,8 +96,9 @@ if (!binary) {
   }
 }
 
-fs.writeFileSync(outputJson, `${JSON.stringify(report, null, 2)}\n`);
-fs.writeFileSync(outputMarkdown, renderMarkdown(report));
+const safeReport = redactSensitiveValue(report);
+fs.writeFileSync(outputJson, `${JSON.stringify(safeReport, null, 2)}\n`);
+fs.writeFileSync(outputMarkdown, renderMarkdown(safeReport));
 console.log(`code hygiene Periphery report wrote ${path.relative(rootDir, outputJson)}`);
 
 function findPeripheryBinary() {
