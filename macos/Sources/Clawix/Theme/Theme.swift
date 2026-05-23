@@ -14,7 +14,7 @@ import AppKit
 //   • A *fill / surface / text* colour → `Color.dynamic(light:dark:)`,
 //     authored with both perceptual values (see `STYLE.md` §2.4).
 //   • An *additive highlight* (hover/press/selection lift, hairline drawn
-//     with `Color.white.opacity(x)` on dark) → `Color.overlay(x)`, which
+//     with white at low alpha on dark) → `Color.overlay(x)`, which
 //     lifts with white on dark and darkens with black on light.
 //   • A *shadow / scrim* stays black on both modes — do not flip it.
 
@@ -34,18 +34,46 @@ extension Color {
 
     /// A neutral additive highlight: white at `alpha` on dark surfaces,
     /// black at `alpha` on light surfaces. This is the light-mode-correct
-    /// replacement for every `Color.white.opacity(x)` used as a hover,
+    /// replacement for every additive white highlight used as a hover,
     /// press, selection, divider, or hairline lift. The perceptual role
     /// (a soft lift away from the surface) is preserved across modes.
     static func overlay(_ alpha: Double) -> Color {
-        .dynamic(light: .black.opacity(alpha), dark: .white.opacity(alpha))
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let base: NSColor = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .white : .black
+            return base.withAlphaComponent(alpha)
+        })
     }
 
     /// The inverse of `overlay`: a darkening wash that uses black on dark
     /// and white on light. Use for the rare highlight that lowers rather
     /// than lifts (e.g. a recessed well on a light card).
     static func overlayInverse(_ alpha: Double) -> Color {
-        .dynamic(light: .white.opacity(alpha), dark: .black.opacity(alpha))
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let base: NSColor = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .black : .white
+            return base.withAlphaComponent(alpha)
+        })
+    }
+
+    /// Grayscale token that keeps its canonical dark value and mirrors to a
+    /// derived light value. Terse wrapper over `dynamic` for the very common
+    /// `Color(white:)` migration: a `0.92` light-on-dark text value
+    /// becomes `Color.gray(light: 0.16, dark: 0.92)` (dark text on light).
+    /// Pass the existing value as `dark` so dark mode is byte-for-byte
+    /// preserved, and the perceptually mirrored value as `light`.
+    static func gray(light: Double, dark: Double) -> Color {
+        .dynamic(light: Color(white: light), dark: Color(white: dark))
+    }
+}
+
+extension NSColor {
+    /// AppKit counterpart of `Color.gray`: a dynamic grayscale `NSColor`
+    /// for the few call sites that hand a raw `NSColor` to AppKit
+    /// (`NSTextView.textColor`, scroller thumbs drawn with `setFill()`).
+    static func dynamicGray(light: CGFloat, dark: CGFloat, alpha: CGFloat = 1) -> NSColor {
+        NSColor(name: nil) { appearance in
+            let w = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            return NSColor(white: w, alpha: alpha)
+        }
     }
 }
 
