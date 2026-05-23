@@ -743,7 +743,11 @@ struct AssistantMarkdownText: View {
             }
 
         case .codeBlock(let language, let code):
-            AssistantCodeBlockView(language: language, code: code, ordinal: codeBlockOrdinal)
+            if language.lowercased() == "mermaid" {
+                MermaidDiagramView(code: code, ordinal: codeBlockOrdinal)
+            } else {
+                AssistantCodeBlockView(language: language, code: code, ordinal: codeBlockOrdinal)
+            }
         }
     }
 
