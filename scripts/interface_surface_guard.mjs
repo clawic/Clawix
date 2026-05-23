@@ -110,15 +110,16 @@ for (const surface of registry.surfaces ?? []) {
   if (seenIds.has(surface.id)) fail(`duplicate interface surface id: ${surface.id}`);
   seenIds.add(surface.id);
 
-  if (!allowedStatuses.has(surface.status)) {
+  const statusIsAllowed = allowedStatuses.has(surface.status) || (surface.id === "publishing" && surface.status === "beta");
+  if (!statusIsAllowed) {
     fail(`${surface.id} has invalid status ${JSON.stringify(surface.status)}`);
   }
-  if (surface.status === "stable") {
+  if (surface.status === "stable" || surface.status === "beta") {
     for (const field of ["steward", "humanSurface", "programmaticSurface", "storageOwner", "validation"]) {
-      if (!surface[field]) fail(`${surface.id} stable surface is missing ${field}`);
+      if (!surface[field]) fail(`${surface.id} ${surface.status} surface is missing ${field}`);
     }
   }
-  if (surface.status === "experimental" || surface.status === "beta") {
+  if (surface.status === "experimental" || (surface.status === "beta" && surface.id !== "publishing")) {
     fail(`${surface.id} uses forbidden ambiguous status ${surface.status}`);
   }
   if (surface.featureFlag) seenFeatureFlags.add(surface.featureFlag);
@@ -161,6 +162,17 @@ if (/default\s*:\s*return\s+\.stable/.test(featureFlagsText)) {
 }
 if (featureFlagsText.includes("String(describing: self)")) {
   fail("FeatureFlags.swift must use explicit capability ids instead of deriving them from enum spelling");
+}
+const appFeatureMaturityText = featureFlagsText.match(/var maturity: FeatureMaturity \{[\s\S]*?\n    \}/)?.[0] ?? "";
+if (/case[\s\S]*?\.publishing[\s\S]*?return \.stable/.test(appFeatureMaturityText)) {
+  fail("AppFeature.publishing must remain beta opt-in, not stable");
+}
+if (!/case \.publishing:\s*\n\s*return \.beta/.test(appFeatureMaturityText)) {
+  fail("AppFeature.publishing must declare maturity .beta");
+}
+const publishingSurface = (registry.surfaces ?? []).find((surface) => surface.id === "publishing");
+if (publishingSurface?.status !== "beta") {
+  fail("interface registry must record Publishing as beta");
 }
 
 const appCapabilityCatalogText = read("macos/Sources/Clawix/Apps/AppCapabilityCatalog.swift");
@@ -244,21 +256,39 @@ const surfaceRouterViewText = read("macos/Sources/Clawix/SurfaceRouterView.swift
 if (!surfaceRouterViewText.includes("isVisible: FeatureFlags.shared.isVisible")) {
   fail("SurfaceRouterView must compute route-demanded services through FeatureFlags visibility");
 }
+const appSwiftText = read("macos/Sources/Clawix/App.swift");
+if (appSwiftText.includes("PublishingWorkspaceStore()")) {
+  fail("App.swift must not construct PublishingWorkspaceStore; Publishing is route-owned on demand");
+}
+const chatViewText = read("macos/Sources/Clawix/ChatView.swift");
+if (chatViewText.includes("PublishingWorkspaceStore")) {
+  fail("ChatView must not depend on PublishingWorkspaceStore; chat hooks use FeatureFlags visibility only");
+}
+if (!chatViewText.includes("flags.isVisible(.publishing)")) {
+  fail("ChatView must gate Push to publishing through FeatureFlags visibility");
+}
+const surfaceRouteRegistryText = read("macos/Sources/Clawix/SurfaceRouteRegistry.swift");
+if (!surfaceRouteRegistryText.includes("PublishingRootView { PublishingHomeView() }")
+    || !surfaceRouteRegistryText.includes("PublishingRootView {\n                    PublishingComposerView")
+    || !surfaceRouteRegistryText.includes("PublishingRootView { PublishingChannelsView() }")) {
+  fail("SurfaceRouteRegistry must wrap every Publishing route in PublishingRootView");
+}
+requireSnippet(
+  "macos/Sources/Clawix/Publishing/PublishingRootView.swift",
+  "@StateObject private var store = PublishingWorkspaceStore()",
+);
+requireSnippet("docs/interface-matrix.md", "Beta opt-in calendar/composer/channels");
 
 for (const [relativePath, snippet] of [
   ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"'],
   ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test'],
-  ["scripts/test.sh", 'run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --target "${CLAWIX_RELEASE_TARGET:-macos-release}"'],
-  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
-  ["macos/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target macos-release'],
-  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
-  ["ios/scripts/build_release_app.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target ios-release'],
-  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
-  ["linux/scripts/build_release_appimage.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release'],
-  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/interface_surface_guard.mjs"'],
-  ["linux/scripts/build_release_deb.sh", 'node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release'],
-  ["windows/scripts/build-release.ps1", 'scripts\\interface_surface_guard.mjs'],
-  ["windows/scripts/build-release.ps1", 'scripts\\release_external_pending_gate.mjs'],
+  ["docs/governance/release-readiness.manifest.json", "scripts/interface_surface_guard.mjs"],
+  ["docs/governance/release-readiness.manifest.json", "scripts/release_external_pending_gate.mjs"],
+  ["macos/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs"],
+  ["ios/scripts/build_release_app.sh", "scripts/release_readiness_check.mjs"],
+  ["linux/scripts/build_release_appimage.sh", "scripts/release_readiness_check.mjs"],
+  ["linux/scripts/build_release_deb.sh", "scripts/release_readiness_check.mjs"],
+  ["windows/scripts/build-release.ps1", "scripts\\release_readiness_check.mjs"],
 ]) {
   requireSnippet(relativePath, snippet);
 }
@@ -344,7 +374,10 @@ for (const [id, requirement] of Object.entries(v1ClosureSurfaceRequirements)) {
     fail(`interface registry is missing v1 closure surface ${id}`);
     continue;
   }
-  if (surface.status !== "stable") fail(`${id} must be stable in the v1 closure registry`);
+  const expectedStatus = id === "publishing" ? "beta" : "stable";
+  if (surface.status !== expectedStatus) {
+    fail(`${id} must be ${expectedStatus} in the v1 closure registry`);
+  }
   const registryText = `${surface.programmaticSurface ?? ""}\n${surface.storageOwner ?? ""}\n${surface.validation ?? ""}`;
   for (const snippet of requirement.registry) {
     if (!registryText.includes(snippet)) fail(`${id} registry row is missing v1 closure snippet ${JSON.stringify(snippet)}`);
@@ -582,8 +615,22 @@ if (!pairingSurface) {
   }
 }
 
-const staleContractTargets = [
+const swiftBridgeProtocolSources = [
   "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyAudioCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyBaseCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeBodyTags.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeCoder.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgeFrameCoding.swift",
+  "packages/ClawixCore/Sources/ClawixCore/BridgePayloadKeys.swift",
+  "packages/ClawixCore/Sources/ClawixCore/WireRateLimits.swift",
+  "packages/ClawixCore/Sources/BridgeProtocolFixtures/BridgeFixtures.swift",
+  "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift",
+];
+
+const staleContractTargets = [
+  ...swiftBridgeProtocolSources,
   "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.md",
   "packages/ClawixCore/Sources/ClawixCore/BridgeModels.swift",
   "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift",
@@ -820,10 +867,17 @@ for (const [relativePath, expected] of allowedUpstreamExtensionWireKeyCounts) {
   }
 }
 
-const bridgeProtocol = read("packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift");
+const bridgeProtocolThin = read("packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift");
+for (const pattern of ["encodePayload", "decodeBase", "BridgeCoder", "WireRateLimitWindow", "BridgeFixtures"]) {
+  if (bridgeProtocolThin.includes(pattern)) {
+    fail(`BridgeProtocol.swift must stay a thin wire API and not contain split helper ${JSON.stringify(pattern)}`);
+  }
+}
+
+const bridgeProtocol = swiftBridgeProtocolSources.map((relativePath) => read(relativePath)).join("\n");
 for (const pattern of ["legacy (v1-v5)", "legacyTypeTag", "encodeLegacyPayload", "decodeLegacy"]) {
   if (bridgeProtocol.includes(pattern)) {
-    fail(`BridgeProtocol.swift contains ambiguous legacy bridge helper ${JSON.stringify(pattern)}`);
+    fail(`Swift bridge protocol sources contain ambiguous legacy bridge helper ${JSON.stringify(pattern)}`);
   }
 }
 for (const pattern of [
@@ -840,7 +894,7 @@ for (const pattern of [
   "try c.encodeIfPresent(clientKind, forKey: .clientKind)",
 ]) {
   if (bridgeProtocol.includes(pattern)) {
-    fail(`BridgeProtocol.swift keeps auth identity optional: ${JSON.stringify(pattern)}`);
+    fail(`Swift bridge protocol sources keep auth identity optional: ${JSON.stringify(pattern)}`);
   }
 }
 
@@ -1072,6 +1126,22 @@ for (const [relativePath, phrases] of [
 
 for (const [relativePath, snippets] of [
   [
+    "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift",
+    ["case audioRegister(requestId: String", "case audioGetBytes(requestId: String", "case audioListResult(requestId: String"],
+  ],
+  [
+    "packages/ClawixCore/Sources/ClawixCore/BridgeBodyAudioCoding.swift",
+    ['case .audioRegister(let requestId, let request):', 'case .audioBytesResult(let requestId, let audioBase64, let mimeType, let durationMs, let errorMessage):', 'case "audioDeleteResult":'],
+  ],
+  [
+    "packages/ClawixCore/Sources/BridgeProtocolFixtures/BridgeFixtures.swift",
+    ['outbound("audioRegister", .audioRegister', 'inbound("audioDeleteResult", .audioDeleteResult'],
+  ],
+  [
+    "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift",
+    ["testFixtureCatalogCoversCurrentFrameTags", '"audioRegister"', '"audioDeleteResult"'],
+  ],
+  [
     "android/app/src/main/java/com/example/clawix/android/core/BridgeProtocol.kt",
     ["AudioRegister(val requestId: String", "AudioGetBytes(val requestId: String", "AudioListResult("],
   ],
@@ -1105,7 +1175,11 @@ for (const [relativePath, snippets] of [
   ],
   [
     "windows/scripts/dump-fixtures.sh",
-    ['swift run BridgeFixtureExporter "$FIXTURES_OUT"'],
+    [
+      'CANONICAL_OUT="$PACKAGES_DIR/ClawixCore/Fixtures/BridgeV1"',
+      'swift run BridgeFixtureExporter "$CANONICAL_OUT"',
+      'find "$CANONICAL_OUT" -maxdepth 1 -name \'*.json\' ! -name \'manifest.json\' -exec cp {} "$FIXTURES_OUT" \\;',
+    ],
   ],
 ]) {
   const source = read(relativePath);
@@ -1753,7 +1827,7 @@ const inertSkillsBridgeFramePatterns = [
   "skillsActiveChanged",
 ];
 for (const relativePath of [
-  "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift",
+  ...swiftBridgeProtocolSources,
   "packages/ClawixEngine/Sources/ClawixEngine/BridgeIntent.swift",
   "macos/Sources/Clawix/Persistence/PersistentSurfaceRegistry.swift",
   "docs/persistent-surface-clawix.manifest.json",

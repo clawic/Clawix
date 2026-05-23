@@ -1156,6 +1156,40 @@
       "canonicalName": "adr:surface-route-graph"
     },
     {
+      "id": "clawix-surface-route-registry-manifest",
+      "kind": "surface-route",
+      "steward": "clawix",
+      "canonicalSource": "docs/surface-route-registry.manifest.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/adr/0011-surface-route-graph.md",
+        "scripts/generate-surface-route-registry.mjs"
+      ],
+      "discoveryTerms": [
+        "surface route registry manifest",
+        "SidebarRoute generated registry",
+        "SurfaceRouteRegistry generated Swift",
+        "generate-surface-route-registry"
+      ],
+      "searchQueries": [
+        {
+          "query": "surface route registry manifest",
+          "expectPath": "docs/surface-route-registry.manifest.json"
+        },
+        {
+          "query": "generate-surface-route-registry",
+          "expectPath": "scripts/generate-surface-route-registry.mjs"
+        }
+      ],
+      "guard": "scripts/generate-surface-route-registry.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-22",
+      "canonicalName": "surface-route-registry-manifest"
+    },
+    {
       "id": "skill-skills-accessibility-governance",
       "kind": "skill",
       "steward": "clawix",
@@ -2128,6 +2162,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-bridge-contract-parity-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/bridge_contract_parity_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "bridge_contract_parity_check",
+        "Bridge Contract Parity Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "bridge_contract_parity_check",
+          "expectPath": "scripts/bridge_contract_parity_check.mjs"
+        }
+      ],
+      "guard": "scripts/bridge_contract_parity_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-check-clawjs-skills-sync",
       "kind": "guardrail",
       "steward": "clawix",
@@ -2906,6 +2965,33 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-debt-control-baseline-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/debt_control_baseline_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/release-readiness.manifest.json"
+      ],
+      "discoveryTerms": [
+        "debt_control_baseline_check",
+        "Debt Control Baseline Check",
+        "release debt control baseline guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "debt_control_baseline_check",
+          "expectPath": "scripts/debt_control_baseline_check.mjs"
+        }
+      ],
+      "guard": "scripts/debt_control_baseline_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-release-external-pending-gate",
       "kind": "guardrail",
       "steward": "clawix",
@@ -2956,6 +3042,8 @@
         "release_readiness_check",
         "Release Readiness Check",
         "V1 Release Readiness",
+        "executable release readiness contract",
+        "target contract release readiness",
         "V1 central promise release readiness",
         "release readiness central promise matrix"
       ],
@@ -5414,6 +5502,31 @@
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
       "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-scale-lab-fixture-check",
+      "kind": "guardrail",
+      "canonicalSource": "scripts/scale_lab_fixture_check.mjs",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "discoveryTerms": [
+        "scale_lab_fixture_check",
+        "Clawix Scale Lab fixture check",
+        "ClawJS Scale Lab fixture consumer"
+      ],
+      "searchQueries": [
+        {
+          "query": "Clawix Scale Lab fixture check",
+          "expectPath": "scripts/scale_lab_fixture_check.mjs"
+        }
+      ],
+      "guard": "scripts/scale_lab_fixture_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
       "steward": "clawix"
     }
   ]

@@ -2,5 +2,27 @@
   "version": 1,
   "createdAt": "2026-05-17",
   "description": "Expiring Clawix baseline for pre-existing local meta-code that predates the discoverability registry.",
-  "entries": []
+  "entries": [],
+  "debtControl": {
+    "ownerArea": "discoverability",
+    "expiresAt": "2026-08-19",
+    "severity": "P2",
+    "budget": {
+      "metric": "discoverability_baseline_entries",
+      "unit": "entry",
+      "current": 0,
+      "maxAllowed": 1,
+      "nextMaxAllowed": 0,
+      "target": 0,
+      "cadence": "next_touch_or_expiry"
+    },
+    "releaseEffect": {
+      "mode": "blocks_growth",
+      "targets": [
+        "changed-work"
+      ],
+      "gate": "node scripts/discoverability-check.mjs",
+      "reason": "Discoverability baseline must remain empty or shrink before new route debt lands."
+    }
+  }
 }

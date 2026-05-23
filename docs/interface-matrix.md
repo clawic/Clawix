@@ -8,7 +8,7 @@ The source registry is `docs/interface-surface-clawix.registry.json`. A Clawix
 surface is not complete merely because it is hidden behind a beta or
 experimental switch. Every current surface must be one of:
 
-- `stable`: v1 product surface with owner, storage boundary, human UI,
+- `stable`: v1 product surface with steward, storage boundary, human UI,
   programmatic interface, fixtures/tests, and validation.
 - `dev-only`: explicitly not a product v1 surface.
 - `removed`: no longer shown or shipped as a v1 surface.
@@ -31,7 +31,7 @@ experimental switch. Every current surface must be one of:
 
 | Surface | Owner | Human UI | Programmatic Surface | Storage Boundary | Required Validation |
 | --- | --- | --- | --- | --- | --- |
-| Bridge v1 | Framework | Pairing and companion clients | Swift `BridgeProtocol` plus JSON fixtures; Android/Windows parity | Framework contract | Round-trip fixture tests across clients |
+| Bridge v1 | Framework | Pairing and companion clients | Swift `BridgeProtocol` plus generated Bridge V1 corpus; Web/Android/Windows validators consume the same fixtures | Framework contract | `scripts/bridge_contract_parity_check.mjs` plus platform round-trip fixture tests |
 | Session deep links | Host | Open/copy session links | `clawix://session/<sessionId>` | Host route | Parser accepts session and rejects chat |
 | OAuth callback deep links | Host | OAuth callback handling | `clawix://auth/callback/<provider>` | Host route | Parser accepts auth callback and rejects the retired callback route spelling |
 | Pairing QR | Host | Pairing QR sheet | JSON payload with `v`, `host`, `port`, `token`, `shortCode`, `hostDisplayName` | Host runtime | Payload tests assert JSON, port `24080`, short code and host display identity |
@@ -52,7 +52,7 @@ experimental switch. Every current surface must be one of:
 | OpenCode/runtime adapters | Framework | Runtime adapter selector | Framework runtime adapter registry | Framework runtime | Adapter registry tests |
 | Local Models | Host + Framework | Model availability/selection | Framework capability records | Host model cache; framework capability metadata | No synced blob guard |
 | Telegram/Connections QA | Framework + Host | Integration settings and QA state | ClawJS Integration QA Lab and provider matrices | Framework integration records; host secret refs | Hermetic QA tests; live checks `EXTERNAL PENDING` |
-| Publishing | Framework | Calendar/composer/channels | `claw content brand|destination|campaign|entry|approval|publish`; content Relay read/write routes | Framework publishing storage | Publishing approval fixtures; live channel publish `EXTERNAL PENDING` without explicit approval |
+| Publishing | Framework | Beta opt-in calendar/composer/channels | `claw content brand|destination|campaign|entry|approval|publish`; content Relay read/write routes | Framework publishing storage | Publishing approval fixtures; live channel publish `EXTERNAL PENDING` without explicit approval |
 | Database and Workbench | Framework + Host | Explorer and workbench | `claw database ...`, `claw db <collection> ...`, `DatabaseApiClient` | Framework database; host vault refs for credentials | Service fixtures and secret-ref tests |
 | Index/Search | Framework | Catalog/search/monitors/alerts | `claw sessions index`, `claw search rebuild`, inspect storage/events/API routes | Framework resource registry | Resource fixtures and Codex read-only mirror tests |
 | Marketplace | Framework | Offers/wants/prospects/receipts | `claw marketplace choice`, marketplace identity/profile/vertical APIs | Framework marketplace storage | Contract fixtures; payment/live installs `EXTERNAL PENDING` without explicit approval |

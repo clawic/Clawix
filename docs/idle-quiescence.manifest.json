@@ -941,6 +941,24 @@
       "expiresAt": "2026-08-19"
     },
     {
+      "id": "historical-macos-sources-clawix-dictation-dictationsettingsrows-swift-timeout",
+      "surface": "macos/Sources/Clawix/Dictation/DictationSettingsRows.swift timeout",
+      "ownerArea": "macos",
+      "path": "macos/Sources/Clawix/Dictation/DictationSettingsRows.swift",
+      "mechanism": "timeout",
+      "activation": "Settings microphone meter is active only while the dictation settings row is visible and microphone permission plus idle dictation state allow capture.",
+      "visibleOnly": true,
+      "inactivityShutdown": "Meter stops on disappearance and before device restart; the delayed restart only re-enters when the row remains active.",
+      "backoff": "Single 60 ms restart delay after microphone device changes; no repeated retry or idle loop.",
+      "sharedTimer": "Dedicated timer rationale: AVAudioEngine restart delay scoped to rebinding the selected input device after teardown.",
+      "diagnosticsOptIn": false,
+      "releaseBehavior": "release mode uses the same visible settings-row activation and does not start background capture.",
+      "debugBehavior": "debug builds follow the same visible settings-row activation.",
+      "evidence": "Detected at macos/Sources/Clawix/Dictation/DictationSettingsRows.swift:289: DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {",
+      "blocksRelease": false,
+      "expiresAt": "2026-08-19"
+    },
+    {
       "id": "historical-macos-sources-clawix-dictation-mediacontroller-swift-timeout",
       "surface": "macos/Sources/Clawix/Dictation/MediaController.swift timeout",
       "ownerArea": "macos",

@@ -29,9 +29,11 @@ function listFiles(relativeDir, extensions, output = []) {
 }
 
 const requiredSnippets = [
-  ["macos/Sources/Clawix/Apps/AppsStore.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"apps\""],
-  ["macos/Sources/Clawix/Design/DesignStore.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"design\""],
-  ["macos/Sources/Clawix/Design/EditorStore.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"design\""],
+  ["macos/Sources/Clawix/Apps/AppsStore.swift", "ClawixFrameworkResourceRoutes.appsRootURL()"],
+  ["macos/Sources/Clawix/Design/DesignStore.swift", "ClawixFrameworkResourceRoutes.designRootURL()"],
+  ["macos/Sources/Clawix/Design/EditorStore.swift", "ClawixFrameworkResourceRoutes.editorDocumentsRootURL()"],
+  ["macos/Sources/Clawix/Persistence/ClawixFrameworkResourceRoutes.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(appsDirectoryName"],
+  ["macos/Sources/Clawix/Persistence/ClawixFrameworkResourceRoutes.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(designDirectoryName"],
   ["ios/Sources/Clawix/Design/DesignStore.swift", ".appendingPathComponent(frameworkRootName"],
   ["ios/Sources/Clawix/Design/EditorStore.swift", ".appendingPathComponent(frameworkRootName"],
   ["macos/Sources/Clawix/Apps/AGENT_CONTRACT.md", "~/.claw/apps/"],
@@ -62,11 +64,29 @@ for (const [relativePath, snippet] of requiredSnippets) {
 
 const forbiddenByPath = new Map([
   ["docs/data-storage-boundary.md", ["workspace legacy folder"]],
-  ["macos/Sources/Clawix/Apps/AppsStore.swift", ["Application Support/Clawix/Apps", "Library/Application Support/Clawix/Apps"]],
+  ["macos/Sources/Clawix/Apps/AppsStore.swift", [
+    "Application Support/Clawix/Apps",
+    "Library/Application Support/Clawix/Apps",
+    "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"apps\"",
+    "manifestName = \"manifest.json\"",
+  ]],
   ["macos/Sources/Clawix/Apps/AppRecord.swift", ["Application Support/Clawix/Apps", "Library/Application Support/Clawix/Apps"]],
   ["macos/Sources/Clawix/Apps/AGENT_CONTRACT.md", ["Application Support/Clawix/Apps", "Library/Application Support/Clawix/Apps"]],
-  ["macos/Sources/Clawix/Design/DesignStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
-  ["macos/Sources/Clawix/Design/EditorStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
+  ["macos/Sources/Clawix/Design/DesignStore.swift", [
+    "Application Support/Clawix/Design",
+    "Library/Application Support/Clawix/Design",
+    "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"design\"",
+    "appendingPathComponent(\"styles\"",
+    "appendingPathComponent(\"templates\"",
+    "appendingPathComponent(\"references\"",
+  ]],
+  ["macos/Sources/Clawix/Design/EditorStore.swift", [
+    "Application Support/Clawix/Design",
+    "Library/Application Support/Clawix/Design",
+    "ClawixPersistentSurfacePaths.frameworkGlobalChild(\"design\"",
+    "appendingPathComponent(\"documents\"",
+    "manifestName = \"document.json\"",
+  ]],
   ["macos/Sources/Clawix/Design/EditorDocument.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
   ["ios/Sources/Clawix/Design/DesignStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
   ["ios/Sources/Clawix/Design/EditorStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],

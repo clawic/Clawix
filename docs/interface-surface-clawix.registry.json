@@ -12,9 +12,9 @@
       "id": "bridge.v1",
       "status": "stable",
       "humanSurface": "Clawix pairing and companion clients",
-      "programmaticSurface": "Swift BridgeProtocol plus JSON fixtures; Android and Windows parity",
+      "programmaticSurface": "Swift BridgeProtocol plus generated Bridge V1 corpus consumed by Web, Android and Windows validators",
       "storageOwner": "framework-contract",
-      "validation": "Bridge fixture round-trip tests across Swift, Android, Windows, Web",
+      "validation": "scripts/bridge_contract_parity_check.mjs plus Bridge V1 corpus round-trip tests across Swift, Web, Android and Windows",
       "steward": "framework"
     },
     {
@@ -129,7 +129,7 @@
           "human": "Clawix Settings/Data portable archive export, verify, import preview, restore and restore report UI.",
           "programmatic": "claw archive plan|export|verify|inspect|import|restore|doctor --json and ClawJS PortableArchive* contracts."
         },
-        "nonInference": "This surface does not make Clawix the archive schema owner, authorize plaintext secret export, or bypass signed-host approval for restore-sensitive paths."
+        "nonInference": "This surface does not make Clawix the archive schema steward, authorize plaintext secret export, or bypass signed-host approval for restore-sensitive paths."
       },
       "resourceContract": {
         "startup": "Portable archive UI does not start archive work at app launch; it reads status only when the Settings/Data surface is opened or an explicit archive action is requested.",
@@ -280,7 +280,7 @@
           "human": "Clawix runtime adapter selector and model display affordances",
           "programmatic": "Framework runtime adapter registry and host policy consumed through Clawix feature visibility checks"
         },
-        "nonInference": "This interface surface does not make Clawix the runtime adapter owner, bypass framework registry policy, or enable hidden adapters without the feature flag."
+        "nonInference": "This interface surface does not make Clawix the runtime adapter steward, bypass framework registry policy, or enable hidden adapters without the feature flag."
       },
       "resourceContract": {
         "startup": "The selector does not start an adapter on launch; it reads visible runtime adapter metadata when the settings/runtime surface is shown.",
@@ -317,7 +317,7 @@
     {
       "id": "publishing",
       "featureFlag": "publishing",
-      "status": "stable",
+      "status": "beta",
       "humanSurface": "Clawix Publishing calendar/composer/channels",
       "programmaticSurface": "claw content brand|destination|campaign|entry|approval|publish plus content Relay read/write routes",
       "storageOwner": "framework-publishing",
@@ -437,10 +437,10 @@
     {
       "id": "runtimeEcosystemLens",
       "status": "dev-only",
-      "humanSurface": "Clawix runtime lens for OpenClaw/Codex/Hermes sessions, skills, memory, channels, providers, settings and diagnostics with semantic native parity; full UI implementation is pending evidence.",
+      "humanSurface": "Clawix runtime lens for OpenClaw/Codex/Hermes sessions, skills, memory, channels, providers, settings and diagnostics with semantic native parity; OpenClaw/Hermes partial lens evidence exists, while full parity, native write-back, and live evidence remain unpromoted.",
       "programmaticSurface": "Sibling ClawJS runtime ecosystem manifest and claw runtime <runtime-id> ... --json portal contract",
       "storageOwner": "framework-manifest-plus-host-local-overlay",
-      "validation": "runtime_ecosystem_lens_check.mjs plus sibling ClawJS test:runtime-ecosystem; live runtimes/accounts are EXTERNAL PENDING",
+      "validation": "runtime_ecosystem_lens_check.mjs plus sibling ClawJS test:runtime-ecosystem; current signed app evidence covers the partial OpenClaw/Hermes lens; live runtimes/accounts are EXTERNAL PENDING",
       "steward": "framework+host",
       "surfaceNarrative": {
         "concept": "Runtime ecosystem lens scopes Clawix to one native runtime while preserving provenance, freshness, field/action authority, and local-only overlays.",
