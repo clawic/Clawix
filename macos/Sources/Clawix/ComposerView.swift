@@ -38,6 +38,7 @@ struct ComposerView: View {
     @State private var composerContentHeight: CGFloat = 52
     @State private var planSuggestionDismissed = false
     @State private var mentionFilePickerActive = false
+    @State private var showShortcuts = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -139,6 +140,8 @@ struct ComposerView: View {
                                     if let chatId = currentComposerChatId {
                                         GoalStore.shared.creationRequestChatId = chatId
                                     }
+                                } else if cmd.id == "shortcuts" {
+                                    showShortcuts = true
                                 }
                             },
                             onHover: { cmd in
@@ -581,6 +584,9 @@ struct ComposerView: View {
             }
 
             mainComposerStack
+        }
+        .sheet(isPresented: $showShortcuts) {
+            KeyboardShortcutsOverlay { showShortcuts = false }
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
         .onChange(of: composer.text) {

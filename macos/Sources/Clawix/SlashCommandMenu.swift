@@ -75,7 +75,11 @@ enum SlashCommandCatalog {
         SlashCommand(id: "goal",
                      label: "Goal",
                      description: "Set a budgeted goal for this chat",
-                     iconName: "target")
+                     iconName: "target"),
+        SlashCommand(id: "shortcuts",
+                     label: "Shortcuts",
+                     description: "Show keyboard shortcuts",
+                     iconName: "keyboard")
     ]
 
     static func filter(_ query: String, isVisible: (AppFeature) -> Bool) -> [SlashCommand] {
