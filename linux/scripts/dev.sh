@@ -4,8 +4,7 @@
 # `cargo tauri dev` against the SolidJS frontend with HMR.
 #
 # Invoked from the repo workspace via `bash dev.sh` when the cwd is
-# `<workspace>/Linux/`. Does NOT bypass the debounce; agents should use
-# `bash scripts-dev/restart-app.sh` instead.
+# `<workspace>/Linux/`.
 
 set -euo pipefail
 

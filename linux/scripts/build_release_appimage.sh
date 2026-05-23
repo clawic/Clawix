@@ -15,8 +15,8 @@
 #   - gpg with the signing key referenced by GPG_KEY_ID
 #   - zsyncmake
 #
-# `GPG_KEY_ID` is sourced from the workspace `.signing.env` exactly the
-# same way `dev.sh` sources `SIGN_IDENTITY` for codesign.
+# `GPG_KEY_ID` must be exported by the caller or loaded from an external
+# local signing environment before running this script.
 
 set -euo pipefail
 
@@ -50,7 +50,7 @@ require npm
 require appimagetool
 require zsyncmake
 require gpg
-: "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
+: "${GPG_KEY_ID:?GPG_KEY_ID must be exported}"
 
 mkdir -p "$OUT_DIR"
 WORK="$(mktemp -d)"

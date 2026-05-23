@@ -11,7 +11,9 @@ FAIL=0
 # These literals must NEVER appear inside clawix/. The matching list is
 # duplicated from macos/scripts/public_hygiene_check.sh; keep in sync.
 PROHIBITED_PATTERNS=(
-  '.signing.env'
+  'scripts-dev'
+  '\.signing\.env'
+  'clawix-launcher'
 )
 
 for pattern in "${PROHIBITED_PATTERNS[@]}"; do

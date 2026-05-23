@@ -72,7 +72,7 @@ OUT_PATH="$OUT_DIR/clawix_${VERSION}_${ARCH}.deb"
 dpkg-deb --root-owner-group --build "$PKG_ROOT" "$OUT_PATH"
 
 if command -v dpkg-sig >/dev/null 2>&1; then
-  : "${GPG_KEY_ID:?GPG_KEY_ID must be exported (load via .signing.env)}"
+  : "${GPG_KEY_ID:?GPG_KEY_ID must be exported}"
   dpkg-sig --sign builder -k "$GPG_KEY_ID" "$OUT_PATH"
 else
   echo "[deb] dpkg-sig not installed; skipping .deb signature" >&2
