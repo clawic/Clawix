@@ -49,7 +49,7 @@ export const PRIMARY_ROUTE_ENTRIES: RouteCatalogEntry[] = [
   { route: "skills", label: "Skills", section: "primary", macRoute: "skills", webSurface: "implemented" },
   { route: "network", label: "Network", section: "primary", macToolId: "network", macRoute: "networkControl", webSurface: "implemented" },
   { route: "plugins", label: "Plugins", section: "primary", macRoute: "plugins", webSurface: "implemented" },
-  { route: "automations", label: "Automations", section: "primary", macRoute: "automations", webSurface: "companion" },
+  { route: "automations", label: "Automations", section: "primary", macRoute: "automations", webSurface: "implemented" },
 ];
 
 export const MAC_SIDEBAR_TOOL_ENTRIES: RouteCatalogEntry[] = [

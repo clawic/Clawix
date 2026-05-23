@@ -48,4 +48,5 @@ export const StorageKeys = {
   localSkills: "ui.skills.localCatalog",
   skillsLastSyncedAt: "ui.skills.lastSyncedAt",
   networkDetailOptIn: "ui.network.detailOptIn",
+  automationsCatalog: "ui.automations.catalog",
 } as const;

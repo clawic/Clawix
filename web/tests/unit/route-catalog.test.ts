@@ -36,6 +36,7 @@ describe("web route catalog", () => {
     expect(routeEntry("skills").webSurface).toBe("implemented");
     expect(routeEntry("network").webSurface).toBe("implemented");
     expect(routeEntry("plugins").webSurface).toBe("implemented");
+    expect(routeEntry("automations").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });

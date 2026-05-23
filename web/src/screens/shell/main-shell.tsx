@@ -17,6 +17,7 @@ import { SearchView } from "../search/search-view";
 import { PluginsView } from "../plugins/plugins-view";
 import { SkillsView } from "../skills/skills-view";
 import { NetworkView } from "../network/network-view";
+import { AutomationsView } from "../automations/automations-view";
 import { SettingsView } from "../settings/settings-view";
 import { MemoryView } from "../memory/memory-view";
 import { SecretsView } from "../secrets/secrets-view";
@@ -126,6 +127,7 @@ export function MainShell() {
           )}
           {route === "skills" && <SkillsView />}
           {route === "network" && <NetworkView />}
+          {route === "automations" && <AutomationsView />}
           {route === "plugins" && <PluginsView />}
           {route === "projects" && <ProjectsView />}
           {route === "memory" && <MemoryView />}
@@ -163,6 +165,7 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
     "search",
     "skills",
     "network",
+    "automations",
     "plugins",
     "projects",
     "memory",
