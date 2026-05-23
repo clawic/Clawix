@@ -75,16 +75,24 @@ struct IDEContextChip: View {
                     Text(L10n.t("IDE"))
                         .font(BodyFont.system(size: 11.5, wght: 500))
                     if store.includeContext {
+                        // Brand colour stays a 1% accent on the check glyph
+                        // only. The chip body reads neutral like every other
+                        // composer-footer pill, so an always-on default never
+                        // fills an action surface with brand colour
+                        // (STYLE.md §2.3); the footer stays calm the way the
+                        // Codex composer keeps its chrome neutral.
                         CheckIcon(size: 9)
+                            .foregroundColor(Palette.pastelBlue)
                     }
                 }
-                .foregroundColor(store.includeContext ? Palette.pastelBlue : Color.overlay(hovering ? 0.7 : 0.5))
+                .foregroundColor(store.includeContext ? Color.gray(light: 0.16, dark: 0.92)
+                                                      : Color.overlay(hovering ? 0.7 : 0.5))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(store.includeContext ? Palette.pastelBlue.opacity(0.10)
-                                                   : Color.overlay(hovering ? 0.06 : 0.0))
+                        .fill(Color.overlay(store.includeContext ? (hovering ? 0.09 : 0.06)
+                                                                 : (hovering ? 0.06 : 0.0)))
                 )
                 .contentShape(Rectangle())
             }
