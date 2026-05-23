@@ -14,6 +14,7 @@ import { type AppRoute, routeEntry } from "../sidebar/route-catalog";
 import { SidebarView } from "../sidebar/sidebar-view";
 import { ChatView } from "../chat/chat-view";
 import { SearchView } from "../search/search-view";
+import { PluginsView } from "../plugins/plugins-view";
 import { SettingsView } from "../settings/settings-view";
 import { MemoryView } from "../memory/memory-view";
 import { SecretsView } from "../secrets/secrets-view";
@@ -121,6 +122,7 @@ export function MainShell() {
               }}
             />
           )}
+          {route === "plugins" && <PluginsView />}
           {route === "projects" && <ProjectsView />}
           {route === "memory" && <MemoryView />}
           {route === "secrets" && <SecretsView />}
@@ -155,6 +157,7 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
   return ![
     "chat",
     "search",
+    "plugins",
     "projects",
     "memory",
     "secrets",

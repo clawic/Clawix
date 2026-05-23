@@ -43,4 +43,5 @@ export const StorageKeys = {
   rightSidebarWidth: "ui.rightSidebarWidth",
   rightSidebarOpen: "ui.rightSidebarOpen",
   currentRoute: "ui.route",
+  pluginEnabledState: "ui.plugins.enabledState",
 } as const;

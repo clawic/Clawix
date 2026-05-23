@@ -3144,6 +3144,138 @@
       "pt-BR": "Chat",
       "ru": "Чат",
       "zh-Hans": "聊天"
+    },
+    "Plugins": {
+      "de": "Plugins",
+      "en": "Plugins",
+      "es": "Plugins",
+      "fr": "Plugins",
+      "it": "Plugin",
+      "ja": "プラグイン",
+      "ko": "플러그인",
+      "pt-BR": "Plugins",
+      "ru": "Плагины",
+      "zh-Hans": "插件"
+    },
+    "Search plugins": {
+      "de": "Plugins suchen",
+      "en": "Search plugins",
+      "es": "Buscar plugins",
+      "fr": "Rechercher des plugins",
+      "it": "Cerca plugin",
+      "ja": "プラグインを検索",
+      "ko": "플러그인 검색",
+      "pt-BR": "Pesquisar plugins",
+      "ru": "Искать плагины",
+      "zh-Hans": "搜索插件"
+    },
+    "Repository": {
+      "de": "Repository",
+      "en": "Repository",
+      "es": "Repositorio",
+      "fr": "Dépôt",
+      "it": "Repository",
+      "ja": "リポジトリ",
+      "ko": "저장소",
+      "pt-BR": "Repositório",
+      "ru": "Репозиторий",
+      "zh-Hans": "代码仓库"
+    },
+    "Integration with code repositories": {
+      "de": "Integration mit Code-Repositories",
+      "en": "Integration with code repositories",
+      "es": "Integración con repositorios de código",
+      "fr": "Intégration avec des dépôts de code",
+      "it": "Integrazione con repository di codice",
+      "ja": "コードリポジトリとの連携",
+      "ko": "코드 저장소와 연동",
+      "pt-BR": "Integração com repositórios de código",
+      "ru": "Интеграция с репозиториями кода",
+      "zh-Hans": "与代码仓库集成"
+    },
+    "Terminal": {
+      "de": "Terminal",
+      "en": "Terminal",
+      "es": "Terminal",
+      "fr": "Terminal",
+      "it": "Terminale",
+      "ja": "ターミナル",
+      "ko": "터미널",
+      "pt-BR": "Terminal",
+      "ru": "Терминал",
+      "zh-Hans": "终端"
+    },
+    "Access to the system terminal": {
+      "de": "Zugriff auf das Systemterminal",
+      "en": "Access to the system terminal",
+      "es": "Acceso al terminal del sistema",
+      "fr": "Accès au terminal système",
+      "it": "Accesso al terminale di sistema",
+      "ja": "システムターミナルへのアクセス",
+      "ko": "시스템 터미널 접근",
+      "pt-BR": "Acesso ao terminal do sistema",
+      "ru": "Доступ к системному терминалу",
+      "zh-Hans": "访问系统终端"
+    },
+    "Web search": {
+      "de": "Websuche",
+      "en": "Web search",
+      "es": "Búsqueda web",
+      "fr": "Recherche web",
+      "it": "Ricerca web",
+      "ja": "Web検索",
+      "ko": "웹 검색",
+      "pt-BR": "Pesquisa na web",
+      "ru": "Веб-поиск",
+      "zh-Hans": "网页搜索"
+    },
+    "Search the web for information": {
+      "de": "Das Web nach Informationen durchsuchen",
+      "en": "Search the web for information",
+      "es": "Buscar información en la web",
+      "fr": "Rechercher des informations sur le web",
+      "it": "Cerca informazioni sul web",
+      "ja": "Webで情報を検索",
+      "ko": "웹에서 정보 검색",
+      "pt-BR": "Pesquisar informações na web",
+      "ru": "Поиск информации в интернете",
+      "zh-Hans": "在网页上搜索信息"
+    },
+    "Enabled": {
+      "de": "Aktiviert",
+      "en": "Enabled",
+      "es": "Activado",
+      "fr": "Activé",
+      "it": "Abilitato",
+      "ja": "有効",
+      "ko": "활성화됨",
+      "pt-BR": "Ativado",
+      "ru": "Включено",
+      "zh-Hans": "已启用"
+    },
+    "Disabled": {
+      "de": "Deaktiviert",
+      "en": "Disabled",
+      "es": "Desactivado",
+      "fr": "Désactivé",
+      "it": "Disabilitato",
+      "ja": "無効",
+      "ko": "비활성화됨",
+      "pt-BR": "Desativado",
+      "ru": "Отключено",
+      "zh-Hans": "已停用"
+    },
+    "No plugins match": {
+      "de": "Keine passenden Plugins",
+      "en": "No plugins match",
+      "es": "No hay plugins coincidentes",
+      "fr": "Aucun plugin ne correspond",
+      "it": "Nessun plugin corrisponde",
+      "ja": "一致するプラグインはありません",
+      "ko": "일치하는 플러그인이 없습니다",
+      "pt-BR": "Nenhum plugin corresponde",
+      "ru": "Нет подходящих плагинов",
+      "zh-Hans": "没有匹配的插件"
     }
   },
   "sameAsEnglishAllowed": {
@@ -5791,6 +5923,22 @@
       "es",
       "fr",
       "it",
+      "pt-BR"
+    ],
+    "Plugins": [
+      "de",
+      "es",
+      "fr",
+      "pt-BR"
+    ],
+    "Repository": [
+      "de",
+      "it"
+    ],
+    "Terminal": [
+      "de",
+      "es",
+      "fr",
       "pt-BR"
     ]
   }
