@@ -36,7 +36,7 @@ struct InboxOverlay: View {
                 Text("\(store.unreadCount)")
                     .font(BodyFont.system(size: 10.5, wght: 600))
                     .monospacedDigit()
-                    .foregroundColor(Color(white: 0.06))
+                    .foregroundColor(Color.gray(light: 0.96, dark: 0.06))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 1)
                     .background(Capsule().fill(Palette.pastelBlue))
@@ -50,7 +50,7 @@ struct InboxOverlay: View {
             }
             Button { onClose() } label: {
                 XIcon(size: 12)
-                    .foregroundColor(Color.white.opacity(0.5))
+                    .foregroundColor(Color.overlay(0.5))
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
             }
@@ -62,7 +62,7 @@ struct InboxOverlay: View {
     }
 
     private var divider: some View {
-        Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+        Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
     }
 
     private var list: some View {
@@ -79,7 +79,7 @@ struct InboxOverlay: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             LucideIcon(.inbox, size: 30)
-                .foregroundColor(Color.white.opacity(0.28))
+                .foregroundColor(Color.overlay(0.28))
             Text(L10n.t("Nothing here yet"))
                 .font(BodyFont.system(size: 13.5, wght: 500))
                 .foregroundColor(Palette.textSecondary)
@@ -142,7 +142,7 @@ private struct InboxRow: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(hovering ? 0.05 : 0.0))
+                    .fill(Color.overlay(hovering ? 0.05 : 0.0))
             )
             .contentShape(Rectangle())
         }

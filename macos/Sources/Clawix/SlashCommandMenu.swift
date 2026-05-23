@@ -185,7 +185,7 @@ private struct SlashCommandRow: View {
 
                 Text(command.label)
                     .font(BodyFont.system(size: 12.5))
-                    .foregroundColor(Color(white: 0.86))
+                    .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
                     .fixedSize(horizontal: true, vertical: false)
 
                 if let desc = command.description {

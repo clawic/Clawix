@@ -131,9 +131,9 @@ struct ImagePreviewOverlay: View {
 
     private func roundIconLabel(systemName: String) -> some View {
         LucideIcon.auto(systemName, size: 13)
-            .foregroundColor(Color(white: 0.94))
+            .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
             .frame(width: 28, height: 28)
-            .background(Circle().fill(Color.white.opacity(0.12)))
+            .background(Circle().fill(Color.overlay(0.12)))
             .contentShape(Circle())
     }
 
@@ -229,7 +229,7 @@ private struct ZoomControl: View {
 
             Text("\(percent)%")
                 .font(BodyFont.system(size: 14, wght: 600))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .monospacedDigit()
                 .frame(minWidth: 64)
                 .padding(.horizontal, 4)
@@ -239,10 +239,10 @@ private struct ZoomControl: View {
         }
         .padding(.vertical, 6)
         .background(
-            Capsule().fill(Color(white: 0.18).opacity(0.96))
+            Capsule().fill(Color.gray(light: 0.905, dark: 0.18).opacity(0.96))
         )
         .overlay(
-            Capsule().stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+            Capsule().stroke(Color.overlay(0.06), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.40), radius: 18, x: 0, y: 10)
     }
@@ -258,10 +258,10 @@ private struct ZoomCircleButton: View {
     var body: some View {
         Button(action: action) {
             LucideIcon.auto(systemName, size: 13)
-                .foregroundColor(Color(white: enabled ? 0.94 : 0.5))
+                .foregroundColor((enabled ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.5)))
                 .frame(width: 36, height: 36)
                 .background(
-                    Circle().fill(Color.white.opacity(hovering && enabled ? 0.14 : 0.09))
+                    Circle().fill(Color.overlay(hovering && enabled ? 0.14 : 0.09))
                 )
                 .contentShape(Circle())
         }

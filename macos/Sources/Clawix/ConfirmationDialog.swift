@@ -48,12 +48,12 @@ struct ConfirmationDialog: View {
             HStack(alignment: .top) {
                 Text(request.title)
                     .font(BodyFont.system(size: 18, weight: .medium))
-                    .foregroundColor(Color(white: 0.97))
+                    .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 12)
                 Button(action: onClose) {
                     LucideIcon(.x, size: 13)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -66,7 +66,7 @@ struct ConfirmationDialog: View {
 
             Text(request.body)
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(2)
                 .padding(.horizontal, 22)

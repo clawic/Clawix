@@ -31,7 +31,7 @@ struct SlashCommandHelpOverlay: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -48,7 +48,7 @@ struct SlashCommandHelpOverlay: View {
                 .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .background(Capsule().fill(Color.overlay(0.06)))
                 .padding(.horizontal, 18)
                 .padding(.bottom, 8)
 
@@ -98,12 +98,12 @@ private struct CommandCapsule: View {
     var body: some View {
         Text("/\(id)")
             .font(.system(size: 11.5, weight: .medium, design: .monospaced))
-            .foregroundColor(Color.white.opacity(0.8))
+            .foregroundColor(Color.overlay(0.8))
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)

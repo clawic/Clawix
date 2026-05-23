@@ -107,10 +107,10 @@ private struct BodyDropTarget: ViewModifier {
 
             HStack(spacing: 9) {
                 LucideIcon(.paperclip, size: 13)
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 Text(L10n.t("Drop to attach"))
                     .font(BodyFont.system(size: 13.5, weight: .medium))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)

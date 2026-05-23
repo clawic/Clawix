@@ -82,11 +82,11 @@ private struct HomeSuggestionRow: View {
             Button(action: onTap) {
                 HStack(spacing: 10) {
                     LucideIcon(icon, size: 13)
-                        .foregroundColor(Color.white.opacity(hovering ? 0.7 : 0.45))
+                        .foregroundColor(Color.overlay(hovering ? 0.7 : 0.45))
                         .accessibilityHidden(true)
                     Text(text)
                         .font(BodyFont.system(size: 13, wght: 450))
-                        .foregroundColor(Color.white.opacity(textOpacity))
+                        .foregroundColor(Color.overlay(textOpacity))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Spacer(minLength: 8)
@@ -98,7 +98,7 @@ private struct HomeSuggestionRow: View {
             if dismissible {
                 Button(action: onDismiss) {
                     XIcon(size: 11)
-                        .foregroundColor(Color.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                         .frame(width: 22, height: 22)
                         .contentShape(Rectangle())
                 }
@@ -112,7 +112,7 @@ private struct HomeSuggestionRow: View {
         .padding(.vertical, 9)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(hovering ? 0.05 : 0.0))
+                .fill(Color.overlay(hovering ? 0.05 : 0.0))
         )
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)

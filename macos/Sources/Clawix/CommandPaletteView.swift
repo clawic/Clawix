@@ -276,7 +276,7 @@ struct CommandPaletteView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.55), radius: 36, y: 18)
         .background(KeyEventHandler(
@@ -300,7 +300,7 @@ struct CommandPaletteView: View {
         TextField("Type a command", text: $query)
             .textFieldStyle(.plain)
             .font(BodyFont.system(size: 16, wght: 500))
-            .foregroundColor(Color(white: 0.92))
+            .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
             .focused($queryFocused)
             .padding(.horizontal, 22)
             .padding(.vertical, 18)
@@ -308,7 +308,7 @@ struct CommandPaletteView: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.06))
+            .fill(Color.overlay(0.06))
             .frame(height: 1)
     }
 
@@ -327,7 +327,7 @@ struct CommandPaletteView: View {
                     if filtered.isEmpty {
                         Text("No results")
                             .font(BodyFont.system(size: 13, wght: 500))
-                            .foregroundColor(Color(white: 0.45))
+                            .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 28)
                     }
@@ -349,7 +349,7 @@ struct CommandPaletteView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(BodyFont.system(size: 12, wght: 500))
-            .foregroundColor(Color(white: 0.50))
+            .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             .padding(.horizontal, 22)
             .padding(.top, 10)
             .padding(.bottom, 4)
@@ -368,11 +368,11 @@ struct CommandPaletteView: View {
                         LucideIcon.auto(item.icon, size: 14)
                     }
                 }
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .frame(width: 18, alignment: .center)
                 Text(item.title)
                     .font(BodyFont.system(size: 14, wght: 500))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 Spacer(minLength: 12)
                 if let shortcut = item.shortcut {
                     ShortcutChip(text: shortcut)
@@ -383,7 +383,7 @@ struct CommandPaletteView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.08) : Color.clear)
+                    .fill(isSelected ? Color.overlay(0.08) : Color.clear)
                     .padding(.horizontal, 8)
             )
             .contentShape(Rectangle())
@@ -421,16 +421,16 @@ private struct ShortcutChip: View {
     var body: some View {
         Text(text)
             .font(BodyFont.system(size: 11.5, wght: 500))
-            .foregroundColor(Color(white: 0.62))
+            .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.06), lineWidth: 0.5)
             )
     }
 }

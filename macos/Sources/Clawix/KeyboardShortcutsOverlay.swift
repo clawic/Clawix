@@ -111,7 +111,7 @@ struct KeyboardShortcutsOverlay: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -128,7 +128,7 @@ struct KeyboardShortcutsOverlay: View {
                 .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .background(Capsule().fill(Color.overlay(0.06)))
                 .padding(.horizontal, 18)
                 .padding(.bottom, 8)
 
@@ -215,13 +215,13 @@ private struct KeyCapsule: View {
     var body: some View {
         Text(keys)
             .font(.system(size: 12, weight: .medium, design: .rounded))
-            .foregroundColor(Color.white.opacity(0.85))
+            .foregroundColor(Color.overlay(0.85))
             .monospacedDigit()
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
