@@ -64,4 +64,15 @@ public sealed partial class PrivacyPage : Page
         TrainingSwitch.IsOn = false;
         PrivacyStatusText.Text = "Conversation training remains disabled.";
     }
+
+    private void ExportData_Click(object sender, RoutedEventArgs e)
+    {
+        var export = WindowsPrivacyDataExport.ExportKnownData(
+            WindowsPrivacyDataExport.DefaultDataRoot(),
+            WindowsPrivacyDataExport.DefaultExportRoot(),
+            DateTimeOffset.UtcNow);
+        App.Services.Shell.Open(export.DirectoryPath);
+        var included = export.Files.Count(file => file.Included);
+        PrivacyStatusText.Text = $"Exported {included} local data files.";
+    }
 }

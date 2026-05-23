@@ -21,7 +21,7 @@
       <TextBlock x:Name="PrivacyStatusText" Opacity="0.7" />
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
-          <Button Content="Export all my data..." />
+          <Button Content="Export all my data..." Click="ExportData_Click" />
           <Button Content="Erase all local data..." Style="{ThemeResource AccentButtonStyle}" />
         </StackPanel>
       </Expander>
