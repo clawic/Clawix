@@ -44,6 +44,7 @@ struct ComposerView: View {
     @State private var showFiles = false
     @State private var showWorktrees = false
     @State private var showSlashHelp = false
+    @State private var showPersonality = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -204,8 +205,7 @@ struct ComposerView: View {
                                         appState.selectedIntelligence = levels[(index + 1) % levels.count]
                                     }
                                 } else if cmd.id == "personalidad" {
-                                    appState.settingsCategory = .personalization
-                                    appState.currentRoute = .settings
+                                    showPersonality = true
                                 } else if cmd.id == "mcp" {
                                     appState.settingsCategory = .mcp
                                     appState.currentRoute = .settings
@@ -716,6 +716,9 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $showSlashHelp) {
             SlashCommandHelpOverlay { showSlashHelp = false }
+        }
+        .sheet(isPresented: $showPersonality) {
+            PersonalityPickerSheet(appState: appState) { showPersonality = false }
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
         .onChange(of: composer.text) {
