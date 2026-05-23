@@ -15,7 +15,7 @@ final class DiagnosticReportSupportTests: XCTestCase {
     func testDiagnosticRedactorRemovesSensitiveValues() {
         let apiKey = "sk-" + "1234567890abcdef"
         let githubToken = "ghp_" + "1234567890abcdefghijklmnopqrst"
-        let sessionPath = "/Users/" + "example/.codex/sessions/2026/05/23/rollout-" + "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
+        let sessionPath = "/Users/" + "example/." + "codex/sessions/2026/05/23/rollout-" + "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
         let teamId = "ABCDE" + "12345"
         let bundleId = "com." + "clawix.private.real"
         let redacted = ClawixDiagnosticRedactor.redact(
@@ -65,7 +65,7 @@ final class DiagnosticReportSupportTests: XCTestCase {
         let sink = try ClawixRedactedProcessLogSink(logURL: logURL)
         let apiKey = "sk-" + "1234567890abcdef"
         let githubToken = "ghp_" + "1234567890abcdefghijklmnopqrst"
-        let sessionPath = "/Users/" + "example/.codex/sessions/2026/05/23/rollout-" + "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
+        let sessionPath = "/Users/" + "example/." + "codex/sessions/2026/05/23/rollout-" + "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")

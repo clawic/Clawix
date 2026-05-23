@@ -14,7 +14,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 APP_NAME="Clawix"
-# Bundle ID is overridable via env (typically through .signing.env). The
+# Bundle ID is overridable via env. The
 # default below is a clearly-placeholder value: anyone who wants to ship
 # their own build should provide their own reverse-DNS bundle ID via
 # BUNDLE_ID. The maintainer's real bundle ID is NOT stored in this repo.
@@ -32,24 +32,20 @@ LOG_FILE="$DEV_DIR/dev.log"
 PID_FILE="$DEV_DIR/dev.pid"
 LOCK_FILE="$DEV_DIR/dev.lock"
 
-# Optional maintainer config. If a `.signing.env` file lives alongside the
-# repo root or in a parent directory, source it here. It can set:
+# Optional local signing config. If CLAWIX_SIGNING_ENV_FILE points at a
+# shell-compatible env file outside this repo, source it here. It can set:
 #
 #   SIGN_IDENTITY  → stable codesign identity (so macOS TCC grants persist
 #                    across rebuilds; "-" or empty means ad-hoc signing).
 #   BUNDLE_ID      → reverse-DNS bundle id used to package the .app and
 #                    sign it. Defaults to a placeholder if unset.
 #
-# Both ALSO accept being passed in the environment (env wins over file).
+# Both also accept being passed directly in the environment.
 # This script never hard-codes the maintainer's bundle id or identity:
-# they live in `.signing.env`, which lives OUTSIDE the public repo and is
-# git-ignored if it ever gets copied inside.
+# local signing values must live outside the public repo.
 for candidate in \
-    "${SIGN_IDENTITY_FILE:-}" \
-    "$PROJECT_DIR/.signing.env" \
-    "$PROJECT_DIR/../.signing.env" \
-    "$PROJECT_DIR/../../.signing.env" \
-    "$PROJECT_DIR/../../../.signing.env"
+    "${CLAWIX_SIGNING_ENV_FILE:-}" \
+    "${SIGN_IDENTITY_FILE:-}"
 do
     [[ -n "$candidate" && -f "$candidate" ]] || continue
     # shellcheck disable=SC1090
@@ -59,10 +55,10 @@ done
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 REQUIRE_STABLE_SIGNING="${CLAWIX_DEV_REQUIRE_STABLE_SIGNING:-0}"
-PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
-if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+if [[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]]; then
     # shellcheck disable=SC1090
-    source "$PRIVATE_SIGNING_GUARD"
+    source "$SIGNING_POLICY_SCRIPT"
     clawix_require_identity_team SIGN_IDENTITY "macOS development signing identity"
     REQUIRE_STABLE_SIGNING=1
 fi
@@ -185,9 +181,7 @@ fi
 CLAWJS_HOST_PKG="${CLAWJS_HOST_PKG:-}"
 if [[ -z "$CLAWJS_HOST_PKG" ]]; then
     for host_candidate in \
-        "$PROJECT_DIR/../../../clawjs/apps/host" \
-        "$PROJECT_DIR/../../../../clawjs/apps/host" \
-        "$HOME/Desktop/clawjs/apps/host"
+        "${CLAWJS_DEV_OVERLAY:-}/apps/host"
     do
         [[ -f "$host_candidate/Package.swift" ]] || continue
         CLAWJS_HOST_PKG="$(cd "$host_candidate" && pwd)"
@@ -210,17 +204,14 @@ fi
 
 # 1.45) Wire the clawjs/iot dev pointer so ClawJSServiceManager can spawn
 #       the IoT daemon (Phase 1 IoT integration). The daemon lives in the
-#       sibling clawjs repo, not inside this tree, so a pointer file at
+#       framework checkout, not inside this tree, so a pointer file at
 #       ~/Library/Application Support/Clawix/clawjs/dev-pointers/iot.dir
 #       tells the supervisor where to find it. Production builds will
 #       substitute a bundled copy under Contents/Resources/clawjs-iot/.
 CLAWJS_IOT_DIR="${CLAWJS_IOT_DIR:-}"
 if [[ -z "$CLAWJS_IOT_DIR" ]]; then
     for iot_candidate in \
-        "${CLAWJS_DEV_OVERLAY:-}/iot" \
-        "$PROJECT_DIR/../../../../clawjs/iot" \
-        "$PROJECT_DIR/../../../clawjs/iot" \
-        "$HOME/Desktop/clawjs/iot"
+        "${CLAWJS_DEV_OVERLAY:-}/iot"
     do
         [[ -n "$iot_candidate" && -d "$iot_candidate" ]] || continue
         if [[ -f "$iot_candidate/package.json" ]]; then
@@ -495,7 +486,7 @@ else
 fi
 # Sparkle: SUFeedURL is the only required key for update checks. The
 # public EdDSA key (SUPublicEDKey) gates whether downloaded updates are
-# accepted. It comes from `.signing.env`; if empty, Sparkle will check
+# accepted. It comes from the local signing environment; if empty, Sparkle will check
 # but refuse to install (development scenario, expected).
 SU_FEED_URL_DEFAULT="https://github.com/clawic/clawix/releases/latest/download/appcast.xml"
 SU_FEED_URL="${SU_FEED_URL:-$SU_FEED_URL_DEFAULT}"

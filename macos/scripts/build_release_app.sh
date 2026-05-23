@@ -4,10 +4,9 @@
 # - bundles Sparkle.framework with per-component hardened-runtime signing
 # - signs the whole .app with the release identity read from env
 #
-# This is the artifact the workspace-private release orchestrator
-# (scripts-dev/release.sh) feeds into notarytool + create-dmg.
+# This is the artifact a release orchestrator feeds into notarytool + create-dmg.
 #
-# Required env (typically via .signing.env at the workspace root):
+# Required env:
 #   DEVELOPER_ID_IDENTITY  → release codesign identity
 #   BUNDLE_ID              → reverse-DNS bundle identifier
 set -euo pipefail
@@ -30,11 +29,8 @@ fi
 
 BUNDLE_ID_DEFAULT="com.example.clawix.desktop"
 for candidate in \
-    "${SIGN_IDENTITY_FILE:-}" \
-    "$PROJECT_DIR/.signing.env" \
-    "$PROJECT_DIR/../.signing.env" \
-    "$PROJECT_DIR/../../.signing.env" \
-    "$PROJECT_DIR/../../../.signing.env"
+    "${CLAWIX_SIGNING_ENV_FILE:-}" \
+    "${SIGN_IDENTITY_FILE:-}"
 do
     [[ -n "$candidate" && -f "$candidate" ]] || continue
     # shellcheck disable=SC1090
@@ -43,16 +39,16 @@ do
 done
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 DEVELOPER_ID_IDENTITY="${DEVELOPER_ID_IDENTITY:-}"
-PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
-if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+if [[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]]; then
     # shellcheck disable=SC1090
-    source "$PRIVATE_SIGNING_GUARD"
+    source "$SIGNING_POLICY_SCRIPT"
     clawix_require_identity_team DEVELOPER_ID_IDENTITY "macOS release Developer ID identity"
 fi
 
 if [[ -z "$DEVELOPER_ID_IDENTITY" ]]; then
     echo "ERROR: DEVELOPER_ID_IDENTITY not set." >&2
-    echo "Set it in .signing.env (workspace root) to a 'Developer ID Application' identity." >&2
+    echo "Set it in the local signing environment to a 'Developer ID Application' identity." >&2
     echo "List candidates with: security find-identity -v -p codesigning" >&2
     exit 1
 fi
@@ -110,9 +106,7 @@ fi
 CLAWJS_HOST_PKG="${CLAWJS_HOST_PKG:-}"
 if [[ -z "$CLAWJS_HOST_PKG" ]]; then
     for host_candidate in \
-        "$PROJECT_DIR/../../../clawjs/apps/host" \
-        "$PROJECT_DIR/../../../../clawjs/apps/host" \
-        "$HOME/Desktop/clawjs/apps/host"
+        "${CLAWJS_DEV_OVERLAY:-}/apps/host"
     do
         [[ -f "$host_candidate/Package.swift" ]] || continue
         CLAWJS_HOST_PKG="$(cd "$host_candidate" && pwd)"

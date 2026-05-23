@@ -88,7 +88,7 @@ Bumping the pin is a deliberate, coordinated act:
    `Contents/Helpers/clawjs/package.json` matches the pin. The release
    pipeline rejects mismatches.
 
-Framework changes (anything that requires editing `~/Desktop/clawjs/`)
+Framework changes (anything that requires editing the sibling framework checkout)
 are filed as requests against the ClawJS repo, not implemented in this
 tree. The macOS app only consumes the published `@clawjs/cli` and the
 contracts documented in this CLAUDE.md.

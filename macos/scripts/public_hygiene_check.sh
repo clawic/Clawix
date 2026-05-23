@@ -129,6 +129,10 @@ scan "hard-coded codesign identity" \
   'Apple Development:|Apple Distribution:|Developer ID Application:' \
   "${TARGETS[@]}"
 
+scan "private workflow markers" \
+  'scripts-dev|clawix-launcher|signing-guard|private-agent-playbooks|brand-reference-guard|commit-de-todo|timestamp-plan|plausible commit-date|\.signing\.env|\.dev-control|(~|\$HOME)/Desktop/clawjs' \
+  "${TARGETS[@]}"
+
 scan "apple team ids beside codesign markers" \
   '(DEVELOPMENT_TEAM|TEAM_ID)[^A-Z0-9]*[A-Z0-9]{10}' \
   "${TARGETS[@]}"

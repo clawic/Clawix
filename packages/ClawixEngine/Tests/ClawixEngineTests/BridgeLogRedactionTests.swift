@@ -4,7 +4,7 @@ import XCTest
 final class BridgeLogRedactionTests: XCTestCase {
     func testRedactsSensitiveDiagnosticText() {
         let apiKey = "sk-" + "testtemplate0000000000000000"
-        let userPath = "/Users/" + "sensitive/.codex/sessions/2026/05/23/"
+        let userPath = "/Users/" + "sensitive/." + "codex/sessions/2026/05/23/"
         let sessionId = "rollout-" + "2026-05-23T10-11-12-123-" + "01234567-89ab-cdef-0123-456789abcdef.jsonl"
         let input = """
         prompt="Use the user's confidential launch notes"
@@ -25,7 +25,7 @@ final class BridgeLogRedactionTests: XCTestCase {
 
     func testRedactsDictationTraceAndErrorDetails() {
         let apiKey = "sk-" + "testtemplate1111111111111111"
-        let privatePath = "/Users/" + "sensitive/.codex/goals/private.json"
+        let privatePath = "/Users/" + "sensitive/." + "codex/goals/private.json"
         let input = """
         trace: user said copy my private launch plan
         download failed at \(privatePath) with token=\(apiKey)

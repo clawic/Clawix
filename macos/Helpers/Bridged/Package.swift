@@ -20,7 +20,7 @@ import PackageDescription
 //
 // The daemon also embeds the Clawix web client (the React SPA built
 // from `clawix/web/`). The build pipeline (`clawix/macos/scripts/dev.sh`
-// and `clawix/scripts-dev/release.sh`) runs `pnpm --filter @clawix/web
+// and release orchestration) runs `pnpm --filter @clawix/web
 // build` and copies `clawix/web/dist/` into
 // `Sources/clawix-bridge/Resources/web-dist/` before `swift build`,
 // so the resulting binary serves the SPA on its HTTP listener

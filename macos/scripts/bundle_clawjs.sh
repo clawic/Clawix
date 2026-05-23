@@ -633,7 +633,7 @@ sign_one() {
         exit 1
     fi
     # Ad-hoc fallback. Used when SIGN_ID is empty/"-" (dev without
-    # .signing.env) or when the configured identity is unavailable.
+    # local signing environment) or when the configured identity is unavailable.
     codesign --force --sign - --timestamp=none "$target"
 }
 

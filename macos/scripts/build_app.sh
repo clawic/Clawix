@@ -8,17 +8,14 @@ APP_NAME="Clawix"
 BUNDLE_DIR="$PROJECT_DIR/build/${APP_NAME}.app"
 ICON_FILE="$PROJECT_DIR/Sources/Clawix/Resources/Clawix.icns"
 
-# Optional maintainer config. Same rules as dev.sh: source `.signing.env`
-# from the repo root or a parent directory; env vars win over file. The
+# Optional local signing config. Same rules as dev.sh: source the file pointed
+# to by CLAWIX_SIGNING_ENV_FILE when present; env vars win over file. The
 # maintainer's real bundle id and codesign identity are NEVER hard-coded
-# in this repo, they live in `.signing.env` outside the public tree.
+# in this repo; local signing values must live outside the public tree.
 BUNDLE_ID_DEFAULT="com.example.clawix.desktop"
 for candidate in \
-    "${SIGN_IDENTITY_FILE:-}" \
-    "$PROJECT_DIR/.signing.env" \
-    "$PROJECT_DIR/../.signing.env" \
-    "$PROJECT_DIR/../../.signing.env" \
-    "$PROJECT_DIR/../../../.signing.env"
+    "${CLAWIX_SIGNING_ENV_FILE:-}" \
+    "${SIGN_IDENTITY_FILE:-}"
 do
     [[ -n "$candidate" && -f "$candidate" ]] || continue
     # shellcheck disable=SC1090
@@ -27,10 +24,10 @@ do
 done
 BUNDLE_ID="${BUNDLE_ID:-$BUNDLE_ID_DEFAULT}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
-PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
-if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+if [[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]]; then
     # shellcheck disable=SC1090
-    source "$PRIVATE_SIGNING_GUARD"
+    source "$SIGNING_POLICY_SCRIPT"
     clawix_require_identity_team SIGN_IDENTITY "macOS development signing identity"
 fi
 

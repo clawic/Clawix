@@ -35,7 +35,7 @@
 #   bash macos/scripts/perf-capture.sh --template "Allocations" --name long-session
 #
 # Prerequisites: Xcode Command Line Tools (`xcrun xctrace --version`
-# must succeed). Sign identity comes from `.signing.env` like dev.sh.
+# must succeed). Sign identity comes from the local signing environment like dev.sh.
 
 set -euo pipefail
 

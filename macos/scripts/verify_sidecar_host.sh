@@ -8,8 +8,8 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 APP="/Applications/Clawix.app"
 EXE="$APP/Contents/MacOS/Clawix"
 SECRETS_XPC="$APP/Contents/XPCServices/ClawixSecretsXPC.xpc"
-SIGNING_GUARD="$WORKSPACE_ROOT/scripts-dev/signing-guard.sh"
-LAUNCHER="$WORKSPACE_ROOT/scripts-dev/clawix-launcher.sh"
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+APP_PREFLIGHT_SCRIPT="${CLAWIX_APP_PREFLIGHT_SCRIPT:-}"
 
 required_services=(
   "secrets:24103"
@@ -48,14 +48,14 @@ fi
 
 [[ -d "$APP" ]] || fail "canonical app missing at $APP"
 [[ -d "$SECRETS_XPC" ]] || fail "Secrets XPC service missing at $SECRETS_XPC"
-[[ -f "$SIGNING_GUARD" ]] || external_pending "private signing guard is unavailable; signed-host validation is not real evidence"
+[[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]] || external_pending "signing policy script is unavailable; signed-host validation is not real evidence"
 # shellcheck disable=SC1090
-source "$SIGNING_GUARD"
+source "$SIGNING_POLICY_SCRIPT"
 declare -F clawix_assert_signed_app_identity >/dev/null || fail "signing guard cannot assert app identity"
 clawix_assert_signed_app_identity "$APP" BUNDLE_ID "canonical Clawix app" || fail "canonical app signing identity is invalid"
 clawix_assert_signed_artifact_team "$SECRETS_XPC" || fail "Secrets XPC signing identity is invalid"
-[[ -x "$LAUNCHER" ]] || external_pending "canonical private launcher is unavailable; signed-host validation is not real evidence"
-bash "$LAUNCHER" preflight-computer-use || fail "canonical launcher preflight failed"
+[[ -n "$APP_PREFLIGHT_SCRIPT" && -x "$APP_PREFLIGHT_SCRIPT" ]] || external_pending "app preflight script is unavailable; signed-host validation is not real evidence"
+bash "$APP_PREFLIGHT_SCRIPT" preflight-computer-use || fail "app preflight failed"
 
 xpc_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$SECRETS_XPC/Contents/Info.plist" 2>/dev/null || true)"
 app_identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist" 2>/dev/null || true)"
