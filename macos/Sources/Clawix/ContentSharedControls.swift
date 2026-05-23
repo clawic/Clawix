@@ -7,7 +7,7 @@ struct SidebarToggleIcon: View {
     enum Side { case left, right }
     var side: Side
     var size: CGFloat = 18
-    var color: Color = Color(white: 0.55)
+    var color: Color = Palette.textSecondary
 
     var body: some View {
         Canvas { ctx, sz in
@@ -52,7 +52,7 @@ struct SidebarToggleButton: View {
 
     var body: some View {
         Button(action: action) {
-            SidebarToggleIcon(side: side, size: size, color: .white)
+            SidebarToggleIcon(side: side, size: size, color: Palette.textPrimary)
                 .opacity(hovered ? hoverOpacity : defaultOpacity)
                 .frame(width: hitSize ?? size, height: hitSize ?? size)
                 .contentShape(Rectangle())
@@ -66,19 +66,25 @@ struct SidebarToggleButton: View {
 
 // MARK: - Shared colour palette
 
+// Semantic colour tokens. Each is a dynamic colour (see `Theme.swift`):
+// the dark branch is the canonical value from `STYLE.md` §2.1, the light
+// branch is derived per §2.4 to preserve the same perceptual function
+// (subtle elevation, soft lift). Every call site that already reads a
+// `Palette.*` token adapts to light mode for free — no call-site changes.
 enum Palette {
-    static let background    = Color(white: 0.04)
-    static let sidebar       = Color(white: 0.245)
-    static let cardFill      = Color(white: 0.14)
-    static let cardHover     = Color(white: 0.17)
-    static let border        = Color(white: 0.20)
-    static let borderSubtle  = Color(white: 0.15)
-    static let popupStroke   = Color.white.opacity(0.10)
+    static let background    = Color.dynamic(light: Color(white: 0.985), dark: Color(white: 0.04))
+    static let sidebar       = Color.dynamic(light: Color(white: 0.95),  dark: Color(white: 0.245))
+    static let cardFill      = Color.dynamic(light: Color(white: 0.95),  dark: Color(white: 0.14))
+    static let cardHover     = Color.dynamic(light: Color(white: 0.915), dark: Color(white: 0.17))
+    static let border        = Color.dynamic(light: Color(white: 0.86),  dark: Color(white: 0.20))
+    static let borderSubtle  = Color.dynamic(light: Color(white: 0.90),  dark: Color(white: 0.15))
+    static let popupStroke   = Color.dynamic(light: Color.black.opacity(0.10), dark: Color.white.opacity(0.10))
     static let popupStrokeWidth: CGFloat = 0.5
-    static let selFill       = Color(white: 0.28)
-    static let textPrimary   = Color.white
-    static let textSecondary = Color(white: 0.55)
-    static let textTertiary  = Color(white: 0.38)
+    static let selFill       = Color.dynamic(light: Color(white: 0.88),  dark: Color(white: 0.28))
+    static let textPrimary   = Color.dynamic(light: Color(white: 0.12),  dark: Color.white)
+    static let textSecondary = Color.dynamic(light: Color(white: 0.40),  dark: Color(white: 0.55))
+    static let textTertiary  = Color.dynamic(light: Color(white: 0.55),  dark: Color(white: 0.38))
+    // Brand accent is identical on both modes (brand consistency, §2.4).
     static let pastelBlue    = Color(red: 0.45, green: 0.65, blue: 1.0)
 }
 
@@ -88,9 +94,17 @@ enum Palette {
 enum MenuStyle {
     static let cornerRadius: CGFloat        = 12
     // Tinted fill on top of a blurred backdrop. Slight translucency lets the
-    // wallpaper and chat content bleed through subtly.
-    static let fill                         = Color(white: 0.135).opacity(0.82)
-    static let shadowColor                  = Color.black.opacity(0.40)
+    // wallpaper and chat content bleed through subtly. Light mode uses a
+    // near-white tint over the light blur variant.
+    static let fill                         = Color.dynamic(light: Color(white: 0.97).opacity(0.85),
+                                                            dark: Color(white: 0.135).opacity(0.82))
+    /// Opaque fill used when the menu opts out of translucency
+    /// (`menuStandardBackground(opaque:)`).
+    static let fillOpaque                   = Color.dynamic(light: Color(white: 0.97), dark: Color(white: 0.135))
+    // Shadows stay dark on both modes; light mode softens the alpha so the
+    // popup does not read as a heavy slab over a bright canvas.
+    static let shadowColor                  = Color.dynamic(light: Color.black.opacity(0.18),
+                                                            dark: Color.black.opacity(0.40))
     static let shadowRadius: CGFloat        = 18
     static let shadowOffsetY: CGFloat       = 10
     static let menuVerticalPadding: CGFloat = 4
@@ -103,11 +117,11 @@ enum MenuStyle {
     static let rowHoverInset: CGFloat        = 4
     static let rowHoverIntensity: Double     = 0.06
     static let rowHoverIntensityStrong: Double = 0.08
-    static let dividerColor                  = Color.white.opacity(0.06)
-    static let rowText                       = Color(white: 0.94)
-    static let rowIcon                       = Color(white: 0.86)
-    static let rowSubtle                     = Color(white: 0.55)
-    static let headerText                    = Color(white: 0.50)
+    static let dividerColor                  = Color.overlay(0.06)
+    static let rowText                       = Color.dynamic(light: Color(white: 0.15), dark: Color(white: 0.94))
+    static let rowIcon                       = Color.dynamic(light: Color(white: 0.25), dark: Color(white: 0.86))
+    static let rowSubtle                     = Color.dynamic(light: Color(white: 0.45), dark: Color(white: 0.55))
+    static let headerText                    = Color.dynamic(light: Color(white: 0.45), dark: Color(white: 0.50))
     static let openAnimation                 = Animation.easeOut(duration: 0.20)
 }
 
@@ -165,7 +179,7 @@ extension View {
                                      state: .active)
                     MenuStyle.fill
                 } else {
-                    Color(white: 0.135)
+                    MenuStyle.fillOpaque
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: MenuStyle.cornerRadius, style: .continuous))
@@ -507,7 +521,7 @@ struct MenuRowHover: View {
     var intensity: Double = MenuStyle.rowHoverIntensity
     var body: some View {
         RoundedRectangle(cornerRadius: MenuStyle.rowHoverCornerRadius, style: .continuous)
-            .fill(active ? Color.white.opacity(intensity) : Color.clear)
+            .fill(active ? Color.overlay(intensity) : Color.clear)
             .padding(.horizontal, MenuStyle.rowHoverInset)
     }
 }

@@ -196,6 +196,11 @@ final class AppState: ObservableObject {
     /// dismiss / turn completion. The sidebar surfaces an awaiting-answer
     /// hint while this is non-nil for a chat.
     @Published var pendingPlanQuestions: [UUID: PendingPlanQuestion] = [:]
+    /// Follow-up messages the user lined up while a chat's turn was still
+    /// running, keyed by chat id. Each entry is dispatched, oldest first,
+    /// when the chat's current turn completes cleanly (type-ahead queue).
+    /// See `MessageQueue.swift`.
+    @Published var queuedMessages: [UUID: [QueuedMessage]] = [:]
     /// URL of an image currently being previewed in the fullscreen
     /// viewer. Same overlay used by composer chips and chat bubbles.
     @Published var imagePreviewURL: URL?
@@ -207,6 +212,10 @@ final class AppState: ObservableObject {
     /// to Codex state). Set non-nil to present, the sheet clears it on
     /// dismiss or after the user confirms.
     @Published var pendingConfirmation: ConfirmationRequest?
+    /// Latest plan (from the agent's `update_plan` tool) per chat, parsed
+    /// from the rollout on hydration. Drives the thread-summary panel's
+    /// Progress checklist. Last `update_plan` wins.
+    @Published var planByChat: [UUID: [PlanStep]] = [:]
     /// Composer text + staged attachments + focus token live here so
     /// typing only fires `objectWillChange` on this child object,
     /// leaving AppState's other observers untouched.
@@ -372,6 +381,20 @@ final class AppState: ObservableObject {
         didSet {
             guard oldValue != preferredLanguage else { return }
             AppLanguage.apply(preferredLanguage)
+        }
+    }
+    /// User-selected interface appearance (system / light / dark).
+    /// Persisted via UserDefaults (suite `appPrefsSuite`, key
+    /// `PreferredAppearance`). Changing it re-applies `NSApp.appearance`
+    /// process-wide, which repaints every window and re-resolves the
+    /// dynamic colour tokens. The initial value is installed by
+    /// `AppAppearance.applyPersisted()` from `applicationDidFinishLaunching`;
+    /// the assignment in `init` does not fire `didSet` (Swift skips
+    /// observers during initialization), so no double-apply on launch.
+    @Published var appearance: AppAppearance = .dark {
+        didSet {
+            guard oldValue != appearance else { return }
+            AppAppearance.apply(appearance)
         }
     }
     /// Cache of resolved `<title>` for URLs the chat surfaces in the
@@ -646,6 +669,7 @@ final class AppState: ObservableObject {
         // before AppState is constructed, so AppLocale.current and the
         // AppleLanguages override are already in place.
         self.preferredLanguage = AppLanguage.loadPersisted()
+        self.appearance = AppAppearance.loadPersisted()
         self.permissionMode = PermissionMode.loadPersisted()
         let persistedRuntime = AgentRuntimeChoice.loadPersisted()
         self.selectedAgentRuntime = persistedRuntime
