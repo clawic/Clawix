@@ -8,4 +8,7 @@ public static class WindowsPreferenceKeys
     public const string DictationLanguage = "dictation.language";
     public const string DictationEnhancementEnabled = "dictation.enhancement.enabled";
     public const string DictationPowerModeEnabled = "dictation.powerMode.enabled";
+    public const string QuickAskEnabled = "quickAsk.enabled";
+    public const string QuickAskIncludeSelectedText = "quickAsk.includeSelectedText";
+    public const string QuickAskIncludeScreenshot = "quickAsk.includeScreenshot";
 }

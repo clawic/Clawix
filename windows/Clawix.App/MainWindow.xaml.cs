@@ -1,5 +1,6 @@
 using Clawix.App.Services;
 using Clawix.App.Views;
+using Clawix.Core;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -11,6 +12,7 @@ public sealed partial class MainWindow : Window
 {
     private IntPtr _hwnd;
     private HotkeyHook? _hotkeyHook;
+    private int? _quickAskHotkeyId;
 
     public MainWindow()
     {
@@ -20,7 +22,12 @@ public sealed partial class MainWindow : Window
         LoginGate.SignInRequested += OpenAccountSettings;
         LoginGate.ContinueRequested += ShowShell;
         Activated += OnActivated;
-        Closed += (_, _) => _hotkeyHook?.Dispose();
+        App.Services.Preferences.Changed += OnPreferenceChanged;
+        Closed += (_, _) =>
+        {
+            App.Services.Preferences.Changed -= OnPreferenceChanged;
+            _hotkeyHook?.Dispose();
+        };
         DispatcherQueue.TryEnqueue(BootShellAsync);
     }
 
@@ -29,9 +36,32 @@ public sealed partial class MainWindow : Window
         if (_hwnd != IntPtr.Zero) return;
         _hwnd = WindowNative.GetWindowHandle(this);
         _hotkeyHook = new HotkeyHook(_hwnd, App.Services.Hotkeys);
-        App.Services.Hotkeys.Register(GlobalHotkeyService.Modifiers.Ctrl, 0x4B /* K */, OpenQuickAsk);
+        SyncQuickAskHotkey();
         App.Services.Hotkeys.Register(GlobalHotkeyService.Modifiers.Ctrl | GlobalHotkeyService.Modifiers.Shift, 0x50 /* P */, OpenCommandPalette);
         WireSystemTray();
+    }
+
+    private void OnPreferenceChanged(string key)
+    {
+        if (key is WindowsPreferenceKeys.QuickAskEnabled or "*")
+            DispatcherQueue.TryEnqueue(SyncQuickAskHotkey);
+    }
+
+    private void SyncQuickAskHotkey()
+    {
+        var enabled = App.Services.Preferences.Get(
+            WindowsPreferenceKeys.QuickAskEnabled,
+            QuickAskSettingsDefaults.Enabled);
+
+        if (enabled && _quickAskHotkeyId is null)
+        {
+            _quickAskHotkeyId = App.Services.Hotkeys.Register(GlobalHotkeyService.Modifiers.Ctrl, 0x4B /* K */, OpenQuickAsk);
+        }
+        else if (!enabled && _quickAskHotkeyId is int id)
+        {
+            App.Services.Hotkeys.Unregister(id);
+            _quickAskHotkeyId = null;
+        }
     }
 
     private async void BootShellAsync()

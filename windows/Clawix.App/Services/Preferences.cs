@@ -13,6 +13,8 @@ public sealed class Preferences
     private readonly object _lock = new();
     private Dictionary<string, JsonElement> _state;
 
+    public event Action<string>? Changed;
+
     public Preferences()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -34,19 +36,28 @@ public sealed class Preferences
 
     public void Set<T>(string key, T value)
     {
+        var changed = false;
         lock (_lock)
         {
             _state[key] = JsonSerializer.SerializeToElement(value);
             Save();
+            changed = true;
         }
+        if (changed) Changed?.Invoke(key);
     }
 
     public void Remove(string key)
     {
+        var changed = false;
         lock (_lock)
         {
-            if (_state.Remove(key)) Save();
+            if (_state.Remove(key))
+            {
+                Save();
+                changed = true;
+            }
         }
+        if (changed) Changed?.Invoke(key);
     }
 
     public void Clear()
@@ -57,6 +68,7 @@ public sealed class Preferences
             if (File.Exists(_path))
                 File.Delete(_path);
         }
+        Changed?.Invoke("*");
     }
 
     private Dictionary<string, JsonElement> Load()

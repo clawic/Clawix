@@ -6,10 +6,10 @@
   <ScrollViewer Padding="24">
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Quick Ask" FontSize="22" FontWeight="SemiBold" />
-      <ToggleSwitch x:Name="EnableSwitch" Header="Enable Quick Ask" />
+      <ToggleSwitch x:Name="EnableSwitch" Header="Enable Quick Ask" Toggled="EnableSwitch_Toggled" />
       <TextBox Header="Hotkey" Text="Ctrl + K" IsReadOnly="True" />
-      <ToggleSwitch Header="Include selected text" />
-      <ToggleSwitch Header="Include screenshot" />
+      <ToggleSwitch x:Name="SelectedTextSwitch" Header="Include selected text" Toggled="SelectedTextSwitch_Toggled" />
+      <ToggleSwitch x:Name="ScreenshotSwitch" Header="Include screenshot" Toggled="ScreenshotSwitch_Toggled" />
     </StackPanel>
   </ScrollViewer>
 </Page>
