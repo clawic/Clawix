@@ -10,9 +10,9 @@
       <ColumnDefinition Width="*" />
       <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
-    <Button Grid.Column="0" Content="←" />
-    <Button Grid.Column="1" Content="→" />
-    <TextBox Grid.Column="2" x:Name="UrlBox" PlaceholderText="URL" />
-    <Button Grid.Column="3" Content="↻" />
+    <Button Grid.Column="0" x:Name="BackButton" Content="←" Click="Back_Click" />
+    <Button Grid.Column="1" x:Name="ForwardButton" Content="→" Click="Forward_Click" />
+    <TextBox Grid.Column="2" x:Name="UrlBox" PlaceholderText="URL" KeyDown="UrlBox_KeyDown" />
+    <Button Grid.Column="3" Content="↻" Click="Reload_Click" />
   </Grid>
 </UserControl>
