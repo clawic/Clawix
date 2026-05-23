@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "scope": "v1-central-promises",
   "description": "V1 release readiness matrix for central constitutional promises. This manifest gates only the promises explicitly listed here, not the entire Constitution.",
   "sources": {
@@ -9,19 +9,778 @@
       "docs/governance/legal/external-pending.md",
       "docs/governance/sdk-first-custom-surfaces/external-pending.md",
       "docs/governance/system-telemetry/external-pending.md"
-    ]
+    ],
+    "debtControlBaselineCheck": "scripts/debt_control_baseline_check.mjs"
   },
   "releaseTargets": [
     "macos-release",
     "ios-release",
     "linux-release",
-    "windows-release"
+    "windows-release",
+    "web-release"
   ],
   "statusRules": {
     "requiredAssertionStatus": "enforced",
     "blockingExternalStatus": "EXTERNAL PENDING",
     "blockingCompletionImpact": "central_promise_blocker"
   },
+  "targetContracts": [
+    {
+      "target": "macos-release",
+      "requirements": [
+        {
+          "id": "macos.legal",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/legal_safety_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.interface",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.mirror",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/clawjs_mirror_contradiction_check.mjs",
+              "--release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.supply-chain",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/supply_chain_security_check.mjs",
+              "--release",
+              "--target",
+              "macos-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.accessibility-governance",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/accessibility_governance_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.external-pending",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/release_external_pending_gate.mjs",
+              "--target",
+              "macos-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.debt-control",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/debt_control_baseline_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.notarization",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.notarization",
+            "evidenceKind": "apple-notarization-receipt",
+            "verifier": "redacted notarytool receipt plus stapler validation for the exact app and DMG artifacts"
+          }
+        },
+        {
+          "id": "macos.signed-host-device",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.signed-host-device",
+            "evidenceKind": "signed-host-validation-receipt",
+            "verifier": "strict host/device validation evidence from the signed candidate"
+          }
+        },
+        {
+          "id": "macos.sbom",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.sbom",
+            "evidenceKind": "CycloneDX JSON SBOM",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "macos.provenance",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.provenance",
+            "evidenceKind": "build provenance or artifact attestation",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "macos.artifact-integrity",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.artifact-integrity",
+            "evidenceKind": "SHA-256 checksums and signature references",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "macos.accessibility-manual",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "macos.accessibility-manual",
+            "evidenceKind": "manual accessibility evidence",
+            "verifier": "screen reader, keyboard, focus, contrast, reduced motion, and text scaling receipt for the signed candidate"
+          }
+        }
+      ]
+    },
+    {
+      "target": "ios-release",
+      "requirements": [
+        {
+          "id": "ios.legal",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/legal_safety_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.interface",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.mirror",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/clawjs_mirror_contradiction_check.mjs",
+              "--release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.supply-chain",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/supply_chain_security_check.mjs",
+              "--release",
+              "--target",
+              "ios-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.accessibility-governance",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/accessibility_governance_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.external-pending",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/release_external_pending_gate.mjs",
+              "--target",
+              "ios-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.debt-control",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/debt_control_baseline_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "ios.device",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "ios.device",
+            "evidenceKind": "device or TestFlight validation receipt",
+            "verifier": "strict device validation from the exact archive candidate"
+          }
+        },
+        {
+          "id": "ios.sbom",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "ios.sbom",
+            "evidenceKind": "CycloneDX JSON SBOM",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "ios.provenance",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "ios.provenance",
+            "evidenceKind": "build provenance or artifact attestation",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "ios.artifact-integrity",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "ios.artifact-integrity",
+            "evidenceKind": "archive checksums and signing references",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "ios.accessibility-manual",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "ios.accessibility-manual",
+            "evidenceKind": "manual accessibility evidence",
+            "verifier": "VoiceOver, keyboard/switch where applicable, focus, contrast, reduced motion, and text scaling receipt"
+          }
+        }
+      ]
+    },
+    {
+      "target": "linux-release",
+      "requirements": [
+        {
+          "id": "linux.legal",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/legal_safety_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.interface",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.mirror",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/clawjs_mirror_contradiction_check.mjs",
+              "--release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.supply-chain",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/supply_chain_security_check.mjs",
+              "--release",
+              "--target",
+              "linux-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.accessibility-governance",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/accessibility_governance_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.external-pending",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/release_external_pending_gate.mjs",
+              "--target",
+              "linux-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.debt-control",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/debt_control_baseline_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "linux.package-signing",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "linux.package-signing",
+            "evidenceKind": "GPG signature receipt",
+            "verifier": "signature verification for AppImage, zsync, and deb artifacts"
+          }
+        },
+        {
+          "id": "linux.sbom",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "linux.sbom",
+            "evidenceKind": "CycloneDX JSON SBOM",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "linux.provenance",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "linux.provenance",
+            "evidenceKind": "build provenance or artifact attestation",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "linux.artifact-integrity",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "linux.artifact-integrity",
+            "evidenceKind": "SHA-256 checksums and signature references",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "linux.accessibility-manual",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "linux.accessibility-manual",
+            "evidenceKind": "manual accessibility evidence",
+            "verifier": "screen reader, keyboard, focus, contrast, reduced motion, and text scaling receipt"
+          }
+        }
+      ]
+    },
+    {
+      "target": "windows-release",
+      "requirements": [
+        {
+          "id": "windows.legal",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/legal_safety_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.interface",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.mirror",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/clawjs_mirror_contradiction_check.mjs",
+              "--release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.supply-chain",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/supply_chain_security_check.mjs",
+              "--release",
+              "--target",
+              "windows-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.accessibility-governance",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/accessibility_governance_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.external-pending",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/release_external_pending_gate.mjs",
+              "--target",
+              "windows-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.debt-control",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/debt_control_baseline_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.authenticode",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.authenticode",
+            "evidenceKind": "Authenticode signing receipt",
+            "verifier": "signtool verification for MSIX and executable artifacts"
+          }
+        },
+        {
+          "id": "windows.device",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.device",
+            "evidenceKind": "Windows device validation receipt",
+            "verifier": "strict device validation from the exact MSIX candidate"
+          }
+        },
+        {
+          "id": "windows.sbom",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.sbom",
+            "evidenceKind": "CycloneDX JSON SBOM",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "windows.provenance",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.provenance",
+            "evidenceKind": "build provenance or artifact attestation",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "windows.artifact-integrity",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.artifact-integrity",
+            "evidenceKind": "SHA-256 checksums and signature references",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "windows.accessibility-manual",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "windows.accessibility-manual",
+            "evidenceKind": "manual accessibility evidence",
+            "verifier": "Narrator, keyboard, focus, contrast, reduced motion, and text scaling receipt"
+          }
+        }
+      ]
+    },
+    {
+      "target": "web-release",
+      "requirements": [
+        {
+          "id": "web.debt-control",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/debt_control_baseline_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.legal",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/legal_safety_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.interface",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.mirror",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/clawjs_mirror_contradiction_check.mjs",
+              "--release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.supply-chain",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/supply_chain_security_check.mjs",
+              "--release",
+              "--target",
+              "web-release"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.accessibility-governance",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/accessibility_governance_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "web.sbom",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "web.sbom",
+            "evidenceKind": "CycloneDX JSON SBOM",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "web.provenance",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "web.provenance",
+            "evidenceKind": "build provenance or artifact attestation",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "web.artifact-integrity",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "web.artifact-integrity",
+            "evidenceKind": "SHA-256 checksums and deployment artifact references",
+            "verifier": "claw verify release --manifest <file> --json"
+          }
+        },
+        {
+          "id": "web.accessibility-manual",
+          "kind": "externalEvidence",
+          "phase": "publish",
+          "externalEvidence": {
+            "blockerId": "web.accessibility-manual",
+            "evidenceKind": "manual accessibility evidence",
+            "verifier": "screen reader, keyboard, focus, contrast, reduced motion, and text scaling receipt"
+          }
+        }
+      ]
+    }
+  ],
   "promises": [
     {
       "id": "v1-interface-parity",
@@ -37,11 +796,12 @@
         "windows-release"
       ],
       "blockingExternalRows": [],
-      "evidenceSources": [
+      "contractSources": [
         "docs/interface-matrix.md",
         "docs/adr/0007-dual-human-programmatic-surfaces.md",
         "scripts/interface_surface_guard.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "Claimed V1 capabilities must be exposed through the app-facing and agent/programmatic surfaces before release."
     },
     {
@@ -60,12 +820,13 @@
         "windows-release"
       ],
       "blockingExternalRows": [],
-      "evidenceSources": [
+      "contractSources": [
         "docs/data-storage-boundary.md",
         "docs/host-ownership.md",
         "scripts/storage_boundary_guard.mjs",
         "scripts/legal_safety_check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "V1 cannot ship with local-first, ownership, telemetry, or consent assertions still below the enforced status."
     },
     {
@@ -83,11 +844,12 @@
         "windows-release"
       ],
       "blockingExternalRows": [],
-      "evidenceSources": [
+      "contractSources": [
         "docs/governance/no-irreversible-data-loss/README.md",
         "docs/governance/no-irreversible-data-loss/manifest.json",
         "scripts/no-irreversible-data-loss-check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "Delete, purge, migration, import, export, sync, and provider mutation paths must satisfy the no-irreversible-data-loss guardrail before V1 release."
     },
     {
@@ -103,12 +865,13 @@
         "windows-release"
       ],
       "blockingExternalRows": [],
-      "evidenceSources": [
+      "contractSources": [
         "SAFETY.md",
         "REGULATED_DOMAINS.md",
         "docs/governance/legal/source-audit.md",
         "scripts/legal_safety_check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "Release copy, UI labels, exports, provider flows, and demos must not claim professional advice, emergency response, compliance readiness, or final regulated decisions."
     },
     {
@@ -138,12 +901,13 @@
           ]
         }
       ],
-      "evidenceSources": [
+      "contractSources": [
         "docs/host-ownership.md",
         "docs/native-action-broker-allowlist.json",
         "scripts/native_permission_broker_check.mjs",
         "scripts/native_action_broker_check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "High-risk native authority must have granular grants, human approval, audit evidence, and no unresolved central external blockers for the target."
     },
     {
@@ -161,12 +925,13 @@
         "windows-release"
       ],
       "blockingExternalRows": [],
-      "evidenceSources": [
+      "contractSources": [
         "STYLE.md",
         "docs/ui/README.md",
         "docs/governance/ui/completion.md",
         "scripts/ui_release_gate_check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "Protected V1 surfaces must satisfy style, accessibility, localization/copy, and release UI gate evidence before release."
     },
     {
@@ -211,12 +976,13 @@
           ]
         }
       ],
-      "evidenceSources": [
+      "contractSources": [
         "RELEASING.md",
         "playbooks/testing-matrix.md",
         "scripts/release_external_pending_gate.mjs",
         "scripts/release_readiness_check.mjs"
       ],
+      "acceptedEvidenceRefs": [],
       "releaseRule": "Target-specific signed-host, device, provider, performance, and distribution evidence must exist before release claims are treated as ready."
     }
   ]
