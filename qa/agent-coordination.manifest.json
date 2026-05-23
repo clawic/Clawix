@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "repo": "clawix",
+  "checks": [
+    {
+      "id": "changed",
+      "repo": "clawix",
+      "lane": "changed",
+      "command": "bash scripts/test.sh changed",
+      "timeoutSeconds": 1800,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": ["**/*"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "cpu:global:heavy", "mode": "write" },
+        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
+        { "id": "build-cache:clawix:web", "mode": "write" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "report",
+      "failureAction": "Inspect the selected changed-lane output and repair the owning boundary before rerunning.",
+      "repairPolicy": "Claim repair ownership for the failing check before broad reruns."
+    },
+    {
+      "id": "fast",
+      "repo": "clawix",
+      "lane": "fast",
+      "command": "bash scripts/test.sh fast",
+      "timeoutSeconds": 3600,
+      "costClass": "saturating",
+      "realServices": false,
+      "pathPatterns": ["**/*"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "cpu:global:saturating", "mode": "exclusive" },
+        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
+        { "id": "build-cache:clawix:web", "mode": "write" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "report",
+      "failureAction": "Inspect the first failing fast-lane guard or package test and repair that boundary.",
+      "repairPolicy": "Do not run repeated fast loops while another repair owner is active for the same fingerprint."
+    },
+    {
+      "id": "integration",
+      "repo": "clawix",
+      "lane": "integration",
+      "command": "bash scripts/test.sh integration",
+      "timeoutSeconds": 5400,
+      "costClass": "saturating",
+      "realServices": false,
+      "pathPatterns": ["macos/**", "packages/**", "scripts/**", "docs/**", "qa/**"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "packages/**", "docs/**", "qa/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "cpu:global:saturating", "mode": "exclusive" },
+        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
+        { "id": "fixture-db:clawix", "mode": "write" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "report",
+      "failureAction": "Inspect integration package, bridge, or fixture output and repair the failing boundary.",
+      "repairPolicy": "Claim the failing integration boundary before broad reruns."
+    },
+    {
+      "id": "e2e",
+      "repo": "clawix",
+      "lane": "e2e",
+      "command": "bash scripts/test.sh e2e",
+      "timeoutSeconds": 3600,
+      "costClass": "saturating",
+      "realServices": false,
+      "pathPatterns": ["macos/scripts/**", "tests/e2e/**", "qa/**"],
+      "fingerprintInputs": ["scripts/**", "macos/scripts/**", "qa/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "fixture-db:clawix", "mode": "exclusive" },
+        { "id": "cpu:global:heavy", "mode": "write" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "report",
+      "failureAction": "Inspect fixture E2E output and repair the fixture or bridge contract.",
+      "repairPolicy": "Do not reset shared fixtures while another E2E owner is active."
+    },
+    {
+      "id": "host",
+      "repo": "clawix",
+      "lane": "host",
+      "command": "bash scripts/test.sh host",
+      "timeoutSeconds": 1800,
+      "costClass": "interactive",
+      "realServices": false,
+      "pathPatterns": ["macos/**", "scripts/**", "qa/scenarios/**"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "qa/scenarios/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "signed-host:clawix-macos", "mode": "exclusive" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "external_pending_without_CLAWIX_HOST_TEST_COMMAND",
+      "failureAction": "Report EXTERNAL PENDING unless an approved signed-host command is configured.",
+      "repairPolicy": "Do not claim signed-host validation complete from public-only tests."
+    },
+    {
+      "id": "core-ux",
+      "repo": "clawix",
+      "lane": "core-ux",
+      "command": "bash scripts/test.sh core-ux",
+      "timeoutSeconds": 1800,
+      "costClass": "interactive",
+      "realServices": false,
+      "pathPatterns": ["macos/**", "scripts/**", "qa/scenarios/**"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "qa/scenarios/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "computer-use:macos:clawix-app", "mode": "exclusive" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "external_pending_without_CLAWIX_CORE_UX_GATE_COMMAND",
+      "failureAction": "Run public Core UX checks locally and report private real-app validation as EXTERNAL PENDING until approved.",
+      "repairPolicy": "Do not run multiple shared-app Core UX validations concurrently."
+    },
+    {
+      "id": "device",
+      "repo": "clawix",
+      "lane": "device",
+      "command": "bash scripts/test.sh device",
+      "timeoutSeconds": 2400,
+      "costClass": "interactive",
+      "realServices": false,
+      "pathPatterns": ["android/**", "ios/**", "scripts/**", "qa/scenarios/**"],
+      "fingerprintInputs": ["android/**", "ios/**", "scripts/**", "qa/scenarios/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "device:ios-simulator", "mode": "exclusive" },
+        { "id": "device:android-emulator", "mode": "exclusive" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "external_pending_without_CLAWIX_DEVICE_TEST_COMMAND",
+      "failureAction": "Report EXTERNAL PENDING unless an approved simulator/device command is configured.",
+      "repairPolicy": "Do not emulate physical/device validation with public-only static checks."
+    },
+    {
+      "id": "live",
+      "repo": "clawix",
+      "lane": "live",
+      "command": "bash scripts/test.sh live",
+      "timeoutSeconds": 3600,
+      "costClass": "interactive",
+      "realServices": true,
+      "pathPatterns": ["scripts/**", "qa/scenarios/**", "macos/**", "web/**"],
+      "fingerprintInputs": ["scripts/**", "qa/scenarios/**", "macos/**", "web/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "live-provider:*", "mode": "exclusive" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "blocked_without_CLAWIX_TEST_LIVE",
+      "failureAction": "Live checks require explicit opt-in and approved disposable external state.",
+      "repairPolicy": "Do not run live checks while repairing unrelated local failures."
+    },
+    {
+      "id": "release",
+      "repo": "clawix",
+      "lane": "release",
+      "command": "bash scripts/test.sh release",
+      "timeoutSeconds": 10800,
+      "costClass": "saturating",
+      "realServices": false,
+      "pathPatterns": ["**/*"],
+      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
+      "resources": [
+        { "id": "repo:clawix:worktree", "mode": "read" },
+        { "id": "cpu:global:saturating", "mode": "exclusive" },
+        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
+        { "id": "build-cache:clawix:web", "mode": "write" },
+        { "id": "signed-host:clawix-macos", "mode": "exclusive" }
+      ],
+      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "externalPendingPolicy": "report_host_device_core_ux_gaps",
+      "failureAction": "Inspect the release preflight or first failing boundary before rerunning release.",
+      "repairPolicy": "Do not use release as a tight repair loop; claim and repair the failing boundary first."
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,105 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const matrixPath = path.join(rootDir, "qa/agent-fast-validation.matrix.json");
 const args = process.argv.slice(2);
+const repoFingerprint = createHash("sha256").update(rootDir).digest("hex").slice(0, 12);
+const coordinationIntent = `agent-fast-${process.pid}`;
+
+function coordinationArgs() {
+  return [
+    ...(process.env.CLAW_AGENT_COORDINATION_STATE_DIR ? ["--state-dir", process.env.CLAW_AGENT_COORDINATION_STATE_DIR] : []),
+    ...(process.env.CLAW_AGENT_COORDINATION_RUN_DIR ? ["--run-dir", process.env.CLAW_AGENT_COORDINATION_RUN_DIR] : []),
+  ];
+}
+
+function clawCommand() {
+  if (process.env.CLAWIX_CLAW_BIN) return { command: process.env.CLAWIX_CLAW_BIN, argsPrefix: [] };
+  const pathProbe = spawnSync("bash", ["-lc", "command -v claw"], { encoding: "utf8" });
+  if (pathProbe.status === 0 && pathProbe.stdout.trim()) return { command: pathProbe.stdout.trim(), argsPrefix: [] };
+  const sibling = path.resolve(rootDir, "../clawjs/packages/clawjs/bin/claw.mjs");
+  if (fs.existsSync(sibling)) return { command: sibling, argsPrefix: [] };
+  return null;
+}
+
+function runClaw(args) {
+  const resolved = clawCommand();
+  if (!resolved) {
+    return { status: 127, payload: null, stdout: "", stderr: "BLOCKED coordination broker: set CLAWIX_CLAW_BIN or install claw on PATH" };
+  }
+  const result = spawnSync(resolved.command, [...resolved.argsPrefix, ...args, "--json"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    env: process.env,
+  });
+  let payload = null;
+  try {
+    payload = result.stdout ? JSON.parse(result.stdout) : null;
+  } catch {
+    payload = null;
+  }
+  return { status: result.status ?? 1, payload, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+}
+
+function acquireCheckLease(check) {
+  if (process.env.CLAW_AGENT_COORDINATION_ACTIVE === "1") return null;
+  const resource = `test:${repoFingerprint}:agent-fast:${check.id}`;
+  if (process.env.CLAW_AGENT_COORDINATION_BYPASS === "1") {
+    const reason = process.env.CLAW_AGENT_COORDINATION_BYPASS_REASON;
+    if (!reason) fail("CLAW_AGENT_COORDINATION_BYPASS_REASON is required when bypassing agent fast validation coordination.");
+    const bypass = runClaw(["agent-resource", "bypass", "--intent", coordinationIntent, "--resource", resource, "--reason", reason, ...coordinationArgs()]);
+    if (bypass.payload?.data?.status !== "BYPASS_AUDITED") fail(`Could not audit coordination bypass:\n${bypass.stdout || bypass.stderr}`);
+    console.error(`WARNING: bypassed coordination for ${check.id}; evidence is partial/degraded.`);
+    return null;
+  }
+  const acquired = runClaw([
+    "agent-resource",
+    "acquire",
+    "--resource",
+    resource,
+    "--mode",
+    "exclusive",
+    "--intent",
+    coordinationIntent,
+    "--pid",
+    String(process.pid),
+    "--ttl",
+    String(check.maxSeconds || 60),
+    "--kind",
+    "test",
+    "--reason",
+    `agent-fast validation ${check.id}`,
+    ...coordinationArgs(),
+  ]);
+  if (acquired.payload?.data?.status === "PENDING") {
+    console.error(`PENDING agent fast validation ${check.id}: coordination lease is busy.`);
+    console.error(acquired.stdout || acquired.stderr);
+    process.exit(2);
+  }
+  const leaseId = acquired.payload?.data?.lease?.id;
+  if (acquired.status !== 0 || !leaseId) fail(`Could not acquire coordination lease for ${check.id}:\n${acquired.stdout || acquired.stderr}`);
+  return leaseId;
+}
+
+function releaseCheckLease(leaseId, passed, check) {
+  if (!leaseId) return;
+  const released = runClaw([
+    "agent-resource",
+    "release",
+    "--lease",
+    leaseId,
+    "--status",
+    passed ? "passed" : "failed",
+    "--repo",
+    rootDir,
+    "--lane",
+    "agent-fast",
+    "--check",
+    check.id,
+    ...coordinationArgs(),
+  ]);
+  if (released.status !== 0) {
+    console.error(`Could not release coordination lease ${leaseId}:\n${released.stdout || released.stderr}`);
+  }
+}
 
 function readMatrix() {
   return JSON.parse(fs.readFileSync(matrixPath, "utf8"));
@@ -121,24 +221,30 @@ function runChecks(matrix, ids) {
   const results = [];
   for (const id of ids) {
     const check = available.get(id);
+    const leaseId = acquireCheckLease(check);
     const started = process.hrtime.bigint();
-    const result = spawnSync("bash", ["-lc", check.command], {
-      cwd: rootDir,
-      encoding: "utf8",
-      timeout: check.maxSeconds * 1000,
-      maxBuffer: 1024 * 1024
-    });
-    const elapsedMs = Math.round(Number(process.hrtime.bigint() - started) / 1e6);
-    const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
-    const status = result.signal ? result.signal : result.status === 0 ? "PASS" : `FAIL ${result.status}`;
-    console.log(`${status.padEnd(8)} ${String(elapsedMs).padStart(6)}ms ${id}`);
-    if (result.status !== 0 || result.signal) {
-      const tail = output.split(/\r?\n/).slice(-8).join("\n");
-      console.error(`  detects: ${check.detects}`);
-      console.error(`  action: ${check.failureAction}`);
-      if (tail) console.error(`  output:\n${tail.split("\n").map((line) => `    ${line}`).join("\n")}`);
+    let result = { status: 1, signal: null, stdout: "", stderr: "" };
+    try {
+      result = spawnSync("bash", ["-lc", check.command], {
+        cwd: rootDir,
+        encoding: "utf8",
+        timeout: check.maxSeconds * 1000,
+        maxBuffer: 1024 * 1024
+      });
+      const elapsedMs = Math.round(Number(process.hrtime.bigint() - started) / 1e6);
+      const output = `${result.stdout || ""}${result.stderr || ""}`.trim();
+      const status = result.signal ? result.signal : result.status === 0 ? "PASS" : `FAIL ${result.status}`;
+      console.log(`${status.padEnd(8)} ${String(elapsedMs).padStart(6)}ms ${id}`);
+      if (result.status !== 0 || result.signal) {
+        const tail = output.split(/\r?\n/).slice(-8).join("\n");
+        console.error(`  detects: ${check.detects}`);
+        console.error(`  action: ${check.failureAction}`);
+        if (tail) console.error(`  output:\n${tail.split("\n").map((line) => `    ${line}`).join("\n")}`);
+      }
+      results.push({ id, elapsedMs, status: result.status, signal: result.signal });
+    } finally {
+      releaseCheckLease(leaseId, result.status === 0 && !result.signal, check);
     }
-    results.push({ id, elapsedMs, status: result.status, signal: result.signal });
   }
   const failed = results.filter((result) => result.status !== 0 || result.signal);
   const totalMs = results.reduce((sum, result) => sum + result.elapsedMs, 0);

@@ -28,6 +28,23 @@ The runner also enforces the policy guard during `fast`: synced ADR, matrix,
 scenario files, ignored artifact paths, non-expired quarantine entries, and
 the macOS localization surface guard.
 
+## Coordination
+
+The public lane runner and `scripts/agent-fast-validation.mjs` acquire ClawJS
+agent coordination ledger leases before running shared checks. If a lane or
+check is already owned by another agent, the command records pending demand,
+prints `PENDING`, exits quickly, and does not spin-wait or start a duplicate
+suite.
+
+Use `qa/agent-coordination.manifest.json` to inspect declared resources,
+cost class, fingerprint inputs, external-pending policy, failure action, and
+repair policy for each lane. `CLAWIX_CLAW_BIN` may point at a local `claw`
+binary when it is not on `PATH`.
+
+Bypass requires both `CLAW_AGENT_COORDINATION_BYPASS=1` and
+`CLAW_AGENT_COORDINATION_BYPASS_REASON`; bypass writes audit evidence with
+`cleanValidation: false` and must be reported as partial/degraded validation.
+
 ## Privacy
 
 The public runner must not embed or print private signing identities, Team IDs,
