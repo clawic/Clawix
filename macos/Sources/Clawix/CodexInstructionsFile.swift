@@ -1,12 +1,46 @@
 import Foundation
 
+enum CodexInstructionsRoutes {
+    static let codexDirectoryName = ".codex"
+    static let agentsFileName = "AGENTS.md"
+    static let temporaryAgentsFilePrefix = "AGENTS.md.tmp"
+
+    static func userHomeDirectory() -> URL {
+        ClawixUserHomeRoutes.directory()
+    }
+
+    static func codexDirectoryURL(
+        homeDirectory explicitHomeDirectory: URL? = nil
+    ) -> URL {
+        let homeDirectory = explicitHomeDirectory ?? userHomeDirectory()
+        return homeDirectory.appendingPathComponent(codexDirectoryName, isDirectory: true)
+    }
+
+    static func agentsFileURL(
+        codexDirectory: URL = codexDirectoryURL()
+    ) -> URL {
+        codexDirectory.appendingPathComponent(agentsFileName, isDirectory: false)
+    }
+
+    static func temporaryAgentsFileURL(
+        processIdentifier: Int32 = ProcessInfo.processInfo.processIdentifier,
+        id: String = UUID().uuidString,
+        codexDirectory: URL
+    ) -> URL {
+        let suffix = String(id.prefix(8))
+        return codexDirectory.appendingPathComponent(
+            "\(temporaryAgentsFilePrefix).\(processIdentifier).\(suffix)",
+            isDirectory: false
+        )
+    }
+}
+
 // Read/write helper for ~/.codex/AGENTS.md, the file Codex uses as the
 // user's global custom instructions. Clawix-owned additions are scoped to
 // sentinel blocks so the rest of the Codex-owned file stays untouched.
 enum CodexInstructionsFile {
     static var fileURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".codex/AGENTS.md")
+        CodexInstructionsRoutes.agentsFileURL()
     }
 
     /// Returns the current file contents, or an empty string if the
@@ -30,9 +64,7 @@ enum CodexInstructionsFile {
             withIntermediateDirectories: true
         )
         let data = Data(text.utf8)
-        let tempURL = dir.appendingPathComponent(
-            "AGENTS.md.tmp.\(ProcessInfo.processInfo.processIdentifier).\(UUID().uuidString.prefix(8))"
-        )
+        let tempURL = CodexInstructionsRoutes.temporaryAgentsFileURL(codexDirectory: dir)
         try data.write(to: tempURL, options: .atomic)
         if FileManager.default.fileExists(atPath: url.path) {
             _ = try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
