@@ -20,7 +20,7 @@ struct QuickAskMessageBubble: View {
                     .padding(.vertical, 8)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.14))
+                            .fill(Color.overlay(0.14))
                     )
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -55,7 +55,7 @@ struct QuickAskMessageBubble: View {
                 text: displayText,
                 renderKey: .message(message.id),
                 weight: .regular,
-                color: Color(red: 0.95, green: 0.45, blue: 0.45),
+                color: Palette.danger,
                 checkpoints: [],
                 streamingFinished: true
             )
@@ -125,14 +125,14 @@ private struct QuickAskCopyAction: View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(hovered ? 0.07 : 0))
+                    .fill(Color.overlay(hovered ? 0.07 : 0))
                 if showCheck {
                     CheckIcon(size: 13)
-                        .foregroundColor(Color(white: hovered ? 0.94 : 0.78))
+                        .foregroundColor((hovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.27, dark: 0.78)))
                         .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 } else {
                     CopyIconViewSquircle(
-                        color: Color(white: hovered ? 0.88 : 0.55),
+                        color: (hovered ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)),
                         lineWidth: 0.85
                     )
                     .frame(width: 13, height: 13)

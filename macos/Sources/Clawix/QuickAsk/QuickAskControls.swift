@@ -68,7 +68,7 @@ struct QuickAskPlusMenu: View {
             }
         } label: {
             LucideIcon(.plus, size: 12.5)
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .opacity(0.78)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
@@ -171,12 +171,12 @@ struct QuickAskModelPicker: View {
         } label: {
             Text(flags.isVisible(.openCode) && runtime == .opencode ? selection : "GPT-\(selection)")
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.09 : 0))
+                        .fill(Color.overlay(hovered ? 0.09 : 0))
                 )
                 .contentShape(Rectangle())
         }
@@ -211,7 +211,7 @@ struct QuickAskCompletionPanel: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
                     .font(BodyFont.system(size: 10, wght: 700))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
                     .textCase(.uppercase)
                     .padding(.horizontal, 10)
                     .padding(.top, 6)
@@ -225,7 +225,7 @@ struct QuickAskCompletionPanel: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.7)
+                    .strokeBorder(Color.overlay(0.10), lineWidth: 0.7)
             )
             .shadow(color: Color.black.opacity(0.30), radius: 14, x: 0, y: 6)
         }
@@ -241,11 +241,11 @@ struct QuickAskCompletionRowView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(row.title)
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .lineLimit(1)
                 Text(row.subtitle)
                     .font(BodyFont.system(size: 10, wght: 500))
-                    .foregroundColor(.white.opacity(0.50))
+                    .foregroundColor(Color.overlay(0.50))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -253,7 +253,7 @@ struct QuickAskCompletionRowView: View {
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .background(Color.white.opacity(hovered ? 0.06 : 0))
+            .background(Color.overlay(hovered ? 0.06 : 0))
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }

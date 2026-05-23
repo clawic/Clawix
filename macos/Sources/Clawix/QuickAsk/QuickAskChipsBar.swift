@@ -40,14 +40,14 @@ private struct QuickAskChip: View {
             leadingContent
             Text(displayLabel)
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .layoutPriority(0)
             if hovered {
                 Button(action: onRemove) {
                     LucideIcon(.x, size: 11)
-                        .foregroundColor(Color(white: removeHovered ? 1.0 : 0.78))
+                        .foregroundColor((removeHovered ? Color.gray(light: 0.05, dark: 1.0) : Color.gray(light: 0.27, dark: 0.78)))
                         .frame(width: 14, height: 14)
                         .contentShape(Rectangle())
                 }
@@ -65,11 +65,11 @@ private struct QuickAskChip: View {
         .frame(maxWidth: 220, alignment: .leading)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.03 : 0))
+                .fill(Color.overlay(hovered ? 0.03 : 0))
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 0.6)
+                .stroke(Color.overlay(0.18), lineWidth: 0.6)
         )
         .animation(.easeOut(duration: 0.14), value: hovered)
         .contentShape(Capsule(style: .continuous))
@@ -87,7 +87,7 @@ private struct QuickAskChip: View {
                 .clipShape(Circle())
         } else {
             LucideIcon.auto(iconName, size: 11)
-                .foregroundColor(Color(white: 0.60))
+                .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
                 .frame(width: 18, height: 18)
         }
     }

@@ -27,7 +27,7 @@ struct QuickAskCameraSheet: View {
                             .foregroundColor(.yellow)
                         Text(error)
                             .font(BodyFont.system(size: 12, wght: 500))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundColor(Color.overlay(0.85))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
                     }
@@ -49,10 +49,10 @@ struct QuickAskCameraSheet: View {
                 Button(action: snap) {
                     ZStack {
                         Circle()
-                            .strokeBorder(Color.white.opacity(0.85), lineWidth: 2)
+                            .strokeBorder(Color.overlay(0.85), lineWidth: 2)
                             .frame(width: 48, height: 48)
                         Circle()
-                            .fill(capturing ? Color.white.opacity(0.5) : Color.white)
+                            .fill(capturing ? Color.overlay(0.5) : Palette.textPrimary)
                             .frame(width: 38, height: 38)
                     }
                     .contentShape(Rectangle())
@@ -69,7 +69,7 @@ struct QuickAskCameraSheet: View {
             .padding(.vertical, 14)
         }
         .frame(width: 420)
-        .background(Color(white: 0.08))
+        .background(Color.gray(light: 0.955, dark: 0.08))
         .onAppear { session.start { errorMessage = $0 } }
         .onDisappear { session.stop() }
     }

@@ -264,11 +264,11 @@ private struct ShortcutRecorder: View {
             Capsule(style: .continuous)
                 .fill(recording
                       ? Color(red: 0.16, green: 0.46, blue: 0.98).opacity(0.18)
-                      : (hovered ? Color(white: 0.21) : Color(white: 0.165)))
+                      : (hovered ? Color.gray(light: 0.875, dark: 0.21) : Color.gray(light: 0.915, dark: 0.165)))
             Capsule(style: .continuous)
                 .stroke(recording
                         ? Color(red: 0.16, green: 0.46, blue: 0.98).opacity(0.6)
-                        : Color.white.opacity(0.10),
+                        : Color.overlay(0.10),
                         lineWidth: 0.7)
 
             Text(recording ? "Type a shortcut…" : hotkey.displayString)
@@ -411,10 +411,10 @@ private struct QASCard<Content: View>: View {
         VStack(spacing: 0) { content }
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(white: 0.085))
+                    .fill(Color.gray(light: 0.95, dark: 0.085))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
     }
@@ -422,7 +422,7 @@ private struct QASCard<Content: View>: View {
 
 private struct QASCardDivider: View {
     var body: some View {
-        Rectangle().fill(Color.white.opacity(0.07)).frame(height: 1)
+        Rectangle().fill(Color.overlay(0.07)).frame(height: 1)
     }
 }
 
@@ -440,7 +440,7 @@ private struct QASSecondaryButton: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(hovered ? Color(white: 0.21) : Color(white: 0.165))
+                        .fill(hovered ? Color.gray(light: 0.875, dark: 0.21) : Color.gray(light: 0.915, dark: 0.165))
                 )
                 .contentShape(Capsule(style: .continuous))
         }

@@ -30,33 +30,33 @@ struct QuickAskRecentChatsPicker: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 LucideIcon(.search, size: 11)
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
                 TextField(
                     "",
                     text: $query,
                     prompt: Text("Search chats")
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(Color.overlay(0.45))
                 )
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .focused($searchFocused)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
             .padding(8)
 
             Divider()
-                .background(Color.white.opacity(0.10))
+                .background(Color.overlay(0.10))
 
             if filteredChats.isEmpty {
                 Text(emptyStateMessage)
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundColor(Color.overlay(0.45))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
             } else {
@@ -83,7 +83,7 @@ struct QuickAskRecentChatsPicker: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.7)
+                .strokeBorder(Color.overlay(0.12), lineWidth: 0.7)
         )
         .onAppear { searchFocused = true }
     }
@@ -107,7 +107,7 @@ private struct QuickAskRecentChatRow: View {
             HStack(spacing: 8) {
                 if isActive {
                     CheckIcon(size: 11)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(Color.overlay(0.9))
                         .frame(width: 14)
                 } else {
                     Color.clear.frame(width: 14)
@@ -115,12 +115,12 @@ private struct QuickAskRecentChatRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(chat.title)
                         .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                         .lineLimit(1)
                         .truncationMode(.tail)
                     Text(relativeTimestamp)
                         .font(BodyFont.system(size: 10, wght: 500))
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(Color.overlay(0.45))
                 }
                 Spacer(minLength: 0)
             }
@@ -129,7 +129,7 @@ private struct QuickAskRecentChatRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .background(
-                Color.white.opacity(hovered ? 0.06 : 0)
+                Color.overlay(hovered ? 0.06 : 0)
             )
         }
         .buttonStyle(.plain)

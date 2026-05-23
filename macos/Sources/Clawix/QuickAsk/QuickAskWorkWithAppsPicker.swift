@@ -21,28 +21,28 @@ struct QuickAskWorkWithAppsPicker: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 LucideIcon(.search, size: 11)
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
                 TextField(
                     "",
                     text: $query,
                     prompt: Text("Search")
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(Color.overlay(0.45))
                 )
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .focused($searchFocused)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
             .padding(8)
 
             Divider()
-                .background(Color.white.opacity(0.10))
+                .background(Color.overlay(0.10))
 
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -53,11 +53,11 @@ struct QuickAskWorkWithAppsPicker: View {
                         } label: {
                             HStack(spacing: 8) {
                                 LucideIcon(.circleX, size: 14)
-                                    .foregroundColor(.white.opacity(0.85))
+                                    .foregroundColor(Color.overlay(0.85))
                                     .frame(width: 18, height: 18)
                                 Text("Stop working with app")
                                     .font(BodyFont.system(size: 12, wght: 600))
-                                    .foregroundColor(.white.opacity(0.85))
+                                    .foregroundColor(Color.overlay(0.85))
                                 Spacer(minLength: 0)
                             }
                             .padding(.horizontal, 12)
@@ -67,7 +67,7 @@ struct QuickAskWorkWithAppsPicker: View {
                         }
                         .buttonStyle(.plain)
 
-                        Divider().background(Color.white.opacity(0.08))
+                        Divider().background(Color.overlay(0.08))
                     }
                     ForEach(filteredApps) { entry in
                         QuickAskWorkRow(
@@ -87,7 +87,7 @@ struct QuickAskWorkWithAppsPicker: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.7)
+                .strokeBorder(Color.overlay(0.12), lineWidth: 0.7)
         )
         .onAppear {
             apps = WorkAppEntry.snapshot()
@@ -119,29 +119,29 @@ private struct QuickAskWorkRow: View {
                         .frame(width: 22, height: 22)
                 } else {
                     LucideIcon(.appWindow, size: 14)
-                        .foregroundColor(.white.opacity(0.65))
+                        .foregroundColor(Color.overlay(0.65))
                         .frame(width: 22, height: 22)
                 }
                 Text(entry.name)
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .lineLimit(1)
                 if !entry.isRunning {
                     Text("·  Not running")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(Color.overlay(0.45))
                 }
                 Spacer(minLength: 0)
                 if isActive {
                     CheckIcon(size: 11)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(Color.overlay(0.9))
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .background(Color.white.opacity(hovered ? 0.06 : 0))
+            .background(Color.overlay(hovered ? 0.06 : 0))
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }

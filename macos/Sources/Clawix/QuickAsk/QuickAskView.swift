@@ -150,15 +150,15 @@ struct QuickAskView: View {
             .fill(Color.black.opacity(0.45))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.55), style: StrokeStyle(lineWidth: 1.4, dash: [6, 4]))
+                    .strokeBorder(Color.overlay(0.55), style: StrokeStyle(lineWidth: 1.4, dash: [6, 4]))
             )
             .overlay(
                 VStack(spacing: 6) {
                     LucideIcon(.inbox, size: 17)
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                     Text("Drop to attach")
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                 }
             )
             .allowsHitTesting(false)
@@ -283,7 +283,7 @@ struct QuickAskView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.32), lineWidth: 0.8)
+                    .strokeBorder(Color.overlay(0.32), lineWidth: 0.8)
             )
             .shadow(color: Color.black.opacity(0.32), radius: 18, x: 0, y: 8)
     }
@@ -357,11 +357,11 @@ struct QuickAskView: View {
         .frame(height: max(85, min(160, promptHeight + 60)))
         .background(
             RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .fill(Color.white.opacity(0.028))
+                .fill(Color.overlay(0.028))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.7)
+                .strokeBorder(Color.overlay(0.14), lineWidth: 0.7)
         )
     }
 
@@ -381,24 +381,24 @@ struct QuickAskView: View {
                     tooltip: "Close (⎋)"
                 ) {
                     LucideIcon(.circleX, size: 14)
-                        .foregroundColor(.white.opacity(0.50))
+                        .foregroundColor(Color.overlay(0.50))
                 }
                 if let chat = currentChat {
                     Button(action: { recentChatsPickerPresented.toggle() }) {
                         HStack(spacing: 4) {
                             Text(chat.title)
                                 .font(BodyFont.system(size: 11, wght: 600))
-                                .foregroundColor(.white.opacity(0.70))
+                                .foregroundColor(Color.overlay(0.70))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                             LucideIcon(.chevronDown, size: 10)
-                                .foregroundColor(.white.opacity(0.50))
+                                .foregroundColor(Color.overlay(0.50))
                         }
                         .padding(.horizontal, 6)
                         .padding(.vertical, 4)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(recentChatsPickerPresented ? 0.10 : 0))
+                                .fill(Color.overlay(recentChatsPickerPresented ? 0.10 : 0))
                         )
                         .contentShape(Rectangle())
                     }
@@ -426,8 +426,8 @@ struct QuickAskView: View {
                         .font(.system(size: 14, weight: .regular))
                         .foregroundColor(
                             controller.isTemporary
-                                ? .white.opacity(0.95)
-                                : .white.opacity(0.50)
+                                ? Color.overlay(0.95)
+                                : Color.overlay(0.50)
                         )
                 }
                 hoverIconButton(
@@ -436,7 +436,7 @@ struct QuickAskView: View {
                 ) {
                     OpenInAppIcon()
                         .stroke(
-                            Color.white.opacity(0.50),
+                            Color.overlay(0.50),
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
                         )
                         .frame(width: 15, height: 15)
@@ -450,7 +450,7 @@ struct QuickAskView: View {
                 ) {
                     ComposeIcon()
                         .stroke(
-                            Color.white.opacity(0.50),
+                            Color.overlay(0.50),
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
                         )
                         .frame(width: 15, height: 15)
@@ -700,7 +700,7 @@ struct QuickAskView: View {
             if prompt.isEmpty {
                 Text(placeholderText)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .padding(.leading, 9)
                     .padding(.top, 8)
                     .allowsHitTesting(false)
@@ -774,7 +774,7 @@ struct QuickAskView: View {
 
             Text(dictation.formattedElapsed)
                 .font(BodyFont.system(size: 12, design: .monospaced))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .monospacedDigit()
                 .padding(.horizontal, 2)
 
@@ -782,10 +782,10 @@ struct QuickAskView: View {
                 stopAndAppendTranscription()
             } label: {
                 StopSquircle()
-                    .fill(Color(white: 0.92))
+                    .fill(Color.gray(light: 0.14, dark: 0.92))
                     .frame(width: 13, height: 13)
                     .frame(width: 26, height: 26)
-                    .background(Circle().fill(Color(white: 0.22)))
+                    .background(Circle().fill(Color.gray(light: 0.87, dark: 0.22)))
             }
             .buttonStyle(.plain)
             .quickAskDiscHover()
@@ -795,9 +795,9 @@ struct QuickAskView: View {
                 stopAndSend()
             } label: {
                 ArrowUpIcon(size: 14)
-                    .foregroundColor(Color(white: 0.06))
+                    .foregroundColor(Color.gray(light: 0.96, dark: 0.06))
                     .frame(width: 28, height: 28)
-                    .background(Circle().fill(Color.white))
+                    .background(Circle().fill(Palette.textPrimary))
             }
             .buttonStyle(.plain)
             .quickAskDiscHover()
@@ -831,8 +831,8 @@ struct QuickAskView: View {
             LucideIcon.auto(controller.webSearchEnabled ? "globe.americas.fill" : "globe", size: 14)
                 .foregroundColor(
                     controller.webSearchEnabled
-                        ? .white.opacity(0.95)
-                        : .white.opacity(0.62)
+                        ? Color.overlay(0.95)
+                        : Color.overlay(0.62)
                 )
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
@@ -853,8 +853,8 @@ struct QuickAskView: View {
                 LucideIcon(.squareDashed, size: 14)
                     .foregroundColor(
                         controller.workWithBundleId != nil
-                            ? .white.opacity(0.95)
-                            : .white.opacity(0.62)
+                            ? Color.overlay(0.95)
+                            : Color.overlay(0.62)
                     )
                 if let bundleId = controller.workWithBundleId,
                    let appName = NSWorkspace.shared.runningApplications
@@ -862,7 +862,7 @@ struct QuickAskView: View {
                 {
                     Text(appName)
                         .font(BodyFont.system(size: 11, wght: 600))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(Color.overlay(0.85))
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .frame(maxWidth: 80)
@@ -890,7 +890,7 @@ struct QuickAskView: View {
             startVoice()
         } label: {
             MicIcon(lineWidth: 1.5)
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .opacity(micHover ? 1.0 : 0.88)
                 .frame(width: 20, height: 20)
                 .frame(width: 28, height: 28)
@@ -912,10 +912,10 @@ struct QuickAskView: View {
     private func sendButton(extraBottomPadding: CGFloat) -> some View {
         Button(action: submitIfReady) {
             ArrowUpIcon(size: 12)
-                .foregroundColor(canSend ? Color(white: 0.06) : Color.white.opacity(0.55))
+                .foregroundColor(canSend ? Color.gray(light: 0.96, dark: 0.06) : Color.overlay(0.55))
                 .frame(width: 33, height: 33)
                 .background(
-                    Circle().fill(canSend ? Color.white : Color.white.opacity(0.14))
+                    Circle().fill(canSend ? Palette.textPrimary : Color.overlay(0.14))
                 )
         }
         .buttonStyle(.plain)
@@ -942,10 +942,10 @@ struct QuickAskView: View {
         if let snap = controller.pendingSelection {
             HStack(spacing: 6) {
                 LucideIcon(.textAlignStart, size: 11)
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(Color.overlay(0.85))
                 Text(snap.appName.map { "Use selection from \($0)" } ?? "Use selection")
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Button {
@@ -961,12 +961,12 @@ struct QuickAskView: View {
                 } label: {
                     Text("Use")
                         .font(BodyFont.system(size: 11, wght: 700))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(Color.overlay(0.92))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.16))
+                                .fill(Color.overlay(0.16))
                         )
                 }
                 .buttonStyle(.plain)
@@ -974,9 +974,9 @@ struct QuickAskView: View {
                     controller.pendingSelection = nil
                 } label: {
                     LucideIcon(.x, size: 10)
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(Color.overlay(0.6))
                         .frame(width: 16, height: 16)
-                        .background(Circle().fill(Color.white.opacity(0.10)))
+                        .background(Circle().fill(Color.overlay(0.10)))
                 }
                 .buttonStyle(.plain)
                 .quickAskIconHover()
