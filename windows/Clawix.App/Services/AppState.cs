@@ -18,7 +18,7 @@ public sealed partial class AppState : ObservableObject
     private DaemonClient? _client;
 
     [ObservableProperty]
-    private List<WireSession> _chats = [];
+    private List<WireSession> _sessions = [];
 
     [ObservableProperty]
     private WireSession? _currentChat;
@@ -113,7 +113,41 @@ public sealed partial class AppState : ObservableObject
 
     public Task SendMessageAsync(string text)
     {
-        if (CurrentChat is null || _client is null) return Task.CompletedTask;
+        if (_client is null) return Task.CompletedTask;
+        if (CurrentChat is null)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var session = new WireSession
+            {
+                Id = Guid.NewGuid().ToString("D").ToLowerInvariant(),
+                Title = TitleFromPrompt(text),
+                CreatedAt = now,
+                LastMessageAt = now,
+                LastMessagePreview = text,
+                HasActiveTurn = true,
+            };
+            Sessions = [session, .. Sessions];
+            CurrentChat = session;
+            CurrentMessages =
+            [
+                new WireMessage
+                {
+                    Id = Guid.NewGuid().ToString("D").ToLowerInvariant(),
+                    Role = WireRole.User,
+                    Content = text,
+                    Timestamp = now,
+                },
+            ];
+            return _client.SendAsync(new BridgeFrame(new BridgeBody.NewSession(session.Id, text, [])), CancellationToken.None);
+        }
+
         return _client.SendAsync(new BridgeFrame(new BridgeBody.SendMessage(CurrentChat.Id, text, [])), CancellationToken.None);
+    }
+
+    private static string TitleFromPrompt(string text)
+    {
+        var normalized = string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (normalized.Length == 0) return "New chat";
+        return normalized.Length <= 48 ? normalized : normalized[..48].TrimEnd() + "...";
     }
 }
