@@ -208,6 +208,27 @@ final class BridgeProtocolContractValidatorTests: XCTestCase {
         }
     }
 
+    func testBridgeDecodeErrorsExposeActionableRedactedDiagnostics() throws {
+        let error = BridgeDecodingError.invalidPayload(
+            type: "sendMessage",
+            message: "token sk-test-secret-123456 at /Users/privateperson/project"
+        )
+
+        XCTAssertEqual(error.status, "FAIL")
+        XCTAssertEqual(error.code, "bridge.decode.invalidPayload")
+        XCTAssertEqual(error.location, "bridge.frame.sendMessage.payload")
+        XCTAssertTrue(error.suggestion.contains("Fix the payload shape"), error.suggestion)
+        XCTAssertTrue(error.safeNextStep.contains("retry"), error.safeNextStep)
+
+        let diagnostic = error.diagnosticMessage
+        XCTAssertTrue(diagnostic.contains("status: FAIL"), diagnostic)
+        XCTAssertTrue(diagnostic.contains("location: bridge.frame.sendMessage.payload"), diagnostic)
+        XCTAssertTrue(diagnostic.contains("suggestion:"), diagnostic)
+        XCTAssertTrue(diagnostic.contains("next:"), diagnostic)
+        XCTAssertFalse(diagnostic.contains("sk-test-secret-123456"), diagnostic)
+        XCTAssertFalse(diagnostic.contains("/Users/privateperson"), diagnostic)
+    }
+
     func testRejectsNonObjectFrames() throws {
         let data = #"["not","an","object"]"#.data(using: .utf8)!
 

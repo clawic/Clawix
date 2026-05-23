@@ -53,10 +53,13 @@ public final class BridgeSession: Identifiable {
             close(.protocolError)
             return
         } catch let error as BridgeDecodingError {
-            send(BridgeFrame(.errorEvent(code: error.code, message: error.description)))
+            send(BridgeFrame(.errorEvent(code: error.code, message: error.diagnosticMessage)))
             return
         } catch {
-            send(BridgeFrame(.errorEvent(code: "decode", message: "\(error)")))
+            send(BridgeFrame(.errorEvent(
+                code: "bridge.decode.unexpected",
+                message: "Unexpected bridge decode failure. status: FAIL; location: bridge.frame; suggestion: Send a valid BridgeCoder-compatible JSON frame.; next: retry after updating the client serializer."
+            )))
             return
         }
         if frame.schemaVersion != bridgeSchemaVersion {

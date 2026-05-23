@@ -314,6 +314,8 @@ public enum BridgeDecodingError: Error, Equatable {
 }
 
 extension BridgeDecodingError: CustomStringConvertible {
+    public var status: String { "FAIL" }
+
     public var code: String {
         switch self {
         case .oversizedFrame:
@@ -337,6 +339,59 @@ extension BridgeDecodingError: CustomStringConvertible {
         }
     }
 
+    public var location: String {
+        switch self {
+        case .oversizedFrame:
+            return "bridge.frame.bytes"
+        case .invalidJSON, .nonObjectFrame:
+            return "bridge.frame"
+        case .missingField(let field), .invalidField(let field):
+            return "bridge.frame.\(Self.redact(field))"
+        case .unknownSchemaVersion:
+            return "bridge.frame.schemaVersion"
+        case .unknownType(let type):
+            return "bridge.frame.type.\(Self.redact(type))"
+        case .unknownField(let type, let field):
+            return "bridge.frame.\(Self.redact(type)).\(Self.redact(field))"
+        case .invalidPayload(let type, _):
+            return "bridge.frame.\(Self.redact(type)).payload"
+        }
+    }
+
+    public var suggestion: String {
+        switch self {
+        case .oversizedFrame:
+            return "Send a smaller bridge frame or use a file/audio handoff instead of inline payload bytes."
+        case .invalidJSON:
+            return "Serialize the bridge frame as valid JSON using BridgeCoder-compatible keys."
+        case .nonObjectFrame:
+            return "Send a top-level JSON object with schemaVersion and type."
+        case .missingField, .invalidField:
+            return "Send the required bridge envelope fields with the expected value types."
+        case .unknownSchemaVersion:
+            return "Update the client or server so both sides use the same bridge schemaVersion."
+        case .unknownType:
+            return "Use a registered bridge frame type from the v1 protocol."
+        case .unknownField:
+            return "Remove fields that are not part of the registered payload for this frame type."
+        case .invalidPayload:
+            return "Fix the payload shape for the named bridge frame type before retrying."
+        }
+    }
+
+    public var safeNextStep: String {
+        switch self {
+        case .unknownSchemaVersion:
+            return "Reconnect after updating the older peer to the current Clawix bridge protocol."
+        default:
+            return "Fix the client frame serializer and retry the same bridge request."
+        }
+    }
+
+    public var diagnosticMessage: String {
+        "\(description) status: \(status); location: \(location); suggestion: \(suggestion); next: \(safeNextStep)"
+    }
+
     public var description: String {
         switch self {
         case .oversizedFrame(let actualBytes, let maxBytes):
@@ -348,16 +403,30 @@ extension BridgeDecodingError: CustomStringConvertible {
         case .missingField(let field):
             return "missing required field: \(field)"
         case .invalidField(let field):
-            return "invalid field: \(field)"
+            return "invalid field: \(Self.redact(field))"
         case .unknownSchemaVersion(let version):
             return "unsupported schemaVersion: \(version)"
         case .unknownType(let type):
-            return "unknown frame type: \(type)"
+            return "unknown frame type: \(Self.redact(type))"
         case .unknownField(let type, let field):
-            return "unexpected field for \(type): \(field)"
+            return "unexpected field for \(Self.redact(type)): \(Self.redact(field))"
         case .invalidPayload(let type, let message):
-            return "invalid payload for \(type): \(message)"
+            return "invalid payload for \(Self.redact(type)): \(Self.redact(message))"
         }
+    }
+
+    private static func redact(_ value: String) -> String {
+        var redacted = value
+        let replacements: [(String, String)] = [
+            (#"sk-[A-Za-z0-9_-]{6,}"#, "[REDACTED]"),
+            (#"gh[pousr]_[A-Za-z0-9_]{6,}"#, "[REDACTED]"),
+            (#"xox[baprs]-[A-Za-z0-9-]{6,}"#, "[REDACTED]"),
+            (#"/Users/[^/\s"']+"#, "~"),
+        ]
+        for (pattern, replacement) in replacements {
+            redacted = redacted.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
+        }
+        return redacted
     }
 }
 
