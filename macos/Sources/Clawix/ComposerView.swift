@@ -135,6 +135,10 @@ struct ComposerView: View {
                                     withAnimation(.easeOut(duration: 0.18)) {
                                         appState.togglePlanMode()
                                     }
+                                } else if cmd.id == "goal" {
+                                    if let chatId = currentComposerChatId {
+                                        GoalStore.shared.creationRequestChatId = chatId
+                                    }
                                 }
                             },
                             onHover: { cmd in
@@ -204,6 +208,10 @@ struct ComposerView: View {
             }
 
             permissionsPill
+
+            IDEContextChip()
+
+            AttemptsSelector()
 
             if chatMode, flags.isVisible(.remoteMesh) {
                 MeshTargetPill(style: .toolbarCompact, menuOpen: $meshTargetMenuOpen)
@@ -535,6 +543,17 @@ struct ComposerView: View {
         appState.requestComposerFocus()
     }
 
+    /// Captures the last non-Clawix foreground app's window and stages it as a
+    /// composer attachment, so the user can hand the agent a picture of another
+    /// app from the "+" menu.
+    private func attachAppSnapshot() {
+        guard let url = AppSnapshotCapture.shared.captureToFile() else { return }
+        withAnimation(.easeInOut(duration: 0.20)) {
+            appState.addComposerAttachments([url])
+        }
+        appState.requestComposerFocus()
+    }
+
     private var composerStack: some View {
         VStack(spacing: 8) {
             // Active skills chip row. Renders only when at least one
@@ -709,7 +728,13 @@ struct ComposerView: View {
                         isPresented: $addMenuOpen,
                         planMode: $appState.planMode,
                         plugins: appState.plugins,
-                        onPickFiles: { presentFilePicker() }
+                        onPickFiles: { presentFilePicker() },
+                        onAppSnapshot: { attachAppSnapshot() },
+                        onPursueGoal: currentComposerChatId == nil ? nil : {
+                            if let id = currentComposerChatId {
+                                GoalStore.shared.creationRequestChatId = id
+                            }
+                        }
                     )
                     .reportsComposerPopupRect()
                     .alignmentGuide(.top) { d in d[.bottom] - buttonFrame.minY + 6 }

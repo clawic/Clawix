@@ -868,6 +868,8 @@ struct AddMenuPopup: View {
     @Binding var planMode: Bool
     let plugins: [Plugin]
     let onPickFiles: () -> Void
+    var onAppSnapshot: (() -> Void)? = nil
+    var onPursueGoal: (() -> Void)? = nil
 
     @State private var showComplementos = false
 
@@ -899,6 +901,21 @@ struct AddMenuPopup: View {
                 if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = false } }
             }
 
+            if let onAppSnapshot, AppSnapshotCapture.shared.hasTarget {
+                AddMenuRow(
+                    icon: "camera.viewfinder",
+                    label: L10n.t("Attach app window"),
+                    trailing: nil,
+                    highlighted: false
+                ) {
+                    isPresented = false
+                    DispatchQueue.main.async { onAppSnapshot() }
+                }
+                .onHover { hovering in
+                    if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = false } }
+                }
+            }
+
             MenuStandardDivider()
                 .padding(.vertical, 3)
 
@@ -906,6 +923,21 @@ struct AddMenuPopup: View {
                 .onHover { hovering in
                     if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = false } }
                 }
+
+            if let onPursueGoal {
+                AddMenuRow(
+                    icon: "target",
+                    label: L10n.t("Pursue a goal"),
+                    trailing: nil,
+                    highlighted: false
+                ) {
+                    isPresented = false
+                    DispatchQueue.main.async { onPursueGoal() }
+                }
+                .onHover { hovering in
+                    if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = false } }
+                }
+            }
 
             /*
             MenuStandardDivider()
