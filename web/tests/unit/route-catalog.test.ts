@@ -52,6 +52,7 @@ describe("web route catalog", () => {
     expect(routeEntry("connections").webSurface).toBe("implemented");
     expect(routeEntry("index").webSurface).toBe("implemented");
     expect(routeEntry("mac-care").webSurface).toBe("implemented");
+    expect(routeEntry("marketplace").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });
