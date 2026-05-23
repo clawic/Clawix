@@ -115,10 +115,10 @@ private struct PersonalityCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.04 : 0.025))
+                .fill(Color.overlay(hovered ? 0.04 : 0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.07), lineWidth: 0.6)
+                        .stroke(Color.overlay(0.07), lineWidth: 0.6)
                 )
         )
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -162,7 +162,7 @@ struct PersonalityDetailView: View {
                                 .padding(14)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color.white.opacity(0.03))
+                                        .fill(Color.overlay(0.03))
                                 )
                         }
                         VStack(alignment: .leading, spacing: 6) {
@@ -321,10 +321,10 @@ struct PersonalityEditorSheet: View {
 
     private var fieldBg: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(Color.overlay(0.04))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
             )
     }
 }

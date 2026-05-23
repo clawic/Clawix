@@ -54,14 +54,11 @@ struct MacCareScreen: View {
                     .foregroundColor(Palette.textSecondary)
             }
             Spacer()
-            Button {
+            IconChipButton(symbol: "arrow.clockwise") {
                 Task { await store.refresh() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(BodyFont.system(size: 13, wght: 600))
             }
-            .buttonStyle(.borderless)
             .disabled(store.isLoading)
+            .opacity(store.isLoading ? 0.5 : 1)
             .help("Refresh")
         }
     }
@@ -108,7 +105,7 @@ struct MacCareScreen: View {
                 } else if let scans = store.scanList?.scans, !scans.isEmpty {
                     ForEach(Array(scans.enumerated()), id: \.element.id) { index, scan in
                         if index > 0 {
-                            Divider().background(Color.white.opacity(0.07))
+                            CardDivider()
                         }
                         MacCareScanRow(
                             scan: scan,
@@ -135,13 +132,13 @@ struct MacCareScreen: View {
                         MacCareInlineMetric(title: "Size", value: Self.bytes(selectedScan.scan.summary.totalSizeBytes ?? 0))
                         MacCareInlineMetric(title: "Safety", value: selectedScan.safety?.requiredAuthority ?? "none")
                     }
-                    Divider().background(Color.white.opacity(0.07))
+                    CardDivider()
                     if selectedScan.candidates.isEmpty {
                         MacCareEmptyRow(title: "No candidates", detail: "The selected scan has no persisted findings.")
                     } else {
                         ForEach(Array(selectedScan.candidates.prefix(12).enumerated()), id: \.element.id) { index, candidate in
                             if index > 0 {
-                                Divider().background(Color.white.opacity(0.07))
+                                CardDivider()
                             }
                             MacCareCandidateRow(candidate: candidate)
                         }
@@ -165,30 +162,22 @@ struct MacCareScreen: View {
                         MacCareInlineMetric(title: "Execution", value: store.finalizerPreview?.willExecute == true ? "Yes" : "No")
                         MacCareInlineMetric(title: "Receipts", value: "\(store.finalizerPreview?.summary.receiptsIssued ?? 0)")
                         Spacer(minLength: 8)
-                        Button {
+                        IconChipButton(symbol: "eye", label: "Preview") {
                             Task { await store.previewFinalizerForSelectedScan() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "shield.lefthalf.filled")
-                                    .font(BodyFont.system(size: 12, wght: 600))
-                                Text("Preview")
-                                    .font(BodyFont.system(size: 12, wght: 600))
-                            }
                         }
-                        .buttonStyle(.borderless)
                         .disabled(store.isLoadingFinalizerPreview || store.selectedScan?.actionPlan == nil)
                         .help("Prepare finalizer preview")
                     }
                     if store.isLoadingFinalizerPreview {
                         MacCareLoadingRow(title: "Preparing finalizer preview")
                     } else if let preview = store.finalizerPreview {
-                        Divider().background(Color.white.opacity(0.07))
+                        CardDivider()
                         if preview.actions.isEmpty {
                             MacCareEmptyRow(title: "No final actions", detail: "The selected action plan has no destructive candidates.")
                         } else {
                             ForEach(Array(preview.actions.prefix(8).enumerated()), id: \.element.id) { index, action in
                                 if index > 0 {
-                                    Divider().background(Color.white.opacity(0.07))
+                                    CardDivider()
                                 }
                                 MacCareFinalizerActionRow(action: action)
                             }
@@ -220,7 +209,7 @@ struct MacCareScreen: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(report.routes.prefix(10).enumerated()), id: \.element.id) { index, route in
                         if index > 0 {
-                            Divider().background(Color.white.opacity(0.07))
+                            CardDivider()
                         }
                         MacCareRouteRow(route: route)
                     }
@@ -264,11 +253,11 @@ private struct MacCareMetricTile: View {
         .frame(minHeight: 96, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                .stroke(Color.overlay(0.10), lineWidth: 0.6)
         )
     }
 }
@@ -278,9 +267,8 @@ private struct MacCareStatusBanner: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(BodyFont.system(size: 12, wght: 600))
-                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+            IconImage("exclamationmark.triangle", size: 12)
+                .foregroundColor(Palette.warning)
             Text(message)
                 .font(BodyFont.system(size: 12))
                 .foregroundColor(Palette.textPrimary)
@@ -289,11 +277,11 @@ private struct MacCareStatusBanner: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(red: 0.18, green: 0.12, blue: 0.07))
+                .fill(Palette.warning.opacity(0.12))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.orange.opacity(0.25), lineWidth: 0.7)
+                .stroke(Palette.warning.opacity(0.30), lineWidth: 0.7)
         )
     }
 }
@@ -306,9 +294,8 @@ private struct MacCareScanRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(selected ? Color(red: 0.50, green: 0.78, blue: 0.55) : Palette.textSecondary)
+                IconImage(selected ? "checkmark.circle.fill" : "circle", size: 13)
+                    .foregroundColor(selected ? Palette.success : Palette.textSecondary)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(scan.id)
@@ -338,8 +325,7 @@ private struct MacCareCandidateRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(BodyFont.system(size: 12, wght: 600))
+            IconImage("doc.text", size: 12)
                 .foregroundColor(Palette.textSecondary)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 4) {
@@ -370,8 +356,7 @@ private struct MacCareRouteRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "folder")
-                .font(BodyFont.system(size: 12, wght: 600))
+            IconImage("folder", size: 12)
                 .foregroundColor(Palette.textSecondary)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 4) {
@@ -397,9 +382,8 @@ private struct MacCareFinalizerActionRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "shield")
-                .font(BodyFont.system(size: 12, wght: 600))
-                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+            IconImage("exclamationmark.shield", size: 12)
+                .foregroundColor(Palette.warning)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 4) {
                 Text(action.displayName)

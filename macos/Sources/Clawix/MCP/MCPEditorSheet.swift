@@ -103,7 +103,7 @@ struct MCPEditorSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(headerTitle)
                     .font(BodyFont.system(size: 20, weight: .medium))
-                    .foregroundColor(Color(white: 0.97))
+                    .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                 Button {
                     if let url = URL(string: "https://github.com/openai/codex/blob/main/docs/mcp.md") {
                         NSWorkspace.shared.open(url)
@@ -128,15 +128,15 @@ struct MCPEditorSheet: View {
                         Text("Uninstall")
                             .font(BodyFont.system(size: 12, wght: 600))
                     }
-                    .foregroundColor(Color(red: 0.95, green: 0.42, blue: 0.42))
+                    .foregroundColor(Palette.danger)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color(red: 0.95, green: 0.42, blue: 0.42).opacity(0.10))
+                            .fill(Palette.danger.opacity(0.10))
                             .overlay(
                                 Capsule(style: .continuous)
-                                    .stroke(Color(red: 0.95, green: 0.42, blue: 0.42).opacity(0.40),
+                                    .stroke(Palette.danger.opacity(0.40),
                                             lineWidth: 0.6)
                             )
                     )
@@ -145,7 +145,7 @@ struct MCPEditorSheet: View {
             }
             Button(action: onClose) {
                 LucideIcon(.x, size: 13)
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
             }
@@ -290,10 +290,10 @@ private struct MCPSheetCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }
@@ -326,7 +326,7 @@ private struct MCPSheetTextField: View {
                     .fill(Color.black.opacity(isDisabled ? 0.20 : 0.30))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
             )
             .disabled(isDisabled)
@@ -391,7 +391,7 @@ private struct MCPSheetAddRow: View {
                 Text(label)
                     .font(BodyFont.system(size: 12.5))
             }
-            .foregroundColor(Color(white: hovered ? 0.94 : 0.65))
+            .foregroundColor((hovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.38, dark: 0.65)))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
             .background(
@@ -399,7 +399,7 @@ private struct MCPSheetAddRow: View {
                     .fill(Color.black.opacity(hovered ? 0.36 : 0.26))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
             )
         }
@@ -415,11 +415,11 @@ private struct MCPSheetTrashButton: View {
     var body: some View {
         Button(action: action) {
             LucideIcon(.trash, size: 11)
-                .foregroundColor(Color(white: hovered ? 0.94 : 0.55))
+                .foregroundColor((hovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.45, dark: 0.55)))
                 .frame(width: 30, height: 30)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.06 : 0.0))
+                        .fill(Color.overlay(hovered ? 0.06 : 0.0))
                 )
                 .contentShape(Rectangle())
         }

@@ -93,7 +93,7 @@ struct FeedbackDialogView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
         .shadow(color: .black.opacity(0.55), radius: 36, y: 18)
         .background(
@@ -133,11 +133,11 @@ struct FeedbackDialogView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.08), lineWidth: 0.5)
             )
 
             Toggle(isOn: $includeDiagnostics) {
@@ -180,7 +180,7 @@ struct FeedbackDialogView: View {
                         .frame(height: 26)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.white.opacity(selected ? 0.12 : 0.05))
+                                .fill(Color.overlay(selected ? 0.12 : 0.05))
                         )
                 }
                 .buttonStyle(.plain)
@@ -401,15 +401,15 @@ private struct FeedbackButton: View {
 
     private var foreground: Color {
         switch style {
-        case .primary:   return Color(white: 0.08)
+        case .primary:   return Color.gray(light: 0.955, dark: 0.08)
         case .secondary: return Palette.textPrimary
         }
     }
 
     private var fill: Color {
         switch style {
-        case .primary:   return Color(white: hovering ? 1.0 : 0.94)
-        case .secondary: return Color.white.opacity(hovering ? 0.14 : 0.10)
+        case .primary:   return (hovering ? Color.gray(light: 0.05, dark: 1.0) : Color.gray(light: 0.12, dark: 0.94))
+        case .secondary: return Color.overlay(hovering ? 0.14 : 0.10)
         }
     }
 }

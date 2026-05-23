@@ -65,7 +65,7 @@ enum PermissionMode: String, CaseIterable, Identifiable {
 
     var accent: Color {
         switch self {
-        case .defaultPermissions: return Color(white: 0.78)
+        case .defaultPermissions: return Color.gray(light: 0.27, dark: 0.78)
         case .autoReview:         return Color(red: 0.34, green: 0.62, blue: 1.0)
         case .fullAccess:         return Color(red: 0.95, green: 0.50, blue: 0.20)
         }

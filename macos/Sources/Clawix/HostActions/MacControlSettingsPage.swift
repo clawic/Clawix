@@ -455,7 +455,7 @@ private struct MacControlCompactTextField: View {
                     .fill(Color.black.opacity(0.24))
                     .overlay(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
     }

@@ -121,7 +121,7 @@ struct DriveScreen: View {
             .padding(.horizontal, 12)
             .frame(height: 28)
             .frame(maxWidth: 280)
-            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.06)))
+            .background(Capsule(style: .continuous).fill(Color.overlay(0.06)))
             SlidingSegmented(
                 selection: $viewMode,
                 options: ViewMode.allCases.map { ($0, $0.rawValue.capitalized) },
@@ -135,10 +135,10 @@ struct DriveScreen: View {
                     Text("Upload")
                 }
                 .font(BodyFont.system(size: 12, wght: 600))
-                .foregroundColor(canUpload ? Color.black : Color.white.opacity(0.55))
+                .foregroundColor(canUpload ? Palette.background : Color.overlay(0.55))
                 .padding(.horizontal, 12)
                 .frame(height: 28)
-                .background(Capsule(style: .continuous).fill(canUpload ? Color.white.opacity(0.92) : Color.white.opacity(0.18)))
+                .background(Capsule(style: .continuous).fill(canUpload ? Color.overlay(0.92) : Color.overlay(0.18)))
             }
             .buttonStyle(.plain)
             .disabled(!canUpload)
@@ -670,7 +670,7 @@ struct DriveItemDetailPane: View {
                     if let detailError {
                         Text(detailError)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                            .foregroundColor(Palette.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: 6) {
@@ -823,8 +823,8 @@ private struct DriveSidebarRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.10)
-                          : (hovered ? Color.white.opacity(0.06) : Color.clear))
+                    .fill(isSelected ? Color.overlay(0.10)
+                          : (hovered ? Color.overlay(0.06) : Color.clear))
             )
             .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
@@ -879,10 +879,10 @@ private struct DrivePillButton: View {
                 .frame(height: 28)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.14 : 0.08))
+                        .fill(Color.overlay(hovered ? 0.14 : 0.08))
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
                 .contentShape(Capsule(style: .continuous))

@@ -37,7 +37,7 @@ struct UserAudioBubble: View {
         .frame(maxWidth: 240, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.overlay(0.08))
         )
         .onDisappear {
             progressTimer?.invalidate()
@@ -50,7 +50,7 @@ struct UserAudioBubble: View {
         Button(action: toggle) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.14))
+                    .fill(Color.overlay(0.14))
                 LucideIcon.auto(isPlaying ? "pause.fill" : "play.fill", size: 13)
                     .foregroundColor(Palette.textPrimary)
                     .offset(x: isPlaying ? 0 : 1)

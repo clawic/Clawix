@@ -154,7 +154,7 @@ private struct FeedCardGrid: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 }
@@ -199,7 +199,7 @@ private struct HandleAvatar: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size / 4, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
             Text(initials).font(.system(size: size * 0.42, weight: .semibold)).kerning(-0.4)
                 .foregroundStyle(Palette.textPrimary)
         }
@@ -246,7 +246,7 @@ private struct FeedPreviewMedia: View {
     let preview: [String: AnyJSON]
 
     var body: some View {
-        Rectangle().fill(Color.white.opacity(0.04))
+        Rectangle().fill(Color.overlay(0.04))
             .overlay(
                 VStack(spacing: 6) {
                     LucideIcon(.image, size: 22)
@@ -271,11 +271,11 @@ private struct SearchField: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 0.5),
+                .stroke(Color.overlay(0.06), lineWidth: 0.5),
         )
     }
 }

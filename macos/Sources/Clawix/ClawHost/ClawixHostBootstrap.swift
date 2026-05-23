@@ -27,7 +27,7 @@ enum ClawixHostBootstrap {
 
         var registry = try readRegistry(from: registryURL)
         let now = Timestamp.now()
-        let stateDir = StatePaths.stateDirectory(environment: [
+        var stateEnv: [String: String] = [
             "CLAW_HOST_ID": config.id,
             "CLAW_HOST_DISPLAY_NAME": config.displayName,
             "CLAW_HOST_APP_SUPPORT_NAME": config.appSupportDirectoryName,
@@ -35,7 +35,15 @@ enum ClawixHostBootstrap {
             "CLAW_HOST_DAEMON_NAME": config.daemonExecutableName,
             "CLAW_HOST_LAUNCH_AGENT_LABEL": config.launchAgentLabel,
             "CLAW_HOST_MACH_SERVICE": config.machServiceName ?? "",
-        ])
+        ]
+        // Honor a per-instance CLAW_HOST_HOME so parallel agent instances isolate
+        // their host state dir (daemon socket, status, capabilities) instead of
+        // all resolving to the shared default state directory. StatePaths only
+        // reads CLAW_HOST_HOME from the dict it is given, so forward it here.
+        if let hostHome = ProcessInfo.processInfo.environment["CLAW_HOST_HOME"], !hostHome.isEmpty {
+            stateEnv["CLAW_HOST_HOME"] = hostHome
+        }
+        let stateDir = StatePaths.stateDirectory(environment: stateEnv)
         let endpoint = HostEndpoint(
             transport: .unixSocket,
             address: try StatePaths.daemonSocketFile(environment: ["CLAW_HOST_HOME": stateDir.path]).path

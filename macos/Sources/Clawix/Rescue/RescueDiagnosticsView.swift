@@ -27,7 +27,7 @@ struct RescueDiagnosticsView: View {
                 SettingsCard {
                     HStack(alignment: .center, spacing: 12) {
                         LucideIcon.auto("circle-alert", size: 14)
-                            .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.30))
+                            .foregroundColor(Palette.warning)
                             .frame(width: 18)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(summary?.title ?? modeLabel)

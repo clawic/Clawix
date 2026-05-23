@@ -195,7 +195,7 @@ struct RootSearchPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().background(Color.white.opacity(0.12))
+            Divider().background(Color.overlay(0.12))
             results
         }
         .frame(width: 720, height: 560)

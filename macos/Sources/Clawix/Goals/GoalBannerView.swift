@@ -90,7 +90,7 @@ struct GoalBannerView: View {
             if let fraction = goal.budgetFraction {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.06))
+                        Capsule().fill(Color.overlay(0.06))
                         Capsule()
                             .fill(accent(status))
                             .frame(width: max(2, proxy.size.width * fraction))
@@ -126,8 +126,8 @@ struct GoalBannerView: View {
     private func bannerButton(_ icon: LucideIcon.Kind, label: String, destructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             LucideIcon(icon, size: 13)
-                .foregroundColor(destructive ? Color(red: 0.92, green: 0.45, blue: 0.45).opacity(0.85)
-                                              : Color.white.opacity(0.55))
+                .foregroundColor(destructive ? Palette.danger.opacity(0.85)
+                                              : Color.overlay(0.55))
                 .frame(width: 26, height: 26)
                 .contentShape(Rectangle())
         }
@@ -141,8 +141,8 @@ struct GoalBannerView: View {
     private func accent(_ status: ActiveGoal.Status) -> Color {
         switch status {
         case .active:   return Palette.pastelBlue
-        case .paused:   return Color.white.opacity(0.5)
-        case .limited:  return Color(red: 0.95, green: 0.62, blue: 0.32)
+        case .paused:   return Color.overlay(0.5)
+        case .limited:  return Palette.warning
         case .achieved: return Palette.pastelBlue
         }
     }
@@ -214,7 +214,7 @@ struct GoalEditSheet: View {
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
 
@@ -229,7 +229,7 @@ struct GoalEditSheet: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(
-                        Capsule().fill(Color.white.opacity(0.06))
+                        Capsule().fill(Color.overlay(0.06))
                     )
                     .onChange(of: budgetText) {
                         budgetText = budgetText.filter(\.isNumber)
@@ -252,9 +252,9 @@ struct GoalEditSheet: View {
                     onClose()
                 }
                 .buttonStyle(.plain)
-                .foregroundColor(canSave ? Color(white: 0.06) : Color.white.opacity(0.5))
+                .foregroundColor(canSave ? Color.gray(light: 0.96, dark: 0.06) : Color.overlay(0.5))
                 .padding(.horizontal, 14).padding(.vertical, 7)
-                .background(Capsule().fill(canSave ? Color(white: 0.94) : Color.white.opacity(0.12)))
+                .background(Capsule().fill(canSave ? Color.gray(light: 0.12, dark: 0.94) : Color.overlay(0.12)))
                 .disabled(!canSave)
             }
         }
