@@ -10,14 +10,14 @@
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-    <TextBox Grid.Row="0" x:Name="QueryBox" PlaceholderText="Ask anything..." />
+    <TextBox Grid.Row="0" x:Name="QueryBox" PlaceholderText="Ask anything..." KeyDown="QueryBox_KeyDown" />
     <ScrollViewer Grid.Row="1">
       <TextBlock x:Name="ResultText" TextWrapping="Wrap" />
     </ScrollViewer>
     <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
-      <Button Content="📷" />
-      <Button Content="📎" />
-      <Button Content="Send" Style="{ThemeResource AccentButtonStyle}" />
+      <Button x:Name="CameraBtn" Content="📷" Click="Camera_Click" />
+      <Button x:Name="AttachBtn" Content="📎" Click="Attach_Click" />
+      <Button x:Name="SendBtn" Content="Send" Style="{ThemeResource AccentButtonStyle}" Click="Send_Click" />
     </StackPanel>
   </Grid>
 </Window>

@@ -1,3 +1,4 @@
+using Clawix.Core;
 using Clawix.Core.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -68,7 +69,7 @@ public sealed partial class ComposerView : UserControl
         {
             Id = Guid.NewGuid().ToString("D").ToLowerInvariant(),
             Kind = WireAttachmentKind.Image,
-            MimeType = MimeTypeFor(file.FileType),
+            MimeType = AttachmentMimeTypes.ForFileExtension(file.FileType),
             Filename = file.Name,
             DataBase64 = Convert.ToBase64String(bytes),
         };
@@ -79,16 +80,4 @@ public sealed partial class ComposerView : UserControl
         AttachBtn.Content = _attachments.Count == 0 ? "📎" : $"📎 {_attachments.Count}";
     }
 
-    private static string MimeTypeFor(string extension)
-    {
-        return extension.ToLowerInvariant() switch
-        {
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            ".bmp" => "image/bmp",
-            _ => "application/octet-stream",
-        };
-    }
 }
