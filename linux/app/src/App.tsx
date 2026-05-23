@@ -42,9 +42,6 @@ export default function App(props: Props) {
     >
       <div class="grid grid-cols-[260px_1fr] h-full">
         <Sidebar
-          onSettings={() => navigate("/settings")}
-          onPairing={() => navigate("/pairing")}
-          onVault={() => navigate("/vault")}
           updateAvailable={updateAvailable()}
           onUpdate={() => navigate("/updater")}
         />

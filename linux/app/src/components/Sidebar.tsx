@@ -4,9 +4,6 @@ import { daemonStore } from "../lib/daemon_ws";
 import { chatHasActiveTurn, chatPreview, chatWasInterrupted, deriveSidebarModel, type ChatBrief } from "../lib/sidebar_model";
 
 interface Props {
-  onSettings: () => void;
-  onPairing: () => void;
-  onVault: () => void;
   updateAvailable: boolean;
   onUpdate: () => void;
 }
@@ -31,6 +28,9 @@ export function Sidebar(props: Props) {
       </header>
 
       <nav class="px-2 pb-2 space-y-0.5">
+        <div class="px-3 pb-1 text-[11px] uppercase tracking-tighter2 text-zinc-400">
+          Workspace
+        </div>
         <A
           href="/"
           end
@@ -105,6 +105,9 @@ export function Sidebar(props: Props) {
       </div>
 
       <footer class="px-2 pb-3 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/60 space-y-0.5">
+        <div class="px-3 pb-1 text-[11px] uppercase tracking-tighter2 text-zinc-400">
+          System
+        </div>
         <A
           href="/archived"
           class="flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg row-hover"
@@ -113,24 +116,34 @@ export function Sidebar(props: Props) {
           <span>Archived</span>
           <span class="text-xs text-zinc-500">{model().archived.length}</span>
         </A>
-        <button
-          class="w-full text-left px-3 py-2 text-sm rounded-lg row-hover"
-          onClick={props.onPairing}
+        <A
+          href="/pairing"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
         >
           Pair iPhone
-        </button>
-        <button
-          class="w-full text-left px-3 py-2 text-sm rounded-lg row-hover"
-          onClick={props.onVault}
+        </A>
+        <A
+          href="/vault"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
         >
           Vault
-        </button>
-        <button
-          class="w-full text-left px-3 py-2 text-sm rounded-lg row-hover"
-          onClick={props.onSettings}
+        </A>
+        <A
+          href="/settings"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
         >
           Settings
-        </button>
+        </A>
+        <A
+          href="/about"
+          class="block px-3 py-2 text-sm rounded-lg row-hover"
+          activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+        >
+          About
+        </A>
       </footer>
     </aside>
   );
