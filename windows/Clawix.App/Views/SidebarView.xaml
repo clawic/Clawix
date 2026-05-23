@@ -12,6 +12,8 @@
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
@@ -28,8 +30,23 @@
       </Button>
     </Grid>
     <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search chats" Margin="6,4,6,8" TextChanged="SearchBox_TextChanged" />
-    <TextBlock Grid.Row="2" x:Name="ProjectsHeader" Text="Projects" Margin="8,4,8,4" Style="{ThemeResource ClawixCaption}" />
-    <ListView Grid.Row="3" x:Name="ProjectList"
+    <TextBlock Grid.Row="2" x:Name="PinnedHeader" Text="Pinned" Margin="8,4,8,4" Style="{ThemeResource ClawixCaption}" />
+    <ListView Grid.Row="3" x:Name="PinnedList"
+              MaxHeight="128"
+              ItemsSource="{x:Bind PinnedSessions, Mode=OneWay}"
+              SelectionChanged="PinnedList_SelectionChanged"
+              SelectionMode="Single">
+      <ListView.ItemTemplate>
+        <DataTemplate x:DataType="models:WireSession">
+          <StackPanel Padding="6,4">
+            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
+            <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+    <TextBlock Grid.Row="4" x:Name="ProjectsHeader" Text="Projects" Margin="8,4,8,4" Style="{ThemeResource ClawixCaption}" />
+    <ListView Grid.Row="5" x:Name="ProjectList"
               MaxHeight="154"
               ItemsSource="{x:Bind Projects, Mode=OneWay}"
               SelectionChanged="ProjectList_SelectionChanged"
@@ -43,8 +60,8 @@
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
-    <Button Grid.Row="4" x:Name="AllChatsButton" Content="All chats" HorizontalAlignment="Stretch" Margin="6,4,6,6" Click="AllChats_Click" />
-    <ListView Grid.Row="5" x:Name="ChatList"
+    <Button Grid.Row="6" x:Name="AllChatsButton" Content="All chats" HorizontalAlignment="Stretch" Margin="6,4,6,6" Click="AllChats_Click" />
+    <ListView Grid.Row="7" x:Name="ChatList"
               ItemsSource="{x:Bind Sessions, Mode=OneWay}"
               SelectionChanged="ChatList_SelectionChanged"
               SelectionMode="Single">
@@ -57,8 +74,8 @@
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
-    <Button Grid.Row="6" Content="New chat" HorizontalAlignment="Stretch" Margin="6" Click="NewChat_Click" />
-    <views:RateLimitsWidget Grid.Row="7" x:Name="RateLimits" Margin="6,8,6,4" />
-    <TextBlock Grid.Row="8" x:Name="BridgeStatusText" Margin="6,4,6,6" Style="{ThemeResource ClawixCaption}" />
+    <Button Grid.Row="8" Content="New chat" HorizontalAlignment="Stretch" Margin="6" Click="NewChat_Click" />
+    <views:RateLimitsWidget Grid.Row="9" x:Name="RateLimits" Margin="6,8,6,4" />
+    <TextBlock Grid.Row="10" x:Name="BridgeStatusText" Margin="6,4,6,6" Style="{ThemeResource ClawixCaption}" />
   </Grid>
 </UserControl>

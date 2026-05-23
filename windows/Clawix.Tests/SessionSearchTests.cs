@@ -42,6 +42,16 @@ public sealed class SessionSearchTests
         Assert.Equal(new[] { "chat-b", "chat-a" }, result.Select(session => session.Id).ToArray());
     }
 
+    [Fact]
+    public void FilterPinned_ReturnsVisiblePinnedSessionsOnly()
+    {
+        var sessions = SampleSessions();
+
+        var result = SessionSearch.FilterPinned(sessions, null);
+
+        Assert.Equal(new[] { "chat-b" }, result.Select(session => session.Id).ToArray());
+    }
+
     private static WireSession[] SampleSessions()
     {
         return
@@ -63,6 +73,7 @@ public sealed class SessionSearchTests
                 Title = "Design work",
                 LastMessagePreview = "image prompt",
                 Cwd = @"C:\Work\ProjectA\src",
+                IsPinned = true,
                 CreatedAt = DateTimeOffset.Parse("2026-05-22T00:00:00Z"),
                 LastMessageAt = DateTimeOffset.Parse("2026-05-23T00:00:00Z"),
             },
@@ -73,6 +84,8 @@ public sealed class SessionSearchTests
                 Title = "Notes",
                 LastMessagePreview = "summary",
                 Cwd = @"C:\Work\Other",
+                IsPinned = true,
+                IsArchived = true,
                 CreatedAt = DateTimeOffset.Parse("2026-05-22T12:00:00Z"),
             },
         ];

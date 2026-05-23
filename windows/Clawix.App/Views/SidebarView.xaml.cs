@@ -9,6 +9,7 @@ namespace Clawix.App.Views;
 public sealed partial class SidebarView : UserControl
 {
     public ObservableCollection<WireSession> Sessions { get; } = new();
+    public ObservableCollection<WireSession> PinnedSessions { get; } = new();
     public ObservableCollection<WireProject> Projects { get; } = new();
     private IReadOnlyList<WireSession> _allSessions = [];
     private WireProject? _selectedProject;
@@ -28,6 +29,7 @@ public sealed partial class SidebarView : UserControl
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     _allSessions = state.Sessions;
+                    RefreshPinnedSessions();
                     RefreshSessions();
                 });
             if (args.PropertyName == nameof(state.Projects))
@@ -46,6 +48,7 @@ public sealed partial class SidebarView : UserControl
                 });
         };
         _allSessions = state.Sessions;
+        RefreshPinnedSessions();
         RefreshProjects(state.Projects);
         RefreshSessions();
         BridgeStatusText.Text = state.BridgeStateLabel;
@@ -56,12 +59,25 @@ public sealed partial class SidebarView : UserControl
     private async void ChatList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ChatList.SelectedItem is WireSession chat)
+        {
+            PinnedList.SelectedItem = null;
             await App.Services.State.SelectChatAsync(chat);
+        }
+    }
+
+    private async void PinnedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PinnedList.SelectedItem is WireSession chat)
+        {
+            ChatList.SelectedItem = null;
+            await App.Services.State.SelectChatAsync(chat);
+        }
     }
 
     private void NewChat_Click(object sender, RoutedEventArgs e)
     {
         ChatList.SelectedItem = null;
+        PinnedList.SelectedItem = null;
         App.Services.State.StartNewChat();
     }
 
@@ -83,7 +99,26 @@ public sealed partial class SidebarView : UserControl
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
+        RefreshPinnedSessions();
         RefreshSessions();
+    }
+
+    private void RefreshPinnedSessions()
+    {
+        var selectedId = (PinnedList.SelectedItem as WireSession)?.Id;
+        var filtered = SessionSearch.FilterPinned(_allSessions, SearchBox.Text);
+        PinnedSessions.Clear();
+        WireSession? selected = null;
+        foreach (var chat in filtered)
+        {
+            PinnedSessions.Add(chat);
+            if (chat.Id == selectedId) selected = chat;
+        }
+
+        PinnedList.SelectedItem = selected;
+        var hasPinned = PinnedSessions.Count > 0;
+        PinnedHeader.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
+        PinnedList.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void RefreshSessions()

@@ -31,6 +31,13 @@ public static class SessionSearch
             .ToList();
     }
 
+    public static IReadOnlyList<WireSession> FilterPinned(IEnumerable<WireSession> sessions, string? query)
+    {
+        return Filter(sessions, query)
+            .Where(session => session.IsPinned && !session.IsArchived)
+            .ToList();
+    }
+
     private static bool Matches(WireSession session, string query)
     {
         return Contains(session.Title, query)
