@@ -34,6 +34,7 @@ describe("web route catalog", () => {
     expect(routeEntry("chat").webSurface).toBe("implemented");
     expect(routeEntry("search").webSurface).toBe("implemented");
     expect(routeEntry("skills").webSurface).toBe("implemented");
+    expect(routeEntry("network").webSurface).toBe("implemented");
     expect(routeEntry("plugins").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
