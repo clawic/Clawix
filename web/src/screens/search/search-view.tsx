@@ -37,8 +37,8 @@ export function SearchView({ onOpenChat }: Props) {
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search in conversations..."
-              aria-label="Search field"
+              placeholder={t("Search in conversations...")}
+              aria-label={t("Search field")}
               className="h-7 px-0 border-0 bg-transparent"
             />
             {query.trim() && (
@@ -46,7 +46,7 @@ export function SearchView({ onOpenChat }: Props) {
                 type="button"
                 onClick={() => setQuery("")}
                 className="grid place-items-center size-6 text-[var(--color-fg-tertiary)] hover:text-[var(--color-fg)]"
-                aria-label="Clear search"
+                aria-label={t("Clear search")}
               >
                 <CircleXIcon size={12} />
               </button>
@@ -54,9 +54,9 @@ export function SearchView({ onOpenChat }: Props) {
           </div>
 
           {query.trim() === "" ? (
-            <SearchEmpty message="Type to search your conversations" />
+            <SearchEmpty message={t("Type to search your conversations")} />
           ) : results.length === 0 ? (
-            <SearchEmpty message={`No results for "${query.trim()}"`} />
+            <SearchEmpty message={`${t("No results for")} "${query.trim()}"`} />
           ) : (
             <Card>
               {results.map((result, index) => (
@@ -94,7 +94,7 @@ function SearchResultRow({
             {result.title}
           </div>
           <div className="shrink-0 text-[10.5px] text-[var(--color-fg-tertiary)]">
-            {result.kind === "message" ? "Message" : "Chat"}
+            {result.kind === "message" ? t("Message") : t("Chat")}
           </div>
         </div>
         <div
