@@ -72,41 +72,11 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
-                        Task { await syncTuya() }
-                    } label: {
-                        Text(verbatim: "Sync devices")
-                            .font(BodyFont.system(size: 11))
-                            .foregroundColor(Palette.textSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.plain)
-                    Button {
-                        Task { await disconnectTuya() }
-                    } label: {
-                        Text(verbatim: "Disconnect")
-                            .font(BodyFont.system(size: 11))
-                            .foregroundColor(Palette.textSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.plain)
-                    Button {
+                    secondaryAction("Sync devices") { Task { await syncTuya() } }
+                    secondaryAction("Disconnect") { Task { await disconnectTuya() } }
+                    primaryAction("Connect", enabled: !(tuyaAppKey.isEmpty || tuyaAppSecret.isEmpty)) {
                         Task { await connectTuya() }
-                    } label: {
-                        Text(verbatim: "Connect")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(tuyaAppKey.isEmpty || tuyaAppSecret.isEmpty)
                 }
             }
         }
@@ -128,31 +98,10 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
-                        Task { await disconnectGoogle() }
-                    } label: {
-                        Text(verbatim: "Disconnect")
-                            .font(BodyFont.system(size: 11))
-                            .foregroundColor(Palette.textSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.plain)
-                    Button {
+                    secondaryAction("Disconnect") { Task { await disconnectGoogle() } }
+                    primaryAction("Connect", enabled: !(googleUrl.isEmpty || googleClientId.isEmpty || googleClientSecret.isEmpty || googleAgentUserId.isEmpty)) {
                         Task { await connectGoogle() }
-                    } label: {
-                        Text(verbatim: "Connect")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(googleUrl.isEmpty || googleClientId.isEmpty || googleClientSecret.isEmpty || googleAgentUserId.isEmpty)
                 }
             }
         }
@@ -173,31 +122,10 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
-                        Task { await disconnectAlexa() }
-                    } label: {
-                        Text(verbatim: "Disconnect")
-                            .font(BodyFont.system(size: 11))
-                            .foregroundColor(Palette.textSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.plain)
-                    Button {
+                    secondaryAction("Disconnect") { Task { await disconnectAlexa() } }
+                    primaryAction("Connect", enabled: !(alexaUrl.isEmpty || alexaClientSecret.isEmpty)) {
                         Task { await connectAlexa() }
-                    } label: {
-                        Text(verbatim: "Connect")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(alexaUrl.isEmpty || alexaClientSecret.isEmpty)
                 }
             }
         }
@@ -216,21 +144,9 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
+                    primaryAction("Commission", enabled: !matterPairing.isEmpty) {
                         Task { await commissionMatter() }
-                    } label: {
-                        Text(verbatim: "Commission")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(matterPairing.isEmpty)
                 }
             }
         }
@@ -260,20 +176,9 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
+                    primaryAction("Start bridge") {
                         Task { await startBridge() }
-                    } label: {
-                        Text(verbatim: "Start bridge")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -293,31 +198,10 @@ struct IoTProtocolPaths: View {
                 }
                 HStack {
                     Spacer()
-                    Button {
-                        Task { await disconnectMqtt() }
-                    } label: {
-                        Text(verbatim: "Disconnect")
-                            .font(BodyFont.system(size: 11))
-                            .foregroundColor(Palette.textSecondary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.plain)
-                    Button {
+                    secondaryAction("Disconnect") { Task { await disconnectMqtt() } }
+                    primaryAction("Connect", enabled: !(mqttUrl.isEmpty || mqttUrl == "mqtt://")) {
                         Task { await connectMqtt() }
-                    } label: {
-                        Text(verbatim: "Connect")
-                            .font(BodyFont.system(size: 11, weight: .medium))
-                            .foregroundColor(Palette.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.accentColor.opacity(0.40))
-                            )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(mqttUrl.isEmpty || mqttUrl == "mqtt://")
                 }
             }
         }
@@ -374,6 +258,39 @@ struct IoTProtocolPaths: View {
                 .font(BodyFont.system(size: 12))
                 .foregroundColor(Palette.textPrimary)
         }
+    }
+
+    /// Solid-light primary action for a protocol card (the dominant
+    /// connect/commission action). Neutral fill, never brand color.
+    @ViewBuilder
+    private func primaryAction(_ title: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(verbatim: title)
+                .font(BodyFont.system(size: 11, wght: 600))
+                .foregroundColor(enabled ? Color.black : Color.white.opacity(0.55))
+                .padding(.horizontal, 14)
+                .frame(height: 26)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(enabled ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    /// Quiet secondary action (disconnect / sync) sitting next to the
+    /// primary one.
+    @ViewBuilder
+    private func secondaryAction(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(verbatim: title)
+                .font(BodyFont.system(size: 11, wght: 500))
+                .foregroundColor(Palette.textSecondary)
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Actions

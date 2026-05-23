@@ -85,8 +85,7 @@ struct IoTDiscoveryView: View {
                             .controlSize(.mini)
                             .tint(Palette.textPrimary)
                     } else {
-                        Image(systemName: "dot.radiowaves.left.and.right")
-                            .font(.system(size: 11))
+                        IconImage("dot.radiowaves.left.and.right", size: 11)
                     }
                     Text(verbatim: scanning ? "Stop scan" : "Scan local network")
                         .font(BodyFont.system(size: 12, weight: .medium))
@@ -104,7 +103,7 @@ struct IoTDiscoveryView: View {
             if feed.isStreaming {
                 HStack(spacing: 4) {
                     Circle()
-                        .fill(Color.green.opacity(0.6))
+                        .fill(Palette.pastelBlue)
                         .frame(width: 6, height: 6)
                     Text(verbatim: "Listening (\(feed.devices.count) found)")
                         .font(BodyFont.system(size: 10))
@@ -129,8 +128,7 @@ struct IoTDiscoveryView: View {
     @ViewBuilder
     private var emptyHint: some View {
         VStack(spacing: 8) {
-            Image(systemName: "antenna.radiowaves.left.and.right")
-                .font(.system(size: 26, weight: .light))
+            IconImage("antenna.radiowaves.left.and.right", size: 26)
                 .foregroundColor(Palette.textTertiary)
             Text(verbatim: "No devices yet")
                 .font(BodyFont.system(size: 13, weight: .medium))
@@ -153,12 +151,10 @@ struct IoTDiscoveryView: View {
                     .font(BodyFont.system(size: 11))
                     .foregroundColor(Palette.textTertiary)
                     .frame(width: 80, alignment: .leading)
-                Picker("", selection: $manualKind) {
-                    ForEach(IoTDeviceKind.allCases, id: \.self) { kind in
-                        Text(verbatim: kind.rawValue.capitalized).tag(kind)
-                    }
-                }
-                .labelsHidden()
+                SettingsDropdown(
+                    options: IoTDeviceKind.allCases.map { ($0, $0.rawValue.capitalized) },
+                    selection: $manualKind
+                )
                 Spacer()
             }
             formRow(label: "Connector", binding: $manualConnectorId, placeholder: "mock-simulator")
@@ -168,14 +164,15 @@ struct IoTDiscoveryView: View {
                 Button {
                     Task { await addManual() }
                 } label: {
+                    let enabled = !(manualLabel.isEmpty || manualTargetRef.isEmpty)
                     Text(verbatim: "Add device")
-                        .font(BodyFont.system(size: 11, weight: .medium))
-                        .foregroundColor(Palette.textPrimary)
+                        .font(BodyFont.system(size: 11, wght: 600))
+                        .foregroundColor(enabled ? Color.black : Color.white.opacity(0.55))
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
+                        .frame(height: 26)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.accentColor.opacity(0.40))
+                            Capsule(style: .continuous)
+                                .fill(enabled ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
                         )
                 }
                 .buttonStyle(.plain)
@@ -271,8 +268,7 @@ private struct DiscoveryCard: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "antenna.radiowaves.left.and.right")
-                .font(.system(size: 13))
+            IconImage("antenna.radiowaves.left.and.right", size: 13)
                 .foregroundColor(Palette.textSecondary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: device.label)
@@ -290,20 +286,18 @@ private struct DiscoveryCard: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .controlSize(.mini)
-                            .tint(Palette.textPrimary)
+                            .tint(Color.black)
                     } else {
-                        Image(systemName: "plus")
-                            .font(.system(size: 10))
+                        IconImage("plus", size: 10)
                     }
                     Text(verbatim: "Add")
                 }
-                .font(BodyFont.system(size: 11, weight: .medium))
-                .foregroundColor(Palette.textPrimary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .font(BodyFont.system(size: 11, wght: 600))
+                .foregroundColor(Color.black)
+                .padding(.horizontal, 12)
+                .frame(height: 26)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.40))
+                    Capsule(style: .continuous).fill(Color.white.opacity(0.92))
                 )
             }
             .buttonStyle(.plain)
