@@ -19,6 +19,7 @@ const [generatedImages, setGeneratedImages] = createSignal<Record<string, unknow
 const [audioById, setAudioById] = createSignal<Record<string, unknown>>({});
 const [rateLimits, setRateLimits] = createSignal<unknown | null>(null);
 const [rateLimitsByLimitId, setRateLimitsByLimitId] = createSignal<Record<string, unknown>>({});
+const [clawJSServiceStatuses, setClawJSServiceStatuses] = createSignal<unknown[]>([]);
 const [bridgeState, setBridgeState] = createSignal<string>("booting");
 
 export const daemonStore = {
@@ -33,6 +34,7 @@ export const daemonStore = {
   audioById,
   rateLimits,
   rateLimitsByLimitId,
+  clawJSServiceStatuses,
   bridgeState,
   send: (body: BridgeFrame["body"]) => invoke("send_intent", { body })
 };
@@ -45,6 +47,7 @@ export function useDaemonStream(): void {
           switch (frame.type) {
             case "authOk":
               void requestRateLimits();
+              void requestClawJSServiceStatuses();
               break;
             case "sessionsSnapshot":
               setChats((frame.sessions as unknown[]) ?? []);
@@ -114,6 +117,12 @@ export function useDaemonStream(): void {
             case "rateLimitsUpdated":
               setRateLimits(frame.rateLimits ?? null);
               setRateLimitsByLimitId(isRecord(frame.rateLimitsByLimitId) ? frame.rateLimitsByLimitId : {});
+              break;
+            case "clawJSServiceStatusesSnapshot":
+              setClawJSServiceStatuses(Array.isArray(frame.services) ? frame.services : []);
+              break;
+            case "clawJSServiceStatusUpdated":
+              setClawJSServiceStatuses((prev) => upsertServiceStatus(prev, frame.service));
               break;
             case "bridgeState":
               setBridgeState((frame.state as string) ?? "booting");
@@ -208,6 +217,14 @@ export async function editPrompt(sessionId: string, messageId: string, text: str
   }
 }
 
+export async function interruptTurn(sessionId: string): Promise<void> {
+  try {
+    await invoke("interrupt_turn", { sessionId });
+  } catch (_) {
+    /* preview mode or bridge unavailable */
+  }
+}
+
 export async function readFile(path: string): Promise<void> {
   try {
     await invoke("read_file", { path });
@@ -240,8 +257,16 @@ export async function requestRateLimits(): Promise<void> {
   }
 }
 
-export async function sendMessage(text: string, sessionId?: string): Promise<void> {
-  await invoke("send_message", { args: { sessionId, text } });
+export async function requestClawJSServiceStatuses(): Promise<void> {
+  try {
+    await invoke("request_clawjs_service_statuses");
+  } catch (_) {
+    setClawJSServiceStatuses([]);
+  }
+}
+
+export async function sendMessage(text: string, sessionId?: string, attachments: unknown[] = []): Promise<void> {
+  await invoke("send_message", { args: { sessionId, text, attachments } });
 }
 
 function titleForSession(sessions: unknown[], sessionId: string): string | null {
@@ -253,4 +278,14 @@ function titleForSession(sessions: unknown[], sessionId: string): string | null 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function upsertServiceStatus(services: unknown[], service: unknown): unknown[] {
+  if (!isRecord(service) || typeof service.id !== "string") return services;
+  const index = services.findIndex((item) => isRecord(item) && item.id === service.id);
+  if (index < 0) return [...services, service];
+
+  const next = services.slice();
+  next[index] = service;
+  return next;
 }

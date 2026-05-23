@@ -87,14 +87,16 @@ impl DaemonClient {
         &self,
         session_id: Option<&str>,
         text: &str,
+        attachments: Vec<serde_json::Value>,
     ) -> Result<serde_json::Value> {
         let body = if let Some(id) = session_id {
-            serde_json::json!({ "type": "sendMessage", "sessionId": id, "text": text })
+            serde_json::json!({ "type": "sendMessage", "sessionId": id, "text": text, "attachments": attachments })
         } else {
             serde_json::json!({
                 "type": "newSession",
                 "sessionId": uuid_v4(),
-                "text": text
+                "text": text,
+                "attachments": attachments
             })
         };
         self.send_intent(body).await
@@ -178,6 +180,14 @@ impl DaemonClient {
     pub async fn request_rate_limits(&self) -> Result<()> {
         self.send_intent(serde_json::json!({
             "type": "requestRateLimits"
+        }))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn request_clawjs_service_statuses(&self) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "requestClawJSServiceStatuses"
         }))
         .await?;
         Ok(())

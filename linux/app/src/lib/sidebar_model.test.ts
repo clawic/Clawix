@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectionForPath, deriveSidebarModel, type ChatBrief } from "./sidebar_model";
+import { chatHasActiveTurn, collectionForPath, deriveSidebarModel, type ChatBrief } from "./sidebar_model";
 
 const chats: ChatBrief[] = [
   { id: "1", title: "Pinned project", isPinned: true, projectId: "alpha", projectName: "Alpha" },
@@ -32,5 +32,13 @@ describe("collectionForPath", () => {
     expect(collectionForPath(chats, "/projects/beta").chats.map((chat) => chat.id)).toEqual(["2"]);
     expect(collectionForPath(chats, "/archived").chats.map((chat) => chat.id)).toEqual(["4"]);
     expect(collectionForPath(chats, "/all-chats").chats.map((chat) => chat.id)).toEqual(["1", "2", "3"]);
+  });
+});
+
+describe("chatHasActiveTurn", () => {
+  it("accepts camelCase and snake_case bridge fields", () => {
+    expect(chatHasActiveTurn({ id: "1", hasActiveTurn: true })).toBe(true);
+    expect(chatHasActiveTurn({ id: "2", has_active_turn: true })).toBe(true);
+    expect(chatHasActiveTurn({ id: "3" })).toBe(false);
   });
 });

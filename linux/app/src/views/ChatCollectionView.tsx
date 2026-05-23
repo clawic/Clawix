@@ -1,7 +1,7 @@
 import { A, useLocation } from "@solidjs/router";
 import { For, Show, createMemo, createSignal, onMount } from "solid-js";
 import { daemonStore, loadChats, loadProjects, renameSession, setArchived, setPinned } from "../lib/daemon_ws";
-import { collectionForPath, type ChatBrief } from "../lib/sidebar_model";
+import { chatHasActiveTurn, collectionForPath, type ChatBrief } from "../lib/sidebar_model";
 
 export default function ChatCollectionView() {
   const location = useLocation();
@@ -79,7 +79,7 @@ export default function ChatCollectionView() {
                         <A href={`/chats/${chat.id}`}>
                           <div class="flex items-center justify-between gap-3">
                             <div class="text-sm font-medium truncate">{chatTitle(chat)}</div>
-                            <Show when={chat.hasActiveTurn}>
+                            <Show when={chatHasActiveTurn(chat)}>
                               <span class="text-[11px] px-2 py-0.5 rounded-full bg-zinc-900/10 text-zinc-600 dark:bg-zinc-100/10 dark:text-zinc-300">
                                 Running
                               </span>
@@ -150,7 +150,7 @@ export default function ChatCollectionView() {
 
         <Show when={collection().projects.length === 0 && collection().chats.length === 0}>
           <div class="min-h-[40vh] flex items-center justify-center text-zinc-400 text-sm">
-            {daemonStore.lastFailure() ?? daemonStore.bridgeStatus().message ?? collection().empty}
+            {collection().empty}
           </div>
         </Show>
       </div>

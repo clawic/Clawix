@@ -1,7 +1,8 @@
 import { For, Show, createSignal, onMount } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
-import { daemonStore, requestRateLimits } from "../lib/daemon_ws";
+import { daemonStore, requestClawJSServiceStatuses, requestRateLimits } from "../lib/daemon_ws";
 import { rateLimitRows, type RateLimitSnapshot } from "../lib/rate_limits_model";
+import { serviceStatusRows, type ServiceStatus } from "../lib/service_status_model";
 
 interface DaemonStatus {
   installed: boolean;
@@ -19,6 +20,7 @@ export default function SettingsView() {
     const s = await invoke<DaemonStatus>("daemon_status");
     setStatus(s);
     void requestRateLimits();
+    void requestClawJSServiceStatuses();
     const stored = await invoke<string | null>("get_setting", { key: "ui.hotkey" });
     if (stored) setHotkey(stored);
     const t = await invoke<string | null>("get_setting", { key: "ui.theme" });
@@ -87,6 +89,33 @@ export default function SettingsView() {
                   <Field label={row.label}>
                     <code class="text-xs text-zinc-600 dark:text-zinc-400">{row.value}</code>
                   </Field>
+                )}
+              </For>
+            </div>
+          </Show>
+        </Section>
+
+        <Section title="ClawJS services">
+          <Show
+            when={serviceStatusRows(daemonStore.clawJSServiceStatuses() as ServiceStatus[]).length > 0}
+            fallback={<div class="text-sm text-zinc-500">No services reported yet.</div>}
+          >
+            <div class="space-y-2">
+              <For each={serviceStatusRows(daemonStore.clawJSServiceStatuses() as ServiceStatus[])}>
+                {(row) => (
+                  <div class="rounded-lg bg-zinc-100/70 px-3 py-2 text-sm dark:bg-zinc-800/40">
+                    <div class="font-medium">{row.id}</div>
+                    <div
+                      class="text-xs"
+                      classList={{
+                        "text-emerald-600 dark:text-emerald-400": row.tone === "ok",
+                        "text-red-600 dark:text-red-400": row.tone === "warn",
+                        "text-zinc-500": row.tone === "muted"
+                      }}
+                    >
+                      {row.detail}
+                    </div>
+                  </div>
                 )}
               </For>
             </div>

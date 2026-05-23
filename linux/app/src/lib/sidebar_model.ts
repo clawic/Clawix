@@ -3,6 +3,7 @@ export interface ChatBrief {
   title?: string | null;
   lastMessage?: string | null;
   hasActiveTurn?: boolean;
+  has_active_turn?: boolean;
   isPinned?: boolean;
   pinned?: boolean;
   isArchived?: boolean;
@@ -148,6 +149,10 @@ export function collectionForPath(
     chats: model.all,
     projects: []
   };
+}
+
+export function chatHasActiveTurn(chat: ChatBrief | null | undefined): boolean {
+  return chat?.hasActiveTurn === true || chat?.has_active_turn === true;
 }
 
 function isPinnedChat(chat: ChatBrief): boolean {

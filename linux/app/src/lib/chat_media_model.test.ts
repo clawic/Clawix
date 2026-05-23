@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filePathsForMessage, formatDurationMs, generatedImagePathsForMessage } from "./chat_media_model";
+import { attachmentKindFromMime, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "./chat_media_model";
 
 describe("chat media model", () => {
   it("extracts unique file paths from tool timeline entries", () => {
@@ -23,5 +23,16 @@ describe("chat media model", () => {
     expect(formatDurationMs(0)).toBe("0:00");
     expect(formatDurationMs(2400)).toBe("0:02");
     expect(formatDurationMs(61000)).toBe("1:01");
+  });
+
+  it("maps supported attachment mime types to bridge attachment kinds", () => {
+    expect(attachmentKindFromMime("audio/webm")).toBe("audio");
+    expect(attachmentKindFromMime("image/png")).toBe("image");
+  });
+
+  it("merges dictation partials into the composer text", () => {
+    expect(mergeDictationText("", " hello ")).toBe("hello");
+    expect(mergeDictationText("hello", "world")).toBe("hello world");
+    expect(mergeDictationText("hello", "  ")).toBe("hello");
   });
 });

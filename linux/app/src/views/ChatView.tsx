@@ -1,8 +1,11 @@
-import { For, Show, createEffect, createMemo, createSignal, onMount } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { createVirtualizer } from "@tanstack/solid-virtual";
-import { daemonStore, editPrompt, loadChats, loadOlderMessages, openSession, readFile, requestAudio, requestGeneratedImage, sendMessage } from "../lib/daemon_ws";
-import { filePathsForMessage, formatDurationMs, generatedImagePathsForMessage } from "../lib/chat_media_model";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { daemonStore, editPrompt, interruptTurn, loadChats, loadOlderMessages, openSession, readFile, requestAudio, requestGeneratedImage, sendMessage } from "../lib/daemon_ws";
+import { attachmentKindFromMime, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "../lib/chat_media_model";
+import { chatHasActiveTurn, type ChatBrief } from "../lib/sidebar_model";
 import { renderCachedMarkdown } from "../lib/markdown";
 
 interface WorkItem {
@@ -20,9 +23,22 @@ interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   timeline?: TimelineEntry[];
+  attachments?: Attachment[];
   audioRef?: AudioRef;
   reasoningText?: string;
   streamingFinished?: boolean;
+}
+
+interface Attachment {
+  id: string;
+  kind: "image" | "audio";
+  mimeType: string;
+  filename?: string;
+  dataBase64?: string;
+}
+
+interface ComposerAttachment extends Attachment {
+  byteSize?: number;
 }
 
 interface AudioRef {
@@ -52,6 +68,8 @@ interface GeneratedImageSnapshot {
 export default function ChatView() {
   const params = useParams<{ id?: string }>();
   const [composer, setComposer] = createSignal("");
+  const [attachments, setAttachments] = createSignal<ComposerAttachment[]>([]);
+  const [dictating, setDictating] = createSignal(false);
   const [editingMessageId, setEditingMessageId] = createSignal<string | null>(null);
   const [editDraft, setEditDraft] = createSignal("");
   const [fileViewerPath, setFileViewerPath] = createSignal<string | null>(null);
@@ -60,6 +78,22 @@ export default function ChatView() {
 
   onMount(() => {
     void loadChats();
+    let unlistenPartial: UnlistenFn | undefined;
+    let unlistenStopped: UnlistenFn | undefined;
+    void listen<string>("dictation:partial", (event) => {
+      setComposer((prev) => mergeDictationText(prev, event.payload));
+    }).then((unlisten) => {
+      unlistenPartial = unlisten;
+    });
+    void listen("dictation:stopped", () => {
+      setDictating(false);
+    }).then((unlisten) => {
+      unlistenStopped = unlisten;
+    });
+    onCleanup(() => {
+      unlistenPartial?.();
+      unlistenStopped?.();
+    });
   });
 
   createEffect(() => {
@@ -80,6 +114,11 @@ export default function ChatView() {
     const id = activeId();
     return id ? daemonStore.hasMoreMessages()[id] === true : false;
   });
+  const activeChat = createMemo(() => {
+    const id = activeId();
+    return id ? (daemonStore.chats() as ChatBrief[]).find((chat) => chat.id === id) : undefined;
+  });
+  const hasActiveTurn = createMemo(() => chatHasActiveTurn(activeChat()));
   const oldestMessageId = createMemo(() => messages()[0]?.id ?? "");
   const activeFileSnapshot = createMemo(() => {
     const path = fileViewerPath();
@@ -104,9 +143,16 @@ export default function ChatView() {
   async function onSubmit(e: SubmitEvent) {
     e.preventDefault();
     const text = composer().trim();
-    if (!text) return;
+    if (!text && attachments().length === 0) return;
     setComposer("");
-    await sendMessage(text, params.id);
+    const queuedAttachments = attachments();
+    setAttachments([]);
+    await sendMessage(text, params.id, queuedAttachments);
+  }
+
+  async function onInterrupt() {
+    const id = activeId();
+    if (id) await interruptTurn(id);
   }
 
   function startEdit(message: Message) {
@@ -135,6 +181,27 @@ export default function ChatView() {
   function openGeneratedImage(path: string) {
     setImageViewerPath(path);
     if (!daemonStore.generatedImages()[path]) void requestGeneratedImage(path);
+  }
+
+  async function attachFiles(fileList: FileList | null) {
+    if (!fileList) return;
+    const next = await Promise.all(Array.from(fileList).map(fileToAttachment));
+    setAttachments((prev) => [...prev, ...next]);
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((prev) => prev.filter((attachment) => attachment.id !== id));
+  }
+
+  async function toggleDictation() {
+    if (dictating()) {
+      await invoke("stop_dictation");
+      setDictating(false);
+      return;
+    }
+
+    await invoke("start_dictation", { device: null });
+    setDictating(true);
   }
 
   return (
@@ -254,6 +321,9 @@ export default function ChatView() {
                           snapshot={daemonStore.audioById()[audioRef().id] as AudioSnapshot | undefined}
                         />
                       )}
+                    </Show>
+                    <Show when={(msg.attachments ?? []).length > 0}>
+                      <AttachmentStrip attachments={msg.attachments ?? []} />
                     </Show>
                     <Show when={filePaths(msg).length > 0}>
                       <div class="mt-3 flex flex-wrap gap-2">
@@ -386,26 +456,81 @@ export default function ChatView() {
         onSubmit={onSubmit}
         class="border-t border-zinc-200/60 dark:border-zinc-800/60 px-6 py-3"
       >
-        <div class="max-w-2xl mx-auto flex items-end gap-2">
-          <textarea
-            class="flex-1 resize-none rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-700 min-h-[44px] max-h-[160px]"
-            placeholder="Message Clawix"
-            value={composer()}
-            onInput={(e) => setComposer(e.currentTarget.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                e.currentTarget.form?.requestSubmit();
+        <div class="max-w-2xl mx-auto space-y-2">
+          <Show when={attachments().length > 0}>
+            <div class="flex flex-wrap gap-2">
+              <For each={attachments()}>
+                {(attachment) => (
+                  <button
+                    type="button"
+                    class="rounded-lg bg-zinc-100/70 px-2.5 py-1 text-xs text-zinc-600 row-hover dark:bg-zinc-800/40 dark:text-zinc-300"
+                    onClick={() => removeAttachment(attachment.id)}
+                    title="Remove attachment"
+                  >
+                    {attachment.filename ?? attachment.kind}
+                  </button>
+                )}
+              </For>
+            </div>
+          </Show>
+          <div class="flex items-end gap-2">
+            <label class="rounded-xl bg-zinc-100/70 px-3 py-2 text-sm text-zinc-600 row-hover dark:bg-zinc-800/40 dark:text-zinc-300">
+              Attach
+              <input
+                type="file"
+                class="hidden"
+                multiple
+                accept="image/*,audio/*"
+                onChange={(event) => {
+                  void attachFiles(event.currentTarget.files);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              class="rounded-xl bg-zinc-100/70 px-3 py-2 text-sm text-zinc-600 row-hover dark:bg-zinc-800/40 dark:text-zinc-300"
+              classList={{
+                "text-red-600 dark:text-red-400": dictating()
+              }}
+              onClick={() => void toggleDictation()}
+            >
+              {dictating() ? "Stop mic" : "Mic"}
+            </button>
+            <textarea
+              class="flex-1 resize-none rounded-xl bg-zinc-100/70 dark:bg-zinc-800/40 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-700 min-h-[44px] max-h-[160px]"
+              placeholder="Message Clawix"
+              value={composer()}
+              onInput={(e) => setComposer(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <Show
+              when={hasActiveTurn()}
+              fallback={
+                <button
+                  type="submit"
+                  class="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium dark:bg-zinc-100 dark:text-zinc-900 disabled:opacity-40"
+                  disabled={!composer().trim() && attachments().length === 0}
+                >
+                  Send
+                </button>
               }
-            }}
-          />
-          <button
-            type="submit"
-            class="px-4 py-2 rounded-xl bg-zinc-900 text-white text-sm font-medium dark:bg-zinc-100 dark:text-zinc-900 disabled:opacity-40"
-            disabled={!composer().trim()}
-          >
-            Send
-          </button>
+            >
+              <button
+                type="button"
+                class="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium disabled:opacity-40"
+                disabled={!activeId()}
+                onClick={() => void onInterrupt()}
+              >
+                Stop
+              </button>
+            </Show>
+          </div>
         </div>
       </form>
     </section>
@@ -425,6 +550,37 @@ function imageDataUrl(snapshot: GeneratedImageSnapshot): string {
 
 function audioDataUrl(snapshot: AudioSnapshot): string {
   return `data:${snapshot.mimeType ?? "audio/mp4"};base64,${snapshot.base64 ?? ""}`;
+}
+
+function attachmentDataUrl(attachment: Attachment): string {
+  return `data:${attachment.mimeType};base64,${attachment.dataBase64 ?? ""}`;
+}
+
+function AttachmentStrip(props: { attachments: Attachment[] }) {
+  return (
+    <div class="mt-3 flex flex-wrap gap-2">
+      <For each={props.attachments}>
+        {(attachment) => (
+          <Show
+            when={attachment.kind === "image" && attachment.dataBase64}
+            fallback={
+              <audio
+                class="h-9"
+                controls
+                src={attachment.dataBase64 ? attachmentDataUrl(attachment) : undefined}
+              />
+            }
+          >
+            <img
+              class="max-h-44 rounded-lg border border-zinc-200 object-contain dark:border-zinc-800"
+              src={attachmentDataUrl(attachment)}
+              alt={attachment.filename ?? "image"}
+            />
+          </Show>
+        )}
+      </For>
+    </div>
+  );
 }
 
 function AudioBubble(props: { audioRef: AudioRef; snapshot?: AudioSnapshot }) {
@@ -481,4 +637,27 @@ function GeneratedImageTile(props: {
       </Show>
     </button>
   );
+}
+
+async function fileToAttachment(file: File): Promise<ComposerAttachment> {
+  return {
+    id: crypto.randomUUID(),
+    kind: attachmentKindFromMime(file.type),
+    mimeType: file.type,
+    filename: file.name,
+    byteSize: file.size,
+    dataBase64: await readFileBase64(file)
+  };
+}
+
+function readFileBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result ?? "");
+      resolve(value.includes(",") ? value.split(",").at(-1) ?? "" : value);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }

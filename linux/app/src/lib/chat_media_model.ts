@@ -40,3 +40,13 @@ export function formatDurationMs(durationMs: number): string {
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
+
+export function attachmentKindFromMime(mimeType: string): "image" | "audio" {
+  return mimeType.startsWith("audio/") ? "audio" : "image";
+}
+
+export function mergeDictationText(current: string, partial: string): string {
+  const text = partial.trim();
+  if (!text) return current;
+  return current.trim() ? `${current.trimEnd()} ${text}` : text;
+}

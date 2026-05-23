@@ -77,6 +77,7 @@ pub fn run() {
             commands::request_generated_image,
             commands::request_audio,
             commands::request_rate_limits,
+            commands::request_clawjs_service_statuses,
             commands::start_pairing,
             commands::list_audio_inputs,
             commands::start_dictation,
@@ -152,6 +153,8 @@ mod commands {
     pub struct SendMessageArgs {
         pub session_id: Option<String>,
         pub text: String,
+        #[serde(default)]
+        pub attachments: Vec<serde_json::Value>,
     }
 
     #[tauri::command]
@@ -161,7 +164,7 @@ mod commands {
     ) -> Result<serde_json::Value, String> {
         let client = state.daemon.lock().await;
         client
-            .send_message(args.session_id.as_deref(), &args.text)
+            .send_message(args.session_id.as_deref(), &args.text, args.attachments)
             .await
             .map_err(|e| e.to_string())
     }
@@ -268,6 +271,14 @@ mod commands {
     ) -> Result<(), String> {
         let client = state.daemon.lock().await;
         client.request_rate_limits().await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn request_clawjs_service_statuses(
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.request_clawjs_service_statuses().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
