@@ -23,6 +23,16 @@ final class HostActionPolicyTests: XCTestCase {
         XCTAssertEqual(events[0].origin, .userInterface)
         XCTAssertEqual(events[0].approval, .alwaysAsk)
         XCTAssertEqual(events[0].outcome, "allowed")
+        XCTAssertEqual(events[0].schemaVersion, HostActionPolicy.schemaVersion)
+        XCTAssertEqual(events[0].surfaceId, "screen-tools")
+        XCTAssertEqual(events[0].capabilityId, "screen-tools.captureArea")
+        XCTAssertEqual(events[0].risk, .high)
+        XCTAssertEqual(events[0].decision, "allow")
+        XCTAssertTrue(events[0].planId.hasPrefix("gate_plan_"))
+        XCTAssertTrue(events[0].auditId.hasPrefix("gate_audit_"))
+        XCTAssertTrue(events[0].receiptId?.hasPrefix("gate_receipt_") == true)
+        XCTAssertEqual(events[0].rollback.level, "best_effort")
+        XCTAssertEqual(events[0].redaction.policy, "host_action_gate_v1")
     }
 
     func testAgentActionsRequireExplicitApprovalByDefault() throws {
@@ -43,6 +53,12 @@ final class HostActionPolicyTests: XCTestCase {
         let events = try readAuditEvents(auditURL)
         XCTAssertEqual(events.first?.surface, .macUtilities)
         XCTAssertEqual(events.first?.outcome, "requiresApproval")
+        XCTAssertEqual(events.first?.surfaceId, "mac-utilities")
+        XCTAssertEqual(events.first?.capabilityId, "mac-utilities.clearClipboard")
+        XCTAssertEqual(events.first?.risk, .high)
+        XCTAssertEqual(events.first?.decision, "requires_approval")
+        XCTAssertNil(events.first?.receiptId)
+        XCTAssertEqual(events.first?.rollback.refs.last, "no_execution_receipt")
     }
 
     func testAlwaysBlockPolicyBlocksEvenUserInitiatedActions() throws {
@@ -79,9 +95,37 @@ final class HostActionPolicyTests: XCTestCase {
 
         XCTAssertTrue(result.allowed)
         XCTAssertEqual(result.outcome, "approved")
+        XCTAssertEqual(result.risk, .high)
+        XCTAssertNotNil(result.receiptId)
         let events = try readAuditEvents(auditURL)
         XCTAssertEqual(events.first?.surface, .macControl)
         XCTAssertEqual(events.first?.outcome, "approved")
+        XCTAssertEqual(events.first?.surfaceId, "mac-control")
+        XCTAssertEqual(events.first?.decision, "allow")
+        XCTAssertEqual(events.first?.receiptId, result.receiptId)
+        XCTAssertEqual(events.first?.planId, result.planId)
+    }
+
+    func testMacUtilitiesLowRiskActionsStillEmitGateCompatibleAudit() throws {
+        let defaults = try makeDefaults()
+        let auditURL = temporaryAuditURL()
+
+        let result = HostActionPolicy.authorize(
+            surface: .macUtilities,
+            action: "openFinder",
+            origin: .userInterface,
+            defaults: defaults,
+            auditURL: auditURL
+        )
+
+        XCTAssertTrue(result.allowed)
+        XCTAssertEqual(result.risk, .low)
+        let event = try XCTUnwrap(readAuditEvents(auditURL).first)
+        XCTAssertEqual(event.schemaVersion, 1)
+        XCTAssertEqual(event.surfaceId, "mac-utilities")
+        XCTAssertEqual(event.risk, .low)
+        XCTAssertEqual(event.rollback.level, "none")
+        XCTAssertTrue(event.redaction.fields.contains("processOutput"))
     }
 
     private func makeDefaults() throws -> UserDefaults {
