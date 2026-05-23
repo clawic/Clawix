@@ -3,6 +3,10 @@ import XCTest
 
 @MainActor
 final class DeviceCodeSignInCoordinatorTests: XCTestCase {
+    private struct TestFailure: LocalizedError {
+        let errorDescription: String?
+    }
+
     func testCancelStopsDeviceCodePollingBeforePersistingAccount() async {
         let requested = expectation(description: "Device code requested")
         let pollingStarted = expectation(description: "Polling started")
@@ -100,5 +104,29 @@ final class DeviceCodeSignInCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.deviceCode)
         await fulfillment(of: [secondRequestStarted], timeout: 1)
         coordinator.cancel()
+    }
+
+    func testRequestFailureUsesClassifiedLocalizedMessage() async {
+        let failed = expectation(description: "Device code request failed")
+        let coordinator = DeviceCodeSignInCoordinator(operations: .init(
+            requestDeviceCode: {
+                failed.fulfill()
+                throw TestFailure(errorDescription: "The Internet connection appears to be offline.")
+            },
+            openVerificationURL: { _ in },
+            pollAccessToken: { _, _, _ in "token" },
+            persistAccount: { _, _ in },
+            refreshStore: {},
+            completionDelay: {}
+        ))
+
+        coordinator.start {}
+
+        await fulfillment(of: [failed], timeout: 1)
+        await Task.yield()
+        XCTAssertEqual(
+            coordinator.error,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
     }
 }

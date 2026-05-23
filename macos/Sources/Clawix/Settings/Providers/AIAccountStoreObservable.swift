@@ -89,7 +89,8 @@ final class AIAccountStoreObservable: ObservableObject {
         }
     }
 
-    func updateLabel(id: UUID, label: String) {
+    @discardableResult
+    func updateLabel(id: UUID, label: String) -> Bool {
         do {
             _ = try store.updateAccount(
                 id: id,
@@ -100,12 +101,15 @@ final class AIAccountStoreObservable: ObservableObject {
             )
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
+            return true
         } catch {
             lastError = humanize(error, surface: "settings.providers.updateLabel")
+            return false
         }
     }
 
-    func setEnabled(id: UUID, enabled: Bool) {
+    @discardableResult
+    func setEnabled(id: UUID, enabled: Bool) -> Bool {
         do {
             _ = try store.updateAccount(
                 id: id,
@@ -116,12 +120,15 @@ final class AIAccountStoreObservable: ObservableObject {
             )
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
+            return true
         } catch {
             lastError = humanize(error, surface: "settings.providers.setEnabled")
+            return false
         }
     }
 
-    func setBaseURL(id: UUID, url: URL?) {
+    @discardableResult
+    func setBaseURL(id: UUID, url: URL?) -> Bool {
         do {
             _ = try store.updateAccount(
                 id: id,
@@ -132,19 +139,24 @@ final class AIAccountStoreObservable: ObservableObject {
             )
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
+            return true
         } catch {
             lastError = humanize(error, surface: "settings.providers.setBaseURL")
+            return false
         }
     }
 
-    func delete(id: UUID) {
+    @discardableResult
+    func delete(id: UUID) -> Bool {
         do {
             try store.deleteAccount(id: id)
             FeatureRouting.clearSelections(forAccountId: id)
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
+            return true
         } catch {
             lastError = humanize(error, surface: "settings.providers.deleteAccount")
+            return false
         }
     }
 

@@ -67,11 +67,15 @@ final class OAuthSignInFlowCoordinator: ObservableObject {
                 task = nil
             } catch let coordError as OAuthCoordinator.CoordinatorError {
                 guard currentGeneration == generation else { return }
-                state = .failed(coordError.errorDescription ?? "Sign-in failed.")
+                let message = coordError.errorDescription ?? L10n.t("Request failed. Try again in a moment.")
+                state = .failed(Self.failureMessage(message, surface: "settings.providers.oauthSignIn"))
                 task = nil
             } catch {
                 guard currentGeneration == generation else { return }
-                state = .failed(error.localizedDescription)
+                state = .failed(Self.failureMessage(
+                    error.localizedDescription,
+                    surface: "settings.providers.oauthSignIn"
+                ))
                 task = nil
             }
         }
@@ -85,5 +89,9 @@ final class OAuthSignInFlowCoordinator: ObservableObject {
         if state == .running {
             state = .idle
         }
+    }
+
+    private static func failureMessage(_ message: String, surface: String) -> String {
+        UserFacingFailure.displayMessage(for: message, surface: surface)
     }
 }

@@ -104,7 +104,11 @@ final class DeviceCodeSignInCoordinator: ObservableObject {
                 task = nil
             } catch {
                 guard currentGeneration == generation else { return }
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                self.error = UserFacingFailure.displayMessage(
+                    for: message,
+                    surface: "settings.providers.deviceCodeSignIn"
+                )
                 task = nil
             }
         }

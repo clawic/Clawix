@@ -65,7 +65,7 @@ final class ProviderConnectionProbe: ObservableObject {
                         providerId: providerId,
                         apiKey: apiKey,
                         mode: mode,
-                        detail: error.localizedDescription
+                        detail: SettingsUtilities.failureMessage(for: error, surface: "settings.provider.probe")
                     )
                 )
                 task = nil

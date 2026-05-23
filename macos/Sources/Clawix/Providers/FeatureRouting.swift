@@ -93,13 +93,21 @@ enum FeatureRouting {
     }
 
     static func isProviderEnabled(_ provider: ProviderID) -> Bool {
-        guard let settings = try? ClawJSFrameworkRecordsClient.shared.listProviderSettings(),
-              let setting = settings.first(where: { $0.provider == provider.rawValue }) else { return true }
+        (try? providerEnabled(provider)) ?? true
+    }
+
+    static func providerEnabled(_ provider: ProviderID) throws -> Bool {
+        let settings = try ClawJSFrameworkRecordsClient.shared.listProviderSettings()
+        guard let setting = settings.first(where: { $0.provider == provider.rawValue }) else { return true }
         return setting.enabled
     }
 
     static func setProviderEnabled(_ provider: ProviderID, enabled: Bool) {
-        try? ClawJSFrameworkRecordsClient.shared.setProviderEnabled(provider.rawValue, enabled: enabled)
+        try? setProviderEnabledOrThrow(provider, enabled: enabled)
+    }
+
+    static func setProviderEnabledOrThrow(_ provider: ProviderID, enabled: Bool) throws {
+        try ClawJSFrameworkRecordsClient.shared.setProviderEnabled(provider.rawValue, enabled: enabled)
     }
 
     private static func route(feature: FeatureID, capability: Capability) -> ClawJSFrameworkRecordsClient.ProviderRoute? {

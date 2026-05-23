@@ -4,6 +4,10 @@ import XCTest
 
 @MainActor
 final class OAuthSignInFlowCoordinatorTests: XCTestCase {
+    private struct TestFailure: LocalizedError {
+        let errorDescription: String?
+    }
+
     func testCancelStopsOAuthSignInBeforeCompletingSheet() async {
         let started = expectation(description: "OAuth sign-in started")
         let cancelled = expectation(description: "OAuth sign-in cancelled")
@@ -35,5 +39,25 @@ final class OAuthSignInFlowCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.state, .idle)
         XCTAssertGreaterThan(cancelOperationCount, 0)
         XCTAssertFalse(didComplete)
+    }
+
+    func testSignInFailureUsesClassifiedLocalizedMessage() async {
+        let started = expectation(description: "OAuth sign-in started")
+        let coordinator = OAuthSignInFlowCoordinator(operations: .init(
+            signIn: { _ in
+                started.fulfill()
+                throw TestFailure(errorDescription: "HTTP 401: invalid API key")
+            },
+            cancel: {}
+        ))
+
+        coordinator.start(flavor: .anthropicClaudeAi) {}
+
+        await fulfillment(of: [started], timeout: 1)
+        await Task.yield()
+        XCTAssertEqual(
+            coordinator.state,
+            .failed(L10n.t("Permission was denied. Review permissions, then try again."))
+        )
     }
 }

@@ -13,6 +13,7 @@ struct EditAccountSheet: View {
 
     @State private var label: String
     @State private var baseURL: String
+    @State private var mutationError: String?
 
     init(account: ProviderAccount, provider: ProviderDefinition) {
         self.account = account
@@ -78,6 +79,11 @@ struct EditAccountSheet: View {
             .buttonStyle(.plain)
             .padding(.top, 16)
 
+            if let mutationError {
+                InfoBanner(text: mutationError, kind: .error)
+                    .padding(.top, 12)
+            }
+
             Spacer(minLength: 16)
 
             HStack {
@@ -106,22 +112,33 @@ struct EditAccountSheet: View {
     }
 
     private func save() {
+        mutationError = nil
         let trimmedLabel = label.trimmingCharacters(in: .whitespaces)
         if trimmedLabel != account.label && !trimmedLabel.isEmpty {
-            store.updateLabel(id: account.id, label: trimmedLabel)
+            guard store.updateLabel(id: account.id, label: trimmedLabel) else {
+                mutationError = store.lastError ?? "Account label was not saved."
+                return
+            }
         }
         if provider.supportsCustomBaseURL {
             let trimmedURL = baseURL.trimmingCharacters(in: .whitespaces)
             let newURL: URL? = trimmedURL.isEmpty ? nil : URL(string: trimmedURL)
             if newURL != account.baseURLOverride {
-                store.setBaseURL(id: account.id, url: newURL)
+                guard store.setBaseURL(id: account.id, url: newURL) else {
+                    mutationError = store.lastError ?? "Base URL was not saved."
+                    return
+                }
             }
         }
         dismiss()
     }
 
     private func deleteAccount() {
-        store.delete(id: account.id)
-        dismiss()
+        mutationError = nil
+        if store.delete(id: account.id) {
+            dismiss()
+        } else {
+            mutationError = store.lastError ?? "Account was not deleted."
+        }
     }
 }
