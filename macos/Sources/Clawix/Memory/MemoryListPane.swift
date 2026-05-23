@@ -39,6 +39,7 @@ struct MemoryListPane: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                 }
+                .thinScrollers()
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 4) {
@@ -59,14 +60,14 @@ struct MemoryListPane: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                 }
+                .thinScrollers()
             }
         }
     }
 
     private var searchBar: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12, weight: .medium))
+            IconImage("magnifyingglass", size: 12)
                 .foregroundColor(.white.opacity(0.55))
             TextField("Search memories", text: $searchText)
                 .textFieldStyle(.plain)
@@ -79,12 +80,7 @@ struct MemoryListPane: View {
                     .tint(.white.opacity(0.7))
             }
             if !searchText.isEmpty {
-                Button(action: onSearchClear) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .buttonStyle(.plain)
+                IconCircleButton(symbol: "xmark", size: 18, symbolSize: 9, action: onSearchClear)
             }
         }
         .padding(.horizontal, 10)

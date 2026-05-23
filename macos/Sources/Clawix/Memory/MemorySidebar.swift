@@ -58,6 +58,7 @@ struct MemorySidebar: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 12)
         }
+        .thinScrollers()
         .background(Color.clear)
     }
 
@@ -66,17 +67,15 @@ struct MemorySidebar: View {
     private var groupByPicker: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Group by")
-                .font(BodyFont.system(size: 10.5, wght: 600))
+                .font(BodyFont.system(size: 11, wght: 600))
                 .foregroundColor(.white.opacity(0.55))
-                .textCase(.uppercase)
                 .padding(.leading, 4)
-            Picker("Group by", selection: $groupBy) {
-                ForEach(GroupBy.allCases) { item in
-                    Text(item.label).tag(item)
-                }
-            }
-            .pickerStyle(.segmented)
-            .controlSize(.small)
+            SlidingSegmented(
+                selection: $groupBy,
+                options: GroupBy.allCases.map { ($0, $0.label) },
+                height: 26,
+                fontSize: 11.5
+            )
             .padding(.horizontal, 2)
         }
     }
@@ -222,9 +221,8 @@ struct MemorySidebar: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(BodyFont.system(size: 10.5, wght: 600))
+            .font(BodyFont.system(size: 11, wght: 600))
             .foregroundColor(.white.opacity(0.55))
-            .textCase(.uppercase)
             .padding(.leading, 8)
             .padding(.top, 6)
     }
@@ -258,8 +256,7 @@ private struct MemorySidebarRow: View {
         Button(action: onTap) {
             HStack(spacing: 8) {
                 if let icon = leadingIcon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .medium))
+                    IconImage(icon, size: 11)
                         .foregroundColor(iconColor)
                         .frame(width: 14)
                 }

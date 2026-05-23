@@ -29,7 +29,6 @@ struct MemoryCapturesView: View {
                         Text("Promoted")
                             .font(BodyFont.system(size: 11, wght: 600))
                             .foregroundColor(.white.opacity(0.5))
-                            .textCase(.uppercase)
                             .padding(.top, 10)
                         ForEach(promotedCaptures) { capture in
                             captureCard(capture: capture, isPromoted: true, dimmed: true)
@@ -38,6 +37,7 @@ struct MemoryCapturesView: View {
                 }
                 .padding(16)
             }
+            .thinScrollers()
             if let errorText {
                 Text(errorText)
                     .font(BodyFont.system(size: 11.5, wght: 500))
@@ -51,8 +51,7 @@ struct MemoryCapturesView: View {
         HStack {
             Button(action: onClose) {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
+                    IconImage("chevron.left", size: 11)
                     Text("Back")
                         .font(BodyFont.system(size: 12, wght: 600))
                 }
@@ -107,7 +106,7 @@ struct MemoryCapturesView: View {
                 } else {
                     Text("promoted")
                         .font(BodyFont.system(size: 11, wght: 600))
-                        .foregroundColor(.green.opacity(0.85))
+                        .foregroundColor(Palette.pastelBlue)
                 }
             }
             if let user = capture.user, !user.isEmpty {
@@ -132,7 +131,6 @@ struct MemoryCapturesView: View {
             Text(label)
                 .font(BodyFont.system(size: 10.5, wght: 600))
                 .foregroundColor(.white.opacity(0.45))
-                .textCase(.uppercase)
             Text(text)
                 .font(BodyFont.system(size: 12, wght: 400))
                 .foregroundColor(.white.opacity(0.8))

@@ -23,6 +23,7 @@ struct MemorySettingsView: View {
                 .padding(20)
                 .frame(maxWidth: 720, alignment: .leading)
             }
+            .thinScrollers()
         }
     }
 
@@ -30,8 +31,7 @@ struct MemorySettingsView: View {
         HStack {
             Button(action: onClose) {
                 HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
+                    IconImage("chevron.left", size: 11)
                     Text("Back")
                         .font(BodyFont.system(size: 12, wght: 600))
                 }

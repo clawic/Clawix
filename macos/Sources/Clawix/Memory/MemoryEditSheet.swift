@@ -34,27 +34,24 @@ struct MemoryEditSheet: View {
                     if case .edit(let note) = mode, note.kind == "memory", note.lastEditedBy == nil, note.createdBy != "user" {
                         agentBanner
                     }
-                    Group {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Kind")
                             .font(BodyFont.system(size: 11, wght: 600))
                             .foregroundColor(.white.opacity(0.55))
-                        Picker("Kind", selection: $noteKind) {
-                            Text("Memory").tag("memory")
-                            Text("Entity").tag("entity")
-                        }
-                        .pickerStyle(.segmented)
+                        SlidingSegmented(
+                            selection: $noteKind,
+                            options: [("memory", "Memory"), ("entity", "Entity")]
+                        )
                     }
                     if noteKind == "memory" {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Memory class")
                                 .font(BodyFont.system(size: 11, wght: 600))
                                 .foregroundColor(.white.opacity(0.55))
-                            Picker("Class", selection: $memoryClass) {
-                                ForEach(Self.memoryClasses, id: \.self) { value in
-                                    Text(value.capitalized).tag(value)
-                                }
-                            }
-                            .pickerStyle(.menu)
+                            SettingsDropdown(
+                                options: Self.memoryClasses.map { ($0, $0.capitalized) },
+                                selection: $memoryClass
+                            )
                         }
                     }
                     field("Title", binding: $title)
@@ -73,6 +70,7 @@ struct MemoryEditSheet: View {
                 }
                 .padding(20)
             }
+            .thinScrollers()
             CardDivider()
             footer
         }
@@ -87,35 +85,16 @@ struct MemoryEditSheet: View {
                 .font(BodyFont.system(size: 14, wght: 700))
                 .foregroundColor(.white)
             Spacer()
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                    .frame(width: 22, height: 22)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.white.opacity(0.05))
-                    )
-            }
-            .buttonStyle(.plain)
+            IconCircleButton(symbol: "xmark", size: 22, symbolSize: 12, action: onDismiss)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
     }
 
     private var agentBanner: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.yellow.opacity(0.85))
-            Text("You are editing a memory written by an agent. The original body will be preserved as `originalBody` and the edit will be stamped with `lastEditedBy: user`.")
-                .font(BodyFont.system(size: 11.5, wght: 400))
-                .foregroundColor(.white.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.yellow.opacity(0.10))
+        InfoBanner(
+            text: "You are editing a memory written by an agent. The original body will be preserved as `originalBody` and the edit will be stamped with `lastEditedBy: user`.",
+            kind: .danger
         )
     }
 

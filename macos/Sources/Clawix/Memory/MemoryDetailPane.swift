@@ -23,8 +23,7 @@ struct MemoryDetailPane: View {
 
     private var placeholder: some View {
         VStack(spacing: 8) {
-            Image(systemName: "brain")
-                .font(.system(size: 28, weight: .light))
+            IconImage("brain", size: 28)
                 .foregroundColor(.white.opacity(0.25))
             Text("Select a memory")
                 .font(BodyFont.system(size: 13, wght: 500))
@@ -49,18 +48,19 @@ struct MemoryDetailPane: View {
                     tagsRow(note.tags)
                 }
                 if note.originalBody != nil {
-                    Toggle(isOn: $showOriginal) {
+                    HStack(spacing: 10) {
                         Text("Show original (before user edit)")
                             .font(BodyFont.system(size: 11.5, wght: 500))
                             .foregroundColor(.white.opacity(0.7))
+                        Spacer(minLength: 12)
+                        PillToggle(isOn: $showOriginal)
                     }
-                    .toggleStyle(.checkbox)
-                    .controlSize(.small)
                 }
                 actionsRow(note: note)
             }
             .padding(20)
         }
+        .thinScrollers()
     }
 
     private func header(note: ClawJSMemoryClient.MemoryNote) -> some View {
@@ -78,14 +78,14 @@ struct MemoryDetailPane: View {
 
     private func pillsRow(note: ClawJSMemoryClient.MemoryNote) -> some View {
         MemoryFlowLayout(spacing: 6) {
-            pill(text: typeLabel(note), color: .blue)
-            pill(text: kindLabel(note), color: .gray)
-            if let project = note.scopeProject { pill(text: "@\(project)", color: .green) }
-            if let agent = note.scopeAgent { pill(text: "agent:\(agent)", color: .purple) }
-            if let user = note.scopeUser { pill(text: "user:\(user)", color: .pink) }
-            if let createdBy = note.createdBy { pill(text: "by \(createdBy)", color: .orange) }
+            pill(text: typeLabel(note))
+            pill(text: kindLabel(note))
+            if let project = note.scopeProject { pill(text: "@\(project)") }
+            if let agent = note.scopeAgent { pill(text: "agent:\(agent)") }
+            if let user = note.scopeUser { pill(text: "user:\(user)") }
+            if let createdBy = note.createdBy { pill(text: "by \(createdBy)") }
             if let updated = note.lastEditedAt ?? note.updatedAt {
-                pill(text: String(updated.prefix(10)), color: .gray)
+                pill(text: String(updated.prefix(10)))
             }
         }
     }
@@ -150,17 +150,17 @@ struct MemoryDetailPane: View {
         note.kind == "entity" ? "Entity" : "Memory"
     }
 
-    private func pill(text: String, color: Color) -> some View {
+    private func pill(text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 11, wght: 600))
-            .foregroundColor(color.opacity(0.85))
+            .foregroundColor(Palette.textSecondary)
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
             .background(
-                Capsule().fill(color.opacity(0.18))
+                Capsule().fill(Color.white.opacity(0.06))
             )
             .overlay(
-                Capsule().stroke(color.opacity(0.4), lineWidth: 0.5)
+                Capsule().stroke(Palette.popupStroke, lineWidth: 0.5)
             )
     }
 }

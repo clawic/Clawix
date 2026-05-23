@@ -82,8 +82,7 @@ private struct MemoryScreenHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             HStack(spacing: 8) {
-                Image(systemName: "brain")
-                    .font(.system(size: 16, weight: .medium))
+                IconImage("brain", size: 16)
                     .foregroundColor(.white.opacity(0.9))
                 Text("Memory")
                     .font(BodyFont.system(size: 17, wght: 600))
@@ -110,8 +109,7 @@ private struct MemoryScreenHeader: View {
             }
             HStack(spacing: 6) {
                 Button(action: onRefresh) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
+                    IconImage("arrow.clockwise", size: 12)
                         .foregroundColor(.white.opacity(0.85))
                         .frame(width: 24, height: 22)
                         .background(
@@ -124,8 +122,7 @@ private struct MemoryScreenHeader: View {
 
                 Button(action: onCreate) {
                     HStack(spacing: 4) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .semibold))
+                        IconImage("plus", size: 11)
                         Text("New")
                             .font(BodyFont.system(size: 12.5, wght: 600))
                     }
