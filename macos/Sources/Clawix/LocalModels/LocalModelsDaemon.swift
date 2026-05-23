@@ -124,12 +124,18 @@ final class LocalModelsDaemon: ObservableObject {
                 state = .running
             } else {
                 process.terminate()
-                state = .crashed(message:
-                    "Runtime did not respond on \(Self.host):\(Self.port) within 30 seconds. " +
-                    "See \(ClawixLocalModelsRuntimeRoutes.userVisibleLogPath) for details.")
+                let message = "Runtime did not respond on \(Self.host):\(Self.port) within 30 seconds. " +
+                    "See \(ClawixLocalModelsRuntimeRoutes.userVisibleLogPath) for details."
+                state = .crashed(message: Self.userFacingDaemonFailureMessage(
+                    message,
+                    surface: "settings.localModels.daemon.start.timeout"
+                ))
             }
         } catch {
-            state = .crashed(message: "Could not start runtime: \(error.localizedDescription)")
+            state = .crashed(message: Self.userFacingDaemonFailureMessage(
+                error.localizedDescription,
+                surface: "settings.localModels.daemon.start"
+            ))
         }
     }
 
@@ -190,7 +196,10 @@ final class LocalModelsDaemon: ObservableObject {
                 let status = proc.terminationStatus
                 self.state = (status == 0 || proc.terminationReason == .uncaughtSignal)
                     ? .stopped
-                    : .crashed(message: "Runtime exited with status \(status).")
+                    : .crashed(message: Self.userFacingDaemonFailureMessage(
+                        "Runtime exited with status \(status).",
+                        surface: "settings.localModels.daemon.exit"
+                    ))
                 self.process = nil
                 self.logSink?.close()
                 self.logSink = nil
@@ -219,6 +228,10 @@ final class LocalModelsDaemon: ObservableObject {
         // dyld searches that directory whatever the rpath situation is.
         env["DYLD_LIBRARY_PATH"] = LocalModelsRuntimeInstaller.libraryPath.path
         return env
+    }
+
+    private static func userFacingDaemonFailureMessage(_ message: String, surface: String) -> String {
+        UserFacingFailure.displayMessage(for: message, surface: surface)
     }
 
     // MARK: - Readiness

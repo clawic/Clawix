@@ -5,7 +5,7 @@ extension LocalModelsPage {
         SectionCard(title: "Models") {
             VStack(alignment: .leading, spacing: 14) {
                 if service.installedModels.isEmpty && service.downloads.isEmpty {
-                    Text("No models yet. Browse the catalog or pull one by name.")
+                    Text(UserFacingEmptyState.localModels.message)
                         .font(BodyFont.system(size: 12))
                         .foregroundColor(Palette.textSecondary)
                 }

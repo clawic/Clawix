@@ -41,7 +41,10 @@ final class LocalModelsLaunchAgent: ObservableObject {
             try agent.register()
             lastError = nil
         } catch {
-            lastError = "register failed: \(error.localizedDescription)"
+            lastError = UserFacingFailure.displayMessage(
+                for: error.localizedDescription,
+                surface: "settings.localModels.launchAgent.register"
+            )
         }
         refresh()
     }
@@ -51,7 +54,10 @@ final class LocalModelsLaunchAgent: ObservableObject {
             try agent.unregister()
             lastError = nil
         } catch {
-            lastError = "unregister failed: \(error.localizedDescription)"
+            lastError = UserFacingFailure.displayMessage(
+                for: error.localizedDescription,
+                surface: "settings.localModels.launchAgent.unregister"
+            )
         }
         refresh()
     }
@@ -64,15 +70,15 @@ final class LocalModelsLaunchAgent: ObservableObject {
     var statusLabel: String {
         switch status {
         case .notRegistered:
-            return "Not running at login"
+            return L10n.t("Not running at login")
         case .enabled:
-            return "Starts automatically at login"
+            return L10n.t("Starts automatically at login")
         case .requiresApproval:
-            return "Approve in System Settings → General → Login Items"
+            return L10n.t("Approve in System Settings → General → Login Items")
         case .notFound:
-            return "LaunchAgent missing from this build"
+            return L10n.t("LaunchAgent missing from this build")
         @unknown default:
-            return "Unknown status"
+            return L10n.t("Unknown status")
         }
     }
 }

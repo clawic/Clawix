@@ -216,6 +216,52 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
         XCTAssertNil(service.runtimeVersion)
     }
 
+    func testPullFailureUsesUserFacingClassifiedMessage() async {
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in
+                    continuation.finish(throwing: TestLocalizedError(message: "No model available for this provider."))
+                }
+            },
+            refreshModelListOperation: {}
+        )
+
+        await service.pull(model: "missing:model")
+
+        guard case .failed(let message) = service.downloads["missing:model"]?.state else {
+            return XCTFail("Expected failed download state")
+        }
+        XCTAssertEqual(message, L10n.t("That model is not available. Pick another model and try again."))
+    }
+
+    func testModelActionFailureUsesUserFacingClassifiedMessage() async {
+        let service = LocalModelsService(
+            defaults: Self.makeDefaults(),
+            bindRuntimeState: false,
+            pullOperation: { _ in
+                AsyncThrowingStream { continuation in continuation.finish() }
+            },
+            refreshModelListOperation: {},
+            unloadOperation: { _ in
+                throw TestLocalizedError(message: "connection refused")
+            }
+        )
+
+        await service.unload(model: "llama3.2:1b")
+
+        XCTAssertEqual(
+            service.actionError,
+            String(
+                format: L10n.t("Could not unload %@: %@"),
+                locale: AppLocale.current,
+                "llama3.2:1b",
+                L10n.t("The background bridge is unavailable. Try again after it reconnects.")
+            )
+        )
+    }
+
     private static func slowPullStream(
         started: XCTestExpectation,
         cancelled: XCTestExpectation
@@ -264,5 +310,11 @@ final class LocalModelsServiceCancellationTests: XCTestCase {
     private static func makeDefaults() -> UserDefaults {
         let suite = "LocalModelsServiceCancellationTests.\(UUID().uuidString)"
         return UserDefaults(suiteName: suite) ?? .standard
+    }
+
+    private struct TestLocalizedError: LocalizedError {
+        let message: String
+
+        var errorDescription: String? { message }
     }
 }

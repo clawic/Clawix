@@ -222,16 +222,25 @@ struct LocalModelsPage: View {
     var daemonStatusLabel: String {
         switch service.daemonState {
         case .stopped:
-            return "Stopped"
+            return L10n.t("Stopped")
         case .starting:
-            return "Starting…"
+            return L10n.t("Starting…")
         case .running:
             let loaded = service.loadedModels.count
             return loaded == 0
-                ? "Running on 127.0.0.1:\(LocalModelsDaemon.port) · idle"
-                : "Running on 127.0.0.1:\(LocalModelsDaemon.port) · \(loaded) loaded"
+                ? String(
+                    format: L10n.t("Running on %@ · idle"),
+                    locale: AppLocale.current,
+                    "127.0.0.1:\(LocalModelsDaemon.port)"
+                )
+                : String(
+                    format: L10n.t("Running on %@ · %lld loaded"),
+                    locale: AppLocale.current,
+                    "127.0.0.1:\(LocalModelsDaemon.port)",
+                    loaded
+                )
         case .missingRuntime:
-            return "Runtime binary missing"
+            return L10n.t("Runtime binary missing")
         case .crashed(let m):
             return m
         }

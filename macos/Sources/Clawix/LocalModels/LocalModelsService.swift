@@ -281,7 +281,10 @@ final class LocalModelsService: ObservableObject {
             guard isCurrentPull(model: model, generation: generation) else { return }
             downloads[model] = Download(
                 model: model,
-                state: .failed(error.localizedDescription)
+                state: .failed(userFacingFailureMessage(
+                    error.localizedDescription,
+                    surface: "settings.localModels.pull"
+                ))
             )
         }
         if isCurrentPull(model: model, generation: generation) {
@@ -327,7 +330,11 @@ final class LocalModelsService: ObservableObject {
             guard isCurrentModelAction(key: key, generation: generation) else { return }
         } catch {
             guard !Task.isCancelled, isCurrentModelAction(key: key, generation: generation) else { return }
-            actionError = "Could not delete \(model): \(error.localizedDescription)"
+            let message = userFacingFailureMessage(
+                error.localizedDescription,
+                surface: "settings.localModels.delete"
+            )
+            actionError = String(format: L10n.t("Could not delete %@: %@"), locale: AppLocale.current, model, message)
         }
         if isCurrentModelAction(key: key, generation: generation) {
             modelActionTasks[key] = nil
@@ -361,7 +368,11 @@ final class LocalModelsService: ObservableObject {
             guard isCurrentModelAction(key: key, generation: generation) else { return }
         } catch {
             guard !Task.isCancelled, isCurrentModelAction(key: key, generation: generation) else { return }
-            actionError = "Could not unload \(model): \(error.localizedDescription)"
+            let message = userFacingFailureMessage(
+                error.localizedDescription,
+                surface: "settings.localModels.unload"
+            )
+            actionError = String(format: L10n.t("Could not unload %@: %@"), locale: AppLocale.current, model, message)
         }
         if isCurrentModelAction(key: key, generation: generation) {
             modelActionTasks[key] = nil
@@ -443,6 +454,12 @@ final class LocalModelsService: ObservableObject {
     private func isCurrentPollIfNeeded(generation: Int?) -> Bool {
         guard let generation else { return true }
         return isCurrentPoll(generation: generation)
+    }
+
+    private func userFacingFailureMessage(_ message: String, surface: String) -> String {
+        let failure = UserFacingFailure.classify(message)
+        failure.log(surface: surface)
+        return failure.displayMessage
     }
 
     private func nextPullGeneration(for model: String) -> Int {
