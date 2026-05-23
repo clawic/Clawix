@@ -91,6 +91,16 @@ enum L10n {
         String(localized: "\(count) plugins installed", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
+    /// "+" menu row that captures the last frontmost app's window
+    /// ("Attach Finder"). Falls back to a generic label when the source
+    /// app's name isn't known.
+    static func attachApp(_ name: String?) -> String {
+        guard let name, !name.isEmpty else {
+            return String(localized: "Attach app window", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Attach \(name)", bundle: AppLocale.bundle, locale: AppLocale.current)
+    }
+
     // MARK: - Relative dates (used by sidebar chat rows)
 
     /// Shorthand label used next to chat titles. Bucket boundaries
