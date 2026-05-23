@@ -76,12 +76,12 @@ private struct LifeVerticalCard: View {
                     if entry.healthkitMapping {
                         Text("HK")
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(Color.white.opacity(0.7))
+                            .foregroundColor(Color.overlay(0.7))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1.5)
                             .background(
                                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(Color.white.opacity(0.10))
+                                    .fill(Color.overlay(0.10))
                             )
                     }
                     if let label = entry.legalGuardLabel {
@@ -113,11 +113,11 @@ private struct LifeVerticalCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(hover ? 0.05 : 0.025))
+                    .fill(Color.overlay(hover ? 0.05 : 0.025))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.white.opacity(0.07), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.07), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)

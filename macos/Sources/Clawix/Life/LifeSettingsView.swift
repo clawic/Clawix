@@ -30,7 +30,7 @@ struct LifeSettingsView: View {
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
 
             ScrollView {
@@ -115,9 +115,9 @@ struct LifeSettingsView: View {
         let color: Color
         switch status {
         case .stable:
-            text = "STABLE"; color = Color.white.opacity(0.80)
+            text = "STABLE"; color = Color.overlay(0.80)
         case .devOnly:
-            text = "DEV"; color = Color.white.opacity(0.45)
+            text = "DEV"; color = Color.overlay(0.45)
         case .removed:
             text = "REMOVED"; color = Color.red.opacity(0.55)
         }

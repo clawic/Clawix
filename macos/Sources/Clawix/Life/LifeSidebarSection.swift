@@ -81,7 +81,7 @@ struct LifeSidebarSection: View {
             if entry.status == .devOnly {
                 Text("DEV")
                     .font(BodyFont.system(size: 10, wght: 600))
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             }
         }
     }
@@ -239,16 +239,16 @@ private struct LifeNavRow<Trailing: View>: View {
 
     private var iconColor: Color {
         if selected { return .white }
-        return Color(white: hovered ? 0.92 : 0.78)
+        return (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78))
     }
 
     private var labelColor: Color {
-        selected ? .white : Color(white: 0.92)
+        selected ? .white : Color.gray(light: 0.14, dark: 0.92)
     }
 
     private var backgroundFill: Color {
-        if selected { return Color.white.opacity(0.06) }
-        if hovered  { return Color.white.opacity(0.035) }
+        if selected { return Color.overlay(0.06) }
+        if hovered  { return Color.overlay(0.035) }
         return .clear
     }
 }

@@ -40,10 +40,10 @@ struct GenericVerticalScreen: View {
         HStack(spacing: 0) {
             catalogPane
                 .frame(width: 240)
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             observationsPane
                 .frame(maxWidth: .infinity)
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             detailPane
                 .frame(width: 320)
         }
@@ -88,7 +88,7 @@ struct GenericVerticalScreen: View {
                 .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
@@ -109,14 +109,14 @@ struct GenericVerticalScreen: View {
                                 if variable.origin == .user {
                                     Text("U")
                                         .font(.system(size: 9, weight: .semibold))
-                                        .foregroundColor(Color.white.opacity(0.5))
+                                        .foregroundColor(Color.overlay(0.5))
                                 }
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 6)
                             .background(
                                 variable.id == selectedVariableId
-                                    ? Color.white.opacity(0.05)
+                                    ? Color.overlay(0.05)
                                     : Color.clear
                             )
                         }
@@ -145,7 +145,7 @@ struct GenericVerticalScreen: View {
                         .foregroundColor(Palette.textSecondary)
                     Text("Use the right panel to add the first one.")
                         .font(.system(size: 11))
-                        .foregroundColor(Color.white.opacity(0.4))
+                        .foregroundColor(Color.overlay(0.4))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -153,7 +153,7 @@ struct GenericVerticalScreen: View {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(state.observations) { observation in
                             observationRow(observation)
-                            Divider().background(Color.white.opacity(0.04))
+                            Divider().background(Color.overlay(0.04))
                         }
                     }
                 }
@@ -189,7 +189,7 @@ struct GenericVerticalScreen: View {
             }) {
                 Text("Delete")
                     .font(.system(size: 11))
-                    .foregroundColor(Color.white.opacity(0.4))
+                    .foregroundColor(Color.overlay(0.4))
             }
             .buttonStyle(.plain)
         }
@@ -215,7 +215,7 @@ struct GenericVerticalScreen: View {
                     .padding(10)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.white.opacity(0.04))
+                            .fill(Color.overlay(0.04))
                     )
                 Button(action: {
                     Task { await submit(variable) }
@@ -227,7 +227,7 @@ struct GenericVerticalScreen: View {
                         .padding(.vertical, 7)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.overlay(0.10))
                         )
                 }
                 .buttonStyle(.plain)
@@ -252,7 +252,7 @@ struct GenericVerticalScreen: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
         case .boolean:
             HStack(spacing: 12) {
@@ -271,7 +271,7 @@ struct GenericVerticalScreen: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
         }
     }
