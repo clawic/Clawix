@@ -65,11 +65,11 @@ private struct ProjectRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 LucideIcon(.folder, size: 11)
-                    .foregroundColor(isSelected ? Color.accentColor : Palette.textSecondary)
+                    .foregroundColor(isSelected ? Palette.pastelBlue : Palette.textSecondary)
                     .frame(width: 36, height: 36)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(isSelected ? Color.accentColor.opacity(0.15) : Palette.cardFill)
+                            .fill(isSelected ? Palette.pastelBlue.opacity(0.16) : Palette.cardFill)
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -95,17 +95,17 @@ private struct ProjectRow: View {
 
                 if isSelected {
                     CheckIcon(size: 11)
-                        .foregroundColor(Color.accentColor)
+                        .foregroundColor(Palette.pastelBlue)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 13)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.accentColor.opacity(0.06) : (hovered ? Palette.cardHover : Palette.cardFill))
+                    .fill(isSelected ? Palette.selFill : (hovered ? Palette.cardHover : Palette.cardFill))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(isSelected ? Color.accentColor.opacity(0.3) : Palette.border, lineWidth: 0.5)
+                            .stroke(isSelected ? Palette.pastelBlue.opacity(0.4) : Palette.border, lineWidth: isSelected ? 1 : 0.5)
                     )
             )
         }
