@@ -45,7 +45,7 @@ export interface RouteCatalogEntry {
 
 export const PRIMARY_ROUTE_ENTRIES: RouteCatalogEntry[] = [
   { route: "chat", label: "Chats", section: "primary", macRoute: "home/chat", webSurface: "implemented" },
-  { route: "search", label: "Search", section: "primary", macRoute: "search", webSurface: "companion" },
+  { route: "search", label: "Search", section: "primary", macRoute: "search", webSurface: "implemented" },
   { route: "skills", label: "Skills", section: "primary", macRoute: "skills", webSurface: "companion" },
   { route: "network", label: "Network", section: "primary", macToolId: "network", macRoute: "networkControl", webSurface: "companion" },
   { route: "plugins", label: "Plugins", section: "primary", macRoute: "plugins", webSurface: "companion" },

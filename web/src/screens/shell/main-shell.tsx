@@ -13,6 +13,7 @@ import { RouteSwitcher } from "../sidebar/route-switcher";
 import { type AppRoute, routeEntry } from "../sidebar/route-catalog";
 import { SidebarView } from "../sidebar/sidebar-view";
 import { ChatView } from "../chat/chat-view";
+import { SearchView } from "../search/search-view";
 import { SettingsView } from "../settings/settings-view";
 import { MemoryView } from "../memory/memory-view";
 import { SecretsView } from "../secrets/secrets-view";
@@ -112,6 +113,14 @@ export function MainShell() {
 
         <ContentShell rightSidebarOpen={rightSidebarOpen}>
           {route === "chat" && <ChatView chatId={chatId} />}
+          {route === "search" && (
+            <SearchView
+              onOpenChat={(id) => {
+                setChatId(id);
+                setRoute("chat");
+              }}
+            />
+          )}
           {route === "projects" && <ProjectsView />}
           {route === "memory" && <MemoryView />}
           {route === "secrets" && <SecretsView />}
@@ -145,6 +154,7 @@ export function MainShell() {
 function isCatalogSurfaceRoute(route: AppRoute): boolean {
   return ![
     "chat",
+    "search",
     "projects",
     "memory",
     "secrets",
