@@ -83,10 +83,10 @@ private struct MarketplaceHeaderBar: View {
                     if unread > 0 {
                         Text("\(unread)")
                             .font(BodyFont.system(size: 11, wght: 600))
-                            .foregroundColor(.black)
+                            .foregroundColor(Palette.background)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Capsule(style: .continuous).fill(Color.orange.opacity(0.9)))
+                            .background(Capsule(style: .continuous).fill(Palette.pastelBlue))
                     }
                 }
                 Spacer()
@@ -282,6 +282,7 @@ private struct IntentListView: View {
 }
 
 private struct IntentRow: View {
+    static let positiveColor = Color(red: 0.45, green: 0.78, blue: 0.55)
     let intent: ClawJSMarketplaceClient.Intent
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -294,19 +295,19 @@ private struct IntentRow: View {
                         .foregroundColor(.white.opacity(0.30))
                     Text(intent.status)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(intent.status == "published" ? .green.opacity(0.75) : .white.opacity(0.45))
+                        .foregroundColor(intent.status == "published" ? Self.positiveColor : Palette.textTertiary)
                     if intent.provenance == "native" {
                         Text("verified")
                             .font(BodyFont.system(size: 10, wght: 600))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(Capsule(style: .continuous).fill(Color.green.opacity(0.30)))
+                            .foregroundColor(Self.positiveColor)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule(style: .continuous).fill(Self.positiveColor.opacity(0.14)))
                     } else {
                         Text("observed")
                             .font(BodyFont.system(size: 10, wght: 600))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(Capsule(style: .continuous).fill(Color.gray.opacity(0.30)))
+                            .foregroundColor(Palette.textSecondary)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.08)))
                     }
                 }
                 let title = intent.payload.string("title") ?? intent.payload.string("summary") ?? intent.id
@@ -321,20 +322,17 @@ private struct IntentRow: View {
                 }
                 HStack(spacing: 8) {
                     if let geo = intent.payload.string("geo_zone") {
-                        Tag(text: geo, color: .blue)
+                        Tag(text: geo, color: Palette.pastelBlue)
                     }
                     if let price = intent.payload.number("price_eur") {
-                        Tag(text: "€\(Int(price))", color: .orange)
+                        Tag(text: "€\(Int(price))", color: Self.positiveColor)
                     }
                 }
             }
             Spacer()
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-        )
+        .marketplaceRowCard()
     }
 }
 
@@ -360,13 +358,11 @@ private struct ProspectRow: View {
             Spacer()
             ProgressView(value: Double(peer.currentLevel) / 5.0)
                 .progressViewStyle(.linear)
+                .tint(Palette.pastelBlue)
                 .frame(width: 120)
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-        )
+        .marketplaceRowCard()
     }
 }
 
@@ -400,10 +396,7 @@ private struct ReceiptRow: View {
             Spacer()
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-        )
+        .marketplaceRowCard()
     }
 
     private func receiptColor(_ status: String) -> Color {
@@ -422,7 +415,7 @@ private struct InboundRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Circle()
-                .fill(message.readAt == nil ? Color.orange.opacity(0.85) : Color.white.opacity(0.20))
+                .fill(message.readAt == nil ? Palette.pastelBlue : Color.white.opacity(0.20))
                 .frame(width: 8, height: 8)
                 .padding(.top, 6)
             VStack(alignment: .leading, spacing: 4) {
@@ -451,13 +444,25 @@ private struct InboundRow: View {
                 Button("Mark read", action: onTapRead)
                     .buttonStyle(.plain)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(.white.opacity(0.65))
+                    .foregroundColor(Palette.textSecondary)
             }
         }
         .padding(12)
-        .background(
+        .marketplaceRowCard(emphasized: message.readAt == nil)
+    }
+}
+
+/// Canon list-row card for Marketplace: `Palette.cardFill` with a
+/// hairline stroke; `emphasized` lifts the fill for unread items.
+private extension View {
+    func marketplaceRowCard(emphasized: Bool = false) -> some View {
+        background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(message.readAt == nil ? 0.06 : 0.03))
+                .fill(emphasized ? Palette.cardHover : Palette.cardFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Palette.popupStroke, lineWidth: 0.5)
+                )
         )
     }
 }
