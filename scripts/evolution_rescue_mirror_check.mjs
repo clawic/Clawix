@@ -110,7 +110,11 @@ if (fs.existsSync(siblingClawjs)) {
   if (!fs.existsSync(siblingAdr)) errors.push("sibling ClawJS ADR 0030 is missing");
   if (!fs.existsSync(siblingLedger)) errors.push("sibling ClawJS evolution ledger is missing");
   if (!fs.existsSync(siblingPackage)) errors.push("sibling ClawJS package.json is missing");
-  if (fs.existsSync(siblingPackage)) runSiblingEvolutionGate();
+  if (fs.existsSync(siblingPackage) && shouldRunSiblingEvolutionGate()) {
+    runSiblingEvolutionGate();
+  } else if (fs.existsSync(siblingPackage)) {
+    notes.push("PARTIAL sibling ClawJS evolution gate skipped: use --require-sibling or CLAWIX_RUN_CLAWJS_EVOLUTION_GATE=1 to run npm run test:evolution");
+  }
 } else if (isSiblingEvolutionGateStrict()) {
   errors.push(`sibling ClawJS repo is required but missing at ${siblingClawjs}`);
 } else {
@@ -151,6 +155,11 @@ function isSiblingEvolutionGateStrict(argSet = args, env = process.env) {
   return argSet.has("--release")
     || argSet.has("--require-sibling")
     || env.CLAWIX_REQUIRE_CLAWJS_EVOLUTION === "1";
+}
+
+function shouldRunSiblingEvolutionGate(argSet = args, env = process.env) {
+  return isSiblingEvolutionGateStrict(argSet, env)
+    || env.CLAWIX_RUN_CLAWJS_EVOLUTION_GATE === "1";
 }
 
 function runRescueSurvivalMatrixGate() {
@@ -216,6 +225,14 @@ function runSelfTest() {
   }
   if (!isSiblingEvolutionGateStrict(new Set(["--release"]), {})) {
     console.error("self-test failed: --release should require the sibling evolution gate");
+    process.exit(1);
+  }
+  if (shouldRunSiblingEvolutionGate(new Set(), {})) {
+    console.error("self-test failed: sibling evolution gate should not run by default");
+    process.exit(1);
+  }
+  if (!shouldRunSiblingEvolutionGate(new Set(), { CLAWIX_RUN_CLAWJS_EVOLUTION_GATE: "1" })) {
+    console.error("self-test failed: opt-in env should run the sibling evolution gate");
     process.exit(1);
   }
   console.log("evolution rescue mirror check self-test passed");

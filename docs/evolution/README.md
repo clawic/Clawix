@@ -11,8 +11,9 @@ Clawix consumes the canonical ClawJS evolution policy:
 
 `scripts/evolution_rescue_mirror_check.mjs` is the Clawix mirror gate. In the
 normal Clawix lane it verifies the sibling ClawJS anchors and reports a
-`PARTIAL` note when the sibling `npm run test:evolution` gate is failing or
-unavailable. Release validation, `--require-sibling`, or
+`PARTIAL` note instead of running the sibling `npm run test:evolution` gate.
+Use `CLAWIX_RUN_CLAWJS_EVOLUTION_GATE=1` to include that sibling gate as a
+non-strict check. Release validation, `--require-sibling`, or
 `CLAWIX_REQUIRE_CLAWJS_EVOLUTION=1` makes the sibling gate strict.
 
 Clawix-specific work must focus on host and UI consequences: launch survival,
