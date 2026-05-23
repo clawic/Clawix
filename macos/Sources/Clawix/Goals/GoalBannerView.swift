@@ -73,6 +73,9 @@ struct GoalBannerView: View {
                                  label: goal.status == .paused ? L10n.t("Resume goal") : L10n.t("Pause goal")) {
                         store.togglePause(for: chatId)
                     }
+                    bannerButton(.check, label: L10n.t("Mark goal achieved")) {
+                        withAnimation(.easeOut(duration: 0.18)) { store.markAchieved(for: chatId) }
+                    }
                 }
                 bannerButton(.trash, label: L10n.t("Remove goal"), destructive: true) {
                     withAnimation(.easeOut(duration: 0.18)) { store.remove(for: chatId) }
