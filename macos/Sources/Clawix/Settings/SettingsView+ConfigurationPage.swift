@@ -2,7 +2,12 @@ import SwiftUI
 
 struct ConfigurationPage: View {
     @EnvironmentObject var appState: AppState
-    @State private var configScope: String = "User settings"
+    @AppStorage(ClawixPersistentSurfaceKeys.settingsConfigurationScope) private var configScope: String = "User settings"
+    @State private var openingConfig = false
+
+    private var projectConfigUnavailable: Bool {
+        configScope == "Project settings" && (appState.selectedProject?.path.isEmpty ?? true)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -30,12 +35,10 @@ struct ConfigurationPage: View {
                 )
                 Spacer()
                 Button {
-                    Task {
-                        await SettingsUtilities.openConfigToml(scope: configScope, selectedProject: appState.selectedProject)
-                    }
+                    openConfigToml()
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Open config.toml")
+                        Text(openingConfig ? "Opening…" : "Open config.toml")
                             .font(BodyFont.system(size: 12, wght: 500))
                             .foregroundColor(Palette.textSecondary)
                         LucideIcon(.arrowUpRight, size: 10)
@@ -43,9 +46,18 @@ struct ConfigurationPage: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .disabled(openingConfig || projectConfigUnavailable)
             }
             .padding(.bottom, 8)
             .liftWhenSettingsDropdownOpen()
+
+            if projectConfigUnavailable {
+                InfoBanner(
+                    text: "Select a project before opening project config.",
+                    kind: .danger
+                )
+                .padding(.bottom, 8)
+            }
 
             SectionLabel(title: "Permissions")
             SettingsCard {
@@ -97,6 +109,22 @@ struct ConfigurationPage: View {
                 CardDivider()
                 ReinstallRow()
             }
+        }
+        .onAppear(perform: normalizeConfigScope)
+    }
+
+    private func normalizeConfigScope() {
+        guard configScope == "User settings" || configScope == "Project settings" else {
+            configScope = "User settings"
+            return
+        }
+    }
+
+    private func openConfigToml() {
+        openingConfig = true
+        Task { @MainActor in
+            await SettingsUtilities.openConfigToml(scope: configScope, selectedProject: appState.selectedProject)
+            openingConfig = false
         }
     }
 }

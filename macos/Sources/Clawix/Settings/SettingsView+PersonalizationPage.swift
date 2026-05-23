@@ -125,7 +125,7 @@ struct PersonalizationPage: View {
             loadError = nil
             didLoad = true
         } catch {
-            loadError = error.localizedDescription
+            loadError = SettingsUtilities.failureMessage(for: error, surface: "settings.personalization.load")
             didLoad = false
         }
     }
@@ -152,7 +152,7 @@ struct PersonalizationPage: View {
             savedSnapshot = body
             saveError = nil
         } catch {
-            saveError = error.localizedDescription
+            saveError = SettingsUtilities.failureMessage(for: error, surface: "settings.personalization.save")
         }
     }
 }

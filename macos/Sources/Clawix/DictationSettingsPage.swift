@@ -43,6 +43,9 @@ struct DictationSettingsPage: View {
     @AppStorage(DictationCoordinator.prewarmOnLaunchKey) private var prewarmOnLaunch = true
 
     @AppStorage(DictationOverlay.styleKey) private var recorderStyle = DictationRecorderStyle.mini.rawValue
+    @AppStorage(DictationCoordinator.backendKey) private var backendRaw = DictationTranscriptionBackend.whisperLocal.rawValue
+    @AppStorage(DictationCoordinator.livePreviewEnabledKey) private var livePreviewEnabled = true
+    @AppStorage(DictationCoordinator.vadEnabledKey) private var vadEnabled = true
 
     @AppStorage(ClawixPersistentSurfaceKeys.dictationAdvancedExpanded) private var advancedExpanded = false
 
@@ -347,20 +350,14 @@ struct DictationSettingsPage: View {
                         title: "Engine",
                         detail: "Local Whisper for highest accuracy. Apple Speech streams partials. Cloud STT uses Model Providers",
                         options: DictationTranscriptionBackend.allCases.map { ($0.rawValue, $0.displayName) },
-                        selection: Binding(
-                            get: { UserDefaults.standard.string(forKey: DictationCoordinator.backendKey) ?? DictationTranscriptionBackend.whisperLocal.rawValue },
-                            set: { UserDefaults.standard.set($0, forKey: DictationCoordinator.backendKey) }
-                        ),
+                        selection: $backendRaw,
                         minWidth: 220
                     )
                     CardDivider()
                     ToggleRow(
                         title: "Live preview while recording",
                         detail: "Show streaming partial transcripts in the floating pill. Only fires with backends that stream (Apple Speech)",
-                        isOn: Binding(
-                            get: { UserDefaults.standard.object(forKey: DictationCoordinator.livePreviewEnabledKey) as? Bool ?? true },
-                            set: { UserDefaults.standard.set($0, forKey: DictationCoordinator.livePreviewEnabledKey) }
-                        )
+                        isOn: $livePreviewEnabled
                     )
                     CardDivider()
                     CloudBackendsRow()
@@ -371,10 +368,7 @@ struct DictationSettingsPage: View {
                     ToggleRow(
                         title: "Voice Activity Detection",
                         detail: "Filter silences and non-speech before transcription so Whisper doesn't hallucinate over them. Local Whisper only",
-                        isOn: Binding(
-                            get: { UserDefaults.standard.bool(forKey: DictationCoordinator.vadEnabledKey) },
-                            set: { UserDefaults.standard.set($0, forKey: DictationCoordinator.vadEnabledKey) }
-                        )
+                        isOn: $vadEnabled
                     )
                 }
 
