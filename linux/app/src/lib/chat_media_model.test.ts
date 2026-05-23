@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachmentKindFromMime, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "./chat_media_model";
+import { attachmentKindFromMime, attachmentNeedsHydration, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "./chat_media_model";
 
 describe("chat media model", () => {
   it("extracts unique file paths from tool timeline entries", () => {
@@ -28,6 +28,12 @@ describe("chat media model", () => {
   it("maps supported attachment mime types to bridge attachment kinds", () => {
     expect(attachmentKindFromMime("audio/webm")).toBe("audio");
     expect(attachmentKindFromMime("image/png")).toBe("image");
+  });
+
+  it("detects rollout attachments that need byte hydration", () => {
+    expect(attachmentNeedsHydration({ id: "att-1" })).toBe(true);
+    expect(attachmentNeedsHydration({ id: "att-1", dataBase64: "AAA=" })).toBe(false);
+    expect(attachmentNeedsHydration({})).toBe(false);
   });
 
   it("merges dictation partials into the composer text", () => {

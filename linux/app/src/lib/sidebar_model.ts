@@ -2,8 +2,11 @@ export interface ChatBrief {
   id: string;
   title?: string | null;
   lastMessage?: string | null;
+  lastMessagePreview?: string | null;
   hasActiveTurn?: boolean;
   has_active_turn?: boolean;
+  lastTurnInterrupted?: boolean;
+  last_turn_interrupted?: boolean;
   isPinned?: boolean;
   pinned?: boolean;
   isArchived?: boolean;
@@ -153,6 +156,14 @@ export function collectionForPath(
 
 export function chatHasActiveTurn(chat: ChatBrief | null | undefined): boolean {
   return chat?.hasActiveTurn === true || chat?.has_active_turn === true;
+}
+
+export function chatWasInterrupted(chat: ChatBrief | null | undefined): boolean {
+  return !chatHasActiveTurn(chat) && (chat?.lastTurnInterrupted === true || chat?.last_turn_interrupted === true);
+}
+
+export function chatPreview(chat: ChatBrief | null | undefined): string | null {
+  return clean(chat?.lastMessagePreview) ?? clean(chat?.lastMessage);
 }
 
 function isPinnedChat(chat: ChatBrief): boolean {

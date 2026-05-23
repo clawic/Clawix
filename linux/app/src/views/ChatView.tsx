@@ -3,14 +3,22 @@ import { useParams } from "@solidjs/router";
 import { createVirtualizer } from "@tanstack/solid-virtual";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { daemonStore, editPrompt, interruptTurn, loadChats, loadOlderMessages, openSession, readFile, requestAudio, requestGeneratedImage, sendMessage } from "../lib/daemon_ws";
-import { attachmentKindFromMime, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "../lib/chat_media_model";
+import { daemonStore, editPrompt, interruptTurn, loadChats, loadOlderMessages, openSession, readFile, requestAudio, requestGeneratedImage, requestRolloutAttachment, sendMessage } from "../lib/daemon_ws";
+import { attachmentKindFromMime, attachmentNeedsHydration, filePathsForMessage, formatDurationMs, generatedImagePathsForMessage, mergeDictationText } from "../lib/chat_media_model";
 import { chatHasActiveTurn, type ChatBrief } from "../lib/sidebar_model";
+import { workItemLabel, workSummaryLine, type WorkItem as SummaryWorkItem, type WorkSummary } from "../lib/work_summary_model";
 import { renderCachedMarkdown } from "../lib/markdown";
 
 interface WorkItem {
   paths?: string[];
   generatedImagePath?: string;
+  kind?: string;
+  status?: string;
+  commandText?: string;
+  commandActions?: string[];
+  mcpServer?: string;
+  mcpTool?: string;
+  dynamicToolName?: string;
 }
 
 interface TimelineEntry {
@@ -23,10 +31,12 @@ interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   timeline?: TimelineEntry[];
+  workSummary?: WorkSummary;
   attachments?: Attachment[];
   audioRef?: AudioRef;
   reasoningText?: string;
   streamingFinished?: boolean;
+  isError?: boolean;
 }
 
 interface Attachment {
@@ -35,6 +45,12 @@ interface Attachment {
   mimeType: string;
   filename?: string;
   dataBase64?: string;
+}
+
+interface RolloutAttachmentSnapshot {
+  dataBase64?: string;
+  mimeType?: string;
+  errorMessage?: string;
 }
 
 interface ComposerAttachment extends Attachment {
@@ -211,6 +227,9 @@ export default function ChatView() {
           {params.id ? "Conversation" : "New chat"}
         </h1>
         <span class="text-xs text-zinc-500">{daemonStore.bridgeState()}</span>
+        <Show when={daemonStore.bridgeMessage()}>
+          <span class="truncate text-xs text-red-500">{daemonStore.bridgeMessage()}</span>
+        </Show>
       </header>
 
       <div ref={(el) => setScrollEl(el)} class="flex-1 overflow-auto px-6 py-4">
@@ -270,11 +289,27 @@ export default function ChatView() {
                         </Show>
                       </div>
                     </Show>
+                    <Show when={msg.workSummary && msg.role !== "user"}>
+                      {(summary) => <WorkSummaryPanel summary={summary()} />}
+                    </Show>
+                    <Show when={(msg.timeline ?? []).length > 0 && msg.role !== "user"}>
+                      <div class="mb-3 space-y-2">
+                        <For each={msg.timeline ?? []}>
+                          {(entry) => <TimelineEntryView entry={entry} />}
+                        </For>
+                      </div>
+                    </Show>
+                    <Show when={msg.reasoningText && msg.role !== "user"}>
+                      <ReasoningBlock text={msg.reasoningText ?? ""} streaming={msg.streamingFinished === false} />
+                    </Show>
                     <Show
                       when={editingMessageId() === msg.id}
                       fallback={
                         <div
                           class="prose prose-sm dark:prose-invert max-w-none leading-relaxed"
+                          classList={{
+                            "text-red-600 dark:text-red-400": msg.isError === true
+                          }}
                           innerHTML={renderCachedMarkdown(msg.content)}
                         />
                       }
@@ -548,6 +583,86 @@ function imageDataUrl(snapshot: GeneratedImageSnapshot): string {
   return `data:${snapshot.mimeType ?? "image/png"};base64,${snapshot.dataBase64 ?? ""}`;
 }
 
+function WorkSummaryPanel(props: { summary: WorkSummary }) {
+  const [open, setOpen] = createSignal(false);
+  return (
+    <div class="mb-3 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs text-zinc-500 row-hover"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>{workSummaryLine(props.summary)}</span>
+        <span>{open() ? "Hide" : "Show"}</span>
+      </button>
+      <Show when={open()}>
+        <div class="divide-y divide-zinc-200 bg-zinc-50/60 dark:divide-zinc-800 dark:bg-zinc-900/40">
+          <For each={props.summary.items ?? []}>
+            {(item) => <WorkItemRow item={item} />}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+function WorkItemRow(props: { item: SummaryWorkItem }) {
+  return (
+    <div class="flex items-start gap-2 px-3 py-2 text-xs">
+      <span
+        class="mt-1.5 h-2 w-2 rounded-full"
+        classList={{
+          "bg-amber-500": props.item.status === "inProgress",
+          "bg-emerald-500": props.item.status === "completed",
+          "bg-red-500": props.item.status === "failed",
+          "bg-zinc-400": !props.item.status
+        }}
+      />
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-zinc-700 dark:text-zinc-200">{workItemLabel(props.item)}</div>
+        <Show when={props.item.commandText}>
+          <pre class="mt-1 truncate font-mono text-[11px] text-zinc-500">{props.item.commandText}</pre>
+        </Show>
+        <Show when={(props.item.paths ?? []).length > 0}>
+          <div class="mt-1 flex flex-wrap gap-1">
+            <For each={props.item.paths ?? []}>
+              {(path) => <span class="font-mono text-[11px] text-zinc-500">{path}</span>}
+            </For>
+          </div>
+        </Show>
+      </div>
+    </div>
+  );
+}
+
+function TimelineEntryView(props: { entry: TimelineEntry }) {
+  if (props.entry.type === "reasoning") {
+    return <ReasoningBlock text={(props.entry as TimelineEntry & { text?: string }).text ?? ""} streaming={false} />;
+  }
+  if (props.entry.type === "message") {
+    return (
+      <div class="whitespace-pre-wrap break-words text-sm leading-relaxed">
+        {(props.entry as TimelineEntry & { text?: string }).text ?? ""}
+      </div>
+    );
+  }
+  if (props.entry.type === "tools") {
+    return <WorkSummaryPanel summary={{ items: props.entry.items ?? [] }} />;
+  }
+  return null;
+}
+
+function ReasoningBlock(props: { text: string; streaming: boolean }) {
+  return (
+    <div
+      class="mb-3 rounded-lg border border-zinc-200 bg-zinc-50/70 px-3 py-2 font-mono text-xs leading-relaxed text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40"
+      classList={{ "animate-pulse": props.streaming }}
+    >
+      {props.text}
+    </div>
+  );
+}
+
 function audioDataUrl(snapshot: AudioSnapshot): string {
   return `data:${snapshot.mimeType ?? "audio/mp4"};base64,${snapshot.base64 ?? ""}`;
 }
@@ -561,25 +676,47 @@ function AttachmentStrip(props: { attachments: Attachment[] }) {
     <div class="mt-3 flex flex-wrap gap-2">
       <For each={props.attachments}>
         {(attachment) => (
-          <Show
-            when={attachment.kind === "image" && attachment.dataBase64}
-            fallback={
-              <audio
-                class="h-9"
-                controls
-                src={attachment.dataBase64 ? attachmentDataUrl(attachment) : undefined}
-              />
-            }
-          >
-            <img
-              class="max-h-44 rounded-lg border border-zinc-200 object-contain dark:border-zinc-800"
-              src={attachmentDataUrl(attachment)}
-              alt={attachment.filename ?? "image"}
-            />
-          </Show>
+          <AttachmentPreview attachment={attachment} />
         )}
       </For>
     </div>
+  );
+}
+
+function AttachmentPreview(props: { attachment: Attachment }) {
+  createEffect(() => {
+    if (attachmentNeedsHydration(props.attachment) && !daemonStore.rolloutAttachments()[props.attachment.id]) {
+      void requestRolloutAttachment(props.attachment.id);
+    }
+  });
+
+  const hydrated = createMemo(() => daemonStore.rolloutAttachments()[props.attachment.id] as RolloutAttachmentSnapshot | undefined);
+  const preview = createMemo<Attachment>(() => ({
+    ...props.attachment,
+    dataBase64: props.attachment.dataBase64 ?? hydrated()?.dataBase64,
+    mimeType: hydrated()?.mimeType ?? props.attachment.mimeType
+  }));
+
+  return (
+    <Show
+      when={preview().dataBase64}
+      fallback={
+        <div class="rounded-lg bg-zinc-100/70 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800/40">
+          {hydrated()?.errorMessage ?? "Loading attachment..."}
+        </div>
+      }
+    >
+      <Show
+        when={preview().kind === "image"}
+        fallback={<audio class="h-9" controls src={attachmentDataUrl(preview())} />}
+      >
+        <img
+          class="max-h-44 rounded-lg border border-zinc-200 object-contain dark:border-zinc-800"
+          src={attachmentDataUrl(preview())}
+          alt={preview().filename ?? "image"}
+        />
+      </Show>
+    </Show>
   );
 }
 

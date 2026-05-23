@@ -17,14 +17,21 @@ export default function SettingsView() {
   const [theme, setTheme] = createSignal<"system" | "light" | "dark">("system");
 
   onMount(async () => {
-    const s = await invoke<DaemonStatus>("daemon_status");
-    setStatus(s);
+    try {
+      setStatus(await invoke<DaemonStatus>("daemon_status"));
+    } catch (_) {
+      setStatus({ installed: false, running: false, version: null });
+    }
     void requestRateLimits();
     void requestClawJSServiceStatuses();
-    const stored = await invoke<string | null>("get_setting", { key: "ui.hotkey" });
-    if (stored) setHotkey(stored);
-    const t = await invoke<string | null>("get_setting", { key: "ui.theme" });
-    if (t === "light" || t === "dark" || t === "system") setTheme(t);
+    try {
+      const stored = await invoke<string | null>("get_setting", { key: "ui.hotkey" });
+      if (stored) setHotkey(stored);
+      const t = await invoke<string | null>("get_setting", { key: "ui.theme" });
+      if (t === "light" || t === "dark" || t === "system") setTheme(t);
+    } catch (_) {
+      /* preview mode or settings backend unavailable */
+    }
   });
 
   async function persist(key: string, value: string) {
@@ -71,6 +78,11 @@ export default function SettingsView() {
         <Section title="Bridge daemon">
           <Show when={status()}>
             <div class="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
+              <div>Paired with: {daemonStore.hostDisplayName() ?? "not paired"}</div>
+              <div>Bridge state: {daemonStore.bridgeState()}</div>
+              <Show when={daemonStore.bridgeMessage()}>
+                <div class="text-red-500">Bridge message: {daemonStore.bridgeMessage()}</div>
+              </Show>
               <div>Status: {status()?.running ? "running" : "stopped"}</div>
               <div>Installed: {status()?.installed ? "yes" : "no"}</div>
               <div>Version: {status()?.version ?? "unknown"}</div>

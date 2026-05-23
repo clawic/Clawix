@@ -1,7 +1,7 @@
 import { For, Show, createMemo } from "solid-js";
 import { A } from "@solidjs/router";
 import { daemonStore } from "../lib/daemon_ws";
-import { deriveSidebarModel, type ChatBrief } from "../lib/sidebar_model";
+import { chatHasActiveTurn, chatPreview, chatWasInterrupted, deriveSidebarModel, type ChatBrief } from "../lib/sidebar_model";
 
 interface Props {
   onSettings: () => void;
@@ -72,13 +72,7 @@ export function Sidebar(props: Props) {
         </Show>
         <For each={model().pinned}>
           {(chat) => (
-            <A
-              href={`/chats/${chat.id}`}
-              class="block px-3 py-2 text-sm rounded-lg row-hover truncate"
-              activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
-            >
-              {chat.title || "Untitled"}
-            </A>
+            <ChatLink chat={chat} />
           )}
         </For>
         <Show when={model().projectless.length > 0}>
@@ -88,13 +82,7 @@ export function Sidebar(props: Props) {
         </Show>
         <For each={model().projectless}>
           {(chat) => (
-            <A
-              href={`/chats/${chat.id}`}
-              class="block px-3 py-2 text-sm rounded-lg row-hover truncate"
-              activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
-            >
-              {chat.title || "Untitled"}
-            </A>
+            <ChatLink chat={chat} />
           )}
         </For>
         <Show when={model().projects.length > 0}>
@@ -145,5 +133,28 @@ export function Sidebar(props: Props) {
         </button>
       </footer>
     </aside>
+  );
+}
+
+function ChatLink(props: { chat: ChatBrief }) {
+  return (
+    <A
+      href={`/chats/${props.chat.id}`}
+      class="block rounded-lg px-3 py-2 row-hover"
+      activeClass="bg-zinc-100/70 dark:bg-zinc-800/40"
+    >
+      <div class="flex items-center gap-2">
+        <span class="min-w-0 flex-1 truncate text-sm">{props.chat.title || "Untitled"}</span>
+        <Show when={chatHasActiveTurn(props.chat)}>
+          <span class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+        </Show>
+        <Show when={chatWasInterrupted(props.chat)}>
+          <span class="text-[10px] text-red-500">Paused</span>
+        </Show>
+      </div>
+      <Show when={chatPreview(props.chat)}>
+        {(preview) => <div class="mt-0.5 truncate text-xs text-zinc-500">{preview()}</div>}
+      </Show>
+    </A>
   );
 }

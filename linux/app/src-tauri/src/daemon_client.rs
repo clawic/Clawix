@@ -168,6 +168,15 @@ impl DaemonClient {
         Ok(())
     }
 
+    pub async fn request_rollout_attachment(&self, attachment_id: &str) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "requestRolloutAttachment",
+            "attachmentId": attachment_id
+        }))
+        .await?;
+        Ok(())
+    }
+
     pub async fn request_audio(&self, audio_id: &str) -> Result<()> {
         self.send_intent(serde_json::json!({
             "type": "requestAudio",
@@ -194,11 +203,12 @@ impl DaemonClient {
     }
 
     pub async fn start_pairing(&self) -> Result<PairingPayload> {
-        // The daemon mints a fresh pairing payload via `pairingStart`.
-        // The frame round-trips back as `pairingPayload`; the WS reader
-        // task forwards that to a oneshot channel keyed by request id.
-        // For the v1 scaffold we read straight from `~/.clawix/state/`
-        // where the daemon already persists the bridge token + short code.
+        let _ = self
+            .send_intent(serde_json::json!({
+                "type": "pairingStart"
+            }))
+            .await;
+
         let state_dir = state_dir();
         let token = std::fs::read_to_string(state_dir.join("bridge-token"))
             .with_context(|| "reading bridge token from ~/.clawix/state/bridge-token")?

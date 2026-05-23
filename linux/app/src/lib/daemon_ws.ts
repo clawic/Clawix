@@ -1,12 +1,19 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { createSignal, onCleanup, onMount } from "solid-js";
+import { bridgeDiagnostic } from "./bridge_diagnostics_model";
 import { appendMessage, applyStreamingMessage, editPromptMessage, prependMessagesPage, updateSessionFlags, updateSessionTitle, upsertSession } from "./bridge_state_model";
 
 export interface BridgeFrame {
   schemaVersion: number;
   type: string;
   [k: string]: unknown;
+}
+
+export interface PairingPayload {
+  token: string;
+  shortCode: string;
+  qrJson: string;
 }
 
 const [chats, setChats] = createSignal<unknown[]>([]);
@@ -16,11 +23,15 @@ const [streamingMessages, setStreamingMessages] = createSignal<Record<string, un
 const [hasMoreMessages, setHasMoreMessages] = createSignal<Record<string, boolean>>({});
 const [fileSnapshots, setFileSnapshots] = createSignal<Record<string, unknown>>({});
 const [generatedImages, setGeneratedImages] = createSignal<Record<string, unknown>>({});
+const [rolloutAttachments, setRolloutAttachments] = createSignal<Record<string, unknown>>({});
 const [audioById, setAudioById] = createSignal<Record<string, unknown>>({});
 const [rateLimits, setRateLimits] = createSignal<unknown | null>(null);
 const [rateLimitsByLimitId, setRateLimitsByLimitId] = createSignal<Record<string, unknown>>({});
 const [clawJSServiceStatuses, setClawJSServiceStatuses] = createSignal<unknown[]>([]);
 const [bridgeState, setBridgeState] = createSignal<string>("booting");
+const [bridgeMessage, setBridgeMessage] = createSignal<string | null>(null);
+const [hostDisplayName, setHostDisplayName] = createSignal<string | null>(null);
+const [pairingPayload, setPairingPayload] = createSignal<PairingPayload | null>(null);
 
 export const daemonStore = {
   chats,
@@ -31,11 +42,15 @@ export const daemonStore = {
   hasMoreMessages,
   fileSnapshots,
   generatedImages,
+  rolloutAttachments,
   audioById,
   rateLimits,
   rateLimitsByLimitId,
   clawJSServiceStatuses,
   bridgeState,
+  bridgeMessage,
+  hostDisplayName,
+  pairingPayload,
   send: (body: BridgeFrame["body"]) => invoke("send_intent", { body })
 };
 
@@ -44,8 +59,16 @@ export function useDaemonStream(): void {
     try {
       const unlisten = await listen<BridgeFrame[]>("bridge:frames", (event) => {
         for (const frame of event.payload) {
+          const diagnostic = bridgeDiagnostic(frame);
+          if (diagnostic) {
+            setBridgeState(diagnostic.state);
+            setBridgeMessage(diagnostic.message);
+            continue;
+          }
           switch (frame.type) {
             case "authOk":
+              setBridgeMessage(null);
+              setHostDisplayName(typeof frame.hostDisplayName === "string" ? frame.hostDisplayName : null);
               void requestRateLimits();
               void requestClawJSServiceStatuses();
               break;
@@ -57,6 +80,11 @@ export function useDaemonStream(): void {
               break;
             case "projectsSnapshot":
               setProjects((frame.projects as unknown[]) ?? []);
+              break;
+            case "pairingPayload":
+              if (isPairingPayload(frame)) {
+                setPairingPayload({ token: frame.token, shortCode: frame.shortCode, qrJson: frame.qrJson });
+              }
               break;
             case "messagesSnapshot":
               setStreamingMessages((prev) => ({
@@ -103,6 +131,18 @@ export function useDaemonStream(): void {
                 }));
               }
               break;
+            case "rolloutAttachmentSnapshot":
+              if (typeof frame.attachmentId === "string") {
+                setRolloutAttachments((prev) => ({
+                  ...prev,
+                  [frame.attachmentId as string]: {
+                    dataBase64: frame.dataBase64,
+                    mimeType: frame.mimeType,
+                    errorMessage: frame.errorMessage
+                  }
+                }));
+              }
+              break;
             case "audioSnapshot":
               if (typeof frame.audioId === "string") {
                 setAudioById((prev) => ({
@@ -126,6 +166,7 @@ export function useDaemonStream(): void {
               break;
             case "bridgeState":
               setBridgeState((frame.state as string) ?? "booting");
+              setBridgeMessage(typeof frame.message === "string" ? frame.message : null);
               break;
             default:
               break;
@@ -241,6 +282,14 @@ export async function requestGeneratedImage(path: string): Promise<void> {
   }
 }
 
+export async function requestRolloutAttachment(attachmentId: string): Promise<void> {
+  try {
+    await invoke("request_rollout_attachment", { attachmentId });
+  } catch (_) {
+    setRolloutAttachments((prev) => ({ ...prev, [attachmentId]: { errorMessage: "Attachment unavailable." } }));
+  }
+}
+
 export async function requestAudio(audioId: string): Promise<void> {
   try {
     await invoke("request_audio", { audioId });
@@ -265,6 +314,14 @@ export async function requestClawJSServiceStatuses(): Promise<void> {
   }
 }
 
+export async function requestPairingPayload(): Promise<void> {
+  try {
+    setPairingPayload(await invoke<PairingPayload>("start_pairing"));
+  } catch (_) {
+    setPairingPayload(null);
+  }
+}
+
 export async function sendMessage(text: string, sessionId?: string, attachments: unknown[] = []): Promise<void> {
   await invoke("send_message", { args: { sessionId, text, attachments } });
 }
@@ -278,6 +335,10 @@ function titleForSession(sessions: unknown[], sessionId: string): string | null 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPairingPayload(frame: BridgeFrame): frame is BridgeFrame & PairingPayload {
+  return typeof frame.token === "string" && typeof frame.shortCode === "string" && typeof frame.qrJson === "string";
 }
 
 function upsertServiceStatus(services: unknown[], service: unknown): unknown[] {

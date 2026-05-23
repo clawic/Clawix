@@ -45,6 +45,10 @@ export function attachmentKindFromMime(mimeType: string): "image" | "audio" {
   return mimeType.startsWith("audio/") ? "audio" : "image";
 }
 
+export function attachmentNeedsHydration(attachment: { id?: string; dataBase64?: string | null }): boolean {
+  return Boolean(attachment.id && !attachment.dataBase64);
+}
+
 export function mergeDictationText(current: string, partial: string): string {
   const text = partial.trim();
   if (!text) return current;

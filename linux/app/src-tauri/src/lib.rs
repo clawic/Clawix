@@ -75,6 +75,7 @@ pub fn run() {
             commands::rename_session,
             commands::read_file,
             commands::request_generated_image,
+            commands::request_rollout_attachment,
             commands::request_audio,
             commands::request_rate_limits,
             commands::request_clawjs_service_statuses,
@@ -254,6 +255,15 @@ mod commands {
     ) -> Result<(), String> {
         let client = state.daemon.lock().await;
         client.request_generated_image(&path).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn request_rollout_attachment(
+        attachment_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.request_rollout_attachment(&attachment_id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
