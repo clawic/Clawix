@@ -2,8 +2,8 @@
 // renderer mounted once at the app root. spring(420,38) on enter,
 // easeIn 220ms on exit. Auto-dismiss default 2.4s.
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { CircleCheck, CircleAlert, X } from "lucide-react";
+import { t } from "../../localization/i18n";
 
 type ToastIcon = "checkCircle" | "info" | "warning" | "error" | "none";
 
@@ -58,9 +58,8 @@ export function ToastHost() {
       className="pointer-events-none fixed inset-x-0 top-0 z-[5000] flex justify-center"
       style={{ paddingTop: 16 }}
     >
-      <AnimatePresence>
-        {item && (
-          <motion.div
+      {item && (
+          <div
             key={item.id}
             className="pointer-events-auto inline-flex items-center gap-2.5 toast-backdrop"
             style={{
@@ -68,11 +67,9 @@ export function ToastHost() {
               boxShadow: "var(--shadow-toast), inset 0 0 0 0.6px rgba(255,255,255,0.10)",
               padding: "8px 8px 8px 14px",
               color: "rgba(255,255,255,0.98)",
+              transform: "translateY(0)",
+              transition: "opacity 220ms ease, transform 220ms ease",
             }}
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.85 }}
           >
             <ToastIconView icon={item.icon} />
             <span style={{ fontSize: 13, fontVariationSettings: '"wght" 800' }}>{item.message}</span>
@@ -80,13 +77,12 @@ export function ToastHost() {
               onClick={() => Toast.dismiss()}
               className="grid place-items-center hover:text-white"
               style={{ width: 18, height: 18, color: "rgba(255,255,255,0.62)" }}
-              aria-label="Dismiss notification"
+              aria-label={t("Dismiss notification")}
             >
               <X size={11} strokeWidth={1.5} />
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

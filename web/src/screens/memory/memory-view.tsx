@@ -1,13 +1,14 @@
 // Memory companion surface. Mac + ClawJS own v1 memory edits; the web view
 // states that boundary while sessions consume the shared context.
 import { PageHeader, Card } from "../../components/ui";
+import { t } from "../../localization/i18n";
 
 export function MemoryView() {
   return (
     <div className="h-full flex flex-col">
       <div className="thin-scroll flex-1 overflow-y-auto">
         <div className="max-w-[720px] mx-auto pt-8 pb-12 px-6">
-          <PageHeader title="Memory" subtitle="Persistent context Codex can recall across chats." />
+          <PageHeader title={t("Memory")} subtitle={t("Persistent context the assistant can recall across chats.")} />
           <Card>
             <div className="space-y-2" style={{ padding: "16px" }}>
               <div
@@ -22,7 +23,7 @@ export function MemoryView() {
                   lineHeight: 1.55,
                 }}
               >
-                Codex memory entries are managed through the Mac UI and ClawJS framework APIs.
+                Assistant memory entries are managed through the Mac UI and ClawJS framework APIs.
                 Sessions here consume that shared context automatically while edits remain on the
                 canonical v1 surfaces.
               </p>
