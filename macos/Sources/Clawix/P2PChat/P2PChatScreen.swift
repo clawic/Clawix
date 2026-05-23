@@ -9,10 +9,10 @@ struct P2PChatScreen: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar.frame(width: 280)
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             detail
         }
-        .background(Color.black)
+        .background(Palette.background)
         .task { await store.refreshChats() }
         .onDisappear {
             store.cancelChatSurfaceWork()
@@ -45,7 +45,7 @@ struct P2PChatScreen: View {
             .thinScrollers()
         }
         .frame(maxHeight: .infinity)
-        .background(Color(white: 0.06))
+        .background(Color.gray(light: 0.96, dark: 0.06))
     }
 
     // MARK: - Detail
@@ -55,9 +55,9 @@ struct P2PChatScreen: View {
         if let thread = currentThread {
             VStack(spacing: 0) {
                 ThreadHeader(thread: thread)
-                Divider().background(Color.white.opacity(0.06))
+                Divider().background(Color.overlay(0.06))
                 MessagesList(messages: store.messages(forPeer: thread.peer.handle.fingerprint), currentAlias: thread.peer.handle.alias)
-                Divider().background(Color.white.opacity(0.06))
+                Divider().background(Color.overlay(0.06))
                 composer(thread: thread)
             }
         } else {
@@ -85,16 +85,16 @@ struct P2PChatScreen: View {
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5),
+                        .stroke(Color.overlay(0.06), lineWidth: 0.5),
                 )
             Button(action: { Task { await send(thread: thread) } }) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(Color.white.opacity(draft.isEmpty ? 0.04 : 0.92))
+                        .fill(Color.overlay(draft.isEmpty ? 0.04 : 0.92))
                     LucideIcon(.arrowUp, size: 14)
                         .foregroundStyle(draft.isEmpty ? Palette.textSecondary : .black)
                 }
@@ -104,7 +104,7 @@ struct P2PChatScreen: View {
             .disabled(draft.isEmpty || isSending)
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
-        .background(Color.black)
+        .background(Palette.background)
     }
 
     // MARK: - Side-effects
@@ -135,7 +135,7 @@ private struct ThreadRow: View {
         HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                 Text(initials).font(.system(size: 12, weight: .semibold))
             }
             .frame(width: 36, height: 36)
@@ -149,15 +149,15 @@ private struct ThreadRow: View {
                     .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 6).padding(.vertical, 2)
                     .background(
-                        Capsule().fill(Color.white)
+                        Capsule().fill(Palette.textPrimary)
                     )
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Palette.background)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.white.opacity(0.07) : .clear)
+                .fill(isSelected ? Color.overlay(0.07) : .clear)
                 .padding(.horizontal, 4)
         )
     }
@@ -182,7 +182,7 @@ private struct ThreadHeader: View {
             LucideIcon(.info, size: 14).foregroundStyle(Palette.textSecondary)
         }
         .padding(.horizontal, 18).padding(.vertical, 14)
-        .background(Color.black)
+        .background(Palette.background)
     }
 }
 
@@ -222,9 +222,9 @@ private struct MessageBubble: View {
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(message.fromMe ? Color.white : Color.white.opacity(0.06))
+                            .fill(message.fromMe ? Palette.textPrimary : Color.overlay(0.06))
                     )
-                    .foregroundStyle(message.fromMe ? .black : Palette.textPrimary)
+                    .foregroundStyle(message.fromMe ? Palette.background : Palette.textPrimary)
             }
             if !message.fromMe { Spacer(minLength: 64) }
         }

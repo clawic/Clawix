@@ -59,7 +59,7 @@ struct MeshTargetPill: View {
                     .lineLimit(1)
                 LucideIcon(.chevronDown, size: 8)
             }
-            .foregroundColor(Color(white: 0.55))
+            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -187,7 +187,7 @@ struct MeshTargetPopup: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.07))
+            .fill(Color.overlay(0.07))
             .frame(height: 1)
             .padding(.vertical, 4)
     }

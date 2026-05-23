@@ -20,10 +20,10 @@ struct PairWindowView: View {
         VStack(alignment: .center, spacing: 18) {
             Text("Pair iPhone")
                 .font(BodyFont.system(size: 16, wght: 700))
-                .foregroundStyle(Color.white.opacity(0.94))
+                .foregroundStyle(Color.overlay(0.94))
             Text("Open Clawix on your iPhone and scan this code while both devices are on the same WiFi.")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundStyle(Color.white.opacity(0.55))
+                .foregroundStyle(Color.overlay(0.55))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
 
@@ -44,11 +44,11 @@ struct PairWindowView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.5)
+                    .strokeBorder(Color.overlay(0.10), lineWidth: 0.5)
             )
 
             HStack(spacing: 10) {
@@ -63,12 +63,12 @@ struct PairWindowView: View {
                 }
                 .buttonStyle(.borderless)
             }
-            .foregroundStyle(Color.white.opacity(0.55))
+            .foregroundStyle(Color.overlay(0.55))
             Spacer()
         }
         .padding(28)
         .frame(width: 360, height: 540)
-        .background(Color(white: 0.06).ignoresSafeArea())
+        .background(Color.gray(light: 0.96, dark: 0.06).ignoresSafeArea())
         .onAppear {
             if bridgeLease == nil {
                 bridgeLease = appState.acquireLocalBridge(reason: .pairing)
@@ -90,11 +90,11 @@ struct PairWindowView: View {
         HStack {
             Text(label)
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundStyle(Color.white.opacity(0.45))
+                .foregroundStyle(Color.overlay(0.45))
                 .frame(width: 50, alignment: .leading)
             Text(value)
                 .font(BodyFont.system(size: 12, design: .monospaced))
-                .foregroundStyle(Color.white.opacity(0.86))
+                .foregroundStyle(Color.overlay(0.86))
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()

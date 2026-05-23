@@ -72,7 +72,15 @@ struct MeshClient: MeshClienting {
         self.session = URLSession(configuration: cfg)
     }
 
-    static func resolvedHTTPPort() -> UInt16 {
+    static func resolvedHTTPPort(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> UInt16 {
+        // Per-instance agent runs set CLAWIX_BRIDGE_HTTP_PORT on both the GUI
+        // and its bridge daemon so they agree on a unique loopback port.
+        if let raw = environment["CLAWIX_BRIDGE_HTTP_PORT"],
+           let port = UInt16(raw), port > 0 {
+            return port
+        }
         if let override = UserDefaults.standard.object(forKey: httpPortDefaultsKey) as? Int,
            override > 0, override < 65536 {
             return UInt16(override)

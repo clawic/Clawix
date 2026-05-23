@@ -21,7 +21,7 @@ struct PairingScreen: View {
             Spacer()
         }
         .padding(24)
-        .background(Color.black)
+        .background(Palette.background)
         .onDisappear {
             store.cancelSurfaceWork()
         }
@@ -52,7 +52,7 @@ struct PairingScreen: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 
@@ -66,7 +66,7 @@ struct PairingScreen: View {
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                 )
             HStack {
                 Button("Resolve and add") {
@@ -95,7 +95,7 @@ struct PairingScreen: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 
@@ -111,14 +111,14 @@ struct PairingScreen: View {
         .padding(.horizontal, 10).padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
     }
 
     private func placeholderQr(text: String) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
             VStack(spacing: 6) {
                 LucideIcon(.scan, size: 30)
                 Text(text).font(.system(size: 10, design: .monospaced)).foregroundStyle(Palette.textSecondary)

@@ -42,10 +42,10 @@ struct RemoteJobCard: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
         )
     }
@@ -77,7 +77,7 @@ struct RemoteJobCard: View {
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -112,7 +112,7 @@ struct RemoteJobCard: View {
         case .running:   return Color(red: 0.30, green: 0.65, blue: 1.0)
         case .completed: return Color(red: 0.30, green: 0.78, blue: 0.45)
         case .failed:    return Color(red: 0.85, green: 0.35, blue: 0.30)
-        case .cancelled: return Color(white: 0.50)
+        case .cancelled: return Color.gray(light: 0.46, dark: 0.50)
         }
     }
 

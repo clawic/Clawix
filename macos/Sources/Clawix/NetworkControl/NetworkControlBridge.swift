@@ -486,9 +486,9 @@ struct NetworkControlCenterView: View {
     @State private var isRefreshing = false
 
     private static let visibleEventLimit = 100
-    private static let okColor = Color(red: 0.34, green: 0.78, blue: 0.55)
+    private static let okColor = Palette.success
     private static let warnColor = Color(red: 1.0, green: 0.78, blue: 0.34)
-    private static let denyColor = Color(red: 0.95, green: 0.45, blue: 0.45)
+    private static let denyColor = Palette.danger
 
     var body: some View {
         VStack(spacing: 0) {
@@ -594,7 +594,7 @@ struct NetworkControlCenterView: View {
                 .frame(width: 30, height: 30)
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
@@ -617,7 +617,7 @@ struct NetworkControlCenterView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.035))
+                .fill(Color.overlay(0.035))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Palette.popupStroke, lineWidth: Palette.popupStrokeWidth)
@@ -632,7 +632,7 @@ struct NetworkControlCenterView: View {
                 .frame(width: 30, height: 30)
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text("Reveal endpoint details")
@@ -649,7 +649,7 @@ struct NetworkControlCenterView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
         )
     }
 
@@ -662,7 +662,7 @@ struct NetworkControlCenterView: View {
                 .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(adapter.label)
@@ -693,7 +693,7 @@ struct NetworkControlCenterView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
         )
     }
 
@@ -733,7 +733,7 @@ struct NetworkControlCenterView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
         )
     }
 
@@ -777,7 +777,7 @@ struct NetworkControlCenterView: View {
         .padding(.horizontal, 14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.025))
+                .fill(Color.overlay(0.025))
         )
     }
 
@@ -813,7 +813,7 @@ struct NetworkControlCenterView: View {
                     .foregroundColor(Palette.textTertiary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 1)
-                    .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
+                    .background(Capsule(style: .continuous).fill(Color.overlay(0.05)))
             }
             Spacer()
         }
@@ -840,7 +840,7 @@ struct NetworkControlCenterView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
+        .background(Capsule(style: .continuous).fill(Color.overlay(0.05)))
     }
 
     private func tag(_ text: String, color: Color) -> some View {
@@ -868,7 +868,7 @@ struct NetworkControlCenterView: View {
             .padding(.horizontal, 14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.02))
+                    .fill(Color.overlay(0.02))
             )
     }
 

@@ -117,7 +117,7 @@ private struct ConnectionRow: View {
                 .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(connection.label)
@@ -137,7 +137,7 @@ private struct ConnectionRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.04 : 0.025))
+                .fill(Color.overlay(hovered ? 0.04 : 0.025))
         )
         .onHover { hovered = $0 }
     }
@@ -196,7 +196,7 @@ struct ConnectionDetailView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: hasSecret ? "lock.fill" : "lock.open")
                                     .foregroundColor(hasSecret ?
-                                                     Color(red: 0.34, green: 0.78, blue: 0.55) :
+                                                     Palette.success :
                                                      Color(red: 1.0, green: 0.78, blue: 0.34))
                                 Text(hasSecret ?
                                      "Encrypted token in Secrets." :
@@ -252,7 +252,7 @@ struct ConnectionDetailView: View {
                 .frame(width: 38, height: 38)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(c.label)
@@ -357,7 +357,7 @@ struct ConnectionEditorSheet: View {
                                     .padding(.vertical, 4)
                                     .background(
                                         Capsule(style: .continuous)
-                                            .fill(Color.white.opacity(0.06))
+                                            .fill(Color.overlay(0.06))
                                     )
                                 }
                             }
@@ -432,10 +432,10 @@ struct ConnectionEditorSheet: View {
 
     private var fieldBg: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(Color.overlay(0.04))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
             )
     }
 }
