@@ -36,6 +36,10 @@ const requiredSnippets = [
   ["macos/Sources/Clawix/Persistence/ClawixFrameworkResourceRoutes.swift", "ClawixPersistentSurfacePaths.frameworkGlobalChild(designDirectoryName"],
   ["ios/Sources/Clawix/Design/DesignStore.swift", ".appendingPathComponent(frameworkRootName"],
   ["ios/Sources/Clawix/Design/EditorStore.swift", ".appendingPathComponent(frameworkRootName"],
+  ["ios/Sources/Clawix/ClawixTemporaryRoutes.swift", "audioPlaybackCacheDirectoryName = \"clawix-audio\""],
+  ["ios/Sources/Clawix/ChatDetail/UserAudioBubble.swift", "ClawixTemporaryRoutes.audioPlaybackCacheURL"],
+  ["ios/Sources/Clawix/Composer/VoiceRecorder.swift", "ClawixTemporaryRoutes.voiceRecordingURL()"],
+  ["ios/Sources/Clawix/Design/EditorExport.swift", "ClawixTemporaryRoutes.designExportURL"],
   ["macos/Sources/Clawix/Apps/AGENT_CONTRACT.md", "~/.claw/apps/"],
   ["macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift", "Regular dictation audio is encoded in"],
   ["macos/Sources/Clawix/Dictation/DictationAudioCatalogRecorder.swift", "DictationAudioStorage.wavFileBytes(samples: samples)"],
@@ -58,6 +62,18 @@ const requiredSnippets = [
   ["macos/Sources/Clawix/MCP/MCPServersStore.swift", "Clawix never parses or"],
   ["macos/Sources/Clawix/MCP/MCPServersStore.swift", "mutates Codex-owned TOML directly"],
   ["macos/Sources/Clawix/MCP/ClawJSMCPClient.swift", "\"mcp\", \"upsert\""],
+  ["web/src/screens/agents/agent-family-model.ts", "UI-only fixture projection for the Web companion"],
+  ["web/src/screens/agents/agent-family-model.ts", "ClawJS remains the"],
+  ["web/src/screens/index/index-model.ts", "UI-only fixture projection for the Web companion"],
+  ["web/src/screens/index/index-model.ts", "ClawJS remains the"],
+  ["web/src/screens/mac-care/mac-care-model.ts", "UI-only fixture projection for the Web companion"],
+  ["web/src/screens/mac-care/mac-care-model.ts", "ClawJS owns the Mac Care"],
+  ["web/src/screens/pomodoro/pomodoro-view.tsx", "UI-only Pomodoro scratchpad"],
+  ["web/src/screens/pomodoro/pomodoro-view.tsx", "not framework sessions/messages"],
+  ["web/src/lib/storage.ts", "pomodoroSessionParity"],
+  ["windows/Clawix.App/Services/Preferences.cs", "This store is UI-only"],
+  ["windows/Clawix.App/Services/Preferences.cs", "must not"],
+  ["windows/Clawix.App/Services/Preferences.cs", "sessions, messages, searches, grants, approvals, audits, or secrets"],
   ["packages/ClawixCore/Sources/ClawixCore/SnapshotCache.swift", "maxChats = 30"],
   ["packages/ClawixCore/Sources/ClawixCore/SnapshotCache.swift", "maxMessagesPerChat = 80"],
   ["android/app/src/main/java/com/example/clawix/android/core/SnapshotCache.kt", "private val maxChats = 30"],
@@ -107,6 +123,9 @@ const forbiddenByPath = new Map([
   ["ios/Sources/Clawix/Design/DesignStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
   ["ios/Sources/Clawix/Design/EditorStore.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
   ["ios/Sources/Clawix/Design/EditorDocument.swift", ["Application Support/Clawix/Design", "Library/Application Support/Clawix/Design"]],
+  ["ios/Sources/Clawix/ChatDetail/UserAudioBubble.swift", ["FileManager.default.temporaryDirectory", ".urls(for: .cachesDirectory", "appendingPathComponent(\"clawix-audio\""]],
+  ["ios/Sources/Clawix/Composer/VoiceRecorder.swift", ["FileManager.default.temporaryDirectory", "appendingPathComponent(\"clawix_voice_"]],
+  ["ios/Sources/Clawix/Design/EditorExport.swift", ["FileManager.default.temporaryDirectory", "appendingPathComponent(\"\\(base)-"]],
   ["macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift", ["Application Support/Clawix/dictation-audio", "Application Support/Clawix/dictation-audio-debug", "frameworkGlobalChild(ClawixPersistentSurfacePaths.components.audio"]],
   ["macos/Sources/Clawix/Dictation/DictationCoordinator.swift", ["DictationAudioStorage.writeWAV(samples: samples, id: id)", "audioFilePath: audioURL?.path"]],
   ["macos/Sources/Clawix/AppState/MessageSending.swift", ["AudioMessageStore.shared.ingest", "legacy store is still the source of truth"]],
@@ -297,6 +316,46 @@ for (const relativePath of listFiles("web/src/screens/secrets", [".ts", ".tsx", 
   }
 }
 
+for (const relativePath of listFiles("web/src/screens/agents", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source)) {
+    fail(`${relativePath} persists Web agent-family data locally; agents, personalities, connections, grants, runtime assignment, and Secrets references must project ClawJS authority`);
+  }
+  if (/\b(?:writeFile|fs\.write|FileSystemWritableFileStream)\b/.test(source)) {
+    fail(`${relativePath} writes Web agent-family records directly; agent-family mutations must route through ClawJS contracts`);
+  }
+}
+
+for (const relativePath of listFiles("web/src/screens/index", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source)) {
+    fail(`${relativePath} persists Web index/search data locally; index records, saved searches, monitors, runs, and alerts must project ClawJS authority`);
+  }
+  if (/\b(?:writeFile|fs\.write|FileSystemWritableFileStream|fetch\s*\()\b/.test(source)) {
+    fail(`${relativePath} writes or mutates Web index/search records directly; index mutations must route through ClawJS contracts`);
+  }
+}
+
+for (const relativePath of listFiles("web/src/screens/mac-care", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source)) {
+    fail(`${relativePath} persists Web Mac Care data locally; route atlas, scan history, action plans, approvals, and receipts must project ClawJS authority`);
+  }
+  if (/\b(?:writeFile|fs\.write|FileSystemWritableFileStream|fetch\s*\(|invoke\s*\()\b/.test(source)) {
+    fail(`${relativePath} writes, executes, or mutates Web Mac Care records directly; Mac Care actions must route through ClawJS contracts and signed-host approval`);
+  }
+}
+
+for (const relativePath of listFiles("web/src/screens/pomodoro", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source)) {
+    fail(`${relativePath} persists Pomodoro state directly; this surface may only use the typed UI-only storage wrapper`);
+  }
+  if (/\b(?:writeFile|fs\.write|FileSystemWritableFileStream|fetch\s*\(|invoke\s*\(|Notification\s*\.|new\s+Notification|serviceWorker)\b/.test(source)) {
+    fail(`${relativePath} performs Pomodoro side effects directly; Pomodoro must remain UI-only until Calendar/Reminders/blockers/runtime routes exist`);
+  }
+}
+
 const allowedWebStorageFiles = new Set(["web/src/lib/storage.ts", "web/src/bridge/client.ts"]);
 for (const relativePath of listFiles("web/src", [".ts", ".tsx", ".js", ".jsx"])) {
   const source = read(relativePath);
@@ -343,6 +402,17 @@ for (const [relativePath, snippet] of [
 ]) {
   if (!read(relativePath).includes(snippet)) {
     fail(`${relativePath} must document the Windows Secrets host/framework boundary snippet ${JSON.stringify(snippet)}`);
+  }
+}
+
+const windowsPreferenceKeysSource = read("windows/Clawix.App/Services/WindowsPreferenceKeys.cs");
+for (const forbidden of ["secret", "token", "session", "message", "search", "grant", "approval", "audit", "credential", "auth"]) {
+  for (const match of windowsPreferenceKeysSource.matchAll(/"([^"]+)"/gu)) {
+    const key = match[1].toLowerCase();
+    if (forbidden === "token" && (key.includes("outputtokens") || key.includes("bytokens"))) continue;
+    if (key.includes(forbidden)) {
+      fail(`Windows JSON preferences must not add ${forbidden} key ${JSON.stringify(match[1])}; use the owning framework/host route instead`);
+    }
   }
 }
 
