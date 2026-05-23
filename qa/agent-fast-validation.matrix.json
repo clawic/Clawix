@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Agent quick validation selection for common Clawix changes without real services.",
+  "measuredAt": "2026-05-23",
+  "measurementNotes": [
+    "Measured locally with warm caches and a 15s per-check timeout.",
+    "Timings are advisory; the runner prints fresh timings on every run.",
+    "The current scripts/test.sh fast lane contains 131 run commands before Swift package and web tests, including 35 self-tests, 44 UI checks, and 39 governance-like checks."
+  ],
+  "quickSuite": [
+    "tracked-ignored",
+    "agent-instructions",
+    "constitution-sync",
+    "bridge-contract-parity",
+    "surface-route-registry",
+    "localization-macos-self-test",
+    "native-permission-broker",
+    "native-action-broker",
+    "markdown-render-heavy-self-test",
+    "package-surface"
+  ],
+  "checks": [
+    {
+      "id": "tracked-ignored",
+      "command": "node scripts/tracked-ignored-check.mjs",
+      "measuredMs": 1035,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "tracked generated or ignored artifacts entering review",
+      "failureAction": "Remove the tracked ignored artifact or update ignore policy with a documented reason."
+    },
+    {
+      "id": "agent-instructions",
+      "command": "node scripts/agent-instructions-check.mjs",
+      "measuredMs": 946,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "bloated or divergent always-loaded agent instructions",
+      "failureAction": "Move procedure detail into routed docs or skills and keep AGENTS.md as a router."
+    },
+    {
+      "id": "constitution-assertions",
+      "command": "node scripts/constitution-assertions-check.mjs",
+      "measuredMs": 2971,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "missing or stale constitutional assertion coverage",
+      "failureAction": "Update the assertion manifest or the referenced canon in the same change."
+    },
+    {
+      "id": "constitution-sync",
+      "command": "node scripts/constitution-sync-check.mjs",
+      "measuredMs": 1034,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "Clawix mirror drift from shared constitutional canon",
+      "failureAction": "Synchronize the mirror text or route the decision through the shared canon."
+    },
+    {
+      "id": "accessibility-governance",
+      "command": "node scripts/accessibility_governance_guard.mjs",
+      "measuredMs": 8380,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "missing accessibility surface coverage and expiring accessibility gaps",
+      "failureAction": "Add surface coverage, capability evidence, or an expiring gap with owner and repair path."
+    },
+    {
+      "id": "bridge-contract-parity",
+      "command": "node scripts/bridge_contract_parity_check.mjs",
+      "measuredMs": 1850,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "bridge contract drift between app-facing surfaces and protocol expectations",
+      "failureAction": "Update the contract, fixture, or consumer on both sides of the boundary."
+    },
+    {
+      "id": "surface-route-registry",
+      "command": "node scripts/generate-surface-route-registry.mjs --check",
+      "measuredMs": 1654,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "stale generated surface-route registry entries",
+      "failureAction": "Regenerate or correct the route registry and include the source change that explains it."
+    },
+    {
+      "id": "surface-evidence-projection",
+      "command": "node scripts/surface-evidence-projection-check.mjs",
+      "measuredMs": 1425,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "surface evidence projection drift",
+      "failureAction": "Update the projection baseline or fix the surface evidence that changed unexpectedly."
+    },
+    {
+      "id": "localization-macos-self-test",
+      "command": "node scripts/localization_surface_guard.mjs --self-test",
+      "measuredMs": 971,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "broken localization guard behavior before app-source scanning",
+      "failureAction": "Fix the guard fixture or detector before relying on localization results."
+    },
+    {
+      "id": "cross-platform-localization",
+      "command": "node scripts/cross_platform_localization_guard.mjs",
+      "measuredMs": 2370,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "new visible string localization debt across iOS, Android, and Web",
+      "failureAction": "Move visible strings into the platform localization resource or update the approved baseline."
+    },
+    {
+      "id": "native-permission-broker",
+      "command": "node scripts/native_permission_broker_check.mjs",
+      "measuredMs": 3703,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "native permission broker policy drift",
+      "failureAction": "Route sensitive permissions through the signed host broker and update the allowlist or docs."
+    },
+    {
+      "id": "native-action-broker",
+      "command": "node scripts/native_action_broker_check.mjs",
+      "measuredMs": 2886,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "native action broker allowlist or ownership drift",
+      "failureAction": "Keep native actions brokered by the signed host and update the registered action surface."
+    },
+    {
+      "id": "persistent-surface-self-test",
+      "command": "node scripts/persistent-surface-guard.mjs --self-test",
+      "measuredMs": 1774,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "broken persistent-surface detector behavior",
+      "failureAction": "Fix detector fixtures before trusting app-source persistent key results."
+    },
+    {
+      "id": "persistent-surface-app-scan",
+      "command": "node scripts/persistent-surface-guard.mjs macos ios android windows web/src linux/app/src",
+      "measuredMs": 6173,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "unregistered persistent keys and native permission identifiers",
+      "failureAction": "Register the persistent key/native permission surface or remove the unregistered literal."
+    },
+    {
+      "id": "hot-path-guard",
+      "command": "node scripts/hot_path_guard.mjs",
+      "measuredMs": 5008,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "new expensive work on hot UI or runtime paths",
+      "failureAction": "Add boundedness metadata or move expensive work off the hot path."
+    },
+    {
+      "id": "boundedness-guard",
+      "command": "node scripts/boundedness_guard.mjs",
+      "measuredMs": 9275,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "unbounded loops, lists, scans, and baseline debt in high-churn paths",
+      "failureAction": "Add concrete limits, windows, cursors, or an approved expiring baseline entry."
+    },
+    {
+      "id": "ui-implementation-evidence",
+      "command": "node scripts/ui_implementation_evidence_check.mjs",
+      "measuredMs": 14888,
+      "maxSeconds": 20,
+      "realServices": false,
+      "detects": "missing UI implementation evidence manifests and required public checks",
+      "failureAction": "Update the UI evidence manifest and attach the required public validation commands."
+    },
+    {
+      "id": "markdown-render-heavy-self-test",
+      "command": "node scripts/markdown_render_heavy_check.mjs --self-test",
+      "measuredMs": 1474,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "broken heavy markdown rendering detector fixtures",
+      "failureAction": "Fix detector fixtures before accepting markdown rendering changes."
+    },
+    {
+      "id": "naming-shape",
+      "command": "node scripts/naming-shape-check.mjs",
+      "measuredMs": 10251,
+      "maxSeconds": 20,
+      "realServices": false,
+      "detects": "source naming and file-shape drift",
+      "failureAction": "Rename, split, or document exceptions according to the naming and source-shape canon."
+    },
+    {
+      "id": "source-size",
+      "command": "node scripts/source-size-check.mjs",
+      "measuredMs": 6306,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "large source files crossing reviewability thresholds",
+      "failureAction": "Split the file, update an intentional baseline, or justify the generated/registry exception."
+    },
+    {
+      "id": "code-hygiene",
+      "command": "node scripts/code-hygiene-check.mjs",
+      "measuredMs": 4114,
+      "maxSeconds": 15,
+      "realServices": false,
+      "detects": "stale code-hygiene inventory and audit summaries",
+      "failureAction": "Refresh the hygiene audit artifacts or fix the stale inventory source."
+    },
+    {
+      "id": "package-surface",
+      "command": "node scripts/package_surface_guard.mjs",
+      "measuredMs": 1373,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "invalid package public-surface shape",
+      "failureAction": "Keep public package surfaces explicit and aligned with package ownership."
+    }
+  ],
+  "changeTypes": [
+    {
+      "id": "agent-docs",
+      "label": "Agent instructions or routed docs",
+      "pathPatterns": ["AGENTS.md", "CLAUDE.md", "docs/agent-rules/**", "skills/**"],
+      "recommendedChecks": ["agent-instructions", "tracked-ignored", "constitution-sync"],
+      "escalateTo": ["scripts/test.sh fast when instructions alter public policy"]
+    },
+    {
+      "id": "constitution-governance",
+      "label": "Constitution, ADR, release, or governance policy",
+      "pathPatterns": ["CONSTITUTION.md", "docs/adr/**", "docs/governance/**", "docs/decision-map.md", "qa/**"],
+      "recommendedChecks": ["constitution-assertions", "constitution-sync", "surface-route-registry", "surface-evidence-projection", "tracked-ignored"],
+      "escalateTo": ["scripts/test.sh fast for broad canon changes", "scripts/test.sh release only for release work"]
+    },
+    {
+      "id": "bridge-route-protocol",
+      "label": "Bridge, route, protocol, Relay, or surface graph",
+      "pathPatterns": ["macos/Sources/Clawix/ClawJS/**", "macos/Sources/Clawix/AppState/**", "docs/surface-*.json", "docs/adr/0011-surface-route-graph.md"],
+      "recommendedChecks": ["bridge-contract-parity", "surface-route-registry", "surface-evidence-projection", "persistent-surface-self-test", "persistent-surface-app-scan"],
+      "escalateTo": ["scripts/test.sh integration for macOS bridge/runtime changes"]
+    },
+    {
+      "id": "native-permission-action",
+      "label": "Native permissions, approvals, grants, or host actions",
+      "pathPatterns": ["macos/Sources/Clawix/HostActions/**", "macos/Sources/Clawix/**Permission**", "qa/scenarios/native-*.md"],
+      "recommendedChecks": ["native-permission-broker", "native-action-broker", "persistent-surface-app-scan", "bridge-contract-parity"],
+      "escalateTo": ["scripts/test.sh host for signed-host behavior", "scripts/test.sh integration for local fixtures"]
+    },
+    {
+      "id": "visible-ui-copy",
+      "label": "Visible UI, localized copy, or UI evidence",
+      "pathPatterns": ["macos/Sources/Clawix/**", "ios/Sources/Clawix/**", "android/app/src/main/**", "web/src/**", "docs/ui/**"],
+      "recommendedChecks": ["cross-platform-localization", "localization-macos-self-test", "accessibility-governance", "ui-implementation-evidence"],
+      "escalateTo": ["platform unit tests for changed client", "real app validation for visible macOS bugs"]
+    },
+    {
+      "id": "performance-hot-path",
+      "label": "Performance-sensitive UI/runtime path",
+      "pathPatterns": ["macos/Sources/Clawix/**", "web/src/**", "android/app/src/main/**", "ios/Sources/Clawix/**"],
+      "recommendedChecks": ["hot-path-guard", "boundedness-guard", "markdown-render-heavy-self-test"],
+      "escalateTo": ["real trace/profile before claiming performance validation"]
+    },
+    {
+      "id": "package-source-shape",
+      "label": "Package, source shape, or hygiene inventory",
+      "pathPatterns": ["packages/**", "scripts/**", "docs/code-hygiene-*.json", "docs/codebase-manifest.json"],
+      "recommendedChecks": ["package-surface", "naming-shape", "source-size", "code-hygiene"],
+      "escalateTo": ["relevant SwiftPM, Vitest, or platform unit tests for functional code"]
+    },
+    {
+      "id": "web-surface",
+      "label": "Web app surface",
+      "pathPatterns": ["web/src/**", "web/tests/**", "web/package.json", "web/vitest.config.ts"],
+      "recommendedChecks": ["cross-platform-localization", "package-surface", "markdown-render-heavy-self-test"],
+      "escalateTo": ["npm --prefix web test when dependencies are installed"]
+    },
+    {
+      "id": "mobile-client",
+      "label": "Android or iOS client",
+      "pathPatterns": ["android/**", "ios/**"],
+      "recommendedChecks": ["cross-platform-localization", "accessibility-governance", "persistent-surface-app-scan"],
+      "escalateTo": ["scripts/test.sh device for simulator/device coverage"]
+    }
+  ],
+  "knownRedundancies": [
+    "Fast currently runs many governance checks and their self-tests on every change; self-tests mainly validate the checker, not the product change.",
+    "UI governance checks dominate the fast lane even when no UI surface changed.",
+    "Release readiness and external-pending checks run in fast even though their natural home is release or goal closure.",
+    "Inventory scans such as naming, source size, code hygiene, and persistent surface app scans are useful but should be selected by changed paths instead of always blocking the shortest agent loop."
+  ],
+  "missingCoverage": [
+    "No public quick selector maps changed paths to recommended checks before this matrix.",
+    "The changed lane chooses mostly between fast and integration; it does not explain why a check is needed for a common change type.",
+    "Several failures print detector-specific lines but do not provide a next action in one place; this matrix adds failureAction text for the quick runner.",
+    "Web and mobile checks rely on dependency availability or device hooks; the quick suite keeps local static checks separate from those external prerequisites."
+  ]
+}
