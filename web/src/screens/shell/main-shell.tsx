@@ -33,6 +33,7 @@ import { ContactsView } from "../personal/contacts-view";
 import { DriveView } from "../drive/drive-view";
 import { AgentFamilyView } from "../agents/agent-family-view";
 import { IndexView } from "../index/index-view";
+import { MacCareView } from "../mac-care/mac-care-view";
 import { SurfaceRouteView } from "../surfaces/surface-route-view";
 import { OfflineBridgeBanner, VersionMismatchBanner } from "./version-mismatch";
 
@@ -152,6 +153,7 @@ export function MainShell() {
           {route === "skill-collections" && <AgentFamilyView view="skill-collections" />}
           {route === "connections" && <AgentFamilyView view="connections" />}
           {route === "index" && <IndexView />}
+          {route === "mac-care" && <MacCareView />}
           {route === "database" && <DatabaseView />}
           {route === "pomodoro" && <PomodoroView />}
           {route === "mcp" && <McpView />}
@@ -201,6 +203,7 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
     "skill-collections",
     "connections",
     "index",
+    "mac-care",
     "projects",
     "memory",
     "secrets",
