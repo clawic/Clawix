@@ -41,10 +41,9 @@ struct CollectionsListSidebar: View {
             selectedCollection = collection.name
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: iconName(for: collection))
-                    .font(.system(size: 11))
+                IconImage(iconName(for: collection), size: 11)
                     .frame(width: 14)
-                    .foregroundColor(isSelected ? Color.accentColor : Palette.textSecondary)
+                    .foregroundColor(isSelected ? Palette.pastelBlue : Palette.textSecondary)
                 Text(collection.displayName)
                     .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
                     .foregroundColor(isSelected ? Palette.textPrimary : Palette.textSecondary)
@@ -59,7 +58,7 @@ struct CollectionsListSidebar: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 4)
-            .background(isSelected ? Color.accentColor.opacity(0.10) : Color.clear)
+            .background(isSelected ? Color.white.opacity(0.08) : Color.clear)
         }
         .buttonStyle(.plain)
     }

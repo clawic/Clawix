@@ -275,7 +275,7 @@ private struct URLCell: View {
         let s = value.stringValue ?? ""
         Text(s.isEmpty ? "—" : s)
             .font(BodyFont.system(size: 12))
-            .foregroundColor(s.isEmpty ? Palette.textTertiary : Color.accentColor)
+            .foregroundColor(s.isEmpty ? Palette.textTertiary : Palette.pastelBlue)
             .lineLimit(1)
             .underline(!s.isEmpty)
             .onTapGesture {
@@ -579,7 +579,7 @@ private struct FileForm: View {
             }
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(
-                    isTargeted ? Color.accentColor : Color.white.opacity(0.12),
+                    isTargeted ? Palette.pastelBlue : Color.white.opacity(0.12),
                     style: StrokeStyle(lineWidth: 1, dash: [4, 4])
                 )
                 .frame(height: 64)

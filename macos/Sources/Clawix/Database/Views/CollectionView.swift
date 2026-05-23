@@ -92,14 +92,14 @@ struct CollectionView: View {
                 showCreate = true
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "plus")
+                    IconImage("plus", size: 11)
                     Text("New")
                 }
                 .font(BodyFont.system(size: 12, wght: 600))
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 5)
-                .background(Color.accentColor.opacity(0.85))
-                .foregroundColor(.white)
+                .background(Color.white.opacity(0.92))
+                .foregroundColor(.black)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)

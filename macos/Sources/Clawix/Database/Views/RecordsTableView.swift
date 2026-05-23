@@ -104,7 +104,7 @@ struct RecordsTableView: View {
     @ViewBuilder
     private func rowBackground(isSelected: Bool, isFocused: Bool) -> some View {
         if isSelected {
-            Color.accentColor.opacity(0.12)
+            Color.white.opacity(0.10)
         } else if isFocused {
             Color.white.opacity(0.04)
         } else {
