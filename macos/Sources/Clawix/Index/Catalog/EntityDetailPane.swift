@@ -120,7 +120,6 @@ private struct DetailHeader: View {
                     Text(meta.displayName)
                         .font(BodyFont.system(size: 10.5, wght: 600))
                         .foregroundColor(.white.opacity(0.55))
-                        .textCase(.uppercase)
                 }
                 Text(detail.entity.title ?? detail.entity.identityKey)
                     .font(BodyFont.system(size: 16, wght: 700))
