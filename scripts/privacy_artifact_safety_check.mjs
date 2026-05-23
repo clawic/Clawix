@@ -84,6 +84,58 @@ function validateFile(filePath) {
   }
 }
 
+function validateWindowsDiagnosticsBoundary() {
+  const reportSource = fs.readFileSync(path.join(rootDir, "windows/Clawix.Core/WindowsDiagnosticReport.cs"), "utf8");
+  const aboutSource = fs.readFileSync(path.join(rootDir, "windows/Clawix.App/Views/Settings/AboutPage.xaml.cs"), "utf8");
+  const generalSource = fs.readFileSync(path.join(rootDir, "windows/Clawix.App/Views/Settings/GeneralPage.xaml"), "utf8");
+  const testSource = fs.readFileSync(path.join(rootDir, "windows/Clawix.Tests/WindowsDiagnosticReportTests.cs"), "utf8");
+
+  const requiredReportSnippets = [
+    "WindowsDiagnosticRedactor.Redact",
+    "SecretRef.Replace",
+    "Bearer.Replace",
+    "Token.Replace",
+    "KeyValueSecret.Replace",
+    "PrivateKey.Replace",
+    "Prompt.Replace",
+    "return WindowsDiagnosticRedactor.Redact(builder.ToString()).TrimEnd()",
+  ];
+  for (const snippet of requiredReportSnippets) {
+    if (!reportSource.includes(snippet)) fail(`Windows diagnostic report must keep redaction snippet: ${snippet}`);
+  }
+  if (!aboutSource.includes("WindowsDiagnosticReport.Build(new WindowsDiagnosticReportInput")) {
+    fail("Windows About diagnostics must build reports through WindowsDiagnosticReport.Build");
+  }
+  if (!aboutSource.includes("App.Services.Clipboard.SetText(report)")) {
+    fail("Windows diagnostics clipboard copy must use the already-built redacted report variable");
+  }
+  if (generalSource.includes("Header=\"Send anonymous diagnostics\"")) {
+    fail("Windows General settings must not expose an enabled anonymous diagnostics send toggle without a governed telemetry route");
+  }
+  if (!generalSource.includes("Header=\"Anonymous diagnostics unavailable\" IsEnabled=\"False\"")) {
+    fail("Windows General settings must keep anonymous diagnostics disabled until a governed opt-in route exists");
+  }
+  const privacySource = fs.readFileSync(path.join(rootDir, "windows/Clawix.App/Views/Settings/PrivacyPage.xaml"), "utf8");
+  const privacyCodeSource = fs.readFileSync(path.join(rootDir, "windows/Clawix.App/Views/Settings/PrivacyPage.xaml.cs"), "utf8");
+  if (privacySource.includes("Header=\"Send crash reports\"") || privacySource.includes("Header=\"Share anonymous usage telemetry\"")) {
+    fail("Windows Privacy settings must not expose enabled crash/telemetry send toggles without governed routes");
+  }
+  for (const snippet of [
+    "Header=\"Crash reports unavailable\"",
+    "Header=\"Anonymous telemetry unavailable\"",
+    "IsEnabled=\"False\"",
+    "CrashReportsSwitch.IsOn = false",
+    "TelemetrySwitch.IsOn = false",
+  ]) {
+    if (!`${privacySource}\n${privacyCodeSource}`.includes(snippet)) {
+      fail(`Windows Privacy settings must keep telemetry/crash reporting fail-closed snippet: ${snippet}`);
+    }
+  }
+  for (const snippet of ["Assert.DoesNotContain", "[redacted_secret]", "[redacted_prompt]", "[redacted_private_key]"]) {
+    if (!testSource.includes(snippet)) fail(`Windows diagnostic tests must keep redaction assertion snippet: ${snippet}`);
+  }
+}
+
 function publicArtifactFiles() {
   const files = [];
   const roots = ["docs", "tests", "packages", "macos/Tests"];
@@ -121,13 +173,16 @@ if (args.includes("--help")) {
 }
 
 if (args.length === 0 || args.includes("--fixtures")) {
+  validateWindowsDiagnosticsBoundary();
   const result = validateFixtures();
   console.log(JSON.stringify({ ok: true, ...result }, null, 2));
 } else if (args.includes("--public-artifacts")) {
+  validateWindowsDiagnosticsBoundary();
   const files = publicArtifactFiles();
   for (const file of files) validateFile(file);
   console.log(JSON.stringify({ ok: true, checkedFiles: files.length }, null, 2));
 } else {
+  validateWindowsDiagnosticsBoundary();
   for (const file of args) validateFile(file);
   console.log(JSON.stringify({ ok: true, checkedFiles: args.length }, null, 2));
 }
