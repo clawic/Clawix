@@ -6,10 +6,13 @@ LANE="${1:-fast}"
 shift || true
 SCRATCH_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/clawix-test.XXXXXX")"
 COORDINATION_LEASE_ID=""
+COORDINATION_LEASE_IDS=""
+COORDINATION_HEARTBEAT_PID=""
 export CLANG_MODULE_CACHE_PATH="$SCRATCH_ROOT/clang-module-cache"
 
 cleanup() {
   local status=$?
+  stop_coordination_heartbeat || true
   release_coordination_lease "$status" || true
   rm -rf "$SCRATCH_ROOT"
 }
@@ -18,6 +21,52 @@ trap cleanup EXIT
 run() {
   echo "+ $*" >&2
   "$@"
+}
+
+redact_text() {
+  local users_root="/Users"
+  sed -E \
+    -e "s#${users_root}/[^/[:space:]]+#~#g" \
+    -e 's#sk-[A-Za-z0-9._-]{6,}#[REDACTED]#g' \
+    -e 's#Bearer[[:space:]]+[A-Za-z0-9._-]{6,}#Bearer [REDACTED]#g'
+}
+
+actionable_failure() {
+  local status="$1"
+  local code="$2"
+  local message="$3"
+  local location="$4"
+  local suggestion="$5"
+  local next="$6"
+  {
+    printf '%s\n' "test lane failed:"
+    printf -- '- [%s] %s\n' "$status" "$message"
+    printf '  code: %s\n' "$code"
+    printf '  location: %s\n' "$location"
+    printf '  suggestion: %s\n' "$suggestion"
+    printf '  next: %s\n' "$next"
+  } | redact_text >&2
+}
+
+test_sh_self_test() {
+  local output
+  local private_path="/Users""/example"
+  local secret_token="sk-test-secret-""123456"
+  output="$(actionable_failure \
+    "SATISFIED" \
+    "clawix_test_coordination_satisfied" \
+    "test lane fast already has valid matching evidence for ${private_path}/private token: ${secret_token}" \
+    "scripts/test.sh:fast" \
+    "Reuse the recorded coordinated evidence instead of rerunning the lane." \
+    "Inspect the coordination ledger for lane fast, or rerun bash scripts/test.sh fast after evidence expires." 2>&1)"
+  [[ "$output" == *"code: clawix_test_coordination_satisfied"* ]]
+  [[ "$output" == *"[SATISFIED]"* ]]
+  [[ "$output" == *"location: scripts/test.sh:fast"* ]]
+  [[ "$output" == *"suggestion: Reuse the recorded coordinated evidence"* ]]
+  [[ "$output" == *"next: Inspect the coordination ledger for lane fast"* ]]
+  [[ "$output" != *"$private_path"* ]]
+  [[ "$output" != *"$secret_token"* ]]
+  echo "clawix test launcher self-test passed"
 }
 
 coordination_claw() {
@@ -33,7 +82,13 @@ coordination_claw() {
     node "$ROOT_DIR/../clawjs/packages/clawjs/bin/claw.mjs" "$@"
     return
   fi
-  echo "BLOCKED coordination broker: set CLAWIX_CLAW_BIN or install claw on PATH" >&2
+  actionable_failure \
+    "BLOCKED" \
+    "clawix_test_coordination_broker_missing" \
+    "coordination broker is unavailable for lane $LANE." \
+    "scripts/test.sh:coordination_claw" \
+    "Set CLAWIX_CLAW_BIN to the claw CLI or install claw on PATH." \
+    "Rerun bash scripts/test.sh $LANE after the coordination broker is available."
   return 127
 }
 
@@ -62,7 +117,13 @@ process.stdin.on("end", () => {
 record_coordination_bypass() {
   local reason="${CLAW_AGENT_COORDINATION_BYPASS_REASON:-}"
   if [[ -z "$reason" ]]; then
-    echo "BLOCKED coordination bypass: CLAW_AGENT_COORDINATION_BYPASS_REASON is required" >&2
+    actionable_failure \
+      "USAGE" \
+      "clawix_test_coordination_bypass_reason_missing" \
+      "CLAW_AGENT_COORDINATION_BYPASS_REASON is required when bypassing coordination." \
+      "scripts/test.sh:record_coordination_bypass" \
+      "Use bypass only for explicitly marked partial validation." \
+      "Set CLAW_AGENT_COORDINATION_BYPASS_REASON to a concrete reason or rerun without bypass."
     exit 2
   fi
   local output status
@@ -71,7 +132,7 @@ record_coordination_bypass() {
   status=$?
   set -e
   if [[ "$status" -ne 2 && "$status" -ne 0 ]]; then
-    echo "$output" >&2
+    printf '%s\n' "$output" | redact_text >&2
     exit "$status"
   fi
   echo "WARNING: CLAW_AGENT_COORDINATION_BYPASS=1; this run is partial/degraded evidence." >&2
@@ -86,31 +147,73 @@ acquire_coordination_lease() {
     return 0
   fi
 
-  local output status broker_status lease_id
+  local output status broker_status lease_id lease_ids
   set +e
   output="$(coordination_claw test require --repo "$ROOT_DIR" --lane "$LANE" --checks "$LANE" --pid "$$" $(coordination_path_flags) --json 2>&1)"
   status=$?
   set -e
   broker_status="$(printf '%s' "$output" | json_field 'data.data?.status' 2>/dev/null || true)"
   if [[ "$broker_status" == "SATISFIED" ]]; then
-    echo "coordination satisfied: test lane $LANE already has valid matching evidence" >&2
+    actionable_failure \
+      "SATISFIED" \
+      "clawix_test_coordination_satisfied" \
+      "test lane $LANE already has valid matching evidence." \
+      "scripts/test.sh:$LANE" \
+      "Reuse the recorded coordinated evidence instead of rerunning the lane." \
+      "Inspect the coordination ledger for lane $LANE, or rerun bash scripts/test.sh $LANE after evidence expires."
     exit 0
   fi
   if [[ "$broker_status" == "PENDING" ]]; then
-    echo "$output" >&2
+    printf '%s\n' "$output" | redact_text >&2
     exit 2
   fi
   if [[ "$status" -ne 0 ]]; then
-    echo "$output" >&2
+    printf '%s\n' "$output" | redact_text >&2
     exit "$status"
   fi
   lease_id="$(printf '%s' "$output" | json_field 'data.data?.checks?.[0]?.lease?.id' 2>/dev/null || true)"
+  lease_ids="$(printf '%s' "$output" | json_field 'data.data?.checks?.[0]?.leases?.map((lease) => lease.id).join("\n")' 2>/dev/null || true)"
   if [[ -z "$lease_id" ]]; then
-    echo "BLOCKED coordination broker: missing acquired lease id for lane $LANE" >&2
-    echo "$output" >&2
+    actionable_failure \
+      "BLOCKED" \
+      "clawix_test_coordination_lease_missing" \
+      "coordination broker did not return an acquired lease id for lane $LANE." \
+      "scripts/test.sh:acquire_coordination_lease" \
+      "Inspect the broker JSON shape and fix the lease projection before trusting this run." \
+      "Rerun bash scripts/test.sh $LANE after the broker returns data.data.checks[0].lease.id."
+    printf '%s\n' "$output" | redact_text >&2
     exit 2
   fi
   COORDINATION_LEASE_ID="$lease_id"
+  COORDINATION_LEASE_IDS="${lease_ids:-$lease_id}"
+}
+
+start_coordination_heartbeat() {
+  if [[ -z "$COORDINATION_LEASE_IDS" || -n "$COORDINATION_HEARTBEAT_PID" ]]; then
+    return 0
+  fi
+  local parent_pid="$$"
+  local interval="${CLAW_AGENT_COORDINATION_HEARTBEAT_SECONDS:-10}"
+  (
+    while kill -0 "$parent_pid" >/dev/null 2>&1; do
+      local lease_id
+      while IFS= read -r lease_id; do
+        [[ -n "$lease_id" ]] || continue
+        coordination_claw agent-resource heartbeat --lease "$lease_id" --status running $(coordination_path_flags) --json >/dev/null 2>&1 || true
+      done <<< "$COORDINATION_LEASE_IDS"
+      sleep "$interval"
+    done
+  ) &
+  COORDINATION_HEARTBEAT_PID="$!"
+}
+
+stop_coordination_heartbeat() {
+  if [[ -z "$COORDINATION_HEARTBEAT_PID" ]]; then
+    return 0
+  fi
+  kill "$COORDINATION_HEARTBEAT_PID" >/dev/null 2>&1 || true
+  wait "$COORDINATION_HEARTBEAT_PID" >/dev/null 2>&1 || true
+  COORDINATION_HEARTBEAT_PID=""
 }
 
 release_coordination_lease() {
@@ -120,7 +223,17 @@ release_coordination_lease() {
   fi
   local status="failed"
   [[ "$exit_code" -eq 0 ]] && status="passed"
-  coordination_claw agent-resource release --lease "$COORDINATION_LEASE_ID" --status "$status" --repo "$ROOT_DIR" --lane "$LANE" --check "$LANE" $(coordination_path_flags) --json >/dev/null
+  [[ "$exit_code" -eq 2 ]] && status="external_pending"
+  local lease_id released_primary=0
+  while IFS= read -r lease_id; do
+    [[ -n "$lease_id" ]] || continue
+    if [[ "$lease_id" == "$COORDINATION_LEASE_ID" && "$released_primary" -eq 0 ]]; then
+      coordination_claw agent-resource release --lease "$lease_id" --status "$status" --repo "$ROOT_DIR" --lane "$LANE" --check "$LANE" $(coordination_path_flags) --json >/dev/null
+      released_primary=1
+    else
+      coordination_claw agent-resource release --lease "$lease_id" --status "$status" --repo "$ROOT_DIR" --lane "$LANE" --check "$LANE" --no-result true $(coordination_path_flags) --json >/dev/null
+    fi
+  done <<< "${COORDINATION_LEASE_IDS:-$COORDINATION_LEASE_ID}"
 }
 
 policy_guard() {
@@ -481,6 +594,10 @@ fast() {
   run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs"
   run node "$ROOT_DIR/scripts/clawjs_mirror_contradiction_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/remote_canon_alignment_check.mjs"
+  run node "$ROOT_DIR/scripts/mesh_route_classification_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/mesh_route_classification_check.mjs"
+  run node "$ROOT_DIR/scripts/remote_route_port_boundary_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/remote_route_port_boundary_check.mjs" --strict
   run node "$ROOT_DIR/scripts/ui_governance_guard.mjs"
   run node "$ROOT_DIR/scripts/ui_canon_docs_check.mjs"
   run node "$ROOT_DIR/scripts/ui_canon_promotion_check.mjs"
@@ -575,7 +692,13 @@ changed() {
   fast "$@"
 }
 
+if [[ "$LANE" == "--self-test" ]]; then
+  test_sh_self_test
+  exit 0
+fi
+
 acquire_coordination_lease
+start_coordination_heartbeat
 
 case "$LANE" in
   fast)
@@ -612,7 +735,13 @@ case "$LANE" in
     CLAWIX_TEST_STRICT_EXTERNAL_PENDING=1 CLAWIX_CORE_UX_REQUIRE_APPROVED=1 core_ux_tests
     ;;
   *)
-    echo "Unknown test lane: $LANE" >&2
+    actionable_failure \
+      "USAGE" \
+      "clawix_test_lane_unknown" \
+      "Unknown test lane: $LANE" \
+      "scripts/test.sh" \
+      "Use one of: fast, changed, integration, e2e, host, core-ux, device, live, release." \
+      "Rerun bash scripts/test.sh with a known lane name."
     exit 2
     ;;
 esac

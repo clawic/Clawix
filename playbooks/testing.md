@@ -35,6 +35,9 @@ agent coordination ledger leases before running shared checks. If a lane or
 check is already owned by another agent, the command records pending demand,
 prints `PENDING`, exits quickly, and does not spin-wait or start a duplicate
 suite.
+While a selected lane or quick check is running, the wrapper heartbeats every
+acquired lease and releases all leases on pass, fail, partial, external pending,
+blocked, or abandoned exit.
 
 Use `qa/agent-coordination.manifest.json` to inspect declared resources,
 cost class, fingerprint inputs, external-pending policy, failure action, and

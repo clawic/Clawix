@@ -24,6 +24,7 @@ const scanRoots = [
 
 const excludedPathFragments = [
   "/node_modules/",
+  "/dist/",
   "/.build/",
   "/DerivedData/",
   "/__pycache__/",
@@ -82,10 +83,19 @@ const guardAndFixturePaths = [
   "scripts/persistent-surface-guard.mjs",
   "scripts/remote_canon_alignment_check.mjs",
   "scripts/remote_route_port_boundary_check.mjs",
+  "scripts/clawjs_mirror_contradiction_check.mjs",
+  "scripts/mesh_route_classification_check.mjs",
+  "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
 ];
 
 const endpointResolverAllowlist = [
+  "linux/app/src-tauri/src/bridge_endpoint.rs",
+  "macos/Helpers/Bridged/Sources/clawix-bridge/OpenCodeDaemonEngineHost.swift",
+  "packages/ClawixEngine/Sources/ClawixEngine/Audio/ClawJSAudioEndpointResolver.swift",
   "macos/Sources/Clawix/ClawJS/ClawJSServiceEndpointResolver.swift",
+  "packages/ClawixEngine/Sources/ClawixEngine/BridgeEndpointResolver.swift",
+  "web/src/bridge/endpoint.ts",
+  "windows/Clawix.App/Services/BridgeEndpoint.cs",
   "macos/Sources/Clawix/ClawJS/ClawJSServiceStatus.swift",
   "macos/Sources/Clawix/ClawJS/ClawJSServiceEnvironmentBuilder.swift",
   "macos/Sources/Clawix/ClawJS/ClawJSServiceLaunchAdapter.swift",
@@ -96,6 +106,18 @@ const endpointResolverAllowlist = [
   "macos/Helpers/Bridged/Sources/clawix-bridge/main.swift",
   "packages/ClawixEngine/Sources/ClawixEngine/BridgeServerNIO.swift",
 ];
+
+const declarativeLoopbackAllowlist = [
+  "linux/app/src-tauri/tauri.conf.json",
+];
+
+const externalProviderLoopbackPaths = [
+  "macos/Sources/Clawix/Providers/Backends/OllamaClient.swift",
+  "packages/AIProviders/Sources/AIProviders/Catalog/CustomOpenAICompatCatalog.swift",
+  "packages/AIProviders/Sources/AIProviders/Catalog/OllamaCatalog.swift",
+];
+
+const localizationResourcePattern = /^macos\/Sources\/Clawix\/Resources\/[^/]+\.lproj\/Localizable\.strings$/;
 
 function normalizeRelative(filePath) {
   return filePath.split(path.sep).join("/");
@@ -183,15 +205,22 @@ function compareFindings(a, b) {
 
 function classifyFinding(input) {
   const route = input.value.match(routePattern)?.[0] ?? null;
-  const isDocs = input.file.startsWith("docs/") || input.file.startsWith("playbooks/");
-  const isTest = /(^|\/)(Tests?|tests?|Fixtures?|fixtures?|qa)(\/|$)/.test(input.file);
+  const isDocs = input.file.startsWith("docs/")
+    || input.file.startsWith("playbooks/")
+    || input.file.endsWith("/README.md")
+    || input.file === "README.md";
+  const isTest = /(^|\/)(Tests?|tests?|Fixtures?|fixtures?|qa)(\/|$)/.test(input.file)
+    || /(^|\/)[^/]*\.Tests\//.test(input.file);
   const isGuardFixture = guardAndFixturePaths.includes(input.file);
+  const isDeclarativeLoopback = declarativeLoopbackAllowlist.includes(input.file);
+  const isExternalProviderLoopback = externalProviderLoopbackPaths.includes(input.file);
+  const isLocalizationResource = localizationResourcePattern.test(input.file);
   const isExternalUrl = /^(?:https?:\/\/|wss?:\/\/)/.test(input.value)
     && !input.value.includes("127.0.0.1")
     && !input.value.includes("localhost");
 
   let category = "service_endpoint";
-  let owner = "clawix";
+  let steward = "clawix";
   let classification = null;
   let replacement = null;
   let validation = "remote_route_port_boundary_check";
@@ -200,28 +229,44 @@ function classifyFinding(input) {
 
   if (isExternalUrl) {
     category = "external_provider";
-    owner = "external";
+    steward = "external";
     allowedReason = "external provider or standards URL, not a Clawix route authority";
     validation = "public hygiene and provider-specific tests";
   }
 
-  if (isDocs) {
+  if (isExternalProviderLoopback) {
+    category = "external_provider";
+    steward = "external";
+    allowedReason = "documented third-party local provider endpoint, not a Clawix route authority";
+    validation = "provider catalog and backend tests";
+  }
+
+  if (isDocs || isLocalizationResource) {
     category = route && /\/v1\/(?:remote|gateway|sync)\//.test(route) ? "framework_remote_route" : "docs";
-    owner = route && /\/v1\/(?:remote|gateway|sync)\//.test(route) ? "claw" : "clawix";
-    allowedReason = "documentation or plan anchor; not an executable Clawix route declaration";
-    validation = "docs alignment and remote canon checks";
+    steward = route && /\/v1\/(?:remote|gateway|sync)\//.test(route) ? "claw" : "clawix";
+    allowedReason = isLocalizationResource
+      ? "localized UI copy; not an executable Clawix route declaration"
+      : "documentation or plan anchor; not an executable Clawix route declaration";
+    validation = isLocalizationResource ? "localization review" : "docs alignment and remote canon checks";
+  }
+
+  if (isDeclarativeLoopback) {
+    category = "host_leg";
+    steward = "clawix";
+    allowedReason = "declarative local development or CSP loopback policy, not runtime endpoint construction";
+    validation = "Tauri configuration review and Linux smoke tests";
   }
 
   if (isTest || isGuardFixture) {
     category = "fixture";
-    owner = "test";
+    steward = "test";
     allowedReason = "fixture or guard example";
     validation = "self-test or focused unit test";
   }
 
   if (route?.startsWith("/v1/remote/") || route?.startsWith("/v1/gateway/") || route?.startsWith("/v1/sync/")) {
     category = "framework_remote_route";
-    owner = "claw";
+    steward = "claw";
     replacement = "Consume via claw inspect remote, claw remote contracts, or framework projection payloads.";
     validation = "claw inspect remote --json and remote canon alignment";
     if (!isDocsRouteAnchor(input.file) && !isTest && !isGuardFixture) {
@@ -231,7 +276,7 @@ function classifyFinding(input) {
 
   if (route?.startsWith("/v1/mesh/")) {
     category = "mesh_route";
-    owner = "clawix";
+    steward = "clawix";
     const mesh = classifyMeshRoute(route);
     classification = mesh.classification;
     replacement = mesh.replacement;
@@ -244,14 +289,23 @@ function classifyFinding(input) {
 
   if (input.value === "24080" || input.value === "24081" || input.value.startsWith("ws://")) {
     category = category === "docs" || category === "fixture" ? category : "host_leg";
-    owner = owner === "test" ? owner : "clawix";
+    steward = steward === "test" ? steward : "clawix";
     allowedReason = category === "host_leg"
       ? "approved local bridge transport or bridge HTTP helper literal"
       : allowedReason;
     validation = category === "host_leg" ? "bridge contract parity and demand-lease tests" : validation;
   }
 
-  if (isLoopbackHttp(input.value) && !isDocs && !isTest && !isGuardFixture && !endpointResolverAllowlist.includes(input.file)) {
+  if (
+    isLoopbackHttp(input.value)
+    && !isDocs
+    && !isLocalizationResource
+    && !isTest
+    && !isGuardFixture
+    && !isDeclarativeLoopback
+    && !isExternalProviderLoopback
+    && !endpointResolverAllowlist.includes(input.file)
+  ) {
     violations.push("ad_hoc_loopback_endpoint_outside_resolver_allowlist");
   }
 
@@ -261,7 +315,7 @@ function classifyFinding(input) {
     column: input.column,
     value: input.value,
     category,
-    owner,
+    steward,
     route,
     classification,
     replacement,
@@ -366,7 +420,7 @@ function buildInventory(files) {
       findings: findings.length,
       violations: violations.length,
       byCategory: countBy(findings, "category"),
-      byOwner: countBy(findings, "owner"),
+      bySteward: countBy(findings, "steward"),
       byMeshClassification: countBy(findings.filter((finding) => finding.category === "mesh_route"), "classification"),
     },
     violations,
@@ -394,6 +448,9 @@ function runSelfTest() {
     "macos/Sources/Clawix/Bridge/NewMesh.swift": "let route = \"/v1/mesh/new-route\"\n",
     "macos/Sources/Clawix/Feature/Client.swift": "let url = \"http://127.0.0.1:24100/v1/health\"\n",
     "macos/Sources/Clawix/Bridge/MeshClient.swift": "let route = \"/v1/mesh/jobs\"\n",
+    "packages/AIProviders/Sources/AIProviders/Catalog/OllamaCatalog.swift": "let url = \"http://localhost:11434\"\n",
+    "macos/Sources/Clawix/Resources/en.lproj/Localizable.strings": "\"example\" = \"Use http://localhost:9000/v1\";\n",
+    "linux/app/src-tauri/tauri.conf.json": "{\"devUrl\":\"http://localhost:1420\",\"csp\":\"ws://127.0.0.1:*\"}\n",
   };
   for (const [file, text] of Object.entries(fixtures)) {
     const absolute = path.join(temp, file);
@@ -411,6 +468,9 @@ function runSelfTest() {
     assert(violations.includes("ad_hoc_loopback_endpoint_outside_resolver_allowlist"));
     assert(findings.some((finding) => finding.value === "/v1/mesh/jobs" && finding.classification === "compatibility_adapter"));
     assert(findings.some((finding) => finding.value === "/v1/remote/conformance" && finding.file.startsWith("docs/") && finding.violations.length === 0));
+    assert(findings.some((finding) => finding.file.includes("OllamaCatalog.swift") && finding.category === "external_provider" && finding.violations.length === 0));
+    assert(findings.some((finding) => finding.file.includes("Localizable.strings") && finding.category === "docs" && finding.violations.length === 0));
+    assert(findings.some((finding) => finding.file.includes("tauri.conf.json") && finding.category === "host_leg" && finding.violations.length === 0));
   } finally {
     process.chdir(originalRoot);
     fs.rmSync(temp, { recursive: true, force: true });

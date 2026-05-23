@@ -162,21 +162,21 @@ function shouldRunSiblingEvolutionGate(argSet = args, env = process.env) {
 }
 
 function runRescueSurvivalMatrixGate() {
-  const scratchPath =
-    process.env.CLAWIX_RESCUE_SWIFTPM_SCRATCH_PATH || path.join("/tmp", `clawix-rescue-survival-matrix-${process.pid}`);
   const timeout = parsePositiveIntegerEnv("CLAWIX_RESCUE_SWIFTPM_TIMEOUT_MS", 5 * 60 * 1000);
-  const result = spawnSync("swift", [
+  const swiftArgs = [
     "test",
     "--disable-sandbox",
     "--package-path",
     "macos",
-    "--scratch-path",
-    scratchPath,
     "--jobs",
     "1",
     "--filter",
     "RescueSurvivalMatrixTests",
-  ], {
+  ];
+  if (process.env.CLAWIX_RESCUE_SWIFTPM_SCRATCH_PATH) {
+    swiftArgs.splice(4, 0, "--scratch-path", process.env.CLAWIX_RESCUE_SWIFTPM_SCRATCH_PATH);
+  }
+  const result = spawnSync("swift", swiftArgs, {
     cwd: rootDir,
     encoding: "utf8",
     maxBuffer: 20 * 1024 * 1024,

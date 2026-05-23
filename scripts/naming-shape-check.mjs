@@ -57,6 +57,11 @@ const allowedBroadSymbolContexts = [
   "testRefreshFailureLeavesPreviousDataAndPublishesError",
   "testSettingsDataSurfaceIncludesPortableArchiveStatesAndSignedHostGate",
   "fixtureData",
+  "InspectRemoteData",
+  "ContractsData",
+  "PendingData",
+  "WindowsPrivacyDataExport",
+  "WindowsPrivacyDataExportTests",
 ];
 // Ecosystem/UI terms where the broad word is part of the precise domain phrase.
 const allowedBroadSymbolPhrases = [
@@ -66,6 +71,8 @@ const allowedBroadSymbolPhrases = [
   ["Input", "Method", "Manager"],
   ["Package", "Manager"],
   ["Previous", "Data"],
+  ["Data", "Surface"],
+  ["Data", "Url"],
   ["Settings", "Data", "Surface"],
   ["fixture", "Data"],
   ["service", "Data", "Directory", "URL"],

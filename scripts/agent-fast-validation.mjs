@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -48,7 +48,7 @@ function runClaw(args) {
 
 function acquireCheckLease(check) {
   if (process.env.CLAW_AGENT_COORDINATION_ACTIVE === "1") return null;
-  const resource = `test:${repoFingerprint}:agent-fast:${check.id}`;
+  const resource = `test:${repoFingerprint}:${check.id}`;
   if (process.env.CLAW_AGENT_COORDINATION_BYPASS === "1") {
     const reason = process.env.CLAW_AGENT_COORDINATION_BYPASS_REASON;
     if (!reason) fail("CLAW_AGENT_COORDINATION_BYPASS_REASON is required when bypassing agent fast validation coordination.");
@@ -58,53 +58,107 @@ function acquireCheckLease(check) {
     return null;
   }
   const acquired = runClaw([
-    "agent-resource",
-    "acquire",
-    "--resource",
-    resource,
-    "--mode",
-    "exclusive",
-    "--intent",
-    coordinationIntent,
+    "test",
+    "require",
+    "--repo",
+    rootDir,
+    "--lane",
+    "agent-fast",
+    "--checks",
+    check.id,
     "--pid",
     String(process.pid),
-    "--ttl",
-    String(check.maxSeconds || 60),
-    "--kind",
-    "test",
-    "--reason",
-    `agent-fast validation ${check.id}`,
     ...coordinationArgs(),
   ]);
+  if (acquired.payload?.data?.status === "SATISFIED") {
+    return { primary: null, leases: [], satisfied: true };
+  }
   if (acquired.payload?.data?.status === "PENDING") {
     console.error(`PENDING agent fast validation ${check.id}: coordination lease is busy.`);
     console.error(acquired.stdout || acquired.stderr);
     process.exit(2);
   }
-  const leaseId = acquired.payload?.data?.lease?.id;
-  if (acquired.status !== 0 || !leaseId) fail(`Could not acquire coordination lease for ${check.id}:\n${acquired.stdout || acquired.stderr}`);
-  return leaseId;
+  const brokerCheck = acquired.payload?.data?.checks?.[0];
+  const primary = brokerCheck?.lease?.id;
+  const leases = Array.isArray(brokerCheck?.leases) ? brokerCheck.leases.map((lease) => lease.id).filter(Boolean) : primary ? [primary] : [];
+  if (acquired.status !== 0 || !primary) fail(`Could not acquire coordination lease for ${check.id}:\n${acquired.stdout || acquired.stderr}`);
+  return { primary, leases, satisfied: false };
 }
 
-function releaseCheckLease(leaseId, passed, check) {
-  if (!leaseId) return;
-  const released = runClaw([
-    "agent-resource",
-    "release",
-    "--lease",
-    leaseId,
-    "--status",
-    passed ? "passed" : "failed",
-    "--repo",
-    rootDir,
-    "--lane",
-    "agent-fast",
-    "--check",
-    check.id,
-    ...coordinationArgs(),
-  ]);
-  if (released.status !== 0) {
-    console.error(`Could not release coordination lease ${leaseId}:\n${released.stdout || released.stderr}`);
+function releaseCheckLease(acquired, passed, check) {
+  if (!acquired?.primary) return;
+  const leases = acquired.leases?.length ? acquired.leases : [acquired.primary];
+  for (const leaseId of leases) {
+    const released = runClaw([
+      "agent-resource",
+      "release",
+      "--lease",
+      leaseId,
+      "--status",
+      passed ? "passed" : "failed",
+      "--repo",
+      rootDir,
+      "--lane",
+      "agent-fast",
+      "--check",
+      check.id,
+      ...(leaseId === acquired.primary ? [] : ["--no-result", "true"]),
+      ...coordinationArgs(),
+    ]);
+    if (released.status !== 0) {
+      console.error(`Could not release coordination lease ${leaseId}:\n${released.stdout || released.stderr}`);
+    }
+  }
+}
+
+function startCheckHeartbeat(acquired) {
+  if (!acquired?.leases?.length) return null;
+  const resolved = clawCommand();
+  if (!resolved) return null;
+  const payload = Buffer.from(JSON.stringify({
+    command: resolved.command,
+    argsPrefix: resolved.argsPrefix,
+    cwd: rootDir,
+    parentPid: process.pid,
+    leases: acquired.leases,
+    flags: coordinationArgs(),
+    intervalMs: 10_000,
+  })).toString("base64");
+  const script = `
+const { spawnSync } = require("node:child_process");
+const data = JSON.parse(Buffer.from(process.argv[1], "base64").toString("utf8"));
+function parentAlive() {
+  try { process.kill(data.parentPid, 0); return true; } catch { return false; }
+}
+function beat() {
+  if (!parentAlive()) process.exit(0);
+  for (const lease of data.leases) {
+    spawnSync(data.command, [...data.argsPrefix, "agent-resource", "heartbeat", "--lease", lease, "--status", "running", ...data.flags, "--json"], {
+      cwd: data.cwd,
+      env: process.env,
+      stdio: "ignore",
+    });
+  }
+}
+process.on("SIGTERM", () => process.exit(0));
+beat();
+setInterval(beat, data.intervalMs);
+`;
+  const child = spawn(process.execPath, ["-e", script, payload], {
+    cwd: rootDir,
+    env: process.env,
+    stdio: "ignore",
+  });
+  child.unref();
+  return child;
+}
+
+function stopCheckHeartbeat(child) {
+  if (!child) return;
+  try {
+    child.kill("SIGTERM");
+  } catch {
+    // Best effort; the helper exits automatically when the parent process dies.
   }
 }
 
@@ -149,6 +203,35 @@ function validateMatrix(matrix) {
 
   for (const id of matrix.quickSuite || []) {
     if (!checkIds.has(id)) errors.push(`quickSuite references unknown check ${id}`);
+  }
+
+  const coordinationManifestPath = path.join(rootDir, "qa/agent-coordination.manifest.json");
+  let coordinationManifest = null;
+  try {
+    coordinationManifest = JSON.parse(fs.readFileSync(coordinationManifestPath, "utf8"));
+  } catch (error) {
+    errors.push(`agent coordination manifest is unreadable: ${error.message}`);
+  }
+  const coordinatedChecks = new Map(
+    Array.isArray(coordinationManifest?.checks)
+      ? coordinationManifest.checks.filter((check) => check.lane === "agent-fast").map((check) => [check.id, check])
+      : [],
+  );
+  for (const check of matrix.checks || []) {
+    const coordinated = coordinatedChecks.get(check.id);
+    if (!coordinated) {
+      errors.push(`check ${check.id} is missing from qa/agent-coordination.manifest.json lane agent-fast`);
+      continue;
+    }
+    if (coordinated.command !== check.command) {
+      errors.push(`check ${check.id} command differs from qa/agent-coordination.manifest.json`);
+    }
+    if (!Array.isArray(coordinated.resources) || coordinated.resources.length === 0) {
+      errors.push(`check ${check.id} needs coordination resources in qa/agent-coordination.manifest.json`);
+    }
+    if (!Array.isArray(coordinated.ownerObligations) || coordinated.ownerObligations.length === 0) {
+      errors.push(`check ${check.id} needs ownerObligations in qa/agent-coordination.manifest.json`);
+    }
   }
 
   for (const changeType of matrix.changeTypes || []) {
@@ -221,10 +304,16 @@ function runChecks(matrix, ids) {
   const results = [];
   for (const id of ids) {
     const check = available.get(id);
-    const leaseId = acquireCheckLease(check);
+    const acquired = acquireCheckLease(check);
+    const heartbeat = startCheckHeartbeat(acquired);
     const started = process.hrtime.bigint();
     let result = { status: 1, signal: null, stdout: "", stderr: "" };
     try {
+      if (acquired?.satisfied) {
+        console.log(`${"SATISFIED".padEnd(8)} ${String(0).padStart(6)}ms ${id}`);
+        results.push({ id, elapsedMs: 0, status: 0, signal: null });
+        continue;
+      }
       result = spawnSync("bash", ["-lc", check.command], {
         cwd: rootDir,
         encoding: "utf8",
@@ -243,7 +332,8 @@ function runChecks(matrix, ids) {
       }
       results.push({ id, elapsedMs, status: result.status, signal: result.signal });
     } finally {
-      releaseCheckLease(leaseId, result.status === 0 && !result.signal, check);
+      stopCheckHeartbeat(heartbeat);
+      releaseCheckLease(acquired, result.status === 0 && !result.signal, check);
     }
   }
   const failed = results.filter((result) => result.status !== 0 || result.signal);

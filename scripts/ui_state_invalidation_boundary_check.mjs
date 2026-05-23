@@ -145,6 +145,19 @@ requireSnippet("android/app/src/test/java/com/example/clawix/android/BridgeStore
 requireSnippet("android/app/src/test/java/com/example/clawix/android/StreamCoalescerTest.kt", "coalescesMultipleFramesForSameMessageWithLatestContent");
 requireSnippet("android/app/src/test/java/com/example/clawix/android/StreamCoalescerTest.kt", "finishedFrameFlushesImmediately");
 
+requireSnippet("ios/Sources/Clawix/Bridge/BridgeTranscriptStore.swift", "final class BridgeTranscriptStore");
+requireSnippet("ios/Sources/Clawix/Bridge/BridgeTranscriptStore.swift", "func applyStreamingBatch");
+requireSnippet("ios/Sources/Clawix/Bridge/BridgeStore.swift", "let transcriptStore = BridgeTranscriptStore()");
+requireSnippet("ios/Sources/Clawix/Bridge/BridgeClient.swift", "store.transcriptStore.applyStreamingBatch");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testStreamingLoopDoesNotNotifySummaryObservation");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testStreamingLoopDoesNotifyActiveTranscriptObservation");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testMessagesSnapshotAndPageUpdateOnlyTargetTranscript");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testSessionUpdatedChangesSummaryWithoutTranscriptMutation");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testStreamingBatchDoesNotReorderSummaries");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testOptimisticNewChatWritesTranscriptAndSummaryTogether");
+requireSnippet("ios/Tests/ClawixTests/BridgeStoreInvalidationTests.swift", "testStreamingHandlingDoesNotCallSnapshotPersistenceDirectly");
+requireSnippet("ios/project.yml", "ClawixTests");
+
 const chatStores = read("macos/Sources/Clawix/AppState/ChatStores.swift");
 const chatSummaryMatch = chatStores.match(/struct ChatSummary: Identifiable, Equatable \{([\s\S]*?)\n    init\(chat: Chat\)/);
 if (!chatSummaryMatch) {
@@ -219,6 +232,44 @@ for (const [relativePath, label] of [
 const androidChatDetail = read("android/app/src/main/java/com/example/clawix/android/chatdetail/ChatDetailViewModel.kt");
 if (!androidChatDetail.includes("container.bridgeStore.summaryState") || !androidChatDetail.includes("container.bridgeStore.transcriptState")) {
   fail("Android ChatDetailViewModel must combine summaryState and transcriptState explicitly");
+}
+
+const iosBridgeStore = read("ios/Sources/Clawix/Bridge/BridgeStore.swift");
+for (const forbidden of ["messagesByChat", "hasMoreByChat", "loadingOlderByChat", "oldestKnownIdByChat"]) {
+  const fieldPattern = new RegExp(`^\\s*var\\s+${forbidden}\\b`, "m");
+  if (fieldPattern.test(iosBridgeStore)) {
+    fail(`iOS BridgeStore must not own transcript field ${forbidden}`);
+  }
+}
+
+const iosBridgeClient = read("ios/Sources/Clawix/Bridge/BridgeClient.swift");
+const iosStreamingCase = iosBridgeClient.match(/case \.messageStreaming[\s\S]*?case \.errorEvent/);
+if (!iosStreamingCase) {
+  fail("iOS BridgeClient messageStreaming case could not be located");
+} else {
+  const streamingSource = iosStreamingCase[0];
+  if (streamingSource.includes("persistSnapshotDebounced")) {
+    fail("iOS messageStreaming handling must not call persistSnapshotDebounced");
+  }
+  if (streamingSource.includes("store.chats")) {
+    fail("iOS messageStreaming handling must not mutate summary chats");
+  }
+}
+const iosFlush = iosBridgeClient.match(/private func flushPendingStreamUpdates\(\)[\s\S]*?\n    \}/);
+if (!iosFlush || !iosFlush[0].includes("store.transcriptStore.applyStreamingBatch")) {
+  fail("iOS streaming flush must publish through BridgeTranscriptStore.applyStreamingBatch");
+}
+
+for (const [relativePath, label] of [
+  ["ios/Sources/Clawix/ChatList/ChatListView.swift", "iOS ChatListView"],
+  ["ios/Sources/Clawix/ProjectDetail/ProjectDetailView.swift", "iOS ProjectDetailView"],
+]) {
+  const source = read(relativePath);
+  for (const forbidden of ["messagesByChat", "transcriptStore", "reasoningText", "timeline"]) {
+    if (source.includes(forbidden)) {
+      fail(`${label} must not reference transcript payload boundary ${forbidden}`);
+    }
+  }
 }
 
 runRenderLogFixtures();

@@ -6,6 +6,12 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const args = new Set(process.argv.slice(2));
 const errors = [];
 const allowedStates = ["implemented", "documented", "blocked", "superseded"];
+const privateRuntimePrefix = ["private", "runtime"].join("-") + "-";
+const privateSessionToken = ["private", "session", "not", "published"].join("-");
+const privateSessionPhrase = ["private", "session"].join(" ") + ",";
+const currentThreadPrefix = ["current", "thread"].join("-");
+const sourceSessionFieldPattern = "source" + "Session(?:Ref|Alias)";
+const privateCodenamePattern = new RegExp(`\\b(?:${["Source", "Code", "Aging", "Program"].join(" ")}|${["Provocation", "Not", "Publish"].join(" ")})\\b`);
 const unsafePublicPatterns = [
   /\/Users\//,
   /file:\/\//,
@@ -14,6 +20,12 @@ const unsafePublicPatterns = [
   /\bsk-[A-Za-z0-9_-]+/,
   /\bAKIA[A-Z0-9]+/,
   /rollout-\d{4}-\d{2}-\d{2}T/,
+  /\b019e[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:-plan)?\b/i,
+  new RegExp(`\\b${privateRuntimePrefix}(?:conversation|plan):`, "i"),
+  new RegExp(`\\b${privateSessionToken}\\b|\\b${privateSessionPhrase}\\s*not published\\b`, "i"),
+  new RegExp(`\\b${currentThreadPrefix}-20\\d{2}-\\d{2}-\\d{2}\\b`, "i"),
+  new RegExp(`\\b${sourceSessionFieldPattern}\\b`),
+  privateCodenamePattern,
 ];
 
 function fail(message) {
@@ -117,6 +129,7 @@ function validateSelectiveBackfill(seed) {
 }
 
 function validateJsonSeed(seed) {
+  assertPublicSafe(`${seed.id}.artifact`, read(seed.artifactPath));
   const artifact = readJson(seed.artifactPath);
   const rows = sourceRows(artifact);
   if (rows.length < seed.minimumDecisionRows) {
@@ -145,6 +158,7 @@ function validateJsonSeed(seed) {
 
 function validateMarkdownSeed(seed) {
   const text = read(seed.artifactPath);
+  assertPublicSafe(`${seed.id}.artifact`, text);
   const rowRequirements = [];
   if (typeof seed.markdownRowPrefix === "string") {
     rowRequirements.push({
@@ -252,6 +266,23 @@ function runSelfTest() {
   const patternRows = extractMarkdownPatternRows("| `plan_scope` | x |\n| QA-001 | y |\n", "^\\| `[^`]+`\\s*\\|", "self-test");
   if (patternRows.length !== 1) fail("self-test: markdown pattern row extraction failed");
   assertPublicSafe("self-test-safe-ref", "docs/governance/source-decision-audits.md");
+  const privateRuntimeConversation = ["private", "runtime", "conversation"].join("-") + ":system-telemetry";
+  const privateSessionPlaceholder = ["private", "session", "not", "published"].join("-");
+  const currentThreadAlias = ["current", "thread", "2026", "05", "21"].join("-");
+  const privateProvenanceField = ["source", "Session", "Ref"].join("");
+  const privateCodename = ["Source Code Aging", "Program"].join(" ");
+  for (const unsafe of [
+    privateRuntimeConversation,
+    privateSessionPlaceholder,
+    currentThreadAlias,
+    privateProvenanceField,
+    privateCodename,
+  ]) {
+    const before = errors.length;
+    assertPublicSafe(`self-test-unsafe-${unsafe}`, unsafe);
+    if (errors.length === before) fail(`self-test: ${unsafe} must be rejected`);
+    else errors.splice(before);
+  }
 }
 
 if (args.has("--self-test")) runSelfTest();

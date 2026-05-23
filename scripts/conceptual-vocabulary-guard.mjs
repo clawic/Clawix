@@ -203,7 +203,13 @@ function collectFindings(baseDir, policy, shouldScanPath = isScannedPath) {
   for (const relativePath of listedFiles(baseDir)) {
     if (!shouldScanPath(relativePath)) continue;
     const absolutePath = path.join(baseDir, relativePath);
-    const stat = fs.statSync(absolutePath);
+    let stat;
+    try {
+      stat = fs.statSync(absolutePath);
+    } catch (error) {
+      if (error?.code === "ENOENT") continue;
+      throw error;
+    }
     if (stat.size > maxFileBytes) continue;
     let text;
     try {

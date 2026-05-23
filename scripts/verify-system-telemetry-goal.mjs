@@ -1488,8 +1488,10 @@ function assertStatusItemAndRecorder() {
 
 function assertSwiftTestCoverage() {
   const testFiles = [
+    "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeDecodingTests.swift",
     "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTests.swift",
     "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeMenuBarTests.swift",
+    "macos/Tests/ClawixMeshTests/SystemTelemetryBridgeTestSupport.swift",
   ];
   const testCoverage = testFiles.map((file) => read(file)).join("\n");
   for (const snippet of [

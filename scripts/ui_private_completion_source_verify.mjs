@@ -158,7 +158,7 @@ function runFailureSelfTests(goalEnv, sessionEnv) {
     [
       ["--require-approved", "--simulate-wrong-expected-decision-choice"],
       { CLAWIX_UI_ALLOW_COMPLETION_SOURCE_SIMULATION: "1" },
-      "expectedDecisions[0].choice must be Cross-platform desde dia 1",
+      "expectedDecisions[0].choice must be Cross-platform from day one",
     ],
   ];
 

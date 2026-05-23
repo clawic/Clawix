@@ -200,6 +200,20 @@ function assertFixture(name, specs, target, expectedIds) {
   for (const error of fixtureErrors) fail(error);
 }
 
+function selfTestEnv(overrides = {}) {
+  const env = { ...process.env, ...overrides };
+  env.CLAW_AGENT_COORDINATION_ACTIVE = "1";
+  for (const key of [
+    "CLAWIX_HOST_TEST_COMMAND",
+    "CLAWIX_DEVICE_TEST_COMMAND",
+    "CLAWIX_APP_PREFLIGHT_SCRIPT",
+    "CLAWIX_LAUNCH_DEPENDENCY_EVIDENCE",
+  ]) {
+    delete env[key];
+  }
+  return env;
+}
+
 function runSelfTest() {
   const header = `## Goal Completion Impact
 
@@ -261,7 +275,7 @@ function runSelfTest() {
 
   const strictHost = spawnSync("bash", ["scripts/test.sh", "host"], {
     cwd: rootDir,
-    env: { ...process.env, CLAWIX_TEST_STRICT_EXTERNAL_PENDING: "1" },
+    env: selfTestEnv({ CLAWIX_TEST_STRICT_EXTERNAL_PENDING: "1" }),
     encoding: "utf8",
   });
   const strictHostOutput = `${strictHost.stdout || ""}${strictHost.stderr || ""}`;
@@ -270,7 +284,7 @@ function runSelfTest() {
   }
   const strictDevice = spawnSync("bash", ["scripts/test.sh", "device"], {
     cwd: rootDir,
-    env: { ...process.env, CLAWIX_TEST_STRICT_EXTERNAL_PENDING: "1", CLAWIX_SKIP_ANDROID_UNIT_TESTS: "1" },
+    env: selfTestEnv({ CLAWIX_TEST_STRICT_EXTERNAL_PENDING: "1", CLAWIX_SKIP_ANDROID_UNIT_TESTS: "1" }),
     encoding: "utf8",
   });
   const strictDeviceOutput = `${strictDevice.stdout || ""}${strictDevice.stderr || ""}`;
