@@ -15,6 +15,11 @@ struct DatabaseWorkbenchSettingsPage: View {
                 subtitle: "Connection, query editor, table browser, import/export, and safety defaults."
             )
 
+            if let error = profiles.lastPersistenceError {
+                InfoBanner(text: error, kind: .error)
+                    .padding(.bottom, 10)
+            }
+
             SectionLabel(title: "Connection profiles")
             SettingsCard {
                 if profiles.profiles.isEmpty {

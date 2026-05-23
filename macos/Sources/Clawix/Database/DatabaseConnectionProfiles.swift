@@ -157,6 +157,7 @@ final class DatabaseConnectionProfileStore: ObservableObject {
 
     @Published private(set) var profiles: [DatabaseConnectionProfile] = []
     @Published private(set) var lastDryRun: DatabaseConnectionDryRunResult?
+    @Published private(set) var lastPersistenceError: String?
 
     private let defaults: UserDefaults
     private let key = "clawix.databaseWorkbench.connectionProfiles.v1"
@@ -267,17 +268,29 @@ final class DatabaseConnectionProfileStore: ObservableObject {
     }
 
     private func load() {
-        guard let data = defaults.data(forKey: key),
-              let decoded = try? decoder.decode([DatabaseConnectionProfile].self, from: data) else {
+        guard let data = defaults.data(forKey: key) else {
             profiles = []
+            lastPersistenceError = nil
             return
         }
-        profiles = decoded.sorted { $0.updatedAt > $1.updatedAt }
+        do {
+            let decoded = try decoder.decode([DatabaseConnectionProfile].self, from: data)
+            profiles = decoded.sorted { $0.updatedAt > $1.updatedAt }
+            lastPersistenceError = nil
+        } catch {
+            profiles = []
+            lastPersistenceError = "Connection profiles could not be loaded: \(error.localizedDescription)"
+        }
     }
 
     private func persist() {
-        guard let data = try? encoder.encode(profiles) else { return }
-        defaults.set(data, forKey: key)
+        do {
+            let data = try encoder.encode(profiles)
+            defaults.set(data, forKey: key)
+            lastPersistenceError = nil
+        } catch {
+            lastPersistenceError = "Connection profiles could not be saved: \(error.localizedDescription)"
+        }
     }
 
     private func normalized(_ profile: DatabaseConnectionProfile) -> DatabaseConnectionProfile {
