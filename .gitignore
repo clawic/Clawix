@@ -8,12 +8,14 @@
 !.codex/skills/*/
 !.codex/skills/*/SKILL.md
 .claw/data/
+.claw/observed/
 .build/
 ios/.build/
 ios/.build-test/
 ios/.build-*/
 ios/build/
 macos/.build/
+macos/.build-*/
 macos/build/
 macos/artifacts/
 test-results/
