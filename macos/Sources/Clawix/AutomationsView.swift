@@ -1,6 +1,57 @@
 import SwiftUI
 
 struct AutomationsView: View {
+    @EnvironmentObject var appState: AppState
+
+    private var yourAutomationsSection: some View {
+        let current = appState.automations.filter { $0.isEnabled }
+        let paused = appState.automations.filter { !$0.isEnabled }
+        return VStack(alignment: .leading, spacing: 22) {
+            if !current.isEmpty { automationGroup(L10n.t("Current"), current) }
+            if !paused.isEmpty { automationGroup(L10n.t("Paused"), paused) }
+        }
+        .padding(.bottom, 44)
+    }
+
+    private func automationGroup(_ title: String, _ items: [Automation]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(BodyFont.system(size: 13.5, wght: 600))
+                .foregroundColor(Palette.textSecondary)
+            ForEach(items) { automation in
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(automation.isEnabled ? Palette.pastelBlue : Color.white.opacity(0.25))
+                        .frame(width: 7, height: 7)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(automation.name)
+                            .font(BodyFont.system(size: 13, wght: 600))
+                            .foregroundColor(Palette.textPrimary)
+                        if !automation.description.isEmpty {
+                            Text(automation.description)
+                                .font(BodyFont.system(size: 12))
+                                .foregroundColor(Palette.textTertiary)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer()
+                    Text(automation.trigger)
+                        .font(BodyFont.system(size: 11, design: .monospaced))
+                        .foregroundColor(Palette.textSecondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Palette.cardFill)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Palette.border, lineWidth: 0.5)
+                        )
+                )
+            }
+        }
+    }
 
     private let sections: [AutomationTemplateSection] = [
         AutomationTemplateSection(
@@ -45,6 +96,10 @@ struct AutomationsView: View {
                     .font(BodyFont.system(size: 12, wght: 500))
                 }
                 .padding(.bottom, 30)
+
+                if !appState.automations.isEmpty {
+                    yourAutomationsSection
+                }
 
                 ForEach(sections) { section in
                     AutomationSectionView(section: section)
