@@ -37,7 +37,7 @@ struct AddSecretSheet: View {
                 identityRail
                     .frame(width: 188)
                 Rectangle()
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                     .frame(width: 1)
                 formColumn
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -66,16 +66,16 @@ struct AddSecretSheet: View {
 
                 ZStack {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(Color.overlay(0.05))
                         .overlay(
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.6)
                         )
                         .frame(width: 96, height: 96)
                     SecretKindIcon(
                         kind: kind,
                         size: 50,
-                        color: Color(white: 0.93)
+                        color: Color.gray(light: 0.13, dark: 0.93)
                     )
                 }
                 .animation(.easeOut(duration: 0.18), value: kind)
@@ -99,7 +99,7 @@ struct AddSecretSheet: View {
                 }
                 Text("Only you can decrypt with the master password.")
                     .font(BodyFont.system(size: 10.5, wght: 500))
-                    .foregroundColor(Color(white: 0.42))
+                    .foregroundColor(Color.gray(light: 0.52, dark: 0.42))
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -150,10 +150,10 @@ struct AddSecretSheet: View {
             .padding(.vertical, 4)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.overlay(0.05))
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
             )
         }
@@ -192,16 +192,16 @@ struct AddSecretSheet: View {
                         }
                         .textFieldStyle(.plain)
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundColor(Color(white: 0.96))
+                        .foregroundColor(Color.gray(light: 0.10, dark: 0.96))
                         .padding(.leading, 14)
                         .padding(.trailing, 42)
                         .padding(.vertical, 11)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white.opacity(0.05))
+                                .fill(Color.overlay(0.05))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                                        .stroke(Color.overlay(0.10), lineWidth: 0.6)
                                 )
                         )
                         IconCircleButton(symbol: primaryRevealed ? "eye.slash" : "eye") {
@@ -246,7 +246,7 @@ struct AddSecretSheet: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .controlSize(.small)
-                            .tint(.black)
+                            .tint(Palette.background)
                     }
                     Text("Create secret")
                 }
@@ -266,7 +266,7 @@ struct AddSecretSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: label)
                 .font(BodyFont.system(size: 11.5, wght: 600))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
             content()
         }
     }

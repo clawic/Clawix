@@ -33,7 +33,7 @@ struct RecoveryPhraseSheet: View {
         .frame(width: 480)
         .padding(.vertical, 22)
         .padding(.horizontal, 22)
-        .background(Color(white: 0.07))
+        .background(Color.gray(light: 0.955, dark: 0.07))
     }
 
     @ViewBuilder
@@ -62,11 +62,11 @@ struct RecoveryPhraseSheet: View {
                         .padding(8)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
 
                     if let error {
@@ -148,7 +148,7 @@ struct RecoveryPhraseSheet: View {
                         .padding(.horizontal, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                         ForEach(Array(kit.recoveryPhrase.enumerated()), id: \.offset) { idx, word in
@@ -166,7 +166,7 @@ struct RecoveryPhraseSheet: View {
                             .padding(.horizontal, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(Color.white.opacity(0.04))
+                                    .fill(Color.overlay(0.04))
                             )
                         }
                     }
@@ -195,7 +195,7 @@ struct RecoveryPhraseSheet: View {
             LucideIcon(.x, size: 11)
                 .foregroundColor(Palette.textSecondary)
                 .padding(6)
-                .background(Circle().fill(Color.white.opacity(0.06)))
+                .background(Circle().fill(Color.overlay(0.06)))
         }
         .buttonStyle(.plain)
     }

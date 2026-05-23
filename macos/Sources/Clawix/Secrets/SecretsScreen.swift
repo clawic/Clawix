@@ -18,7 +18,7 @@ struct SecretsScreen: View {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .controlSize(.regular)
-                    .tint(Color(white: 0.6))
+                    .tint(Color.gray(light: 0.42, dark: 0.6))
             case .uninitialized:
                 SecretsOnboardingView()
             case .locked, .unlocking:
@@ -99,10 +99,10 @@ private struct IntegrityFailedBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             LucideIcon(.shieldAlert, size: 13)
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
             Text("Audit chain broken")
                 .font(BodyFont.system(size: 12, wght: 700))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)

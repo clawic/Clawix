@@ -69,7 +69,7 @@ struct SecretsTrashView: View {
             Spacer()
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
                     .frame(width: 64, height: 64)
                 LucideIcon(.trash, size: 18)
                     .foregroundColor(Palette.textSecondary)

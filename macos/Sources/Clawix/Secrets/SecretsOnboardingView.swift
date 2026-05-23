@@ -73,7 +73,7 @@ struct SecretsOnboardingView: View {
             HStack(spacing: 4) {
                 ForEach(0..<4, id: \.self) { i in
                     Capsule(style: .continuous)
-                        .fill(i < level.score ? level.color : Color.white.opacity(0.06))
+                        .fill(i < level.score ? level.color : Color.overlay(0.06))
                         .frame(height: 3)
                 }
             }
@@ -125,7 +125,7 @@ struct SecretsOnboardingView: View {
         SecretsCard {
             VStack(alignment: .leading, spacing: 10) {
                 emergencySecretKeyRow(kit.secretKey)
-                Divider().background(Color.white.opacity(0.05))
+                Divider().background(Color.overlay(0.05))
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
                     spacing: 8
@@ -134,7 +134,7 @@ struct SecretsOnboardingView: View {
                         recoveryWordCell(index: idx + 1, word: word)
                     }
                 }
-                Divider().background(Color.white.opacity(0.05))
+                Divider().background(Color.overlay(0.05))
                 HStack(spacing: 10) {
                     SecretsSecondaryButton(title: "Copy to clipboard") {
                         copyEmergencyKit(kit)
@@ -161,7 +161,7 @@ struct SecretsOnboardingView: View {
                 .padding(.horizontal, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
         }
     }
@@ -181,7 +181,7 @@ struct SecretsOnboardingView: View {
         .padding(.horizontal, 8)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 
@@ -306,11 +306,11 @@ private struct VerifyPhrasePanel: View {
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                     }
                 }

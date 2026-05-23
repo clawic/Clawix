@@ -8,7 +8,7 @@ import SwiftUI
 struct SecretsIcon: View {
     var size: CGFloat = 16
     var lineWidth: CGFloat = 1.28
-    var color: Color = Color(white: 0.86)
+    var color: Color = Color.gray(light: 0.19, dark: 0.86)
     var isLocked: Bool = true
 
     var body: some View {

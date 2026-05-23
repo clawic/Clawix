@@ -269,7 +269,7 @@ struct SecretsSettingsPage: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(tint.opacity(0.40), lineWidth: 0.7)
@@ -301,10 +301,10 @@ struct SecretsSettingsPage: View {
             .frame(height: 28)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color(white: 0.135))
+                    .fill(Color.gray(light: 0.94, dark: 0.135))
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
             .contentShape(Capsule(style: .continuous))
@@ -504,7 +504,7 @@ private struct BackupExportSheet: View {
                     LucideIcon(.x, size: 11)
                         .foregroundColor(Palette.textSecondary)
                         .padding(6)
-                        .background(Circle().fill(Color.white.opacity(0.06)))
+                        .background(Circle().fill(Color.overlay(0.06)))
                 }
                 .buttonStyle(.plain)
             }
@@ -531,7 +531,7 @@ private struct BackupExportSheet: View {
         }
         .frame(width: 420)
         .padding(22)
-        .background(Color(white: 0.07))
+        .background(Color.gray(light: 0.955, dark: 0.07))
     }
 
     private func requestExportReview() {
@@ -600,7 +600,7 @@ private struct BackupImportSheet: View {
                     LucideIcon(.x, size: 11)
                         .foregroundColor(Palette.textSecondary)
                         .padding(6)
-                        .background(Circle().fill(Color.white.opacity(0.06)))
+                        .background(Circle().fill(Color.overlay(0.06)))
                 }
                 .buttonStyle(.plain)
             }
@@ -628,7 +628,7 @@ private struct BackupImportSheet: View {
         }
         .frame(width: 420)
         .padding(22)
-        .background(Color(white: 0.07))
+        .background(Color.gray(light: 0.955, dark: 0.07))
     }
 
     private func restore() {

@@ -47,7 +47,7 @@ struct SecretsPrimaryButton: View {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .controlSize(.small)
-                        .tint(.black)
+                        .tint(Palette.background)
                 }
                 Text(title)
             }

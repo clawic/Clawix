@@ -61,11 +61,11 @@ struct AgentApprovalPromptView: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
             }
             .padding(.top, 14)
@@ -81,7 +81,7 @@ struct AgentApprovalPromptView: View {
                 Button(action: onApprove) {
                     Text("Approve · issue token")
                         .font(BodyFont.system(size: 12, wght: 700))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 9)
                         .background(
@@ -90,7 +90,7 @@ struct AgentApprovalPromptView: View {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 }
                 .buttonStyle(.plain)
@@ -99,7 +99,7 @@ struct AgentApprovalPromptView: View {
         }
         .frame(width: 480)
         .padding(22)
-        .background(Color(white: 0.07))
+        .background(Color.gray(light: 0.955, dark: 0.07))
     }
 
     private var header: some View {

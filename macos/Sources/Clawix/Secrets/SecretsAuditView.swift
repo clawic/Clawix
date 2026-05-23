@@ -131,7 +131,7 @@ struct SecretsAuditView: View {
             Spacer()
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
                     .frame(width: 64, height: 64)
                 LucideIcon(.clock, size: 18)
                     .foregroundColor(Palette.textSecondary)
@@ -221,7 +221,7 @@ struct EventRow: View {
                 if let notes = event.payload.notes {
                     Text(verbatim: notes)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.72))
+                        .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
                 }
                 if let host = event.payload.host {
                     Text(verbatim: "→ \(host)")
@@ -248,7 +248,7 @@ struct EventRow: View {
         LucideIcon.auto(symbol, size: 12)
             .foregroundColor(eventColor)
             .padding(5)
-            .background(Circle().fill(Color.white.opacity(0.07)))
+            .background(Circle().fill(Color.overlay(0.07)))
     }
 
     private var eventColor: Color {

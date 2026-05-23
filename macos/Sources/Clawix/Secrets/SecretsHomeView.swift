@@ -52,7 +52,7 @@ struct SecretsHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Color(red: 0.34, green: 0.78, blue: 0.55))
+                        .fill(Palette.success)
                         .frame(width: 6, height: 6)
                     Text(verbatim: "\(vault.secrets.count) secret\(vault.secrets.count == 1 ? "" : "s") · Secrets unlocked")
                         .font(BodyFont.system(size: 11, wght: 500))
@@ -141,7 +141,7 @@ struct SecretsHomeView: View {
             Spacer(minLength: 28)
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
                     .frame(width: 64, height: 64)
                 SecretsIcon(size: 32, lineWidth: 1.5, color: Palette.textSecondary, isLocked: false)
             }
@@ -204,7 +204,7 @@ private struct SecretListRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 10) {
-                SecretKindIcon(kind: secret.kind, size: 18, color: Color(white: 0.86))
+                SecretKindIcon(kind: secret.kind, size: 18, color: Color.gray(light: 0.19, dark: 0.86))
                     .frame(width: 22, height: 22)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {

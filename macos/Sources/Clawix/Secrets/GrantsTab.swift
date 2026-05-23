@@ -35,13 +35,13 @@ struct GrantsTab: View {
         let revoked = grant.revokedAt != nil
         let active = !expired && !revoked
         let badge = active ? "ACTIVE" : (revoked ? "REVOKED" : "EXPIRED")
-        let badgeColor: Color = active ? .green.opacity(0.7) : (revoked ? .red.opacity(0.7) : Color(white: 0.45))
+        let badgeColor: Color = active ? .green.opacity(0.7) : (revoked ? .red.opacity(0.7) : Color.gray(light: 0.50, dark: 0.45))
         return HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(badge)
                         .font(.system(size: 9, weight: .heavy))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Capsule(style: .continuous).fill(badgeColor))
@@ -57,7 +57,7 @@ struct GrantsTab: View {
                     .foregroundColor(Palette.textSecondary)
                 Text("created \(grant.createdAt.asDate.formatted(.relative(presentation: .numeric))) · expires \(grant.expiresAt.asDate.formatted(.relative(presentation: .numeric))) · used \(grant.usedCount)x")
                     .font(BodyFont.system(size: 11))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             Spacer()
             if active {
@@ -69,7 +69,7 @@ struct GrantsTab: View {
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
@@ -83,7 +83,7 @@ struct GrantsTab: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
         )
     }
 

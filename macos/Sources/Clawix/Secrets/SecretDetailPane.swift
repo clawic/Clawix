@@ -100,10 +100,10 @@ struct SecretDetailPane: View {
     private var iconTile: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(white: 0.105))
+                .fill(Color.gray(light: 0.95, dark: 0.105))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
             SecretKindIcon(kind: secret.kind, size: 28, color: Palette.textPrimary)
         }
@@ -141,7 +141,7 @@ struct SecretDetailPane: View {
         HStack(spacing: 5) {
             if leadingDot {
                 Circle()
-                    .fill(Color.white.opacity(0.22))
+                    .fill(Color.overlay(0.22))
                     .frame(width: 3, height: 3)
             }
             Text(verbatim: text)
@@ -154,7 +154,7 @@ struct SecretDetailPane: View {
         .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
     }
 
@@ -189,10 +189,10 @@ struct SecretDetailPane: View {
                 .frame(width: 28, height: 28)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color(white: 0.135))
+                        .fill(Color.gray(light: 0.94, dark: 0.135))
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
                 .contentShape(Capsule(style: .continuous))
@@ -501,10 +501,10 @@ private struct FieldCard: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: hovered ? 0.10 : 0.085))
+                .fill((hovered ? Color.gray(light: 0.95, dark: 0.10) : Color.gray(light: 0.95, dark: 0.085)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
         )
         .contentShape(Rectangle())
@@ -527,7 +527,7 @@ private struct FieldCard: View {
             .padding(.vertical, 1.5)
             .background(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.overlay(0.05))
             )
     }
 }
@@ -537,10 +537,10 @@ private struct FieldCard: View {
 private struct DetailCardBackground: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color(white: 0.085))
+            .fill(Color.gray(light: 0.95, dark: 0.085))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.08), lineWidth: 0.5)
             )
     }
 }
@@ -569,7 +569,7 @@ private struct DetailModalSheet<Content: View>: View {
                 Spacer(minLength: 12)
                 Button { isPresented = false } label: {
                     LucideIcon(.x, size: 13)
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }

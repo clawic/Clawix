@@ -8,7 +8,7 @@ import SecretsModels
 struct SecretKindIcon: View {
     let kind: SecretKind
     var size: CGFloat = 18
-    var color: Color = Color(white: 0.86)
+    var color: Color = Color.gray(light: 0.19, dark: 0.86)
 
     var body: some View {
         LucideIcon(lucideKind, size: size)

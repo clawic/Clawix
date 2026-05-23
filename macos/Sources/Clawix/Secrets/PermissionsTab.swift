@@ -62,7 +62,7 @@ struct PermissionsTab: View {
                                 .font(.system(size: 12, design: .monospaced))
                         }
                     }
-                    Divider().background(Color.white.opacity(0.05))
+                    Divider().background(Color.overlay(0.05))
                     section("Placement") {
                         toggle("Allow in URL query string", $governance.allowInUrl, detail: "Off by default. Tokens in URLs end up in server logs.")
                         toggle("Allow in request body", $governance.allowInBody)
@@ -70,7 +70,7 @@ struct PermissionsTab: View {
                         toggle("Allow plaintext http://", $governance.allowInsecureTransport, detail: "Only enable for dev / staging endpoints.")
                         toggle("Allow local-network targets", $governance.allowLocalNetwork, detail: "Allows 127.0.0.1, RFC1918 ranges, and *.local hosts.")
                     }
-                    Divider().background(Color.white.opacity(0.05))
+                    Divider().background(Color.overlay(0.05))
                     section("Lifecycle") {
                         labeledField("TTL expiry", subtitle: "Disable the secret automatically after this date.") {
                             HStack {
@@ -93,7 +93,7 @@ struct PermissionsTab: View {
                                 .frame(width: 120)
                         }
                     }
-                    Divider().background(Color.white.opacity(0.05))
+                    Divider().background(Color.overlay(0.05))
                     section("Approval") {
                         labeledField("Approval mode", subtitle: nil) {
                             Picker("", selection: $governance.approvalMode) {
@@ -118,7 +118,7 @@ struct PermissionsTab: View {
                                 .font(.system(size: 12, design: .monospaced))
                         }
                     }
-                    Divider().background(Color.white.opacity(0.05))
+                    Divider().background(Color.overlay(0.05))
                     section("Output and UX") {
                         labeledField("Custom redaction label", subtitle: "Empty = `[REDACTED:internal_name]`. Useful when the agent expects a stable token like `[GH_TOKEN]`.") {
                             TextField("[GH_TOKEN]", text: $redactionLabel)
@@ -145,7 +145,7 @@ struct PermissionsTab: View {
                 Button { save() } label: {
                     Text("Save permissions")
                         .font(BodyFont.system(size: 12, wght: 700))
-                        .foregroundColor(canSave ? .white : Color.white.opacity(0.45))
+                        .foregroundColor(canSave ? .white : Color.overlay(0.45))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(
@@ -154,7 +154,7 @@ struct PermissionsTab: View {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 }
                 .buttonStyle(.plain)

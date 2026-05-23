@@ -64,7 +64,7 @@ struct SecretsLockScreen: View {
                             ProgressView()
                                 .progressViewStyle(.circular)
                                 .controlSize(.small)
-                                .tint(canUnlock ? .black : Color(white: 0.55))
+                                .tint(canUnlock ? .black : Color.gray(light: 0.45, dark: 0.55))
                         }
                         Text(vault.state == .unlocking ? "Unlocking…" : "Unlock")
                     }
@@ -189,7 +189,7 @@ private struct SecretsUnlockPasswordField: View {
             }
             .textFieldStyle(.plain)
             .font(BodyFont.system(size: 14, wght: 500))
-            .foregroundColor(Color(white: 0.96))
+            .foregroundColor(Color.gray(light: 0.10, dark: 0.96))
 
             Button {
                 showPassword.toggle()
@@ -198,7 +198,7 @@ private struct SecretsUnlockPasswordField: View {
                 }
             } label: {
                 LucideIcon.auto(showPassword ? "eye.slash" : "eye", size: 14)
-                    .foregroundColor(Color(white: revealHovered ? 0.95 : 0.55))
+                    .foregroundColor((revealHovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.45, dark: 0.55)))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -210,10 +210,10 @@ private struct SecretsUnlockPasswordField: View {
         .padding(.vertical, 11)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(focused.wrappedValue ? 0.085 : 0.06))
+                .fill(Color.overlay(focused.wrappedValue ? 0.085 : 0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(focused.wrappedValue ? 0.22 : 0.10),
+                        .stroke(Color.overlay(focused.wrappedValue ? 0.22 : 0.10),
                                 lineWidth: focused.wrappedValue ? 0.8 : 0.6)
                 )
         )
@@ -241,7 +241,7 @@ private struct SecretsUnlockButtonLabel: View {
     var body: some View {
         configuration.label
             .font(BodyFont.system(size: 13.5, wght: 600))
-            .foregroundColor(enabled ? .black : Color(white: 0.55))
+            .foregroundColor(enabled ? .black : Color.gray(light: 0.45, dark: 0.55))
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
             .background(
@@ -260,13 +260,13 @@ private struct SecretsUnlockButtonLabel: View {
     }
 
     private var fill: Color {
-        guard enabled else { return Color.white.opacity(0.06) }
-        if configuration.isPressed { return Color(white: 0.82) }
-        return hovered ? Color.white : Color(white: 0.97)
+        guard enabled else { return Color.overlay(0.06) }
+        if configuration.isPressed { return Color.gray(light: 0.23, dark: 0.82) }
+        return hovered ? Palette.textPrimary : Color.gray(light: 0.09, dark: 0.97)
     }
 
     private var stroke: Color {
-        enabled ? Color.clear : Color.white.opacity(0.10)
+        enabled ? Color.clear : Color.overlay(0.10)
     }
 }
 
