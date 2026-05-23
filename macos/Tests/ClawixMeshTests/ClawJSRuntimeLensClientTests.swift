@@ -86,114 +86,16 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
     func testRuntimeLensUsesTopLevelResourcesAsInventoryFallback() async throws {
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
-            return .init(data: Data("""
-            {
-              "ok": true,
-              "data": {
-                "runtimeId": "hermes",
-                "runtimeName": "Hermes Agent",
-                "status": {
-                  "installed": true,
-                  "cliAvailable": true,
-                  "gatewayAvailable": false
-                },
-                "session": {
-                  "primaryTransport": "gateway",
-                  "fallbackTransport": "cli",
-                  "sessionPersistence": "runtime",
-                  "streamingMode": "hybrid",
-                  "sessionPath": "/Users/tester/.hermes/sessions"
-                },
-                "workspace": {
-                  "canonicalPaths": {
-                    "SOUL": "/tmp/workspace/SOUL.md"
-                  },
-                  "managedFiles": ["/tmp/workspace/AGENTS.md"]
-                },
-                "resources": {
-                  "providers": [
-                    {
-                      "id": "openai",
-                      "label": "OpenAI",
-                      "envVars": ["OPENAI_API_KEY"],
-                      "auth": {
-                        "supportsApiKey": true,
-                        "supportsEnv": true
-                      }
-                    }
-                  ],
-                  "models": [],
-                  "defaultModel": {
-                    "provider": "openai",
-                    "modelId": "gpt-4.1",
-                    "label": "GPT 4.1"
-                  },
-                  "auth": {
-                    "openai": {
-                      "provider": "openai",
-                      "hasAuth": true,
-                      "hasSubscription": false,
-                      "hasApiKey": true,
-                      "hasProfileApiKey": false,
-                      "hasEnvKey": true,
-                      "authType": "env",
-                      "maskedCredential": "sk-..."
-                    }
-                  },
-                  "schedulers": [
-                    {
-                      "id": "hermes-scheduler",
-                      "label": "Hermes Scheduler",
-                      "enabled": true,
-                      "status": "idle",
-                      "kind": "workflow"
-                    }
-                  ],
-                  "memory": [
-                    {
-                      "id": "hermes-memory",
-                      "label": "Hermes Memory",
-                      "kind": "index",
-                      "path": "/Users/tester/.hermes/memories"
-                    }
-                  ],
-                  "skills": [
-                    {
-                      "id": "hermes-skills",
-                      "label": "Hermes Skills",
-                      "enabled": true,
-                      "scope": "runtime",
-                      "path": "/Users/tester/.hermes/skills"
-                    }
-                  ],
-                  "channels": [
-                    {
-                      "id": "discord",
-                      "label": "Discord",
-                      "kind": "chat",
-                      "status": "configured"
-                    }
-                  ]
-                },
-                "domains": [
-                  { "domain": "skills", "supported": true, "status": "ready" },
-                  { "domain": "memory", "supported": true, "status": "ready" },
-                  { "domain": "channels", "supported": true, "status": "ready" },
-                  { "domain": "providers", "supported": true, "status": "ready" },
-                  { "domain": "auth", "supported": true, "status": "ready" },
-                  { "domain": "models", "supported": true, "status": "ready" },
-                  { "domain": "scheduler", "supported": true, "status": "ready" },
-                  { "domain": "configuration", "supported": true, "status": "ready" }
-                ]
-              }
-            }
-            """.utf8), exitCode: 0)
+            return .init(
+                data: try ClawJSRuntimeLensTestFixtures.data(named: "top-level-resources-fallback"),
+                exitCode: 0
+            )
         })
 
         let snapshot = try await client.load(runtime: .hermes)
         let runtimeSummary = ClawJSRuntimeLensRuntimeSummaryPresentation.make(snapshot: snapshot)
 
-        XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.example/sessions")
         XCTAssertEqual(snapshot.runtimeResources?.providers?.first?.id, "openai")
         XCTAssertEqual(snapshot.runtimeResources?.auth?["openai"]?.hasEnvKey, true)
         XCTAssertEqual(runtimeSummary.runtimeResourceAggregateDomainCount, 7)
@@ -204,8 +106,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         )
         XCTAssertTrue(runtimeSummary.accessibilityLabel.contains("runtime resource aggregate domains 7"))
         XCTAssertTrue(runtimeSummary.accessibilityLabel.contains("runtime resources 7"))
-        XCTAssertEqual(snapshot.resources(for: "skills").first?.id, "hermes-skills")
-        XCTAssertEqual(snapshot.resources(for: "memory").first?.path, "/Users/tester/.hermes/memories")
+        XCTAssertEqual(snapshot.resources(for: "skills").first?.id, "example-skills")
+        XCTAssertEqual(snapshot.resources(for: "memory").first?.path, "/Users/tester/.example/memories")
         XCTAssertEqual(snapshot.resources(for: "channels").first?.status, "configured")
         XCTAssertEqual(snapshot.resources(for: "providers").first?.envVars, ["OPENAI_API_KEY"])
         XCTAssertEqual(snapshot.resources(for: "providers").first?.attributes, [
@@ -226,7 +128,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
             "model id: gpt-4.1",
             "default: true"
         ])
-        XCTAssertEqual(snapshot.resources(for: "scheduler").first?.id, "hermes-scheduler")
+        XCTAssertEqual(snapshot.resources(for: "scheduler").first?.id, "example-scheduler")
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "SOUL" }?.path, "/tmp/workspace/SOUL.md")
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "managed-file-1" }?.path, "/tmp/workspace/AGENTS.md")
     }
@@ -236,858 +138,48 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
             requested.append(.hermes)
-            return .init(data: Data("""
-            {
-              "ok": true,
-              "data": {
-                "runtimeId": "hermes",
-                "runtimeName": "Hermes Agent",
-                "support": {
-                  "stability": "dev-only",
-                  "supportLevel": "dev-only",
-                  "recommended": false,
-                  "ecosystem": {
-                    "supportStage": "dev_only",
-                    "recommended": false,
-                    "production": false,
-                    "summary": "Hermes ecosystem remains blocked until native write-back and live channel evidence exist.",
-                    "claimSource": "runtime-ecosystem-manifest",
-                    "provenance": {
-                      "source": "runtime-ecosystem-manifest",
-                      "runtimeId": "hermes"
-                    },
-                    "evidenceRequirements": [
-                      {
-                        "id": "hermes.channels.live_evidence",
-                        "blockerClass": "external_pending",
-                        "approvalRequired": true,
-                        "commandShape": "runtime hermes domain channels --json",
-                        "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
-                        "riskControls": ["read_only_first"],
-                        "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
-                        "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
-                        "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
-                        "claimEffect": "blocks_recommended_production_native_parity",
-                        "reentryCondition": "approve_and_run_runtime_hermes_domain_channels_read_only_evidence",
-                        "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
-                      }
-                    ]
-                  }
-                },
-                "supportAudit": {
-                  "scope": "runtime_ecosystem_support_audit",
-                  "closureState": "blocked",
-                  "supportComplete": false,
-                  "allDomainsAccountedFor": true,
-                  "supportStage": "dev_only",
-                  "recommended": false,
-                  "production": false,
-                  "uiParityClaim": "partial_runtime_lens",
-                  "summary": "Hermes ecosystem remains blocked until native write-back and live channel evidence exist.",
-                  "blockingReasons": ["native_write_back_pending", "live_evidence_pending"],
-                  "blockerSummary": {
-                    "byBlockerClass": {
-                      "direct_blocker": 2,
-                      "external_pending": 1
-                    },
-                    "directBlockerDomains": ["sessions"],
-                    "externalPendingDomains": ["channels"],
-                    "blockedWriteBackDomains": ["sessions"],
-                    "ecosystemExternalPendingDomains": ["channels"],
-                    "evidenceRequirementCount": 3,
-                    "productBlockedRequirementCount": 2
-                  },
-                  "evidenceRequirements": [
-                    {
-                      "id": "hermes.sessions.create.action_contract",
-                      "blockerClass": "direct_blocker",
-                      "approvalRequired": false,
-                      "commandShape": "not_executable_until_official_runtime_create_contract_exists",
-                      "expectedEvidence": ["official_create_command_or_api", "non_destructive_fixture"],
-                      "riskControls": ["no_silent_runtime_write"],
-                      "evidenceDisposition": "blocked_until_official_runtime_action_contract",
-                      "currentBehavior": "non_executable_action_plan_only",
-                      "fallbackPolicy": "do_not_synthesize_native_runtime_action",
-                      "claimEffect": "blocks_recommended_production_native_parity",
-                      "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-                      "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
-                      "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-                      "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-                      "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
-                    }
-                  ],
-                  "domains": [
-                    {
-                      "domain": "sessions",
-                      "claim": "inventoried",
-                      "status": "error",
-                      "canonicalAuthority": "runtime",
-                      "nativeAuthority": "runtime",
-                      "writeBackPolicy": "blocked_until_fixture_coverage",
-                      "writeBackAllowed": false,
-                      "validation": "fixture_required",
-                      "externalPending": false,
-                      "blockerClasses": ["direct_blocker"],
-                      "evidenceDispositions": ["blocked_until_official_runtime_contract", "blocked_until_official_runtime_action_contract"],
-                      "supportResolutions": ["explicitly_product_blocked_not_a_silent_gap"],
-                      "evidenceRequirementIds": ["hermes.sessions.write_back_contract", "hermes.sessions.create.action_contract"]
-                    },
-                    {
-                      "domain": "channels",
-                      "claim": "inventoried",
-                      "status": "degraded",
-                      "canonicalAuthority": "runtime",
-                      "nativeAuthority": "runtime",
-                      "writeBackPolicy": "external_pending_live_accounts",
-                      "writeBackAllowed": false,
-                      "validation": "external_pending_for_live_accounts",
-                      "externalPending": true,
-                      "blockerClasses": ["external_pending"],
-                      "evidenceDispositions": ["external_pending_until_approved_redacted_live_receipt"],
-                      "supportResolutions": ["external_pending_not_product_blocked"],
-                      "evidenceRequirementIds": ["hermes.channels.live_evidence"]
-                    }
-                  ],
-                  "promotionGate": "support_claim_remains_unpromoted_until_all_evidence_requirements_are_closed_or_explicitly_product_blocked",
-                  "closureChecklist": [
-                    {
-                      "domain": "sessions",
-                      "closureStatus": "product_blocked",
-                      "claim": "inventoried",
-                      "status": "error",
-                      "readProjectionStatus": "projected",
-                      "implementedFacets": ["manifest_domain_contract", "claw_cli_resource_surface", "session_list_action"],
-                      "blockingFacets": ["native_action_contract", "native_write_back_contract", "product_blocked_claim"],
-                      "projectionDisposition": "read_projection_available_write_back_blocked",
-                      "writeBackPolicy": "blocked_until_fixture_coverage",
-                      "validation": "fixture_required",
-                      "blockerClasses": ["direct_blocker"],
-                      "evidenceRequirementIds": ["hermes.sessions.create.action_contract", "hermes.sessions.pin.native_write_back_contract"],
-                      "supportResolutions": ["explicitly_product_blocked_not_a_silent_gap"],
-                      "safeDefault": "keep_lowered_claim_until_upstream_native_contract_exists",
-                      "nextAction": "wait_for_official_runtime_contract_then_add_fixture_and_round_trip_evidence"
-                    },
-                    {
-                      "domain": "channels",
-                      "closureStatus": "external_pending",
-                      "claim": "inventoried",
-                      "status": "ok",
-                      "readProjectionStatus": "degraded_projection",
-                      "implementedFacets": ["manifest_domain_contract", "read_projection_contract"],
-                      "blockingFacets": ["approved_live_evidence"],
-                      "projectionDisposition": "read_projection_available_live_evidence_pending",
-                      "writeBackPolicy": "external_pending_live_accounts",
-                      "validation": "external_pending_for_live_accounts",
-                      "blockerClasses": ["external_pending"],
-                      "evidenceRequirementIds": ["hermes.channels.live_evidence"],
-                      "supportResolutions": ["external_pending_not_product_blocked"],
-                      "safeDefault": "keep_unpromoted_until_approved_redacted_evidence",
-                      "nextAction": "use_matching_evidenceReentryPacket_after_explicit_approval"
-                    }
-                  ],
-                  "closureChecklistSummary": {
-                    "product_blocked": 1,
-                    "external_pending": 1
-                  },
-                  "syncPolicySummary": {
-                    "domainCount": 2,
-                    "canonicalAuthorityCounts": {
-                      "runtime": 1,
-                      "claw_registry_with_runtime_binding": 1
-                    },
-                    "nativeAuthorityCounts": {
-                      "runtime": 2
-                    },
-                    "persistenceCounts": {
-                      "index_and_shadow_when_safe": 1,
-                      "secret_refs_only": 1
-                    },
-                    "relationCounts": {
-                      "native_projection": 1,
-                      "gateway_projection": 1
-                    },
-                    "writeBackPolicyCounts": {
-                      "blocked_until_fixture_coverage": 1,
-                      "external_pending_live_accounts": 1
-                    },
-                    "lossPolicyCounts": {
-                      "preserve_when_safe": 1,
-                      "secret_refs_only": 1
-                    },
-                    "freshnessCounts": {
-                      "snapshot": 1,
-                      "degraded_snapshot": 1
-                    },
-                    "readOnlyProjectionDomains": ["sessions", "channels"],
-                    "writeBackAllowedDomains": [],
-                    "blockedWriteBackDomains": ["sessions"],
-                    "externalPendingDomains": ["channels"],
-                    "localOverlayDomains": ["sessions"],
-                    "localOverlayActions": ["pin", "unpin"],
-                    "noSilentOverwrite": true,
-                    "defaultSyncMode": "read_projection_first_no_silent_write_back",
-                    "safeDefault": "project_runtime_state_do_not_sync_or_write_back_without_official_contract"
-                  },
-                  "projectionSummary": {
-                    "byReadProjectionStatus": {
-                      "projected": 1,
-                      "degraded_projection": 1
-                    },
-                    "implementedFacetCounts": {
-                      "manifest_domain_contract": 2,
-                      "session_list_action": 1
-                    },
-                    "blockingFacetCounts": {
-                      "native_action_contract": 1,
-                      "approved_live_evidence": 1
-                    },
-                    "projectedDomainCount": 2,
-                    "unsupportedDomainCount": 0,
-                    "productBlockedButProjectedDomainCount": 1
-                  },
-                  "evidenceReadinessSummary": {
-                    "statusCounts": {
-                      "approval_required": 1,
-                      "blocked_until_upstream_contract": 1
-                    },
-                    "blockerClassCounts": {
-                      "external_pending": 1,
-                      "direct_blocker": 1
-                    },
-                    "safeDefaultCounts": {
-                      "do_not_run_without_explicit_approval_and_redaction": 1,
-                      "keep_unpromoted_and_do_not_synthesize_runtime_state": 1
-                    },
-                    "totalRequirementCount": 3,
-                    "approvalRequiredCount": 1,
-                    "externalPendingCount": 1,
-                    "upstreamContractBlockedCount": 1,
-                    "productBlockedCount": 2,
-                    "unresolvedNativeRequirementCount": 0,
-                    "approvalRequiredRequirementIds": ["hermes.channels.live_evidence"],
-                    "externalPendingRequirementIds": ["hermes.channels.live_evidence"],
-                    "upstreamContractRequirementIds": ["hermes.sessions.create.action_contract"],
-                    "productBlockedRequirementIds": ["hermes.sessions.create.action_contract", "hermes.sessions.pin.native_write_back_contract"],
-                    "unresolvedNativeRequirementIds": [],
-                    "nextRequiredActions": ["approved_redacted_live_evidence", "official_runtime_native_contract_fixture"],
-                    "reentryPolicy": "use_evidence_reentry_packets_before_claim_promotion",
-                    "safeDefault": "keep_unpromoted_and_follow_exact_reentry_packets"
-                  },
-                  "finalPromotionReview": {
-                    "status": "unpromoted",
-                    "finalPromotionAllowed": false,
-                    "claimDisposition": "unpromoted_external_pending",
-                    "productBlockedByDecisionCount": 2,
-                    "externalPendingCount": 1,
-                    "unresolvedNativeRequirementCount": 0,
-                    "productBlockedRequirementIds": ["hermes.sessions.create.action_contract", "hermes.sessions.pin.native_write_back_contract"],
-                    "externalPendingRequirementIds": ["hermes.channels.live_evidence"],
-                    "unresolvedNativeRequirementIds": [],
-                    "requiredForPromotion": ["approved_redacted_live_evidence", "keep_lowered_claim_until_upstream_native_contracts_exist", "ecosystem_production_claim", "ecosystem_recommended_claim"],
-                    "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims"
-                  },
-                  "finalSupportClaimDecision": {
-                    "status": "not_promoted",
-                    "decision": "keep_current_lowered_runtime_ecosystem_claim",
-                    "effectiveSupportStage": "dev_only",
-                    "recommended": false,
-                    "production": false,
-                    "uiParityClaim": "partial_template_only",
-                    "uiParityDisposition": "partial_lens_validated_not_full_native_parity",
-                    "blockedPromotionClaims": ["recommended", "production", "native_parity", "write_back"],
-                    "blockerClasses": ["external_pending", "direct_blocker"],
-                    "productBlockedRequirementIds": ["hermes.sessions.create.action_contract", "hermes.sessions.pin.native_write_back_contract"],
-                    "externalPendingRequirementIds": ["hermes.channels.live_evidence"],
-                    "unresolvedNativeRequirementIds": [],
-                    "promotionEvidenceRequired": ["approved_redacted_live_evidence", "keep_lowered_claim_until_upstream_native_contracts_exist"],
-                    "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
-                    "safeDefault": "keep_unpromoted_until_evidence_or_upstream_contract_changes",
-                    "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production"
-                  },
-                  "provenance": {
-                    "source": "runtime-portal-support-audit",
-                    "runtimeId": "hermes"
-                  },
-                  "evidenceReentryPackets": [
-                    {
-                      "id": "hermes.channels.live_evidence.reentry",
-                      "requirementId": "hermes.channels.live_evidence",
-                      "blockerClass": "external_pending",
-                      "status": "approval_required",
-                      "approvalRequired": true,
-                      "commandShape": "runtime hermes domain channels --json",
-                      "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
-                      "riskControls": ["read_only_first"],
-                      "reentryCondition": "approve_and_run_runtime_hermes_domain_channels_read_only_evidence",
-                      "claimEffect": "blocks_recommended_production_native_parity",
-                      "supportResolution": "external_pending_not_product_blocked",
-                      "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
-                      "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
-                      "safeDefault": "do_not_run_without_explicit_approval_and_redaction"
-                    },
-                    {
-                      "id": "hermes.sessions.create.action_contract.reentry",
-                      "requirementId": "hermes.sessions.create.action_contract",
-                      "blockerClass": "direct_blocker",
-                      "status": "blocked_until_upstream_contract",
-                      "approvalRequired": false,
-                      "commandShape": "not_executable_until_official_runtime_create_contract_exists",
-                      "expectedEvidence": ["official_create_command_or_api", "non_destructive_fixture"],
-                      "riskControls": ["no_silent_runtime_write"],
-                      "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-                      "claimEffect": "blocks_recommended_production_native_parity",
-                      "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-                      "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
-                      "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-                      "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
-                    }
-                  ]
-                },
-                "status": {
-                  "adapter": "hermes",
-                  "runtimeName": "Hermes Agent",
-                  "version": "1.2.3",
-                  "installed": false,
-                  "cliAvailable": false,
-                  "gatewayAvailable": false,
-                  "capabilities": {
-                    "conversationCli": true,
-                    "gateway": false,
-                    "skills": false
-                  },
-                  "capabilityMap": {
-                    "runtime": {
-                      "supported": true,
-                      "status": "error",
-                      "strategy": "cli",
-                      "diagnostics": {
-                        "source": "runtime",
-                        "probeMethod": "cli"
-                      }
-                    },
-                    "workspace": {
-                      "supported": true,
-                      "status": "ready",
-                      "strategy": "native"
-                    },
-                    "channels": {
-                      "supported": true,
-                      "status": "degraded",
-                      "strategy": "native",
-                      "limitations": ["Channel inventory is normalized from Hermes gateway capabilities."]
-                    },
-                    "plugins": {
-                      "supported": false,
-                      "status": "unsupported",
-                      "strategy": "unsupported"
-                    }
-                  },
-                  "diagnostics": {
-                    "lastError": "hermes CLI not found",
-                    "locations": {
-                      "homeDir": "/Users/tester/.hermes",
-                      "workspacePath": "/tmp/workspace",
-                      "configPath": "/Users/tester/.hermes/config.json",
-                      "authStorePath": "/Users/tester/.hermes/auth.json",
-                      "gatewayConfigPath": "/Users/tester/.hermes/gateway.json"
-                    }
-                  }
-                },
-                "session": {
-                  "primaryTransport": "gateway",
-                  "fallbackTransport": "cli",
-                  "sessionPersistence": "runtime",
-                  "streamingMode": "hybrid",
-                  "sessionPath": "/Users/tester/.hermes/sessions",
-                  "supportsGateway": true,
-                  "transport": {
-                    "kind": "cli",
-                    "streaming": true
-                  }
-                },
-                "workspace": {
-                  "canonicalPaths": {
-                    "SOUL": "/tmp/workspace/SOUL.md",
-                    "USER": "/tmp/workspace/USER.md",
-                    "SKILLS": "/tmp/workspace/SKILLS.md"
-                  },
-                  "managedFiles": ["/tmp/workspace/AGENTS.md", "/tmp/workspace/CLAUDE.md"]
-                },
-                "commands": {
-                  "authority": "runtime_adapter",
-                  "executableByClawCli": [
-                    {
-                      "command": "runtime hermes sessions list",
-                      "delegatesTo": "runtime session metadata projection",
-                      "writesRuntime": false,
-                      "args": ["sessions", "list"]
-                    },
-                    {
-                      "command": "runtime hermes sessions inject --session-key <id> --message <text> --confirm-runtime-write",
-                      "delegatesTo": "blocked until native inject contract",
-                      "writesRuntime": false,
-                      "args": ["sessions", "inject", "--session-key", "<id>", "--message", "<text>", "--confirm-runtime-write"]
-                    },
-                    {
-                      "command": "runtime hermes sessions create --title <title>",
-                      "delegatesTo": "blocked until official runtime create contract and fixture",
-                      "writesRuntime": false,
-                      "wouldWriteRuntime": true,
-                      "args": ["sessions", "create", "--title", "<title>"]
-                    }
-                  ],
-                  "resourceDomains": ["sessions", "skills", "memory", "channels", "providers", "auth", "models", "scheduler", "plugins", "gateway", "doctorCompat", "sandboxPermissions", "configuration"],
-                  "mutationPolicy": "Runtime-owned actions must delegate to the runtime adapter or be marked unsupported."
-                },
-                "domains": [
-                  { "domain": "sessions", "supported": true, "status": "error", "strategy": "cli", "authority": "runtime_adapter", "claim": "inventoried", "canonicalAuthority": "runtime", "nativeAuthority": "runtime", "persistence": "index_and_shadow_when_safe", "relation": "native_projection", "lossPolicy": "preserve_when_safe", "writeBackPolicy": "blocked_until_fixture_coverage", "writeBackAllowed": false, "validation": "fixture_required", "freshness": "degraded_snapshot", "limitations": [], "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "sessions" } },
-                  { "domain": "skills", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "memory", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  {
-                    "domain": "channels",
-                    "supported": true,
-                    "status": "degraded",
-                    "strategy": "native",
-                    "count": 7,
-                    "authority": "runtime_adapter",
-                    "claim": "inventoried",
-                    "canonicalAuthority": "runtime",
-                    "nativeAuthority": "runtime",
-                    "persistence": "secret_refs_only",
-                    "relation": "gateway_projection",
-                    "lossPolicy": "secret_refs_only",
-                    "writeBackPolicy": "external_pending_live_accounts",
-                    "writeBackAllowed": false,
-                    "validation": "external_pending_for_live_accounts",
-                    "externalPending": true,
-                    "officialCommands": ["hermes gateway", "hermes gateway setup", "hermes gateway start"],
-                    "evidenceRequirements": [
-                      {
-                        "id": "hermes.channels.live_evidence",
-                        "blockerClass": "external_pending",
-                        "approvalRequired": true,
-                        "commandShape": "runtime hermes domain channels --json",
-                        "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
-                        "riskControls": ["read_only_first"],
-                        "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
-                        "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
-                        "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
-                        "claimEffect": "blocks_recommended_production_native_parity",
-                        "reentryCondition": "approve_and_run_runtime_hermes_domain_channels_read_only_evidence",
-                        "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
-                      }
-                    ],
-                    "limitations": ["normalized"],
-                    "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "channels" }
-                  },
-                  { "domain": "providers", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "auth", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_and_host_by_action", "limitations": [] },
-                  { "domain": "models", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "scheduler", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "plugins", "supported": true, "status": "degraded", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "gateway", "supported": true, "status": "degraded", "strategy": "gateway", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "doctorCompat", "supported": true, "status": "ready", "strategy": "native", "authority": "runtime_adapter", "limitations": [] },
-                  { "domain": "sandboxPermissions", "supported": true, "status": "degraded", "strategy": "hosted", "authority": "runtime_and_host_by_action", "limitations": [] },
-                  { "domain": "configuration", "supported": true, "status": "ready", "strategy": "native", "authority": "runtime_config_with_claw_workspace_projection", "limitations": [] }
-                ],
-                "domainData": {
-                  "sessions": {
-                    "session": {
-                      "transport": {
-                        "kind": "cli",
-                        "streaming": true
-                      },
-                      "supportsGateway": true,
-                      "primaryTransport": "gateway",
-                      "fallbackTransport": "cli",
-                      "sessionPersistence": "runtime",
-                      "streamingMode": "hybrid",
-                      "sessionPath": "/Users/tester/.hermes/sessions"
-                    },
-                    "sessions": [
-                      {
-                        "id": "2026/05/21/runtime-session",
-                        "label": "runtime-session",
-                        "kind": "session",
-                        "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl",
-                        "status": "projected",
-                        "updatedAt": "2026-05-21T17:40:00.000Z",
-                        "sizeBytes": 128,
-                        "pinned": true,
-                        "pinAuthority": "clawix_local_overlay",
-                        "divergence": "local_pin_overlay",
-                        "localOverlay": {
-                          "pinned": true,
-                          "authority": "clawix_local_overlay",
-                          "writesRuntime": false
-                        },
-                        "nativeIdentifier": {
-                          "name": "sessionPathId"
-                        },
-                        "provenance": {
-                          "source": "runtime-session-store",
-                          "runtimeId": "hermes",
-                          "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl"
-                        }
-                      }
-                    ],
-                    "totalProjected": 1,
-                    "inventoryError": "OpenClaw unavailable in fixture",
-                    "overlayState": {
-                      "runtimeId": "hermes",
-                      "overlayAuthority": "clawix_local_overlay",
-                      "writesRuntime": false,
-                      "writeBackStatus": "blocked_until_official_runtime_pin_api",
-                      "conflictPolicy": "no_silent_overwrite",
-                      "totalOverlays": 1,
-                      "totalConflicts": 1,
-                      "overlays": [
-                        {
-                          "id": "2026/05/21/runtime-session",
-                          "overlayThreadId": "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session",
-                          "kind": "pin",
-                          "pinned": true,
-                          "authority": "clawix_local_overlay",
-                          "writesRuntime": false,
-                          "nativeFound": true,
-                          "nativePinned": false,
-                          "conflictStatus": "local_only"
-                        }
-                      ]
-                    },
-                    "actionContracts": [
-                      {
-                        "action": "list",
-                        "status": "degraded",
-                        "statusWhenSessionPath": "implemented",
-                        "authority": "runtime",
-                        "writesRuntime": false,
-                        "persistence": "metadata_only",
-                        "delegatesTo": "runtime session path metadata projection",
-                        "guard": "bounded_scan_without_transcript_reads"
-                      },
-                      {
-                        "action": "pin",
-                        "status": "local_overlay_only",
-                        "authority": "clawix_local_overlay",
-                        "writesRuntime": false,
-                        "persistence": "local_pin_overlay",
-                        "delegatesTo": "ClawJS app-state local pin overlay",
-                        "guard": "must_not_write_runtime_pin_without_official_api"
-                      },
-                      {
-                        "action": "create",
-                        "status": "blocked",
-                        "authority": "runtime",
-                        "writesRuntime": false,
-                        "wouldWriteRuntime": true,
-                        "persistence": "none",
-                        "delegatesTo": "blocked until official runtime create contract and fixture",
-                        "guard": "blocked_until_official_create_fixture",
-                        "requiredEvidence": [
-                          "official_create_command_or_api",
-                          "non_destructive_fixture",
-                          "confirmation_or_dry_run_policy"
-                        ]
-                      }
-                    ],
-                    "actionPolicy": [
-                      {
-                        "action": "list",
-                        "status": "implemented",
-                        "authority": "runtime",
-                        "writesRuntime": false,
-                        "persistence": "metadata_only",
-                        "delegatesTo": "runtime session path metadata projection",
-                        "guard": "bounded_scan_without_transcript_reads"
-                      },
-                      {
-                        "action": "pin",
-                        "status": "local_overlay_only",
-                        "authority": "clawix_local_overlay",
-                        "writesRuntime": false,
-                        "persistence": "local_pin_overlay",
-                        "delegatesTo": "ClawJS app-state local pin overlay",
-                        "guard": "must_not_write_runtime_pin_without_official_api"
-                      },
-                      {
-                        "action": "create",
-                        "status": "blocked",
-                        "authority": "runtime",
-                        "writesRuntime": false,
-                        "wouldWriteRuntime": true,
-                        "persistence": "none",
-                        "delegatesTo": "blocked_until_fixture_coverage",
-                        "guard": "blocked_until_official_create_fixture",
-                        "requiredEvidence": ["official_create_command_or_api", "non_destructive_fixture"]
-                      }
-                    ],
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "canonicalAuthority": "runtime",
-                      "nativeAuthority": "runtime",
-                      "writeBackPolicy": "blocked_until_fixture_coverage",
-                      "validation": "fixture_required",
-                      "freshness": "degraded_snapshot",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "sessions" },
-                      "evidenceRequirements": [
-                        {
-                          "id": "hermes.sessions.write_back_contract",
-                          "blockerClass": "direct_blocker",
-                          "approvalRequired": false,
-                          "commandShape": "not_executable_until_official_runtime_contract_exists",
-                          "expectedEvidence": ["official_runtime_cli_or_api", "non_destructive_fixture"],
-                          "riskControls": ["no_direct_runtime_store_mutation"],
-                          "evidenceDisposition": "blocked_until_official_runtime_contract",
-                          "currentBehavior": "read_only_projection_or_local_overlay_only",
-                          "fallbackPolicy": "do_not_synthesize_native_write_back",
-                          "claimEffect": "blocks_recommended_production_native_parity",
-                          "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
-                          "promotionGate": "claim_remains_unpromoted_until_write_back_contract_is_implemented"
-                        }
-                      ]
-                    }
-                  },
-                  "skills": {
-                    "skills": [
-                      { "id": "hermes-skills", "label": "Hermes Skills", "enabled": true, "scope": "runtime", "path": "/Users/tester/.hermes/skills" }
-                    ],
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "writeBackPolicy": "blocked_until_fixture_coverage",
-                      "validation": "snapshot_required",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "skills" }
-                    }
-                  },
-                  "channels": {
-                    "channels": [
-                      {
-                        "id": "telegram",
-                        "label": "Telegram",
-                        "kind": "chat",
-                        "status": "disconnected",
-                        "provider": "telegram",
-                        "lastError": "channel disabled in fixture",
-                        "metadata": {
-                          "mode": "disabled",
-                          "knownChats": 0
-                        }
-                      },
-                      { "id": "slack", "label": "Slack", "kind": "chat", "status": "configured" }
-                    ],
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "canonicalAuthority": "runtime",
-                      "nativeAuthority": "runtime",
-                      "writeBackPolicy": "external_pending_live_accounts",
-                      "validation": "external_pending_for_live_accounts",
-                      "externalPending": true,
-                      "freshness": "degraded_snapshot",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "channels" },
-                      "evidenceRequirements": [
-                        {
-                          "id": "hermes.channels.live_evidence",
-                          "blockerClass": "external_pending",
-                          "approvalRequired": true,
-                          "commandShape": "runtime hermes domain channels --json",
-                          "expectedEvidence": ["redacted_json_receipt", "no_plaintext_secrets"],
-                          "riskControls": ["read_only_first"],
-                          "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
-                          "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
-                          "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
-                          "claimEffect": "blocks_recommended_production_native_parity",
-                          "reentryCondition": "approve_and_run_runtime_hermes_domain_channels_read_only_evidence",
-                          "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
-                        }
-                      ]
-                    }
-                  },
-                  "providers": {
-                    "providers": [
-                      {
-                        "id": "openai",
-                        "label": "openai",
-                        "envVars": ["OPENAI_API_KEY"],
-                        "auth": {
-                          "supportsApiKey": true,
-                          "supportsEnv": true
-                        }
-                      }
-                    ]
-                  },
-                  "auth": {
-                    "auth": {
-                      "openai": {
-                        "provider": "openai",
-                        "hasAuth": true,
-                        "hasSubscription": false,
-                        "hasApiKey": true,
-                        "hasProfileApiKey": false,
-                        "hasEnvKey": true,
-                        "authType": "env",
-                        "maskedCredential": "****1234"
-                      },
-                      "anthropic": {
-                        "provider": "anthropic",
-                        "hasAuth": false,
-                        "hasSubscription": false,
-                        "hasApiKey": false,
-                        "hasProfileApiKey": false,
-                        "hasEnvKey": false
-                      }
-                    },
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_and_host_by_action",
-                      "writeBackPolicy": "blocked_until_fixture_coverage",
-                      "validation": "secret_guard",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "auth" }
-                    }
-                  },
-                  "models": {
-                    "models": [
-                      {
-                        "id": "claude-3-haiku",
-                        "modelId": "claude-3-haiku",
-                        "provider": "anthropic",
-                        "label": "Claude Haiku",
-                        "available": true,
-                        "source": "runtime",
-                        "isDefault": false
-                      }
-                    ],
-                    "defaultModel": {
-                      "provider": "anthropic",
-                      "modelId": "claude-3-opus",
-                      "label": "Claude Opus"
-                    },
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "validation": "model_fixture_required",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "models" }
-                    }
-                  },
-                  "plugins": {
-                    "plugins": [],
-                    "status": {
-                      "supported": false,
-                      "status": "unsupported",
-                      "strategy": "unsupported",
-                      "limitations": ["plugins unavailable in fixture"],
-                      "diagnostics": {
-                        "mode": "managed",
-                        "diagnostics": ["plugin CLI not available in fixture"]
-                      }
-                    },
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "validation": "plugin_fixture_required",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "plugins" }
-                    }
-                  },
-                  "gateway": {
-                    "gatewayAvailable": false,
-                    "capability": {
-                      "supported": true,
-                      "status": "degraded",
-                      "strategy": "gateway",
-                      "limitations": ["gateway unavailable in fixture"],
-                      "diagnostics": {
-                        "source": "runtime",
-                        "probeMethod": "gateway",
-                        "transport": "gateway",
-                        "inventoryFreshness": "degraded_snapshot"
-                      }
-                    },
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_adapter",
-                      "validation": "fixture_required",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "gateway" }
-                    }
-                  },
-                  "doctorCompat": {
-                    "runtimeVersion": "hermes 0.9.0",
-                    "diagnostics": {
-                      "lastError": "hermes CLI not found"
-                    },
-                    "capability": {
-                      "supported": true,
-                      "status": "ready",
-                      "strategy": "native"
-                    }
-                  },
-                  "sandboxPermissions": {
-                    "capability": {
-                      "supported": true,
-                      "status": "degraded",
-                      "strategy": "hosted",
-                      "limitations": ["host permission review required"]
-                    }
-                  },
-                  "configuration": {
-                    "canonicalPaths": {
-                      "SOUL": "/tmp/workspace/SOUL.md",
-                      "USER": "/tmp/workspace/USER.md"
-                    },
-                    "managedFiles": ["/tmp/workspace/AGENTS.md"],
-                    "diagnostics": {
-                      "lastError": "config drift in fixture"
-                    },
-                    "supportContract": {
-                      "claim": "inventoried",
-                      "authority": "runtime_config_with_claw_workspace_projection",
-                      "validation": "config_fixture_required",
-                      "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "configuration" }
-                    }
-                  }
-                }
-              }
-            }
-            """.utf8), exitCode: 2)
+            return .init(
+                data: try ClawJSRuntimeLensTestFixtures.data(named: "degraded-runtime-portal-envelope"),
+                exitCode: 2
+            )
         })
 
         let snapshot = try await client.load(runtime: .hermes)
 
         XCTAssertEqual(requested, [.hermes])
-        XCTAssertEqual(snapshot.runtimeId, "hermes")
+        XCTAssertEqual(snapshot.runtimeId, "example")
         XCTAssertEqual(snapshot.status.cliAvailable, false)
-        XCTAssertEqual(snapshot.status.diagnostics?.locations?.homeDir, "/Users/tester/.hermes")
+        XCTAssertEqual(snapshot.status.diagnostics?.locations?.homeDir, "/Users/tester/.example")
         let runtimeSummaryPresentation = ClawJSRuntimeLensRuntimeSummaryPresentation.make(snapshot: snapshot)
-        XCTAssertEqual(runtimeSummaryPresentation.runtimeId, "hermes")
-        XCTAssertEqual(runtimeSummaryPresentation.runtimeName, "Hermes Agent")
-        XCTAssertEqual(snapshot.status.adapter, "hermes")
+        XCTAssertEqual(runtimeSummaryPresentation.runtimeId, "example")
+        XCTAssertEqual(runtimeSummaryPresentation.runtimeName, "Example Agent")
+        XCTAssertEqual(snapshot.status.adapter, "example")
         XCTAssertEqual(snapshot.status.version, "1.2.3")
         XCTAssertEqual(snapshot.status.capabilities?["conversationCli"], true)
         XCTAssertEqual(snapshot.status.capabilityMap?["runtime"]?.diagnostics?.source, "runtime")
-        XCTAssertEqual(snapshot.status.capabilityMap?["channels"]?.limitations?.first, "Channel inventory is normalized from Hermes gateway capabilities.")
-        XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(snapshot.status.capabilityMap?["channels"]?.limitations?.first, "Channel inventory is normalized from Example gateway capabilities.")
+        XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.example/sessions")
         XCTAssertEqual(snapshot.session?.primaryTransport, "gateway")
         XCTAssertEqual(snapshot.workspace?.canonicalPaths?["SOUL"], "/tmp/workspace/SOUL.md")
         XCTAssertEqual(snapshot.workspace?.managedFiles?.count, 2)
-        XCTAssertEqual(runtimeSummaryPresentation.adapter, "hermes")
+        XCTAssertEqual(runtimeSummaryPresentation.adapter, "example")
         XCTAssertEqual(runtimeSummaryPresentation.version, "1.2.3")
         XCTAssertEqual(runtimeSummaryPresentation.installed, false)
         XCTAssertEqual(runtimeSummaryPresentation.installedLabel, "Not installed")
         XCTAssertEqual(runtimeSummaryPresentation.cliLabel, "Unavailable")
         XCTAssertEqual(runtimeSummaryPresentation.gatewayLabel, "Degraded")
-        XCTAssertEqual(runtimeSummaryPresentation.homeDir, "/Users/tester/.hermes")
+        XCTAssertEqual(runtimeSummaryPresentation.homeDir, "/Users/tester/.example")
         XCTAssertEqual(runtimeSummaryPresentation.workspacePath, "/tmp/workspace")
-        XCTAssertEqual(runtimeSummaryPresentation.configPath, "/Users/tester/.hermes/config.json")
-        XCTAssertEqual(runtimeSummaryPresentation.authStorePath, "/Users/tester/.hermes/auth.json")
-        XCTAssertEqual(runtimeSummaryPresentation.gatewayConfigPath, "/Users/tester/.hermes/gateway.json")
+        XCTAssertEqual(runtimeSummaryPresentation.configPath, "/Users/tester/.example/config.json")
+        XCTAssertEqual(runtimeSummaryPresentation.authStorePath, "/Users/tester/.example/auth.json")
+        XCTAssertEqual(runtimeSummaryPresentation.gatewayConfigPath, "/Users/tester/.example/gateway.json")
         XCTAssertEqual(runtimeSummaryPresentation.locationRows.map(\.id), ["home", "workspace", "config", "auth-store", "gateway-config"])
-        XCTAssertEqual(runtimeSummaryPresentation.locationRows.first?.accessibilityLabel, "Home /Users/tester/.hermes")
+        XCTAssertEqual(runtimeSummaryPresentation.locationRows.first?.accessibilityLabel, "Home /Users/tester/.example")
         XCTAssertEqual(runtimeSummaryPresentation.locationCount, 5)
         XCTAssertEqual(runtimeSummaryPresentation.workspaceCanonicalPathCount, 3)
         XCTAssertEqual(runtimeSummaryPresentation.workspaceManagedFileCount, 2)
         XCTAssertEqual(runtimeSummaryPresentation.workspaceFilesLabel, "canonical SKILLS, SOUL, USER; managed 2")
-        XCTAssertEqual(runtimeSummaryPresentation.lastError, "hermes CLI not found")
+        XCTAssertEqual(runtimeSummaryPresentation.lastError, "example CLI not found")
         XCTAssertEqual(runtimeSummaryPresentation.hasHomeDir, true)
         XCTAssertEqual(runtimeSummaryPresentation.hasLastError, true)
         XCTAssertEqual(runtimeSummaryPresentation.supportPresent, true)
@@ -1101,25 +193,25 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(runtimeSummaryPresentation.unsupportedCapabilityCount, 1)
         XCTAssertEqual(runtimeSummaryPresentation.capabilityStatusLabel, "degraded 1, error 1, ready 1, unsupported 1")
         XCTAssertEqual(runtimeSummaryPresentation.capabilityRows.map(\.id), ["channels", "plugins", "runtime", "workspace"])
-        XCTAssertEqual(runtimeSummaryPresentation.capabilityRows.first?.limitationsLabel, "Channel inventory is normalized from Hermes gateway capabilities.")
+        XCTAssertEqual(runtimeSummaryPresentation.capabilityRows.first?.limitationsLabel, "Channel inventory is normalized from Example gateway capabilities.")
         XCTAssertTrue(runtimeSummaryPresentation.capabilityRows.first?.accessibilityLabel.contains("strategy native") == true)
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("Runtime summary"))
-        XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("adapter hermes"))
+        XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("adapter example"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("version 1.2.3"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("workspace canonical paths 3"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("workspace files canonical SKILLS, SOUL, USER; managed 2"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("raw capabilities 3"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("capability status degraded 1, error 1, ready 1, unsupported 1"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("Workspace /tmp/workspace"))
-        XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("Gateway config /Users/tester/.hermes/gateway.json"))
+        XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("Gateway config /Users/tester/.example/gateway.json"))
         XCTAssertTrue(runtimeSummaryPresentation.accessibilityLabel.contains("support audit true"))
-        XCTAssertEqual(snapshot.support?.ecosystem?.evidenceRequirements?.first?.id, "hermes.channels.live_evidence")
+        XCTAssertEqual(snapshot.support?.ecosystem?.evidenceRequirements?.first?.id, "example.channels.live_evidence")
         XCTAssertEqual(snapshot.support?.ecosystem?.evidenceRequirements?.first?.approvalRequired, true)
         XCTAssertEqual(snapshot.support?.ecosystem?.evidenceRequirements?.first?.evidenceDisposition, "external_pending_until_approved_redacted_live_receipt")
         XCTAssertEqual(snapshot.support?.ecosystem?.evidenceRequirements?.first?.currentBehavior, "read_only_projection_or_degraded_snapshot_only")
         XCTAssertEqual(snapshot.support?.ecosystem?.claimSource, "runtime-ecosystem-manifest")
         XCTAssertEqual(snapshot.support?.ecosystem?.provenance?.source, "runtime-ecosystem-manifest")
-        XCTAssertEqual(snapshot.support?.ecosystem?.provenance?.runtimeId, "hermes")
+        XCTAssertEqual(snapshot.support?.ecosystem?.provenance?.runtimeId, "example")
         let supportOverviewPresentation = ClawJSRuntimeLensSupportOverviewPresentation.make(
             support: try XCTUnwrap(snapshot.support)
         )
@@ -1134,12 +226,12 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(supportOverviewPresentation.hasSummary, true)
         XCTAssertEqual(supportOverviewPresentation.claimSource, "runtime-ecosystem-manifest")
         XCTAssertEqual(supportOverviewPresentation.provenanceSource, "runtime-ecosystem-manifest")
-        XCTAssertEqual(supportOverviewPresentation.provenanceRuntimeId, "hermes")
-        XCTAssertEqual(supportOverviewPresentation.sourceLabel, "runtime-ecosystem-manifest, runtime hermes")
+        XCTAssertEqual(supportOverviewPresentation.provenanceRuntimeId, "example")
+        XCTAssertEqual(supportOverviewPresentation.sourceLabel, "runtime-ecosystem-manifest, runtime example")
         XCTAssertTrue(supportOverviewPresentation.accessibilityLabel.contains("Runtime support overview"))
         XCTAssertTrue(supportOverviewPresentation.accessibilityLabel.contains("not promoted true"))
         XCTAssertTrue(supportOverviewPresentation.accessibilityLabel.contains("claim source runtime-ecosystem-manifest"))
-        XCTAssertTrue(supportOverviewPresentation.accessibilityLabel.contains("provenance runtime hermes"))
+        XCTAssertTrue(supportOverviewPresentation.accessibilityLabel.contains("provenance runtime example"))
         XCTAssertEqual(snapshot.supportAudit?.closureState, "blocked")
         XCTAssertEqual(snapshot.supportAudit?.supportComplete, false)
         XCTAssertEqual(snapshot.supportAudit?.allDomainsAccountedFor, true)
@@ -1147,7 +239,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.productBlockedRequirementCount, 2)
         XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.externalPendingDomains, ["channels"])
         XCTAssertEqual(snapshot.supportAudit?.provenance?.source, "runtime-portal-support-audit")
-        XCTAssertEqual(snapshot.supportAudit?.provenance?.runtimeId, "hermes")
+        XCTAssertEqual(snapshot.supportAudit?.provenance?.runtimeId, "example")
         let supportAuditPresentation = ClawJSRuntimeLensSupportAuditPresentation.make(
             audit: try XCTUnwrap(snapshot.supportAudit)
         )
@@ -1165,8 +257,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(supportAuditPresentation.blockedWriteBackDomainsLabel, "sessions")
         XCTAssertEqual(supportAuditPresentation.ecosystemExternalPendingDomainsLabel, "channels")
         XCTAssertEqual(supportAuditPresentation.provenanceSource, "runtime-portal-support-audit")
-        XCTAssertEqual(supportAuditPresentation.provenanceRuntimeId, "hermes")
-        XCTAssertEqual(supportAuditPresentation.provenanceLabel, "runtime-portal-support-audit, runtime hermes")
+        XCTAssertEqual(supportAuditPresentation.provenanceRuntimeId, "example")
+        XCTAssertEqual(supportAuditPresentation.provenanceLabel, "runtime-portal-support-audit, runtime example")
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("Runtime support audit"))
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("product blocked 2"))
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("blocked write back domains sessions"))
@@ -1181,12 +273,12 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(ecosystemEvidencePresentation.externalPendingCount, 1)
         XCTAssertEqual(ecosystemEvidencePresentation.commandShapeCount, 1)
         XCTAssertEqual(ecosystemEvidencePresentation.blockerClassLabel, "external_pending 1")
-        XCTAssertEqual(ecosystemEvidencePresentation.rows.first?.id, "hermes.channels.live_evidence")
+        XCTAssertEqual(ecosystemEvidencePresentation.rows.first?.id, "example.channels.live_evidence")
         XCTAssertEqual(ecosystemEvidencePresentation.rows.first?.expectedEvidenceCount, 2)
         XCTAssertEqual(ecosystemEvidencePresentation.rows.first?.riskControlCount, 1)
         XCTAssertTrue(ecosystemEvidencePresentation.rows.first?.accessibilityLabel.contains("approval required true") == true)
         XCTAssertTrue(ecosystemEvidencePresentation.accessibilityLabel.contains("Runtime evidence requirements"))
-        XCTAssertEqual(snapshot.supportAudit?.evidenceRequirements?.first?.id, "hermes.sessions.create.action_contract")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceRequirements?.first?.id, "example.sessions.create.action_contract")
         XCTAssertEqual(snapshot.supportAudit?.evidenceRequirements?.first?.fallbackPolicy, "do_not_synthesize_native_runtime_action")
         XCTAssertEqual(snapshot.supportAudit?.evidenceRequirements?.first?.supportResolution, "explicitly_product_blocked_not_a_silent_gap")
         XCTAssertEqual(snapshot.supportAudit?.evidenceRequirements?.first?.productDecision, "native_session_action_unsupported_until_official_runtime_contract")
@@ -1199,7 +291,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(auditEvidencePresentation.productBlockedCount, 1)
         XCTAssertEqual(auditEvidencePresentation.rows.first?.resolutionLabel, "explicitly_product_blocked_not_a_silent_gap, native_session_action_unsupported_until_official_runtime_contract")
         XCTAssertTrue(auditEvidencePresentation.accessibilityLabel.contains("direct blockers 1"))
-        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.evidenceRequirementIds?.contains("hermes.sessions.create.action_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.evidenceRequirementIds?.contains("example.sessions.create.action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.evidenceDispositions?.contains("blocked_until_official_runtime_action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.supportResolutions?.contains("explicitly_product_blocked_not_a_silent_gap"), true)
         XCTAssertEqual(snapshot.supportAudit?.promotionGate, "support_claim_remains_unpromoted_until_all_evidence_requirements_are_closed_or_explicitly_product_blocked")
@@ -1244,10 +336,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts?["direct_blocker"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 1)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalRequiredRequirementIds?.contains("hermes.channels.live_evidence"), true)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds?.contains("hermes.channels.live_evidence"), true)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractRequirementIds?.contains("hermes.sessions.create.action_contract"), true)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalRequiredRequirementIds?.contains("example.channels.live_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractRequirementIds?.contains("example.sessions.create.action_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds?.contains("example.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementIds, [])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("official_runtime_native_contract_fixture"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.reentryPolicy, "use_evidence_reentry_packets_before_claim_promotion")
@@ -1292,15 +384,15 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(readinessPresentation.statusLabel, "approval_required 1, blocked_until_upstream_contract 1")
         XCTAssertEqual(readinessPresentation.blockerClassLabel, "direct_blocker 1, external_pending 1")
         XCTAssertEqual(readinessPresentation.safeDefaultLabel, "do_not_run_without_explicit_approval_and_redaction 1, keep_unpromoted_and_do_not_synthesize_runtime_state 1")
-        XCTAssertEqual(readinessPresentation.approvalRequiredIdsLabel, "hermes.channels.live_evidence")
-        XCTAssertEqual(readinessPresentation.externalPendingIdsLabel, "hermes.channels.live_evidence")
-        XCTAssertEqual(readinessPresentation.upstreamContractIdsLabel, "hermes.sessions.create.action_contract")
-        XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "hermes.sessions.create.action_contract, hermes.sessions.pin.native_write_back_contract")
+        XCTAssertEqual(readinessPresentation.approvalRequiredIdsLabel, "example.channels.live_evidence")
+        XCTAssertEqual(readinessPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
+        XCTAssertEqual(readinessPresentation.upstreamContractIdsLabel, "example.sessions.create.action_contract")
+        XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract")
         XCTAssertNil(readinessPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(readinessPresentation.nextRequiredActionsLabel, "approved_redacted_live_evidence, official_runtime_native_contract_fixture")
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("Runtime evidence readiness summary"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("blocker classes direct_blocker 1"))
-        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("product blocked ids hermes.sessions.create.action_contract"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("product blocked ids example.sessions.create.action_contract"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("safe default keep_unpromoted_and_follow_exact_reentry_packets"))
         let closurePresentation = ClawJSRuntimeLensClosureChecklistPresentation.make(
             checklist: snapshot.supportAudit?.closureChecklist ?? [],
@@ -1310,7 +402,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(closurePresentation.statusPills.map(\.label), ["external_pending 1", "product_blocked 1"])
         XCTAssertEqual(closurePresentation.rows.map(\.domain), ["sessions", "channels"])
         XCTAssertEqual(closurePresentation.rows.first?.evidenceCount, 2)
-        XCTAssertEqual(closurePresentation.rows.first?.evidenceRequirementIdsLabel, "hermes.sessions.create.action_contract, hermes.sessions.pin.native_write_back_contract")
+        XCTAssertEqual(closurePresentation.rows.first?.evidenceRequirementIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract")
         XCTAssertEqual(closurePresentation.rows.first?.readProjectionStatus, "projected")
         XCTAssertEqual(closurePresentation.rows.first?.implementedFacetCount, 3)
         XCTAssertEqual(closurePresentation.rows.first?.blockingFacetCount, 3)
@@ -1323,7 +415,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(closurePresentation.accessibilityLabel.contains("sessions product_blocked"))
         XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("read projection projected") == true)
         XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("write back blocked_until_fixture_coverage") == true)
-        XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("evidence ids hermes.sessions.create.action_contract") == true)
+        XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("evidence ids example.sessions.create.action_contract") == true)
         XCTAssertTrue(closurePresentation.rows.last?.accessibilityLabel.contains("blocker classes external_pending") == true)
         XCTAssertTrue(closurePresentation.rows.last?.accessibilityLabel.contains("support resolutions external_pending_not_product_blocked") == true)
         let validationSummary = ClawJSRuntimeLensValidationSummary.make(snapshot: snapshot)
@@ -1358,9 +450,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(validationSummary.finalDecisionBlockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             validationSummary.finalDecisionProductBlockedIdsLabel,
-            "hermes.sessions.create.action_contract, hermes.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
         )
-        XCTAssertEqual(validationSummary.finalDecisionExternalPendingIdsLabel, "hermes.channels.live_evidence")
+        XCTAssertEqual(validationSummary.finalDecisionExternalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(validationSummary.finalDecisionUnresolvedNativeIdsLabel)
         XCTAssertEqual(
             validationSummary.finalDecisionPromotionEvidenceLabel,
@@ -1377,8 +469,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.finalPromotionAllowed, false)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.claimDisposition, "unpromoted_external_pending")
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedByDecisionCount, 2)
-        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.externalPendingRequirementIds?.contains("hermes.channels.live_evidence"), true)
-        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedRequirementIds?.contains("hermes.sessions.create.action_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedRequirementIds?.contains("example.sessions.create.action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.unresolvedNativeRequirementIds, [])
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.requiredForPromotion?.contains("approved_redacted_live_evidence"), true)
@@ -1393,9 +485,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(promotionReviewPresentation.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(
             promotionReviewPresentation.productBlockedIdsLabel,
-            "hermes.sessions.create.action_contract, hermes.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
         )
-        XCTAssertEqual(promotionReviewPresentation.externalPendingIdsLabel, "hermes.channels.live_evidence")
+        XCTAssertEqual(promotionReviewPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(promotionReviewPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             promotionReviewPresentation.requiredForPromotionLabel,
@@ -1404,7 +496,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("Runtime final promotion review"))
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked 2"))
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("external pending 1"))
-        XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked ids hermes.sessions.create.action_contract"))
+        XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked ids example.sessions.create.action_contract"))
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.status, "not_promoted")
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.decision, "keep_current_lowered_runtime_ecosystem_claim")
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.effectiveSupportStage, "dev_only")
@@ -1414,8 +506,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.blockedPromotionClaims?.contains("native_parity"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.blockedPromotionClaims?.contains("write_back"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.blockerClasses, ["external_pending", "direct_blocker"])
-        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.productBlockedRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
-        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.externalPendingRequirementIds?.contains("hermes.channels.live_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.productBlockedRequirementIds?.contains("example.sessions.pin.native_write_back_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.unresolvedNativeRequirementIds, [])
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.promotionEvidenceRequired?.contains("approved_redacted_live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.reentryPolicy, "use_evidenceReentryPackets_exactly_before_revisiting_claim")
@@ -1434,9 +526,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(finalDecisionPresentation.blockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             finalDecisionPresentation.productBlockedIdsLabel,
-            "hermes.sessions.create.action_contract, hermes.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
         )
-        XCTAssertEqual(finalDecisionPresentation.externalPendingIdsLabel, "hermes.channels.live_evidence")
+        XCTAssertEqual(finalDecisionPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(finalDecisionPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             finalDecisionPresentation.promotionEvidenceRequiredLabel,
@@ -1448,10 +540,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocker classes external_pending, direct_blocker"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("promotion evidence approved_redacted_live_evidence"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("safe default keep_unpromoted_until_evidence_or_upstream_contract_changes"))
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.requirementId, "hermes.channels.live_evidence")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.requirementId, "example.channels.live_evidence")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.status, "approval_required")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.safeDefault, "do_not_run_without_explicit_approval_and_redaction")
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.commandShape, "runtime hermes domain channels --json")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.commandShape, "runtime example domain channels --json")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.first?.riskControls?.contains("read_only_first"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.last?.status, "blocked_until_upstream_contract")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.last?.safeDefault, "keep_unpromoted_and_do_not_synthesize_runtime_state")
@@ -1465,8 +557,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         ])
         XCTAssertEqual(reentryPresentation.approvalRequiredCount, 1)
         XCTAssertEqual(reentryPresentation.rows.map(\.requirementId), [
-            "hermes.channels.live_evidence",
-            "hermes.sessions.create.action_contract"
+            "example.channels.live_evidence",
+            "example.sessions.create.action_contract"
         ])
         XCTAssertEqual(reentryPresentation.rows.first?.approvalRequired, true)
         XCTAssertEqual(reentryPresentation.rows.first?.expectedEvidenceCount, 2)
@@ -1491,7 +583,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(reentryPresentation.accessibilityLabel.contains("blocked_until_upstream_contract 1"))
         XCTAssertEqual(snapshot.commands?.authority, "runtime_adapter")
         XCTAssertEqual(snapshot.commands?.resourceDomains, ClawJSRuntimeLensSnapshot.canonicalDomains)
-        XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.command, "runtime hermes sessions list")
+        XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.command, "runtime example sessions list")
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.args, ["sessions", "list"])
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first { $0.command.contains("inject") }?.delegatesTo, "blocked until native inject contract")
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first { $0.command.contains("inject") }?.args?.count, 7)
@@ -1509,7 +601,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(commandPresentation.argumentCount, 13)
         XCTAssertEqual(commandPresentation.resourceDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(commandPresentation.resourceDomainsLabel, "sessions, skills, memory, channels, providers")
-        XCTAssertEqual(commandPresentation.rows.first?.command, "runtime hermes sessions create --title <title>")
+        XCTAssertEqual(commandPresentation.rows.first?.command, "runtime example sessions create --title <title>")
         XCTAssertEqual(commandPresentation.rows.first?.writeDisposition, "blocked write")
         XCTAssertEqual(commandPresentation.rows.first?.argumentCount, 4)
         XCTAssertEqual(commandPresentation.rows.first?.argsLabel, "sessions, create, --title, <title>")
@@ -1539,7 +631,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.claim, "inventoried")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.writeBackPolicy, "external_pending_live_accounts")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.externalPending, true)
-        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.officialCommands?.first, "hermes gateway")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.officialCommands?.first, "example gateway")
         let domainCommandPresentation = ClawJSRuntimeLensDomainCommandPresentation.make(
             domain: "channels",
             commands: snapshot.domains.first { $0.domain == "channels" }?.officialCommands ?? [],
@@ -1549,13 +641,13 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(domainCommandPresentation.totalCommandCount, 3)
         XCTAssertEqual(domainCommandPresentation.visibleCommandCount, 2)
         XCTAssertEqual(domainCommandPresentation.hiddenCommandCount, 1)
-        XCTAssertEqual(domainCommandPresentation.rows.first?.command, "hermes gateway")
-        XCTAssertEqual(domainCommandPresentation.rows.first?.id, "hermes-gateway")
+        XCTAssertEqual(domainCommandPresentation.rows.first?.command, "example gateway")
+        XCTAssertEqual(domainCommandPresentation.rows.first?.id, "example-gateway")
         XCTAssertTrue(domainCommandPresentation.hasCommands)
         XCTAssertTrue(domainCommandPresentation.rows.first?.accessibilityLabel.contains("runtime domain command 1") == true)
         XCTAssertTrue(domainCommandPresentation.accessibilityLabel.contains("Runtime domain commands"))
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.blockerClass, "external_pending")
-        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.commandShape, "runtime hermes domain channels --json")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.commandShape, "runtime example domain channels --json")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "sandboxPermissions" }?.displayLabel, "Sandbox")
         let domainPresentation = ClawJSRuntimeLensDomainPresentation.make(domains: snapshot.domains)
         XCTAssertEqual(domainPresentation.domainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
@@ -1589,7 +681,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(channelPresentation.writeBackAllowed, false)
         XCTAssertEqual(channelPresentation.validation, "external_pending_for_live_accounts")
         XCTAssertEqual(channelPresentation.provenanceSource, "runtime-ecosystem-manifest")
-        XCTAssertEqual(channelPresentation.provenanceRuntimeId, "hermes")
+        XCTAssertEqual(channelPresentation.provenanceRuntimeId, "example")
         XCTAssertEqual(channelPresentation.provenanceDomain, "channels")
         XCTAssertEqual(
             channelPresentation.policyLabel,
@@ -1597,7 +689,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         )
         XCTAssertEqual(
             channelPresentation.provenanceLabel,
-            "runtime-ecosystem-manifest, runtime hermes, domain channels"
+            "runtime-ecosystem-manifest, runtime example, domain channels"
         )
         XCTAssertEqual(channelPresentation.commandCount, 3)
         XCTAssertEqual(channelPresentation.evidenceRequirementCount, 1)
@@ -1611,7 +703,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("validation external_pending_for_live_accounts"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("limitations normalized"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance source runtime-ecosystem-manifest"))
-        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance runtime hermes"))
+        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance runtime example"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance domain channels"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("strategies cli 1, gateway 1, hosted 1, native 10"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("policy domains 2"))
@@ -1626,12 +718,12 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         )
         XCTAssertEqual(domainEvidencePresentation.totalRequirementCount, 1)
         XCTAssertEqual(domainEvidencePresentation.externalPendingCount, 1)
-        XCTAssertEqual(domainEvidencePresentation.rows.first?.commandShape, "runtime hermes domain channels --json")
-        XCTAssertTrue(domainEvidencePresentation.rows.first?.accessibilityLabel.contains("evidence requirement hermes.channels.live_evidence") == true)
+        XCTAssertEqual(domainEvidencePresentation.rows.first?.commandShape, "runtime example domain channels --json")
+        XCTAssertTrue(domainEvidencePresentation.rows.first?.accessibilityLabel.contains("evidence requirement example.channels.live_evidence") == true)
         XCTAssertTrue(domainEvidencePresentation.accessibilityLabel.contains("Runtime evidence requirements"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("Runtime domains"))
         XCTAssertEqual(snapshot.domainData?.sessions?.session?.primaryTransport, "gateway")
-        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionPath, "/Users/tester/.example/sessions")
         let sessionDescriptorPresentation = ClawJSRuntimeLensSessionDescriptorPresentation.make(
             session: try XCTUnwrap(snapshot.domainData?.sessions?.session)
         )
@@ -1641,7 +733,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(sessionDescriptorPresentation.streamingLabel, "hybrid")
         XCTAssertEqual(sessionDescriptorPresentation.persistence, "runtime")
         XCTAssertEqual(sessionDescriptorPresentation.fallbackTransport, "cli")
-        XCTAssertEqual(sessionDescriptorPresentation.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionPath, "/Users/tester/.example/sessions")
         XCTAssertEqual(sessionDescriptorPresentation.transportPills, ["gateway", "hybrid", "runtime"])
         XCTAssertTrue(sessionDescriptorPresentation.hasFallback)
         XCTAssertTrue(sessionDescriptorPresentation.hasPath)
@@ -1669,7 +761,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let overlayPresentation = ClawJSRuntimeLensSessionOverlayPresentation.make(
             state: try XCTUnwrap(snapshot.domainData?.sessions?.overlayState)
         )
-        XCTAssertEqual(overlayPresentation.runtimeId, "hermes")
+        XCTAssertEqual(overlayPresentation.runtimeId, "example")
         XCTAssertEqual(overlayPresentation.overlayAuthority, "clawix_local_overlay")
         XCTAssertEqual(overlayPresentation.writesRuntime, false)
         XCTAssertEqual(overlayPresentation.writeBackStatus, "blocked_until_official_runtime_pin_api")
@@ -1720,7 +812,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(sessionInventory.rows.first?.nativeIdentifierLabel, "native id: sessionPathId")
         XCTAssertEqual(
             sessionInventory.rows.first?.provenanceLabel,
-            "runtime-session-store, runtime hermes, /Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl"
+            "runtime-session-store, runtime example, /Users/tester/.example/sessions/2026/05/21/runtime-session.jsonl"
         )
         XCTAssertTrue(sessionInventory.accessibilityLabel.contains("runtime inventory domain sessions"))
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("runtime inventory resource 2026/05/21/runtime-session") == true)
@@ -1756,7 +848,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(sessionOverlayActionPresentation.disabled)
         XCTAssertTrue(
             sessionOverlayActionPresentation.accessibilityIdentifier.contains(
-                "runtime-lens-session-overlay-action-hermes-2026-05-21-runtime-session"
+                "runtime-lens-session-overlay-action-example-2026-05-21-runtime-session"
             )
         )
         XCTAssertTrue(sessionOverlayActionPresentation.accessibilityLabel.contains("runtime session overlay action unpin"))
@@ -1890,9 +982,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.validation, "fixture_required")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.authority, "runtime_adapter")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.provenance?.source, "runtime-ecosystem-manifest")
-        XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.provenance?.runtimeId, "hermes")
+        XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.provenance?.runtimeId, "example")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.provenance?.domain, "sessions")
-        XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.evidenceRequirements?.first?.id, "hermes.sessions.write_back_contract")
+        XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.evidenceRequirements?.first?.id, "example.sessions.write_back_contract")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.evidenceRequirements?.first?.blockerClass, "direct_blocker")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.evidenceRequirements?.first?.fallbackPolicy, "do_not_synthesize_native_write_back")
         let supportContractPresentation = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
@@ -1924,24 +1016,24 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(supportContractPresentation.accessibilityLabel.contains("provenance domains 8"))
         XCTAssertEqual(supportContractPresentation.rows.first?.domain, "sessions")
         XCTAssertEqual(supportContractPresentation.rows.first?.contractAuthorityLabel, "contract authority: runtime_adapter")
-        XCTAssertEqual(supportContractPresentation.rows.first?.provenanceLabel, "runtime-ecosystem-manifest, runtime hermes, domain sessions")
+        XCTAssertEqual(supportContractPresentation.rows.first?.provenanceLabel, "runtime-ecosystem-manifest, runtime example, domain sessions")
         XCTAssertEqual(supportContractPresentation.rows.first?.evidenceRequirementCount, 1)
         XCTAssertEqual(supportContractPresentation.rows.first { $0.domain == "channels" }?.externalPending, true)
         XCTAssertEqual(supportContractPresentation.rows.first { $0.domain == "channels" }?.evidenceRequirementCount, 1)
         XCTAssertTrue(supportContractPresentation.rows.first { $0.domain == "channels" }?.accessibilityLabel.contains("contract authority runtime_adapter") == true)
         XCTAssertTrue(supportContractPresentation.rows.first { $0.domain == "channels" }?.accessibilityLabel.contains("provenance domain channels") == true)
         XCTAssertTrue(supportContractPresentation.rows.first { $0.domain == "auth" }?.accessibilityLabel.contains("validation secret_guard") == true)
-        XCTAssertEqual(snapshot.resources(for: "skills").first?.path, "/Users/tester/.hermes/skills")
+        XCTAssertEqual(snapshot.resources(for: "skills").first?.path, "/Users/tester/.example/skills")
         XCTAssertEqual(snapshot.domainData?.skills?.supportContract?.validation, "snapshot_required")
-        XCTAssertEqual(snapshot.resources(for: "channels").map(\.displayLabel), ["Telegram", "Slack"])
+        XCTAssertEqual(snapshot.resources(for: "channels").map(\.displayLabel), ["Channel A", "Channel B"])
         XCTAssertEqual(snapshot.domainData?.channels?.supportContract?.evidenceRequirements?.first?.expectedEvidence?.last, "no_plaintext_secrets")
-        XCTAssertEqual(snapshot.domainData?.channels?.supportContract?.evidenceRequirements?.first?.reentryCondition, "approve_and_run_runtime_hermes_domain_channels_read_only_evidence")
+        XCTAssertEqual(snapshot.domainData?.channels?.supportContract?.evidenceRequirements?.first?.reentryCondition, "approve_and_run_runtime_example_domain_channels_read_only_evidence")
         XCTAssertEqual(snapshot.resources(for: "providers").first?.id, "openai")
         XCTAssertEqual(snapshot.resources(for: "auth").map(\.id), ["anthropic", "openai"])
         XCTAssertEqual(snapshot.resources(for: "auth").first { $0.id == "openai" }?.status, "configured")
         XCTAssertEqual(snapshot.resources(for: "auth").first { $0.id == "openai" }?.kind, "env")
         XCTAssertEqual(snapshot.resources(for: "gateway").first?.status, "degraded")
-        XCTAssertEqual(snapshot.resources(for: "doctorCompat").first?.summary, "hermes CLI not found")
+        XCTAssertEqual(snapshot.resources(for: "doctorCompat").first?.summary, "example CLI not found")
         XCTAssertEqual(snapshot.resources(for: "sandboxPermissions").first?.kind, "hosted")
         XCTAssertEqual(snapshot.resources(for: "configuration").map(\.id), ["SOUL", "USER", "managed-file-1", "configuration-diagnostics"])
         XCTAssertEqual(snapshot.resources(for: "configuration").first?.status, "projected")
@@ -1953,30 +1045,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         var requested: [[String]] = []
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             requested.append(args)
-            return .init(data: Data("""
-            {
-              "ok": true,
-              "data": {
-                "runtimeId": "hermes",
-                "domain": "sessions",
-                "action": "pin",
-                "status": "local_overlay_applied",
-                "authority": "clawix_local_overlay",
-                "writesRuntime": false,
-                "writesLocalOverlay": true,
-                "result": {
-                  "id": "2026/05/21/runtime-session",
-                  "overlayThreadId": "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session",
-                  "pinned": true,
-                  "receipt": {
-                    "requestId": "appstate-test",
-                    "hostId": "runtime-portal",
-                    "status": "applied"
-                  }
-                }
-              }
-            }
-            """.utf8), exitCode: 0)
+            return .init(
+                data: try ClawJSRuntimeLensTestFixtures.data(named: "session-local-overlay-action"),
+                exitCode: 0
+            )
         })
 
         let result = try await client.setSessionPinned(

@@ -2,7 +2,7 @@ import Foundation
 
 struct ClawJSSpawnedServiceProcess {
     var process: Process
-    var logHandle: FileHandle
+    var logSink: ClawixRedactedProcessLogSink
 }
 
 enum ClawJSServiceSpawner {
@@ -18,12 +18,13 @@ enum ClawJSServiceSpawner {
         process.environment = plan.environment
 
         let bootstrapPipe: Pipe?
+        let logSink: ClawixRedactedProcessLogSink
         if let bootstrapData = plan.bootstrapData {
             let pipe = Pipe()
             process.standardInput = pipe
             bootstrapPipe = pipe
             process.terminationHandler = terminationHandler
-            try configureLogsAndRun(
+            logSink = try configureLogsAndRun(
                 process: process,
                 logURL: plan.logFileURL,
                 bootstrapPipe: bootstrapPipe,
@@ -33,7 +34,7 @@ enum ClawJSServiceSpawner {
         } else {
             bootstrapPipe = nil
             process.terminationHandler = terminationHandler
-            try configureLogsAndRun(
+            logSink = try configureLogsAndRun(
                 process: process,
                 logURL: plan.logFileURL,
                 bootstrapPipe: bootstrapPipe,
@@ -42,12 +43,7 @@ enum ClawJSServiceSpawner {
             )
         }
 
-        guard let handle = process.standardOutput as? FileHandle else {
-            throw NSError(domain: "ClawJSServiceSpawner", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Failed to attach service log handle."
-            ])
-        }
-        return ClawJSSpawnedServiceProcess(process: process, logHandle: handle)
+        return ClawJSSpawnedServiceProcess(process: process, logSink: logSink)
     }
 
     private static func configureLogsAndRun(
@@ -56,14 +52,10 @@ enum ClawJSServiceSpawner {
         bootstrapPipe: Pipe?,
         bootstrapData: Data?,
         fileManager: FileManager
-    ) throws {
-        if !fileManager.fileExists(atPath: logURL.path) {
-            fileManager.createFile(atPath: logURL.path, contents: nil)
-        }
-        let handle = try FileHandle(forWritingTo: logURL)
-        try handle.seekToEnd()
-        process.standardOutput = handle
-        process.standardError = handle
+    ) throws -> ClawixRedactedProcessLogSink {
+        let logSink = try ClawixRedactedProcessLogSink(logURL: logURL, fileManager: fileManager)
+        process.standardOutput = logSink.stdoutPipe
+        process.standardError = logSink.stderrPipe
 
         do {
             try process.run()
@@ -71,8 +63,9 @@ enum ClawJSServiceSpawner {
                 bootstrapPipe.fileHandleForWriting.write(bootstrapData)
                 try? bootstrapPipe.fileHandleForWriting.close()
             }
+            return logSink
         } catch {
-            try? handle.close()
+            logSink.close()
             throw error
         }
     }

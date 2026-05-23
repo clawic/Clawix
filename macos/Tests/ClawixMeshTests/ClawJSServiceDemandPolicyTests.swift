@@ -210,6 +210,12 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("await serviceManager.release(serviceLease)"))
         XCTAssertTrue(source.contains("await holdLeaseUntilCancelled()"))
         XCTAssertTrue(source.contains("serviceManager.startupIssue(for: demandedServices)"))
+        XCTAssertTrue(source.contains("UserFacingFailure.classify(issue)"))
+        XCTAssertTrue(source.contains("@State private var retryNonce = 0"))
+        XCTAssertTrue(source.contains(".task(id: \"\\(descriptor.id)-\\(retryNonce)\")"))
+        XCTAssertTrue(source.contains("Button(\"Retry\")"))
+        XCTAssertTrue(source.contains("private func retrySurface()"))
+        XCTAssertTrue(source.contains("retryNonce += 1"))
     }
 
     func testSettingsUsesManualServiceDemandLeases() throws {

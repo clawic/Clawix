@@ -2,6 +2,38 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
+    func testRuntimeResourceAliasDecodesAndMergesAttributes() throws {
+        let data = Data("""
+        {
+          "id": "resource-1",
+          "label": "Resource One",
+          "status": "configured",
+          "kind": "provider",
+          "attributes": ["existing"],
+          "metadata": {
+            "string": "value",
+            "object": { "nested": true },
+            "array": ["one", "two"]
+          },
+          "auth": {
+            "supportsOAuth": true,
+            "supportsApiKey": false,
+            "supportsEnv": true,
+            "supportsToken": false
+          }
+        }
+        """.utf8)
+        let resource = try JSONDecoder().decode(ClawJSRuntimeLensSnapshot.RuntimeResource.self, from: data)
+        let merged = resource.addingAttributes(["extra"])
+
+        XCTAssertEqual(resource.id, "resource-1")
+        XCTAssertEqual(resource.displayLabel, "Resource One")
+        XCTAssertEqual(resource.providerAuth?.supportsOAuth, true)
+        XCTAssertEqual(resource.providerAuth?.supportsApiKey, false)
+        XCTAssertEqual(resource.metadata?.keys.sorted(), ["array", "object", "string"])
+        XCTAssertEqual(merged.attributes, ["existing", "extra"])
+    }
+
     func testRuntimeLensSessionAndInventoryPresentations() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
 

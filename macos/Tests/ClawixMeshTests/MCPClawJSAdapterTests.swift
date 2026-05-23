@@ -83,6 +83,22 @@ final class MCPClawJSAdapterTests: XCTestCase {
         XCTAssertNil(store.lastError)
     }
 
+    func testMCPReloadFailureUsesUserFacingClassifiedMessage() async {
+        let persistence = FailingMCPPersistence(
+            loadError: TestLocalizedError(message: "The Internet connection appears to be offline.")
+        )
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+
+        await store.refresh()
+
+        XCTAssertTrue(store.servers.isEmpty)
+        XCTAssertFalse(store.isLoading)
+        XCTAssertEqual(
+            store.lastError,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
+    }
+
     func testStoreCancelCancelsInFlightMCPSave() async {
         let saveStarted = expectation(description: "MCP save started")
         let saveCancelled = expectation(description: "MCP save cancelled after teardown")
@@ -109,6 +125,25 @@ final class MCPClawJSAdapterTests: XCTestCase {
         await fulfillment(of: [saveCancelled, saveReturned], timeout: 1)
         XCTAssertFalse(store.isSaving)
         XCTAssertNil(store.lastError)
+    }
+
+    func testMCPSaveFailureUsesUserFacingClassifiedMessage() async {
+        let persistence = FailingMCPPersistence(
+            saveError: TestLocalizedError(message: "permission denied")
+        )
+        let store = MCPServersStore(persistence: persistence, autoLoad: false)
+
+        store.upsert(MCPServerConfig(name: "notes", command: "node"))
+        await persistence.waitForSaveAttempt()
+        while store.isSaving {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(
+            store.lastError,
+            L10n.t("Permission was denied. Review permissions, then try again.")
+        )
+        XCTAssertFalse(store.isSaving)
     }
 
     func testClawJSMCPClientMapsListAndSaveToJsonCommands() async throws {
@@ -230,4 +265,41 @@ private final class SequencedMCPPersistence: MCPServersPersistence {
     func saveServers(_ servers: [MCPServerConfig]) async throws {
         _ = servers
     }
+}
+
+private final class FailingMCPPersistence: MCPServersPersistence {
+    private let loadError: Error?
+    private let saveError: Error?
+    private var saveAttemptContinuation: CheckedContinuation<Void, Never>?
+    private var didAttemptSave = false
+
+    init(loadError: Error? = nil, saveError: Error? = nil) {
+        self.loadError = loadError
+        self.saveError = saveError
+    }
+
+    func loadServers() async throws -> [MCPServerConfig] {
+        if let loadError { throw loadError }
+        return []
+    }
+
+    func saveServers(_ servers: [MCPServerConfig]) async throws {
+        _ = servers
+        didAttemptSave = true
+        saveAttemptContinuation?.resume()
+        saveAttemptContinuation = nil
+        if let saveError { throw saveError }
+    }
+
+    func waitForSaveAttempt() async {
+        if didAttemptSave { return }
+        await withCheckedContinuation { continuation in
+            saveAttemptContinuation = continuation
+        }
+    }
+}
+
+private struct TestLocalizedError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }

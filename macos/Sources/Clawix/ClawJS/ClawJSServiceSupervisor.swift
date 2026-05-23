@@ -28,7 +28,7 @@ actor ClawJSServiceSupervisor {
     private static let healthyResetWindow = ClawJSServiceSupervisorPolicy.healthyResetWindow
 
     private var processes: [ClawJSService: Process] = [:]
-    private var logHandles: [ClawJSService: FileHandle] = [:]
+    private var logSinks: [ClawJSService: ClawixRedactedProcessLogSink] = [:]
     private var monitorTask: Task<Void, Never>?
     private var serviceMonitors: [ClawJSService: ClawJSServiceMonitor] = [:]
     private var restartTasks: [ClawJSService: Task<Void, Never>] = [:]
@@ -147,8 +147,8 @@ actor ClawJSServiceSupervisor {
             }
         }
 
-        try? logHandles[service]?.close()
-        logHandles[service] = nil
+        logSinks[service]?.close()
+        logSinks[service] = nil
         return true
     }
 
@@ -201,10 +201,10 @@ actor ClawJSServiceSupervisor {
         for process in running.values where process.isRunning {
             kill(process.processIdentifier, SIGKILL)
         }
-        for handle in logHandles.values {
-            try? handle.close()
+        for sink in logSinks.values {
+            sink.close()
         }
-        logHandles.removeAll()
+        logSinks.removeAll()
 
         for service in ClawJSService.allCases {
             update(service) { $0.state = .idle }
@@ -433,7 +433,7 @@ actor ClawJSServiceSupervisor {
                 }
             }
             processes[service] = spawned.process
-            logHandles[service] = spawned.logHandle
+            logSinks[service] = spawned.logSink
             processRegistry.register(spawned.process, for: service)
 
             // The aggregate monitor flips state to `.ready` once the
@@ -453,8 +453,8 @@ actor ClawJSServiceSupervisor {
         guard processes[service] === proc else { return }
         processes[service] = nil
         processRegistry.unregister(service)
-        try? logHandles[service]?.close()
-        logHandles[service] = nil
+        logSinks[service]?.close()
+        logSinks[service] = nil
         serviceMonitors[service] = nil
 
         let status = proc.terminationStatus
@@ -1012,7 +1012,7 @@ actor ClawJSServiceSupervisor {
                 }
             }
             processes[.iot] = spawned.process
-            logHandles[.iot] = spawned.logHandle
+            logSinks[.iot] = spawned.logSink
             processRegistry.register(spawned.process, for: .iot)
 
             monitorLocalService(.iot, pid: spawned.process.processIdentifier)
