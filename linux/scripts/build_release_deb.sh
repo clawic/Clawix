@@ -4,7 +4,7 @@
 # (/opt/clawix/) and the apt repository registration in postinst.
 #
 # Output:
-#   release-output/clawix_<version>_<arch>.deb
+#   release-artifacts/clawix_<version>_<arch>.deb
 #
 # Requires the same toolchain as the AppImage script + dpkg-deb + dpkg-sig.
 
@@ -16,19 +16,11 @@ REPO_ROOT="$ROOT"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
-OUT_DIR="$LINUX_ROOT/release-output"
+OUT_DIR="$LINUX_ROOT/release-artifacts"
 VERSION="$(cat "$LINUX_ROOT/VERSION" | tr -d '\n[:space:]')"
 
-echo "[deb] legal safety preflight"
-node "$REPO_ROOT/scripts/legal_safety_check.mjs"
-echo "[deb] capability maturity preflight"
-node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
-echo "[deb] ClawJS mirror release preflight"
-node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
-echo "[deb] supply-chain security preflight"
-node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target linux-release
-echo "[deb] external pending release preflight"
-node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release
+echo "[deb] release readiness contract preflight"
+node "$REPO_ROOT/scripts/release_readiness_check.mjs" --target linux-release --phase preflight --run
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-deb" ]]; then
   echo "[deb] ERROR: Linux deb release requires explicit approval for this exact action." >&2

@@ -19,16 +19,8 @@ BUNDLE_DIR="$PROJECT_DIR/build/Release/${APP_NAME}.app"
 ICON_FILE="$PROJECT_DIR/Sources/Clawix/Resources/Clawix.icns"
 REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
 
-echo "==> Legal safety preflight"
-node "$REPO_ROOT/scripts/legal_safety_check.mjs"
-echo "==> Capability maturity preflight"
-node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
-echo "==> ClawJS mirror release preflight"
-node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
-echo "==> Supply-chain security preflight"
-node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target macos-release
-echo "==> External pending release preflight"
-node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target macos-release
+echo "==> Release readiness contract preflight"
+node "$REPO_ROOT/scripts/release_readiness_check.mjs" --target macos-release --phase preflight --run
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "macos-app" ]]; then
     echo "ERROR: macOS app release requires explicit approval for this exact action." >&2

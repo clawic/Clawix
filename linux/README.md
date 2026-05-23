@@ -38,7 +38,7 @@ bash linux/scripts/build_release_deb.sh
 ```
 
 Both honour `GPG_KEY_ID` from the workspace's `.signing.env`. Output
-lands in `linux/release-output/`. Upload to GitHub Releases via the
+lands in `linux/release-artifacts/`. Upload to GitHub Releases via the
 workspace's `scripts-dev/release-linux.sh` (orchestrates appcast,
 zsync, repo apt sync).
 

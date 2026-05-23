@@ -3,9 +3,9 @@
 # `clawix/macos/scripts/build_release_app.sh` for the .app bundle.
 #
 # Output:
-#   release-output/Clawix-<version>-<arch>.AppImage
-#   release-output/Clawix-<version>-<arch>.AppImage.zsync
-#   release-output/Clawix-<version>-<arch>.AppImage.sig
+#   release-artifacts/Clawix-<version>-<arch>.AppImage
+#   release-artifacts/Clawix-<version>-<arch>.AppImage.zsync
+#   release-artifacts/Clawix-<version>-<arch>.AppImage.sig
 #
 # Requires:
 #   - swift toolchain (for the bridge daemon)
@@ -26,7 +26,7 @@ REPO_ROOT="$ROOT"
 LINUX_ROOT="$ROOT/linux"
 APP_DIR="$LINUX_ROOT/app"
 DAEMON_DIR="$ROOT/macos/Helpers/Bridged"
-OUT_DIR="$LINUX_ROOT/release-output"
+OUT_DIR="$LINUX_ROOT/release-artifacts"
 VERSION="$(cat "$LINUX_ROOT/VERSION" | tr -d '\n[:space:]')"
 
 require() {
@@ -35,16 +35,8 @@ require() {
     exit 78
   fi
 }
-echo "[release] legal safety preflight"
-node "$REPO_ROOT/scripts/legal_safety_check.mjs"
-echo "[release] capability maturity preflight"
-node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
-echo "[release] ClawJS mirror release preflight"
-node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
-echo "[release] supply-chain security preflight"
-node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target linux-release
-echo "[release] external pending release preflight"
-node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target linux-release
+echo "[release] release readiness contract preflight"
+node "$REPO_ROOT/scripts/release_readiness_check.mjs" --target linux-release --phase preflight --run
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "linux-appimage" ]]; then
   echo "[release] ERROR: Linux AppImage release requires explicit approval for this exact action." >&2

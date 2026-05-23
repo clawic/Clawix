@@ -19,16 +19,8 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$PROJECT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
 
-echo "==> Legal safety preflight"
-node "$REPO_ROOT/scripts/legal_safety_check.mjs"
-echo "==> Capability maturity preflight"
-node "$REPO_ROOT/scripts/interface_surface_guard.mjs"
-echo "==> ClawJS mirror release preflight"
-node "$REPO_ROOT/scripts/clawjs_mirror_contradiction_check.mjs" --release
-echo "==> Supply-chain security preflight"
-node "$REPO_ROOT/scripts/supply_chain_security_check.mjs" --release --target ios-release
-echo "==> External pending release preflight"
-node "$REPO_ROOT/scripts/release_external_pending_gate.mjs" --target ios-release
+echo "==> Release readiness contract preflight"
+node "$REPO_ROOT/scripts/release_readiness_check.mjs" --target ios-release --phase preflight --run
 
 if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "ios-archive" ]]; then
     echo "ERROR: iOS archive release requires explicit approval for this exact action." >&2

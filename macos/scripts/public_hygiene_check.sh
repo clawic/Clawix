@@ -68,6 +68,14 @@ for surface in "$ROOT_DIR/macos" "$ROOT_DIR/ios" "$ROOT_DIR/packages"/* ; do
   done
 done
 
+for surface in "$ROOT_DIR/linux" "$ROOT_DIR/windows" ; do
+  [[ -d "$surface" ]] || continue
+  for sub in README.md scripts package.json src test tests ; do
+      candidate="${surface%/}/$sub"
+      [[ -e "$candidate" ]] && TARGETS+=("$candidate")
+  done
+done
+
 # Web SPA target. Same blacklist applies (no Team ID, bundle id real,
 # SKU literals, codesign identities). dist/ and node_modules/ are
 # excluded above via COMMON_GLOBS so we only scan source code.
@@ -88,7 +96,7 @@ fi
 # Developer-machine absolute paths almost always come from a personal
 # checkout. Synthetic user names used by tests and docs are allowed.
 scan "developer-machine paths" \
-  '/Users/(?!example(?:/|$)|demo(?:/|$)|me(?:/|$)|tester(?:/|$)|alice(?:/|$)|person(?:/|$)|<redacted>)([A-Za-z0-9._-]+)(?=/|\b)' \
+  '/Users/(?!(?:example|demo|me|tester|alice|person|<redacted>)(?:/|\b|$))([A-Za-z0-9._-]+)(?=/|\b)' \
   "${TARGETS[@]}"
 
 scan "private Codex paths" \
@@ -124,7 +132,7 @@ scan "real bundle ids in app/release context" \
   "${TARGETS[@]}"
 
 scan "release output references" \
-  '(^|[/"'"'"'`\s])release-output([/"'"'"'`\s]|$)' \
+  '(^|[/"'"'"'`\s])release[-]output([/"'"'"'`\s]|$)' \
   "${TARGETS[@]}"
 
 check_git_metadata() {
