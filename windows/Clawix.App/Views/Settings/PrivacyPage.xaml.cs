@@ -19,52 +19,46 @@ public sealed partial class PrivacyPage : Page
     private void LoadSettings()
     {
         _loading = true;
-        if (App.Services.Preferences.Get(
+        CrashReportsSwitch.IsOn = App.Services.Preferences.Get(
             WindowsPreferenceKeys.PrivacySendCrashReports,
-            PrivacySettingsDefaults.SendCrashReports))
-        {
-            App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacySendCrashReports, false);
-        }
-        if (App.Services.Preferences.Get(
+            PrivacySettingsDefaults.SendCrashReports);
+        TelemetrySwitch.IsOn = App.Services.Preferences.Get(
             WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry,
-            PrivacySettingsDefaults.ShareAnonymousTelemetry))
-        {
-            App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry, false);
-        }
-        if (App.Services.Preferences.Get(
+            PrivacySettingsDefaults.ShareAnonymousTelemetry);
+        TrainingSwitch.IsOn = App.Services.Preferences.Get(
             WindowsPreferenceKeys.PrivacyAllowTrainingOnConversations,
-            PrivacySettingsDefaults.AllowTrainingOnConversations))
-        {
-            App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyAllowTrainingOnConversations, false);
-        }
-        CrashReportsSwitch.IsOn = PrivacySettingsDefaults.SendCrashReports;
-        TelemetrySwitch.IsOn = PrivacySettingsDefaults.ShareAnonymousTelemetry;
-        TrainingSwitch.IsOn = PrivacySettingsDefaults.AllowTrainingOnConversations;
+            PrivacySettingsDefaults.AllowTrainingOnConversations);
+        UpdateStatus();
         _loading = false;
     }
 
     private void CrashReportsSwitch_Toggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacySendCrashReports, false);
-        CrashReportsSwitch.IsOn = false;
-        PrivacyStatusText.Text = "Crash reports remain unavailable.";
+        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacySendCrashReports, CrashReportsSwitch.IsOn);
+        UpdateStatus();
     }
 
     private void TelemetrySwitch_Toggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry, false);
-        TelemetrySwitch.IsOn = false;
-        PrivacyStatusText.Text = "Anonymous telemetry remains unavailable.";
+        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry, TelemetrySwitch.IsOn);
+        UpdateStatus();
     }
 
     private void TrainingSwitch_Toggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyAllowTrainingOnConversations, false);
-        TrainingSwitch.IsOn = false;
-        PrivacyStatusText.Text = "Conversation training remains disabled.";
+        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyAllowTrainingOnConversations, TrainingSwitch.IsOn);
+        UpdateStatus();
+    }
+
+    private void UpdateStatus()
+    {
+        PrivacyStatusText.Text = PrivacySettingsDefaults.Summary(
+            CrashReportsSwitch.IsOn,
+            TelemetrySwitch.IsOn,
+            TrainingSwitch.IsOn);
     }
 
     private void ExportData_Click(object sender, RoutedEventArgs e)

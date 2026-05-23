@@ -7,16 +7,13 @@
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Privacy" FontSize="22" FontWeight="SemiBold" />
       <ToggleSwitch x:Name="CrashReportsSwitch"
-                    Header="Crash reports unavailable"
-                    IsEnabled="False"
+                    Header="Send crash reports"
                     Toggled="CrashReportsSwitch_Toggled" />
       <ToggleSwitch x:Name="TelemetrySwitch"
-                    Header="Anonymous telemetry unavailable"
-                    IsEnabled="False"
+                    Header="Share anonymous telemetry"
                     Toggled="TelemetrySwitch_Toggled" />
       <ToggleSwitch x:Name="TrainingSwitch"
                     Header="Allow training on conversations"
-                    IsEnabled="False"
                     Toggled="TrainingSwitch_Toggled" />
       <TextBlock x:Name="PrivacyStatusText" Opacity="0.7" />
       <Expander Header="Advanced" IsExpanded="False">
