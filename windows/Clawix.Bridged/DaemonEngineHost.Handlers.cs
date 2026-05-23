@@ -57,17 +57,7 @@ public sealed partial class DaemonEngineHost
 
     public Task<(string? Content, bool IsMarkdown, string? Error)> HandleReadFileAsync(string path, CancellationToken ct)
     {
-        try
-        {
-            if (!File.Exists(path)) return Task.FromResult<(string?, bool, string?)>((null, false, "File not found"));
-            var text = File.ReadAllText(path);
-            var isMd = path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
-            return Task.FromResult<(string?, bool, string?)>((text, isMd, null));
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult<(string?, bool, string?)>((null, false, ex.Message));
-        }
+        return Task.FromResult(BridgeFileReader.Load(path));
     }
 
     public Task<(string? Text, string? Error)> HandleTranscribeAudioAsync(string audioBase64, string mimeType, string? language, CancellationToken ct)
