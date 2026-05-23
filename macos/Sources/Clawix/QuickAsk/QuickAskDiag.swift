@@ -8,7 +8,9 @@ import Foundation
 /// not open" bug is understood.
 enum QuickAskDiag {
 
-    private static let path = "/tmp/clawix-quickask.log"
+    private static let logURL = ClawixDiagnosticLogRoutes.quickAskLogURL
+    private static let rotatedLogURL = logURL.deletingPathExtension().appendingPathExtension("1.log")
+    private static let maxLogBytes: UInt64 = 256 * 1024
     private static let queue = DispatchQueue(label: "clawix.quickask.diag")
     private static let formatter: DateFormatter = {
         let f = DateFormatter()
@@ -20,15 +22,25 @@ enum QuickAskDiag {
         let line = "[\(formatter.string(from: Date()))] \(message)\n"
         queue.async {
             guard let data = line.data(using: .utf8) else { return }
-            let url = URL(fileURLWithPath: path)
-            if FileManager.default.fileExists(atPath: path),
-               let handle = try? FileHandle(forWritingTo: url) {
+            rotateIfNeeded(addingBytes: UInt64(data.count))
+            if FileManager.default.fileExists(atPath: logURL.path),
+               let handle = try? FileHandle(forWritingTo: logURL) {
                 defer { try? handle.close() }
                 _ = try? handle.seekToEnd()
                 try? handle.write(contentsOf: data)
             } else {
-                try? data.write(to: url)
+                try? data.write(to: logURL)
             }
         }
+    }
+
+    private static func rotateIfNeeded(addingBytes: UInt64) {
+        let fm = FileManager.default
+        guard let attrs = try? fm.attributesOfItem(atPath: logURL.path),
+              let size = attrs[.size] as? NSNumber,
+              size.uint64Value + addingBytes > maxLogBytes
+        else { return }
+        try? fm.removeItem(at: rotatedLogURL)
+        try? fm.moveItem(at: logURL, to: rotatedLogURL)
     }
 }
