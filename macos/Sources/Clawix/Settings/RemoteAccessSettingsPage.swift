@@ -29,6 +29,34 @@ struct RemoteAccessSettingsPage: View {
         _store = StateObject(wrappedValue: store)
     }
 
+    private var trimmedCoordinatorURL: String {
+        coordinatorUrlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedEmail: String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedToken: String {
+        pasteToken.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var coordinatorURLValid: Bool {
+        trimmedCoordinatorURL.isEmpty || RemoteAccessSettingsStore.isCoordinatorURLValid(trimmedCoordinatorURL)
+    }
+
+    private var canSendMagicLink: Bool {
+        !store.inFlight &&
+        RemoteAccessSettingsStore.isCoordinatorURLValid(trimmedCoordinatorURL) &&
+        trimmedEmail.contains("@")
+    }
+
+    private var canRegisterMac: Bool {
+        !store.inFlight &&
+        RemoteAccessSettingsStore.isCoordinatorURLValid(trimmedCoordinatorURL) &&
+        !trimmedToken.isEmpty
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
@@ -67,6 +95,9 @@ struct RemoteAccessSettingsPage: View {
                     .onChange(of: coordinatorUrlString) { _, newValue in
                         PairingService.shared.coordinatorURL = URL(string: newValue.trimmingCharacters(in: .whitespacesAndNewlines))
                     }
+                if !coordinatorURLValid {
+                    InfoBanner(text: L10n.t("Invalid coordinator URL"), kind: .error)
+                }
                 Text("Stored locally. Used by this Mac to register itself and by future pairings to embed the URL in the QR.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -87,7 +118,7 @@ struct RemoteAccessSettingsPage: View {
                             deviceLabel: Host.current().localizedName ?? "Mac"
                         )
                     }
-                    .disabled(store.inFlight || coordinatorUrlString.isEmpty || !email.contains("@"))
+                    .disabled(!canSendMagicLink)
                     if store.inFlight { ProgressView().controlSize(.small) }
                 }
                 Divider().padding(.vertical, 4)
@@ -109,7 +140,7 @@ struct RemoteAccessSettingsPage: View {
                         RelayCredentialStore.storeRefreshToken(session.refreshToken, forDeviceId: session.deviceId)
                     }
                 }
-                .disabled(store.inFlight || pasteToken.isEmpty)
+                .disabled(!canRegisterMac)
                 statusView
             }
         }
@@ -122,13 +153,14 @@ struct RemoteAccessSettingsPage: View {
                 VStack(alignment: .leading, spacing: 6) {
                     LabeledContent("Device id") { Text(savedDeviceId).font(.system(size: 11, design: .monospaced)) }
                     LabeledContent("Tenant") { Text(savedTenantId).font(.system(size: 11, design: .monospaced)) }
-                    Button("Forget this Mac on the coordinator") {
+                    Button("Forget local pairing") {
                         store.forget {
                             savedDeviceId = ""
                             savedTenantId = ""
                         }
                     }
                     .controlSize(.small)
+                    .disabled(store.inFlight)
                 }
             }
         }
@@ -243,7 +275,7 @@ final class RemoteAccessSettingsStore: ObservableObject {
         platform: String? = "macos"
     ) -> Task<Void, Never>? {
         guard let baseURL = Self.coordinatorURL(from: coordinatorUrlString) else {
-            status = .error("Invalid coordinator URL")
+            status = .error(L10n.t("Invalid coordinator URL"))
             return nil
         }
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -256,11 +288,18 @@ final class RemoteAccessSettingsStore: ObservableObject {
                 try await self.requestMagicLinkOperation(baseURL, trimmedEmail, deviceLabel, platform)
                 try Task.checkCancellation()
                 guard self.isCurrent(generation) else { return }
-                self.status = .info("Magic link sent to \(trimmedEmail). Open it on this Mac, then paste the token below.")
+                self.status = .info(String(
+                    format: L10n.t("Magic link sent to %@. Open it on this Mac, then paste the token below."),
+                    locale: AppLocale.current,
+                    trimmedEmail
+                ))
             } catch is CancellationError {
             } catch {
                 guard self.isCurrent(generation) else { return }
-                self.status = .error(error.localizedDescription)
+                self.status = .error(Self.failureMessage(
+                    for: error,
+                    surface: "settings.remoteAccess.sendMagicLink"
+                ))
             }
             self.finishIfCurrent(generation)
         }
@@ -279,7 +318,7 @@ final class RemoteAccessSettingsStore: ObservableObject {
         onSession: @escaping SessionHandler
     ) -> Task<Void, Never>? {
         guard let baseURL = Self.coordinatorURL(from: coordinatorUrlString) else {
-            status = .error("Invalid coordinator URL")
+            status = .error(L10n.t("Invalid coordinator URL"))
             return nil
         }
         let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -300,11 +339,18 @@ final class RemoteAccessSettingsStore: ObservableObject {
                 try Task.checkCancellation()
                 guard self.isCurrent(generation) else { return }
                 onSession(session)
-                self.status = .info("This Mac is registered as \(session.deviceId). Refresh token stashed locally.")
+                self.status = .info(String(
+                    format: L10n.t("This Mac is registered as %@. Refresh token stored locally."),
+                    locale: AppLocale.current,
+                    session.deviceId
+                ))
             } catch is CancellationError {
             } catch {
                 guard self.isCurrent(generation) else { return }
-                self.status = .error(error.localizedDescription)
+                self.status = .error(Self.failureMessage(
+                    for: error,
+                    surface: "settings.remoteAccess.consumeToken"
+                ))
             }
             self.finishIfCurrent(generation)
         }
@@ -315,7 +361,7 @@ final class RemoteAccessSettingsStore: ObservableObject {
     func forget(_ onForget: @MainActor () -> Void) {
         cancelInFlight()
         onForget()
-        status = .info("Local pairing forgotten. Revoke the device from the coordinator's Devices page to fully unpair.")
+        status = .info(L10n.t("Local pairing forgotten. Revoke the device from the coordinator's Devices page to fully unpair."))
     }
 
     func cancelInFlight() {
@@ -326,7 +372,18 @@ final class RemoteAccessSettingsStore: ObservableObject {
     }
 
     private static func coordinatorURL(from raw: String) -> URL? {
-        URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard let url = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              url.host?.isEmpty == false
+        else {
+            return nil
+        }
+        return url
+    }
+
+    static func isCoordinatorURLValid(_ raw: String) -> Bool {
+        coordinatorURL(from: raw) != nil
     }
 
     private func nextGeneration() -> Int {
@@ -342,6 +399,11 @@ final class RemoteAccessSettingsStore: ObservableObject {
         guard isCurrent(value) else { return }
         inFlight = false
         task = nil
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: message, surface: surface)
     }
 }
 

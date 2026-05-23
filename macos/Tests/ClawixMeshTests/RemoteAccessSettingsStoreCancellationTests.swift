@@ -4,6 +4,10 @@ import ClawixEngine
 
 @MainActor
 final class RemoteAccessSettingsStoreCancellationTests: XCTestCase {
+    private struct TestFailure: LocalizedError {
+        let errorDescription: String?
+    }
+
     func testStartingConsumeCancelsStaleMagicLinkRequest() async throws {
         let requestStarted = expectation(description: "Magic link request started")
         let requestCancelled = expectation(description: "Magic link request cancelled")
@@ -125,6 +129,72 @@ final class RemoteAccessSettingsStoreCancellationTests: XCTestCase {
         await second?.value
 
         XCTAssertEqual(store.status, .info("Magic link sent to fresh@example.com. Open it on this Mac, then paste the token below."))
+        XCTAssertFalse(store.inFlight)
+    }
+
+    func testMagicLinkFailureUsesClassifiedLocalizedMessage() async {
+        let requestStarted = expectation(description: "Magic link request started")
+        let store = RemoteAccessSettingsStore(
+            requestMagicLinkOperation: { _, _, _, _ in
+                requestStarted.fulfill()
+                throw TestFailure(errorDescription: "The Internet connection appears to be offline.")
+            }
+        )
+
+        let task = store.sendMagicLink(
+            coordinatorUrlString: "https://relay.example.com",
+            email: "person@example.com",
+            deviceLabel: "Mac"
+        )
+
+        await fulfillment(of: [requestStarted], timeout: 1)
+        await task?.value
+
+        XCTAssertEqual(
+            store.status,
+            .error(L10n.t("The network appears to be offline. Reconnect, then try again."))
+        )
+        XCTAssertFalse(store.inFlight)
+    }
+
+    func testConsumeFailureUsesClassifiedLocalizedMessage() async {
+        let consumeStarted = expectation(description: "Token consume started")
+        let store = RemoteAccessSettingsStore(
+            consumeMagicLinkOperation: { _, _, _, _, _, _ in
+                consumeStarted.fulfill()
+                throw TestFailure(errorDescription: "HTTP 401: invalid API key")
+            }
+        )
+
+        let task = store.consumeToken(
+            coordinatorUrlString: "https://relay.example.com",
+            token: "mlk_denied",
+            deviceLabel: "Mac",
+            platformVersion: "macOS Test",
+            irohNodeID: "node"
+        ) { _ in }
+
+        await fulfillment(of: [consumeStarted], timeout: 1)
+        await task?.value
+
+        XCTAssertEqual(
+            store.status,
+            .error(L10n.t("Permission was denied. Review permissions, then try again."))
+        )
+        XCTAssertFalse(store.inFlight)
+    }
+
+    func testInvalidCoordinatorURLUsesLocalizedStatus() {
+        let store = RemoteAccessSettingsStore()
+
+        let task = store.sendMagicLink(
+            coordinatorUrlString: "not a url",
+            email: "person@example.com",
+            deviceLabel: "Mac"
+        )
+
+        XCTAssertNil(task)
+        XCTAssertEqual(store.status, .error(L10n.t("Invalid coordinator URL")))
         XCTAssertFalse(store.inFlight)
     }
 
