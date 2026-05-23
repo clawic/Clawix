@@ -72,7 +72,7 @@ enum ClawixDiagnosticRedactor {
             options: .regularExpression
         )
         redacted = redacted.replacingOccurrences(
-            of: #"(?i)\b(path|local_path|filepath|file_path)\s*[:=]\s*("[^"]*"|'[^']*'|[^\n\r;]+)"#,
+            of: #"(?i)\b(path|local_path|filepath|file_path)\s*[:=]\s*("[^"]*"|'[^']*'|(?!\[redacted_session\])[^\n\r;]+)"#,
             with: "$1=[redacted_path]",
             options: .regularExpression
         )

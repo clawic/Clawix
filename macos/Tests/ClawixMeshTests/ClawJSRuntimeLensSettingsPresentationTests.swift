@@ -25,7 +25,7 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.sections.map(\.id).contains("domains"))
         XCTAssertTrue(presentation.sections.map(\.id).contains("support-contracts"))
         XCTAssertTrue(presentation.sections.map(\.id).contains("inventory"))
-        XCTAssertEqual(presentation.runtimeSummary?.runtimeId, "hermes")
+        XCTAssertEqual(presentation.runtimeSummary?.runtimeId, "example")
         XCTAssertEqual(presentation.domainPresentation?.domainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertTrue(presentation.validationAccessibilityLabel.contains("Runtime lens validation"))
 

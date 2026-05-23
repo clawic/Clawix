@@ -65,7 +65,7 @@ final class RescueChatFallbackTests: XCTestCase {
         XCTAssertEqual(messages[0].role, .user)
         XCTAssertEqual(messages[1].role, .assistant)
         XCTAssertTrue(messages[1].isError)
-        XCTAssertTrue(messages[1].content.contains("Agent runtime is unavailable"))
+        XCTAssertTrue(messages[1].content.contains("The background bridge is unavailable"))
         XCTAssertFalse(chat.hasActiveTurn)
         XCTAssertEqual(state.composer.text, "")
     }

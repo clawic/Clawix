@@ -38,7 +38,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
 
         XCTAssertEqual(snapshot.domainData?.sessions?.session?.primaryTransport, "gateway")
-        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionPath, "/Users/tester/.example/sessions")
         let sessionDescriptorPresentation = ClawJSRuntimeLensSessionDescriptorPresentation.make(
             session: try XCTUnwrap(snapshot.domainData?.sessions?.session)
         )
@@ -48,7 +48,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(sessionDescriptorPresentation.streamingLabel, "hybrid")
         XCTAssertEqual(sessionDescriptorPresentation.persistence, "runtime")
         XCTAssertEqual(sessionDescriptorPresentation.fallbackTransport, "cli")
-        XCTAssertEqual(sessionDescriptorPresentation.sessionPath, "/Users/tester/.hermes/sessions")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionPath, "/Users/tester/.example/sessions")
         XCTAssertEqual(sessionDescriptorPresentation.transportPills, ["gateway", "hybrid", "runtime"])
         XCTAssertTrue(sessionDescriptorPresentation.hasFallback)
         XCTAssertTrue(sessionDescriptorPresentation.hasPath)
@@ -76,7 +76,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         let overlayPresentation = ClawJSRuntimeLensSessionOverlayPresentation.make(
             state: try XCTUnwrap(snapshot.domainData?.sessions?.overlayState)
         )
-        XCTAssertEqual(overlayPresentation.runtimeId, "hermes")
+        XCTAssertEqual(overlayPresentation.runtimeId, "example")
         XCTAssertEqual(overlayPresentation.overlayAuthority, "clawix_local_overlay")
         XCTAssertEqual(overlayPresentation.writesRuntime, false)
         XCTAssertEqual(overlayPresentation.writeBackStatus, "blocked_until_official_runtime_pin_api")
@@ -127,7 +127,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(sessionInventory.rows.first?.nativeIdentifierLabel, "native id: sessionPathId")
         XCTAssertEqual(
             sessionInventory.rows.first?.provenanceLabel,
-            "runtime-session-store, runtime hermes, /Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl"
+            "runtime-session-store, runtime example, /Users/tester/.example/sessions/2026/05/21/runtime-session.jsonl"
         )
         XCTAssertTrue(sessionInventory.accessibilityLabel.contains("runtime inventory domain sessions"))
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("runtime inventory resource 2026/05/21/runtime-session") == true)
@@ -163,7 +163,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertTrue(sessionOverlayActionPresentation.disabled)
         XCTAssertTrue(
             sessionOverlayActionPresentation.accessibilityIdentifier.contains(
-                "runtime-lens-session-overlay-action-hermes-2026-05-21-runtime-session"
+                "runtime-lens-session-overlay-action-example-2026-05-21-runtime-session"
             )
         )
         XCTAssertTrue(sessionOverlayActionPresentation.accessibilityLabel.contains("runtime session overlay action unpin"))

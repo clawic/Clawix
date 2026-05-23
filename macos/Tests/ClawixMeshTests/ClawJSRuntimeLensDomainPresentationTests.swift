@@ -7,7 +7,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
 
         XCTAssertEqual(snapshot.commands?.authority, "runtime_adapter")
         XCTAssertEqual(snapshot.commands?.resourceDomains, ClawJSRuntimeLensSnapshot.canonicalDomains)
-        XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.command, "runtime hermes sessions list")
+        XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.command, "runtime example sessions list")
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first?.args, ["sessions", "list"])
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first { $0.command.contains("inject") }?.delegatesTo, "blocked until native inject contract")
         XCTAssertEqual(snapshot.commands?.executableByClawCli?.first { $0.command.contains("inject") }?.args?.count, 7)
@@ -25,7 +25,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertEqual(commandPresentation.argumentCount, 13)
         XCTAssertEqual(commandPresentation.resourceDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(commandPresentation.resourceDomainsLabel, "sessions, skills, memory, channels, providers")
-        XCTAssertEqual(commandPresentation.rows.first?.command, "runtime hermes sessions create --title <title>")
+        XCTAssertEqual(commandPresentation.rows.first?.command, "runtime example sessions create --title <title>")
         XCTAssertEqual(commandPresentation.rows.first?.writeDisposition, "blocked write")
         XCTAssertEqual(commandPresentation.rows.first?.argumentCount, 4)
         XCTAssertEqual(commandPresentation.rows.first?.argsLabel, "sessions, create, --title, <title>")
@@ -55,7 +55,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.claim, "inventoried")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.writeBackPolicy, "external_pending_live_accounts")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.externalPending, true)
-        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.officialCommands?.first, "hermes gateway")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.officialCommands?.first, "example gateway")
         let domainCommandPresentation = ClawJSRuntimeLensDomainCommandPresentation.make(
             domain: "channels",
             commands: snapshot.domains.first { $0.domain == "channels" }?.officialCommands ?? [],
@@ -65,13 +65,13 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertEqual(domainCommandPresentation.totalCommandCount, 3)
         XCTAssertEqual(domainCommandPresentation.visibleCommandCount, 2)
         XCTAssertEqual(domainCommandPresentation.hiddenCommandCount, 1)
-        XCTAssertEqual(domainCommandPresentation.rows.first?.command, "hermes gateway")
-        XCTAssertEqual(domainCommandPresentation.rows.first?.id, "hermes-gateway")
+        XCTAssertEqual(domainCommandPresentation.rows.first?.command, "example gateway")
+        XCTAssertEqual(domainCommandPresentation.rows.first?.id, "example-gateway")
         XCTAssertTrue(domainCommandPresentation.hasCommands)
         XCTAssertTrue(domainCommandPresentation.rows.first?.accessibilityLabel.contains("runtime domain command 1") == true)
         XCTAssertTrue(domainCommandPresentation.accessibilityLabel.contains("Runtime domain commands"))
         XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.blockerClass, "external_pending")
-        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.commandShape, "runtime hermes domain channels --json")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.evidenceRequirements?.first?.commandShape, "runtime example domain channels --json")
         XCTAssertEqual(snapshot.domains.first { $0.domain == "sandboxPermissions" }?.displayLabel, "Sandbox")
         let domainPresentation = ClawJSRuntimeLensDomainPresentation.make(domains: snapshot.domains)
         XCTAssertEqual(domainPresentation.domainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
@@ -105,7 +105,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertEqual(channelPresentation.writeBackAllowed, false)
         XCTAssertEqual(channelPresentation.validation, "external_pending_for_live_accounts")
         XCTAssertEqual(channelPresentation.provenanceSource, "runtime-ecosystem-manifest")
-        XCTAssertEqual(channelPresentation.provenanceRuntimeId, "hermes")
+        XCTAssertEqual(channelPresentation.provenanceRuntimeId, "example")
         XCTAssertEqual(channelPresentation.provenanceDomain, "channels")
         XCTAssertEqual(
             channelPresentation.policyLabel,
@@ -113,7 +113,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         )
         XCTAssertEqual(
             channelPresentation.provenanceLabel,
-            "runtime-ecosystem-manifest, runtime hermes, domain channels"
+            "runtime-ecosystem-manifest, runtime example, domain channels"
         )
         XCTAssertEqual(channelPresentation.commandCount, 3)
         XCTAssertEqual(channelPresentation.evidenceRequirementCount, 1)
@@ -127,7 +127,7 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("validation external_pending_for_live_accounts"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("limitations normalized"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance source runtime-ecosystem-manifest"))
-        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance runtime hermes"))
+        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance runtime example"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance domain channels"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("strategies cli 1, gateway 1, hosted 1, native 10"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("policy domains 2"))
@@ -142,8 +142,8 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         )
         XCTAssertEqual(domainEvidencePresentation.totalRequirementCount, 1)
         XCTAssertEqual(domainEvidencePresentation.externalPendingCount, 1)
-        XCTAssertEqual(domainEvidencePresentation.rows.first?.commandShape, "runtime hermes domain channels --json")
-        XCTAssertTrue(domainEvidencePresentation.rows.first?.accessibilityLabel.contains("evidence requirement hermes.channels.live_evidence") == true)
+        XCTAssertEqual(domainEvidencePresentation.rows.first?.commandShape, "runtime example domain channels --json")
+        XCTAssertTrue(domainEvidencePresentation.rows.first?.accessibilityLabel.contains("evidence requirement example.channels.live_evidence") == true)
         XCTAssertTrue(domainEvidencePresentation.accessibilityLabel.contains("Runtime evidence requirements"))
         XCTAssertTrue(domainPresentation.accessibilityLabel.contains("Runtime domains"))
     }
