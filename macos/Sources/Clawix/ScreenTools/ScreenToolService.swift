@@ -456,8 +456,7 @@ final class ScreenToolService: ObservableObject {
 
         Task { @MainActor in
             let temporaryURLs = (0..<Self.scrollingCaptureFrameCount).map { index in
-                FileManager.default.temporaryDirectory
-                    .appendingPathComponent("clawix-scrolling-\(UUID().uuidString)-\(index).png")
+                ClawixScreenToolRoutes.scrollingCaptureFrameURL(index: index)
             }
             defer {
                 for url in temporaryURLs {
@@ -798,8 +797,7 @@ final class ScreenToolService: ObservableObject {
             throw CocoaError(.fileNoSuchFile)
         }
 
-        let temporaryURL = url.deletingLastPathComponent()
-            .appendingPathComponent(".\(url.deletingPathExtension().lastPathComponent)-processed-\(UUID().uuidString).mov")
+        let temporaryURL = ClawixScreenToolRoutes.processedRecordingURL(for: url)
         defer {
             try? FileManager.default.removeItem(at: temporaryURL)
         }
@@ -823,13 +821,8 @@ final class ScreenToolService: ObservableObject {
     }
 
     private static func ffmpegExecutableURL(fileManager: FileManager = .default) -> URL? {
-        [
-            "/opt/homebrew/bin/ffmpeg",
-            "/usr/local/bin/ffmpeg",
-            "/usr/bin/ffmpeg"
-        ]
-        .map { URL(fileURLWithPath: $0) }
-        .first { fileManager.isExecutableFile(atPath: $0.path) }
+        ClawixCaptureToolRoutes.ffmpegCandidateURLs()
+            .first { fileManager.isExecutableFile(atPath: $0.path) }
     }
 
     static func applyScreenshotPostProcessing(to url: URL) throws {
@@ -1218,7 +1211,7 @@ final class ScreenToolService: ObservableObject {
     private static func runScreencapture(args: [String], completion: @escaping (ProcessResult) -> Void) {
         let task = Process()
         let stderr = Pipe()
-        task.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        task.executableURL = URL(fileURLWithPath: ClawixCaptureToolRoutes.screencaptureCLI)
         task.arguments = args
         task.standardError = stderr
         task.terminationHandler = { task in

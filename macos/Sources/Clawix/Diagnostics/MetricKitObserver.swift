@@ -4,8 +4,8 @@ import os
 
 /// Subscriber that captures every `MXMetricPayload` and
 /// `MXDiagnosticPayload` Apple delivers and persists the JSON to
-/// `~/Library/Application Support/<bundleId>/Diagnostics/` so a
-/// post-mortem investigation has a stable artifact.
+/// the persistent diagnostics directory so a post-mortem investigation has
+/// a stable artifact.
 ///
 /// MetricKit is the only API that gives `MXAppLaunchMetric`,
 /// `MXHangDiagnostic` (with symbolicated backtraces),

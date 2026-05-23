@@ -60,9 +60,6 @@ final class IOSSimulatorHIDBridge {
     private typealias IOHIDSetIntegerValueFn = @convention(c) (UnsafeMutableRawPointer, UInt32, Int) -> Void
     private typealias IOHIDSetFloatValueFn = @convention(c) (UnsafeMutableRawPointer, UInt32, CGFloat) -> Void
 
-    private static let simulatorKitPath = "/Applications/Xcode.app/Contents/Developer/Library/PrivateFrameworks/SimulatorKit.framework/SimulatorKit"
-    private static let coreSimulatorPath = "/Library/Developer/PrivateFrameworks/CoreSimulator.framework/CoreSimulator"
-    private static let ioKitPath = "/System/Library/Frameworks/IOKit.framework/IOKit"
     private static let mainScreenID: UInt32 = 1
     private static let digitizerEventRange: UInt32 = 1 << 0
     private static let digitizerEventTouch: UInt32 = 1 << 1
@@ -86,10 +83,10 @@ final class IOSSimulatorHIDBridge {
 
     init?(device: SimDevice) {
         self.device = device
-        _ = Self.loadFramework(Self.coreSimulatorPath)
-        let ioKit = Self.loadFramework(Self.ioKitPath)
+        _ = Self.loadFramework(ClawixIOSSimulatorRoutes.coreSimulatorFramework)
+        let ioKit = Self.loadFramework(ClawixIOSSimulatorRoutes.ioKitFramework)
         guard
-            let simulatorKit = Self.loadFramework(Self.simulatorKitPath),
+            let simulatorKit = Self.loadFramework(ClawixIOSSimulatorRoutes.simulatorKitFramework),
             let simDevice = Self.resolveSimDevice(udid: device.udid),
             let screen = Self.createScreen(device: simDevice),
             let client = Self.createClient(device: simDevice),
@@ -249,7 +246,7 @@ final class IOSSimulatorHIDBridge {
             let contextClass = NSClassFromString("SimServiceContext") as? NSObject.Type,
             let context = contextClass.perform(
                 NSSelectorFromString("sharedServiceContextForDeveloperDir:error:"),
-                with: "/Applications/Xcode.app/Contents/Developer" as NSString,
+                with: ClawixIOSSimulatorRoutes.xcodeDeveloperDir as NSString,
                 with: nil
             )?.takeUnretainedValue() as? NSObject
         else {

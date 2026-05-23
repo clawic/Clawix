@@ -3,8 +3,7 @@ import ServiceManagement
 
 /// LaunchAgent registration for the local LLM runtime. When enabled,
 /// `launchd` keeps the daemon alive across logout, app crashes, and
-/// Cmd+Q of the GUI. The plist embedded in the .app
-/// (`Contents/Library/LaunchAgents/<bundle>.local-models.plist`) is
+/// Cmd+Q of the GUI. The plist embedded in the .app's LaunchAgents folder is
 /// written by `dev.sh` / the release scripts; this class only flips
 /// registration on or off via `SMAppService.agent`.
 ///
@@ -26,7 +25,7 @@ final class LocalModelsLaunchAgent: ObservableObject {
 
     private init() {
         let parentBundleId = Bundle.main.bundleIdentifier ?? "clawix.desktop"
-        self.plistName = "\(parentBundleId).local-models.plist"
+        self.plistName = ClawixLocalModelsRuntimeRoutes.launchAgentPlistName(parentBundleId: parentBundleId)
         self.agent = SMAppService.agent(plistName: plistName)
         refresh()
     }

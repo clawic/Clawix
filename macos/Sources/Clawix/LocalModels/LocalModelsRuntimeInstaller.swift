@@ -131,18 +131,18 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
     // MARK: - On-disk layout
 
     nonisolated static var runtimeRoot: URL {
-        applicationSupportRoot.appendingPathComponent("runtime", isDirectory: true)
+        ClawixLocalModelsRuntimeRoutes.runtimeRoot(applicationSupportRoot: applicationSupportRoot)
     }
 
     nonisolated static var versionFile: URL {
-        runtimeRoot.appendingPathComponent("version", isDirectory: false)
+        ClawixLocalModelsRuntimeRoutes.versionFileURL(runtimeRoot: runtimeRoot)
     }
 
     /// The upstream tarball ships the binary at the tarball root (next
     /// to its `.dylib`s, `.so`s and `mlx_metal_v*/` directories), not
     /// under `bin/`. Confirmed against v0.23.1 by extracting locally.
     nonisolated static var binaryURL: URL {
-        runtimeRoot.appendingPathComponent("ollama", isDirectory: false)
+        ClawixLocalModelsRuntimeRoutes.binaryURL(runtimeRoot: runtimeRoot)
     }
 
     /// Directory dyld must search at runtime to load the libs that ship
@@ -150,13 +150,7 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
     nonisolated static var libraryPath: URL { runtimeRoot }
 
     nonisolated static var applicationSupportRoot: URL {
-        let base = FileManager.default.urls(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask
-        )[0]
-        return base
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.localModels, isDirectory: true)
+        ClawixLocalModelsRuntimeRoutes.applicationSupportRoot()
     }
 
     private nonisolated static func prepareParentDirectory() throws {
@@ -244,7 +238,7 @@ final class LocalModelsRuntimeInstaller: NSObject, ObservableObject {
         try fm.createDirectory(at: runtimeRoot, withIntermediateDirectories: true)
 
         let tar = Process()
-        tar.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+        tar.executableURL = ClawixLocalModelsRuntimeRoutes.tarURL
         tar.arguments = ["-xzf", tarball.path, "-C", runtimeRoot.path]
         let stderrPipe = Pipe()
         tar.standardError = stderrPipe

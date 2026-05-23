@@ -3,17 +3,9 @@ import Foundation
 extension AndroidSimulatorFramebufferController {
     nonisolated static func locateADB() throws -> String {
         let env = ProcessInfo.processInfo.environment
-        let home = env["HOME"] ?? NSHomeDirectory()
-        let sdkRoots = [
-            env["ANDROID_HOME"],
-            env["ANDROID_SDK_ROOT"],
-            "\(home)/Library/Android/sdk",
-            "/opt/homebrew/share/android-commandlinetools",
-            "/usr/local/share/android-commandlinetools"
-        ].compactMap { $0 }
-        let candidates =
-            sdkRoots.map { "\($0)/platform-tools/adb" } +
-            ["/opt/homebrew/bin/adb", "/usr/local/bin/adb", "/usr/bin/adb"]
+        let home = ClawixAndroidSimulatorRoutes.userHomePath(environment: env)
+        let sdkRoots = ClawixAndroidSimulatorRoutes.sdkRoots(home: home, environment: env)
+        let candidates = ClawixAndroidSimulatorRoutes.adbCandidates(sdkRoots: sdkRoots)
         if let path = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
             return path
         }
@@ -30,17 +22,9 @@ extension AndroidSimulatorFramebufferController {
 
     nonisolated static func locateEmulator() -> String? {
         let env = ProcessInfo.processInfo.environment
-        let home = env["HOME"] ?? NSHomeDirectory()
-        let sdkRoots = [
-            env["ANDROID_HOME"],
-            env["ANDROID_SDK_ROOT"],
-            "\(home)/Library/Android/sdk",
-            "/opt/homebrew/share/android-commandlinetools",
-            "/usr/local/share/android-commandlinetools"
-        ].compactMap { $0 }
-        let candidates =
-            sdkRoots.map { "\($0)/emulator/emulator" } +
-            ["/opt/homebrew/bin/emulator", "/usr/local/bin/emulator"]
+        let home = ClawixAndroidSimulatorRoutes.userHomePath(environment: env)
+        let sdkRoots = ClawixAndroidSimulatorRoutes.sdkRoots(home: home, environment: env)
+        let candidates = ClawixAndroidSimulatorRoutes.emulatorCandidates(sdkRoots: sdkRoots)
         return candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) })
     }
 
@@ -58,8 +42,8 @@ extension AndroidSimulatorFramebufferController {
             }
         }
 
-        let home = ProcessInfo.processInfo.environment["HOME"] ?? NSHomeDirectory()
-        let avdRoot = URL(fileURLWithPath: "\(home)/.android/avd")
+        let home = ClawixAndroidSimulatorRoutes.userHomePath()
+        let avdRoot = ClawixAndroidSimulatorRoutes.avdRoot(home: home)
         guard let entries = try? FileManager.default.contentsOfDirectory(
             at: avdRoot,
             includingPropertiesForKeys: nil
@@ -75,9 +59,9 @@ extension AndroidSimulatorFramebufferController {
     }
 
     nonisolated static func configForAVD(named name: String) -> AndroidAVDConfig {
-        let home = ProcessInfo.processInfo.environment["HOME"] ?? NSHomeDirectory()
-        let path = "\(home)/.android/avd/\(name).avd/config.ini"
-        guard let raw = try? String(contentsOfFile: path) else {
+        let home = ClawixAndroidSimulatorRoutes.userHomePath()
+        let path = ClawixAndroidSimulatorRoutes.avdConfig(home: home, name: name)
+        guard let raw = try? String(contentsOf: path) else {
             return AndroidAVDConfig(width: nil, height: nil, deviceName: nil)
         }
         var values: [String: String] = [:]

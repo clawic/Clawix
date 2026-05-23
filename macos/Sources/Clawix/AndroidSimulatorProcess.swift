@@ -19,10 +19,9 @@ extension AndroidSimulatorFramebufferController {
         captureBinary: Bool = false,
         timeout: TimeInterval = 20
     ) throws -> AndroidToolResult {
-        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let token = UUID().uuidString
-        let stdoutURL = tempDir.appendingPathComponent("clawix-android-\(token).stdout")
-        let stderrURL = tempDir.appendingPathComponent("clawix-android-\(token).stderr")
+        let stdoutURL = ClawixAndroidSimulatorRoutes.toolStdoutURL(token: token)
+        let stderrURL = ClawixAndroidSimulatorRoutes.toolStderrURL(token: token)
         defer {
             try? FileManager.default.removeItem(at: stdoutURL)
             try? FileManager.default.removeItem(at: stderrURL)

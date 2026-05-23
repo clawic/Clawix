@@ -55,27 +55,23 @@ final class LocalModelsDaemon: ObservableObject {
     // MARK: - Paths
 
     static var logFileURL: URL {
-        let logs = FileManager.default.urls(
-            for: .libraryDirectory,
-            in: .userDomainMask
-        )[0]
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.logs, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-        return logs.appendingPathComponent("local-models.log", isDirectory: false)
+        ClawixLocalModelsRuntimeRoutes.logFileURL
     }
 
     /// `OLLAMA_MODELS` target. Lives next to the runtime so an uninstall
     /// only of the runtime doesn't wipe the user's downloaded weights.
     static var modelsDirectory: URL {
-        LocalModelsRuntimeInstaller.applicationSupportRoot
-            .appendingPathComponent("models", isDirectory: true)
+        ClawixLocalModelsRuntimeRoutes.modelsDirectory(
+            applicationSupportRoot: LocalModelsRuntimeInstaller.applicationSupportRoot
+        )
     }
 
     /// Fake `HOME` for the daemon. Stops it from reading `~/.ollama/` of
     /// the user (auth keys, manifests of any system Ollama install).
     static var fakeHomeDirectory: URL {
-        LocalModelsRuntimeInstaller.applicationSupportRoot
-            .appendingPathComponent("home", isDirectory: true)
+        ClawixLocalModelsRuntimeRoutes.fakeHomeDirectory(
+            applicationSupportRoot: LocalModelsRuntimeInstaller.applicationSupportRoot
+        )
     }
 
     // MARK: - Public API
@@ -130,7 +126,7 @@ final class LocalModelsDaemon: ObservableObject {
                 process.terminate()
                 state = .crashed(message:
                     "Runtime did not respond on \(Self.host):\(Self.port) within 30 seconds. " +
-                    "See ~/Library/Logs/Clawix/local-models.log for details.")
+                    "See \(ClawixLocalModelsRuntimeRoutes.userVisibleLogPath) for details.")
             }
         } catch {
             state = .crashed(message: "Could not start runtime: \(error.localizedDescription)")

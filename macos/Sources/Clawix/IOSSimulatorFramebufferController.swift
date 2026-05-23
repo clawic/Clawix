@@ -126,7 +126,7 @@ final class IOSSimulatorFramebufferController: ObservableObject {
     func goHome() {
         guard let device = selectedDevice else { return }
         Task { [weak self] in
-            _ = try? await Self.runTool("/usr/bin/xcrun", [
+            _ = try? await Self.runTool(ClawixIOSSimulatorRoutes.xcrunCLI, [
                 "simctl", "spawn", device.udid,
                 "notifyutil", "-p", "com.apple.springboard.homebutton"
             ], timeout: 5)
@@ -138,7 +138,7 @@ final class IOSSimulatorFramebufferController: ObservableObject {
     func openURL(_ url: String) {
         guard let device = selectedDevice else { return }
         Task { [weak self] in
-            _ = try? await Self.runTool("/usr/bin/xcrun", ["simctl", "openurl", device.udid, url], timeout: 8)
+            _ = try? await Self.runTool(ClawixIOSSimulatorRoutes.xcrunCLI, ["simctl", "openurl", device.udid, url], timeout: 8)
             try? await Task.sleep(nanoseconds: 900_000_000)
             await self?.captureOnce(device: device, markRunning: true)
         }
@@ -147,7 +147,7 @@ final class IOSSimulatorFramebufferController: ObservableObject {
     func setAppearance(_ appearance: Appearance) {
         guard let device = selectedDevice else { return }
         Task { [weak self] in
-            _ = try? await Self.runTool("/usr/bin/xcrun", [
+            _ = try? await Self.runTool(ClawixIOSSimulatorRoutes.xcrunCLI, [
                 "simctl", "ui", device.udid, "appearance", appearance.rawValue
             ], timeout: 5)
             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -279,7 +279,7 @@ final class IOSSimulatorFramebufferController: ObservableObject {
     }
 
     private static func loadAvailableDevices() async throws -> [SimDevice] {
-        let result = try await runTool("/usr/bin/xcrun", ["simctl", "list", "devices", "available", "--json"])
+        let result = try await runTool(ClawixIOSSimulatorRoutes.xcrunCLI, ["simctl", "list", "devices", "available", "--json"])
         guard result.status == 0 else {
             throw SimulatorError.commandFailed(result.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
         }
@@ -316,7 +316,7 @@ final class IOSSimulatorFramebufferController: ObservableObject {
 
     private static func boot(device: SimDevice) async throws {
         if device.state == "Booted" { return }
-        let result = try await runTool("/usr/bin/xcrun", ["simctl", "boot", device.udid])
+        let result = try await runTool(ClawixIOSSimulatorRoutes.xcrunCLI, ["simctl", "boot", device.udid])
         if result.status == 0 { return }
         let message = result.stderr + result.stdout
         if message.localizedCaseInsensitiveContains("current state: booted") { return }
@@ -325,11 +325,10 @@ final class IOSSimulatorFramebufferController: ObservableObject {
     }
 
     private static func screenshot(device: SimDevice) async throws -> Data {
-        let path = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clawix-ios-simulator-\(device.udid)-\(UUID().uuidString).png")
+        let path = ClawixIOSSimulatorRoutes.screenshotTempURL(deviceUDID: device.udid)
         defer { try? FileManager.default.removeItem(at: path) }
 
-        let result = try await runTool("/usr/bin/xcrun", [
+        let result = try await runTool(ClawixIOSSimulatorRoutes.xcrunCLI, [
             "simctl", "io", device.udid,
             "screenshot", "--type=png", "--mask=alpha",
             path.path
@@ -355,9 +354,9 @@ final class IOSSimulatorFramebufferController: ObservableObject {
         _ arguments: [String],
         timeout: TimeInterval = 20
     ) throws -> ToolResult {
-        let tempDirectory = FileManager.default.temporaryDirectory
-        let stdoutURL = tempDirectory.appendingPathComponent("clawix-ios-tool-\(UUID().uuidString).out")
-        let stderrURL = tempDirectory.appendingPathComponent("clawix-ios-tool-\(UUID().uuidString).err")
+        let token = UUID().uuidString
+        let stdoutURL = ClawixIOSSimulatorRoutes.toolStdoutURL(id: token)
+        let stderrURL = ClawixIOSSimulatorRoutes.toolStderrURL(id: token)
         FileManager.default.createFile(atPath: stdoutURL.path, contents: nil)
         FileManager.default.createFile(atPath: stderrURL.path, contents: nil)
         defer {

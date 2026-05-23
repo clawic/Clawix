@@ -25,8 +25,6 @@ struct IOSSimulatorNativeDisplayView: NSViewRepresentable {
         private var retainedScreen: AnyObject?
         private var retainedDisplay: AnyObject?
 
-        private static let simulatorKitPath = "/Applications/Xcode.app/Contents/Developer/Library/PrivateFrameworks/SimulatorKit.framework/SimulatorKit"
-        private static let coreSimulatorPath = "/Library/Developer/PrivateFrameworks/CoreSimulator.framework/CoreSimulator"
         private static let mainScreenID: UInt32 = 1
         private static let allInputs: UInt = 7
 
@@ -58,8 +56,8 @@ struct IOSSimulatorNativeDisplayView: NSViewRepresentable {
             retainedDisplay = nil
 
             guard
-                Self.loadFramework(Self.coreSimulatorPath) != nil,
-                let simulatorKit = Self.loadFramework(Self.simulatorKitPath),
+                Self.loadFramework(ClawixIOSSimulatorRoutes.coreSimulatorFramework) != nil,
+                let simulatorKit = Self.loadFramework(ClawixIOSSimulatorRoutes.simulatorKitFramework),
                 let simDevice = Self.resolveSimDevice(udid: display.deviceUDID),
                 let screen = Self.createScreen(device: simDevice),
                 let view = Self.createDisplayView(),
@@ -130,7 +128,7 @@ struct IOSSimulatorNativeDisplayView: NSViewRepresentable {
                 let contextClass = NSClassFromString("SimServiceContext") as? NSObject.Type,
                 let context = contextClass.perform(
                     NSSelectorFromString("sharedServiceContextForDeveloperDir:error:"),
-                    with: "/Applications/Xcode.app/Contents/Developer" as NSString,
+                    with: ClawixIOSSimulatorRoutes.xcodeDeveloperDir as NSString,
                     with: nil
                 )?.takeUnretainedValue() as? NSObject
             else {

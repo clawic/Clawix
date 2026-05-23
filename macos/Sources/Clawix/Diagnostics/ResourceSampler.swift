@@ -129,25 +129,29 @@ enum ResourceSampler {
         )
     }
 
-    /// Resolves `~/Library/Application Support/<bundleId>/Diagnostics/<name>`,
-    /// creating the directory tree if needed. Returns nil on sandbox
-    /// or filesystem errors (the caller should treat that as "no
-    /// diagnostics dump this run", not a fatal condition).
+    /// Resolves a persistent diagnostics artifact, creating the directory tree
+    /// if needed. Returns nil on sandbox or filesystem errors (the caller should
+    /// treat that as "no diagnostics dump this run", not a fatal condition).
     static func diagnosticsFileURL(named name: String) -> URL? {
         let fm = FileManager.default
-        let bundleId = Bundle.main.bundleIdentifier ?? "clawix.desktop"
-        guard let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+        let bundleId = ClawixDiagnosticStorageRoutes.bundleIdentifier()
+        guard let support = ClawixDiagnosticStorageRoutes.applicationSupportRoot(fileManager: fm) else {
             return nil
         }
-        let dir = support
-            .appendingPathComponent(bundleId, isDirectory: true)
-            .appendingPathComponent("Diagnostics", isDirectory: true)
+        let dir = ClawixDiagnosticStorageRoutes.diagnosticsDirectoryURL(
+            applicationSupportRoot: support,
+            bundleIdentifier: bundleId
+        )
         do {
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
             return nil
         }
-        return dir.appendingPathComponent(name)
+        return ClawixDiagnosticStorageRoutes.diagnosticsFileURL(
+            named: name,
+            applicationSupportRoot: support,
+            bundleIdentifier: bundleId
+        )
     }
 
     private static func tick() {

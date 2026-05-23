@@ -24,9 +24,7 @@ extension LocalModelsRuntimeInstaller: URLSessionDownloadDelegate {
         didFinishDownloadingTo location: URL
     ) {
         let fm = FileManager.default
-        let cacheDir = fm.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.localModels, isDirectory: true)
+        let cacheDir = ClawixCacheRoutes.localModelsDirectory(fileManager: fm)
         try? fm.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         let dest = cacheDir.appendingPathComponent("ollama-\(Self.pinnedVersion).tgz")
         try? fm.removeItem(at: dest)

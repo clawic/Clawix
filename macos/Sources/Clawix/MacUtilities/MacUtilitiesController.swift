@@ -244,7 +244,7 @@ final class MacUtilitiesController: ObservableObject {
             case .clearClipboard:
                 NSPasteboard.general.clearContents()
             case .sleepDisplays:
-                try runProcess("/usr/bin/pmset", arguments: ["displaysleepnow"])
+                try runProcess(ClawixMacUtilityRoutes.pmsetCLI, arguments: ["displaysleepnow"])
             case .centerMousePointer:
                 try centerMousePointer()
             case .showColorPicker:
@@ -258,13 +258,13 @@ final class MacUtilitiesController: ObservableObject {
             case .toggleDesktopIcons:
                 try toggleDesktopIcons()
             case .openFinder:
-                openApplication("/System/Library/CoreServices/Finder.app")
+                openApplication(ClawixMacUtilityRoutes.finderApp)
             case .openTerminal:
-                openApplication("/System/Applications/Utilities/Terminal.app")
+                openApplication(ClawixMacUtilityRoutes.terminalApp)
             case .openShortcuts:
-                openApplication("/System/Applications/Shortcuts.app")
+                openApplication(ClawixMacUtilityRoutes.shortcutsApp)
             case .openPasswords:
-                openApplication("/System/Applications/Passwords.app")
+                openApplication(ClawixMacUtilityRoutes.passwordsApp)
             case .openAirDrop:
                 try runAppleScript(Self.openAirDropScript)
             case .openVPNSettings:
@@ -319,16 +319,16 @@ final class MacUtilitiesController: ObservableObject {
 
     private func toggleDesktopIcons() throws {
         let current = try runProcess(
-            "/usr/bin/defaults",
+            ClawixMacUtilityRoutes.defaultsCLI,
             arguments: ["read", "com.apple.finder", "CreateDesktop"],
             allowFailure: true
         )
         let showsDesktop = current.trimmingCharacters(in: .whitespacesAndNewlines) != "false"
         try runProcess(
-            "/usr/bin/defaults",
+            ClawixMacUtilityRoutes.defaultsCLI,
             arguments: ["write", "com.apple.finder", "CreateDesktop", showsDesktop ? "false" : "true"]
         )
-        try runProcess("/usr/bin/killall", arguments: ["Finder"], allowFailure: true)
+        try runProcess(ClawixMacUtilityRoutes.killallCLI, arguments: ["Finder"], allowFailure: true)
     }
 
     private func centerMousePointer() throws {
