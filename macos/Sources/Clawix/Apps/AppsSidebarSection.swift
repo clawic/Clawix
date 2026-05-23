@@ -72,13 +72,10 @@ struct AppsSidebarSection: View {
             withAnimation(.easeOut(duration: 0.16)) { expanded.toggle() }
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 12.5, weight: .semibold))
+                IconImage("square.grid.2x2", size: 12.5)
                     .frame(width: 16, height: 16, alignment: .center)
                 Text("Apps")
-                    .font(BodyFont.system(size: 12, wght: 600))
-                    .textCase(.uppercase)
-                    .tracking(0.4)
+                    .font(BodyFont.system(size: 13, wght: 600))
                 Spacer()
                 Button {
                     appState.navigate(to: .appsHome)
