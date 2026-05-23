@@ -149,6 +149,13 @@ struct ClawixApp: App {
                     }
                 }
             )
+            // Global "open project in editor" shortcut (⌥⌘O by default). The
+            // resolver pulls the active project folder from `state`, so the
+            // shortcut opens whatever chat/project the user is viewing in their
+            // last-used external editor.
+            FavoriteEditorShortcutInstaller.installIfNeeded(
+                resolveFolderPath: { [weak state] in state?.currentProjectFolderPath }
+            )
         }
         _appState = StateObject(wrappedValue: state)
         // IoT observable surface: the manager observes ClawJSServiceManager

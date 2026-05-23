@@ -50,7 +50,7 @@ struct EditorPickerDropdown: View {
     @State private var hoverTrigger = false
 
     private var triggerEditor: EditorOption {
-        clawixEditors.first { $0.name == "Finder" } ?? clawixEditors[0]
+        FavoriteEditorStore.favorite
     }
 
     var body: some View {
@@ -130,7 +130,8 @@ private struct EditorPickerMenu: View {
 
             ForEach(clawixEditors) { editor in
                 Button {
-                    openFolder(folderPath, with: editor)
+                    FavoriteEditorStore.record(editor)
+                    EditorLauncher.open(folderPath: folderPath, with: editor)
                     isOpen = false
                 } label: {
                     HStack(spacing: MenuStyle.rowIconLabelSpacing) {
@@ -161,28 +162,5 @@ private struct EditorPickerMenu: View {
         .padding(.vertical, MenuStyle.menuVerticalPadding)
         .menuStandardBackground()
         .background(MenuOutsideClickWatcher(isPresented: $isOpen))
-    }
-
-    private func openFolder(_ path: String, with editor: EditorOption) {
-        let folderURL = URL(fileURLWithPath: path, isDirectory: true)
-        let appURL: URL? =
-            NSWorkspace.shared.urlForApplication(withBundleIdentifier: editor.bundleId)
-            ?? (FileManager.default.fileExists(atPath: editor.fallbackPath)
-                ? URL(fileURLWithPath: editor.fallbackPath)
-                : nil)
-
-        guard let appURL else {
-            NSWorkspace.shared.open(folderURL)
-            return
-        }
-
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        NSWorkspace.shared.open(
-            [folderURL],
-            withApplicationAt: appURL,
-            configuration: configuration,
-            completionHandler: nil
-        )
     }
 }

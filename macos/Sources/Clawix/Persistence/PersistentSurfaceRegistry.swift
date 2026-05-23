@@ -736,6 +736,8 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.shortcuts.terminalCloseTab", "Terminal close tab keyboard shortcut", "KeyboardShortcuts_terminal.closeTab", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.shortcuts.terminalSplitVertical", "Terminal split vertical keyboard shortcut", "KeyboardShortcuts_terminal.splitVertical", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.shortcuts.terminalSplitHorizontal", "Terminal split horizontal keyboard shortcut", "KeyboardShortcuts_terminal.splitHorizontal", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.openFavoriteEditor", "Open favorite editor keyboard shortcut", "KeyboardShortcuts_editor.openFavorite", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.editor.favoriteBundleId", "Favorite editor bundle id", ClawixPersistentSurfaceKeys.favoriteEditorBundleId, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.apps.expanded", "Apps sidebar expanded", ClawixPersistentSurfaceKeys.sidebarAppsExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultInternetAllowed", "Apps default internet allowed", ClawixPersistentSurfaceKeys.appsDefaultInternetAllowed, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultCallAgent", "Apps default call agent", ClawixPersistentSurfaceKeys.appsDefaultCallAgent, PersistentSurfaceKind.appStorageKey),
@@ -1016,6 +1018,7 @@ enum ClawixPersistentSurfaceKeys {
     static let sidebarAgentsExpanded = "SidebarAgentsExpanded"
     static let leftSidebarWidth = "LeftSidebarWidth"
     static let rightSidebarWidth = "RightSidebarWidth"
+    static let favoriteEditorBundleId = "FavoriteEditorBundleId"
     static let clawJSAdvancedExpanded = "clawjs.advancedExpanded"
     static let secretsAdvancedExpanded = "secrets.advancedExpanded"
     static let dictationAdvancedExpanded = "dictation.advancedExpanded"

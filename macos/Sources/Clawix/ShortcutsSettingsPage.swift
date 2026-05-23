@@ -58,6 +58,16 @@ struct ShortcutsSettingsPage: View {
                     name: .terminalSplitHorizontal
                 )
             }
+            Spacer().frame(height: 16)
+
+            SectionLabel(title: "Editor")
+            SettingsCard {
+                ShortcutSettingRow(
+                    title: "Open project in editor",
+                    detail: "Open the current project's folder in the editor you last picked from the title-bar menu.",
+                    name: .openFavoriteEditor
+                )
+            }
         }
     }
 }

@@ -155,19 +155,10 @@ struct ContentTopChrome: View {
 
     /// Folder path that the right-side "Open with" dropdown should target.
     /// Returns nil when the user has no real folder context (e.g. "Work on
-    /// a Project" home), so the dropdown stays hidden.
+    /// a Project" home), so the dropdown stays hidden. Shared with the
+    /// open-favorite-editor shortcut via `AppState.currentProjectFolderPath`.
     private var resolvedFolderPath: String? {
-        if let chat = currentChat,
-           let pid = chat.projectId,
-           let proj = appState.projects.first(where: { $0.id == pid }) {
-            let expanded = (proj.path as NSString).expandingTildeInPath
-            if FileManager.default.fileExists(atPath: expanded) { return expanded }
-        }
-        if let project = appState.selectedProject {
-            let expanded = (project.path as NSString).expandingTildeInPath
-            if FileManager.default.fileExists(atPath: expanded) { return expanded }
-        }
-        return nil
+        appState.currentProjectFolderPath
     }
 
     var body: some View {
