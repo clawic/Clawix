@@ -68,15 +68,15 @@ private struct CardBody: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
                 LucideIcon(.globe, size: 16)
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     .frame(width: 26, height: 26)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.overlay(0.08))
                     )
                 Text("Allow Clawix to access \(request.origin)?")
                     .font(BodyFont.system(size: 14.5, weight: .medium))
-                    .foregroundColor(Color(white: 0.97))
+                    .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
             }
@@ -128,9 +128,9 @@ private struct CardBody: View {
                 HStack(spacing: 6) {
                     Text(scope.label)
                         .font(BodyFont.system(size: 12.5, wght: 500))
-                        .foregroundColor(persist ? Color(white: 0.92) : Color(white: 0.62))
+                        .foregroundColor(persist ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.40, dark: 0.62))
                     LucideIcon.auto("chevron.down", size: 10)
-                        .foregroundColor(persist ? Color(white: 0.78) : Color(white: 0.5))
+                        .foregroundColor(persist ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.46, dark: 0.5))
                 }
                 .contentShape(Rectangle())
             }
@@ -147,16 +147,16 @@ private struct CardBody: View {
 
     private var checkbox: some View {
         RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(persist ? Color.white.opacity(0.92) : Color.white.opacity(0.06))
+            .fill(persist ? Color.overlay(0.92) : Color.overlay(0.06))
             .overlay(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .stroke(Color.white.opacity(persist ? 0 : 0.22), lineWidth: 1)
+                    .stroke(Color.overlay(persist ? 0 : 0.22), lineWidth: 1)
             )
             .frame(width: 18, height: 18)
             .overlay {
                 if persist {
                     CheckIcon(size: 10)
-                        .foregroundColor(.black)
+                        .foregroundColor(Palette.background)
                 }
             }
     }

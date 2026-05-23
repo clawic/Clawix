@@ -83,7 +83,7 @@ private struct SidebarItemPill: View {
 
                 Text(displayTitle)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(isActive ? .white : Color(white: 0.78))
+                    .foregroundColor(isActive ? .white : Color.gray(light: 0.27, dark: 0.78))
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             }
@@ -110,10 +110,10 @@ private struct SidebarItemPill: View {
             .overlay(alignment: .trailing) {
                 Button(action: onClose) {
                     LucideIcon(.x, size: 10)
-                        .foregroundColor(Color(white: 0.95))
+                        .foregroundColor(Color.gray(light: 0.11, dark: 0.95))
                         .frame(width: 14, height: 14)
                         .background(
-                            Circle().fill(Color.white.opacity(0.18))
+                            Circle().fill(Color.overlay(0.18))
                         )
                         .contentShape(Rectangle())
                 }
@@ -149,34 +149,34 @@ private struct SidebarItemPill: View {
             .animation(.easeOut(duration: 0.12), value: isLoading)
         case .file:
             FileChipIcon(size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         case .chat:
             // Branch arrows mark a side chat tab so users can tell it
             // apart from web/file pills at a glance. Same icon used by
             // the menu's "Fork conversation" entry, since a side chat
             // is a silent fork at heart.
-            BranchArrowsIconView(color: Color(white: 0.78), lineWidth: 1.0)
+            BranchArrowsIconView(color: Color.gray(light: 0.27, dark: 0.78), lineWidth: 1.0)
                 .frame(width: 14, height: 14)
         case .fileTree:
             FolderStackIcon(size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         case .review:
             GitCompareIcon(size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         case .summary:
             LucideIcon(.info, size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         case .iosSimulator:
             LucideIcon(.appWindow, size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         case .androidSimulator:
             LucideIcon.auto("smartphone", size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 14, height: 14)
         }
     }
@@ -213,8 +213,8 @@ private struct SidebarItemPill: View {
     }
 
     private var background: Color {
-        if isActive  { return Color.white.opacity(0.10) }
-        if isHovered { return Color.white.opacity(0.05) }
+        if isActive  { return Color.overlay(0.10) }
+        if isHovered { return Color.overlay(0.05) }
         return .clear
     }
 }
@@ -230,11 +230,11 @@ private struct BrowserTabSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.18),
+                .stroke(Color.overlay(0.18),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
             Circle()
                 .trim(from: 0.0, to: 0.79)
-                .stroke(Color.white.opacity(0.75),
+                .stroke(Color.overlay(0.75),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
                 .rotationEffect(.degrees(rotation))
         }
@@ -254,11 +254,11 @@ private struct NewTabButton: View {
     var body: some View {
         Button(action: action) {
             LucideIcon(.plus, size: 13)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(hovered ? Color.white.opacity(0.07) : Color.clear)
+                        .fill(hovered ? Color.overlay(0.07) : Color.clear)
                 )
                 .contentShape(Rectangle())
         }
@@ -277,11 +277,11 @@ private struct SimulatorTabButton: View {
         Button(action: action) {
             Text("iOS")
                 .font(BodyFont.system(size: 11, wght: 700))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 34, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(hovered ? Color.white.opacity(0.07) : Color.clear)
+                        .fill(hovered ? Color.overlay(0.07) : Color.clear)
                 )
                 .contentShape(Rectangle())
         }
@@ -301,11 +301,11 @@ private struct AndroidSimulatorTabButton: View {
         Button(action: action) {
             Text("Android")
                 .font(BodyFont.system(size: 11, wght: 700))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .frame(width: 58, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(hovered ? Color.white.opacity(0.07) : Color.clear)
+                        .fill(hovered ? Color.overlay(0.07) : Color.clear)
                 )
                 .contentShape(Rectangle())
         }
@@ -425,14 +425,14 @@ private struct ChromeIconButton: View {
     }
 
     private var foreground: Color {
-        if !enabled { return Color(white: 0.32) }
-        if isActive { return Color(white: 0.96) }
-        return hovered ? Color(white: 0.92) : Color(white: 0.72)
+        if !enabled { return Color.gray(light: 0.84, dark: 0.32) }
+        if isActive { return Color.gray(light: 0.10, dark: 0.96) }
+        return hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.31, dark: 0.72)
     }
 
     private var backgroundColor: Color {
-        if isActive { return Color.white.opacity(0.10) }
-        if hovered && enabled { return Color.white.opacity(0.07) }
+        if isActive { return Color.overlay(0.10) }
+        if hovered && enabled { return Color.overlay(0.07) }
         return .clear
     }
 }
@@ -456,7 +456,7 @@ private struct ChromeMaximizeButton: View {
             .frame(width: 26, height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(hovered ? Color.white.opacity(0.07) : .clear)
+                    .fill(hovered ? Color.overlay(0.07) : .clear)
             )
             .contentShape(Rectangle())
         }
@@ -466,7 +466,7 @@ private struct ChromeMaximizeButton: View {
     }
 
     private var foreground: Color {
-        hovered ? Color(white: 0.92) : Color(white: 0.72)
+        hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.31, dark: 0.72)
     }
 }
 
@@ -580,7 +580,7 @@ private struct ZoomRow: View {
                 stepperButton(symbol: "minus", hovered: $hoverMinus, action: onZoomOut)
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
                     .frame(width: 1, height: 14)
 
                 Text(percentText)
@@ -589,18 +589,18 @@ private struct ZoomRow: View {
                     .frame(minWidth: 38)
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
                     .frame(width: 1, height: 14)
 
                 stepperButton(symbol: "plus", hovered: $hoverPlus, action: onZoomIn)
             }
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Color.overlay(0.07))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.06), lineWidth: 0.5)
             )
 
             Button(action: onReset) {
@@ -646,7 +646,7 @@ struct BrowserURLField: View {
                 .textFieldStyle(.plain)
                 .focused($isFocused)
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .frame(maxWidth: .infinity)
                 .onChange(of: isFocused) { _, focused in
                     editing = focused
@@ -661,11 +661,11 @@ struct BrowserURLField: View {
         .padding(.trailing, 12)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(white: 0.10))
+                .fill(Color.gray(light: 0.95, dark: 0.10))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(editing ? 0.18 : 0.08), lineWidth: 0.7)
+                .stroke(Color.overlay(editing ? 0.18 : 0.08), lineWidth: 0.7)
         )
         .onAppear { syncFromController() }
         .onChange(of: controller.id) { _, _ in
@@ -819,7 +819,7 @@ private struct MonogramFavicon: View {
             .overlay(
                 Text(letter)
                     .font(BodyFont.system(size: size * 0.62, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
             )
             .frame(width: size, height: size)
     }

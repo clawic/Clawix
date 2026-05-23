@@ -50,13 +50,13 @@ struct BrowserView: View {
         ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
                 BrowserTabStrip()
-                Divider().background(Color.white.opacity(0.06))
+                Divider().background(Color.overlay(0.06))
 
                 if let payload = activeWeb {
                     let controller = store.controller(for: payload, appState: appState)
                     BrowserNavigationBar(controller: controller, moreMenuOpen: $moreMenuOpen)
                         .id(payload.id)
-                    Divider().background(Color.white.opacity(0.06))
+                    Divider().background(Color.overlay(0.06))
                     ZStack {
                         BrowserWebView(controller: controller)
                             .id(payload.id)
@@ -203,19 +203,19 @@ private struct BrowserErrorOverlay: View {
     var body: some View {
         VStack(spacing: 14) {
             LucideIcon(.circleAlert, size: 22.5)
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             Text("Cannot load page")
                 .font(BodyFont.system(size: 14, wght: 600))
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
             Text(error.message)
                 .font(BodyFont.system(size: 12, wght: 400))
-                .foregroundColor(Color(white: 0.60))
+                .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
             if let url = error.failedURL {
                 Text(url.absoluteString)
                     .font(BodyFont.system(size: 11, wght: 400))
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 360)
@@ -223,12 +223,12 @@ private struct BrowserErrorOverlay: View {
             Button(action: onRetry) {
                 Text("Try again")
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color(white: 0.20))
+                            .fill(Color.gray(light: 0.88, dark: 0.20))
                     )
             }
             .buttonStyle(.plain)
