@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { createDiagnostic, printActionableFailureReport } from "./actionable-error.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 
@@ -509,7 +510,17 @@ const wantsReport = process.argv.includes("--report");
 const wantsJson = process.argv.includes("--json");
 const targets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 if (targets.length === 0) {
-  console.error("Usage: node scripts/persistent-surface-guard.mjs --self-test | [--report] [--json] <file-or-dir>...");
+  printActionableFailureReport({
+    title: "persistent surface guard usage error:",
+    diagnostics: [
+      createDiagnostic("persistent_surface_guard_missing_target", "No target files or directories were provided.", {
+        status: "USAGE",
+        location: "argv",
+        suggestion: "Pass one or more source roots so the guard can scan durable literals.",
+        safeNextStep: "Run node scripts/persistent-surface-guard.mjs --self-test or node scripts/persistent-surface-guard.mjs macos ios android windows web/src linux/app/src.",
+      }),
+    ],
+  });
   process.exit(64);
 }
 
@@ -538,10 +549,14 @@ if (wantsReport) {
   process.exit(0);
 }
 if (findings.length > 0) {
-  console.error("persistent surface guard failed:");
-  for (const finding of findings) {
-    console.error(`- ${finding.file}:${finding.line} ${finding.rule}: ${finding.message}`);
-  }
+  printActionableFailureReport({
+    title: "persistent surface guard failed:",
+    diagnostics: findings.map((finding) => createDiagnostic(`persistent_surface_${finding.rule.replaceAll(".", "_")}`, finding.message, {
+      location: `${finding.file}:${finding.line}`,
+      suggestion: "Register the durable literal in the persistent surface manifest or replace it with the existing typed surface builder.",
+      safeNextStep: "Rerun node scripts/persistent-surface-guard.mjs with the same target after the manifest or source update.",
+    })),
+  });
   process.exit(1);
 }
 

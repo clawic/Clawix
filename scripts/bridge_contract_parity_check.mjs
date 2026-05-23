@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { createDiagnostic, printActionableFailureReport } from "./actionable-error.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const fixtureRoot = path.join(rootDir, "packages/ClawixCore/Fixtures/BridgeV1");
@@ -20,22 +21,34 @@ function read(file) {
   return fs.readFileSync(path.join(rootDir, file), "utf8");
 }
 
-function fail(errors, message) {
-  errors.push(message);
+function fail(errors, message, options = {}) {
+  errors.push(createDiagnostic(options.code ?? "bridge_contract_parity_failed", message, {
+    location: options.location ?? "packages/ClawixCore/Fixtures/BridgeV1",
+    suggestion: options.suggestion ?? "Update the Bridge V1 fixture manifest, generated fixtures, or platform parity test that owns this contract.",
+    safeNextStep: options.safeNextStep ?? "Rerun node scripts/bridge_contract_parity_check.mjs after fixing the named bridge contract input.",
+  }));
 }
 
 function parseJson(file, errors) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (error) {
-    fail(errors, `${path.relative(rootDir, file)} is not valid JSON: ${error.message}`);
+    fail(errors, `${path.relative(rootDir, file)} is not valid JSON: ${error.message}`, {
+      code: "bridge_contract_invalid_json",
+      location: path.relative(rootDir, file),
+      suggestion: "Fix the JSON syntax without changing fixture semantics.",
+    });
     return null;
   }
 }
 
 function checkManifest(errors) {
   if (!fs.existsSync(manifestPath)) {
-    fail(errors, "missing packages/ClawixCore/Fixtures/BridgeV1/manifest.json");
+    fail(errors, "missing packages/ClawixCore/Fixtures/BridgeV1/manifest.json", {
+      code: "bridge_contract_manifest_missing",
+      location: "packages/ClawixCore/Fixtures/BridgeV1/manifest.json",
+      suggestion: "Regenerate or restore the Bridge V1 fixture manifest before running platform parity tests.",
+    });
     return null;
   }
   const manifest = parseJson(manifestPath, errors);
@@ -85,7 +98,13 @@ function checkManifest(errors) {
 
 function checkConsumers(errors) {
   for (const file of requiredFiles) {
-    if (!fs.existsSync(path.join(rootDir, file))) fail(errors, `missing Bridge V1 parity consumer ${file}`);
+    if (!fs.existsSync(path.join(rootDir, file))) {
+      fail(errors, `missing Bridge V1 parity consumer ${file}`, {
+        code: "bridge_contract_consumer_missing",
+        location: file,
+        suggestion: "Restore the platform parity consumer or update this check only if the platform contract moved.",
+      });
+    }
   }
 
   const expectations = [
@@ -127,8 +146,10 @@ checkConsumers(errors);
 checkLegacyWindowsMirror(errors, manifest);
 
 if (errors.length > 0) {
-  console.error("Bridge contract parity check failed:");
-  for (const error of errors) console.error(`- ${error}`);
+  printActionableFailureReport({
+    title: "Bridge contract parity check failed:",
+    diagnostics: errors,
+  });
   process.exit(1);
 }
 
