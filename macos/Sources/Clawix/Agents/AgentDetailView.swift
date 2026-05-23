@@ -462,12 +462,14 @@ struct AgentDetailView: View {
 
 struct FlowChips: View {
     let items: [String]
+    private static let visibleChipLimit = 32
+
     var body: some View {
         // SwiftUI lacks a native flow layout on older targets; use a
         // simple wrapped HStack via Layout. Keep it small + dependency
         // free so the surface renders on day one.
         AgentChipFlowLayout(spacing: 6) {
-            ForEach(items, id: \.self) { item in
+            ForEach(items.prefix(Self.visibleChipLimit), id: \.self) { item in
                 Text(item)
                     .font(BodyFont.system(size: 11, wght: 600))
                     .foregroundColor(Palette.textPrimary)

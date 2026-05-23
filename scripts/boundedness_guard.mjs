@@ -56,7 +56,20 @@ function statement(lines, index) {
 }
 
 function nearbyBound(lines, index) {
-  return bounded.test(lines.slice(Math.max(0, index - 4), Math.min(lines.length, index + 5)).join("\n"));
+  const context = lines.slice(Math.max(0, index - 4), Math.min(lines.length, index + 5)).join("\n");
+  return bounded.test(context) || /\blet\s+\w+\s*=\s*page\s*\(/u.test(context);
+}
+
+function escapedRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function hasPagedRowsSource(line, lines, index) {
+  const match = line.match(/\bForEach\s*\(\s*(\w+)\.rows\b/u);
+  if (!match) return false;
+  const source = escapedRegExp(match[1]);
+  const declaration = new RegExp(`\\blet\\s+${source}\\s*=\\s*page\\s*\\(`, "u");
+  return lines.slice(Math.max(0, index - 200), index + 1).some((candidate) => declaration.test(candidate));
 }
 
 function riskFor(line, context, lines, index) {
@@ -66,7 +79,7 @@ function riskFor(line, context, lines, index) {
   if (/\breadFileSync\s*\(/u.test(line) && /\.(?:jsonl|ndjson)\b/iu.test(line) && !nearbyBound(lines, index)) return "full-jsonl-read";
   if (/\breadFileSync\s*\(/u.test(line) && /\.(?:split|filter|sort|map)\s*\(/u.test(line) && /\b(?:session|rollout|transcript|timeline|import|embedding|search|records?)\b/iu.test(context) && !nearbyBound(lines, index)) return "full-file-split-over-large-source";
   if (/\.(?:filter|sort)\s*\(/u.test(line) && highVolume.test(line) && /\.(?:filter|sort)\s*\([^)]*\)\s*\.\s*(?:filter|sort|map|forEach)\s*\(/su.test(context) && !nearbyBound(lines, index)) return "load-all-filter-sort-render";
-  if (/\bForEach\s*\(/u.test(line) && highVolume.test(line) && !nearbyBound(lines, index)) return "ui-foreach-over-unbounded-source";
+  if (/\bForEach\s*\(/u.test(line) && highVolume.test(line) && !nearbyBound(lines, index) && !hasPagedRowsSource(line, lines, index)) return "ui-foreach-over-unbounded-source";
   return null;
 }
 
@@ -105,6 +118,12 @@ function baselineKeys(failures) {
     ids.add(entry.id);
     for (const field of ["path", "riskKind", "ownerArea", "reason", "limitKind", "limitValue", "cleanupPolicy", "reference", "expiresAt"]) {
       if (!entry[field]) failures.push(`${label} is missing ${field}`);
+    }
+    if (entry.limitKind === "historical-baseline") {
+      failures.push(`${label} must replace historical-baseline with a concrete bytes/count/age/active-window limit`);
+    }
+    if (entry.debtControl?.severity === "P0") {
+      failures.push(`${label} must not carry P0 boundedness debt; close the unbounded surface before landing`);
     }
     if (typeof entry.blocksRelease !== "boolean") failures.push(`${label} blocksRelease must be boolean`);
     if (entry.path && !fs.existsSync(path.join(args.rootDir, entry.path))) failures.push(`${label} path does not exist: ${entry.path}`);
@@ -169,6 +188,12 @@ function selfTest() {
   writeFixture(root, "macos/View.swift", "let messages = store.messages\nForEach(messages) { message in Text(message.text) }\n");
   result = run(root);
   if (result.status === 0 || !result.stderr.includes("ui-foreach-over-unbounded-source")) throw new Error("self-test missed unbounded ForEach");
+  writeFixture(root, "macos/View.swift", "let slice = page(store.messages, key: pageKey)\nForEach(slice.rows) { message in Text(message.text) }\n");
+  result = run(root);
+  if (result.status !== 0) throw new Error(`self-test explicit page slice should pass: ${result.stderr}`);
+  writeFixture(root, "macos/View.swift", "let capabilitySlice = page(store.messages, key: pageKey)\nText(\"Capabilities\")\nText(\"paged\")\nForEach(capabilitySlice.rows) { message in Text(message.text) }\n");
+  result = run(root);
+  if (result.status !== 0) throw new Error(`self-test named page slice should pass: ${result.stderr}`);
   writeFixture(root, "docs/boundedness-baseline.json", JSON.stringify({
     ...emptyBaseline,
     entries: [{
@@ -187,6 +212,27 @@ function selfTest() {
   }, null, 2));
   result = run(root);
   if (result.status !== 0) throw new Error(`self-test baseline should pass: ${result.stderr}`);
+  writeFixture(root, "docs/boundedness-baseline.json", JSON.stringify({
+    ...emptyBaseline,
+    entries: [{
+      id: "demo-historical-baseline",
+      path: "macos/View.swift",
+      riskKind: "ui-foreach-over-unbounded-source",
+      ownerArea: "demo",
+      reason: "self-test historical violation",
+      limitKind: "historical-baseline",
+      limitValue: "temporary",
+      cleanupPolicy: "replace with visible window",
+      reference: "self-test",
+      expiresAt: "2099-01-01",
+      blocksRelease: false,
+      debtControl: {
+        severity: "P0",
+      },
+    }],
+  }, null, 2));
+  result = run(root);
+  if (result.status === 0 || !result.stderr.includes("must replace historical-baseline")) throw new Error("self-test allowed historical boundedness baseline");
   fs.rmSync(root, { recursive: true, force: true });
 }
 

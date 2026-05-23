@@ -130,6 +130,8 @@ struct CommandPaletteView: View {
     @State private var query: String = ""
     @State private var selectedID: String?
     @FocusState private var queryFocused: Bool
+    private static let visibleSectionLimit = 12
+    private static let visibleItemLimit = 64
 
     private var filtered: [(PaletteSection, [PaletteItem])] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
@@ -208,9 +210,9 @@ struct CommandPaletteView: View {
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(filtered, id: \.0.id) { section, items in
+                    ForEach(filtered.prefix(Self.visibleSectionLimit), id: \.0.id) { section, items in
                         sectionHeader(section.title)
-                        ForEach(items) { item in
+                        ForEach(items.prefix(Self.visibleItemLimit)) { item in
                             row(item)
                                 .id(item.id)
                         }

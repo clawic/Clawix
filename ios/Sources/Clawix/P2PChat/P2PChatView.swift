@@ -67,6 +67,7 @@ private struct ThreadRow: View {
 struct P2PChatDetailView: View {
     @ObservedObject var store: ProfileStore
     let thread: ProfileClient.ChatThread
+    private static let visibleMessageLimit = 100
     @State private var messages: [ProfileClient.ChatMessage] = []
     @State private var draft: String = ""
 
@@ -84,7 +85,7 @@ struct P2PChatDetailView: View {
     private var messageList: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(messages) { m in Bubble(message: m) }
+                ForEach(messages.suffix(Self.visibleMessageLimit)) { m in Bubble(message: m) }
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
         }
@@ -113,7 +114,7 @@ struct P2PChatDetailView: View {
     }
 
     private func load() async {
-        messages = await store.loadMessages(peer: thread.peer.handle.fingerprint)
+        messages = Array(await store.loadMessages(peer: thread.peer.handle.fingerprint).suffix(Self.visibleMessageLimit))
     }
 
     private func send() async {
@@ -137,11 +138,13 @@ struct P2PChatDetailView: View {
                 sentAt: now,
                 draftFromAgent: false
             ))
+            messages = Array(messages.suffix(Self.visibleMessageLimit))
             draft = ""
             return
         }
         if let m = await store.sendMessage(peer: thread.peer.handle.fingerprint, body: body) {
             messages.append(m)
+            messages = Array(messages.suffix(Self.visibleMessageLimit))
             draft = ""
         }
     }

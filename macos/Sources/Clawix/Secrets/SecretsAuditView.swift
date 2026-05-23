@@ -9,6 +9,7 @@ struct SecretsAuditView: View {
     @State private var events: [DecryptedAuditEvent] = []
     @State private var selectedKindFilter: AuditEventKind?
     @State private var error: String?
+    private static let visibleAuditEventLimit = 200
 
     private let filterKinds: [AuditEventKind] = [
         .adminCreate, .uiReveal, .uiCopy, .adminTrash, .adminPurge,
@@ -160,7 +161,7 @@ struct SecretsAuditView: View {
     private var listState: some View {
         ScrollView {
             SettingsCard {
-                ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
+                ForEach(Array(events.prefix(Self.visibleAuditEventLimit).enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
                         CardDivider()
                     }

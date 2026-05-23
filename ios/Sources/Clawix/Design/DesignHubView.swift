@@ -6,6 +6,8 @@ import SwiftUI
 struct DesignHubView: View {
     var onOpenEditor: (String) -> Void
 
+    private static let visibleDraftLimit = 100
+
     @ObservedObject private var design: DesignStore = .shared
     @ObservedObject private var editor: EditorStore = .shared
     @State private var tab: Tab = .styles
@@ -189,7 +191,7 @@ struct DesignHubView: View {
                     detail: "Open any template and tap \"Open in editor\" to start one."
                 )
             } else {
-                ForEach(editor.documents) { document in
+                ForEach(editor.documents.prefix(Self.visibleDraftLimit)) { document in
                     Button {
                         Haptics.tap()
                         onOpenEditor(document.id)

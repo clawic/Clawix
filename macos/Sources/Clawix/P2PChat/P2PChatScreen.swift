@@ -189,11 +189,12 @@ private struct ThreadHeader: View {
 private struct MessagesList: View {
     let messages: [ClawJSProfileClient.ChatMessage]
     let currentAlias: String
+    private static let visibleMessageLimit = 100
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(messages) { m in
+                ForEach(messages.suffix(Self.visibleMessageLimit)) { m in
                     MessageBubble(message: m)
                 }
             }

@@ -17,6 +17,7 @@ struct SecretDetailPane: View {
     @State private var permissionsSheetOpen: Bool = false
     @State private var grantsSheetOpen: Bool = false
     @State private var activitySheetOpen: Bool = false
+    private static let visibleAuditEventLimit = 100
 
     var body: some View {
         ScrollView {
@@ -289,7 +290,7 @@ struct SecretDetailPane: View {
             emptyStateCard(symbol: "clock", text: "No events yet for this secret.")
         } else {
             VStack(spacing: 0) {
-                ForEach(Array(events.enumerated()), id: \.element.id) { idx, event in
+                ForEach(Array(events.prefix(Self.visibleAuditEventLimit).enumerated()), id: \.element.id) { idx, event in
                     if idx > 0 {
                         CardDivider()
                     }

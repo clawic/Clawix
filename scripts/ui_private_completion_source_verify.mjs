@@ -59,21 +59,48 @@ function assertPrivateFile(file, envName) {
 }
 
 function countJsonlRecords(file) {
-  return fs.readFileSync(file, "utf8").split("\n").filter((line) => line.trim() !== "").length;
+  let count = 0;
+  forEachJsonlLine(file, (line) => {
+    if (line.trim() !== "") count += 1;
+  });
+  return count;
 }
 
 function parseJsonlRecords(file, label) {
   const records = [];
-  const lines = fs.readFileSync(file, "utf8").split("\n");
-  for (const [index, line] of lines.entries()) {
-    if (line.trim() === "") continue;
+  forEachJsonlLine(file, (line, index) => {
+    if (line.trim() === "") return;
     try {
       records.push(JSON.parse(line));
     } catch (error) {
       fail(`${label} line ${index + 1} is not valid JSON: ${error.message}`);
     }
-  }
+  });
   return records;
+}
+
+function forEachJsonlLine(file, visit, { chunkBytes = 64 * 1024 } = {}) {
+  const fd = fs.openSync(file, "r");
+  const buffer = Buffer.alloc(chunkBytes);
+  let carry = "";
+  let index = 0;
+  try {
+    for (;;) {
+      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null);
+      if (bytesRead === 0) break;
+      carry += buffer.toString("utf8", 0, bytesRead);
+      let newlineIndex;
+      while ((newlineIndex = carry.indexOf("\n")) >= 0) {
+        const line = carry.slice(0, newlineIndex).replace(/\r$/u, "");
+        carry = carry.slice(newlineIndex + 1);
+        visit(line, index);
+        index += 1;
+      }
+    }
+    if (carry.length > 0) visit(carry.replace(/\r$/u, ""), index);
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function recordTypeKey(record) {

@@ -21,6 +21,7 @@ struct AgentEditorSheet: View {
     @State private var newProjectId: String = ""
     @State private var newBindingChannel: String = ""
     @State private var newBindingConnection: String = ""
+    private static let visibleChipLimit = 32
 
     init(initial: Agent,
          isPresented: Binding<Bool>,
@@ -418,7 +419,7 @@ struct AgentEditorSheet: View {
                 .foregroundColor(Palette.textSecondary)
         } else {
             FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
-                ForEach(items.wrappedValue, id: \.self) { value in
+                ForEach(items.wrappedValue.prefix(Self.visibleChipLimit), id: \.self) { value in
                     HStack(spacing: 4) {
                         Text(render(value))
                             .font(BodyFont.system(size: 11, wght: 600))
