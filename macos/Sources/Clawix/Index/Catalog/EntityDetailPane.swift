@@ -320,7 +320,7 @@ private struct ObservationsSection: View {
                 )
             }
             if observations.isEmpty {
-                Text("No observations yet.")
+                Text(L10n.t("No observations yet."))
                     .font(BodyFont.system(size: 12, wght: 400))
                     .foregroundColor(.white.opacity(0.45))
             }
@@ -390,7 +390,7 @@ private struct TimeseriesSection: View {
             TimeseriesChart(points: points)
                 .frame(height: 160)
             if points.isEmpty {
-                Text("No history yet for this field. Run the Search again or wait for the next Monitor fire.")
+                Text(L10n.t("No history yet for this field. Run the Search again or wait for the next Monitor fire."))
                     .font(BodyFont.system(size: 11, wght: 400))
                     .foregroundColor(.white.opacity(0.50))
             }

@@ -158,7 +158,7 @@ private struct RunDetailPane: View {
                                 .font(BodyFont.system(size: 10.5, wght: 700))
                                 .kerning(0.5)
                                 .foregroundColor(.white.opacity(0.5))
-                            Text(error)
+                            Text(UserFacingFailure.classify(error).displayMessage)
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                                 .foregroundColor(.red.opacity(0.9))
                         }
@@ -206,8 +206,13 @@ private struct RunDetailPane: View {
             do {
                 detail = try await ClawJSIndexClient(bearerToken: ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)).getRun(id: runId)
             } catch {
-                loadError = error.localizedDescription
+                loadError = Self.failureMessage(for: error)
             }
         }
+    }
+
+    private static func failureMessage(for error: Error) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: "index.runDetail.load")
     }
 }

@@ -89,7 +89,7 @@ final class IndexEntityDetailStore: ObservableObject {
         } catch {
             guard isCurrentDetail(entityId: entityId, generation: generation) else { return }
             detail = nil
-            loadError = error.localizedDescription
+            loadError = Self.failureMessage(for: error, surface: "index.entityDetail.load")
         }
         finishDetailIfCurrent(entityId: entityId, generation: generation)
     }
@@ -130,6 +130,7 @@ final class IndexEntityDetailStore: ObservableObject {
         } catch is CancellationError {
         } catch {
             guard isCurrentHistory(entityId: entityId, field: field, generation: generation) else { return }
+            _ = Self.failureMessage(for: error, surface: "index.entityDetail.history")
             historyByField[field] = []
         }
         finishHistoryIfCurrent(field: field, generation: generation)
@@ -170,5 +171,10 @@ final class IndexEntityDetailStore: ObservableObject {
     private func finishHistoryIfCurrent(field: String, generation: Int) {
         guard historyGenerations[field] == generation else { return }
         historyTasks[field] = nil
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 }

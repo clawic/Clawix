@@ -117,7 +117,7 @@ final class IndexStore: ObservableObject {
 
     func surfaceActionError(_ error: Error) {
         if error is CancellationError { return }
-        updateSnapshot { $0.state = .error(error.localizedDescription) }
+        updateSnapshot { $0.state = .error(Self.failureMessage(for: error, surface: "index.action")) }
     }
 
     func requestRefresh() {
@@ -276,7 +276,7 @@ final class IndexStore: ObservableObject {
         } catch {
             if generation == refreshGeneration {
                 updateSnapshot {
-                    $0.state = .error(error.localizedDescription)
+                    $0.state = .error(Self.failureMessage(for: error, surface: "index.refresh"))
                     $0.isLoadingEntities = false
                 }
                 finishRefreshIfCurrent(generation)
@@ -315,6 +315,9 @@ final class IndexStore: ObservableObject {
                 $0.entities = reset ? page.entities : $0.entities + page.entities
                 $0.entityNextCursor = page.nextCursor
                 $0.isLoadingEntities = false
+                if case .error = $0.state {
+                    $0.state = .ready
+                }
             }
             finishEntityLoadIfCurrent(generation)
         } catch is CancellationError {
@@ -328,6 +331,7 @@ final class IndexStore: ObservableObject {
                     if reset { $0.entities = [] }
                     $0.entityNextCursor = nil
                     $0.isLoadingEntities = false
+                    $0.state = .error(Self.failureMessage(for: error, surface: "index.entities"))
                 }
                 finishEntityLoadIfCurrent(generation)
             }
@@ -368,8 +372,14 @@ final class IndexStore: ObservableObject {
         } catch is CancellationError {
             return entities
         } catch {
+            _ = Self.failureMessage(for: error, surface: "index.fullTextSearch")
             return entities
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     private func fetchEntities(criteria: IndexQueryCriteria, cursor: String?) async throws -> ClawJSIndexClient.EntityPage {

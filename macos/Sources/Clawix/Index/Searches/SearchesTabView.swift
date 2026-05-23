@@ -181,7 +181,7 @@ private struct SearchDetailPane: View {
                         SectionTitle(text: "Recent runs")
                         let runs = store.runs.filter { $0.searchId == search.id }
                         if runs.isEmpty {
-                            Text("No runs yet.")
+                            Text(L10n.t("No runs yet."))
                                 .font(BodyFont.system(size: 12, wght: 400))
                                 .foregroundColor(.white.opacity(0.45))
                         } else {
@@ -363,19 +363,19 @@ struct SearchEditorSheet: View {
         saving = true
         defer { saving = false }
         guard let data = criteriaText.data(using: .utf8) else {
-            error = "Criteria is not valid UTF-8"
+            error = L10n.t("Invalid JSON")
             return
         }
         let parsed: [String: AnyJSON]
         do {
             let raw = try JSONDecoder().decode(AnyJSON.self, from: data)
             guard case .object(let dict) = raw else {
-                error = "Criteria must be a JSON object"
+                error = L10n.t("Invalid JSON")
                 return
             }
             parsed = dict
         } catch {
-            self.error = "Criteria is not valid JSON: \(error.localizedDescription)"
+            self.error = L10n.t("Invalid JSON")
             return
         }
         do {
@@ -387,8 +387,13 @@ struct SearchEditorSheet: View {
             )
             onDismiss()
         } catch {
-            self.error = error.localizedDescription
+            self.error = Self.failureMessage(for: error)
         }
+    }
+
+    private static func failureMessage(for error: Error) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: "index.search.create")
     }
 }
 

@@ -109,6 +109,18 @@ final class IndexStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.state.errorMessage)
     }
 
+    func testSurfaceActionErrorUsesClassifiedLocalizedMessage() {
+        let client = FakeIndexClient()
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        store.surfaceActionError(TestFailure(errorDescription: "HTTP 401: invalid API key"))
+
+        XCTAssertEqual(
+            store.state.errorMessage,
+            L10n.t("Permission was denied. Review permissions, then try again.")
+        )
+    }
+
     func testEntityDetailLoadCancelsStaleDetailRequest() async {
         let staleStarted = expectation(description: "Stale entity detail started")
         let staleCancelled = expectation(description: "Stale entity detail cancelled")
@@ -142,6 +154,23 @@ final class IndexStoreCancellationTests: XCTestCase {
 
         XCTAssertEqual(detailStore.detail?.entity.id, "fresh")
         XCTAssertNil(detailStore.loadError)
+    }
+
+    func testEntityDetailFailureUsesClassifiedLocalizedMessage() async {
+        let client = FakeIndexClient()
+        client.onGetEntity = { _ in
+            throw TestFailure(errorDescription: "HTTP 403: forbidden")
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+        let detailStore = IndexEntityDetailStore()
+
+        await detailStore.load(entityId: "denied", using: store)
+
+        XCTAssertNil(detailStore.detail)
+        XCTAssertEqual(
+            detailStore.loadError,
+            L10n.t("Permission was denied. Review permissions, then try again.")
+        )
     }
 
     func testCancelSurfaceWorkSuppressesInFlightDetailLoad() async {
@@ -258,6 +287,56 @@ final class IndexStoreCancellationTests: XCTestCase {
         XCTAssertEqual(readySnapshots, 1)
         XCTAssertEqual(store.state, .ready)
         _ = cancellables
+    }
+
+    func testRefreshFailureUsesClassifiedLocalizedMessage() async {
+        let client = FakeIndexClient()
+        client.onListTypes = {
+            throw TestFailure(errorDescription: "ClawJS index service is not running.")
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        await store.refresh()
+
+        XCTAssertEqual(
+            store.state.errorMessage,
+            L10n.t("The service is unavailable. Try again in a moment.")
+        )
+        XCTAssertFalse(store.snapshot.isLoadingEntities)
+    }
+
+    func testEntityLoadFailureUsesClassifiedLocalizedMessage() async {
+        let client = FakeIndexClient()
+        client.onListEntities = { _ in
+            throw TestFailure(errorDescription: "The Internet connection appears to be offline.")
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+
+        await store.loadEntities()
+
+        XCTAssertEqual(
+            store.state.errorMessage,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
+        XCTAssertFalse(store.snapshot.isLoadingEntities)
+        XCTAssertTrue(store.entities.isEmpty)
+    }
+
+    func testEntityLoadSuccessClearsPreviousFailure() async {
+        let client = FakeIndexClient()
+        client.onListEntities = { _ in
+            ClawJSIndexClient.EntityPage(
+                entities: [Self.entity(id: "recovered", title: "Recovered")],
+                nextCursor: nil
+            )
+        }
+        let store = IndexStore(client: client, attachSupervisor: false)
+        store.surfaceActionError(TestFailure(errorDescription: "ClawJS index service is not running."))
+
+        await store.loadEntities()
+
+        XCTAssertEqual(store.state, .ready)
+        XCTAssertEqual(store.entities.map(\.id), ["recovered"])
     }
 
     func testEntityReloadCancelsStaleFilterRequest() async {
@@ -447,6 +526,10 @@ private extension IndexStore.State {
         if case .error(let message) = self { return message }
         return nil
     }
+}
+
+private struct TestFailure: LocalizedError {
+    let errorDescription: String?
 }
 
 private final class FakeIndexClient: ClawJSIndexClienting {

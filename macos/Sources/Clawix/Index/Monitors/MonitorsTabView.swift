@@ -158,7 +158,7 @@ private struct MonitorDetailPane: View {
                         }
                         SectionTitle(text: "Alert rules")
                         if monitor.alertRules.isEmpty {
-                            Text("No rules defined.")
+                            Text(L10n.t("No rules defined."))
                                 .font(BodyFont.system(size: 12, wght: 400))
                                 .foregroundColor(.white.opacity(0.45))
                         } else {
@@ -169,7 +169,7 @@ private struct MonitorDetailPane: View {
                         SectionTitle(text: "Recent runs")
                         let runs = store.runs.filter { $0.monitorId == monitor.id }
                         if runs.isEmpty {
-                            Text("No runs yet.")
+                            Text(L10n.t("No runs yet."))
                                 .font(BodyFont.system(size: 12, wght: 400))
                                 .foregroundColor(.white.opacity(0.45))
                         } else {
@@ -325,14 +325,14 @@ private struct MonitorEditorSheet: View {
         saving = true
         defer { saving = false }
         guard let data = alertRulesJSON.data(using: .utf8) else {
-            error = "Alert rules JSON is not valid UTF-8"
+            error = L10n.t("Invalid JSON")
             return
         }
         let rules: [ClawJSIndexClient.AlertRule]
         do {
             rules = try JSONDecoder().decode([ClawJSIndexClient.AlertRule].self, from: data)
         } catch {
-            self.error = "Alert rules JSON invalid: \(error.localizedDescription)"
+            self.error = L10n.t("Invalid JSON")
             return
         }
         do {
@@ -344,8 +344,13 @@ private struct MonitorEditorSheet: View {
             )
             onDismiss()
         } catch {
-            self.error = error.localizedDescription
+            self.error = Self.failureMessage(for: error)
         }
+    }
+
+    private static func failureMessage(for error: Error) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: "index.monitor.create")
     }
 }
 
