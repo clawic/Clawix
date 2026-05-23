@@ -24,7 +24,7 @@ struct PeerPairingView: View {
                     Text(error).font(.system(size: 12)).foregroundStyle(.red.opacity(0.8))
                         .padding(.horizontal, 20).padding(.bottom, 16)
                 } else {
-                    Text("Point the camera at the peer's pairing QR.")
+                    Text(L10n.t("Point the camera at the peer's pairing QR."))
                         .font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
                         .padding(.bottom, 16)
                 }
@@ -33,7 +33,7 @@ struct PeerPairingView: View {
             .navigationTitle("Pair peer")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.t("Done")) { dismiss() }
                 }
             }
         }
@@ -56,8 +56,8 @@ struct PeerPairingView: View {
 
     private func pairedCard(handle: ProfileClient.Handle) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("@\(handle.alias)").font(.system(size: 14, weight: .semibold)).kerning(-0.2)
-            Text("." + handle.fingerprint).font(.system(size: 12, design: .monospaced))
+            Text(verbatim: "@\(handle.alias)").font(.system(size: 14, weight: .semibold)).kerning(-0.2)
+            Text(verbatim: "." + handle.fingerprint).font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(Palette.textSecondary)
         }
         .padding(.horizontal, 20).padding(.vertical, 14)

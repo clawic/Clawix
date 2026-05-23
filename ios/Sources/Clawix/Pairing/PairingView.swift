@@ -61,11 +61,11 @@ struct PairingView: View {
 
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Pair with your Mac")
+            Text(L10n.t("Pair with your Mac"))
                 .font(BodyFont.system(size: 30, weight: .bold))
                 .tracking(-0.4)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Open Clawix on your Mac, choose Window > Pair iPhone, and scan the QR with this device.")
+            Text(L10n.t("Open Clawix on your Mac, choose Window > Pair iPhone, and scan the QR with this device."))
                 .font(Typography.bodyFont)
                 .foregroundStyle(Palette.textSecondary)
                 .lineSpacing(2)
@@ -110,7 +110,7 @@ struct PairingView: View {
             Haptics.send()
             showScanner = true
         }) {
-            Text("Scan QR")
+            Text(L10n.t("Scan QR"))
                 .font(Typography.bodyEmphasized)
                 .foregroundStyle(Color.black)
                 .frame(maxWidth: .infinity)
@@ -128,7 +128,7 @@ struct PairingView: View {
             lastError = nil
             showShortCode = true
         }) {
-            Text("Type a code instead")
+            Text(L10n.t("Type a code instead"))
                 .font(Typography.bodyFont)
                 .foregroundStyle(Palette.textSecondary)
                 .frame(maxWidth: .infinity)
@@ -178,7 +178,7 @@ private struct ScannerSheet: View {
                     Spacer()
                 }
                 Spacer()
-                Text("Scan the Clawix QR shown on your Mac")
+                Text(L10n.t("Scan the Clawix QR shown on your Mac"))
                     .font(BodyFont.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)

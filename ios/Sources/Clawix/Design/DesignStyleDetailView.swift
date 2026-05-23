@@ -289,7 +289,7 @@ struct DesignStyleDetailView: View {
                     .foregroundColor(Color(white: 0.55))
                     .lineLimit(1)
             }
-            Text("The quick brown fox")
+            Text(L10n.t("The quick brown fox"))
                 .font(.custom(firstFamily(stack.family), size: size))
                 .foregroundColor(Palette.textPrimary)
         }
@@ -354,7 +354,7 @@ struct DesignStyleDetailView: View {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 26, weight: .light))
                 .foregroundColor(Color(white: 0.45))
-            Text("Style not found")
+            Text(L10n.t("Style not found"))
                 .font(BodyFont.manrope(size: 14, wght: 500))
                 .foregroundColor(Color(white: 0.70))
         }

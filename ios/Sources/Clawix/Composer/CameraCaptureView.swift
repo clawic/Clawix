@@ -78,7 +78,7 @@ struct CameraCaptureView: View {
                     .background(Circle().fill(Color.white.opacity(0.18)))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open photo library")
+            .accessibilityLabel(L10n.t("Open photo library"))
 
             Spacer()
 
@@ -93,7 +93,7 @@ struct CameraCaptureView: View {
                 }
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Capture photo")
+            .accessibilityLabel(L10n.t("Capture photo"))
 
             Spacer()
 
@@ -107,7 +107,7 @@ struct CameraCaptureView: View {
                     .background(Circle().fill(Color.white.opacity(0.18)))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Flip camera")
+            .accessibilityLabel(L10n.t("Flip camera"))
         }
         .padding(.horizontal, 32)
         .padding(.bottom, 36)

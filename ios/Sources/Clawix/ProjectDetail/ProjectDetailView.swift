@@ -93,15 +93,15 @@ struct ProjectDetailView: View {
             .preferredColorScheme(.dark)
         }
         .alert("Rename folder", isPresented: $showRenameAlert) {
-            TextField("Folder name", text: $renameDraft)
+            TextField(L10n.t("Folder name"), text: $renameDraft)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
-            Button("Cancel", role: .cancel) {}
-            Button("Save") {
+            Button(L10n.t("Cancel"), role: .cancel) {}
+            Button(L10n.t("Save")) {
                 store.renameProject(cwd: project.cwd, newName: renameDraft)
             }
         } message: {
-            Text("Choose a new name for this folder. The change is kept on this iPhone.")
+            Text(L10n.t("Choose a new name for this folder. The change is kept on this iPhone."))
         }
     }
 
@@ -136,9 +136,9 @@ struct ProjectDetailView: View {
                 }
             } label: {
                 if let img = MenuIconImage.pencil {
-                    Label { Text("Edit") } icon: { Image(uiImage: img) }
+                    Label { Text(L10n.t("Edit")) } icon: { Image(uiImage: img) }
                 } else {
-                    Label("Edit", systemImage: "pencil")
+                    Label(L10n.t("Edit"), systemImage: "pencil")
                 }
             }
         } label: {
@@ -193,7 +193,7 @@ struct ProjectDetailView: View {
             VStack(spacing: 10) {
                 LucideIcon(.messageCircle, size: 45)
                     .foregroundStyle(Palette.textTertiary)
-                Text("No chats yet")
+                Text(L10n.t("No chats yet"))
                     .font(Typography.bodyEmphasized)
                     .foregroundStyle(Palette.textSecondary)
             }
@@ -264,7 +264,7 @@ struct ProjectPickerSheet: View {
     }
 
     private var header: some View {
-        Text("Switch project")
+        Text(L10n.t("Switch project"))
             .font(BodyFont.system(size: 22, weight: .bold))
             .foregroundStyle(Palette.textPrimary)
     }

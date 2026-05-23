@@ -374,7 +374,7 @@ private struct AssistantCodeBlockView: View {
                     .frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Copy code")
+                .accessibilityLabel(L10n.t("Copy code"))
             }
             .padding(.horizontal, 12)
             .padding(.top, 8)
@@ -399,10 +399,10 @@ private struct AssistantCodeBlockView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
         )
         .confirmationDialog("Export or share sensitive data?", isPresented: $copyReviewPresented, titleVisibility: .visible) {
-            Button("Copy code with labels") {
+            Button(L10n.t("Copy code with labels")) {
                 copyReviewed()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(L10n.t("Cancel"), role: .cancel) {}
         } message: {
             Text(IOSLegalSafetyPolicy.sensitiveCopyReviewMessage)
         }

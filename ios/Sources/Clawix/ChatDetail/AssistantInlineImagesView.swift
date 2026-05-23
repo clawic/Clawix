@@ -78,8 +78,8 @@ enum AssistantInlineImageSources {
     /// Returns the message body with the inline image markdown removed.
     /// `![](path-into-sandbox)` matches collapse to a paragraph break
     /// instead of disappearing outright so the prose either side stays
-    /// in its own paragraph (the user complained about "aquí. Aquí la
-    /// tienes:" being concatenated when the model split the sentence
+    /// in its own paragraph (the user reported adjacent sentence fragments
+    /// being concatenated when the model split the sentence
     /// across the image).
     ///
     /// `isStreaming == true` also hides any unfinished `![` or `[`
@@ -317,7 +317,7 @@ struct AssistantInlineImagesView: View {
                 store.generatedImagesByPath[path] = nil
                 _ = store.requestGeneratedImage(path: path)
             } label: {
-                Text("Retry")
+                Text(L10n.t("Retry"))
                     .font(BodyFont.system(size: 13, weight: .regular))
                     .foregroundStyle(.white.opacity(0.75))
             }

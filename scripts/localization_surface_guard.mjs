@@ -11,6 +11,14 @@ const requireAppBundle = args.has("--require-app-bundle");
 const target = process.argv.slice(2).find((arg) => !arg.startsWith("--")) ?? "macos";
 const supportedLocales = ["de", "en", "es", "fr", "it", "ja", "ko", "pt-BR", "ru", "zh-Hans"];
 const sourceLanguage = "en";
+const sourceExtensions = new Set([".swift", ".kt", ".java"]);
+const spanishSourcePatterns = [
+  { reason: "Spanish punctuation", regex: /[¿¡]/u },
+  {
+    reason: "Spanish wording",
+    regex: /\b(?:aquí|aqui|aún|aun|cargando|escribe|empezar|mensajes|motivo|sincronizando|subtítulo|subtitulo|tarjeta|todavía|todavia|trabajas|qué|que)\b/iu,
+  },
+];
 
 const scanCalls = [
   { name: "Text", kind: "call" },
@@ -35,6 +43,7 @@ function walkFiles(dir, predicate, acc = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const next = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      if ([".build", "build", ".swiftpm", "DerivedData", "node_modules"].includes(entry.name)) continue;
       walkFiles(next, predicate, acc);
     } else if (entry.isFile() && predicate(next)) {
       acc.push(next);
@@ -262,6 +271,53 @@ function scanSwiftFile(filePath, projectDir) {
   return findings;
 }
 
+function spanishSourceReason(value) {
+  for (const pattern of spanishSourcePatterns) {
+    if (pattern.regex.test(value)) return pattern.reason;
+  }
+  return null;
+}
+
+function scanSpanishSourceFile(filePath, projectDir) {
+  const findings = [];
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    if (isCommentLine(line)) {
+      const reason = spanishSourceReason(line);
+      if (reason) {
+        findings.push({
+          file: path.relative(projectDir, filePath),
+          line: lineIndex + 1,
+          kind: "comment",
+          value: line.trim(),
+          reason,
+        });
+      }
+      continue;
+    }
+    for (const call of scanCalls) {
+      for (const openParen of findCallOpenParens(line, call)) {
+        const parsed = parseFirstStringArgument(line, openParen, {
+          requireLabel: call.kind === "localizedString" ? "localized" : undefined,
+        });
+        if (!parsed || parsed.skipped) continue;
+        const reason = spanishSourceReason(parsed.value);
+        if (reason) {
+          findings.push({
+            file: path.relative(projectDir, filePath),
+            line: lineIndex + 1,
+            kind: call.name,
+            value: parsed.value,
+            reason,
+          });
+        }
+      }
+    }
+  }
+  return findings;
+}
+
 function localizationStateFor(entry, locale) {
   const loc = entry?.localizations?.[locale];
   if (!loc) return null;
@@ -330,7 +386,23 @@ function validateMacos() {
     missingCatalogLocalizations: validateCatalog(catalog),
     unregisteredUiStrings: unregistered,
     generatedResourceMissing: validateGeneratedResources(projectDir),
+    spanishSourceText: validateSpanishSourceText(),
   };
+}
+
+function validateSpanishSourceText() {
+  const sourceRoots = [
+    path.join(rootDir, "macos/Sources/Clawix"),
+    path.join(rootDir, "ios/Sources/Clawix"),
+    path.join(rootDir, "android/app/src/main/java"),
+    path.join(rootDir, "packages"),
+  ].filter((dir) => fs.existsSync(dir));
+  const projectDir = rootDir;
+  const files = sourceRoots.flatMap((dir) => walkFiles(
+    dir,
+    (filePath) => sourceExtensions.has(path.extname(filePath)),
+  ));
+  return files.flatMap((filePath) => scanSpanishSourceFile(filePath, projectDir));
 }
 
 function formatReport(report) {
@@ -339,13 +411,15 @@ function formatReport(report) {
     ["missing catalog localizations", report.missingCatalogLocalizations],
     ["unregistered UI strings", report.unregisteredUiStrings],
     ["missing generated resources", report.generatedResourceMissing],
+    ["Spanish comments or visible source strings", report.spanishSourceText],
   ];
   for (const [label, items] of sections) {
     if (items.length === 0) continue;
     lines.push(label);
     for (const item of items.slice(0, 80)) {
       if (typeof item === "string") lines.push(`  ${item}`);
-      else if (item.file) lines.push(`  ${item.file}:${item.line}: ${item.value} -> ${item.key}`);
+      else if (item.file && item.key) lines.push(`  ${item.file}:${item.line}: ${item.value} -> ${item.key}`);
+      else if (item.file) lines.push(`  ${item.file}:${item.line}: ${item.kind}: ${item.value} (${item.reason})`);
       else lines.push(`  ${item.key} [${item.locale}]: ${item.reason}`);
     }
     if (items.length > 80) lines.push(`  ... ${items.length - 80} more`);
@@ -359,7 +433,8 @@ function formatReport(report) {
 function hasFailures(report) {
   return report.missingCatalogLocalizations.length > 0
     || report.unregisteredUiStrings.length > 0
-    || report.generatedResourceMissing.length > 0;
+    || report.generatedResourceMissing.length > 0
+    || report.spanishSourceText.length > 0;
 }
 
 function runSelfTest() {
@@ -386,6 +461,14 @@ function runSelfTest() {
     ].join("\n"));
     const findings = scanSwiftFile(fixture, tmp);
     if (findings.length !== 2) throw new Error(`expected 2 fixture findings, got ${findings.length}`);
+    fs.writeFileSync(fixture, [
+      '/// Cargando este chat while loading',
+      'Text("Aún no hay mensajes")',
+    ].join("\n"));
+    const spanishFindings = scanSpanishSourceFile(fixture, tmp);
+    if (spanishFindings.length !== 2) {
+      throw new Error(`expected 2 Spanish source findings, got ${spanishFindings.length}`);
+    }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

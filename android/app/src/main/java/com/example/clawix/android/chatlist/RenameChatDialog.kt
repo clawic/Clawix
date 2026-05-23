@@ -20,10 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.theme.AppTypography
 import com.example.clawix.android.theme.Palette
 
@@ -52,7 +54,7 @@ fun RenameChatDialog(
         textContentColor = Palette.textPrimary,
         titleContentColor = Palette.textPrimary,
         onDismissRequest = onDismiss,
-        title = { Text("Rename chat", color = Palette.textPrimary) },
+        title = { Text(stringResource(R.string.rename_chat), color = Palette.textPrimary) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.height(4.dp))
@@ -82,11 +84,11 @@ fun RenameChatDialog(
                     onSave(trimmed)
                     onDismiss()
                 },
-            ) { Text("Save", color = if (canSave) Palette.unreadDot else Palette.textTertiary) }
+            ) { Text(stringResource(R.string.save), color = if (canSave) Palette.unreadDot else Palette.textTertiary) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Palette.textSecondary)
+                Text(stringResource(R.string.cancel), color = Palette.textSecondary)
             }
         },
     )

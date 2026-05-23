@@ -37,7 +37,7 @@ struct IndexTab: View {
 
     private var topBar: some View {
         HStack {
-            Text("Index")
+            Text(L10n.t("Index"))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
             Spacer()
@@ -80,10 +80,10 @@ struct IndexTab: View {
                     .font(.system(size: 38, weight: .light))
                     .foregroundColor(.white.opacity(0.95))
             }
-            Text("Index on iPhone is coming")
+            Text(L10n.t("Index on iPhone is coming"))
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
-            Text("v1 ships on the desktop. The daemon proxy that pipes types, entities, monitors and alerts to your phone is rolling out next. Open Clawix on Mac to start capturing.")
+            Text(L10n.t("v1 ships on the desktop. The daemon proxy that pipes types, entities, monitors and alerts to your phone is rolling out next. Open Clawix on Mac to start capturing."))
                 .font(.system(size: 13.5))
                 .foregroundColor(.white.opacity(0.55))
                 .multilineTextAlignment(.center)

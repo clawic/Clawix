@@ -64,7 +64,7 @@ struct RecordingOverlay: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Cancel recording")
+        .accessibilityLabel(L10n.t("Cancel recording"))
     }
 
     // Stop / resume bubble. Sits next to the waveform pill as its own
@@ -97,7 +97,7 @@ struct RecordingOverlay: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Stop recording")
+        .accessibilityLabel(L10n.t("Stop recording"))
     }
 
     private var resumeBubble: some View {
@@ -114,7 +114,7 @@ struct RecordingOverlay: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Resume recording")
+        .accessibilityLabel(L10n.t("Resume recording"))
     }
 
     // Non-interactive placeholder during transcription so the bubble
@@ -165,7 +165,7 @@ struct RecordingOverlay: View {
                 .progressViewStyle(.circular)
                 .tint(Color.white.opacity(0.75))
                 .scaleEffect(0.9)
-            Text("Transcribing")
+            Text(L10n.t("Transcribing"))
                 .font(Typography.bodyFont)
                 .foregroundStyle(Palette.textSecondary)
             Spacer(minLength: 0)

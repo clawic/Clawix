@@ -35,9 +35,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.core.WireAttachmentKind
 import com.example.clawix.android.icons.LucideGlyph
 import com.example.clawix.android.icons.LucideIcon
@@ -114,7 +116,7 @@ fun RecordingOverlay(
                 .padding(20.dp),
         ) {
             Text(
-                "Recording…  ${formatElapsed(elapsed)}",
+                stringResource(R.string.recording_elapsed, formatElapsed(elapsed)),
                 style = AppTypography.bodyEmphasized,
                 color = Palette.textPrimary,
             )
@@ -135,7 +137,7 @@ fun RecordingOverlay(
             ) {
                 ActionPill(
                     icon = LucideGlyph.X,
-                    label = "Cancel",
+                    label = stringResource(R.string.cancel),
                     onClick = {
                         Haptics.tap(view)
                         runCatching { recorder.stopAndDiscard() }
@@ -145,7 +147,7 @@ fun RecordingOverlay(
                 )
                 ActionPill(
                     icon = LucideGlyph.AudioWaveform,
-                    label = "Send audio",
+                    label = stringResource(R.string.send_audio),
                     onClick = {
                         Haptics.send(view)
                         val (bytes, mime) = recorder.stopAndCollect() ?: return@ActionPill onComplete(null)
@@ -164,7 +166,7 @@ fun RecordingOverlay(
                 )
                 ActionPill(
                     icon = LucideGlyph.Check,
-                    label = "Transcribe",
+                    label = stringResource(R.string.transcribe),
                     primary = true,
                     onClick = {
                         Haptics.send(view)

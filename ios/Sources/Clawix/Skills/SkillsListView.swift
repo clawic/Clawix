@@ -24,7 +24,7 @@ struct SkillsListView: View {
                     if let skill = catalog.first(where: { $0.slug == slug }) {
                         SkillDetailReadOnlyView(skill: skill)
                     } else {
-                        Text("Skill not found").foregroundStyle(.secondary)
+                        Text(L10n.t("Skill not found")).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -119,7 +119,7 @@ private struct SkillDetailReadOnlyView: View {
                         )
                     VStack(alignment: .leading, spacing: 2) {
                         Text(skill.name).font(.system(size: 18, weight: .semibold))
-                        Text("\(skill.kind.label) · v\(skill.version)\(skill.author.map { " · by \($0)" } ?? "")")
+                        Text(skill.author.map { L10n.format("%@ · v%@ · by %@", skill.kind.label, skill.version, $0) } ?? L10n.format("%@ · v%@", skill.kind.label, skill.version))
                             .font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -133,7 +133,7 @@ private struct SkillDetailReadOnlyView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
                             ForEach(skill.tags, id: \.self) { tag in
-                                Text("#\(tag)")
+                                Text(verbatim: "#\(tag)")
                                     .font(.system(size: 11, weight: .medium))
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 8).padding(.vertical, 4)
@@ -153,7 +153,7 @@ private struct SkillDetailReadOnlyView: View {
 
     private var bodyCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Body").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            Text(L10n.t("Body")).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             Text(skill.body)
                 .font(.system(size: 12, design: .monospaced))
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -20,8 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.core.WireSession
 import com.example.clawix.android.icons.LucideGlyph
 import com.example.clawix.android.icons.LucideIcon
@@ -56,8 +58,9 @@ fun ChatActionsSheet(
                 .fillMaxWidth()
                 .padding(horizontal = AppLayout.screenHorizontalPadding, vertical = 12.dp)
         ) {
+            val title = chat.title.takeIf { it.isNotBlank() } ?: stringResource(R.string.untitled_chat)
             Text(
-                text = chat.title.ifBlank { "Untitled chat" },
+                text = title,
                 style = AppTypography.title,
                 color = Palette.textPrimary,
                 maxLines = 1,
@@ -67,17 +70,17 @@ fun ChatActionsSheet(
 
             ActionRow(
                 glyph = LucideGlyph.Pin,
-                label = if (chat.isPinned) "Unpin" else "Pin",
+                label = if (chat.isPinned) stringResource(R.string.unpin) else stringResource(R.string.pin),
                 onClick = { onDismiss(); onTogglePin() },
             )
             ActionRow(
                 glyph = LucideGlyph.Pencil,
-                label = "Rename",
+                label = stringResource(R.string.rename),
                 onClick = { onDismiss(); onRename() },
             )
             ActionRow(
                 glyph = LucideGlyph.Archive,
-                label = if (chat.isArchived) "Unarchive" else "Archive",
+                label = if (chat.isArchived) stringResource(R.string.unarchive) else stringResource(R.string.archive),
                 onClick = { onDismiss(); onToggleArchive() },
             )
 

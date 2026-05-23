@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.DerivedProject
 import com.example.clawix.android.theme.AppLayout
 import com.example.clawix.android.theme.AppTypography
@@ -39,7 +41,7 @@ fun AllProjectsSheet(
                 .fillMaxWidth()
                 .padding(horizontal = AppLayout.screenHorizontalPadding, vertical = 12.dp)
         ) {
-            Text("All projects", style = AppTypography.title, color = Palette.textPrimary)
+            Text(stringResource(R.string.all_projects), style = AppTypography.title, color = Palette.textPrimary)
             Spacer(Modifier.height(12.dp))
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),

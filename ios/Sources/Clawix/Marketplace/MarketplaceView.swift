@@ -43,11 +43,11 @@ private struct IntentCard: View {
             }
             HStack {
                 if let owner = intent.ownerHandle {
-                    Text("@\(owner.alias)").font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
+                    Text(verbatim: "@\(owner.alias)").font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
                 }
                 Spacer()
                 Button(action: onInterested) {
-                    Text("Interested").font(.system(size: 13, weight: .semibold)).kerning(-0.2)
+                    Text(L10n.t("Interested")).font(.system(size: 13, weight: .semibold)).kerning(-0.2)
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(
                             Capsule().fill(Color.white)

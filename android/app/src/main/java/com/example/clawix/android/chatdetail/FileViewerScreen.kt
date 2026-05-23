@@ -18,8 +18,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.theme.AppLayout
 import com.example.clawix.android.theme.AppTypography
 import com.example.clawix.android.theme.Palette
@@ -56,7 +58,7 @@ fun FileViewerSheet(
             Text(path, style = AppTypography.caption, color = Palette.textTertiary)
             Spacer(Modifier.height(16.dp))
             when {
-                snapshot == null -> Text("Loading…", style = AppTypography.body, color = Palette.textTertiary)
+                snapshot == null -> Text(stringResource(R.string.loading), style = AppTypography.body, color = Palette.textTertiary)
                 snapshot.error != null -> Text(snapshot.error, style = AppTypography.body, color = Palette.unreadDot)
                 snapshot.isMarkdown -> AssistantMarkdownView(snapshot.content ?: "")
                 else -> Text(

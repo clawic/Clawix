@@ -34,9 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.example.clawix.android.R
 import com.example.clawix.android.core.WireAttachmentKind
 import com.example.clawix.android.theme.AppTypography
 import com.example.clawix.android.theme.Palette
@@ -88,7 +90,7 @@ fun RecentPhotosRow(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
             Text(
-                "Tap to enable Recent Photos",
+                stringResource(R.string.enable_recent_photos),
                 style = AppTypography.body,
                 color = Palette.textSecondary,
             )

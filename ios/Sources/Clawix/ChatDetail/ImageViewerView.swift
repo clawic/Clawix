@@ -100,7 +100,7 @@ struct ImageViewerView: View {
             ImageShareSheet(items: [item.image])
         }
         .confirmationDialog("Export or share sensitive data?", isPresented: sensitiveImageReviewPresented, titleVisibility: .visible) {
-            Button("Continue") {
+            Button(L10n.t("Continue")) {
                 guard let action = pendingSensitiveImageAction, let image = currentImage else {
                     pendingSensitiveImageAction = nil
                     return
@@ -113,11 +113,11 @@ struct ImageViewerView: View {
                     shareItem = ShareItem(image: image)
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button(L10n.t("Cancel"), role: .cancel) {
                 pendingSensitiveImageAction = nil
             }
         } message: {
-            Text("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material.")
+            Text(L10n.t("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material."))
         }
     }
 

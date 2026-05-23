@@ -68,10 +68,10 @@ struct DesignHubView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Design")
+            Text(L10n.t("Design"))
                 .font(BodyFont.manrope(size: 30, wght: 700))
                 .foregroundColor(Palette.textPrimary)
-            Text("Styles, templates and references shared with the desktop.")
+            Text(L10n.t("Styles, templates and references shared with the desktop."))
                 .font(BodyFont.manrope(size: 14, wght: 400))
                 .foregroundColor(Color(white: 0.65))
         }
@@ -97,7 +97,7 @@ struct DesignHubView: View {
                             HStack(spacing: 6) {
                                 Text(entry.label)
                                     .font(BodyFont.manrope(size: 13.5, wght: 600))
-                                Text("\(count)")
+                                Text(verbatim: "\(count)")
                                     .font(BodyFont.manrope(size: 11.5, wght: 600))
                                     .foregroundColor(Color(white: 0.50))
                             }
@@ -147,7 +147,7 @@ struct DesignHubView: View {
         return VStack(alignment: .leading, spacing: 22) {
             ForEach(groups, id: \.0) { category, list in
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("\(category.displayName) · \(list.count)")
+                    Text(verbatim: "\(category.displayName) · \(list.count)")
                         .font(BodyFont.manrope(size: 13, wght: 700))
                         .foregroundColor(Color(white: 0.65))
                         .tracking(0.3)
@@ -416,7 +416,7 @@ struct DraftRow: View {
                     .font(BodyFont.manrope(size: 14, wght: 600))
                     .foregroundColor(Palette.textPrimary)
                 if let template = template {
-                    Text("\(template.name) · \(style?.name ?? document.styleId)")
+                    Text(verbatim: "\(template.name) · \(style?.name ?? document.styleId)")
                         .font(BodyFont.manrope(size: 11.5, wght: 500))
                         .foregroundColor(Color(white: 0.60))
                 }

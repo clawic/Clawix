@@ -40,11 +40,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.composer.ComposerView
 import com.example.clawix.android.core.WireMessage
 import com.example.clawix.android.core.WireRole
@@ -127,7 +129,7 @@ fun ChatDetailScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "Load older messages",
+                            stringResource(R.string.load_older_messages),
                             style = AppTypography.secondary,
                             color = Palette.textSecondary,
                             modifier = Modifier.clickable {
@@ -168,8 +170,9 @@ fun ChatDetailScreen(
                     .clip(RoundedCornerShape(AppLayout.topBarPillHeight / 2)),
                 contentAlignment = Alignment.Center,
             ) {
+                val chatTitle = ui.chat?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.new_chat)
                 Text(
-                    text = ui.chat?.title?.ifBlank { "New chat" } ?: "New chat",
+                    text = chatTitle,
                     style = AppTypography.bodyEmphasized,
                     color = Palette.textPrimary,
                     maxLines = 1,

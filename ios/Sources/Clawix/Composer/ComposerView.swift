@@ -203,7 +203,7 @@ struct ComposerView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Attachments")
+        .accessibilityLabel(L10n.t("Attachments"))
     }
 
     private var inlinePlusButton: some View {
@@ -216,7 +216,7 @@ struct ComposerView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Attachments")
+        .accessibilityLabel(L10n.t("Attachments"))
     }
 
     private var attachmentChips: some View {
@@ -324,7 +324,7 @@ struct ComposerView: View {
     private var field: some View {
         ZStack(alignment: .leading) {
             if text.isEmpty {
-                Text("Ask Clawix")
+                Text(L10n.t("Ask Clawix"))
                     .font(Typography.bodyFont)
                     .foregroundStyle(Palette.textSecondary.opacity(0.65))
                     .allowsHitTesting(false)
@@ -376,7 +376,7 @@ struct ComposerView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Expand composer")
+        .accessibilityLabel(L10n.t("Expand composer"))
     }
 
     /// Stable trailing layout: mic + white circle, always rendered.
@@ -392,7 +392,7 @@ struct ComposerView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Mic")
+            .accessibilityLabel(L10n.t("Mic"))
 
             Button(action: triggerPrimary) {
                 ZStack {
@@ -489,7 +489,7 @@ private struct ExpandedComposerSheet: View {
             // Surface
             VStack(alignment: .leading, spacing: 0) {
                 ScrollView(.vertical, showsIndicators: false) {
-                    TextField("Ask Clawix", text: $text, axis: .vertical)
+                    TextField(L10n.t("Ask Clawix"), text: $text, axis: .vertical)
                         .font(Typography.bodyFont)
                         .foregroundStyle(Palette.textPrimary)
                         .tint(Color.white)
@@ -530,7 +530,7 @@ private struct ExpandedComposerSheet: View {
             .buttonStyle(.plain)
             .padding(.trailing, 8)
             .padding(.top, 8)
-            .accessibilityLabel("Collapse composer")
+            .accessibilityLabel(L10n.t("Collapse composer"))
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)

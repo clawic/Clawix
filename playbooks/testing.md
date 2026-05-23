@@ -42,7 +42,7 @@ Quarantines live in `qa/quarantine.json`. Each entry needs `id`, `owner`,
 `reason`, `repair`, and `expires`. Expired entries fail the public runner.
 Quarantines may not suppress constitutionally required localization
 completeness for visible UI strings; `scripts/localization_surface_guard.mjs`
-must fail instead.
+and `scripts/cross_platform_localization_guard.mjs` must fail instead.
 
 ## Localization
 
@@ -53,9 +53,15 @@ run:
 node scripts/localization_surface_guard.mjs --self-test
 python3 macos/scripts/compile_xcstrings.py
 node scripts/localization_surface_guard.mjs macos
+node scripts/cross_platform_localization_guard.mjs --self-test
+node scripts/cross_platform_localization_guard.mjs
 ```
 
-The guard verifies registered `Localizable.xcstrings` keys, supported-locale
-values, generated `.lproj` resources, and unregistered SwiftUI/user-facing
-literals. Use `Text(verbatim:)` or an explicit technical literal only for data,
-identifiers, paths, URLs, symbols, or other non-localizable content.
+The macOS guard verifies registered `Localizable.xcstrings` keys,
+supported-locale values, generated `.lproj` resources, and unregistered
+SwiftUI/user-facing literals. The cross-platform guard freezes known Web
+visible-literal debt in `docs/localization-hardcoded-baseline.json`, fails on
+growth until that baseline reaches zero, and requires Android string resources
+to exist for every supported locale. iOS visible literals must go through
+`L10n`/localized resources or use `Text(verbatim:)` only for data, identifiers,
+paths, URLs, symbols, or other non-localizable content.

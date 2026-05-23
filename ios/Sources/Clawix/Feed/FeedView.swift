@@ -104,8 +104,8 @@ private struct FeedRow: View {
             HandleAvatar(alias: entry.owner.handle.alias, size: 36)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
-                    Text("@\(entry.owner.handle.alias)").font(.system(size: 14, weight: .semibold)).kerning(-0.2)
-                    Text(".\(entry.owner.handle.fingerprint)")
+                    Text(verbatim: "@\(entry.owner.handle.alias)").font(.system(size: 14, weight: .semibold)).kerning(-0.2)
+                    Text(verbatim: ".\(entry.owner.handle.fingerprint)")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Palette.textSecondary)
                     Spacer()
@@ -136,7 +136,7 @@ private struct FeedTile: View {
             .frame(height: 160)
             HStack(spacing: 6) {
                 HandleAvatar(alias: entry.owner.handle.alias, size: 22)
-                Text("@\(entry.owner.handle.alias)").font(.system(size: 12, weight: .medium)).kerning(-0.2)
+                Text(verbatim: "@\(entry.owner.handle.alias)").font(.system(size: 12, weight: .medium)).kerning(-0.2)
                 Spacer()
             }
             if let title = previewString(entry.preview, keys: ["title", "headline", "display_name"]) {
@@ -168,7 +168,7 @@ private struct FeedStory: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     HandleAvatar(alias: entry.owner.handle.alias, size: 26)
-                    Text("@\(entry.owner.handle.alias)").font(.system(size: 13, weight: .semibold)).kerning(-0.2).foregroundStyle(.white)
+                    Text(verbatim: "@\(entry.owner.handle.alias)").font(.system(size: 13, weight: .semibold)).kerning(-0.2).foregroundStyle(.white)
                 }
                 if let title = previewString(entry.preview, keys: ["title", "headline", "display_name"]) {
                     Text(title).font(.system(size: 16, weight: .semibold)).kerning(-0.2).foregroundStyle(.white)

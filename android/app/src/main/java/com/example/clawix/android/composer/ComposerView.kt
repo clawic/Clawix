@@ -37,8 +37,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.icons.LucideGlyph
 import com.example.clawix.android.icons.LucideIcon
 import com.example.clawix.android.icons.MicIcon
@@ -132,7 +134,7 @@ fun ComposerView(
                     .heightIn(min = 24.dp, max = 198.dp),
                 decorationBox = { inner ->
                     if (text.isEmpty()) {
-                        Text("Message Codex…", style = AppTypography.body, color = Palette.textTertiary)
+                        Text(stringResource(R.string.message_codex), style = AppTypography.body, color = Palette.textTertiary)
                     }
                     inner()
                 },

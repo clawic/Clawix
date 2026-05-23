@@ -1,0 +1,965 @@
+{
+  "version": 1,
+  "purpose": "Temporary inventory of non-macOS user-visible literals that must be reduced to zero. The guard blocks new growth.",
+  "findings": [
+    {
+      "platform": "web",
+      "file": "web/src/app.tsx",
+      "line": 30,
+      "kind": "jsxText",
+      "value": ": showShell ?"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/components/ui/toast-center.tsx",
+      "line": 83,
+      "kind": "aria-label",
+      "value": "Dismiss notification"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/chat/composer.tsx",
+      "line": 154,
+      "kind": "aria-label",
+      "value": "Remove attachment"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/chat/composer.tsx",
+      "line": 204,
+      "kind": "title",
+      "value": "Voice"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/chat/composer.tsx",
+      "line": 219,
+      "kind": "title",
+      "value": "Stop"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/chat/composer.tsx",
+      "line": 229,
+      "kind": "title",
+      "value": "Send"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/database/database-view.tsx",
+      "line": 10,
+      "kind": "title",
+      "value": "Database"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/database/database-view.tsx",
+      "line": 10,
+      "kind": "subtitle",
+      "value": "Managed datasets exposed by the daemon."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/local-models/local-models-view.tsx",
+      "line": 9,
+      "kind": "title",
+      "value": "Local models"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/local-models/local-models-view.tsx",
+      "line": 9,
+      "kind": "subtitle",
+      "value": "Ollama runtime exposed via the bridge."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/mcp/mcp-view.tsx",
+      "line": 9,
+      "kind": "title",
+      "value": "MCP servers"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/mcp/mcp-view.tsx",
+      "line": 9,
+      "kind": "subtitle",
+      "value": "Model Context Protocol endpoints."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/memory/memory-view.tsx",
+      "line": 10,
+      "kind": "title",
+      "value": "Memory"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/memory/memory-view.tsx",
+      "line": 10,
+      "kind": "subtitle",
+      "value": "Persistent context Codex can recall across chats."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pairing/pairing-screen.tsx",
+      "line": 97,
+      "kind": "jsxText",
+      "value": "Short code"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 37,
+      "kind": "jsxText",
+      "value": "Analytics"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 38,
+      "kind": "jsxText",
+      "value": "Daily, weekly and monthly totals, category distribution, mood split, notes and exports."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 49,
+      "kind": "title",
+      "value": "Category distribution"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 52,
+      "kind": "title",
+      "value": "Mood"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 63,
+      "kind": "jsxText",
+      "value": "Day"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 64,
+      "kind": "jsxText",
+      "value": "Week"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 65,
+      "kind": "jsxText",
+      "value": "Month"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 76,
+      "kind": "jsxText",
+      "value": "All"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 77,
+      "kind": "jsxText",
+      "value": "Focus"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 78,
+      "kind": "jsxText",
+      "value": "Break"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 79,
+      "kind": "jsxText",
+      "value": "Notes"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 82,
+      "kind": "title",
+      "value": "Timeline"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 85,
+      "kind": "jsxText",
+      "value": "No sessions match this range/filter."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 99,
+      "kind": "title",
+      "value": "Timeline"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 126,
+      "kind": "aria-label",
+      "value": "Previous day"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 131,
+      "kind": "aria-label",
+      "value": "Next day"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-analytics.tsx",
+      "line": 205,
+      "kind": "jsxText",
+      "value": "No focus distribution yet."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 147,
+      "kind": "jsxText",
+      "value": "Pomodoro"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 148,
+      "kind": "jsxText",
+      "value": "Session parity workspace"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 194,
+      "kind": "jsxText",
+      "value": "Mini Player"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 195,
+      "kind": "aria-label",
+      "value": "Close mini player"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 247,
+      "kind": "placeholder",
+      "value": "What do you want to focus on?"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 342,
+      "kind": "placeholder",
+      "value": "Write down your thoughts, learning, or distraction..."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 349,
+      "kind": "jsxText",
+      "value": "Reflection mood"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 364,
+      "kind": "placeholder",
+      "value": "What did you learn in this Session?"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 374,
+      "kind": "title",
+      "value": "Active blockers"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 376,
+      "kind": "jsxText",
+      "value": "No website, app, or team-chat blocker is active for this timer state."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 383,
+      "kind": "title",
+      "value": "Notices"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 391,
+      "kind": "jsxText",
+      "value": "Timer notifications, overflow tests, and shortcut actions appear here."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 406,
+      "kind": "subtitle",
+      "value": "Local task planning with plain-text imports and local-only session notes."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 406,
+      "kind": "title",
+      "value": "To Do"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 408,
+      "kind": "title",
+      "value": "Add task"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 408,
+      "kind": "action",
+      "value": "Today"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 410,
+      "kind": "placeholder",
+      "value": "Task title"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 413,
+      "kind": "placeholder",
+      "value": "- Paste plain text tasks&#10;- One per line"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 421,
+      "kind": "title",
+      "value": "Today"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 439,
+      "kind": "aria-label",
+      "value": "Delete task"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 442,
+      "kind": "jsxText",
+      "value": "No tasks yet."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 456,
+      "kind": "title",
+      "value": "Categories"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 456,
+      "kind": "subtitle",
+      "value": "Create, filter, edit color, archive, and use category IDs for URL-scheme style starts."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 458,
+      "kind": "action",
+      "value": "Custom colors"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 458,
+      "kind": "title",
+      "value": "New category"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 459,
+      "kind": "placeholder",
+      "value": "Category name"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 461,
+      "kind": "placeholder",
+      "value": "Filter categories"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 463,
+      "kind": "title",
+      "value": "Active categories"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 484,
+      "kind": "title",
+      "value": "Profile Settings"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 484,
+      "kind": "subtitle",
+      "value": "Rules can tune duration, notifications, website blockers and app blockers by intention/category."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 486,
+      "kind": "action",
+      "value": "Default profile"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 486,
+      "kind": "title",
+      "value": "Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 507,
+      "kind": "title",
+      "value": "Notification profile"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 507,
+      "kind": "action",
+      "value": "Overflow"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 522,
+      "kind": "title",
+      "value": "Example rules"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 522,
+      "kind": "action",
+      "value": "Local"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 538,
+      "kind": "title",
+      "value": "Blockers"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 538,
+      "kind": "subtitle",
+      "value": "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 540,
+      "kind": "title",
+      "value": "Website blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 541,
+      "kind": "title",
+      "value": "Break website blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 542,
+      "kind": "title",
+      "value": "Session app blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 543,
+      "kind": "title",
+      "value": "Break app blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 544,
+      "kind": "title",
+      "value": "Team chat blocker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 544,
+      "kind": "action",
+      "value": "Teams"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 546,
+      "kind": "placeholder",
+      "value": "Team name per line"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 548,
+      "kind": "title",
+      "value": "Currently enforced in app"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 549,
+      "kind": "jsxText",
+      "value": "No active blocker for the current timer state."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 564,
+      "kind": "title",
+      "value": "Calendar"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 564,
+      "kind": "subtitle",
+      "value": "Daily planning surface with scheduled tasks, logged Sessions, breaks and projected timer block."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 567,
+      "kind": "action",
+      "value": "Local"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 567,
+      "kind": "title",
+      "value": "Schedule Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 568,
+      "kind": "placeholder",
+      "value": "Focus title"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 583,
+      "kind": "title",
+      "value": "Calendar integration"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 583,
+      "kind": "action",
+      "value": "Local"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 592,
+      "kind": "title",
+      "value": "Planned Sessions"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 597,
+      "kind": "jsxText",
+      "value": "No scheduled Sessions for this day."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 623,
+      "kind": "title",
+      "value": "Automation"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 623,
+      "kind": "subtitle",
+      "value": "Shortcuts, URL scheme, AppleScript and window tracker equivalents for this Pomodoro example."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 625,
+      "kind": "action",
+      "value": "Actions"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 625,
+      "kind": "title",
+      "value": "Shortcuts"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 636,
+      "kind": "action",
+      "value": "Copy source"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 636,
+      "kind": "title",
+      "value": "Current Session JSON"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 639,
+      "kind": "action",
+      "value": "session://"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 639,
+      "kind": "title",
+      "value": "URL scheme"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 644,
+      "kind": "jsxText",
+      "value": "Local command URLs"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 651,
+      "kind": "title",
+      "value": "Window tracker"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 654,
+      "kind": "placeholder",
+      "value": "App name"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 655,
+      "kind": "placeholder",
+      "value": "Window keyword"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 656,
+      "kind": "placeholder",
+      "value": "Suggested intention"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 680,
+      "kind": "aria-label",
+      "value": "Delete tracker rule"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 683,
+      "kind": "jsxText",
+      "value": "No tracker rules yet."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 702,
+      "kind": "jsxText",
+      "value": "started"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 704,
+      "kind": "aria-label",
+      "value": "Delete scheduled Session"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 712,
+      "kind": "subtitle",
+      "value": "General, notification, sound, menubar, window, display, account, support and developer controls."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 712,
+      "kind": "title",
+      "value": "Settings"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 714,
+      "kind": "title",
+      "value": "General"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 714,
+      "kind": "action",
+      "value": "Timer"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 721,
+      "kind": "title",
+      "value": "Background sound"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 738,
+      "kind": "action",
+      "value": "Chrome"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 738,
+      "kind": "title",
+      "value": "Menubar and Dock"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 744,
+      "kind": "action",
+      "value": "Mini player"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 744,
+      "kind": "title",
+      "value": "Window"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 751,
+      "kind": "title",
+      "value": "Display and language"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 757,
+      "kind": "title",
+      "value": "Account and support"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 757,
+      "kind": "action",
+      "value": "Local"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 802,
+      "kind": "placeholder",
+      "value": "example.com&#10;social.example"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 803,
+      "kind": "jsxText",
+      "value": "Entries are enforced as an in-app active blocker list for this example."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/pomodoro/pomodoro-view.tsx",
+      "line": 812,
+      "kind": "placeholder",
+      "value": "App name per line"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/projects/projects-view.tsx",
+      "line": 20,
+      "kind": "title",
+      "value": "Projects"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/projects/projects-view.tsx",
+      "line": 20,
+      "kind": "subtitle",
+      "value": "The working directories your chats touched."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/secrets/secrets-view.tsx",
+      "line": 34,
+      "kind": "subtitle",
+      "value": "Local-first crypto with Mac parity."
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/secrets/secrets-view.tsx",
+      "line": 34,
+      "kind": "title",
+      "value": "Secrets vault"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/secrets/secrets-view.tsx",
+      "line": 72,
+      "kind": "placeholder",
+      "value": "Test passphrase"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 72,
+      "kind": "jsxText",
+      "value": "Connection"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 85,
+      "kind": "placeholder",
+      "value": "Web"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 118,
+      "kind": "jsxText",
+      "value": "Manage on Mac"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 122,
+      "kind": "jsxText",
+      "value": "Manage on Mac"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 126,
+      "kind": "jsxText",
+      "value": "Manage on Mac"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 136,
+      "kind": "jsxText",
+      "value": "Theme"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 142,
+      "kind": "jsxText",
+      "value": "Always dark"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 156,
+      "kind": "jsxText",
+      "value": "Bridge runtime"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/settings/settings-view.tsx",
+      "line": 171,
+      "kind": "jsxText",
+      "value": "Rate limits"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/sidebar/sidebar-view.tsx",
+      "line": 43,
+      "kind": "title",
+      "value": "New chat"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/sidebar/sidebar-view.tsx",
+      "line": 61,
+      "kind": "placeholder",
+      "value": "Search"
+    },
+    {
+      "platform": "web",
+      "file": "web/src/screens/sidebar/sidebar-view.tsx",
+      "line": 85,
+      "kind": "jsxText",
+      "value": "No chats yet"
+    }
+  ]
+}

@@ -198,7 +198,7 @@ struct DesignTemplateDetailView: View {
                         Text(slot.label)
                             .font(BodyFont.manrope(size: 13, wght: 500))
                             .foregroundColor(Palette.textPrimary)
-                        Text("\(slot.id) · \(slot.kind.rawValue)")
+                        Text(verbatim: "\(slot.id) · \(slot.kind.rawValue)")
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundColor(Color(white: 0.55))
                     }
@@ -252,7 +252,7 @@ struct DesignTemplateDetailView: View {
             HStack(spacing: 8) {
                 Image(systemName: "wand.and.rays")
                     .font(.system(size: 14, weight: .semibold))
-                Text("Open in editor")
+                Text(L10n.t("Open in editor"))
                     .font(BodyFont.manrope(size: 15, wght: 700))
             }
             .foregroundColor(Palette.background)
@@ -308,7 +308,7 @@ struct DesignTemplateDetailView: View {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 26, weight: .light))
                 .foregroundColor(Color(white: 0.45))
-            Text("Template not found")
+            Text(L10n.t("Template not found"))
                 .font(BodyFont.manrope(size: 14, wght: 500))
                 .foregroundColor(Color(white: 0.70))
         }

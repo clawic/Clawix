@@ -61,11 +61,11 @@ struct ShortCodePairingView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Type your code")
+                Text(L10n.t("Type your code"))
                     .font(BodyFont.system(size: 26, weight: .bold))
                     .tracking(-0.4)
                     .foregroundStyle(Palette.textPrimary)
-                Text("Run `clawix pair` on your Mac and read the 9-character code below the QR.")
+                Text(L10n.t("Run `clawix pair` on your Mac and read the 9-character code below the QR."))
                     .font(Typography.bodyFont)
                     .foregroundStyle(Palette.textSecondary)
                     .lineSpacing(2)
@@ -89,7 +89,7 @@ struct ShortCodePairingView: View {
         if flow.discovered.isEmpty {
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small)
-                Text("Looking for your Mac on this Wi-Fi…")
+                Text(L10n.t("Looking for your Mac on this Wi-Fi…"))
                     .font(Typography.captionFont)
                     .foregroundStyle(Palette.textTertiary)
             }
@@ -112,7 +112,7 @@ struct ShortCodePairingView: View {
             .glassRounded(radius: AppLayout.cardCornerRadius)
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Pick the Mac to pair with:")
+                Text(L10n.t("Pick the Mac to pair with:"))
                     .font(Typography.captionFont)
                     .foregroundStyle(Palette.textTertiary)
                 ForEach(flow.discovered) { mac in
@@ -144,7 +144,7 @@ struct ShortCodePairingView: View {
 
     private var codeInput: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Code")
+            Text(L10n.t("Code"))
                 .font(Typography.captionFont)
                 .foregroundStyle(Palette.textTertiary)
             TextField("XXX-XXX-XXX", text: Binding(
@@ -176,7 +176,7 @@ struct ShortCodePairingView: View {
                 if isPairing {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Pair")
+                    Text(L10n.t("Pair"))
                         .font(Typography.bodyEmphasized)
                         .foregroundStyle(Color.black)
                 }

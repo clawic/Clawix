@@ -19,8 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.core.WireSession
 import com.example.clawix.android.icons.LucideGlyph
 import com.example.clawix.android.icons.LucideIcon
@@ -49,8 +51,9 @@ fun ChatRow(
                     LucideIcon(LucideGlyph.Pin, size = 14.dp, tint = Palette.textTertiary)
                     Spacer(Modifier.width(6.dp))
                 }
+                val title = chat.title.takeIf { it.isNotBlank() } ?: stringResource(R.string.untitled)
                 Text(
-                    text = chat.title.ifBlank { "Untitled" },
+                    text = title,
                     style = AppTypography.bodyEmphasized,
                     color = Palette.textPrimary,
                     maxLines = 1,

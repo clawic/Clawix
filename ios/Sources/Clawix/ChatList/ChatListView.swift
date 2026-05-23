@@ -178,7 +178,7 @@ struct ChatListView: View {
                 searchCloseCircle
                     .transition(.scale(scale: 0.6, anchor: .trailing).combined(with: .opacity))
             } else {
-                Text("Clawix")
+                Text(L10n.t("Clawix"))
                     .font(AppFont.system(size: 23, weight: .bold))
                     .foregroundStyle(Palette.textPrimary)
                     .padding(.leading, 6)
@@ -217,7 +217,7 @@ struct ChatListView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Search")
+            .accessibilityLabel(L10n.t("Search"))
 
             if let onOpenDesign {
                 Button(action: {
@@ -231,7 +231,7 @@ struct ChatListView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Design")
+                .accessibilityLabel(L10n.t("Design"))
             }
 
             Button(action: {
@@ -245,7 +245,7 @@ struct ChatListView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Settings")
+            .accessibilityLabel(L10n.t("Settings"))
         }
         .glassCapsule()
     }
@@ -254,7 +254,7 @@ struct ChatListView: View {
         HStack(spacing: 10) {
             SearchIcon(size: 16)
                 .foregroundStyle(Palette.textSecondary)
-            TextField("Search", text: $searchText)
+            TextField(L10n.t("Search"), text: $searchText)
                 .font(BodyFont.system(size: 16))
                 .foregroundStyle(Palette.textPrimary)
                 .tint(Color.white)
@@ -300,7 +300,7 @@ struct ChatListView: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Close search")
+        .accessibilityLabel(L10n.t("Close search"))
     }
 
     // MARK: Projects section
@@ -335,7 +335,7 @@ struct ChatListView: View {
                             LucideIcon(.ellipsis, size: 29)
                                 .foregroundStyle(Palette.textPrimary)
                                 .frame(width: 24, alignment: .center)
-                            Text("See more")
+                            Text(L10n.t("See more"))
                                 .font(Typography.bodyFont)
                                 .foregroundStyle(Palette.textPrimary)
                             Spacer()
@@ -424,7 +424,7 @@ struct ChatListView: View {
                 VStack(spacing: 8) {
                     SearchIcon(size: 32)
                         .foregroundStyle(Palette.textTertiary)
-                    Text("No matches for \"\(searchText)\"")
+                    Text(L10n.format("No matches for \"%@\"", searchText))
                         .font(Typography.secondaryFont)
                         .foregroundStyle(Palette.textSecondary)
                 }
@@ -438,9 +438,9 @@ struct ChatListView: View {
 
     /// Renders when the chat list is empty. Picks one of three
     /// states from `store`:
-    ///   • bridge syncing → "Sincronizando con tu Mac…" + spinner
-    ///   • bridge error   → tarjeta con el motivo y subtítulo de ayuda
-    ///   • bridge ready   → empty state real ("No tienes chats todavía")
+    ///   • bridge syncing → "Syncing with your Mac…" + spinner
+    ///   • bridge error   → card with the reason and help subtitle
+    ///   • bridge ready   → real empty state ("No chats yet")
     /// Centred vertically inside the scroll view so the placeholder
     /// reads as a screen state, not a list row.
     @ViewBuilder
@@ -467,11 +467,11 @@ struct ChatListView: View {
             ProgressView()
                 .controlSize(.regular)
                 .tint(Palette.textTertiary)
-            Text("Syncing with your Mac…")
+            Text(L10n.t("Syncing with your Mac…"))
                 .font(BodyFont.system(size: 17, weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Loading your chats for the first time")
+            Text(L10n.t("Loading your chats for the first time"))
                 .font(BodyFont.system(size: 14))
                 .tracking(-0.2)
                 .foregroundStyle(Palette.textSecondary)
@@ -481,11 +481,11 @@ struct ChatListView: View {
 
     private var placeholderEmpty: some View {
         VStack(spacing: 12) {
-            Text("No chats yet")
+            Text(L10n.t("No chats yet"))
                 .font(BodyFont.system(size: 17, weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Start a conversation from your Mac and it will appear here.")
+            Text(L10n.t("Start a conversation from your Mac and it will appear here."))
                 .font(BodyFont.system(size: 14))
                 .tracking(-0.2)
                 .foregroundStyle(Palette.textSecondary)
@@ -496,7 +496,7 @@ struct ChatListView: View {
 
     private func placeholderError(message: String) -> some View {
         VStack(spacing: 12) {
-            Text("Could not connect to your Mac")
+            Text(L10n.t("Could not connect to your Mac"))
                 .font(BodyFont.system(size: 17, weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Palette.textPrimary)
@@ -855,7 +855,7 @@ private struct AllProjectsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") {
+                    Button(L10n.t("Close")) {
                         Haptics.tap()
                         onDismiss()
                     }
@@ -908,7 +908,7 @@ private struct SettingsSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(L10n.t("Done")) {
                         Haptics.tap()
                         onDismiss()
                     }
@@ -1106,7 +1106,7 @@ private struct SettingsScannerSheet: View {
                     Spacer()
                 }
                 Spacer()
-                Text("Scan the Clawix QR shown on your Mac")
+                Text(L10n.t("Scan the Clawix QR shown on your Mac"))
                     .font(BodyFont.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
@@ -1134,7 +1134,7 @@ private struct NewChatFAB: View {
             HStack(spacing: 8) {
                 ComposeIcon(size: 18)
                     .foregroundStyle(Color.black)
-                Text("Chat")
+                Text(L10n.t("Chat"))
                     .font(BodyFont.system(size: 18, weight: .semibold))
                     .foregroundStyle(Color.black)
             }
@@ -1149,7 +1149,7 @@ private struct NewChatFAB: View {
             .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("New chat")
+        .accessibilityLabel(L10n.t("New chat"))
     }
 }
 

@@ -25,9 +25,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import android.graphics.BitmapFactory
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.GeneratedImageState
 import com.example.clawix.android.theme.AppLayout
 import com.example.clawix.android.theme.AppTypography
@@ -98,8 +100,7 @@ private fun InlineImage(container: AppContainer, path: String) {
                 modifier = Modifier.size(160.dp).clip(RoundedCornerShape(AppLayout.cardCornerRadius))
             )
             error != null -> Text(error!!, style = AppTypography.caption, color = Palette.textTertiary, modifier = Modifier.padding(8.dp))
-            else -> Text("Loading…", style = AppTypography.caption, color = Palette.textTertiary)
+            else -> Text(stringResource(R.string.loading), style = AppTypography.caption, color = Palette.textTertiary)
         }
     }
 }
-

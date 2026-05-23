@@ -10,15 +10,15 @@ struct ProfileView: View {
             Form {
                 Section("Identity") {
                     if let me = store.me {
-                        LabeledContent("Alias") { Text("@" + me.handle.alias).foregroundStyle(Palette.textPrimary) }
-                        LabeledContent("Fingerprint") {
+                        LabeledContent(L10n.t("Alias")) { Text("@" + me.handle.alias).foregroundStyle(Palette.textPrimary) }
+                        LabeledContent(L10n.t("Fingerprint")) {
                             Text(me.handle.fingerprint)
                                 .font(.system(size: 13, design: .monospaced))
                                 .textSelection(.enabled)
                                 .foregroundStyle(Palette.textSecondary)
                         }
                     } else {
-                        Text("No profile yet").foregroundStyle(Palette.textSecondary)
+                        Text(L10n.t("No profile yet")).foregroundStyle(Palette.textSecondary)
                     }
                 }
 
@@ -26,12 +26,12 @@ struct ProfileView: View {
                     TextEditor(text: $pasteLink)
                         .font(.system(size: 12, design: .monospaced))
                         .frame(minHeight: 80)
-                    Button("Resolve and add") {
+                    Button(L10n.t("Resolve and add")) {
                         Task { pairedHandle = await store.pair(link: pasteLink) }
                     }
                     .disabled(pasteLink.isEmpty)
                     if let handle = pairedHandle {
-                        Text("Paired with @\(handle.alias)")
+                        Text(L10n.format("Paired with @%@", handle.alias))
                             .font(.system(size: 12)).foregroundStyle(Palette.textSecondary)
                     }
                 }
@@ -43,7 +43,7 @@ struct ProfileView: View {
                 }
 
                 Section("Recovery") {
-                    Button("Reveal mnemonic") {
+                    Button(L10n.t("Reveal mnemonic")) {
                         // Reveal flow lives behind a biometric prompt in the daemon.
                     }
                 }

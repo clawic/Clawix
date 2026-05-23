@@ -82,22 +82,22 @@ struct EditorView: View {
             ShareSheet(items: [payload.url])
         }
         .confirmationDialog("Export or share sensitive data?", isPresented: exportReviewPresented, titleVisibility: .visible) {
-            Button("Continue") {
+            Button(L10n.t("Continue")) {
                 guard let format = pendingExportFormat else { return }
                 pendingExportFormat = nil
                 export(format: format)
             }
-            Button("Cancel", role: .cancel) {
+            Button(L10n.t("Cancel"), role: .cancel) {
                 pendingExportFormat = nil
             }
         } message: {
-            Text("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material.")
+            Text(L10n.t("Clawix outputs are drafts, not professional advice. Review sources, gaps, recipients, and consequences before sharing or saving sensitive material."))
         }
         .confirmationDialog("Delete draft?", isPresented: $pendingDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) { performDelete() }
-            Button("Cancel", role: .cancel) {}
+            Button(L10n.t("Delete"), role: .destructive) { performDelete() }
+            Button(L10n.t("Cancel"), role: .cancel) {}
         } message: {
-            Text("This editor document will be removed from disk.")
+            Text(L10n.t("This editor document will be removed from disk."))
         }
         .photosPicker(isPresented: photosPresentation, selection: $photoPickerItem, matching: .images)
     }
@@ -165,13 +165,13 @@ struct EditorView: View {
                                     .tracking(0.4)
                             }
                         } else {
-                            Text("Inspector")
+                            Text(L10n.t("Inspector"))
                                 .font(BodyFont.manrope(size: 14, wght: 600))
                                 .foregroundColor(Palette.textPrimary)
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
+                        Button(L10n.t("Done")) {
                             Haptics.tap()
                             inspectorSheetOpen = false
                         }
@@ -268,7 +268,7 @@ struct EditorView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 12, weight: .bold))
-                    Text("Done")
+                    Text(L10n.t("Done"))
                         .font(BodyFont.manrope(size: 13, wght: 600))
                 }
                 .foregroundColor(Color(white: 0.92))
@@ -282,7 +282,7 @@ struct EditorView: View {
                     .font(BodyFont.manrope(size: 15, wght: 600))
                     .foregroundColor(Palette.textPrimary)
                     .lineLimit(1)
-                Text("\(template.name) · \(template.aspect.displayLabel)")
+                Text(verbatim: "\(template.name) · \(template.aspect.displayLabel)")
                     .font(BodyFont.manrope(size: 11.5, wght: 500))
                     .foregroundColor(Color(white: 0.55))
                     .lineLimit(1)
@@ -290,13 +290,13 @@ struct EditorView: View {
             Spacer()
             Menu {
                 ForEach(EditorExport.Format.allCases) { format in
-                    Button("Export \(format.label)") {
+                    Button(L10n.format("Export %@", format.label)) {
                         Haptics.tap()
                         requestExportReview(format: format)
                     }
                 }
                 Divider()
-                Button("Delete draft", role: .destructive) {
+                Button(L10n.t("Delete draft"), role: .destructive) {
                     Haptics.warning()
                     pendingDelete = true
                 }
@@ -498,10 +498,10 @@ struct EditorView: View {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 28, weight: .light))
                 .foregroundColor(Color(white: 0.45))
-            Text("Editor document not found")
+            Text(L10n.t("Editor document not found"))
                 .font(BodyFont.manrope(size: 15, wght: 500))
                 .foregroundColor(Color(white: 0.70))
-            Button("Close", action: onClose)
+            Button(L10n.t("Close"), action: onClose)
                 .buttonStyle(.plain)
                 .padding(.top, 6)
         }

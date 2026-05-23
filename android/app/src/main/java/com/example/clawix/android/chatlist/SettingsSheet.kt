@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.ConnectionRoute
 import com.example.clawix.android.bridge.ConnectionState
 import com.example.clawix.android.icons.LucideGlyph
@@ -52,15 +54,15 @@ fun SettingsSheet(
                 .fillMaxWidth()
                 .padding(horizontal = AppLayout.screenHorizontalPadding, vertical = 12.dp)
         ) {
-            Text("Settings", style = AppTypography.title, color = Palette.textPrimary)
+            Text(stringResource(R.string.settings), style = AppTypography.title, color = Palette.textPrimary)
             Spacer(Modifier.height(20.dp))
 
             ConnectionStatusRow(connection = connection)
             Spacer(Modifier.height(16.dp))
 
-            ActionRow(LucideGlyph.Refresh, "Reconnect", onClick = onReconnect)
-            ActionRow(LucideGlyph.QrCode, "Pair another Mac", onClick = onPairAnother)
-            ActionRow(LucideGlyph.Unlock, "Unpair Mac", danger = true, onClick = onUnpair)
+            ActionRow(LucideGlyph.Refresh, stringResource(R.string.reconnect), onClick = onReconnect)
+            ActionRow(LucideGlyph.QrCode, stringResource(R.string.pair_another_mac), onClick = onPairAnother)
+            ActionRow(LucideGlyph.Unlock, stringResource(R.string.unpair_mac), danger = true, onClick = onUnpair)
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -69,19 +71,22 @@ fun SettingsSheet(
 @Composable
 private fun ConnectionStatusRow(connection: ConnectionState) {
     val (label, color, icon) = when (connection) {
-        ConnectionState.Idle -> Triple("Not connected", Palette.textTertiary, LucideGlyph.WifiOff)
-        ConnectionState.Connecting -> Triple("Connecting…", Palette.textSecondary, LucideGlyph.Wifi)
-        is ConnectionState.Reconnecting -> Triple("Reconnecting (#${connection.attempt})", Palette.textSecondary, LucideGlyph.Wifi)
+        ConnectionState.Idle -> Triple(stringResource(R.string.not_connected), Palette.textTertiary, LucideGlyph.WifiOff)
+        ConnectionState.Connecting -> Triple(stringResource(R.string.connecting), Palette.textSecondary, LucideGlyph.Wifi)
+        is ConnectionState.Reconnecting -> Triple(stringResource(R.string.reconnecting_attempt, connection.attempt), Palette.textSecondary, LucideGlyph.Wifi)
         is ConnectionState.Connected -> {
             val routeLabel = when (connection.route) {
                 ConnectionRoute.Lan -> "LAN"
                 ConnectionRoute.Tailscale -> "Tailscale"
                 ConnectionRoute.Bonjour -> "Bonjour"
             }
-            Triple("Connected via $routeLabel${connection.hostDisplayName?.let { " · $it" } ?: ""}", Palette.unreadDot, LucideGlyph.Wifi)
+            val label = connection.hostDisplayName?.let {
+                stringResource(R.string.connected_via_host, routeLabel, it)
+            } ?: stringResource(R.string.connected_via, routeLabel)
+            Triple(label, Palette.unreadDot, LucideGlyph.Wifi)
         }
-        is ConnectionState.Failed -> Triple("Failed: ${connection.reason}", Palette.unreadDot, LucideGlyph.CircleAlert)
-        is ConnectionState.VersionMismatch -> Triple("Update required (server v${connection.serverVersion})", Palette.unreadDot, LucideGlyph.CircleAlert)
+        is ConnectionState.Failed -> Triple(stringResource(R.string.connection_failed, connection.reason), Palette.unreadDot, LucideGlyph.CircleAlert)
+        is ConnectionState.VersionMismatch -> Triple(stringResource(R.string.update_required_server, connection.serverVersion), Palette.unreadDot, LucideGlyph.CircleAlert)
     }
     Row(
         Modifier

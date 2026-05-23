@@ -15,8 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.DerivedProject
 import com.example.clawix.android.icons.FolderClosedIcon
 import com.example.clawix.android.icons.LucideGlyph
@@ -46,11 +49,17 @@ fun ProjectRow(project: DerivedProject, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            val chatCount = project.chatIds.size
+            val chatCountLabel = if (chatCount > 0) {
+                pluralStringResource(R.plurals.project_chat_count, chatCount, chatCount)
+            } else {
+                ""
+            }
             val subtitle = buildString {
                 if (project.branch != null) append(project.branch)
-                if (project.chatIds.isNotEmpty()) {
+                if (chatCountLabel.isNotEmpty()) {
                     if (isNotEmpty()) append(" · ")
-                    append("${project.chatIds.size} chats")
+                    append(chatCountLabel)
                 }
             }
             if (subtitle.isNotEmpty()) {

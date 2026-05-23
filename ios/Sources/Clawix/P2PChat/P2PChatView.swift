@@ -38,8 +38,8 @@ private struct ThreadRow: View {
             }
             .frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 2) {
-                Text("@\(thread.peer.handle.alias)").font(.system(size: 14, weight: .medium)).kerning(-0.2)
-                Text(".\(thread.peer.handle.fingerprint)")
+                Text(verbatim: "@\(thread.peer.handle.alias)").font(.system(size: 14, weight: .medium)).kerning(-0.2)
+                Text(verbatim: ".\(thread.peer.handle.fingerprint)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(Palette.textSecondary)
             }
@@ -93,7 +93,7 @@ struct P2PChatDetailView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            TextField("Message…", text: $draft, axis: .vertical)
+            TextField(L10n.t("Message…"), text: $draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1...5)
                 .font(.system(size: 14))

@@ -36,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.Credentials
 import com.example.clawix.android.bridge.DiscoveredMac
 import com.example.clawix.android.icons.CloseIcon
@@ -96,12 +98,12 @@ fun ShortCodePairingScreen(
                     contentAlignment = Alignment.Center,
                 ) { CloseIcon(size = 18.dp, tint = Palette.textPrimary) }
                 Spacer(Modifier.width(12.dp))
-                Text("Pair with code", style = AppTypography.title, color = Palette.textPrimary)
+                Text(stringResource(R.string.pair_with_code), style = AppTypography.title, color = Palette.textPrimary)
             }
 
             Spacer(Modifier.height(16.dp))
             Text(
-                "Make sure your phone and Mac are on the same Wi-Fi.",
+                stringResource(R.string.same_wifi_instruction),
                 style = AppTypography.secondary,
                 color = Palette.textSecondary,
             )
@@ -149,7 +151,7 @@ fun ShortCodePairingScreen(
                 LucideIcon(LucideGlyph.Check, size = 18.dp, tint = if (code.length >= 9) Palette.userBubbleText else Palette.textTertiary)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Pair",
+                    stringResource(R.string.pair),
                     style = AppTypography.bodyEmphasized,
                     color = if (code.length >= 9) Palette.userBubbleText else Palette.textTertiary,
                 )
@@ -161,7 +163,7 @@ fun ShortCodePairingScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("Discovered Macs", style = AppTypography.caption, color = Palette.textTertiary)
+            Text(stringResource(R.string.discovered_macs), style = AppTypography.caption, color = Palette.textTertiary)
             Spacer(Modifier.height(8.dp))
 
             LazyColumn(

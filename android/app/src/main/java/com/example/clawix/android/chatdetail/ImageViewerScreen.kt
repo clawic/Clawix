@@ -22,9 +22,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.theme.AppTypography
 import com.example.clawix.android.theme.Palette
 import com.example.clawix.android.util.Base64Util
@@ -92,7 +94,7 @@ fun ImageViewerDialog(
                         ),
                 )
                 cached?.errorMessage != null -> Text(cached.errorMessage, style = AppTypography.body, color = Palette.unreadDot)
-                else -> Text("Loading…", style = AppTypography.body, color = Palette.textTertiary)
+                else -> Text(stringResource(R.string.loading), style = AppTypography.body, color = Palette.textTertiary)
             }
         }
     }

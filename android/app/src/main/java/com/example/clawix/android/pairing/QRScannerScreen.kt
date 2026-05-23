@@ -37,10 +37,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.Credentials
 import com.example.clawix.android.core.PairingPayload
 import com.example.clawix.android.icons.CloseIcon
@@ -122,7 +124,7 @@ fun QRScannerScreen(
                 CloseIcon(size = 18.dp, tint = Palette.textPrimary)
             }
             Text(
-                "Scan QR",
+                stringResource(R.string.scan_qr),
                 style = AppTypography.title,
                 color = Palette.textPrimary,
                 modifier = Modifier.align(Alignment.Center)

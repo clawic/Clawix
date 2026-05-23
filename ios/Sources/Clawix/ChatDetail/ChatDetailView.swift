@@ -232,13 +232,13 @@ struct ChatDetailView: View {
             }
             #endif
             .alert("Rename chat", isPresented: $showRenameAlert) {
-                TextField("Chat title", text: $renameDraft)
+                TextField(L10n.t("Chat title"), text: $renameDraft)
                     .textInputAutocapitalization(.sentences)
                     .autocorrectionDisabled()
-                Button("Cancel", role: .cancel) {}
-                Button("Save", action: commitRename)
+                Button(L10n.t("Cancel"), role: .cancel) {}
+                Button(L10n.t("Save"), action: commitRename)
             } message: {
-                Text("Choose a new name for this chat.")
+                Text(L10n.t("Choose a new name for this chat."))
             }
     }
 
@@ -476,18 +476,18 @@ struct ChatDetailView: View {
                     handleRename()
                 } label: {
                     if let img = MenuIconImage.pencil {
-                        Label { Text("Rename") } icon: { Image(uiImage: img) }
+                        Label { Text(L10n.t("Rename")) } icon: { Image(uiImage: img) }
                     } else {
-                        Label("Rename", systemImage: "pencil")
+                        Label(L10n.t("Rename"), systemImage: "pencil")
                     }
                 }
                 Button {
                     handleArchive()
                 } label: {
                     if let img = MenuIconImage.archive {
-                        Label { Text("Archive") } icon: { Image(uiImage: img) }
+                        Label { Text(L10n.t("Archive")) } icon: { Image(uiImage: img) }
                     } else {
-                        Label("Archive", systemImage: "archivebox")
+                        Label(L10n.t("Archive"), systemImage: "archivebox")
                     }
                 }
             } label: {
@@ -496,7 +496,7 @@ struct ChatDetailView: View {
                     .frame(width: 48, height: 46)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Chat actions")
+            .accessibilityLabel(L10n.t("Chat actions"))
             .menuOrder(.fixed)
             .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
         }
@@ -642,7 +642,7 @@ struct ChatDetailView: View {
                 LucideIcon(.arrowDown, size: 24)
                     .foregroundStyle(Palette.textPrimary)
                 if unreadCount > 0 {
-                    Text("\(unreadCount)")
+                    Text(verbatim: "\(unreadCount)")
                         .font(BodyFont.manrope(size: 11, wght: 700))
                         .foregroundStyle(Palette.textPrimary)
                         .padding(.horizontal, 5)
@@ -656,7 +656,7 @@ struct ChatDetailView: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Scroll to bottom")
+        .accessibilityLabel(L10n.t("Scroll to bottom"))
         .scaleEffect(showScrollToBottom ? 1 : 0.6, anchor: .center)
         .opacity(showScrollToBottom ? 1 : 0)
         .animation(.spring(response: 0.34, dampingFraction: 0.82), value: showScrollToBottom)
@@ -928,7 +928,7 @@ struct ChatDetailView: View {
             ProgressView()
                 .controlSize(.regular)
                 .tint(Palette.textTertiary)
-            Text("Cargando este chat…")
+            Text(L10n.t("Loading this chat…"))
                 .font(BodyFont.system(size: 14))
                 .tracking(-0.2)
                 .foregroundStyle(Palette.textSecondary)
@@ -942,11 +942,11 @@ struct ChatDetailView: View {
     private var chatEmptyPlaceholder: some View {
         VStack(spacing: 8) {
             Spacer().frame(height: 60)
-            Text("Aún no hay mensajes en este chat")
+            Text(L10n.t("No messages in this chat yet"))
                 .font(BodyFont.system(size: 17, weight: .semibold))
                 .tracking(-0.4)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Escribe abajo para empezar.")
+            Text(L10n.t("Write below to start."))
                 .font(BodyFont.system(size: 14))
                 .tracking(-0.2)
                 .foregroundStyle(Palette.textSecondary)
@@ -1223,10 +1223,10 @@ private struct MessageActions: View {
             copyButton
         }
         .confirmationDialog("Export or share sensitive data?", isPresented: $copyReviewPresented, titleVisibility: .visible) {
-            Button("Copy with labels") {
+            Button(L10n.t("Copy with labels")) {
                 copyReviewed()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(L10n.t("Cancel"), role: .cancel) {}
         } message: {
             Text(IOSLegalSafetyPolicy.sensitiveCopyReviewMessage)
         }
@@ -1273,7 +1273,7 @@ private struct ReasoningDisclosure: View {
                 HStack(spacing: 6) {
                     LucideIcon.auto(isExpanded ? "chevron.down" : "chevron.right", size: 17.5)
                         .foregroundStyle(Palette.textTertiary)
-                    Text("Reasoning")
+                    Text(L10n.t("Reasoning"))
                         .font(Typography.captionFont)
                         .foregroundStyle(Palette.textTertiary)
                 }

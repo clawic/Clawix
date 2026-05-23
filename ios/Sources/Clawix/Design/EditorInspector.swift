@@ -112,10 +112,10 @@ struct EditorInspector: View {
             let items = document.data[slot.id]?.asItems ?? []
             ForEach(Array(items.enumerated()), id: \.offset) { index, _ in
                 HStack(spacing: 6) {
-                    Text("\(index + 1).")
+                    Text(verbatim: "\(index + 1).")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(Color(white: 0.55))
-                    TextField("Item \(index + 1)", text: itemBinding(slot.id, index: index))
+                    TextField(L10n.format("Item %lld", Int64(index + 1)), text: itemBinding(slot.id, index: index))
                         .textFieldStyle(.plain)
                         .font(BodyFont.manrope(size: 14, wght: 500))
                         .foregroundColor(Color(white: 0.92))
@@ -138,7 +138,7 @@ struct EditorInspector: View {
                 HStack(spacing: 5) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 13, weight: .semibold))
-                    Text("Add item")
+                    Text(L10n.t("Add item"))
                         .font(BodyFont.manrope(size: 13, wght: 600))
                 }
                 .foregroundColor(Palette.unreadDot)
@@ -193,7 +193,7 @@ struct EditorInspector: View {
             sectionTitle("Document")
             VStack(alignment: .leading, spacing: 6) {
                 fieldLabel("NAME")
-                TextField("Untitled", text: documentNameBinding())
+                TextField(L10n.t("Untitled"), text: documentNameBinding())
                     .textFieldStyle(.plain)
                     .font(BodyFont.manrope(size: 14, wght: 500))
                     .foregroundColor(Color(white: 0.92))
@@ -229,7 +229,7 @@ struct EditorInspector: View {
                 Text(template.name)
                     .font(BodyFont.manrope(size: 13, wght: 500))
                     .foregroundColor(Color(white: 0.85))
-                Text("\(template.category.displayName) · \(template.aspect.displayLabel)")
+                Text(verbatim: "\(template.category.displayName) · \(template.aspect.displayLabel)")
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundColor(Color(white: 0.55))
             }
@@ -422,7 +422,7 @@ private struct AssetPreviewCard: View {
                     .foregroundColor(Color(white: 0.55))
                     .lineLimit(1)
                 if let w = asset.width, let h = asset.height {
-                    Text("·  \(Int(w))×\(Int(h))")
+                    Text(verbatim: "·  \(Int(w))×\(Int(h))")
                         .font(BodyFont.manrope(size: 10.5, wght: 500))
                         .foregroundColor(Color(white: 0.45))
                 }

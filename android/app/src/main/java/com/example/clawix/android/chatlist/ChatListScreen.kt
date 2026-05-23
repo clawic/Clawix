@@ -39,11 +39,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.bridge.DerivedProject
 import com.example.clawix.android.core.WireSession
 import com.example.clawix.android.icons.ComposeIcon
@@ -106,11 +108,11 @@ fun ChatListScreen(
                             .padding(top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Projects", style = AppTypography.caption, color = Palette.textTertiary)
+                        Text(stringResource(R.string.projects), style = AppTypography.caption, color = Palette.textTertiary)
                         Spacer(Modifier.weight(1f))
                         if (ui.projects.size > 5) {
                             Text(
-                                "See all",
+                                stringResource(R.string.see_all),
                                 style = AppTypography.caption,
                                 color = Palette.textSecondary,
                                 modifier = Modifier.clickable { showAllProjects = true },
@@ -127,7 +129,7 @@ fun ChatListScreen(
             if (ui.pinnedChats.isNotEmpty()) {
                 item {
                     Text(
-                        "Pinned",
+                        stringResource(R.string.pinned),
                         style = AppTypography.caption,
                         color = Palette.textTertiary,
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -150,7 +152,7 @@ fun ChatListScreen(
             if (ui.recentChats.isNotEmpty()) {
                 item {
                     Text(
-                        "Recent",
+                        stringResource(R.string.recent),
                         style = AppTypography.caption,
                         color = Palette.textTertiary,
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -218,7 +220,7 @@ fun ChatListScreen(
                 }
                 if (!searchExpanded) {
                     Spacer(Modifier.weight(1f))
-                    Text("Clawix", style = AppTypography.bodyEmphasized, color = Palette.textPrimary)
+                    Text(stringResource(R.string.app_name), style = AppTypography.bodyEmphasized, color = Palette.textPrimary)
                     Spacer(Modifier.weight(1f))
                     // hidden symmetry placeholder
                     Box(Modifier.size(36.dp))
@@ -297,8 +299,8 @@ private fun EmptyState() {
     ) {
         ComposeIcon(size = 40.dp, tint = Palette.textTertiary)
         Spacer(Modifier.height(12.dp))
-        Text("No chats yet", style = AppTypography.bodyEmphasized, color = Palette.textSecondary)
+        Text(stringResource(R.string.no_chats_yet), style = AppTypography.bodyEmphasized, color = Palette.textSecondary)
         Spacer(Modifier.height(4.dp))
-        Text("Tap the new chat button to start", style = AppTypography.secondary, color = Palette.textTertiary)
+        Text(stringResource(R.string.tap_new_chat_to_start), style = AppTypography.secondary, color = Palette.textTertiary)
     }
 }

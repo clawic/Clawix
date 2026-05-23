@@ -60,7 +60,7 @@ struct AttachmentSheetView: View {
 
     private var header: some View {
         HStack {
-            Text("Clawix")
+            Text(L10n.t("Clawix"))
                 .font(BodyFont.system(size: 19, weight: .semibold))
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
@@ -68,12 +68,12 @@ struct AttachmentSheetView: View {
                 Haptics.tap()
                 onAllPhotos()
             }) {
-                Text("All photos")
+                Text(L10n.t("All photos"))
                     .font(BodyFont.system(size: 16, weight: .regular))
                     .foregroundStyle(Color(red: 0.27, green: 0.55, blue: 1.0))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("All photos")
+            .accessibilityLabel(L10n.t("All photos"))
             .accessibilityIdentifier("AllPhotosButton")
         }
     }
@@ -108,7 +108,7 @@ struct AttachmentSheetView: View {
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Open camera")
+        .accessibilityLabel(L10n.t("Open camera"))
     }
 
     private func photoTile(asset: PHAsset) -> some View {
@@ -162,7 +162,7 @@ struct AttachmentSheetView: View {
                             .progressViewStyle(.circular)
                             .tint(Color.black)
                     }
-                    Text("Add \(selectedAssetIds.count)")
+                    Text(L10n.format("Add %lld", Int64(selectedAssetIds.count)))
                         .font(BodyFont.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color.black)
                 }
@@ -181,10 +181,10 @@ struct AttachmentSheetView: View {
         VStack(spacing: 10) {
             LucideIcon(.images, size: 51)
                 .foregroundStyle(Palette.textSecondary)
-            Text("Photo access disabled")
+            Text(L10n.t("Photo access disabled"))
                 .font(Typography.bodyEmphasized)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Enable Photos in Settings to attach images, or open the system picker with \"All photos\" above.")
+            Text(L10n.t("Enable Photos in Settings to attach images, or open the system picker with \"All photos\" above."))
                 .font(Typography.secondaryFont)
                 .foregroundStyle(Palette.textSecondary)
                 .multilineTextAlignment(.center)
@@ -195,10 +195,10 @@ struct AttachmentSheetView: View {
         VStack(spacing: 10) {
             LucideIcon(.images, size: 51)
                 .foregroundStyle(Palette.textSecondary)
-            Text("Choose photos")
+            Text(L10n.t("Choose photos"))
                 .font(Typography.bodyEmphasized)
                 .foregroundStyle(Palette.textPrimary)
-            Text("Use \"All photos\" to pick images without granting full library access.")
+            Text(L10n.t("Use \"All photos\" to pick images without granting full library access."))
                 .font(Typography.secondaryFont)
                 .foregroundStyle(Palette.textSecondary)
                 .multilineTextAlignment(.center)

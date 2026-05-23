@@ -25,10 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.icons.QrIcon
 import com.example.clawix.android.icons.SettingsIcon
 import com.example.clawix.android.icons.LucideGlyph
@@ -71,20 +73,20 @@ fun PairingScreen(
             }
             Spacer(Modifier.height(28.dp))
             Text(
-                "Pair with your Mac",
+                stringResource(R.string.pair_with_your_mac),
                 style = AppTypography.headlineLarge,
                 color = Palette.textPrimary,
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "Open Clawix on your Mac. Click \"Pair iPhone\" in the menu bar — your Mac will show a QR code.",
+                stringResource(R.string.pairing_qr_instruction),
                 style = AppTypography.body,
                 color = Palette.textSecondary,
             )
             Spacer(Modifier.height(36.dp))
 
             CtaPrimary(
-                text = "Scan QR code",
+                text = stringResource(R.string.scan_qr_code),
                 glyph = LucideGlyph.Scan,
                 onClick = {
                     Haptics.tap(view)
@@ -93,7 +95,7 @@ fun PairingScreen(
             )
             Spacer(Modifier.height(12.dp))
             CtaSecondary(
-                text = "Type a code instead",
+                text = stringResource(R.string.type_code_instead),
                 glyph = LucideGlyph.Hash,
                 onClick = {
                     Haptics.tap(view)

@@ -25,8 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.core.WireAttachmentKind
 import com.example.clawix.android.icons.LucideGlyph
 import com.example.clawix.android.icons.LucideIcon
@@ -65,7 +67,7 @@ fun AttachmentSheet(
                 .fillMaxWidth()
                 .padding(horizontal = AppLayout.screenHorizontalPadding, vertical = 12.dp)
         ) {
-            Text("Attach", style = AppTypography.title, color = Palette.textPrimary)
+            Text(stringResource(R.string.attach), style = AppTypography.title, color = Palette.textPrimary)
             Spacer(Modifier.height(12.dp))
 
             // Recent photos grid (mirror iOS RecentPhotosLoader).
@@ -74,10 +76,10 @@ fun AttachmentSheet(
             })
             Spacer(Modifier.height(12.dp))
 
-            ActionRow(LucideGlyph.Camera, "Camera") {
+            ActionRow(LucideGlyph.Camera, stringResource(R.string.camera)) {
                 onOpenCamera()
             }
-            ActionRow(LucideGlyph.Images, "All photos") {
+            ActionRow(LucideGlyph.Images, stringResource(R.string.all_photos)) {
                 photoPicker.launch(
                     androidx.activity.result.PickVisualMediaRequest(
                         ActivityResultContracts.PickVisualMedia.ImageOnly

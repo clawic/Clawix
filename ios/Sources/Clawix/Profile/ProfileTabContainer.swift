@@ -13,16 +13,16 @@ struct ProfileTabContainer: View {
     var body: some View {
         TabView {
             FeedView(store: store)
-                .tabItem { Label("Feed", systemImage: "rectangle.stack") }
+                .tabItem { Label(L10n.t("Feed"), systemImage: "rectangle.stack") }
 
             P2PChatView(store: store)
-                .tabItem { Label("Chats", systemImage: "bubble.left.and.bubble.right") }
+                .tabItem { Label(L10n.t("Chats"), systemImage: "bubble.left.and.bubble.right") }
 
             MarketplaceView(store: store)
-                .tabItem { Label("Market", systemImage: "tag") }
+                .tabItem { Label(L10n.t("Market"), systemImage: "tag") }
 
             ProfileView(store: store)
-                .tabItem { Label("Profile", systemImage: "person.circle") }
+                .tabItem { Label(L10n.t("Profile"), systemImage: "person.circle") }
         }
         .task {
             if !didConfigure {

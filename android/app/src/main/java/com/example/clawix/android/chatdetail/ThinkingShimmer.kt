@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.clawix.android.R
 import com.example.clawix.android.theme.AppTypography
 import com.example.clawix.android.theme.Palette
 import kotlin.math.cos
@@ -20,7 +22,8 @@ import kotlin.math.cos
  * `ThinkingShimmer`.
  */
 @Composable
-fun ThinkingShimmer(text: String = "Thinking…", modifier: Modifier = Modifier) {
+fun ThinkingShimmer(text: String? = null, modifier: Modifier = Modifier) {
+    val displayText = text ?: stringResource(R.string.thinking)
     val transition = rememberInfiniteTransition(label = "thinking")
     val phase by transition.animateFloat(
         initialValue = 0f,
@@ -29,8 +32,8 @@ fun ThinkingShimmer(text: String = "Thinking…", modifier: Modifier = Modifier)
         label = "thinking-phase",
     )
     Row(modifier) {
-        text.forEachIndexed { idx, ch ->
-            val charPhase = (phase - idx.toFloat() / text.length.coerceAtLeast(1)).mod(1f)
+        displayText.forEachIndexed { idx, ch ->
+            val charPhase = (phase - idx.toFloat() / displayText.length.coerceAtLeast(1)).mod(1f)
             val s = (1f - cos(2f * Math.PI.toFloat() * charPhase)) / 2f
             val alpha = 0.30f + 0.55f * s
             Text(

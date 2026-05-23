@@ -24,10 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.clawix.android.AppContainer
+import com.example.clawix.android.R
 import com.example.clawix.android.chatlist.ChatRow
 import com.example.clawix.android.icons.FolderOpenIcon
 import com.example.clawix.android.icons.LucideGlyph
@@ -119,7 +121,7 @@ private fun ProjectHeader(ui: ProjectDetailUi) {
         }
         if (project.branch != null) {
             Spacer(Modifier.height(2.dp))
-            Text("on ${project.branch}", style = AppTypography.caption, color = Palette.textTertiary)
+            Text(stringResource(R.string.on_branch, project.branch), style = AppTypography.caption, color = Palette.textTertiary)
         }
     }
 }
