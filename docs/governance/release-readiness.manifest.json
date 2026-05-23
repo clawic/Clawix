@@ -5,6 +5,7 @@
   "sources": {
     "constitutionAssertions": "docs/constitution.assertions.json",
     "humanMatrix": "docs/governance/release-readiness.md",
+    "platformFeatureParity": "docs/platform-feature-parity.manifest.json",
     "externalPendingLedgers": [
       "docs/governance/legal/external-pending.md",
       "docs/governance/sdk-first-custom-surfaces/external-pending.md",
@@ -50,6 +51,19 @@
             "argv": [
               "node",
               "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "macos.platform-feature-parity",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/platform_feature_parity_check.mjs"
             ],
             "requiredEnv": []
           }
@@ -217,6 +231,19 @@
           }
         },
         {
+          "id": "ios.platform-feature-parity",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/platform_feature_parity_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
           "id": "ios.mirror",
           "kind": "command",
           "phase": "preflight",
@@ -369,6 +396,19 @@
           }
         },
         {
+          "id": "linux.platform-feature-parity",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/platform_feature_parity_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
           "id": "linux.mirror",
           "kind": "command",
           "phase": "preflight",
@@ -516,6 +556,19 @@
             "argv": [
               "node",
               "scripts/interface_surface_guard.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
+          "id": "windows.platform-feature-parity",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/platform_feature_parity_check.mjs"
             ],
             "requiredEnv": []
           }
@@ -696,6 +749,19 @@
           }
         },
         {
+          "id": "web.platform-feature-parity",
+          "kind": "command",
+          "phase": "preflight",
+          "command": {
+            "cwd": ".",
+            "argv": [
+              "node",
+              "scripts/platform_feature_parity_check.mjs"
+            ],
+            "requiredEnv": []
+          }
+        },
+        {
           "id": "web.mirror",
           "kind": "command",
           "phase": "preflight",
@@ -793,16 +859,43 @@
         "macos-release",
         "ios-release",
         "linux-release",
-        "windows-release"
+        "windows-release",
+        "web-release"
       ],
       "blockingExternalRows": [],
       "contractSources": [
         "docs/interface-matrix.md",
+        "docs/platform-feature-parity.manifest.json",
         "docs/adr/0007-dual-human-programmatic-surfaces.md",
-        "scripts/interface_surface_guard.mjs"
+        "scripts/interface_surface_guard.mjs",
+        "scripts/platform_feature_parity_check.mjs"
       ],
       "acceptedEvidenceRefs": [],
       "releaseRule": "Claimed V1 capabilities must be exposed through the app-facing and agent/programmatic surfaces before release."
+    },
+    {
+      "id": "v1-platform-product-parity",
+      "title": "Platform product parity for claimed V1 capabilities",
+      "constitutionalAssertionIds": [
+        "I.2.human-and-agent-are-equal-consumers",
+        "I.6.capabilities-are-complete-only-when-dual-surfaced",
+        "X.3.distribution-is-native"
+      ],
+      "releaseTargets": [
+        "macos-release",
+        "ios-release",
+        "linux-release",
+        "windows-release",
+        "web-release"
+      ],
+      "blockingExternalRows": [],
+      "contractSources": [
+        "docs/platform-feature-parity.md",
+        "docs/platform-feature-parity.manifest.json",
+        "scripts/platform_feature_parity_check.mjs"
+      ],
+      "acceptedEvidenceRefs": [],
+      "releaseRule": "Each macOS reference feature must have a platform status, evidence, test/scenario reference, and accepted exception for non-complete cells; blocks-release exceptions fail release readiness, and blocks-parity-claim exceptions block 100% parity claims."
     },
     {
       "id": "v1-sovereign-local-data",

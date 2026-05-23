@@ -73,6 +73,10 @@ domains are assistive only.
   `docs/regulated-domain-safety.md`, sibling ClawJS ADR 0026.
 - Human/programmatic parity: `docs/interface-matrix.md`,
   `docs/adr/0007-dual-human-programmatic-surfaces.md`.
+- Platform product parity: `docs/platform-feature-parity.md`,
+  `docs/platform-feature-parity.manifest.json`, and
+  `scripts/platform_feature_parity_check.mjs` before claiming macOS, iOS,
+  Linux, Windows, or Web feature parity.
 - Adoption/canonicity governance: `docs/governance/adoption-canonicity.md`,
   `docs/adr/0026-adoption-and-canonicity-governance-mirror.md`, and sibling
   ClawJS `docs/governance/adoption-canonicity.md`.
@@ -233,8 +237,11 @@ uncertainty by publishing private values.
 
 ## Commits
 
-- Use Conventional Commits.
+- Use Conventional Commits in English only.
 - Keep commits scoped by intention.
+- Include a commit body for every non-trivial commit explaining why the change
+  exists, what behavior or contract changed, and which validation was run or
+  remains pending.
 - Do not sweep unrelated edits from a dirty tree.
 - Add changesets only when release metadata explicitly requires them.
 - Push, publish, upload, tagging, and release actions require explicit

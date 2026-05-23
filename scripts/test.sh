@@ -5,12 +5,122 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LANE="${1:-fast}"
 shift || true
 SCRATCH_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/clawix-test.XXXXXX")"
-trap 'rm -rf "$SCRATCH_ROOT"' EXIT
+COORDINATION_LEASE_ID=""
 export CLANG_MODULE_CACHE_PATH="$SCRATCH_ROOT/clang-module-cache"
+
+cleanup() {
+  local status=$?
+  release_coordination_lease "$status" || true
+  rm -rf "$SCRATCH_ROOT"
+}
+trap cleanup EXIT
 
 run() {
   echo "+ $*" >&2
   "$@"
+}
+
+coordination_claw() {
+  if [[ -n "${CLAWIX_CLAW_BIN:-}" ]]; then
+    "$CLAWIX_CLAW_BIN" "$@"
+    return
+  fi
+  if command -v claw >/dev/null 2>&1; then
+    claw "$@"
+    return
+  fi
+  if [[ -f "$ROOT_DIR/../clawjs/packages/clawjs/bin/claw.mjs" ]]; then
+    node "$ROOT_DIR/../clawjs/packages/clawjs/bin/claw.mjs" "$@"
+    return
+  fi
+  echo "BLOCKED coordination broker: set CLAWIX_CLAW_BIN or install claw on PATH" >&2
+  return 127
+}
+
+coordination_path_flags() {
+  if [[ -n "${CLAW_AGENT_COORDINATION_STATE_DIR:-}" ]]; then
+    printf '%s\n' --state-dir "$CLAW_AGENT_COORDINATION_STATE_DIR"
+  fi
+  if [[ -n "${CLAW_AGENT_COORDINATION_RUN_DIR:-}" ]]; then
+    printf '%s\n' --run-dir "$CLAW_AGENT_COORDINATION_RUN_DIR"
+  fi
+}
+
+json_field() {
+  local expression="$1"
+  node -e '
+let input = "";
+process.stdin.on("data", (chunk) => input += chunk);
+process.stdin.on("end", () => {
+  const data = JSON.parse(input);
+  const value = Function("data", `return ${process.argv[1]}`)(data);
+  if (value !== undefined && value !== null) process.stdout.write(String(value));
+});
+' "$expression"
+}
+
+record_coordination_bypass() {
+  local reason="${CLAW_AGENT_COORDINATION_BYPASS_REASON:-}"
+  if [[ -z "$reason" ]]; then
+    echo "BLOCKED coordination bypass: CLAW_AGENT_COORDINATION_BYPASS_REASON is required" >&2
+    exit 2
+  fi
+  local output status
+  set +e
+  output="$(coordination_claw agent-resource bypass --intent "clawix-test-bypass-$$" --resource "test-lane:clawix:${LANE}" --reason "$reason" $(coordination_path_flags) --json 2>&1)"
+  status=$?
+  set -e
+  if [[ "$status" -ne 2 && "$status" -ne 0 ]]; then
+    echo "$output" >&2
+    exit "$status"
+  fi
+  echo "WARNING: CLAW_AGENT_COORDINATION_BYPASS=1; this run is partial/degraded evidence." >&2
+}
+
+acquire_coordination_lease() {
+  if [[ "${CLAW_AGENT_COORDINATION_ACTIVE:-0}" == "1" ]]; then
+    return 0
+  fi
+  if [[ "${CLAW_AGENT_COORDINATION_BYPASS:-0}" == "1" ]]; then
+    record_coordination_bypass
+    return 0
+  fi
+
+  local output status broker_status lease_id
+  set +e
+  output="$(coordination_claw test require --repo "$ROOT_DIR" --lane "$LANE" --checks "$LANE" --pid "$$" $(coordination_path_flags) --json 2>&1)"
+  status=$?
+  set -e
+  broker_status="$(printf '%s' "$output" | json_field 'data.data?.status' 2>/dev/null || true)"
+  if [[ "$broker_status" == "SATISFIED" ]]; then
+    echo "coordination satisfied: test lane $LANE already has valid matching evidence" >&2
+    exit 0
+  fi
+  if [[ "$broker_status" == "PENDING" ]]; then
+    echo "$output" >&2
+    exit 2
+  fi
+  if [[ "$status" -ne 0 ]]; then
+    echo "$output" >&2
+    exit "$status"
+  fi
+  lease_id="$(printf '%s' "$output" | json_field 'data.data?.checks?.[0]?.lease?.id' 2>/dev/null || true)"
+  if [[ -z "$lease_id" ]]; then
+    echo "BLOCKED coordination broker: missing acquired lease id for lane $LANE" >&2
+    echo "$output" >&2
+    exit 2
+  fi
+  COORDINATION_LEASE_ID="$lease_id"
+}
+
+release_coordination_lease() {
+  local exit_code="$1"
+  if [[ -z "$COORDINATION_LEASE_ID" ]]; then
+    return 0
+  fi
+  local status="failed"
+  [[ "$exit_code" -eq 0 ]] && status="passed"
+  coordination_claw agent-resource release --lease "$COORDINATION_LEASE_ID" --status "$status" --repo "$ROOT_DIR" --lane "$LANE" --check "$LANE" $(coordination_path_flags) --json >/dev/null
 }
 
 policy_guard() {
@@ -202,9 +312,9 @@ run_external_command() {
 }
 
 signed_host_preflight() {
-  local launcher="$ROOT_DIR/../scripts-dev/clawix-launcher.sh"
+  local launcher="${CLAWIX_APP_PREFLIGHT_SCRIPT:-}"
   if [[ ! -x "$launcher" ]]; then
-    echo "EXTERNAL PENDING host lane: private launcher is unavailable for signed-host preflight" >&2
+    echo "EXTERNAL PENDING host lane: app preflight script is unavailable for signed-host preflight" >&2
     return 2
   fi
   run bash "$launcher" preflight-computer-use
@@ -304,6 +414,8 @@ fast() {
   run node "$ROOT_DIR/scripts/evolution_rescue_mirror_check.mjs"
   run node "$ROOT_DIR/scripts/legal_safety_check.mjs"
   run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"
+  run node "$ROOT_DIR/scripts/platform_feature_parity_check.mjs"
+  run node "$ROOT_DIR/scripts/platform_feature_parity_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/attachment_lifecycle_matrix_check.mjs"
@@ -326,6 +438,7 @@ fast() {
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/actionable-error.mjs" --self-test
   run node "$ROOT_DIR/scripts/bridge_contract_parity_check.mjs"
   run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs"
   run node "$ROOT_DIR/scripts/idle_quiescence_check.mjs" --self-test
@@ -460,6 +573,8 @@ changed() {
 
   fast "$@"
 }
+
+acquire_coordination_lease
 
 case "$LANE" in
   fast)

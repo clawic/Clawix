@@ -3091,6 +3091,41 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-platform-feature-parity-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/platform_feature_parity_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/release-readiness.md",
+        "docs/platform-feature-parity.md",
+        "docs/platform-feature-parity.manifest.json"
+      ],
+      "discoveryTerms": [
+        "platform_feature_parity_check",
+        "Platform Feature Parity Check",
+        "platform product parity matrix",
+        "macOS feature platform status evidence test exception",
+        "100% product parity claim"
+      ],
+      "searchQueries": [
+        {
+          "query": "platform_feature_parity_check",
+          "expectPath": "scripts/platform_feature_parity_check.mjs"
+        },
+        {
+          "query": "platform product parity matrix",
+          "expectPath": "docs/platform-feature-parity.md"
+        }
+      ],
+      "guard": "scripts/platform_feature_parity_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-31"
+    },
+    {
       "id": "guard-scripts-portable-archive-mirror-check",
       "kind": "guardrail",
       "steward": "clawix",

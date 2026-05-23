@@ -1,0 +1,667 @@
+{
+  "schemaVersion": 1,
+  "scope": "v1-platform-product-parity",
+  "canonicalDoc": "docs/platform-feature-parity.md",
+  "sourcePlatform": "macos",
+  "releasePlatforms": ["macos", "ios", "linux", "windows", "web"],
+  "statusVocabulary": ["complete", "partial", "blocked", "dev-only", "not-applicable", "removed"],
+  "releaseEffects": ["allowed-for-v1", "blocks-parity-claim", "blocks-release"],
+  "claimRule": "A platform may not claim 100% product parity while any in-scope feature cell is partial, blocked, dev-only, removed, or missing accepted exception evidence. blocks-release exceptions fail release readiness.",
+  "features": [
+    {
+      "id": "chat-core",
+      "macosFeature": "Chat, session list, composer, streaming messages, attachments",
+      "category": "core-chat",
+      "ownerArea": "host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "qa/scenarios/signed-host-validation.md"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/ContentView.swift", "macos/Tests/ClawixMeshTests/ProfileSurfaceStoreCancellationTests.swift"],
+          "tests": ["swift test --package-path macos --filter ProfileSurfaceStoreCancellationTests", "qa/scenarios/signed-host-validation.md"]
+        },
+        "ios": {
+          "status": "partial",
+          "evidence": ["ios/Sources/Clawix/ChatDetail/UserAudioBubble.swift", "ios/Sources/Clawix/Composer/VoiceRecorder.swift"],
+          "tests": ["qa/scenarios/signed-host-validation.md"],
+          "exceptionAccepted": {
+            "id": "PFPM-CHAT-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS has chat-adjacent UI slices, but full session navigation, companion runtime behavior, and signed device validation are not yet equivalent to macOS."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["linux/app/src/views/ChatView.tsx", "linux/app/src/lib/chat_media_model.test.ts"],
+          "tests": ["npm --prefix linux/app test -- chat_media_model"],
+          "exceptionAccepted": {
+            "id": "PFPM-CHAT-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux chat UI and media modeling exist, but signed-host evidence and full macOS flow coverage remain below the reference product contract."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/ChatView.xaml", "windows/Clawix.Tests/BridgeSessionDispatchParityTests.cs"],
+          "tests": ["dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter BridgeSessionDispatchParityTests"],
+          "exceptionAccepted": {
+            "id": "PFPM-CHAT-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows has bridge-backed chat paths, but full UI parity and release candidate validation remain below the macOS reference."
+          }
+        },
+        "web": {
+          "status": "partial",
+          "evidence": ["web/src/bridge/store.ts", "web/tests/unit/store.test.ts"],
+          "tests": ["npm --prefix web test -- store.test"],
+          "exceptionAccepted": {
+            "id": "PFPM-CHAT-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Web validates bridge state and shell behavior, but native host behaviors and full macOS chat validation are outside current web evidence."
+          }
+        }
+      }
+    },
+    {
+      "id": "bridge-pairing",
+      "macosFeature": "Bridge v1 runtime, QR pairing, companion protocol",
+      "category": "runtime-bridge",
+      "ownerArea": "framework-host",
+      "sourceRefs": ["docs/interface-matrix.md", "scripts/bridge_contract_parity_check.mjs"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/BackgroundBridgeService.swift", "macos/Tests/ClawixMeshTests/ClawixAgentBackendRoutesTests.swift"],
+          "tests": ["node scripts/bridge_contract_parity_check.mjs", "swift test --package-path macos --filter ClawixAgentBackendRoutesTests"]
+        },
+        "ios": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.md"],
+          "tests": ["node scripts/bridge_contract_parity_check.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-BRIDGE-IOS-001",
+            "ownerArea": "ios-host-bridge",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS consumes the shared bridge contract but does not yet have the same complete companion host flow evidence as macOS."
+          }
+        },
+        "linux": {
+          "status": "complete",
+          "evidence": ["linux/app/src/views/BridgePairing.tsx", "linux/app/src-tauri/src/daemon_client.rs"],
+          "tests": ["node scripts/bridge_contract_parity_check.mjs"]
+        },
+        "windows": {
+          "status": "complete",
+          "evidence": ["windows/Clawix.App/Views/PairingView.xaml", "windows/Clawix.Tests/BridgeFixtureParityTests.cs"],
+          "tests": ["node scripts/bridge_contract_parity_check.mjs", "dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter BridgeFixtureParityTests"]
+        },
+        "web": {
+          "status": "complete",
+          "evidence": ["web/src/bridge/wire.ts", "web/tests/unit/wire.test.ts"],
+          "tests": ["node scripts/bridge_contract_parity_check.mjs", "npm --prefix web test -- wire.test"]
+        }
+      }
+    },
+    {
+      "id": "sidebar-navigation",
+      "macosFeature": "All Chats, Pinned, Projects, route catalog navigation",
+      "category": "navigation",
+      "ownerArea": "host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/surface-route-registry.manifest.json"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/Sidebar/SidebarCatalog.swift", "macos/Tests/ClawixMeshTests/SurfaceRouteSupervisorTests.swift"],
+          "tests": ["swift test --package-path macos --filter SurfaceRouteSupervisorTests"]
+        },
+        "ios": {
+          "status": "partial",
+          "evidence": ["ios/Sources/Clawix/ChatDetail/UserAudioBubble.swift", "docs/interface-matrix.md"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-NAV-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS route exposure remains a temporary slice and is not equivalent to the macOS sidebar route catalog."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["linux/app/src/components/Sidebar.tsx", "linux/app/src/lib/sidebar_model.test.ts"],
+          "tests": ["npm --prefix linux/app test -- sidebar_model"],
+          "exceptionAccepted": {
+            "id": "PFPM-NAV-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux sidebar modeling exists, but the full route catalog and signed-host flow evidence remain below macOS."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/SidebarView.xaml", "windows/Clawix.App/ViewModels/SidebarViewModel.cs"],
+          "tests": ["docs/platform-feature-parity.md"],
+          "exceptionAccepted": {
+            "id": "PFPM-NAV-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows has sidebar UI structure, but route coverage and release validation are not yet equivalent to macOS."
+          }
+        },
+        "web": {
+          "status": "complete",
+          "evidence": ["web/src/screens/sidebar/route-catalog.ts", "web/tests/unit/route-catalog.test.ts"],
+          "tests": ["npm --prefix web test -- route-catalog"]
+        }
+      }
+    },
+    {
+      "id": "settings-preferences",
+      "macosFeature": "Settings surfaces and persisted preferences",
+      "category": "settings",
+      "ownerArea": "host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/persistent-surface-clawix.manifest.json"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/Settings/SettingsView+ConfigurationPage.swift", "macos/Tests/ClawixMeshTests/SettingsSurfaceTruthTests.swift"],
+          "tests": ["swift test --package-path macos --filter SettingsSurfaceTruthTests", "node scripts/persistent-surface-guard.mjs macos"]
+        },
+        "ios": {
+          "status": "partial",
+          "evidence": ["ios/Sources/Clawix/Design/EditorExport.swift", "docs/persistent-surface-clawix.manifest.json"],
+          "tests": ["node scripts/persistent-surface-guard.mjs ios"],
+          "exceptionAccepted": {
+            "id": "PFPM-SETTINGS-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS has selected persisted host settings but does not yet expose the full macOS settings product surface."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["linux/app/src/views/SettingsView.tsx", "docs/persistent-surface-clawix.manifest.json"],
+          "tests": ["node scripts/persistent-surface-guard.mjs linux/app/src"],
+          "exceptionAccepted": {
+            "id": "PFPM-SETTINGS-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux settings exists but does not yet match the breadth and signed-host evidence of macOS settings."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/SettingsView.xaml", "windows/Clawix.App/Services/Preferences.cs"],
+          "tests": ["node scripts/persistent-surface-guard.mjs windows"],
+          "exceptionAccepted": {
+            "id": "PFPM-SETTINGS-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows settings and preferences exist, but full settings breadth and release evidence remain below macOS."
+          }
+        },
+        "web": {
+          "status": "partial",
+          "evidence": ["web/src/screens/shell/main-shell.tsx", "web/src/localization/messages.json"],
+          "tests": ["node scripts/cross_platform_localization_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-SETTINGS-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Web exposes shell settings-adjacent state but not the native settings surface breadth of macOS."
+          }
+        }
+      }
+    },
+    {
+      "id": "provider-secrets",
+      "macosFeature": "Provider routing plus signed-host secret references",
+      "category": "providers-secrets",
+      "ownerArea": "framework-host-security",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/host-ownership.md"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/Settings/Providers/ProviderDetailPane.swift", "macos/Sources/Clawix/Secrets/SecretsSettingsPage.swift"],
+          "tests": ["swift test --package-path macos --filter DeviceCodeSignInCoordinatorTests", "swift test --package-path macos --filter OAuthSignInFlowCoordinatorTests"]
+        },
+        "ios": {
+          "status": "blocked",
+          "evidence": ["docs/host-ownership.md", "qa/scenarios/signed-host-validation.md"],
+          "tests": ["qa/scenarios/signed-host-validation.md"],
+          "exceptionAccepted": {
+            "id": "PFPM-PROVIDERS-IOS-001",
+            "ownerArea": "ios-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS provider and secret parity needs device/keychain validation before it can match macOS signed-host behavior."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["linux/app/src/views/SettingsView.tsx", "docs/host-ownership.md"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-PROVIDERS-LINUX-001",
+            "ownerArea": "linux-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux provider settings are present, but host secret storage and approval validation are not equivalent to macOS."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/SecretsScreen.xaml", "windows/Clawix.Tests/SecretsVaultTests.cs"],
+          "tests": ["dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter SecretsVaultTests"],
+          "exceptionAccepted": {
+            "id": "PFPM-PROVIDERS-WINDOWS-001",
+            "ownerArea": "windows-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows has vault coverage, but provider routing, approval, and release validation are not yet macOS-equivalent."
+          }
+        },
+        "web": {
+          "status": "not-applicable",
+          "evidence": ["docs/host-ownership.md", "docs/data-storage-boundary.md"],
+          "tests": ["node scripts/storage_boundary_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-PROVIDERS-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "allowed-for-v1",
+            "reason": "The web surface must not become the signed-host secret vault; it can only consume approved framework or host projections."
+          }
+        }
+      }
+    },
+    {
+      "id": "skills-apps",
+      "macosFeature": "Skills, skill collections, apps catalog",
+      "category": "framework-catalog",
+      "ownerArea": "framework-host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "macos/Tests/ClawixMeshTests/SettingsSurfaceTruthTests.swift"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/Skills/SkillsSettingsPage.swift", "macos/Sources/Clawix/Settings/AppsSettingsPage.swift"],
+          "tests": ["swift test --package-path macos --filter SettingsSurfaceTruthTests", "swift test --package-path macos --filter ClawJSFrameworkRecordsClientTests"]
+        },
+        "ios": {
+          "status": "dev-only",
+          "evidence": ["docs/interface-matrix.md", "ios/Sources/Clawix/ChatDetail/UserAudioBubble.swift"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-SKILLS-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS skills exposure is classified as dev-only until it consumes real bridge frames and product navigation."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "linux/app/src/views/SettingsView.tsx"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-SKILLS-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux can expose framework catalog state, but the full macOS skills/apps UI is not yet product-equivalent."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "windows/Clawix.App/Views/SettingsView.xaml"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-SKILLS-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows settings can host catalog slices, but full skills/apps parity remains unproven."
+          }
+        },
+        "web": {
+          "status": "partial",
+          "evidence": ["web/tests/unit/skill-model.test.ts", "docs/interface-matrix.md"],
+          "tests": ["npm --prefix web test -- skill-model"],
+          "exceptionAccepted": {
+            "id": "PFPM-SKILLS-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Web validates skills model behavior but does not yet provide the full macOS catalog product surface."
+          }
+        }
+      }
+    },
+    {
+      "id": "local-models",
+      "macosFeature": "Local model inventory and selection",
+      "category": "local-models",
+      "ownerArea": "host-runtime",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/host-ownership.md"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/LocalModels/LocalModelsPage.swift", "macos/Tests/ClawixMeshTests/LocalModelsServiceCancellationTests.swift"],
+          "tests": ["swift test --package-path macos --filter LocalModelsServiceCancellationTests"]
+        },
+        "ios": {
+          "status": "blocked",
+          "evidence": ["docs/interface-matrix.md", "docs/host-ownership.md"],
+          "tests": ["qa/scenarios/signed-host-validation.md"],
+          "exceptionAccepted": {
+            "id": "PFPM-LOCALMODELS-IOS-001",
+            "ownerArea": "ios-host-runtime",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS local model parity needs explicit device/runtime validation and storage budget decisions."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "linux/app/src/views/SettingsView.tsx"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-LOCALMODELS-LINUX-001",
+            "ownerArea": "linux-host-runtime",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux local model UI is not yet backed by the same host inventory and validation depth as macOS."
+          }
+        },
+        "windows": {
+          "status": "complete",
+          "evidence": ["windows/Clawix.App/Views/LocalModelsPage.xaml", "windows/Clawix.Tests/LocalModelInventoryTests.cs"],
+          "tests": ["dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter LocalModelInventoryTests"]
+        },
+        "web": {
+          "status": "not-applicable",
+          "evidence": ["docs/host-ownership.md", "docs/interface-matrix.md"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-LOCALMODELS-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "allowed-for-v1",
+            "reason": "Web must not own host-local model binaries; it may only project framework or host metadata."
+          }
+        }
+      }
+    },
+    {
+      "id": "database-index",
+      "macosFeature": "Database workbench plus index/search surfaces",
+      "category": "data-surfaces",
+      "ownerArea": "framework-host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/data-storage-boundary.md"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/Database/DatabaseWorkbenchSettingsPage.swift", "macos/Sources/Clawix/Index/IndexScreen.swift"],
+          "tests": ["swift test --package-path macos --filter DatabaseManagerCancellationTests", "swift test --package-path macos --filter IndexStoreCancellationTests"]
+        },
+        "ios": {
+          "status": "blocked",
+          "evidence": ["docs/data-storage-boundary.md", "docs/interface-matrix.md"],
+          "tests": ["node scripts/storage_boundary_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-DATA-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS database and index parity needs scoped mobile UX, storage, and signed device validation."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "linux/app/src/lib/sidebar_model.test.ts"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-DATA-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux has supporting model coverage, but database workbench and index UI parity are not macOS-equivalent."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/DatabaseScreen.xaml", "windows/Clawix.Tests/SessionSearchTests.cs"],
+          "tests": ["dotnet test windows/Clawix.Tests/Clawix.Tests.csproj --filter SessionSearchTests"],
+          "exceptionAccepted": {
+            "id": "PFPM-DATA-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows has database/search surfaces, but full database workbench plus index/search parity remains unproven."
+          }
+        },
+        "web": {
+          "status": "partial",
+          "evidence": ["web/src/screens/sidebar/route-catalog.ts", "docs/interface-matrix.md"],
+          "tests": ["npm --prefix web test -- route-catalog"],
+          "exceptionAccepted": {
+            "id": "PFPM-DATA-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Web route catalog coverage exists, but full database workbench and index/search parity remain below macOS."
+          }
+        }
+      }
+    },
+    {
+      "id": "native-host-actions",
+      "macosFeature": "Browser, screen tools, Mac utilities, host approvals",
+      "category": "native-host-actions",
+      "ownerArea": "host-security",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/host-ownership.md", "qa/scenarios/native-permission-simulation.md"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["macos/Sources/Clawix/ScreenTools/ScreenToolsSettingsPage.swift", "macos/Sources/Clawix/MacUtilities/MacUtilitiesSettingsPage.swift"],
+          "tests": ["swift test --package-path macos --filter NativeMacPermissionSimulationAgentTests", "node scripts/native_action_broker_check.mjs"]
+        },
+        "ios": {
+          "status": "blocked",
+          "evidence": ["qa/scenarios/native-permission-simulation.md", "docs/host-ownership.md"],
+          "tests": ["qa/scenarios/signed-host-validation.md"],
+          "exceptionAccepted": {
+            "id": "PFPM-NATIVE-IOS-001",
+            "ownerArea": "ios-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "iOS native action parity needs separate mobile permission policy and device validation."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["docs/host-ownership.md", "linux/app/src-tauri/src/lib.rs"],
+          "tests": ["node scripts/native_action_broker_check.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-NATIVE-LINUX-001",
+            "ownerArea": "linux-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux host actions need platform-specific broker and permission evidence before macOS parity can be claimed."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Services/ScreenService.cs", "windows/Clawix.App/Services/ShellService.cs"],
+          "tests": ["node scripts/native_action_broker_check.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-NATIVE-WINDOWS-001",
+            "ownerArea": "windows-host-security",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows host services exist, but approval, permission, and release evidence are not yet equivalent to macOS."
+          }
+        },
+        "web": {
+          "status": "not-applicable",
+          "evidence": ["docs/host-ownership.md", "docs/interface-matrix.md"],
+          "tests": ["node scripts/native_action_broker_check.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-NATIVE-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "allowed-for-v1",
+            "reason": "Browser-delivered web surfaces cannot directly own signed native permissions; they may consume brokered host projections only."
+          }
+        }
+      }
+    },
+    {
+      "id": "quickask",
+      "macosFeature": "QuickAsk prompt, hotkey, capture, and panel behavior",
+      "category": "quickask",
+      "ownerArea": "host-ui",
+      "sourceRefs": ["docs/interface-matrix.md", "docs/persistent-surface-clawix.manifest.json"],
+      "platforms": {
+        "macos": {
+          "status": "complete",
+          "evidence": ["docs/interface-matrix.md", "docs/persistent-surface-clawix.manifest.json"],
+          "tests": ["node scripts/persistent-surface-guard.mjs macos", "node scripts/interface_surface_guard.mjs"]
+        },
+        "ios": {
+          "status": "not-applicable",
+          "evidence": ["docs/interface-matrix.md", "docs/host-ownership.md"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-QUICKASK-IOS-001",
+            "ownerArea": "ios-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "allowed-for-v1",
+            "reason": "QuickAsk is a desktop interaction pattern; iOS may use platform-native entry points instead of matching hotkey/panel behavior."
+          }
+        },
+        "linux": {
+          "status": "partial",
+          "evidence": ["docs/interface-matrix.md", "linux/app/src/views/SettingsView.tsx"],
+          "tests": ["node scripts/persistent-surface-guard.mjs linux/app/src"],
+          "exceptionAccepted": {
+            "id": "PFPM-QUICKASK-LINUX-001",
+            "ownerArea": "linux-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Linux has related settings surfaces, but desktop hotkey/capture/panel parity is not yet validated."
+          }
+        },
+        "windows": {
+          "status": "partial",
+          "evidence": ["windows/Clawix.App/Views/QuickAskSettingsPage.xaml", "windows/Clawix.App/Views/QuickAskWindow.xaml"],
+          "tests": ["node scripts/persistent-surface-guard.mjs windows"],
+          "exceptionAccepted": {
+            "id": "PFPM-QUICKASK-WINDOWS-001",
+            "ownerArea": "windows-host-ui",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "blocks-parity-claim",
+            "reason": "Windows QuickAsk UI exists, but hotkey, capture, and release evidence are not yet equivalent to macOS."
+          }
+        },
+        "web": {
+          "status": "not-applicable",
+          "evidence": ["docs/interface-matrix.md", "docs/host-ownership.md"],
+          "tests": ["node scripts/interface_surface_guard.mjs"],
+          "exceptionAccepted": {
+            "id": "PFPM-QUICKASK-WEB-001",
+            "ownerArea": "web-surface",
+            "acceptedBy": "public-canon",
+            "acceptedOn": "2026-05-23",
+            "reviewBy": "2026-08-31",
+            "releaseEffect": "allowed-for-v1",
+            "reason": "QuickAsk's desktop hotkey and capture contract is not a direct web product requirement."
+          }
+        }
+      }
+    }
+  ]
+}
