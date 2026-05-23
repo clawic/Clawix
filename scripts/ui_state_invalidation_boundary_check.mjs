@@ -121,6 +121,30 @@ requireSnippet(
 );
 requireSnippet("scripts/test.sh", "ui_state_invalidation_boundary_check.mjs");
 
+requireSnippet("web/src/bridge/store.ts", "searchMessagesBySession");
+requireSnippet("web/src/bridge/store.ts", "STREAMING_TRANSCRIPT_FLUSH_MS");
+requireSnippet("web/src/bridge/store.ts", "SEARCH_TRANSCRIPT_SNAPSHOT_DEBOUNCE_MS");
+requireSnippet("web/src/bridge/store.ts", "enqueueStreamingFrame(set, get, frame)");
+requireSnippet("web/src/bridge/store.ts", "clearStreamingTimers()");
+requireSnippet("web/src/screens/search/search-view.tsx", "s.searchMessagesBySession");
+requireSnippet("web/tests/unit/store.test.ts", "keeps sidebar summaries isolated from streaming-only frames");
+requireSnippet("web/tests/unit/store.test.ts", "debounces global search snapshots during active streaming");
+requireSnippet("web/tests/unit/store.test.ts", "flushes finished streaming frames immediately");
+requireSnippet("web/tests/unit/store.test.ts", "clears pending streaming work on detach");
+
+requireSnippet("android/app/src/main/java/com/example/clawix/android/bridge/BridgeState.kt", "data class BridgeSummaryState");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/bridge/BridgeState.kt", "data class BridgeTranscriptState");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/bridge/BridgeStore.kt", "val summaryState: StateFlow<BridgeSummaryState>");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/bridge/BridgeStore.kt", "val transcriptState: StateFlow<BridgeTranscriptState>");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/bridge/BridgeStore.kt", "summary.withTranscript(transcript)");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/chatlist/ChatListViewModel.kt", "container.bridgeStore.summaryState");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/projectdetail/ProjectDetailViewModel.kt", "container.bridgeStore.summaryState");
+requireSnippet("android/app/src/main/java/com/example/clawix/android/chatdetail/ChatDetailViewModel.kt", "container.bridgeStore.transcriptState");
+requireSnippet("android/app/src/test/java/com/example/clawix/android/BridgeStoreInvalidationTest.kt", "streamingBatchUpdatesTranscriptWithoutEmittingSummaryState");
+requireSnippet("android/app/src/test/java/com/example/clawix/android/BridgeStoreInvalidationTest.kt", "summaryMutationsDoNotEmitTranscriptState");
+requireSnippet("android/app/src/test/java/com/example/clawix/android/StreamCoalescerTest.kt", "coalescesMultipleFramesForSameMessageWithLatestContent");
+requireSnippet("android/app/src/test/java/com/example/clawix/android/StreamCoalescerTest.kt", "finishedFrameFlushesImmediately");
+
 const chatStores = read("macos/Sources/Clawix/AppState/ChatStores.swift");
 const chatSummaryMatch = chatStores.match(/struct ChatSummary: Identifiable, Equatable \{([\s\S]*?)\n    init\(chat: Chat\)/);
 if (!chatSummaryMatch) {
@@ -164,6 +188,37 @@ if (!engineHost.includes("chatStore.transcriptChangesPublisher")) {
 }
 if (!engineHost.includes(".throttle(for: .milliseconds(16)")) {
   fail("EngineHost transcript bridge snapshots must be coalesced to a frame before snapshot generation");
+}
+
+const webSearchView = read("web/src/screens/search/search-view.tsx");
+if (webSearchView.includes("s.messagesBySession")) {
+  fail("Web SearchView must consume the debounced searchMessagesBySession snapshot, not live messagesBySession");
+}
+
+const webBridgeStore = read("web/src/bridge/store.ts");
+if (/case "messageStreaming":[\s\S]{0,800}set\(\{\s*messagesBySession/.test(webBridgeStore)) {
+  fail("Web messageStreaming frames must be coalesced before publishing messagesBySession");
+}
+
+for (const [relativePath, label] of [
+  ["android/app/src/main/java/com/example/clawix/android/chatlist/ChatListViewModel.kt", "Android ChatListViewModel"],
+  ["android/app/src/main/java/com/example/clawix/android/projectdetail/ProjectDetailViewModel.kt", "Android ProjectDetailViewModel"],
+  ["android/app/src/main/java/com/example/clawix/android/chatdetail/AssistantInlineImagesView.kt", "Android AssistantInlineImagesView"],
+  ["android/app/src/main/java/com/example/clawix/android/chatdetail/ImageViewerScreen.kt", "Android ImageViewerScreen"],
+  ["android/app/src/main/java/com/example/clawix/android/chatdetail/FileViewerScreen.kt", "Android FileViewerScreen"],
+]) {
+  const source = read(relativePath);
+  if (source.includes("bridgeStore.state")) {
+    fail(`${label} must not collect the compatibility BridgeStore.state projection`);
+  }
+  if (source.includes("messagesBySession")) {
+    fail(`${label} must not consume transcript state`);
+  }
+}
+
+const androidChatDetail = read("android/app/src/main/java/com/example/clawix/android/chatdetail/ChatDetailViewModel.kt");
+if (!androidChatDetail.includes("container.bridgeStore.summaryState") || !androidChatDetail.includes("container.bridgeStore.transcriptState")) {
+  fail("Android ChatDetailViewModel must combine summaryState and transcriptState explicitly");
 }
 
 runRenderLogFixtures();
