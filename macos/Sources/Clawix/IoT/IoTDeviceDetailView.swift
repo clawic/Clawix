@@ -144,7 +144,7 @@ struct IoTDeviceDetailView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
         )
     }
 

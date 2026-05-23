@@ -45,11 +45,11 @@ struct DeviceCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isOn ? Color.accentColor.opacity(0.08) : Color.white.opacity(0.04))
+                .fill(isOn ? Color.accentColor.opacity(0.08) : Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(
-                            isOn ? Color.accentColor.opacity(0.30) : Color.white.opacity(0.06),
+                            isOn ? Color.accentColor.opacity(0.30) : Color.overlay(0.06),
                             lineWidth: 0.5,
                         )
                 )
@@ -86,7 +86,7 @@ struct DeviceCard: View {
     private var kindIcon: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isOn ? Color.accentColor.opacity(0.20) : Color.white.opacity(0.06))
+                .fill(isOn ? Color.accentColor.opacity(0.20) : Color.overlay(0.06))
                 .frame(width: 32, height: 32)
             Image(systemName: kindSymbol)
                 .font(.system(size: 14, weight: .medium))
@@ -164,7 +164,7 @@ struct DeviceCard: View {
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.overlay(0.08))
                         )
                 }
                 .buttonStyle(.plain)

@@ -86,10 +86,10 @@ struct IoTDevicesView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.06), lineWidth: 0.5)
                 )
         )
         .padding(.horizontal, 20)

@@ -56,7 +56,7 @@ private struct AutomationRow: View {
         HStack(alignment: .center, spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(automation.enabled ? Color.green.opacity(0.30) : Color.white.opacity(0.08))
+                    .fill(automation.enabled ? Color.green.opacity(0.30) : Color.overlay(0.08))
                     .frame(width: 10, height: 10)
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -87,7 +87,7 @@ private struct AutomationRow: View {
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.overlay(0.08))
                 )
             }
             .buttonStyle(.plain)
@@ -96,10 +96,10 @@ private struct AutomationRow: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.06), lineWidth: 0.5)
                 )
         )
     }

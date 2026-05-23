@@ -95,7 +95,7 @@ struct IoTDiscoveryView: View {
                 .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.overlay(0.08))
                 )
             }
             .buttonStyle(.plain)
@@ -167,12 +167,12 @@ struct IoTDiscoveryView: View {
                     let enabled = !(manualLabel.isEmpty || manualTargetRef.isEmpty)
                     Text(verbatim: "Add device")
                         .font(BodyFont.system(size: 11, wght: 600))
-                        .foregroundColor(enabled ? Color.black : Color.white.opacity(0.55))
+                        .foregroundColor(enabled ? Palette.background : Color.overlay(0.55))
                         .padding(.horizontal, 12)
                         .frame(height: 26)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(enabled ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
+                                .fill(enabled ? Color.overlay(0.92) : Color.overlay(0.18))
                         )
                 }
                 .buttonStyle(.plain)
@@ -183,10 +183,10 @@ struct IoTDiscoveryView: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.05), lineWidth: 0.5)
                 )
         )
     }
@@ -286,18 +286,18 @@ private struct DiscoveryCard: View {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .controlSize(.mini)
-                            .tint(Color.black)
+                            .tint(Palette.background)
                     } else {
                         IconImage("plus", size: 10)
                     }
                     Text(verbatim: "Add")
                 }
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(Color.black)
+                .foregroundColor(Palette.background)
                 .padding(.horizontal, 12)
                 .frame(height: 26)
                 .background(
-                    Capsule(style: .continuous).fill(Color.white.opacity(0.92))
+                    Capsule(style: .continuous).fill(Color.overlay(0.92))
                 )
             }
             .buttonStyle(.plain)
@@ -307,10 +307,10 @@ private struct DiscoveryCard: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.06), lineWidth: 0.5)
                 )
         )
     }

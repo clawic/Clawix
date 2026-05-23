@@ -224,10 +224,10 @@ struct IoTProtocolPaths: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.05), lineWidth: 0.5)
                 )
         )
     }
@@ -267,12 +267,12 @@ struct IoTProtocolPaths: View {
         Button(action: action) {
             Text(verbatim: title)
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(enabled ? Color.black : Color.white.opacity(0.55))
+                .foregroundColor(enabled ? Palette.background : Color.overlay(0.55))
                 .padding(.horizontal, 14)
                 .frame(height: 26)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(enabled ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
+                        .fill(enabled ? Color.overlay(0.92) : Color.overlay(0.18))
                 )
         }
         .buttonStyle(.plain)
