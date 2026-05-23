@@ -6,12 +6,14 @@
   <ScrollViewer Padding="24">
     <StackPanel Spacing="16" MaxWidth="640">
       <TextBlock Text="Account" FontSize="22" FontWeight="SemiBold" />
-      <InfoBar IsOpen="True" Severity="Informational" Title="Signed in" Message="Connected to Codex." IsClosable="False" />
-      <Button Content="Sign out" />
+      <InfoBar x:Name="AccountInfo" IsOpen="True" Severity="Informational" Title="Checking account" Message="Reading local auth state." IsClosable="False" />
+      <TextBlock x:Name="ProfileText" TextWrapping="Wrap" Opacity="0.75" />
+      <Button x:Name="AuthActionButton" Content="Sign in" Style="{ThemeResource AccentButtonStyle}" Click="AuthAction_Click" />
       <Expander Header="Advanced" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
-          <Button Content="View access tokens" />
-          <Button Content="Rotate refresh token" />
+          <Button Content="View access tokens" Click="ViewTokens_Click" />
+          <Button Content="Rotate refresh token" Click="RotateRefreshToken_Click" />
+          <TextBlock x:Name="StatusText" TextWrapping="Wrap" Opacity="0.7" />
         </StackPanel>
       </Expander>
     </StackPanel>
