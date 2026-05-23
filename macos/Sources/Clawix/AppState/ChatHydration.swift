@@ -114,6 +114,19 @@ extension AppState {
         syncLegacyChatFromStore(chatId: id)
     }
 
+    /// True when the thread list is driven by a local fixture / dummy
+    /// session / backend-disabled run, i.e. there is no live ClawJS
+    /// sessions service to hydrate history from and every chat carries
+    /// its rollout path directly. Computed once from the launch
+    /// environment, which never changes during a process lifetime.
+    static let prefersLocalRolloutHydration: Bool = {
+        let env = ProcessInfo.processInfo.environment
+        if env["CLAWIX_DISABLE_BACKEND"] == "1" { return true }
+        if env["CLAWIX_DUMMY_MODE"] == "1" { return true }
+        if let fixture = env["CLAWIX_THREAD_FIXTURE"], !fixture.isEmpty { return true }
+        return false
+    }()
+
     func hydrateHistoryIfNeeded(chatId: UUID, blocking: Bool = false) {
         guard let chat = chat(byId: chatId), shouldHydrateHistory(chat) else { return }
         if FeatureFlags.shared.isVisible(.git), !chat.hasGitRepo, let cwd = chat.cwd {
@@ -123,38 +136,48 @@ extension AppState {
                 scheduleGitInspection(chatId: chatId, cwd: cwd)
             }
         }
-        if let threadId = chat.clawixThreadId {
+        // Fixture-driven runs (dummy session, showcase, E2E) and the
+        // backend-disabled mode have no ClawJS sessions service to ask:
+        // the thread list comes from a local fixture and every chat
+        // already carries its rollout path. Read history straight from
+        // that rollout so it loads instantly at full fidelity. Routing
+        // these through the sessions client instead made every chat hang
+        // on ~8 retries (~10s of backoff) and then surface a spurious
+        // "service unavailable" error bubble, because the service is not
+        // running and the codex-home fallback locator finds nothing.
+        if Self.prefersLocalRolloutHydration, let path = chat.rolloutPath {
+            hydrateHistoryFromLocalRollout(path: path, chatId: chatId, blocking: blocking)
+        } else if let threadId = chat.clawixThreadId {
             hydrateHistoryFromClawJSSessions(threadId: threadId, chatId: chatId, blocking: blocking)
         } else if let path = chat.rolloutPath {
-            // Mac UI path (`blocking == false`): read off the main
-            // actor AND only the trailing window of the JSONL so a
-            // multi-hundred-MB rollout doesn't stall hydration. The
-            // chat opens at the latest turn, the user almost never
-            // scrolls hundreds of turns up immediately, and the
-            // snapshot has already painted the sidebar; capping the
-            // parse cost keeps "click chat → first paint" sub-second
-            // regardless of total file size. The bridge path is still
-            // synchronous, but it also uses the bounded tail page; older
-            // rows are loaded through `loadOlderMessages`.
-            if blocking {
-                applyRolloutResult(RolloutReader.readTailWithStatus(path: path), chatId: chatId)
-            } else {
-                Task.detached(priority: .userInitiated) { [weak self] in
-                    let result = RolloutReader.readTailWithStatus(path: path)
-                    let messages = rolloutChatMessages(from: result)
-                    await MainActor.run { [weak self] in
-                        self?.applyRolloutMessages(
-                            messages,
-                            lastTurnInterrupted: result.lastTurnInterrupted,
-                            chatId: chatId
-                        )
-                    }
-                }
-            }
+            hydrateHistoryFromLocalRollout(path: path, chatId: chatId, blocking: blocking)
         }
         if let threadId = chat.clawixThreadId, let clawix {
             Task { @MainActor in
                 await clawix.attach(chatId: chat.id, threadId: threadId)
+            }
+        }
+    }
+
+    private func hydrateHistoryFromLocalRollout(path: URL, chatId: UUID, blocking: Bool) {
+        // Mac UI path (`blocking == false`): read off the main actor AND
+        // only the trailing window of the JSONL so a multi-hundred-MB
+        // rollout doesn't stall hydration. Fixture/backend-disabled runs
+        // also use this path because there is intentionally no session
+        // service to ask.
+        if blocking {
+            applyRolloutResult(RolloutReader.readTailWithStatus(path: path), chatId: chatId)
+        } else {
+            Task.detached(priority: .userInitiated) { [weak self] in
+                let result = RolloutReader.readTailWithStatus(path: path)
+                let messages = rolloutChatMessages(from: result)
+                await MainActor.run { [weak self] in
+                    self?.applyRolloutMessages(
+                        messages,
+                        lastTurnInterrupted: result.lastTurnInterrupted,
+                        chatId: chatId
+                    )
+                }
             }
         }
     }
@@ -187,6 +210,9 @@ extension AppState {
             hasMore: result.hasMoreBefore,
             loadingOlder: false
         )
+        if let plan = result.latestPlan {
+            planByChat[chatId] = plan
+        }
         applyRolloutMessages(
             rolloutChatMessages(from: result),
             lastTurnInterrupted: result.lastTurnInterrupted,
@@ -242,6 +268,19 @@ extension AppState {
     }
 
     private func hydrateFromCodexRolloutFallback(threadId: String, chatId: UUID) async -> Bool {
+        // Prefer the chat's own rollout path when it already has one and
+        // the file exists on disk. Fixture/dummy threads always carry it,
+        // and real chats often cache it too; reading it directly renders
+        // full history even when the sessions service is unreachable,
+        // instead of re-scanning the codex home for a path we already know.
+        if let localPath = chat(byId: chatId)?.rolloutPath,
+           FileManager.default.fileExists(atPath: localPath.path) {
+            let result = await Task.detached(priority: .userInitiated) {
+                RolloutReader.readTailWithStatus(path: localPath)
+            }.value
+            applyRolloutResult(result, chatId: chatId)
+            return true
+        }
         guard let path = await resolveCodexRolloutPath(threadId: threadId) else { return false }
         let result = await Task.detached(priority: .userInitiated) {
             RolloutReader.readTailWithStatus(path: path)
