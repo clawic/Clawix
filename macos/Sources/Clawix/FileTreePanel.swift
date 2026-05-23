@@ -37,6 +37,16 @@ enum FileTreeScanner {
 struct FileTreePanel: View {
     let onClose: () -> Void
     @EnvironmentObject private var appState: AppState
+    @State private var filter: String = ""
+
+    private func filteredFiles(path: String) -> [URL] {
+        let query = filter.lowercased()
+        return Array(
+            ProjectFileIndex.shared.files(forProject: path)
+                .filter { $0.lastPathComponent.lowercased().contains(query) }
+                .prefix(40)
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -66,10 +76,27 @@ struct FileTreePanel: View {
             Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
 
             if let path = appState.selectedProject?.path, !path.isEmpty {
+                TextField(L10n.t("Filter files"), text: $filter)
+                    .textFieldStyle(.plain)
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textPrimary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(FileTreeScanner.children(of: URL(fileURLWithPath: path, isDirectory: true)), id: \.path) { url in
-                            FileTreeEntry(url: url, depth: 0) { open($0) }
+                        if filter.isEmpty {
+                            ForEach(FileTreeScanner.children(of: URL(fileURLWithPath: path, isDirectory: true)), id: \.path) { url in
+                                FileTreeEntry(url: url, depth: 0) { open($0) }
+                            }
+                        } else {
+                            ForEach(filteredFiles(path: path), id: \.path) { url in
+                                FileTreeEntry(url: url, depth: 0) { open($0) }
+                            }
                         }
                     }
                     .padding(.vertical, 6)
