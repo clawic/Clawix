@@ -437,7 +437,9 @@ enum ProjectFolderInspector {
         guard fileManager.fileExists(atPath: expandedPath, isDirectory: &isDirectory), isDirectory.boolValue else {
             return .missing
         }
-        let manifestURL = URL(fileURLWithPath: expandedPath).appendingPathComponent("claw.project.json")
+        let manifestURL = ProjectFolderPathResolver.manifestURL(
+            folderURL: URL(fileURLWithPath: expandedPath, isDirectory: true)
+        )
         guard let data = try? Data(contentsOf: manifestURL),
               let manifest = try? JSONDecoder().decode(Manifest.self, from: data)
         else {
@@ -456,6 +458,24 @@ enum ProjectFolderInspector {
 
 enum ProjectFolderPathResolver {
     static let defaultProjectsDirectoryName = "Projects"
+    static let manifestFileName = "claw.project.json"
+    static let sampleUsersDirectoryName = "Users"
+    static let sampleUserDirectoryName = "me"
+    static let sampleWorkspaceDirectoryName = "code"
+    static let sampleProjectDirectoryName = "foo"
+
+    static var sampleProjectFolderDisplayPath: String {
+        "/" + [
+            sampleUsersDirectoryName,
+            sampleUserDirectoryName,
+            sampleWorkspaceDirectoryName,
+            sampleProjectDirectoryName,
+        ].joined(separator: "/")
+    }
+
+    static func manifestURL(folderURL: URL) -> URL {
+        folderURL.appendingPathComponent(manifestFileName, isDirectory: false)
+    }
 
     static func createDefaultFolder(
         forName name: String,

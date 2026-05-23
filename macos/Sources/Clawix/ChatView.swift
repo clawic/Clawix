@@ -17,12 +17,9 @@ struct ChatView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var meshStore: MeshStore
     @EnvironmentObject private var flags: FeatureFlags
-    @EnvironmentObject private var publishingStore: PublishingWorkspaceStore
 
     private var publishingReady: Bool {
-        guard flags.isVisible(.publishing) else { return false }
-        if case .ready = publishingStore.state { return true }
-        return false
+        flags.isVisible(.publishing)
     }
     /// View-owned composer used only when `isSideChat == true`.
     /// Created once per ChatView identity (the right-sidebar tab keys

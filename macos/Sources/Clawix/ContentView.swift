@@ -126,7 +126,7 @@ struct ContentView: View {
         case .home, .search, .plugins, .project, .chat:
             return true
         case .automations, .settings, .rescue, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
-             .indexHome, .marketplaceHome,
+             .indexHome, .macCare, .marketplaceHome,
              .calendarHome, .contactsHome, .networkControl,
              .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent, .driveFolder,
              .app, .appsHome, .skills, .skillDetail,
@@ -158,6 +158,7 @@ struct ContentView: View {
         case .databaseCollection(let name): return "database-\(name)"
         case .memoryHome: return "memory"
         case .indexHome: return "index"
+        case .macCare: return "mac-care"
         case .marketplaceHome: return "marketplace"
         case .calendarHome: return "calendar"
         case .contactsHome: return "contacts"

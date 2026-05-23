@@ -118,13 +118,16 @@ extension AppState: EngineHost {
                 reply("", "Audio decode failed")
                 return
             }
-            let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory())
-                .appendingPathComponent("clawix-attachments", isDirectory: true)
-                .appendingPathComponent("dictation", isDirectory: true)
             do {
-                try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
                 let ext = AudioCatalogRegistration.fileExtension(for: mimeType)
-                let url = tmpDir.appendingPathComponent("\(requestId).\(ext)")
+                let url = ClawixAudioRoutes.dictationSpoolFileURL(
+                    requestId: requestId,
+                    fileExtension: ext
+                )
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
                 try data.write(to: url, options: .atomic)
                 let activeRaw = UserDefaults.standard.string(
                     forKey: DictationModelStore.activeModelDefaultsKey

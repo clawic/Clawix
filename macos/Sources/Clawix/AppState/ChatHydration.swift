@@ -21,7 +21,7 @@ extension AppState {
                 return expanded
             }
         }
-        return FileManager.default.homeDirectoryForCurrentUser.path
+        return ClawixAgentBackendRoutes.defaultThreadCwd()
     }
 
     /// Maps the dropdown label ("5.5", "5.4 Mini", …) to a Clawix slug.

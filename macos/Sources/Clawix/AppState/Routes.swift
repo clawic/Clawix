@@ -93,6 +93,9 @@ enum SidebarRoute: Equatable {
     case memoryHome
     /// Index home (Catalog / Searches / Monitors / Runs / Alerts tabs).
     case indexHome
+    /// Mac Care report surface. Read-only scan/report view over the
+    /// framework-owned route atlas and persisted scan history.
+    case macCare
     /// Marketplace home (My Offers / My Wants / Prospects / Receipts / Inbox).
     /// Surfaces the marketplace/1.0.0 peer-to-peer protocol state.
     case marketplaceHome
@@ -218,7 +221,7 @@ extension SidebarRoute {
         case .lifeHome, .lifeVertical, .lifeSettings:
             return .life
         case .home, .search, .plugins, .automations, .project, .chat, .settings, .rescue,
-             .databaseCollection, .memoryHome, .driveAdmin, .drivePhotos,
+             .databaseCollection, .memoryHome, .macCare, .driveAdmin, .drivePhotos,
              .driveDocuments, .driveRecent, .driveFolder:
             return nil
         }

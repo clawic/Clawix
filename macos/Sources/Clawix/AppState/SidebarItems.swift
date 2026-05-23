@@ -537,7 +537,7 @@ extension AppState {
     }
 
     /// Publishes the current pairing payload (host, port, token, optional
-    /// Tailscale host, etc.) to `~/Library/Caches/Clawix-Dev/pairing.json`
+    /// Tailscale host, etc.) to the dev pairing cache route
     /// so external dev tools (the `Dev` menu-bar agent, scripts) can pre-pair
     /// the iOS Simulator without scanning the on-screen QR. The token is
     /// stable across rebuilds, but the LAN IP is not, so this rewrites on
@@ -546,12 +546,13 @@ extension AppState {
     static func publishPairingForDevMenu(_ pairing: PairingService) {
         let payload = pairing.qrPayload()
         guard let data = payload.data(using: .utf8) else { return }
-        let dir = ((try? ClawixPersistentSurfacePaths.cacheRoot()) ?? FileManager.default.temporaryDirectory).path
-        let path = (dir as NSString).appendingPathComponent("pairing.json")
+        let url = ClawixCacheRoutes.devPairingFileURL()
         do {
             try FileManager.default.createDirectory(
-                atPath: dir, withIntermediateDirectories: true)
-            try data.write(to: URL(fileURLWithPath: path), options: .atomic)
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try data.write(to: url, options: .atomic)
         } catch {
             // dev convenience only; ignore.
         }
