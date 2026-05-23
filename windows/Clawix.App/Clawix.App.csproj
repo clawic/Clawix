@@ -36,6 +36,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Clawix.Core\Clawix.Core.csproj" />
     <ProjectReference Include="..\Clawix.Engine\Clawix.Engine.csproj" />
+    <ProjectReference Include="..\Clawix.Secrets\Clawix.Secrets.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Package.appxmanifest">

@@ -23,6 +23,7 @@ public sealed class AppServices
     public required PairingService Pairing { get; init; }
     public required ShellService Shell { get; init; }
     public required ClipboardService Clipboard { get; init; }
+    public required WindowsSecretsVaultService Secrets { get; init; }
     public required GlobalHotkeyService Hotkeys { get; init; }
     public required ScreenService Screens { get; init; }
     public required SystemTrayService Tray { get; init; }
@@ -62,6 +63,7 @@ public sealed class AppServices
             State = state,
             Shell = new ShellService(),
             Clipboard = new ClipboardService(),
+            Secrets = new WindowsSecretsVaultService(credentials),
             Hotkeys = new GlobalHotkeyService(loggerFactory.CreateLogger<GlobalHotkeyService>()),
             Screens = new ScreenService(),
             Tray = new SystemTrayService(),
