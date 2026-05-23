@@ -77,7 +77,7 @@ struct ClawJSRuntimeLensSection: View {
                 runtimeLensSnapshots[target] = try await runtimeLensClient.load(runtime: target)
             } catch {
                 if target == runtimeLensSelection {
-                    runtimeLensError = error.localizedDescription
+                    runtimeLensError = SettingsUtilities.failureMessage(for: error, surface: "settings.runtimeLens.refresh")
                 }
             }
         }

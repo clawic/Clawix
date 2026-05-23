@@ -7,10 +7,11 @@ import SwiftUI
 struct ClawJSSettingsPage: View {
 
     @StateObject private var manager = ClawJSServiceManager.shared
-    @State private var advancedExpanded = false
+    @AppStorage(ClawixPersistentSurfaceKeys.clawJSAdvancedExpanded) private var advancedExpanded = false
     @State private var databaseProbe: DatabaseProbeResult?
     @State private var databaseProbeInFlight = false
     @State private var manualServiceLeases: [ClawJSService: ServiceDemandLease] = [:]
+    @State private var serviceActionsInFlight: Set<ClawJSService> = []
 
     private enum DatabaseProbeResult: Equatable {
         case success(service: String, host: String, port: Int)
@@ -123,13 +124,12 @@ struct ClawJSSettingsPage: View {
 
                     Button("Reveal log") {
                         let url = ClawJSServiceManager.logFileURL(for: service)
-                        if FileManager.default.fileExists(atPath: url.path) {
-                            NSWorkspace.shared.activateFileViewerSelecting([url])
-                        }
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                     .buttonStyle(.borderless)
                     .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Palette.textSecondary)
+                    .foregroundColor(logFileExists(for: service) ? Palette.textSecondary : Palette.textTertiary)
+                    .disabled(!logFileExists(for: service))
                 }
 
                 if service == .database, state.isReady {
@@ -186,7 +186,9 @@ struct ClawJSSettingsPage: View {
                 port: response.port
             )
         } catch {
-            databaseProbe = .failure(message: error.localizedDescription)
+            databaseProbe = .failure(
+                message: SettingsUtilities.failureMessage(for: error, surface: "settings.clawjs.databaseProbe")
+            )
         }
     }
 
@@ -206,6 +208,7 @@ struct ClawJSSettingsPage: View {
                     Divider().background(Color.white.opacity(0.07))
                     ForEach(visibleClawJSServices) { service in
                         let state = manager.snapshots[service]?.state ?? .idle
+                        let statusJSONValue = statusJSON(for: service)
                         HStack(spacing: 12) {
                             Text(service.displayName)
                                 .font(BodyFont.system(size: 12.5))
@@ -213,7 +216,7 @@ struct ClawJSSettingsPage: View {
                                 .frame(width: 90, alignment: .leading)
                             serviceActionButton(service: service, state: state)
                             Button("Status JSON") {
-                                if let json = statusJSON(for: service) {
+                                if let json = statusJSONValue {
                                     let pasteboard = NSPasteboard.general
                                     pasteboard.clearContents()
                                     pasteboard.setString(json, forType: .string)
@@ -221,7 +224,8 @@ struct ClawJSSettingsPage: View {
                             }
                             .buttonStyle(.borderless)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Palette.textSecondary)
+                            .foregroundColor(statusJSONValue == nil ? Palette.textTertiary : Palette.textSecondary)
+                            .disabled(statusJSONValue == nil)
                             Spacer()
                         }
                     }
@@ -242,30 +246,47 @@ struct ClawJSSettingsPage: View {
     }
 
     private func serviceActionButton(service: ClawJSService, state: ClawJSServiceState) -> some View {
-        Button(serviceActionTitle(service: service, state: state)) {
-            Task {
-                if let lease = manualServiceLeases[service] {
-                    await manager.release(lease)
-                    manualServiceLeases[service] = nil
-                } else if state.isReady {
-                    await manager.restart(service)
-                } else {
-                    let services = ClawJSServiceDemandPolicy.visibleServices(
-                        [service],
-                        isVisible: FeatureFlags.shared.isVisible
-                    )
-                    manualServiceLeases[service] = await manager.acquire(
-                        services: services,
-                        reason: .manual(service.displayName),
-                        consumer: "settings.manual.\(service.rawValue)"
-                    )
+        let inFlight = serviceActionsInFlight.contains(service)
+        return Button {
+            Task { await performServiceAction(service: service, state: state) }
+        } label: {
+            HStack(spacing: 6) {
+                if inFlight {
+                    ProgressView()
+                        .controlSize(.small)
                 }
+                Text(serviceActionTitle(service: service, state: state))
             }
         }
         .buttonStyle(.borderless)
         .font(BodyFont.system(size: 11.5, wght: 500))
         .foregroundColor(Palette.textSecondary)
-        .disabled(isServiceActionDisabled(service, state: state))
+        .disabled(inFlight || isServiceActionDisabled(service, state: state))
+    }
+
+    @MainActor
+    private func performServiceAction(service: ClawJSService, state: ClawJSServiceState) async {
+        guard !serviceActionsInFlight.contains(service),
+              !isServiceActionDisabled(service, state: state)
+        else { return }
+        serviceActionsInFlight.insert(service)
+        defer { serviceActionsInFlight.remove(service) }
+        if let lease = manualServiceLeases[service] {
+            await manager.release(lease)
+            manualServiceLeases[service] = nil
+        } else if state.isReady {
+            await manager.restart(service)
+        } else {
+            let services = ClawJSServiceDemandPolicy.visibleServices(
+                [service],
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            manualServiceLeases[service] = await manager.acquire(
+                services: services,
+                reason: .manual(service.displayName),
+                consumer: "settings.manual.\(service.rawValue)"
+            )
+        }
     }
 
     private func serviceActionTitle(service: ClawJSService, state: ClawJSServiceState) -> String {
@@ -288,6 +309,10 @@ struct ClawJSSettingsPage: View {
         }
         if case .starting = state { return true }
         return false
+    }
+
+    private func logFileExists(for service: ClawJSService) -> Bool {
+        FileManager.default.fileExists(atPath: ClawJSServiceManager.logFileURL(for: service).path)
     }
 
     // MARK: - Row + pill helpers

@@ -173,7 +173,7 @@ extension ClawJSRuntimeLensSection {
             }
             await refreshRuntimeLens(runtime)
         } catch {
-            runtimeLensActionError = error.localizedDescription
+            runtimeLensActionError = SettingsUtilities.failureMessage(for: error, surface: "settings.runtimeLens.action")
         }
     }
 
