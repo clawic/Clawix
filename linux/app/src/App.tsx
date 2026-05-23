@@ -20,9 +20,13 @@ export default function App(props: Props) {
   onMount(async () => {
     applyTheme();
     useDaemonStream();
-    unlistenUpdate = await listen<{ available: boolean }>("updater:status", (event) => {
-      setUpdateAvailable(event.payload.available);
-    });
+    try {
+      unlistenUpdate = await listen<{ available: boolean }>("updater:status", (event) => {
+        setUpdateAvailable(event.payload.available);
+      });
+    } catch (_) {
+      unlistenUpdate = undefined;
+    }
   });
 
   onCleanup(() => {

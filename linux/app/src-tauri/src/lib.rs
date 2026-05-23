@@ -62,6 +62,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_chats,
+            commands::get_projects,
             commands::open_session,
             commands::send_message,
             commands::interrupt_turn,
@@ -94,10 +95,23 @@ mod commands {
         pub has_active_turn: bool,
     }
 
+    #[derive(Serialize)]
+    pub struct WireProjectBrief {
+        pub id: String,
+        pub title: String,
+        pub cwd: Option<String>,
+    }
+
     #[tauri::command]
     pub async fn get_chats(state: State<'_, AppState>) -> Result<Vec<WireSessionBrief>, String> {
         let client = state.daemon.lock().await;
         client.get_chats().await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn get_projects(state: State<'_, AppState>) -> Result<Vec<WireProjectBrief>, String> {
+        let client = state.daemon.lock().await;
+        client.get_projects().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]

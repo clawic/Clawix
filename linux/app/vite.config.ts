@@ -16,6 +16,9 @@ export default defineConfig(async () => ({
     watch: { ignored: ["**/src-tauri/**"] }
   },
   envPrefix: ["VITE_", "TAURI_"],
+  test: {
+    environment: "node"
+  },
   build: {
     target:
       process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari13",

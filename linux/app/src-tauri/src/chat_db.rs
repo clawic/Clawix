@@ -1,7 +1,10 @@
-// Local cache mirroring what GRDB stores on the Mac GUI: chat history,
-// pinned/archived state, settings. The daemon stays the source of truth
-// for everything that crosses the bridge; this DB is the "remember
-// across launches" layer for offline reads and prefs.
+// Host-local preferences for the Linux shell.
+//
+// The chats/messages tables below are legacy scaffold only: the bridge
+// daemon and framework sessions store remain the source of truth for chats,
+// messages, pinned/archive state, and runtime events. Do not add writes to
+// those tables without first moving the code behind a bounded snapshot-cache
+// contract and updating the host/framework boundary inventory.
 
 use anyhow::{Context, Result};
 use rusqlite::{params, Connection};

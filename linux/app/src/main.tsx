@@ -3,6 +3,7 @@ import { render } from "solid-js/web";
 import { Router, Route } from "@solidjs/router";
 import App from "./App";
 import ChatView from "./views/ChatView";
+import ChatCollectionView from "./views/ChatCollectionView";
 import SettingsView from "./views/SettingsView";
 import BridgePairing from "./views/BridgePairing";
 import VaultManagement from "./views/VaultManagement";
@@ -18,6 +19,11 @@ render(
   () => (
     <Router root={App}>
       <Route path="/" component={ChatView} />
+      <Route path="/all-chats" component={ChatCollectionView} />
+      <Route path="/pinned" component={ChatCollectionView} />
+      <Route path="/projects" component={ChatCollectionView} />
+      <Route path="/projects/:projectId" component={ChatCollectionView} />
+      <Route path="/archived" component={ChatCollectionView} />
       <Route path="/chats/:id" component={ChatView} />
       <Route path="/settings" component={SettingsView} />
       <Route path="/pairing" component={BridgePairing} />

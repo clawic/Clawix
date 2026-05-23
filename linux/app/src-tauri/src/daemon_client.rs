@@ -53,6 +53,12 @@ impl DaemonClient {
         Ok(Vec::new())
     }
 
+    pub async fn get_projects(&self) -> Result<Vec<crate::commands::WireProjectBrief>> {
+        self.send_intent(serde_json::json!({ "type": "listProjects" }))
+            .await?;
+        Ok(Vec::new())
+    }
+
     pub async fn open_session(&self, session_id: &str) -> Result<serde_json::Value> {
         self.send_intent(serde_json::json!({
             "type": "openSession",
