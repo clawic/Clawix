@@ -7,7 +7,7 @@ final class TerminalTabTests: XCTestCase {
     }
 
     func testDerivedLabelUsesHomeMarker() {
-        XCTAssertEqual(TerminalTab.deriveLabel(from: NSHomeDirectory()), "~")
+        XCTAssertEqual(TerminalTab.deriveLabel(from: ClawixTerminalRoutes.userHomePath()), "~")
     }
 
     func testDerivedLabelUsesRootMarker() {
