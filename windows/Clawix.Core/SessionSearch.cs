@@ -18,6 +18,19 @@ public static class SessionSearch
             .ToList();
     }
 
+    public static IReadOnlyList<WireSession> FilterByProject(IEnumerable<WireSession> sessions, WireProject? project, string? query)
+    {
+        var filtered = Filter(sessions, query);
+        if (project is null) return filtered;
+
+        var projectRoot = NormalizePath(project.Cwd);
+        if (projectRoot.Length == 0) return [];
+
+        return filtered
+            .Where(session => IsInsideProject(session.Cwd, projectRoot))
+            .ToList();
+    }
+
     private static bool Matches(WireSession session, string query)
     {
         return Contains(session.Title, query)
@@ -31,11 +44,26 @@ public static class SessionSearch
         return Normalize(value).Contains(query, StringComparison.Ordinal);
     }
 
+    private static bool IsInsideProject(string? cwd, string projectRoot)
+    {
+        var normalizedCwd = NormalizePath(cwd);
+        return normalizedCwd.Equals(projectRoot, StringComparison.OrdinalIgnoreCase)
+            || normalizedCwd.StartsWith(projectRoot + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string Normalize(string? value)
     {
         return string.Join(" ", (value ?? string.Empty)
             .Trim()
             .ToLowerInvariant()
             .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string NormalizePath(string? value)
+    {
+        return (value ?? string.Empty)
+            .Trim()
+            .Replace('\\', '/')
+            .TrimEnd('/');
     }
 }

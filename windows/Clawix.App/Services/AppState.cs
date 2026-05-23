@@ -23,6 +23,9 @@ public sealed partial class AppState : ObservableObject
     private List<WireSession> _sessions = [];
 
     [ObservableProperty]
+    private List<WireProject> _projects = [];
+
+    [ObservableProperty]
     private WireSession? _currentChat;
 
     [ObservableProperty]
@@ -60,6 +63,7 @@ public sealed partial class AppState : ObservableObject
         _client.FrameReceived += ApplyFrame;
         await _client.ConnectAsync(ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.ListSessions()), ct);
+        await _client.SendAsync(new BridgeFrame(new BridgeBody.ListProjects()), ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.RequestRateLimits()), ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.RequestClawJSServiceStatuses()), ct);
     }
@@ -79,6 +83,11 @@ public sealed partial class AppState : ObservableObject
                 break;
             case BridgeBody.SessionsSnapshot cs:
                 Sessions = cs.Sessions.ToList();
+                break;
+            case BridgeBody.ProjectsSnapshot ps:
+                Projects = ps.Projects
+                    .OrderBy(project => project.Title, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
                 break;
             case BridgeBody.SessionUpdated cu:
                 Sessions = Sessions.Select(c => c.Id == cu.Session.Id ? cu.Session : c).ToList();

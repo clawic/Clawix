@@ -9,7 +9,9 @@ namespace Clawix.App.Views;
 public sealed partial class SidebarView : UserControl
 {
     public ObservableCollection<WireSession> Sessions { get; } = new();
+    public ObservableCollection<WireProject> Projects { get; } = new();
     private IReadOnlyList<WireSession> _allSessions = [];
+    private WireProject? _selectedProject;
 
     public SidebarView()
     {
@@ -28,6 +30,12 @@ public sealed partial class SidebarView : UserControl
                     _allSessions = state.Sessions;
                     RefreshSessions();
                 });
+            if (args.PropertyName == nameof(state.Projects))
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    RefreshProjects(state.Projects);
+                    RefreshSessions();
+                });
             if (args.PropertyName == nameof(state.BridgeStateLabel))
                 DispatcherQueue.TryEnqueue(() => BridgeStatusText.Text = state.BridgeStateLabel);
             if (args.PropertyName == nameof(state.RateLimits))
@@ -38,6 +46,7 @@ public sealed partial class SidebarView : UserControl
                 });
         };
         _allSessions = state.Sessions;
+        RefreshProjects(state.Projects);
         RefreshSessions();
         BridgeStatusText.Text = state.BridgeStateLabel;
         RateLimits.Render(state.RateLimits?.Primary, state.RateLimits?.Secondary);
@@ -56,6 +65,22 @@ public sealed partial class SidebarView : UserControl
         App.Services.State.StartNewChat();
     }
 
+    private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _selectedProject = ProjectList.SelectedItem as WireProject;
+        ChatList.SelectedItem = null;
+        UpdateProjectChromeVisibility();
+        RefreshSessions();
+    }
+
+    private void AllChats_Click(object sender, RoutedEventArgs e)
+    {
+        ProjectList.SelectedItem = null;
+        _selectedProject = null;
+        UpdateProjectChromeVisibility();
+        RefreshSessions();
+    }
+
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         RefreshSessions();
@@ -64,7 +89,7 @@ public sealed partial class SidebarView : UserControl
     private void RefreshSessions()
     {
         var selectedId = (ChatList.SelectedItem as WireSession)?.Id;
-        var filtered = SessionSearch.Filter(_allSessions, SearchBox.Text);
+        var filtered = SessionSearch.FilterByProject(_allSessions, _selectedProject, SearchBox.Text);
         Sessions.Clear();
         WireSession? selected = null;
         foreach (var chat in filtered)
@@ -73,6 +98,30 @@ public sealed partial class SidebarView : UserControl
             if (chat.Id == selectedId) selected = chat;
         }
         ChatList.SelectedItem = selected;
+    }
+
+    private void RefreshProjects(IReadOnlyList<WireProject> projects)
+    {
+        var selectedId = _selectedProject?.Id;
+        Projects.Clear();
+        WireProject? selected = null;
+        foreach (var project in projects)
+        {
+            Projects.Add(project);
+            if (project.Id == selectedId) selected = project;
+        }
+
+        _selectedProject = selected;
+        ProjectList.SelectedItem = selected;
+        UpdateProjectChromeVisibility();
+    }
+
+    private void UpdateProjectChromeVisibility()
+    {
+        var hasProjects = Projects.Count > 0;
+        ProjectsHeader.Visibility = hasProjects ? Visibility.Visible : Visibility.Collapsed;
+        ProjectList.Visibility = hasProjects ? Visibility.Visible : Visibility.Collapsed;
+        AllChatsButton.Visibility = _selectedProject is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)

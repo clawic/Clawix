@@ -20,6 +20,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public IReadOnlyList<WireSession> BridgeSessionsCurrent => _sessions;
     public (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) BridgeRateLimitsCurrent
         => _rateLimits;
+    public IReadOnlyList<WireProject> ProjectsCurrent { get; set; } = [];
     public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; set; } = [];
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged;
@@ -73,7 +74,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public Task HandlePinAsync(string sessionId, bool pinned, CancellationToken ct) => Task.CompletedTask;
     public Task HandleRenameAsync(string sessionId, string title, CancellationToken ct) => Task.CompletedTask;
     public Task<IReadOnlyList<WireProject>> HandleListProjectsAsync(CancellationToken ct)
-        => Task.FromResult<IReadOnlyList<WireProject>>(Array.Empty<WireProject>());
+        => Task.FromResult(ProjectsCurrent);
     public Task<(string? Content, bool IsMarkdown, string? Error)> HandleReadFileAsync(string path, CancellationToken ct)
         => Task.FromResult<(string?, bool, string?)>((null, false, "stub"));
     public Task<(string? Text, string? Error)> HandleTranscribeAudioAsync(string audioBase64, string mimeType, string? language, CancellationToken ct)

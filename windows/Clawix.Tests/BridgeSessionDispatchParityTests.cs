@@ -19,6 +19,18 @@ public sealed class BridgeSessionDispatchParityTests
         var pairing = new PairingService(new InMemoryPairingStore(), (ushort)port);
         var host = new InMemoryEngineHost
         {
+            ProjectsCurrent =
+            [
+                new WireProject
+                {
+                    Id = "project-1",
+                    Title = "Windows Parity",
+                    Cwd = @"C:\src\clawix",
+                    HasGitRepo = true,
+                    Branch = "main",
+                    LastUsedAt = DateTimeOffset.Parse("2026-05-23T00:00:00Z"),
+                },
+            ],
             ClawJSServiceStatusesCurrent =
             [
                 new WireClawJSServiceSnapshot
@@ -55,6 +67,12 @@ public sealed class BridgeSessionDispatchParityTests
 
         Assert.IsType<BridgeBody.AuthOk>((await ReceiveAsync(client)).Body);
         Assert.IsType<BridgeBody.BridgeState>((await ReceiveAsync(client)).Body);
+
+        await SendAsync(client, new BridgeBody.ListProjects());
+        var projects = Assert.IsType<BridgeBody.ProjectsSnapshot>((await ReceiveAsync(client)).Body);
+        Assert.Single(projects.Projects);
+        Assert.Equal("Windows Parity", projects.Projects[0].Title);
+        Assert.True(projects.Projects[0].HasGitRepo);
 
         await SendAsync(client, new BridgeBody.RequestClawJSServiceStatuses());
         var serviceStatuses = Assert.IsType<BridgeBody.ClawJSServiceStatusesSnapshot>((await ReceiveAsync(client)).Body);

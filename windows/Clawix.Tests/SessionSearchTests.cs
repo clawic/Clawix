@@ -25,6 +25,23 @@ public sealed class SessionSearchTests
         Assert.Equal(new[] { "chat-b", "chat-c", "chat-a" }, result.Select(session => session.Id).ToArray());
     }
 
+    [Fact]
+    public void FilterByProject_MatchesRootAndNestedWorkingDirectories()
+    {
+        var project = new WireProject
+        {
+            Id = "project-a",
+            Title = "Project A",
+            Cwd = @"C:\Work\ProjectA\",
+            HasGitRepo = true,
+        };
+        var sessions = SampleSessions();
+
+        var result = SessionSearch.FilterByProject(sessions, project, null);
+
+        Assert.Equal(new[] { "chat-b", "chat-a" }, result.Select(session => session.Id).ToArray());
+    }
+
     private static WireSession[] SampleSessions()
     {
         return
@@ -35,6 +52,7 @@ public sealed class SessionSearchTests
                 ThreadId = "thread-a",
                 Title = "Pricing review",
                 LastMessagePreview = "numbers",
+                Cwd = @"C:\Work\ProjectA",
                 CreatedAt = DateTimeOffset.Parse("2026-05-21T00:00:00Z"),
                 LastMessageAt = DateTimeOffset.Parse("2026-05-21T00:00:00Z"),
             },
@@ -44,6 +62,7 @@ public sealed class SessionSearchTests
                 ThreadId = "thread-b",
                 Title = "Design work",
                 LastMessagePreview = "image prompt",
+                Cwd = @"C:\Work\ProjectA\src",
                 CreatedAt = DateTimeOffset.Parse("2026-05-22T00:00:00Z"),
                 LastMessageAt = DateTimeOffset.Parse("2026-05-23T00:00:00Z"),
             },
@@ -53,6 +72,7 @@ public sealed class SessionSearchTests
                 ThreadId = "thread-c",
                 Title = "Notes",
                 LastMessagePreview = "summary",
+                Cwd = @"C:\Work\Other",
                 CreatedAt = DateTimeOffset.Parse("2026-05-22T12:00:00Z"),
             },
         ];
