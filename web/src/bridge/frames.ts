@@ -8,333 +8,152 @@
 
 import { z } from "zod";
 import {
-  ZWireAttachment,
-  ZWireAudioAssetWithTranscripts,
-  ZWireAudioAttachTranscriptInput,
-  ZWireAudioListFilter,
-  ZWireAudioListResult,
-  ZWireAudioRegisterRequest,
-  ZWireAudioTranscript,
-  ZWireClawJSServiceSnapshot,
-  ZWireSession,
-  ZWireMessage,
-  ZWireProject,
-  ZWireRateLimitSnapshot,
-} from "./wire";
+  BRIDGE_MAX_FRAME_BYTES,
+  BRIDGE_SCHEMA_VERSION,
+} from "./frame-base";
+import {
+  ALLOWED_PAYLOAD_KEYS,
+  TOP_LEVEL_FRAME_KEYS,
+  type BridgePayloadFrameType,
+} from "./frame-payload-keys";
+import {
+  ZArchiveSession,
+  ZAuth,
+  ZEditPrompt,
+  ZInterruptTurn,
+  ZListProjects,
+  ZListSessions,
+  ZLoadOlderMessages,
+  ZNewSession,
+  ZOpenSession,
+  ZPairingStart,
+  ZPinSession,
+  ZReadFile,
+  ZRenameSession,
+  ZRequestAudio,
+  ZRequestClawJSServiceStatuses,
+  ZRequestGeneratedImage,
+  ZRequestRateLimits,
+  ZRequestRolloutAttachment,
+  ZSendMessage,
+  ZTranscribeAudio,
+  ZUnarchiveSession,
+  ZUnpinSession,
+} from "./client-frames";
+import {
+  ZAudioSnapshot,
+  ZAuthFailed,
+  ZAuthOk,
+  ZBridgeState,
+  ZErrorEvent,
+  ZFileSnapshot,
+  ZGeneratedImageSnapshot,
+  ZMessageAppended,
+  ZMessageStreaming,
+  ZMessagesPage,
+  ZMessagesSnapshot,
+  ZPairingPayload,
+  ZProjectsSnapshot,
+  ZRolloutAttachmentSnapshot,
+  ZSessionUpdated,
+  ZSessionsSnapshot,
+  ZTranscriptionResult,
+  ZVersionMismatch,
+} from "./server-frames";
+import {
+  ZAudioAttachTranscript,
+  ZAudioAttachTranscriptResult,
+  ZAudioBytesResult,
+  ZAudioDelete,
+  ZAudioDeleteResult,
+  ZAudioGet,
+  ZAudioGetBytes,
+  ZAudioGetResult,
+  ZAudioList,
+  ZAudioListResult,
+  ZAudioRegister,
+  ZAudioRegisterResult,
+} from "./audio-frames";
+import {
+  ZClawJSServiceStatusesSnapshot,
+  ZClawJSServiceStatusUpdated,
+  ZRateLimitsSnapshot,
+  ZRateLimitsUpdated,
+} from "./runtime-frames";
 
-export const BRIDGE_SCHEMA_VERSION = 1 as const;
-export const BRIDGE_MAX_FRAME_BYTES = 8 * 1024 * 1024;
-export const BRIDGE_INITIAL_PAGE_LIMIT = 60 as const;
-export const BRIDGE_OLDER_PAGE_LIMIT = 40 as const;
-
-export const ZClientKind = z.enum(["companion", "desktop"]);
-export type ClientKind = z.infer<typeof ZClientKind>;
-
-const base = { schemaVersion: z.number().int().default(BRIDGE_SCHEMA_VERSION) };
-
-/** Outbound: client -> server */
-export const ZAuth = z.object({
-  ...base,
-  type: z.literal("auth"),
-  token: z.string(),
-  deviceName: z.string().optional(),
-  clientKind: ZClientKind,
-  clientId: z.string(),
-  installationId: z.string(),
-  deviceId: z.string(),
-});
-
-export const ZListSessions = z.object({ ...base, type: z.literal("listSessions") });
-
-export const ZOpenSession = z.object({
-  ...base,
-  type: z.literal("openSession"),
-  sessionId: z.string(),
-  limit: z.number().int().optional(),
-});
-
-export const ZLoadOlderMessages = z.object({
-  ...base,
-  type: z.literal("loadOlderMessages"),
-  sessionId: z.string(),
-  beforeMessageId: z.string(),
-  limit: z.number().int(),
-});
-
-export const ZSendMessage = z.object({
-  ...base,
-  type: z.literal("sendMessage"),
-  sessionId: z.string(),
-  text: z.string(),
-  attachments: z.array(ZWireAttachment).optional().default([]),
-});
-
-export const ZNewSession = z.object({
-  ...base,
-  type: z.literal("newSession"),
-  sessionId: z.string(),
-  text: z.string(),
-  attachments: z.array(ZWireAttachment).optional().default([]),
-});
-
-export const ZInterruptTurn = z.object({ ...base, type: z.literal("interruptTurn"), sessionId: z.string() });
-
-export const ZEditPrompt = z.object({
-  ...base,
-  type: z.literal("editPrompt"),
-  sessionId: z.string(),
-  messageId: z.string(),
-  text: z.string(),
-});
-
-export const ZArchiveSession = z.object({ ...base, type: z.literal("archiveSession"), sessionId: z.string() });
-export const ZUnarchiveSession = z.object({ ...base, type: z.literal("unarchiveSession"), sessionId: z.string() });
-export const ZPinSession = z.object({ ...base, type: z.literal("pinSession"), sessionId: z.string() });
-export const ZUnpinSession = z.object({ ...base, type: z.literal("unpinSession"), sessionId: z.string() });
-export const ZRenameSession = z.object({ ...base, type: z.literal("renameSession"), sessionId: z.string(), title: z.string() });
-export const ZPairingStart = z.object({ ...base, type: z.literal("pairingStart") });
-export const ZListProjects = z.object({ ...base, type: z.literal("listProjects") });
-export const ZReadFile = z.object({ ...base, type: z.literal("readFile"), path: z.string() });
-
-export const ZTranscribeAudio = z.object({
-  ...base,
-  type: z.literal("transcribeAudio"),
-  requestId: z.string(),
-  audioBase64: z.string(),
-  mimeType: z.string(),
-  language: z.string().optional(),
-});
-export const ZRequestAudio = z.object({ ...base, type: z.literal("requestAudio"), audioId: z.string() });
-export const ZRequestGeneratedImage = z.object({ ...base, type: z.literal("requestGeneratedImage"), path: z.string() });
-export const ZRequestRolloutAttachment = z.object({ ...base, type: z.literal("requestRolloutAttachment"), attachmentId: z.string() });
-export const ZRequestRateLimits = z.object({ ...base, type: z.literal("requestRateLimits") });
-export const ZRequestClawJSServiceStatuses = z.object({ ...base, type: z.literal("requestClawJSServiceStatuses") });
-
-/** Inbound: server -> client */
-export const ZAuthOk = z.object({ ...base, type: z.literal("authOk"), hostDisplayName: z.string().optional() });
-export const ZAuthFailed = z.object({ ...base, type: z.literal("authFailed"), reason: z.string() });
-export const ZVersionMismatch = z.object({ ...base, type: z.literal("versionMismatch"), serverVersion: z.number().int() });
-
-export const ZSessionsSnapshot = z.object({ ...base, type: z.literal("sessionsSnapshot"), sessions: z.array(ZWireSession) });
-export const ZSessionUpdated = z.object({ ...base, type: z.literal("sessionUpdated"), session: ZWireSession });
-
-export const ZMessagesSnapshot = z.object({
-  ...base,
-  type: z.literal("messagesSnapshot"),
-  sessionId: z.string(),
-  messages: z.array(ZWireMessage),
-  hasMore: z.boolean().optional(),
-});
-
-export const ZMessagesPage = z.object({
-  ...base,
-  type: z.literal("messagesPage"),
-  sessionId: z.string(),
-  messages: z.array(ZWireMessage),
-  hasMore: z.boolean(),
-});
-
-export const ZMessageAppended = z.object({
-  ...base,
-  type: z.literal("messageAppended"),
-  sessionId: z.string(),
-  message: ZWireMessage,
-});
-
-export const ZMessageStreaming = z.object({
-  ...base,
-  type: z.literal("messageStreaming"),
-  sessionId: z.string(),
-  messageId: z.string(),
-  content: z.string(),
-  reasoningText: z.string(),
-  finished: z.boolean(),
-});
-
-export const ZErrorEvent = z.object({ ...base, type: z.literal("errorEvent"), code: z.string(), message: z.string() });
-
-export const ZPairingPayload = z.object({
-  ...base,
-  type: z.literal("pairingPayload"),
-  qrJson: z.string(),
-  token: z.string(),
-  shortCode: z.string(),
-});
-
-export const ZProjectsSnapshot = z.object({
-  ...base,
-  type: z.literal("projectsSnapshot"),
-  projects: z.array(ZWireProject),
-});
-
-export const ZFileSnapshot = z.object({
-  ...base,
-  type: z.literal("fileSnapshot"),
-  path: z.string(),
-  content: z.string().optional(),
-  isMarkdown: z.boolean().default(false),
-  error: z.string().optional(),
-});
-
-export const ZTranscriptionResult = z.object({
-  ...base,
-  type: z.literal("transcriptionResult"),
-  requestId: z.string(),
-  text: z.string(),
-  errorMessage: z.string().optional(),
-});
-
-export const ZAudioSnapshot = z.object({
-  ...base,
-  type: z.literal("audioSnapshot"),
-  audioId: z.string(),
-  audioBase64: z.string().optional(),
-  mimeType: z.string().optional(),
-  errorMessage: z.string().optional(),
-});
-
-export const ZGeneratedImageSnapshot = z.object({
-  ...base,
-  type: z.literal("generatedImageSnapshot"),
-  path: z.string(),
-  dataBase64: z.string().optional(),
-  mimeType: z.string().optional(),
-  errorMessage: z.string().optional(),
-});
-
-export const ZRolloutAttachmentSnapshot = z.object({
-  ...base,
-  type: z.literal("rolloutAttachmentSnapshot"),
-  attachmentId: z.string(),
-  dataBase64: z.string().optional(),
-  mimeType: z.string().optional(),
-  errorMessage: z.string().optional(),
-});
-
-export const ZBridgeState = z.object({
-  ...base,
-  type: z.literal("bridgeState"),
-  state: z.string(),
-  chatCount: z.number().int(),
-  message: z.string().optional(),
-});
-
-export const ZRateLimitsPayload = z.object({
-  rateLimits: ZWireRateLimitSnapshot.nullable().optional(),
-  rateLimitsByLimitId: z.record(z.string(), ZWireRateLimitSnapshot).default({}),
-});
-
-export const ZRateLimitsSnapshot = z.object({
-  ...base,
-  type: z.literal("rateLimitsSnapshot"),
-  ...ZRateLimitsPayload.shape,
-});
-
-export const ZRateLimitsUpdated = z.object({
-  ...base,
-  type: z.literal("rateLimitsUpdated"),
-  ...ZRateLimitsPayload.shape,
-});
-
-export const ZClawJSServiceStatusesSnapshot = z.object({
-  ...base,
-  type: z.literal("clawJSServiceStatusesSnapshot"),
-  services: z.array(ZWireClawJSServiceSnapshot),
-});
-
-export const ZClawJSServiceStatusUpdated = z.object({
-  ...base,
-  type: z.literal("clawJSServiceStatusUpdated"),
-  service: ZWireClawJSServiceSnapshot,
-});
-
-// Audio catalog frames (outbound: client -> daemon).
-export const ZAudioRegister = z.object({
-  ...base,
-  type: z.literal("audioRegister"),
-  requestId: z.string(),
-  request: ZWireAudioRegisterRequest,
-});
-export const ZAudioAttachTranscript = z.object({
-  ...base,
-  type: z.literal("audioAttachTranscript"),
-  requestId: z.string(),
-  audioId: z.string(),
-  transcript: ZWireAudioAttachTranscriptInput,
-});
-export const ZAudioGet = z.object({
-  ...base,
-  type: z.literal("audioGet"),
-  requestId: z.string(),
-  audioId: z.string(),
-  appId: z.string(),
-});
-export const ZAudioGetBytes = z.object({
-  ...base,
-  type: z.literal("audioGetBytes"),
-  requestId: z.string(),
-  audioId: z.string(),
-  appId: z.string(),
-});
-export const ZAudioList = z.object({
-  ...base,
-  type: z.literal("audioList"),
-  requestId: z.string(),
-  filter: ZWireAudioListFilter,
-});
-export const ZAudioDelete = z.object({
-  ...base,
-  type: z.literal("audioDelete"),
-  requestId: z.string(),
-  audioId: z.string(),
-  appId: z.string(),
-});
-
-// Audio catalog frames (inbound: daemon -> client).
-export const ZAudioRegisterResult = z.object({
-  ...base,
-  type: z.literal("audioRegisterResult"),
-  requestId: z.string(),
-  asset: ZWireAudioAssetWithTranscripts.nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
-export const ZAudioAttachTranscriptResult = z.object({
-  ...base,
-  type: z.literal("audioAttachTranscriptResult"),
-  requestId: z.string(),
-  transcript: ZWireAudioTranscript.nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
-export const ZAudioGetResult = z.object({
-  ...base,
-  type: z.literal("audioGetResult"),
-  requestId: z.string(),
-  asset: ZWireAudioAssetWithTranscripts.nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
-export const ZAudioBytesResult = z.object({
-  ...base,
-  type: z.literal("audioBytesResult"),
-  requestId: z.string(),
-  audioBase64: z.string().nullable().optional(),
-  mimeType: z.string().nullable().optional(),
-  durationMs: z.number().int().nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
-export const ZAudioListResult = z.object({
-  ...base,
-  type: z.literal("audioListResult"),
-  requestId: z.string(),
-  list: ZWireAudioListResult.nullable().optional(),
-  errorMessage: z.string().nullable().optional(),
-});
-export const ZAudioDeleteResult = z.object({
-  ...base,
-  type: z.literal("audioDeleteResult"),
-  requestId: z.string(),
-  deleted: z.boolean(),
-  errorMessage: z.string().nullable().optional(),
-});
+export {
+  ZArchiveSession,
+  ZAuth,
+  ZClientKind,
+  ZEditPrompt,
+  ZInterruptTurn,
+  ZListProjects,
+  ZListSessions,
+  ZLoadOlderMessages,
+  ZNewSession,
+  ZOpenSession,
+  ZPairingStart,
+  ZPinSession,
+  ZReadFile,
+  ZRenameSession,
+  ZRequestAudio,
+  ZRequestClawJSServiceStatuses,
+  ZRequestGeneratedImage,
+  ZRequestRateLimits,
+  ZRequestRolloutAttachment,
+  ZSendMessage,
+  ZTranscribeAudio,
+  ZUnarchiveSession,
+  ZUnpinSession,
+  type ClientKind,
+} from "./client-frames";
+export {
+  ZAudioSnapshot,
+  ZAuthFailed,
+  ZAuthOk,
+  ZBridgeState,
+  ZErrorEvent,
+  ZFileSnapshot,
+  ZGeneratedImageSnapshot,
+  ZMessageAppended,
+  ZMessageStreaming,
+  ZMessagesPage,
+  ZMessagesSnapshot,
+  ZPairingPayload,
+  ZProjectsSnapshot,
+  ZRolloutAttachmentSnapshot,
+  ZSessionUpdated,
+  ZSessionsSnapshot,
+  ZTranscriptionResult,
+  ZVersionMismatch,
+} from "./server-frames";
+export {
+  BRIDGE_INITIAL_PAGE_LIMIT,
+  BRIDGE_MAX_FRAME_BYTES,
+  BRIDGE_OLDER_PAGE_LIMIT,
+  BRIDGE_SCHEMA_VERSION,
+} from "./frame-base";
+export {
+  ZAudioAttachTranscript,
+  ZAudioAttachTranscriptResult,
+  ZAudioBytesResult,
+  ZAudioDelete,
+  ZAudioDeleteResult,
+  ZAudioGet,
+  ZAudioGetBytes,
+  ZAudioGetResult,
+  ZAudioList,
+  ZAudioListResult,
+  ZAudioRegister,
+  ZAudioRegisterResult,
+} from "./audio-frames";
+export {
+  ZClawJSServiceStatusesSnapshot,
+  ZClawJSServiceStatusUpdated,
+  ZRateLimitsPayload,
+  ZRateLimitsSnapshot,
+  ZRateLimitsUpdated,
+} from "./runtime-frames";
 
 /** Full discriminated union covering both directions. */
 export const ZBridgeFrame = z.discriminatedUnion("type", [
@@ -405,65 +224,7 @@ export type FrameOf<T extends FrameType> = Extract<BridgeFrame, { type: T }>;
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 export type FrameBody = DistributiveOmit<BridgeFrame, "schemaVersion">;
 
-const TOP_LEVEL_KEYS = new Set(["schemaVersion", "type"]);
-const ALLOWED_PAYLOAD_KEYS: Record<FrameType, readonly string[]> = {
-  auth: ["token", "deviceName", "clientKind", "clientId", "installationId", "deviceId"],
-  listSessions: [],
-  openSession: ["sessionId", "limit"],
-  loadOlderMessages: ["sessionId", "beforeMessageId", "limit"],
-  sendMessage: ["sessionId", "text", "attachments"],
-  newSession: ["sessionId", "text", "attachments"],
-  interruptTurn: ["sessionId"],
-  editPrompt: ["sessionId", "messageId", "text"],
-  archiveSession: ["sessionId"],
-  unarchiveSession: ["sessionId"],
-  pinSession: ["sessionId"],
-  unpinSession: ["sessionId"],
-  renameSession: ["sessionId", "title"],
-  pairingStart: [],
-  listProjects: [],
-  readFile: ["path"],
-  transcribeAudio: ["requestId", "audioBase64", "mimeType", "language"],
-  requestAudio: ["audioId"],
-  requestGeneratedImage: ["path"],
-  requestRolloutAttachment: ["attachmentId"],
-  requestRateLimits: [],
-  requestClawJSServiceStatuses: [],
-  authOk: ["hostDisplayName"],
-  authFailed: ["reason"],
-  versionMismatch: ["serverVersion"],
-  sessionsSnapshot: ["sessions"],
-  sessionUpdated: ["session"],
-  messagesSnapshot: ["sessionId", "messages", "hasMore"],
-  messagesPage: ["sessionId", "messages", "hasMore"],
-  messageAppended: ["sessionId", "message"],
-  messageStreaming: ["sessionId", "messageId", "content", "reasoningText", "finished"],
-  errorEvent: ["code", "message"],
-  pairingPayload: ["qrJson", "token", "shortCode"],
-  projectsSnapshot: ["projects"],
-  fileSnapshot: ["path", "content", "isMarkdown", "error"],
-  transcriptionResult: ["requestId", "text", "errorMessage"],
-  audioSnapshot: ["audioId", "audioBase64", "mimeType", "errorMessage"],
-  generatedImageSnapshot: ["path", "dataBase64", "mimeType", "errorMessage"],
-  rolloutAttachmentSnapshot: ["attachmentId", "dataBase64", "mimeType", "errorMessage"],
-  bridgeState: ["state", "chatCount", "message"],
-  rateLimitsSnapshot: ["rateLimits", "rateLimitsByLimitId"],
-  rateLimitsUpdated: ["rateLimits", "rateLimitsByLimitId"],
-  clawJSServiceStatusesSnapshot: ["services"],
-  clawJSServiceStatusUpdated: ["service"],
-  audioRegister: ["requestId", "request"],
-  audioAttachTranscript: ["requestId", "audioId", "transcript"],
-  audioGet: ["requestId", "audioId", "appId"],
-  audioGetBytes: ["requestId", "audioId", "appId"],
-  audioList: ["requestId", "filter"],
-  audioDelete: ["requestId", "audioId", "appId"],
-  audioRegisterResult: ["requestId", "asset", "errorMessage"],
-  audioAttachTranscriptResult: ["requestId", "transcript", "errorMessage"],
-  audioGetResult: ["requestId", "asset", "errorMessage"],
-  audioBytesResult: ["requestId", "audioBase64", "mimeType", "durationMs", "errorMessage"],
-  audioListResult: ["requestId", "list", "errorMessage"],
-  audioDeleteResult: ["requestId", "deleted", "errorMessage"],
-};
+const TOP_LEVEL_KEYS = new Set(TOP_LEVEL_FRAME_KEYS);
 
 function frameByteLength(raw: string): number {
   return new TextEncoder().encode(raw).byteLength;
@@ -474,7 +235,7 @@ function hasStrictTopLevelShape(obj: unknown): obj is { schemaVersion: number; t
   const record = obj as Record<string, unknown>;
   if (record.schemaVersion !== BRIDGE_SCHEMA_VERSION) return false;
   if (typeof record.type !== "string" || !(record.type in ALLOWED_PAYLOAD_KEYS)) return false;
-  const allowed = new Set([...TOP_LEVEL_KEYS, ...ALLOWED_PAYLOAD_KEYS[record.type as FrameType]]);
+  const allowed = new Set<string>([...TOP_LEVEL_KEYS, ...ALLOWED_PAYLOAD_KEYS[record.type as BridgePayloadFrameType]]);
   return Object.keys(record).every((key) => allowed.has(key));
 }
 

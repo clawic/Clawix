@@ -6,7 +6,23 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
-import { decodeFrame, encodeFrame, peekSchemaVersion, BRIDGE_MAX_FRAME_BYTES, BRIDGE_SCHEMA_VERSION, type FrameBody } from "../../src/bridge/frames";
+import {
+  decodeFrame,
+  encodeFrame,
+  peekSchemaVersion,
+  BRIDGE_MAX_FRAME_BYTES,
+  BRIDGE_SCHEMA_VERSION,
+  ZAudioRegister,
+  ZAuth,
+  ZRateLimitsSnapshot,
+  ZSessionsSnapshot,
+  type FrameBody,
+} from "../../src/bridge/frames";
+import { ZAuth as ZAuthDirect } from "../../src/bridge/client-frames";
+import { ZSessionsSnapshot as ZSessionsSnapshotDirect } from "../../src/bridge/server-frames";
+import { ZAudioRegister as ZAudioRegisterDirect } from "../../src/bridge/audio-frames";
+import { ZRateLimitsSnapshot as ZRateLimitsSnapshotDirect } from "../../src/bridge/runtime-frames";
+import { ALLOWED_PAYLOAD_KEYS } from "../../src/bridge/frame-payload-keys";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,6 +113,68 @@ describe("frames", () => {
   it("peeks the schema version without parsing", () => {
     const raw = JSON.stringify({ schemaVersion: 99, type: "ping" });
     expect(peekSchemaVersion(raw)).toBe(99);
+  });
+
+  it("keeps the extracted strict payload key registry aligned with Bridge V1 fixtures", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(bridgeFixtureRoot, "manifest.json"), "utf8")) as {
+      fixtures: Array<{ type: string }>;
+    };
+    const fixtureTypes = new Set(manifest.fixtures.map((fixture) => fixture.type));
+    for (const type of fixtureTypes) {
+      expect(type in ALLOWED_PAYLOAD_KEYS, type).toBe(true);
+    }
+  });
+
+  it("keeps extracted client schemas re-exported through the public frames module", () => {
+    const frame = {
+      schemaVersion: BRIDGE_SCHEMA_VERSION,
+      type: "auth",
+      token: "abc",
+      clientKind: "companion",
+      clientId: "client-web",
+      installationId: "install-web",
+      deviceId: "device-web",
+    };
+    expect(ZAuth.safeParse(frame).success).toBe(true);
+    expect(ZAuthDirect.safeParse(frame)).toEqual(ZAuth.safeParse(frame));
+  });
+
+  it("keeps extracted server schemas re-exported through the public frames module", () => {
+    const frame = {
+      schemaVersion: BRIDGE_SCHEMA_VERSION,
+      type: "sessionsSnapshot",
+      sessions: [],
+    };
+    expect(ZSessionsSnapshot.safeParse(frame).success).toBe(true);
+    expect(ZSessionsSnapshotDirect.safeParse(frame)).toEqual(ZSessionsSnapshot.safeParse(frame));
+  });
+
+  it("keeps extracted audio schemas re-exported through the public frames module", () => {
+    const frame = {
+      schemaVersion: BRIDGE_SCHEMA_VERSION,
+      type: "audioRegister",
+      requestId: "audio-register-1",
+      request: {
+        kind: "user_message",
+        appId: "voice-notes",
+        originActor: "user",
+        mimeType: "audio/mp4",
+        bytesBase64: "AAAA",
+        durationMs: 1200,
+      },
+    };
+    expect(ZAudioRegister.safeParse(frame).success).toBe(true);
+    expect(ZAudioRegisterDirect.safeParse(frame)).toEqual(ZAudioRegister.safeParse(frame));
+  });
+
+  it("keeps extracted runtime schemas re-exported through the public frames module", () => {
+    const frame = {
+      schemaVersion: BRIDGE_SCHEMA_VERSION,
+      type: "rateLimitsSnapshot",
+      rateLimitsByLimitId: {},
+    };
+    expect(ZRateLimitsSnapshot.safeParse(frame).success).toBe(true);
+    expect(ZRateLimitsSnapshotDirect.safeParse(frame)).toEqual(ZRateLimitsSnapshot.safeParse(frame));
   });
 
   it("decodes the generated Bridge V1 fixture corpus", () => {
