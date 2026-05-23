@@ -43,6 +43,7 @@ struct StatusPanel: View {
                 VStack(alignment: .leading, spacing: 16) {
                     section(L10n.t("Session")) {
                         infoRow(L10n.t("Chat"), chatIdShort ?? L10n.t("New chat"))
+                        infoRow(L10n.t("Project"), appState.selectedProject?.name ?? L10n.t("None"))
                     }
 
                     if let usage = appState.currentContextUsage {
@@ -51,6 +52,12 @@ struct StatusPanel: View {
 
                     section(L10n.t("Model")) {
                         infoRow(L10n.t("Model"), "\(appState.selectedModel) · \(appState.selectedIntelligence.label)")
+                        infoRow(L10n.t("Speed"), appState.selectedSpeed == .fast ? L10n.t("Fast") : L10n.t("Standard"))
+                    }
+
+                    section(L10n.t("Mode")) {
+                        infoRow(L10n.t("Permissions"), appState.permissionMode.label)
+                        infoRow(L10n.t("Plan mode"), appState.planMode ? L10n.t("On") : L10n.t("Off"))
                     }
 
                     if let limits = appState.rateLimits {
