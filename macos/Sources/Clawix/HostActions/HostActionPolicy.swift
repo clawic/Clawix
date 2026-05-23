@@ -197,6 +197,8 @@ enum HostActionPolicy {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.sortedKeys]
             var data = try encoder.encode(event)
+            let redacted = ClawixDiagnosticRedactor.redact(String(decoding: data, as: UTF8.self))
+            data = Data(redacted.utf8)
             data.append(0x0A)
             if FileManager.default.fileExists(atPath: url.path),
                let handle = try? FileHandle(forWritingTo: url) {

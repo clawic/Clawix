@@ -1196,11 +1196,11 @@ final class ScreenToolService: ObservableObject {
     }
 
     private static func ensureScreenCaptureAccess() -> Bool {
-        if CGPreflightScreenCaptureAccess() {
+        if NativeMacPermissionBroker.status(for: .screenRecording).isGranted {
             return true
         }
 
-        if CGRequestScreenCaptureAccess() {
+        if NativeMacPermissionBroker.requestScreenRecording() {
             return true
         }
 
@@ -1300,7 +1300,7 @@ final class ScreenToolService: ObservableObject {
     }
 
     private static func captureFailureMessage(_ result: ProcessResult, fallback: String) -> String {
-        if !CGPreflightScreenCaptureAccess() {
+        if !NativeMacPermissionBroker.status(for: .screenRecording).isGranted {
             return "Screen Recording permission required"
         }
         if !result.stderr.isEmpty {

@@ -166,6 +166,42 @@ final class MacControlCenterTests: XCTestCase {
         XCTAssertTrue(ids.contains("mac.permission.calendar"))
         XCTAssertTrue(ids.contains("mac.permission.contacts"))
         XCTAssertTrue(ids.contains("mac.permission.reminders"))
+        XCTAssertTrue(ids.contains("mac.permission.screen_recording"))
+    }
+
+    func testSimulatedPermissionSnapshotProjectsBlockingStateAndReceipts() {
+        let snapshot = MacControlPermissionSnapshot.simulated(
+            statuses: [
+                .microphone: .granted,
+                .camera: .denied,
+                .contacts: .restricted,
+                .calendar: .notDetermined,
+                .inputMonitoring: .revoked,
+            ],
+            hostId: "ui-test-host"
+        )
+
+        let microphone = snapshot.first { $0.id == "mac.permission.microphone" }
+        XCTAssertEqual(microphone?.status, "Granted")
+        XCTAssertEqual(microphone?.isBlocked, false)
+        XCTAssertNil(microphone?.settingsURLString)
+        XCTAssertEqual(microphone?.realValidation, "external_pending_signed_host")
+
+        let camera = snapshot.first { $0.id == "mac.permission.camera" }
+        XCTAssertEqual(camera?.status, "Denied")
+        XCTAssertEqual(camera?.isBlocked, true)
+        XCTAssertEqual(camera?.action, .openSystemSettings)
+        XCTAssertEqual(camera?.settingsURLString, "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
+        XCTAssertTrue(camera?.receiptId.contains("ui-test-host_mac_permission_camera_denied") == true)
+
+        let calendar = snapshot.first { $0.id == "mac.permission.calendar" }
+        XCTAssertEqual(calendar?.status, "Not requested")
+        XCTAssertEqual(calendar?.isBlocked, true)
+        XCTAssertEqual(calendar?.action, .requestAccess)
+
+        let inputMonitoring = snapshot.first { $0.id == "mac.permission.input_monitoring" }
+        XCTAssertEqual(inputMonitoring?.status, "Revoked")
+        XCTAssertEqual(inputMonitoring?.blockReason, "Permission was revoked after a previous host grant.")
     }
 
     private func makeDefaults() throws -> UserDefaults {

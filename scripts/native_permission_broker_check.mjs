@@ -10,6 +10,7 @@ const brokerPath = "macos/Sources/Clawix/HostActions/NativeMacPermissionBroker.s
 const patterns = [
   { name: "microphone or camera native authorization", pattern: /\bAVCaptureDevice\.(?:authorizationStatus|requestAccess)\b/ },
   { name: "speech recognition native authorization", pattern: /\bSFSpeechRecognizer\.(?:authorizationStatus|requestAuthorization)\b/ },
+  { name: "screen recording native authorization", pattern: /\bCG(?:Preflight|Request)ScreenCaptureAccess\b/ },
   { name: "accessibility trust check", pattern: /\bAXIsProcessTrusted(?:WithOptions)?\b/ },
   { name: "input monitoring access", pattern: /\bIOHID(?:Request|Check)Access\b/ },
 ];

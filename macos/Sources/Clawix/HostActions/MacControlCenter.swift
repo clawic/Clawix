@@ -57,32 +57,81 @@ struct MacControlPermissionSnapshot: Identifiable, Equatable {
     let id: String
     let title: String
     let status: String
+    let isBlocked: Bool
+    let blockReason: String?
+    let action: NativeMacPermissionSimulationAgent.Action
+    let settingsURLString: String?
+    let receiptId: String
+    let realValidation: String
 
     static var current: [MacControlPermissionSnapshot] {
-        [
-            snapshot(.accessibility, title: "Accessibility"),
-            snapshot(.automationAppleEvents, title: "Automation"),
-            snapshot(.microphone, title: "Microphone"),
-            snapshot(.speechRecognition, title: "Speech recognition"),
-            snapshot(.camera, title: "Camera"),
-            snapshot(.inputMonitoring, title: "Input monitoring"),
-            snapshot(.contacts, title: "Contacts"),
-            snapshot(.calendar, title: "Calendar"),
-            snapshot(.reminders, title: "Reminders"),
-        ]
+        snapshots { NativeMacPermissionBroker.status(for: $0) }
     }
 
-    private static func snapshot(_ permission: NativeMacPermissionBroker.PermissionID, title: String) -> MacControlPermissionSnapshot {
-        MacControlPermissionSnapshot(id: permission.rawValue, title: title, status: statusLabel(NativeMacPermissionBroker.status(for: permission)))
-    }
-
-    private static func statusLabel(_ status: NativeMacPermissionBroker.Status) -> String {
-        switch status {
-        case .granted:       return "Granted"
-        case .denied:        return "Denied"
-        case .notDetermined: return "Not requested"
+    static func simulated(
+        statuses: [NativeMacPermissionBroker.PermissionID: NativeMacPermissionBroker.Status],
+        previousReceipts: [NativeMacPermissionBroker.PermissionID: NativeMacPermissionSimulationAgent.HostReceipt] = [:],
+        hostId: String = "simulated-host",
+        bundleId: String = "com.example.clawix",
+        now: Date = Date()
+    ) -> [MacControlPermissionSnapshot] {
+        permissionRows.map { row in
+            let evaluation = NativeMacPermissionSimulationAgent.evaluate(
+                permission: row.permission,
+                currentStatus: statuses[row.permission] ?? .notDetermined,
+                previousReceipt: previousReceipts[row.permission],
+                hostId: hostId,
+                bundleId: bundleId,
+                now: now
+            )
+            return snapshot(row, evaluation: evaluation)
         }
     }
+
+    private static func snapshots(
+        statusProvider: (NativeMacPermissionBroker.PermissionID) -> NativeMacPermissionBroker.Status
+    ) -> [MacControlPermissionSnapshot] {
+        permissionRows.map { row in
+            let evaluation = NativeMacPermissionSimulationAgent.evaluate(
+                permission: row.permission,
+                currentStatus: statusProvider(row.permission),
+                hostId: ProcessInfo.processInfo.hostName,
+                bundleId: Bundle.main.bundleIdentifier ?? "com.example.clawix"
+            )
+            return snapshot(row, evaluation: evaluation)
+        }
+    }
+
+    private static let permissionRows: [(permission: NativeMacPermissionBroker.PermissionID, title: String)] = [
+        (.accessibility, "Accessibility"),
+        (.automationAppleEvents, "Automation"),
+        (.microphone, "Microphone"),
+        (.speechRecognition, "Speech recognition"),
+        (.camera, "Camera"),
+        (.screenRecording, "Screen recording"),
+        (.inputMonitoring, "Input monitoring"),
+        (.contacts, "Contacts"),
+        (.calendar, "Calendar"),
+        (.reminders, "Reminders"),
+    ]
+
+    private static func snapshot(
+        _ row: (permission: NativeMacPermissionBroker.PermissionID, title: String),
+        evaluation: NativeMacPermissionSimulationAgent.Evaluation
+    ) -> MacControlPermissionSnapshot {
+        MacControlPermissionSnapshot(
+            id: row.permission.rawValue,
+            title: row.title,
+            status: evaluation.status.displayLabel,
+            isBlocked: evaluation.block.isBlocked,
+            blockReason: evaluation.block.reason,
+            action: evaluation.block.action,
+            settingsURLString: evaluation.block.settingsURLString,
+            receiptId: evaluation.receipt.id,
+            realValidation: evaluation.receipt.realValidation
+        )
+    }
+
 }
 
 struct MacControlTimelineEntry: Identifiable, Equatable, Codable {
@@ -162,6 +211,8 @@ struct MacControlCenterPersistence {
         do {
             try FileManager.default.createDirectory(at: timelineURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             var data = try JSONEncoder().encode(entry)
+            let redacted = ClawixDiagnosticRedactor.redact(String(decoding: data, as: UTF8.self))
+            data = Data(redacted.utf8)
             data.append(0x0A)
             if FileManager.default.fileExists(atPath: timelineURL.path),
                let handle = try? FileHandle(forWritingTo: timelineURL) {

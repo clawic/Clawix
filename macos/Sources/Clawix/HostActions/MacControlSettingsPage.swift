@@ -209,11 +209,15 @@ struct MacControlSettingsPage: View {
                 let permissions = MacControlPermissionSnapshot.current
                 ForEach(Array(permissions.enumerated()), id: \.element.id) { index, permission in
                     SettingsRow {
-                        RowLabel(title: LocalizedStringKey(permission.title), detail: nil)
+                        RowLabel(
+                            title: LocalizedStringKey(permission.title),
+                            detail: permission.blockReason.map { LocalizedStringKey($0) }
+                        )
                     } trailing: {
-                        Text(permission.status)
-                            .font(BodyFont.system(size: 12, wght: 600))
-                            .foregroundColor(Palette.textSecondary)
+                        MacControlPermissionStatusView(
+                            permission: permission,
+                            openSettings: { openSettings(for: permission) }
+                        )
                     }
                     if index < permissions.count - 1 {
                         CardDivider()
@@ -272,6 +276,14 @@ struct MacControlSettingsPage: View {
             windowHeight: windowHeight,
             shortcutName: shortcutName
         )
+    }
+
+    private func openSettings(for permission: MacControlPermissionSnapshot) {
+        guard let permissionID = NativeMacPermissionBroker.PermissionID(rawValue: permission.id),
+              permission.settingsURLString != nil else {
+            return
+        }
+        NativeMacPermissionBroker.openSettings(for: permissionID)
     }
 
     private func rollbackText(_ rollback: NativeMacActionWireRollbackPlan) -> String {
@@ -372,6 +384,29 @@ private struct MacControlTextRow: View {
             MacControlCompactTextField(placeholder: placeholder, text: $text)
                 .frame(width: 210)
         }
+    }
+}
+
+private struct MacControlPermissionStatusView: View {
+    let permission: MacControlPermissionSnapshot
+    let openSettings: () -> Void
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(verbatim: permission.status)
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(permission.isBlocked ? Palette.textPrimary : Palette.textSecondary)
+            Text(verbatim: permission.receiptId)
+                .font(BodyFont.system(size: 10.5))
+                .foregroundColor(Palette.textTertiary)
+                .lineLimit(1)
+            if permission.isBlocked, permission.settingsURLString != nil {
+                Button("Open Settings", action: openSettings)
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+            }
+        }
+        .frame(maxWidth: 260, alignment: .trailing)
     }
 }
 

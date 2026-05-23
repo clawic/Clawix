@@ -13,6 +13,7 @@ enum NativeMacPermissionBroker {
         case microphone = "mac.permission.microphone"
         case speechRecognition = "mac.permission.speech_recognition"
         case camera = "mac.permission.camera"
+        case screenRecording = "mac.permission.screen_recording"
         case accessibility = "mac.permission.accessibility"
         case inputMonitoring = "mac.permission.input_monitoring"
         case automationAppleEvents = "mac.permission.automation_apple_events"
@@ -21,10 +22,41 @@ enum NativeMacPermissionBroker {
         case reminders = "mac.permission.reminders"
     }
 
-    enum Status {
+    enum Status: String, CaseIterable, Codable {
         case granted
         case denied
         case notDetermined
+        case restricted
+        case revoked
+
+        var isGranted: Bool {
+            self == .granted
+        }
+
+        var displayLabel: String {
+            switch self {
+            case .granted:       return "Granted"
+            case .denied:        return "Denied"
+            case .notDetermined: return "Not requested"
+            case .restricted:    return "Restricted"
+            case .revoked:       return "Revoked"
+            }
+        }
+
+        var blockedReason: String? {
+            switch self {
+            case .granted:
+                return nil
+            case .notDetermined:
+                return "Permission has not been requested."
+            case .denied:
+                return "Permission is denied."
+            case .restricted:
+                return "Permission is restricted by system policy."
+            case .revoked:
+                return "Permission was revoked after a previous host grant."
+            }
+        }
     }
 
     nonisolated static let accessibilityRequestedKey = "dictation.accessibility.hasRequested"
@@ -37,6 +69,8 @@ enum NativeMacPermissionBroker {
             return speechRecognitionStatus()
         case .camera:
             return cameraStatus()
+        case .screenRecording:
+            return screenRecordingStatus()
         case .accessibility:
             return accessibilityStatus()
         case .inputMonitoring:
@@ -60,6 +94,8 @@ enum NativeMacPermissionBroker {
             return await requestSpeechRecognition()
         case .camera:
             return await requestCamera()
+        case .screenRecording:
+            return requestScreenRecording()
         case .accessibility:
             return requestAccessibility()
         case .inputMonitoring:
@@ -76,25 +112,31 @@ enum NativeMacPermissionBroker {
     }
 
     static func openSettings(for permission: PermissionID) {
+        open(settingsURLString(for: permission))
+    }
+
+    static func settingsURLString(for permission: PermissionID) -> String {
         switch permission {
         case .microphone:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
         case .speechRecognition:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
         case .camera:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera"
+        case .screenRecording:
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
         case .accessibility:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
         case .inputMonitoring:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
         case .automationAppleEvents:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
         case .contacts:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts"
         case .calendar:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
         case .reminders:
-            open("x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders")
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders"
         }
     }
 
@@ -106,8 +148,10 @@ enum NativeMacPermissionBroker {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
             return .granted
-        case .denied, .restricted:
+        case .denied:
             return .denied
+        case .restricted:
+            return .restricted
         case .notDetermined:
             return .notDetermined
         @unknown default:
@@ -127,8 +171,10 @@ enum NativeMacPermissionBroker {
         switch SFSpeechRecognizer.authorizationStatus() {
         case .authorized:
             return .granted
-        case .denied, .restricted:
+        case .denied:
             return .denied
+        case .restricted:
+            return .restricted
         case .notDetermined:
             return .notDetermined
         @unknown default:
@@ -148,8 +194,10 @@ enum NativeMacPermissionBroker {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             return .granted
-        case .denied, .restricted:
+        case .denied:
             return .denied
+        case .restricted:
+            return .restricted
         case .notDetermined:
             return .notDetermined
         @unknown default:
@@ -163,6 +211,15 @@ enum NativeMacPermissionBroker {
                 continuation.resume(returning: granted)
             }
         }
+    }
+
+    private static func screenRecordingStatus() -> Status {
+        CGPreflightScreenCaptureAccess() ? .granted : .notDetermined
+    }
+
+    @discardableResult
+    static func requestScreenRecording() -> Bool {
+        CGRequestScreenCaptureAccess()
     }
 
     private static func accessibilityStatus() -> Status {
@@ -200,8 +257,10 @@ enum NativeMacPermissionBroker {
         switch CNContactStore.authorizationStatus(for: .contacts) {
         case .authorized:
             return .granted
-        case .denied, .restricted:
+        case .denied:
             return .denied
+        case .restricted:
+            return .restricted
         case .notDetermined:
             return .notDetermined
         @unknown default:
@@ -221,8 +280,10 @@ enum NativeMacPermissionBroker {
         switch status {
         case .authorized, .fullAccess, .writeOnly:
             return .granted
-        case .denied, .restricted:
+        case .denied:
             return .denied
+        case .restricted:
+            return .restricted
         case .notDetermined:
             return .notDetermined
         @unknown default:
