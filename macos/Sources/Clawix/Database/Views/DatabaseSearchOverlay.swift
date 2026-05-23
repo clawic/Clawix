@@ -31,19 +31,16 @@ struct DatabaseSearchOverlay: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
+                IconImage("magnifyingglass", size: 14)
                     .foregroundColor(Palette.textSecondary)
                 TextField("Search across collections…", text: $query)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 14))
+                    .foregroundColor(Palette.textPrimary)
                     .onChange(of: query) { _ in scheduleSearch() }
-                Button {
+                IconCircleButton(symbol: "xmark", size: 22, symbolSize: 11) {
                     isPresented = false
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(Palette.textSecondary)
                 }
-                .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
             }
             .padding(14)
@@ -65,6 +62,7 @@ struct DatabaseSearchOverlay: View {
                     .padding(.vertical, 4)
                 }
                 .frame(maxHeight: 380)
+                .thinScrollers()
             }
         }
         .frame(width: 560)
@@ -105,7 +103,7 @@ struct DatabaseSearchOverlay: View {
     private func actionRow(label: String, systemIcon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: systemIcon)
+                IconImage(systemIcon, size: 14)
                     .frame(width: 18)
                     .foregroundColor(Palette.textSecondary)
                 Text(label)
@@ -126,8 +124,8 @@ struct DatabaseSearchOverlay: View {
             isPresented = false
         } label: {
             HStack(alignment: .top, spacing: 10) {
-                Text(result.collectionLabel.uppercased())
-                    .font(BodyFont.system(size: 9.5, wght: 700))
+                Text(result.collectionLabel)
+                    .font(BodyFont.system(size: 11, wght: 600))
                     .foregroundColor(Palette.textTertiary)
                     .frame(width: 90, alignment: .leading)
                     .padding(.top, 1)

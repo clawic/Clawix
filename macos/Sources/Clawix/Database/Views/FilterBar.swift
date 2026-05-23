@@ -11,17 +11,17 @@ struct FilterBar: View {
     var body: some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
+                IconImage("magnifyingglass", size: 11)
                     .foregroundColor(Palette.textSecondary)
-                    .font(.system(size: 11))
                 TextField("Search", text: $state.search)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 12))
+                    .foregroundColor(Palette.textPrimary)
                     .frame(maxWidth: 220)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.white.opacity(0.04))
+            .background(Color.white.opacity(0.06))
             .clipShape(Capsule())
 
             ForEach(state.chips) { chip in
@@ -40,15 +40,14 @@ struct FilterBar: View {
                 addingChip = true
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 10))
+                    IconImage("plus", size: 10)
                     Text("Filter")
                         .font(BodyFont.system(size: 11.5, wght: 500))
                 }
                 .foregroundColor(Palette.textSecondary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color.white.opacity(0.03))
+                .background(Color.white.opacity(0.06))
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -65,8 +64,7 @@ struct FilterBar: View {
 
             if let sort = state.sort {
                 HStack(spacing: 4) {
-                    Image(systemName: sort.descending ? "arrow.down" : "arrow.up")
-                        .font(.system(size: 10))
+                    IconImage(sort.descending ? "arrow.down" : "arrow.up", size: 10)
                     Text(sort.field)
                         .font(BodyFont.system(size: 11.5))
                 }
@@ -98,15 +96,14 @@ private struct ChipView: View {
             Button {
                 onChange(nil)
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
+                IconImage("xmark", size: 9)
                     .foregroundColor(Palette.textSecondary)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color.accentColor.opacity(0.18))
+        .background(Palette.pastelBlue.opacity(0.16))
         .clipShape(Capsule())
     }
 
