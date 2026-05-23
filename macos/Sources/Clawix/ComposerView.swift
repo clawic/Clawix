@@ -43,6 +43,7 @@ struct ComposerView: View {
     @State private var showStatus = false
     @State private var showFiles = false
     @State private var showWorktrees = false
+    @State private var showSlashHelp = false
 
     private let cornerRadius: CGFloat = 22
     private let projectOverlap: CGFloat = 32
@@ -228,6 +229,8 @@ struct ComposerView: View {
                                     appState.navigate(to: .memoryHome)
                                 } else if cmd.id == "trace" {
                                     PerfTraceController.shared.toggle()
+                                } else if cmd.id == "help" {
+                                    showSlashHelp = true
                                 }
                             },
                             onHover: { cmd in
@@ -710,6 +713,9 @@ struct ComposerView: View {
         .sheet(isPresented: $showWorktrees) {
             WorktreesPanel { showWorktrees = false }
                 .environmentObject(appState)
+        }
+        .sheet(isPresented: $showSlashHelp) {
+            SlashCommandHelpOverlay { showSlashHelp = false }
         }
         .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
         .onChange(of: composer.text) {
