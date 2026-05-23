@@ -85,7 +85,7 @@ struct ClawixApp: App {
             let mock = BridgeStore.mock()
             store.connection = mock.connection
             store.chats = mock.chats
-            store.messagesByChat = mock.messagesByChat
+            store.transcriptStore.replaceState(from: mock.transcriptStore)
             creds = Credentials(host: "127.0.0.1", port: 24080, token: "mock", hostDisplayName: "studio Mac", tailscaleHost: nil)
             if ClawixEnv.isEnabled(ClawixEnv.mockOpenFirstChat),
                let first = store.chats.first {
@@ -127,7 +127,7 @@ struct ClawixApp: App {
         CredentialStore.shared.clear()
         SnapshotCache.clear()
         store.chats = []
-        store.messagesByChat = [:]
+        store.transcriptStore.reset()
         store.openSessionId = nil
         creds = nil
     }

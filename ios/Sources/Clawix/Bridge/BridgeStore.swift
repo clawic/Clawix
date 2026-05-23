@@ -17,7 +17,6 @@ fileprivate let bridgeDbg = Logger(subsystem: "clawix.bridge.dbg", category: "st
 @Observable
 final class BridgeStore {
     static let iosHeavyTranscriptInitialPageLimit = 30
-    private static let inlineAttachmentMaxPixelSize = 512
     private static let generatedImageMaxPixelSize = 2048
 
     /// Path the bridge client is using. `lan` covers Bonjour-resolved
@@ -91,25 +90,11 @@ final class BridgeStore {
     /// talking to an old daemon that doesn't emit the frame).
     var bridgeSyncUpdatedAt: Date?
     var chats: [WireSession] = []
-    var messagesByChat: [String: [WireMessage]] = [:]
-    /// Pagination state per chat. `true` means the daemon has older
-    /// messages we haven't pulled yet; the chat detail view shows the
-    /// scroll-up sentinel and triggers `loadOlderMessages` when it
-    /// materializes. Reset on every `messagesSnapshot` (the snapshot is
-    /// the new baseline). Absent / `false` is treated as "no older
-    /// history known" — covers chats we just opened, chats served by
-    /// daemons without pagination metadata, and chats hydrated
-    /// from the on-disk snapshot cache before reconnect.
-    var hasMoreByChat: [String: Bool] = [:]
-    /// `true` while a `loadOlderMessages` round trip is in flight for
-    /// the chat. Guards against firing duplicate requests when the
-    /// scroll-up sentinel re-materializes (a single onAppear can fire
-    /// twice during fast scrolls). Cleared by `applyMessagesPage`.
-    var loadingOlderByChat: [String: Bool] = [:]
-    /// Cursor for the next `loadOlderMessages` call: id of the oldest
-    /// message currently held for the chat. Recomputed from
-    /// `messagesByChat[chatId].first` after every snapshot/page apply.
-    var oldestKnownIdByChat: [String: String] = [:]
+    /// High-churn transcript/message state. Summary surfaces must not
+    /// observe this store; chat detail is the only route that reads it.
+    @ObservationIgnored
+    let transcriptStore = BridgeTranscriptStore()
+
     var openSessionId: String?
     var fileSnapshots: [String: FileSnapshotState] = [:]
     /// Cache of generated images keyed by absolute path on the Mac.
@@ -117,18 +102,6 @@ final class BridgeStore {
     /// inline markdown renderer (`![](file:...)` / `![](<local-user-path>/*.png)`)
     /// so the same path resolved from two angles only round-trips once.
     var generatedImagesByPath: [String: GeneratedImageState] = [:]
-    #if canImport(UIKit)
-    /// Inline image previews for user messages that this device sent
-    /// during the current session. Keyed by `WireMessage.id`. The
-    /// `messageAppended` echo from the Mac merges onto the local-* id
-    /// (see `applyMessageAppended`), so the preview survives the round
-    /// trip without re-keying. Cleared when the chat is dropped from
-    /// `messagesByChat` (relaunch, manual delete) — we deliberately do
-    /// NOT persist these blobs because they would balloon the snapshot
-    /// cache and the photo lives on the Mac side anyway.
-    var attachmentImagesByMessageId: [String: [UIImage]] = [:]
-    #endif
-
     /// Per-cwd display-name overrides set by the user on this iPhone.
     /// Persisted to UserDefaults under `Clawix.ProjectLabels.v1`. The
     /// daemon doesn't model project entities yet, so a folder rename
@@ -215,18 +188,15 @@ final class BridgeStore {
         guard snapshotCacheKey != cacheKey else { return }
         snapshotCacheKey = cacheKey
         chats = []
-        messagesByChat = [:]
+        transcriptStore.reset()
         openSessionId = nil
-        hasMoreByChat = [:]
-        loadingOlderByChat = [:]
-        oldestKnownIdByChat = [:]
     }
 
     @MainActor
     func openSession(_ sessionId: String) {
         openSessionId = sessionId
         clearUnread(chatId: sessionId)
-        // Intentionally NOT seeding `messagesByChat[chatId] = []` here.
+        // Intentionally NOT seeding the transcript here.
         // We use the `nil` vs `[]` distinction to mean "snapshot not
         // delivered yet" vs "snapshot arrived and the chat is genuinely
         // empty". The detail view keys its empty-state visibility off
@@ -239,7 +209,8 @@ final class BridgeStore {
         // parses cached the measurement settles in a single frame
         // instead of streaming up under the fade-in and surfacing as
         // a visible reanchor on chat entry.
-        if let cached = messagesByChat[sessionId] {
+        let cached = transcriptStore.messages(for: sessionId)
+        if !cached.isEmpty {
             let bodies = cached
                 .filter { $0.role == .assistant && !$0.content.isEmpty }
                 .map(\.content)
@@ -300,7 +271,7 @@ final class BridgeStore {
     /// delivered. Used to gate the empty-state UI: while loading, the
     /// detail view shows nothing instead of the empty placeholder.
     func hasLoadedMessages(_ chatId: String) -> Bool {
-        messagesByChat[chatId] != nil
+        transcriptStore.hasLoadedMessages(chatId)
     }
 
     /// True when the daemon told us it is mid-bootstrap. Drives the
@@ -364,9 +335,8 @@ final class BridgeStore {
     /// Pass `attachmentCount` so the optimistic preview matches the
     /// `[image] text` format the Mac echoes back; otherwise the daemon
     /// echo would not align with the local placeholder and the bubble
-    /// would be duplicated on round-trip. Image previews go through
-    /// `attachmentImagesByMessageId` which is the actual thing the
-    /// `UserBubble` renders above the text.
+    /// would be duplicated on round-trip. Image previews are owned by
+    /// the transcript store because they are rendered with message rows.
     @MainActor
     @discardableResult
     func beginPendingTurn(
@@ -377,16 +347,13 @@ final class BridgeStore {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty || attachmentCount > 0 else { return nil }
         let preview = previewForUserBubble(text: trimmed, attachmentCount: attachmentCount)
-        let messageId = "local-\(UUID().uuidString)"
-        let optimistic = WireMessage(
-            id: messageId,
-            role: .user,
-            content: preview,
-            timestamp: Date()
-        )
-        messagesByChat[chatId, default: []].append(optimistic)
+        guard let messageId = transcriptStore.appendOptimisticUserMessage(
+            chatId: chatId,
+            text: trimmed,
+            attachmentCount: attachmentCount
+        ) else { return nil }
         if let refusal = IOSLegalSafetyPolicy.crisisRefusal(for: trimmed) {
-            appendLocalCrisisRefusal(chatId: chatId, text: refusal)
+            transcriptStore.appendLocalCrisisRefusal(chatId: chatId, text: refusal)
             if let idx = chats.firstIndex(where: { $0.id == chatId }) {
                 chats[idx].hasActiveTurn = false
                 chats[idx].lastTurnInterrupted = false
@@ -439,18 +406,6 @@ final class BridgeStore {
         return text.isEmpty ? label : "\(label) \(text)"
     }
 
-    @MainActor
-    private func appendLocalCrisisRefusal(chatId: String, text: String) {
-        let refusal = WireMessage(
-            id: "local-crisis-\(UUID().uuidString)",
-            role: .assistant,
-            content: text,
-            streamingFinished: true,
-            timestamp: Date()
-        )
-        messagesByChat[chatId, default: []].append(refusal)
-    }
-
     #if canImport(UIKit)
     /// Stash the inline image previews against the optimistic
     /// `WireMessage.id` returned by `beginPendingTurn` so the
@@ -459,8 +414,7 @@ final class BridgeStore {
     /// the daemon echo.
     @MainActor
     func attachLocalImages(messageId: String, images: [UIImage]) {
-        guard !images.isEmpty else { return }
-        attachmentImagesByMessageId[messageId] = images
+        transcriptStore.attachLocalImages(messageId: messageId, images: images)
     }
     #endif
 
@@ -541,61 +495,7 @@ final class BridgeStore {
     /// `applyMessageAppended` does on subsequent turns.
     @MainActor
     func applyMessagesSnapshot(chatId: String, messages: [WireMessage], hasMore: Bool? = nil) {
-        // Reset pagination state regardless: the snapshot is the new
-        // baseline. Done before the equality short-circuit because
-        // `hasMore` may have flipped (daemon without page metadata →
-        // paged daemon mid-session, or vice versa) without the message array
-        // changing. Treat absent metadata as "no older history known"
-        // so peers without page metadata keep eager behaviour.
-        hasMoreByChat[chatId] = hasMore ?? false
-        loadingOlderByChat[chatId] = false
-        oldestKnownIdByChat[chatId] = messages.first?.id
-        // Short-circuit when the incoming snapshot is structurally
-        // identical to what we already hold. `@Observable` would
-        // otherwise invalidate every subscriber on the reassignment
-        // even when the rendered output is the same, and the chat
-        // transcript reanchors its ScrollView during that invalidation
-        // window, surfacing as a visible jump on chat entry.
-        if let current = messagesByChat[chatId], current == messages {
-            return
-        }
-        let placeholders = (messagesByChat[chatId] ?? []).filter {
-            $0.id.hasPrefix("local-") && $0.role == .user
-        }
-        let reconciled: [WireMessage]
-        if placeholders.isEmpty {
-            reconciled = messages
-        } else {
-            var consumed: Set<String> = []
-            reconciled = messages.map { msg in
-                guard msg.role == .user,
-                      let placeholder = placeholders.first(where: {
-                          !consumed.contains($0.id) && $0.content == msg.content
-                      })
-                else { return msg }
-                consumed.insert(placeholder.id)
-                return WireMessage(
-                    id: placeholder.id,
-                    role: msg.role,
-                    content: msg.content,
-                    reasoningText: msg.reasoningText,
-                    streamingFinished: msg.streamingFinished,
-                    isError: msg.isError,
-                    timestamp: msg.timestamp,
-                    timeline: msg.timeline,
-                    workSummary: msg.workSummary,
-                    audioRef: msg.audioRef,
-                    attachments: msg.attachments
-                )
-            }
-        }
-        messagesByChat[chatId] = reconciled
-        oldestKnownIdByChat[chatId] = reconciled.first?.id
-        #if canImport(UIKit)
-        for msg in reconciled {
-            ingestInlineAttachments(messageId: msg.id, attachments: msg.attachments)
-        }
-        #endif
+        transcriptStore.applyMessagesSnapshot(chatId: chatId, messages: messages, hasMore: hasMore)
     }
 
     /// Apply a server-delivered page of older messages. Prepended to
@@ -608,21 +508,7 @@ final class BridgeStore {
     /// `editPrompt` that truncated the chat between requests.
     @MainActor
     func applyMessagesPage(chatId: String, messages: [WireMessage], hasMore: Bool) {
-        loadingOlderByChat[chatId] = false
-        hasMoreByChat[chatId] = hasMore
-        guard !messages.isEmpty else { return }
-        var current = messagesByChat[chatId] ?? []
-        let existingIds = Set(current.map(\.id))
-        let prepend = messages.filter { !existingIds.contains($0.id) }
-        guard !prepend.isEmpty else { return }
-        current.insert(contentsOf: prepend, at: 0)
-        messagesByChat[chatId] = current
-        oldestKnownIdByChat[chatId] = current.first?.id
-        #if canImport(UIKit)
-        for msg in prepend {
-            ingestInlineAttachments(messageId: msg.id, attachments: msg.attachments)
-        }
-        #endif
+        transcriptStore.applyMessagesPage(chatId: chatId, messages: messages, hasMore: hasMore)
     }
 
     /// Ask the daemon for the next page of older messages if (and only
@@ -633,10 +519,7 @@ final class BridgeStore {
     /// and must short-circuit cheaply.
     @MainActor
     func requestOlderIfNeeded(chatId: String) {
-        guard hasMoreByChat[chatId] == true else { return }
-        guard loadingOlderByChat[chatId] != true else { return }
-        guard let cursor = oldestKnownIdByChat[chatId] else { return }
-        loadingOlderByChat[chatId] = true
+        guard let cursor = transcriptStore.markLoadingOlder(chatId: chatId) else { return }
         if let client {
             client.loadOlderMessages(chatId: chatId, beforeMessageId: cursor)
         } else if let mockLoadOlderHandler {
@@ -645,80 +528,14 @@ final class BridgeStore {
             // No bridge attached and no mock handler: cancel the
             // in-flight flag so the next sentinel firing can retry
             // (e.g. once the bridge connects).
-            loadingOlderByChat[chatId] = false
+            transcriptStore.cancelLoadingOlder(chatId: chatId)
         }
     }
 
     @MainActor
     func applyMessageAppended(chatId: String, message: WireMessage) {
-        var current = messagesByChat[chatId] ?? []
-        if message.role == .user,
-           let idx = current.firstIndex(where: {
-               $0.id.hasPrefix("local-")
-                   && $0.role == .user
-                   && $0.content == message.content
-           }) {
-            let placeholderId = current[idx].id
-            current[idx] = WireMessage(
-                id: placeholderId,
-                role: message.role,
-                content: message.content,
-                reasoningText: message.reasoningText,
-                streamingFinished: message.streamingFinished,
-                isError: message.isError,
-                timestamp: message.timestamp,
-                timeline: message.timeline,
-                workSummary: message.workSummary,
-                audioRef: message.audioRef,
-                attachments: message.attachments
-            )
-            #if canImport(UIKit)
-            ingestInlineAttachments(messageId: placeholderId, attachments: message.attachments)
-            #endif
-        } else {
-            current.append(message)
-            #if canImport(UIKit)
-            ingestInlineAttachments(messageId: message.id, attachments: message.attachments)
-            #endif
-        }
-        messagesByChat[chatId] = current
+        transcriptStore.applyMessageAppended(chatId: chatId, message: message)
     }
-
-    #if canImport(UIKit)
-    /// Decode the inline base64 image bytes attached to a hydrated
-    /// message and push them into `attachmentImagesByMessageId` so the
-    /// `UserBubble` renders the same `[image]` thumbnails the user
-    /// originally saw. No-op when the array is empty (typed messages,
-    /// assistant turns, or peers that never sent attachments). Skips
-    /// silently if the bytes are unreadable so a malformed fixture
-    /// doesn't bring down the chat.
-    private func ingestInlineAttachments(messageId: String, attachments: [WireAttachment]) {
-        guard !attachments.isEmpty else { return }
-        // Don't overwrite a locally-cached preview from this device's
-        // own send: that copy has the original `UIImage` and round-tripping
-        // through base64 can drop fidelity.
-        if attachmentImagesByMessageId[messageId] != nil { return }
-        var images: [UIImage] = []
-        for att in attachments where att.kind == .image {
-            // `.ignoreUnknownCharacters` so newlines / whitespace inside
-            // the base64 (e.g. when the bytes were inlined as a Swift
-            // multiline string for the standalone `CLAWIX_MOCK=1` flow)
-            // don't reject the otherwise-valid payload.
-            guard let data = Data(
-                    base64Encoded: att.dataBase64,
-                    options: .ignoreUnknownCharacters
-                  ),
-                  let image = Self.downsampledImage(
-                    from: data,
-                    maxPixelSize: Self.inlineAttachmentMaxPixelSize
-                  ) else { continue }
-            images.append(image)
-        }
-        if !images.isEmpty {
-            attachmentImagesByMessageId[messageId] = images
-        }
-    }
-    #endif
 
     /// Rename a project's display name on this device. The mapping is
     /// keyed by `cwd` because that's the project's stable identity in
@@ -787,28 +604,13 @@ final class BridgeStore {
             chats[idx].hasActiveTurn = false
             chats[idx].lastTurnInterrupted = true
         }
-        if var current = messagesByChat[chatId],
-           let lastIdx = current.indices.last,
-           current[lastIdx].role == .assistant,
-           !current[lastIdx].streamingFinished {
-            let msg = current[lastIdx]
-            let isEmpty = msg.content.isEmpty
-                && msg.reasoningText.isEmpty
-                && msg.timeline.isEmpty
-                && (msg.workSummary?.items.isEmpty ?? true)
-            if isEmpty {
-                current.remove(at: lastIdx)
-            } else {
-                current[lastIdx].streamingFinished = true
-            }
-            messagesByChat[chatId] = current
-        }
+        transcriptStore.finishOrDropTrailingAssistant(chatId: chatId)
         client?.interruptTurn(chatId: chatId)
     }
 
     /// Mints a fresh chat id for the FAB-driven "new chat" flow. The
     /// id is queued as pending so the next `sendMessage(chatId:text:)`
-    /// emits a `newChat` frame instead, and `messagesByChat` is seeded
+    /// emits a `newChat` frame instead, and the transcript is seeded
     /// to `[]` so the detail view treats the chat as "loaded, empty"
     /// rather than gating on a snapshot that will never arrive (the
     /// chat doesn't exist on the Mac yet).
@@ -823,7 +625,7 @@ final class BridgeStore {
     func startNewChat(cwd: String? = nil) -> String {
         let id = UUID().uuidString
         pendingNewChats.insert(id)
-        messagesByChat[id] = []
+        transcriptStore.seedLoadedEmpty(chatId: id)
         if let cwd, !cwd.isEmpty {
             pendingNewChatCwds[id] = cwd
         }
@@ -835,7 +637,7 @@ final class BridgeStore {
     /// fresh `newChat` flow goes:
     ///
     ///   1. iOS calls `beginPendingTurn` and the user message lands in
-    ///      `messagesByChat[id]` with a `local-…` id.
+    ///      the transcript with a `local-…` id.
     ///   2. iOS dispatches `sendNewSession` to the Mac.
     ///   3. The Mac processes it and republishes; the bus emits a
     ///      `chatsSnapshot` containing the new chat.
@@ -854,17 +656,16 @@ final class BridgeStore {
         let incomingIds = Set(incoming.map(\.id))
         let inflightCandidates = chats.filter { existing in
             guard !incomingIds.contains(existing.id) else { return false }
-            return messagesByChat[existing.id]?
-                .contains(where: { $0.id.hasPrefix("local-") }) ?? false
+            return transcriptStore.hasLocalOptimisticUserMessage(chatId: existing.id)
         }
         let priorIds = Set(chats.map(\.id))
         let droppedIds = priorIds.subtracting(incomingIds).subtracting(inflightCandidates.map(\.id))
         bridgeDbg.notice("applyChatsSnapshot in=\(incoming.count, privacy: .public) prior=\(self.chats.count, privacy: .public) keptInflight=\(inflightCandidates.count, privacy: .public) dropped=\(droppedIds.count, privacy: .public)")
         if !droppedIds.isEmpty {
             for did in droppedIds.sorted().prefix(8) {
-                let msgs = messagesByChat[did]
-                let firstId = msgs?.first?.id ?? "<no msgs>"
-                bridgeDbg.notice("  drop id=\(did, privacy: .public) firstMsgId=\(firstId, privacy: .public) msgCount=\(msgs?.count ?? 0, privacy: .public)")
+                let msgs = transcriptStore.messages(for: did)
+                let firstId = msgs.first?.id ?? "<no msgs>"
+                bridgeDbg.notice("  drop id=\(did, privacy: .public) firstMsgId=\(firstId, privacy: .public) msgCount=\(msgs.count, privacy: .public)")
             }
         }
         for chat in incoming {
@@ -875,6 +676,7 @@ final class BridgeStore {
         // (deleted on the Mac). The set otherwise grows monotonically
         // across a relaunch.
         let known = incomingIds.union(inflightCandidates.map(\.id))
+        transcriptStore.prune(keeping: known)
         let stale = unreadChatIds.subtracting(known)
         if !stale.isEmpty {
             unreadChatIds.subtract(stale)
@@ -1101,7 +903,7 @@ final class BridgeStore {
     #endif
 
     func messages(for chatId: String) -> [WireMessage] {
-        messagesByChat[chatId] ?? []
+        transcriptStore.messages(for: chatId)
     }
 
     func chat(_ chatId: String) -> WireSession? {
@@ -1128,10 +930,10 @@ final class BridgeStore {
     /// shortly overwrite this with the canonical truth.
     @MainActor
     func loadCachedSnapshot() {
-        guard chats.isEmpty, messagesByChat.isEmpty else { return }
+        guard chats.isEmpty, transcriptStore.isEmpty else { return }
         guard let payload = SnapshotCache.load(cacheKey: snapshotCacheKey) else { return }
         chats = payload.chats
-        messagesByChat = payload.messagesBySession
+        transcriptStore.replaceAll(payload.messagesBySession)
     }
 
     /// Schedule a persist of the current chats + messages snapshot
@@ -1146,7 +948,7 @@ final class BridgeStore {
             try? await Task.sleep(nanoseconds: 500_000_000)
             guard !Task.isCancelled, let self else { return }
             let chatsSnap = self.chats
-            let messagesSnap = self.messagesByChat
+            let messagesSnap = self.transcriptStore.messagesByChat
             let cacheKey = self.snapshotCacheKey
             Task.detached(priority: .background) {
                 SnapshotCache.save(chats: chatsSnap, messages: messagesSnap, cacheKey: cacheKey)
@@ -1175,15 +977,15 @@ final class BridgeStore {
                 .suffix(Self.iosHeavyTranscriptInitialPageLimit)
         )
         seeded[MockConversationFixtures.heavyMarkdownChatId] = heavyTail
-        s.messagesByChat = seeded
-        s.hasMoreByChat[MockConversationFixtures.longChatId] = MockConversationFixtures.longMessages.count > longTail.count
-        s.oldestKnownIdByChat[MockConversationFixtures.longChatId] = longTail.first?.id
-        s.hasMoreByChat[MockConversationFixtures.heavyMarkdownChatId] = MockConversationFixtures.heavyMarkdownMessages.count > heavyTail.count
-        s.oldestKnownIdByChat[MockConversationFixtures.heavyMarkdownChatId] = heavyTail.first?.id
+        s.transcriptStore.replaceAll(seeded)
+        s.transcriptStore.hasMoreByChat[MockConversationFixtures.longChatId] = MockConversationFixtures.longMessages.count > longTail.count
+        s.transcriptStore.oldestKnownIdByChat[MockConversationFixtures.longChatId] = longTail.first?.id
+        s.transcriptStore.hasMoreByChat[MockConversationFixtures.heavyMarkdownChatId] = MockConversationFixtures.heavyMarkdownMessages.count > heavyTail.count
+        s.transcriptStore.oldestKnownIdByChat[MockConversationFixtures.heavyMarkdownChatId] = heavyTail.first?.id
         // Stand in for the bridge's `loadOlderMessages` round trip:
         // serves the next slice of `MockConversationFixtures.longMessages` after a
         // 200ms delay so the spinner is observable, then flips
-        // `loadingOlderByChat` back off via `applyMessagesPage`.
+        // the pagination loading state back off via `applyMessagesPage`.
         s.mockLoadOlderHandler = { @MainActor [weak s] chatId, beforeId in
             guard let s else { return }
             let transcript: [WireMessage]
@@ -1207,15 +1009,6 @@ final class BridgeStore {
                 s?.applyMessagesPage(chatId: chatId, messages: slice, hasMore: hasMore)
             }
         }
-        #if canImport(UIKit)
-        // Mirror the live-bridge path: any seeded message carrying inline
-        // attachment bytes gets its `[UIImage]` cached so the
-        // `UserBubble` thumbnail strip renders without waiting for an
-        // upload round-trip (there is no daemon in this mock build).
-        for msg in MockConversationFixtures.messages where !msg.attachments.isEmpty {
-            s.ingestInlineAttachments(messageId: msg.id, attachments: msg.attachments)
-        }
-        #endif
         return s
     }
 }

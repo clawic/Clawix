@@ -58,7 +58,7 @@ struct ChatDetailView: View {
     // so streamed messages don't trigger a re-fade.
     @State private var transcriptVisible: Bool = false
     // Captured on first render: true for a newly-created conversation
-    // because the FAB seeds `messagesByChat[id] = []` before this view
+    // because the FAB seeds an empty transcript before this view
     // mounts, so it is already loaded and empty. Existing chats start
     // with `hasLoaded == false`, keeping autofocus limited to fresh
     // conversations.
@@ -108,7 +108,8 @@ struct ChatDetailView: View {
     #endif
 
     private var chat: WireSession? { store.chat(chatId) }
-    private var messages: [WireMessage] { store.messages(for: chatId) }
+    private var transcriptStore: BridgeTranscriptStore { store.transcriptStore }
+    private var messages: [WireMessage] { transcriptStore.messages(for: chatId) }
     /// Cached `DerivedProject.from(chats:)` result. The previous code
     /// recomputed it twice per body (once for `derivedProject`, once
     /// for the project picker sheet) which, with `@Observable`,
@@ -124,11 +125,11 @@ struct ChatDetailView: View {
         return cachedAllProjects.first(where: { $0.cwd == cwd })
     }
     private var allProjects: [DerivedProject] { cachedAllProjects }
-    private var hasLoaded: Bool { store.hasLoadedMessages(chatId) }
+    private var hasLoaded: Bool { transcriptStore.hasLoadedMessages(chatId) }
     /// Scroll-up trigger zone in points. While the user is within this
     /// many points of the top of the transcript AND the daemon has
     /// older history available, the store fires `loadOlderMessages`.
-    /// Re-entrancy is gated by `loadingOlderByChat`, so the geometry
+    /// Re-entrancy is gated by the transcript pagination state, so the geometry
     /// callback can fire freely without burning round trips.
     static let loadOlderThreshold: CGFloat = 200
 
@@ -151,7 +152,7 @@ struct ChatDetailView: View {
 
     private var transcriptRows: [VirtualTranscriptRow] {
         var rows: [VirtualTranscriptRow] = []
-        if store.loadingOlderByChat[chatId] == true {
+        if transcriptStore.isLoadingOlder(chatId) {
             rows.append(.loadingOlder())
         }
         rows.append(.spacer(id: "__top_spacer__", height: 8))
@@ -400,7 +401,7 @@ struct ChatDetailView: View {
             if let msg = messageLookup[id] {
                 MessageView(
                     message: msg,
-                    attachmentImages: store.attachmentImagesByMessageId[msg.id] ?? [],
+                    attachmentImages: transcriptStore.attachmentImagesByMessageId[msg.id] ?? [],
                     isReasoningExpanded: expandedReasoning.contains(msg.id),
                     toggleReasoning: { toggleReasoning(messageId: msg.id) },
                     onOpenFile: onOpenFile,

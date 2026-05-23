@@ -12,6 +12,14 @@ import UIKit
 /// is closed.
 fileprivate let clientDbg = Logger(subsystem: "clawix.bridge.dbg", category: "client")
 
+struct PendingStreamUpdate {
+    let sessionId: String
+    let messageId: String
+    let content: String
+    let reasoning: String
+    let finished: Bool
+}
+
 /// Bridge client for the iOS companion. Speaks WebSocket to the Mac
 /// over `NWConnection + NWProtocolWebSocket`, the same primitive the
 /// Mac side uses, which is what unlocks:
@@ -68,12 +76,9 @@ final class BridgeClient: NSObject {
 
     /// Coalesce window for `messageStreaming` chunks. A turn typically
     /// emits a few chunks per second; without coalescing each one
-    /// reassigns `store.messagesByChat[sessionId]` and causes every view
-    /// observing the array to redraw, including the markdown parser
-    /// in `AssistantMarkdownView`. Batching at 80ms keeps the visible
-    /// streaming smooth (~12fps text growth, well under typing speed)
-    /// while collapsing redraws by an order of magnitude when chunks
-    /// arrive faster than the eye can read.
+    /// reassigns the active transcript and causes the detail route to
+    /// redraw. Batching keeps the visible streaming smooth while
+    /// avoiding per-token publication.
     private static let streamCoalesceNanos: UInt64 = 10_000_000
 
     /// Pending streaming updates keyed by `messageId`. Each new chunk
@@ -82,14 +87,6 @@ final class BridgeClient: NSObject {
     /// sees the final text without the 80ms delay.
     private var pendingStreamUpdates: [String: PendingStreamUpdate] = [:]
     private var streamFlushScheduled: Bool = false
-
-    private struct PendingStreamUpdate {
-        let sessionId: String
-        let messageId: String
-        let content: String
-        let reasoning: String
-        let finished: Bool
-    }
 
     init(store: BridgeStore) {
         self.store = store
@@ -155,7 +152,7 @@ final class BridgeClient: NSObject {
         send(
             BridgeFrame(.openSession(
                 sessionId: sessionId,
-                limit: Self.initialOpenLimit(for: store.messagesByChat[sessionId])
+                limit: Self.initialOpenLimit(for: store.transcriptStore.messages(for: sessionId))
             )),
             on: winner
         )
@@ -681,10 +678,10 @@ final class BridgeClient: NSObject {
     }
 
     /// Apply all pending streaming updates in a single pass. Each
-    /// `messageId` mutates `store.messagesByChat[sessionId]` once,
-    /// regardless of how many chunks arrived during the coalesce
-    /// window. The caller must clear `streamFlushScheduled` before
-    /// returning so a subsequent chunk re-arms the timer.
+    /// `messageId` mutates the transcript store once, regardless of how
+    /// many chunks arrived during the coalesce window. The caller must
+    /// clear `streamFlushScheduled` before returning so a subsequent
+    /// chunk re-arms the timer.
     private func flushPendingStreamUpdates() {
         streamFlushScheduled = false
         guard !pendingStreamUpdates.isEmpty else { return }
@@ -694,15 +691,7 @@ final class BridgeClient: NSObject {
         // pass against an immutable copy avoids surprises).
         let updates = pendingStreamUpdates
         pendingStreamUpdates.removeAll(keepingCapacity: true)
-        for (_, u) in updates {
-            var current = store.messagesByChat[u.sessionId] ?? []
-            if let idx = current.firstIndex(where: { $0.id == u.messageId }) {
-                current[idx].content = u.content
-                current[idx].reasoningText = u.reasoning
-                current[idx].streamingFinished = u.finished
-                store.messagesByChat[u.sessionId] = current
-            }
-        }
+        store.transcriptStore.applyStreamingBatch(Array(updates.values))
     }
 
     private func promote(_ candidate: Candidate, hostDisplayName: String?) {
