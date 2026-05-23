@@ -12,7 +12,7 @@
 #
 # BUILD_NUMBER is a manually-managed monotonic counter, NOT git's
 # `rev-list --count HEAD` like macOS uses. The release orchestrator
-# (scripts-dev/ios-release.sh, lives outside the public repo) bumps
+# (release orchestration lives outside the public repo) bumps
 # BUILD_NUMBER by +1 on every upload and commits the new value. iOS
 # starts at 1 and grows independently of the macOS build series so the
 # numbers stay tidy in App Store Connect.

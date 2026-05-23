@@ -2,9 +2,9 @@
 # Dev loop for the Clawix iOS companion. Idempotent; safe to re-run.
 #
 # What it does:
-#   1. Walks up from this script looking for `.signing.env` and sources
-#      it. Pulls BUNDLE_ID_IOS, SIGN_IDENTITY_IOS, DEVELOPMENT_TEAM_IOS
-#      out of the workspace-private file. Never echoes them.
+#   1. Sources CLAWIX_SIGNING_ENV_FILE when set. Pulls BUNDLE_ID_IOS,
+#      SIGN_IDENTITY_IOS, DEVELOPMENT_TEAM_IOS out of the local file.
+#      Never echoes them.
 #   2. Runs the squircle lint over Sources/.
 #   3. Regenerates Clawix.xcodeproj with xcodegen so the on-disk
 #      project always matches project.yml.
@@ -20,16 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
 
-# 0) Source .signing.env walking up.
-env_file=""
-dir="$PROJECT_DIR"
-while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/.signing.env" ]]; then
-        env_file="$dir/.signing.env"
-        break
-    fi
-    dir="$(dirname "$dir")"
-done
+env_file="${CLAWIX_SIGNING_ENV_FILE:-}"
 if [[ -n "$env_file" ]]; then
     set -a
     # shellcheck disable=SC1090
@@ -40,10 +31,10 @@ fi
 BUNDLE_ID_IOS="${BUNDLE_ID_IOS:-com.example.clawix}"
 SIGN_IDENTITY_IOS="${SIGN_IDENTITY_IOS:-}"
 DEVELOPMENT_TEAM_IOS="${DEVELOPMENT_TEAM_IOS:-}"
-PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
-if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+if [[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]]; then
     # shellcheck disable=SC1090
-    source "$PRIVATE_SIGNING_GUARD"
+    source "$SIGNING_POLICY_SCRIPT"
     clawix_require_team_var DEVELOPMENT_TEAM_IOS "iOS development team"
     if [[ -n "$SIGN_IDENTITY_IOS" ]]; then
         clawix_require_identity_team SIGN_IDENTITY_IOS "iOS development signing identity"

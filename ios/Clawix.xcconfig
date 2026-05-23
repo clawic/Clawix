@@ -1,6 +1,6 @@
 // Build configuration for the Clawix iOS companion. The bundle id and
 // development team are NEVER committed: they are injected at build time
-// from the workspace-private `.signing.env`. The script
+// from the local signing environment. The script
 // `ios/scripts/dev.sh` reads that file and forwards the values via
 // `xcodebuild` overrides, so the values fall through to these
 // fallbacks only when someone runs `xcodebuild` by hand without the

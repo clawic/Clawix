@@ -3,15 +3,15 @@
 # resulting archive lives at .build/Release/Clawix.xcarchive and is the
 # input that downstream tooling consumes to produce a signed binary.
 #
-# Inputs (read from .signing.env walking up from this script):
+# Inputs (read from CLAWIX_SIGNING_ENV_FILE when set, or the environment):
 #   BUNDLE_ID_IOS                 reverse-DNS bundle id of the .app
 #   DEVELOPMENT_TEAM_IOS          Apple Team ID that signs the archive
 #   SIGN_IDENTITY_IOS_DISTRIBUTION codesign identity used for the
 #                                 release archive (must be present in the
 #                                 keychain)
 #
-# Lives in the public repo. Reads private values from .signing.env at
-# build time. Hardcoding any of these in this file is a leak.
+# Lives in the public repo. Reads local signing values at build time.
+# Hardcoding any of these in this file is a leak.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,16 +28,7 @@ if [[ "${CLAWIX_RELEASE_APPROVED_FOR:-}" != "ios-archive" ]]; then
     exit 1
 fi
 
-# 0) Source .signing.env walking up.
-env_file=""
-dir="$PROJECT_DIR"
-while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/.signing.env" ]]; then
-        env_file="$dir/.signing.env"
-        break
-    fi
-    dir="$(dirname "$dir")"
-done
+env_file="${CLAWIX_SIGNING_ENV_FILE:-}"
 if [[ -n "$env_file" ]]; then
     set -a
     # shellcheck disable=SC1090
@@ -48,17 +39,17 @@ fi
 require() {
     local name="$1"
     if [[ -z "${!name:-}" ]]; then
-        echo "ERROR: $name not set (.signing.env missing or incomplete)" >&2
+        echo "ERROR: $name not set (local signing environment missing or incomplete)" >&2
         exit 1
     fi
 }
 require BUNDLE_ID_IOS
 require DEVELOPMENT_TEAM_IOS
 require SIGN_IDENTITY_IOS_DISTRIBUTION
-PRIVATE_SIGNING_GUARD="$PROJECT_DIR/../../scripts-dev/signing-guard.sh"
-if [[ -f "$PRIVATE_SIGNING_GUARD" ]]; then
+SIGNING_POLICY_SCRIPT="${CLAWIX_SIGNING_POLICY_SCRIPT:-}"
+if [[ -n "$SIGNING_POLICY_SCRIPT" && -f "$SIGNING_POLICY_SCRIPT" ]]; then
     # shellcheck disable=SC1090
-    source "$PRIVATE_SIGNING_GUARD"
+    source "$SIGNING_POLICY_SCRIPT"
     clawix_require_team_var DEVELOPMENT_TEAM_IOS "iOS release development team"
     clawix_require_identity_team SIGN_IDENTITY_IOS_DISTRIBUTION "iOS distribution signing identity"
 fi
@@ -90,9 +81,9 @@ echo "==> Archiving Clawix-iOS at $ARCHIVE_PATH"
 # Apple Distribution for Release/Archive. Passing CODE_SIGN_IDENTITY as
 # an override conflicts with that and Xcode aborts. The team id is
 # enough to disambiguate which Apple ID to sign on behalf of.
-# SIGN_IDENTITY_IOS_DISTRIBUTION is read from .signing.env so the human
+# SIGN_IDENTITY_IOS_DISTRIBUTION is read from the local signing environment so the human
 # can verify the right cert is installed; xcodebuild does not need it.
-: "${SIGN_IDENTITY_IOS_DISTRIBUTION:?required from .signing.env}"
+: "${SIGN_IDENTITY_IOS_DISTRIBUTION:?required from local signing environment}"
 team_setting="DEVELOPMENT_""TEAM=$DEVELOPMENT_TEAM_IOS"
 xcodebuild \
     -project Clawix.xcodeproj \
