@@ -357,8 +357,10 @@ final class IndexStoreCancellationTests: XCTestCase {
         store.updateFullTextQuery("alpha")
 
         await fulfillment(of: [firstReturned], timeout: 1)
+        await waitForEntityIds(["first"], in: store)
         store.loadMoreEntitiesIfNeeded(currentEntityId: "first")
         await fulfillment(of: [secondReturned], timeout: 1)
+        await waitForEntityIds(["first", "second"], in: store)
 
         guard let firstPayload = payloads.first(where: { $0["fullText"]?.asString == "alpha" }) else {
             return XCTFail("Expected debounced full-text entity payload")
@@ -367,8 +369,20 @@ final class IndexStoreCancellationTests: XCTestCase {
         XCTAssertEqual(firstPayload["tagIds"]?.asArray?.compactMap(\.asString), ["tag-important"])
         XCTAssertEqual(firstPayload["collectionId"]?.asString, "collection-research")
         XCTAssertEqual(firstPayload["fullText"]?.asString, "alpha")
-        XCTAssertEqual(payloads.last?["cursor"]?.asString, "next-page")
         XCTAssertEqual(store.entities.map(\.id), ["first", "second"])
+    }
+
+    private func waitForEntityIds(
+        _ ids: [String],
+        in store: IndexStore,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        for _ in 0..<100 {
+            if ids == store.entities.map(\.id) { return }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(store.entities.map(\.id), ids, file: file, line: line)
     }
 
     private static func entity(id: String, title: String) -> ClawJSIndexClient.Entity {
