@@ -1,3 +1,5 @@
+// UI-only fixture projection for the Web companion. ClawJS owns the Mac Care
+// route atlas, scan sidecar, action plans, approvals, and finalizer previews.
 export interface MacCareRoute {
   id: string;
   family: string;
