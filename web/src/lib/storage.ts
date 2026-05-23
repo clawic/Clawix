@@ -44,4 +44,7 @@ export const StorageKeys = {
   rightSidebarOpen: "ui.rightSidebarOpen",
   currentRoute: "ui.route",
   pluginEnabledState: "ui.plugins.enabledState",
+  skillActiveState: "ui.skills.activeState",
+  localSkills: "ui.skills.localCatalog",
+  skillsLastSyncedAt: "ui.skills.lastSyncedAt",
 } as const;

@@ -33,6 +33,7 @@ describe("web route catalog", () => {
     expect(sectionedCount).toBe(ROUTE_CATALOG.length);
     expect(routeEntry("chat").webSurface).toBe("implemented");
     expect(routeEntry("search").webSurface).toBe("implemented");
+    expect(routeEntry("skills").webSurface).toBe("implemented");
     expect(routeEntry("plugins").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
