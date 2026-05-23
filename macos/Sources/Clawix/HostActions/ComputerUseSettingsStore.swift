@@ -1,3 +1,4 @@
+import ClawHostKit
 import Combine
 import Foundation
 
@@ -24,15 +25,15 @@ final class ComputerUseSettings: ObservableObject {
     static let shared = ComputerUseSettings()
 
     @Published var anyAppEnabled: Bool {
-        didSet { store.set(anyAppEnabled, forKey: Keys.anyApp) }
+        didSet { store.set(anyAppEnabled, forKey: Keys.anyApp); syncHostPolicy() }
     }
 
     @Published var lockedUseEnabled: Bool {
-        didSet { store.set(lockedUseEnabled, forKey: Keys.lockedUse) }
+        didSet { store.set(lockedUseEnabled, forKey: Keys.lockedUse); syncHostPolicy() }
     }
 
     @Published private(set) var alwaysAllowedApps: [AlwaysAllowedApp] {
-        didSet { persistAllowed() }
+        didSet { persistAllowed(); syncHostPolicy() }
     }
 
     private let store: UserDefaults
@@ -53,6 +54,21 @@ final class ComputerUseSettings: ObservableObject {
         } else {
             self.alwaysAllowedApps = []
         }
+        // Mirror current settings into the host-readable policy so the signed
+        // host broker enforces them on the next Computer Use action.
+        syncHostPolicy()
+    }
+
+    /// Write the host-readable Computer Use policy that the signed-host broker
+    /// reads to gate `mac.app.*` actions (block when off, auto-approve
+    /// always-allowed apps, otherwise require approval).
+    private func syncHostPolicy() {
+        let policy = ComputerUsePolicy(
+            anyApp: anyAppEnabled,
+            lockedUse: lockedUseEnabled,
+            allowedApps: alwaysAllowedApps.map { ComputerUseAllowedApp(bundleId: $0.bundleId, name: $0.name) }
+        )
+        try? ComputerUsePolicyStore.save(policy, to: ComputerUsePolicyStore.defaultURL())
     }
 
     /// Whether the agent may control this app right now without prompting:
