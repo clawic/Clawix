@@ -19,12 +19,8 @@ public sealed partial class PrivacyPage : Page
     private void LoadSettings()
     {
         _loading = true;
-        CrashReportsSwitch.IsOn = App.Services.Preferences.Get(
-            WindowsPreferenceKeys.PrivacySendCrashReports,
-            PrivacySettingsDefaults.SendCrashReports);
-        TelemetrySwitch.IsOn = App.Services.Preferences.Get(
-            WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry,
-            PrivacySettingsDefaults.ShareAnonymousTelemetry);
+        CrashReportsSwitch.IsOn = false;
+        TelemetrySwitch.IsOn = false;
         TrainingSwitch.IsOn = App.Services.Preferences.Get(
             WindowsPreferenceKeys.PrivacyAllowTrainingOnConversations,
             PrivacySettingsDefaults.AllowTrainingOnConversations);
@@ -35,14 +31,16 @@ public sealed partial class PrivacyPage : Page
     private void CrashReportsSwitch_Toggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacySendCrashReports, CrashReportsSwitch.IsOn);
+        CrashReportsSwitch.IsOn = false;
+        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacySendCrashReports, false);
         UpdateStatus();
     }
 
     private void TelemetrySwitch_Toggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry, TelemetrySwitch.IsOn);
+        TelemetrySwitch.IsOn = false;
+        App.Services.Preferences.Set(WindowsPreferenceKeys.PrivacyShareAnonymousTelemetry, false);
         UpdateStatus();
     }
 

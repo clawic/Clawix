@@ -24,7 +24,7 @@ public sealed class DaemonClient : IAsyncDisposable
 
     public DaemonClient(int port, string bearer, ILogger<DaemonClient> logger)
     {
-        _endpoint = new Uri($"ws://127.0.0.1:{port}/");
+        _endpoint = BridgeEndpoint.WebSocketUri(port);
         _bearer = bearer;
         _logger = logger;
     }

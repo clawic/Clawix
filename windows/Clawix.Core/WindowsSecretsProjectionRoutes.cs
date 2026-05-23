@@ -1,8 +1,9 @@
 namespace Clawix.Core;
 
+// @persistent-surface-wrapper
 public static class WindowsSecretsProjectionRoutes
 {
-    public const string DefaultTenantId = "clawix-local";
+    public const string DefaultSecretsIsolationId = "clawix-local";
     public const string LoopbackHost = "127.0.0.1";
 
     public static Uri DefaultBaseUri(int port = 24103) => new UriBuilder("http", LoopbackHost, port).Uri;
@@ -11,9 +12,9 @@ public static class WindowsSecretsProjectionRoutes
 
     public static Uri Lock(Uri baseUri) => Build(baseUri, "/api/v1/secrets/lock");
 
-    public static Uri Secrets(Uri baseUri, string tenantId = DefaultTenantId)
+    public static Uri Secrets(Uri baseUri, string secretsIsolationId = DefaultSecretsIsolationId)
     {
-        return Build(baseUri, $"/api/v1/tenants/{Uri.EscapeDataString(tenantId)}/secrets");
+        return Build(baseUri, $"/api/v1/tenants/{Uri.EscapeDataString(secretsIsolationId)}/secrets");
     }
 
     public static string InternalNameFromLabel(string label)
