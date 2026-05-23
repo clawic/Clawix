@@ -14,7 +14,7 @@ plugins {
 // launcher script and external contributors keep working out of the box.
 // Release pipelines (Play Console upload) set the real bundle id explicitly
 // via env var at invocation time. The owner-private real bundle id lives in
-// the workspace `.signing.env` (a sibling of the public `clawix/` repo) and
+// the local signing environment outside the public `clawix/` repo and
 // is NEVER hardcoded inside the public repo.
 //
 // `versionName` reads `clawix/android/VERSION` (mirror of ios/VERSION,
