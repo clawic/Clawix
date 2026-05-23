@@ -120,9 +120,10 @@ public sealed partial class AppState : ObservableObject
         ComposerFocusRequested?.Invoke();
     }
 
-    public Task SendMessageAsync(string text)
+    public Task SendMessageAsync(string text, IReadOnlyList<WireAttachment>? attachments = null)
     {
         if (_client is null) return Task.CompletedTask;
+        IReadOnlyList<WireAttachment> outgoingAttachments = attachments ?? [];
         if (CurrentChat is null)
         {
             var now = DateTimeOffset.UtcNow;
@@ -145,12 +146,13 @@ public sealed partial class AppState : ObservableObject
                     Role = WireRole.User,
                     Content = text,
                     Timestamp = now,
+                    Attachments = outgoingAttachments.ToList(),
                 },
             ];
-            return _client.SendAsync(new BridgeFrame(new BridgeBody.NewSession(session.Id, text, [])), CancellationToken.None);
+            return _client.SendAsync(new BridgeFrame(new BridgeBody.NewSession(session.Id, text, outgoingAttachments)), CancellationToken.None);
         }
 
-        return _client.SendAsync(new BridgeFrame(new BridgeBody.SendMessage(CurrentChat.Id, text, [])), CancellationToken.None);
+        return _client.SendAsync(new BridgeFrame(new BridgeBody.SendMessage(CurrentChat.Id, text, outgoingAttachments)), CancellationToken.None);
     }
 
     private static string TitleFromPrompt(string text)
