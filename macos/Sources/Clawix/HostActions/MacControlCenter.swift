@@ -129,12 +129,9 @@ struct MacControlCenterPersistence {
     let pendingApprovalsURL: URL?
 
     static var live: MacControlCenterPersistence {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        let directory = base.appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
         return MacControlCenterPersistence(
-            timelineURL: directory.appendingPathComponent(ClawixPersistentSurfacePaths.components.macControlTimelineFile),
-            pendingApprovalsURL: directory.appendingPathComponent(ClawixPersistentSurfacePaths.components.macControlPendingApprovalsFile)
+            timelineURL: ClawixHostActionRoutes.macControlTimelineURL(),
+            pendingApprovalsURL: ClawixHostActionRoutes.macControlPendingApprovalsURL()
         )
     }
 
