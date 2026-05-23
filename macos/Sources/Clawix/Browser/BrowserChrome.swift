@@ -166,6 +166,10 @@ private struct SidebarItemPill: View {
             GitCompareIcon(size: 13)
                 .foregroundColor(Color(white: 0.78))
                 .frame(width: 14, height: 14)
+        case .summary:
+            LucideIcon(.info, size: 13)
+                .foregroundColor(Color(white: 0.78))
+                .frame(width: 14, height: 14)
         case .iosSimulator:
             LucideIcon(.appWindow, size: 13)
                 .foregroundColor(Color(white: 0.78))
@@ -199,6 +203,8 @@ private struct SidebarItemPill: View {
             return L10n.t("Files")
         case .review:
             return L10n.t("Changes")
+        case .summary:
+            return L10n.t("Summary")
         case .iosSimulator(let p):
             return p.deviceName
         case .androidSimulator(let p):
@@ -357,6 +363,11 @@ struct BrowserNavigationBar: View {
             }
             .accessibilityLabel("Take screenshot")
             .hoverHint(L10n.t("Take screenshot"), placement: .below)
+            ChromeIconButton(systemName: "bubble.left", isActive: controller.annotating) {
+                controller.setAnnotating(!controller.annotating)
+            }
+            .accessibilityLabel("Annotate page")
+            .hoverHint(L10n.t("Annotate page"), placement: .below)
             if flags.isVisible(.simulators) {
                 ChromeIconButton(systemName: "plus") {
                     appState.openIOSSimulator()

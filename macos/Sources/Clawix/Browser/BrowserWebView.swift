@@ -19,11 +19,30 @@ final class BrowserTabController: NSObject, ObservableObject {
     /// new navigation starts. Drives the "Cannot connect to host" overlay
     /// in BrowserView.
     @Published var lastNavigationError: NavigationError?
+    /// Pending per-domain website-access request. Set when navigation
+    /// resolves to `.ask`; drives the floating approval card overlay in
+    /// BrowserView and is cleared once the user decides.
+    @Published var pendingWebsiteApproval: BrowserWebsiteApprovalRequest?
+    /// True while the user is annotating the page (clicking elements to pin
+    /// comments). Drives the injected highlight script and the overlay pill.
+    @Published var annotating: Bool = false
+    /// Set when the user clicked an element while annotating and the comment
+    /// editor should appear. Cleared once the comment is submitted/cancelled.
+    @Published var pendingAnnotationDraft: AnnotationDraft?
 
     struct NavigationError: Equatable {
         let message: String
         let failedURL: URL?
     }
+
+    /// One in-progress annotation: the marker number placed on the page and
+    /// a short label describing the clicked element.
+    struct AnnotationDraft: Equatable {
+        let marker: Int
+        let elementLabel: String
+    }
+
+    static let annotationMessageName = "clawixAnnotate"
 
     private static let mobileUserAgent =
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) " +
@@ -89,6 +108,9 @@ final class BrowserTabController: NSObject, ObservableObject {
 
         webView.navigationDelegate = self
         webView.uiDelegate = self
+        // Receives annotation clicks from the injected page script while
+        // annotation mode is on.
+        webView.configuration.userContentController.add(self, name: Self.annotationMessageName)
         attachObservers()
         startBackgroundSampling()
         load(initialURL)
@@ -98,6 +120,7 @@ final class BrowserTabController: NSObject, ObservableObject {
         webView.stopLoading()
         webView.navigationDelegate = nil
         webView.uiDelegate = nil
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.annotationMessageName)
         observers.forEach { $0.invalidate() }
         observers.removeAll()
         bgSampleTimer?.invalidate()
@@ -112,13 +135,32 @@ final class BrowserTabController: NSObject, ObservableObject {
         case .block:
             ToastCenter.shared.show("Website blocked by browser settings", icon: .error)
         case .ask:
-            appState?.pendingConfirmation = ConfirmationRequest(
-                title: "Open website?",
-                body: "Clawix wants to open an external website in the browser.",
-                confirmLabel: "Open"
-            ) { [weak self] in
-                self?.loadApproved(url)
-            }
+            let origin = url.host ?? url.absoluteString
+            pendingWebsiteApproval = BrowserWebsiteApprovalRequest(url: url, origin: origin)
+        }
+    }
+
+    /// Apply the user's choice on the website-access card and continue (or
+    /// abandon) the navigation that triggered it. "This site" adds the
+    /// origin to the allow list; "any website" flips the global approval
+    /// policy to always-allow, matching the two scopes the card offers.
+    func resolveWebsiteApproval(_ decision: BrowserWebsiteApprovalDecision) {
+        guard let request = pendingWebsiteApproval else { return }
+        pendingWebsiteApproval = nil
+        switch decision {
+        case .cancel:
+            return
+        case .allowOnce:
+            loadApproved(request.url)
+        case .allowSite:
+            _ = BrowserPermissionPolicy.addDomain(request.origin, to: .allowed)
+            loadApproved(request.url)
+        case .allowAnyWebsite:
+            UserDefaults.standard.set(
+                BrowserPermissionPolicy.Approval.alwaysAllow.rawValue,
+                forKey: BrowserPermissionPolicy.approvalStorageKey
+            )
+            loadApproved(request.url)
         }
     }
 
@@ -190,6 +232,20 @@ final class BrowserTabController: NSObject, ObservableObject {
     }
     func hardReload() { webView.reloadFromOrigin() }
 
+    /// Hand the current page off to the user's default system browser.
+    /// No-op for blank/file pages, which have nothing meaningful to open
+    /// outside the in-app view.
+    func openInDefaultBrowser() {
+        let url = currentURL
+        guard let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https"
+        else {
+            ToastCenter.shared.show("Nothing to open in your browser", icon: .info)
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
     /// Capture the current visible region of the web view as a PNG and
     /// copy it to the system pasteboard. Surfaces a toast on success or
     /// failure so the user gets immediate feedback even though the
@@ -218,6 +274,93 @@ final class BrowserTabController: NSObject, ObservableObject {
                     )
                 }
             }
+        }
+    }
+
+    // MARK: - Annotation mode
+
+    /// Enter or leave annotation mode. Injects (or tears down) the page
+    /// script that highlights hovered elements and reports clicks.
+    func setAnnotating(_ on: Bool) {
+        guard annotating != on else { return }
+        annotating = on
+        if on {
+            webView.evaluateJavaScript(Self.annotationEnableJS, completionHandler: nil)
+        } else {
+            pendingAnnotationDraft = nil
+            webView.evaluateJavaScript(Self.annotationDisableJS, completionHandler: nil)
+        }
+    }
+
+    func cancelAnnotationDraft() {
+        pendingAnnotationDraft = nil
+    }
+
+    /// Finalize the pending annotation: capture a page screenshot (when the
+    /// setting allows it) and hand the comment off to the composer, either as
+    /// a chip-bearing attachment or as inline text when screenshots are off.
+    /// Stays in annotation mode so the user can pin several comments in a row.
+    func submitAnnotation(comment: String) {
+        guard let draft = pendingAnnotationDraft else { return }
+        pendingAnnotationDraft = nil
+        let trimmed = comment.trimmingCharacters(in: .whitespacesAndNewlines)
+        let pageTitle = title.isEmpty ? nil : title
+        let pageURL = currentURL.absoluteString
+        let meta = BrowserAnnotationMetadata(
+            pageTitle: pageTitle,
+            pageURL: pageURL,
+            comment: trimmed,
+            marker: draft.marker
+        )
+
+        guard BrowserPermissionPolicy.annotationScreenshotsEnabled else {
+            appendAnnotationToComposerText(meta)
+            appState?.requestComposerFocus()
+            ToastCenter.shared.show("Annotation added")
+            return
+        }
+
+        let config = WKSnapshotConfiguration()
+        config.afterScreenUpdates = true
+        webView.takeSnapshot(with: config) { [weak self] image, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                if let image, let url = self.writeSnapshotPNG(image) {
+                    self.appState?.composer.attachments.append(
+                        ComposerAttachment(url: url, annotation: meta)
+                    )
+                } else {
+                    self.appendAnnotationToComposerText(meta)
+                }
+                self.appState?.requestComposerFocus()
+                ToastCenter.shared.show("Annotation added")
+            }
+        }
+    }
+
+    private func appendAnnotationToComposerText(_ meta: BrowserAnnotationMetadata) {
+        var line = "[Browser annotation \(meta.marker) — "
+        if let title = meta.pageTitle, !title.isEmpty { line += "\(title) · " }
+        line += "\(meta.pageURL)]"
+        if !meta.comment.isEmpty { line += "\n\(meta.comment)" }
+        let existing = appState?.composer.text ?? ""
+        appState?.composer.text = existing.isEmpty ? line : existing + "\n\n" + line
+    }
+
+    private func writeSnapshotPNG(_ image: NSImage) -> URL? {
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let png = rep.representation(using: .png, properties: [:])
+        else { return nil }
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-annotations", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("annotation-\(UUID().uuidString).png")
+        do {
+            try png.write(to: url)
+            return url
+        } catch {
+            return nil
         }
     }
 
@@ -614,6 +757,90 @@ final class BrowserTabController: NSObject, ObservableObject {
         components?.queryItems = [URLQueryItem(name: "q", value: trimmed)]
         return components?.url
     }
+
+    // MARK: - Annotation script
+
+    /// Injected when annotation mode turns on. Highlights the element under
+    /// the pointer with a blue box and, on click, drops a numbered marker and
+    /// reports the click back to Swift (cancelling the page's own handlers so
+    /// the click annotates instead of navigating).
+    static let annotationEnableJS = """
+    (function(){
+      if (window.__clawixAnn) { return; }
+      var state = { count: window.__clawixAnnCount || 0 };
+      window.__clawixAnn = state;
+      var box = document.createElement('div');
+      box.setAttribute('data-clawix-ann', '1');
+      box.style.cssText = 'position:fixed;z-index:2147483646;pointer-events:none;border:2px solid #3b82f6;background:rgba(59,130,246,0.12);border-radius:4px;display:none;box-sizing:border-box;';
+      document.documentElement.appendChild(box);
+      state.box = box;
+      function onMove(e){
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        if(!el || el === box){ box.style.display='none'; return; }
+        var r = el.getBoundingClientRect();
+        box.style.display='block';
+        box.style.left = r.left + 'px';
+        box.style.top = r.top + 'px';
+        box.style.width = r.width + 'px';
+        box.style.height = r.height + 'px';
+      }
+      function onClick(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        state.count += 1;
+        window.__clawixAnnCount = state.count;
+        var m = document.createElement('div');
+        m.setAttribute('data-clawix-ann', '1');
+        m.textContent = String(state.count);
+        m.style.cssText = 'position:fixed;z-index:2147483647;width:20px;height:20px;border-radius:50%;background:#3b82f6;color:#fff;font:600 12px -apple-system,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.4);pointer-events:none;';
+        m.style.left = (e.clientX - 10) + 'px';
+        m.style.top = (e.clientY - 10) + 'px';
+        document.documentElement.appendChild(m);
+        var label = '';
+        if (el) { label = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('alt') || el.tagName || '').toString().trim().slice(0, 80); }
+        try {
+          window.webkit.messageHandlers.clawixAnnotate.postMessage({ marker: state.count, label: label });
+        } catch (err) {}
+        return false;
+      }
+      state.onMove = onMove;
+      state.onClick = onClick;
+      document.addEventListener('mousemove', onMove, true);
+      document.addEventListener('click', onClick, true);
+    })();
+    """
+
+    /// Removes everything the enable script added and resets the counter.
+    static let annotationDisableJS = """
+    (function(){
+      var s = window.__clawixAnn;
+      if (s) {
+        document.removeEventListener('mousemove', s.onMove, true);
+        document.removeEventListener('click', s.onClick, true);
+      }
+      var nodes = document.querySelectorAll('[data-clawix-ann="1"]');
+      for (var i = 0; i < nodes.length; i++) { nodes[i].remove(); }
+      window.__clawixAnn = null;
+      window.__clawixAnnCount = 0;
+    })();
+    """
+}
+
+extension BrowserTabController: WKScriptMessageHandler {
+    nonisolated func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        guard message.name == BrowserTabController.annotationMessageName,
+              let body = message.body as? [String: Any]
+        else { return }
+        let marker = (body["marker"] as? Int) ?? Int((body["marker"] as? Double) ?? 0)
+        let label = (body["label"] as? String) ?? ""
+        Task { @MainActor in
+            self.pendingAnnotationDraft = AnnotationDraft(marker: marker, elementLabel: label)
+        }
+    }
 }
 
 extension BrowserTabController: WKNavigationDelegate {
@@ -637,6 +864,11 @@ extension BrowserTabController: WKNavigationDelegate {
             self.requestedURL = nil
             self.fallbackBackURLAfterError = nil
             self.lastNavigationError = nil
+            // A fresh document drops the injected script; re-arm it so
+            // annotation mode survives reloads and in-site navigation.
+            if self.annotating {
+                self.webView.evaluateJavaScript(Self.annotationEnableJS, completionHandler: nil)
+            }
         }
     }
 

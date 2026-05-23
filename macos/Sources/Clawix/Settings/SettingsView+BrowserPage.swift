@@ -2,6 +2,8 @@ import SwiftUI
 
 struct BrowserUsagePage: View {
     @AppStorage(BrowserPermissionPolicy.approvalStorageKey) private var approval: String = BrowserPermissionPolicy.Approval.alwaysAsk.rawValue
+    @AppStorage(BrowserPermissionPolicy.agentControlEnabledKey) private var agentControlEnabled = true
+    @AppStorage(BrowserPermissionPolicy.annotationScreenshotsKey) private var annotationScreenshots = true
     @State private var browserStorage: BrowserPermissionPolicy.BrowserStorageKind = .all
     @State private var clearStatus: String?
     @State private var clearingBrowsingData = false
@@ -20,17 +22,21 @@ struct BrowserUsagePage: View {
         VStack(alignment: .leading, spacing: 0) {
             PageHeader(title: "Browser usage")
 
-            /*
-            Text("Plugins")
-                .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(Palette.textPrimary)
-                .padding(.bottom, 14)
-
+            SectionLabel(title: "Browser Use")
             SettingsCard {
-                BrowserPluginRow(title: "Browser Use",
-                                 detail: "Control the in-app browser with Clawix")
+                ToggleRow(
+                    title: "Let the agent control the built-in browser",
+                    detail: "Allow the agent to open pages, navigate, and read the in-app browser while it works.",
+                    isOn: $agentControlEnabled
+                )
+                CardDivider()
+                ToggleRow(
+                    title: "Annotation screenshots",
+                    detail: "Attach a page screenshot with each annotation you send so the agent sees exactly what you mean.",
+                    isOn: $annotationScreenshots
+                )
             }
-            */
+            .padding(.bottom, 28)
 
             SectionLabel(title: "Browser")
             SettingsCard {
@@ -119,13 +125,14 @@ struct BrowserUsagePage: View {
     }
 
     private func clearSelectedBrowserStorage() {
+        guard !clearingBrowsingData else { return }
         clearingBrowsingData = true
         clearStatus = nil
         let selected = browserStorage
         BrowserPermissionPolicy.clearBrowserStorage(selected) {
             clearingBrowsingData = false
-            clearStatus = "\(selected.rawValue) completed."
-            ToastCenter.shared.show(clearStatus ?? "Browsing data cleared")
+            clearStatus = L10n.t("Browsing data cleared.")
+            ToastCenter.shared.show(clearStatus ?? L10n.t("Browsing data cleared."))
         }
     }
 }
@@ -153,43 +160,6 @@ private struct BrowserPolicyStatusRow: View {
                         )
                 )
                 .accessibilityLabel(Text(status))
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-}
-
-struct BrowserPluginRow: View {
-    let title: LocalizedStringKey
-    let detail: LocalizedStringKey
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(red: 0.12, green: 0.20, blue: 0.36),
-                                     Color(red: 0.06, green: 0.10, blue: 0.20)],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                    .frame(width: 36, height: 36)
-                LucideIcon(.send, size: 14)
-                    .foregroundColor(.white)
-                    .rotationEffect(.degrees(-12))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Palette.textPrimary)
-                Text(detail)
-                    .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Palette.textSecondary)
-            }
-            Spacer(minLength: 12)
-            CheckIcon(size: 13)
-                .foregroundColor(Palette.textSecondary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

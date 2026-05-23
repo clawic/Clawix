@@ -5,6 +5,23 @@ enum BrowserPermissionPolicy {
     static let approvalStorageKey = "clawix.browser.websiteApproval"
     static let blockedDomainsStorageKey = "clawix.browser.blockedDomains"
     static let allowedDomainsStorageKey = "clawix.browser.allowedDomains"
+    /// Master switch for letting the agent drive the in-app browser. The
+    /// rendering layer reads this to decide whether browser activity rows
+    /// and the Browser side-panel source are surfaced. Defaults to on.
+    static let agentControlEnabledKey = "clawix.browser.agentControlEnabled"
+    /// Whether a page screenshot is bundled with each annotation the user
+    /// sends from the in-app browser. Defaults to on.
+    static let annotationScreenshotsKey = "clawix.browser.annotationScreenshots"
+
+    /// On by default until the user explicitly turns it off, so a brand
+    /// new install behaves like the rest of the agent surface.
+    static var agentControlEnabled: Bool {
+        UserDefaults.standard.object(forKey: agentControlEnabledKey) as? Bool ?? true
+    }
+
+    static var annotationScreenshotsEnabled: Bool {
+        UserDefaults.standard.object(forKey: annotationScreenshotsKey) as? Bool ?? true
+    }
 
     enum Approval: String {
         case alwaysAsk = "Always ask"

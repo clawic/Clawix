@@ -31,6 +31,11 @@ struct BrowserView: View {
         return nil
     }
 
+    private var activeSummary: SidebarItem.SummaryPayload? {
+        if case .summary(let p) = appState.activeSidebarItem { return p }
+        return nil
+    }
+
     private var activeIOSSimulator: SidebarItem.IOSSimulatorPayload? {
         if case .iosSimulator(let p) = appState.activeSidebarItem { return p }
         return nil
@@ -60,6 +65,7 @@ struct BrowserView: View {
                                 controller.reload()
                             }
                         }
+                        BrowserAnnotationOverlay(controller: controller)
                         BrowserWebsiteApprovalCard(controller: controller)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -78,6 +84,10 @@ struct BrowserView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeReview {
                     ReviewChangesPanel()
+                        .id(payload.id)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let payload = activeSummary {
+                    ThreadSummaryPanel()
                         .id(payload.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeIOSSimulator {
