@@ -15,10 +15,10 @@ extension ClawJSRuntimeLensSection {
                         .font(BodyFont.system(size: 12.5, weight: .medium))
                         .foregroundColor(Palette.textPrimary)
                     if let adapter = presentation.adapter {
-                        statusPill(text: adapter, color: Color.white.opacity(0.35))
+                        statusPill(text: adapter, color: Color.overlay(0.35))
                     }
                     if let version = presentation.version {
-                        statusPill(text: "v\(version)", color: Color.white.opacity(0.35))
+                        statusPill(text: "v\(version)", color: Color.overlay(0.35))
                     }
                     statusPill(
                         text: presentation.installedLabel,
@@ -28,21 +28,21 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if let support = snapshot.support {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 runtimeLensSupport(support)
             }
             if let supportAudit = snapshot.supportAudit {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 runtimeLensSupportAudit(supportAudit)
             }
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             row(label: "CLI") {
                 statusPill(
                     text: presentation.cliLabel,
                     color: presentation.cliAvailable ? .green : .orange
                 )
             }
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             row(label: "Gateway") {
                 statusPill(
                     text: presentation.gatewayLabel,
@@ -50,14 +50,14 @@ extension ClawJSRuntimeLensSection {
                 )
             }
             if presentation.workspaceCanonicalPathCount > 0 || presentation.workspaceManagedFileCount > 0 {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Workspace files") {
                     HStack(spacing: 8) {
                         if presentation.workspaceCanonicalPathCount > 0 {
                             statusPill(text: "canonical \(presentation.workspaceCanonicalPathCount)", color: .blue)
                         }
                         if presentation.workspaceManagedFileCount > 0 {
-                            statusPill(text: "managed \(presentation.workspaceManagedFileCount)", color: Color.white.opacity(0.35))
+                            statusPill(text: "managed \(presentation.workspaceManagedFileCount)", color: Color.overlay(0.35))
                         }
                         Spacer()
                     }
@@ -71,13 +71,13 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if presentation.runtimeResourceCount > 0 {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Runtime resources") {
                     HStack(spacing: 8) {
                         statusPill(text: "\(presentation.runtimeResourceCount)", color: .blue)
                         statusPill(
                             text: "groups \(presentation.runtimeResourceAggregateDomainCount)",
-                            color: Color.white.opacity(0.35)
+                            color: Color.overlay(0.35)
                         )
                         Spacer()
                     }
@@ -91,7 +91,7 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if presentation.capabilityCount > 0 || presentation.rawCapabilityCount > 0 {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Capabilities") {
                     HStack(spacing: 8) {
                         if presentation.capabilityCount > 0 {
@@ -100,7 +100,7 @@ extension ClawJSRuntimeLensSection {
                         if presentation.rawCapabilityCount > 0 {
                             statusPill(
                                 text: "enabled \(presentation.rawCapabilityEnabledCount)/\(presentation.rawCapabilityCount)",
-                                color: Color.white.opacity(0.35)
+                                color: Color.overlay(0.35)
                             )
                         }
                         if presentation.degradedCapabilityCount > 0 {
@@ -123,7 +123,7 @@ extension ClawJSRuntimeLensSection {
                                 color: runtimeLensColor(ClawJSRuntimeLensStatusTone.resourceStatus(capability.status))
                             )
                             if let strategy = capability.strategy {
-                                statusPill(text: strategy, color: Color.white.opacity(0.28))
+                                statusPill(text: strategy, color: Color.overlay(0.28))
                             }
                             if let limitations = capability.limitationsLabel {
                                 Text(limitations)
@@ -141,7 +141,7 @@ extension ClawJSRuntimeLensSection {
                 pager(capabilitySlice, key: capabilityPageKey)
             }
             if !presentation.locationRows.isEmpty {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(locationSlice.rows) { location in
                         row(label: location.label) {
@@ -158,7 +158,7 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if let error = presentation.lastError {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 Text(error)
                     .font(BodyFont.system(size: 11.5))
                     .foregroundColor(.orange)

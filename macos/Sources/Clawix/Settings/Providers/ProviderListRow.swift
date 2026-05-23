@@ -30,7 +30,7 @@ struct ProviderListRow: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .contentShape(Rectangle())
-            .background(hovered ? Color.white.opacity(0.025) : .clear)
+            .background(hovered ? Color.overlay(0.025) : .clear)
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }

@@ -9,7 +9,7 @@ struct ProviderBrandIcon: View {
     var size: CGFloat = 28
 
     var body: some View {
-        let color = Color(hex: brand.colorHex) ?? Color(white: 0.3)
+        let color = Color(hex: brand.colorHex) ?? Color.gray(light: 0.55, dark: 0.3)
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
                 .fill(color.opacity(0.9))

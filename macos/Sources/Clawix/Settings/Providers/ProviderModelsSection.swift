@@ -59,7 +59,7 @@ private struct FlowCapabilityBadges: View {
                     .padding(.vertical, 2)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
         }

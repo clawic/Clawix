@@ -62,8 +62,8 @@ struct PillToggle: View {
     }
 
     private var trackFill: Color {
-        let enabledFill = isOn ? Color(red: 0.16, green: 0.46, blue: 0.98) : Color(white: 0.22)
-        return isEnabled ? enabledFill : Color(white: 0.16)
+        let enabledFill = isOn ? Color(red: 0.16, green: 0.46, blue: 0.98) : Color.gray(light: 0.87, dark: 0.22)
+        return isEnabled ? enabledFill : Color.gray(light: 0.92, dark: 0.16)
     }
 
     var body: some View {
@@ -77,7 +77,7 @@ struct PillToggle: View {
                 Capsule(style: .continuous)
                     .fill(trackFill)
                 Circle()
-                    .fill(isEnabled ? Color.white : Color(white: 0.62))
+                    .fill(isEnabled ? Color.white : Color.gray(light: 0.40, dark: 0.62))
                     .frame(width: knobSize, height: knobSize)
                     .shadow(color: .black.opacity(0.20), radius: 1, x: 0, y: 1)
                     .offset(x: knobOffset)
@@ -156,8 +156,8 @@ struct SettingsDropdown<T: Hashable>: View {
             .background(
                 Capsule(style: .continuous)
                     .fill(hovered || isOpen
-                          ? Color(white: 0.165)
-                          : Color(white: 0.135))
+                          ? Color.gray(light: 0.915, dark: 0.165)
+                          : Color.gray(light: 0.94, dark: 0.135))
             )
             .contentShape(Capsule(style: .continuous))
         }
@@ -374,10 +374,10 @@ struct ActionPillRow: View {
                         .padding(.vertical, 5)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.overlay(0.08))
                                 .overlay(
                                     Capsule(style: .continuous)
-                                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                                 )
                         )
                 }
@@ -411,11 +411,11 @@ struct SlidingSegmented<T: Hashable>: View {
                     .fill(Color.black.opacity(0.30))
                     .overlay(
                         RoundedRectangle(cornerRadius: 13, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
 
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.10))
+                    .fill(Color.overlay(0.10))
                     .frame(width: chipW, height: height - inset * 2)
                     .offset(x: inset + selectedIndex * chipW, y: inset)
                     .animation(animation, value: selection)

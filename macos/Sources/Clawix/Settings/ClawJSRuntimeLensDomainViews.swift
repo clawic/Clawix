@@ -23,7 +23,7 @@ extension ClawJSRuntimeLensSection {
                             statusPill(text: claim, color: claimColor(claim))
                         }
                         if let strategy = domain.strategy {
-                            statusPill(text: strategy, color: Color.white.opacity(0.28))
+                            statusPill(text: strategy, color: Color.overlay(0.28))
                         }
                         if let count = domain.count {
                             Text("\(count)")
@@ -172,13 +172,13 @@ extension ClawJSRuntimeLensSection {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
                         ForEach(slice.rows) { command in
-                            statusPill(text: command.command, color: Color.white.opacity(0.24))
+                            statusPill(text: command.command, color: Color.overlay(0.24))
                                 .help(command.command)
                                 .accessibilityIdentifier("runtime-lens-domain-command-\(domain)-\(command.id)")
                                 .accessibilityLabel(Text(command.accessibilityLabel))
                         }
                         if presentation.hiddenCommandCount > 0 {
-                            statusPill(text: "+\(presentation.hiddenCommandCount)", color: Color.white.opacity(0.2))
+                            statusPill(text: "+\(presentation.hiddenCommandCount)", color: Color.overlay(0.2))
                         }
                         Spacer()
                     }

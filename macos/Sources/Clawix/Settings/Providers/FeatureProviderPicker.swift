@@ -44,7 +44,7 @@ struct FeatureProviderPicker: View {
             .padding(.vertical, 8)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color(white: 0.135))
+                    .fill(Color.gray(light: 0.94, dark: 0.135))
             )
         }
         .buttonStyle(.plain)

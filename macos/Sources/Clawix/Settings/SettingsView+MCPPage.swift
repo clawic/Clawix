@@ -47,10 +47,10 @@ struct MCPPage: View {
                     .padding(.vertical, 5)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.overlay(0.08))
                             .overlay(
                                 Capsule(style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
                 }
@@ -153,7 +153,7 @@ struct MCPServerRow: View {
             Spacer()
             Button(action: onConfigure) {
                 SettingsIcon(size: 18)
-                    .foregroundColor(Color(white: configHovered ? 0.94 : 0.62))
+                    .foregroundColor((configHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.40, dark: 0.62)))
                     .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
             }
@@ -172,10 +172,10 @@ struct MCPServerRow: View {
         .padding(.vertical, 11)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
         .opacity(isBusy ? 0.72 : 1)
@@ -212,10 +212,10 @@ struct MCPEmptyState: View {
                 .padding(.vertical, 5)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.overlay(0.08))
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
             }
@@ -225,10 +225,10 @@ struct MCPEmptyState: View {
         .padding(.vertical, 28)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }

@@ -51,10 +51,10 @@ struct SettingsCard<Content: View>: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
         .liftWhenSettingsDropdownOpen()
@@ -66,7 +66,7 @@ struct SettingsCard<Content: View>: View {
 struct CardDivider: View {
     var body: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.07))
+            .fill(Color.overlay(0.07))
             .frame(height: 1)
     }
 }
@@ -228,7 +228,7 @@ struct IconChipButton: View {
                     .fill(fill)
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
             .contentShape(Capsule(style: .continuous))
@@ -241,7 +241,9 @@ struct IconChipButton: View {
     private var fill: Color {
         let base: CGFloat = isPrimary ? 0.165 : 0.135
         let value = base + (hovered ? 0.03 : 0)
-        return Color(white: value)
+        let lightBase: CGFloat = isPrimary ? 0.915 : 0.94
+        let lightValue = lightBase - (hovered ? 0.025 : 0)
+        return Color.gray(light: lightValue, dark: value)
     }
 
     /// Routes lock-shaped SF Symbol names to the project's custom
@@ -277,7 +279,7 @@ struct IconCircleButton: View {
                 .frame(width: size, height: size)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.10 : 0.05))
+                        .fill(Color.overlay(hovered ? 0.10 : 0.05))
                 )
                 .contentShape(Rectangle())
         }
@@ -311,7 +313,7 @@ struct FilterChip: View {
                         .fill(fill)
                         .overlay(
                             RoundedRectangle(cornerRadius: 13, style: .continuous)
-                                .stroke(active ? Color.white.opacity(0.10) : .clear, lineWidth: 0.5)
+                                .stroke(active ? Color.overlay(0.10) : .clear, lineWidth: 0.5)
                         )
                 )
                 .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
@@ -323,8 +325,8 @@ struct FilterChip: View {
 
     private var fill: Color {
         if active {
-            return Color(white: 0.20 + (hovered ? 0.02 : 0))
+            return Color.gray(light: 0.88 - (hovered ? 0.02 : 0), dark: 0.20 + (hovered ? 0.02 : 0))
         }
-        return Color(white: 0.135 + (hovered ? 0.03 : 0))
+        return Color.gray(light: 0.94 - (hovered ? 0.03 : 0), dark: 0.135 + (hovered ? 0.03 : 0))
     }
 }

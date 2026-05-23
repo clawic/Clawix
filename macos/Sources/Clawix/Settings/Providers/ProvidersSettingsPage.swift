@@ -102,10 +102,10 @@ struct ProvidersSettingsPage: View {
         .padding(.vertical, 7)
         .background(
             Capsule(style: .continuous)
-                .fill(Color(white: 0.105))
+                .fill(Color.gray(light: 0.95, dark: 0.105))
                 .overlay(
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.06), lineWidth: 0.5)
                 )
         )
         .frame(maxWidth: 260)

@@ -262,10 +262,10 @@ struct PinsStorageNoticeRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pins")
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 Text("Pins are stored locally in Clawix and session state is synchronized through the ClawJS sessions adapter.")
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             Spacer(minLength: 12)
         }
@@ -285,7 +285,7 @@ struct HiddenCodexFoldersSection: View {
                 HStack {
                     Text("No hidden folders. Right-click a Codex folder in the sidebar to hide it.")
                         .font(BodyFont.system(size: 12, wght: 500))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }
@@ -319,10 +319,10 @@ struct HiddenFolderRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text((path as NSString).lastPathComponent)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 Text(path)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -344,10 +344,10 @@ struct ResetLocalOverridesRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Reset local overrides")
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 Text("Permanently delete all local pins, archives, custom titles, project overrides and hidden Codex folders. The app will resync from Codex on next refresh. Codex's data is not affected.")
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 12)
@@ -399,11 +399,11 @@ struct WorkModeCard: View {
         Button(action: onTap) {
             HStack(alignment: .top, spacing: 12) {
                 LucideIcon.auto(icon, size: 14)
-                    .foregroundColor(Color(white: 0.86))
+                    .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
                     .frame(width: 28, height: 28)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -418,7 +418,7 @@ struct WorkModeCard: View {
                 Spacer(minLength: 8)
                 ZStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                        .stroke(Color.overlay(0.18), lineWidth: 1)
                         .frame(width: 16, height: 16)
                     if isOn {
                         Circle()
@@ -435,10 +435,10 @@ struct WorkModeCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(white: 0.085))
+                    .fill(Color.gray(light: 0.95, dark: 0.085))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(isOn ? Color.white.opacity(0.16) : Color.white.opacity(0.06),
+                            .stroke(isOn ? Color.overlay(0.16) : Color.overlay(0.06),
                                     lineWidth: 0.7)
                     )
             )
@@ -511,7 +511,7 @@ struct DictionaryExpandableRow: View {
                             Text("Add entry")
                                 .font(BodyFont.system(size: 12.5))
                         }
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                         .background(
@@ -519,7 +519,7 @@ struct DictionaryExpandableRow: View {
                                 .fill(Color.black.opacity(0.30))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                                 )
                         )
                     }
@@ -550,7 +550,7 @@ struct DictionaryEntryField: View {
             Spacer(minLength: 8)
             Button(action: onDelete) {
                 LucideIcon(.trash, size: 13)
-                    .foregroundColor(Color(white: trashHovered ? 0.94 : 0.55))
+                    .foregroundColor((trashHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.45, dark: 0.55)))
                     .frame(width: 30, height: 30)
                     .contentShape(Rectangle())
             }
@@ -565,7 +565,7 @@ struct DictionaryEntryField: View {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(focused
                                 ? Color(red: 0.30, green: 0.55, blue: 1.0).opacity(0.85)
-                                : Color.white.opacity(0.08),
+                                : Color.overlay(0.08),
                                 lineWidth: focused ? 1.0 : 0.5)
                 )
         )
@@ -605,13 +605,13 @@ struct RecentDictationRow: View {
                         CheckIcon(size: 13)
                     } else {
                         CopyIconViewSquircle(
-                            color: Color(white: copyHovered ? 0.94 : 0.60),
+                            color: (copyHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.42, dark: 0.60)),
                             lineWidth: 1.0
                         )
                         .frame(width: 13, height: 13)
                     }
                 }
-                .foregroundColor(Color(white: copyHovered ? 0.94 : 0.60))
+                .foregroundColor((copyHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.42, dark: 0.60)))
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
             }

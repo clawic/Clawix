@@ -36,7 +36,7 @@ extension ClawJSRuntimeLensSection {
                 HStack(spacing: 8) {
                     statusPill(text: presentation.statusLabel, color: presentation.hasInventoryError ? .orange : .green)
                     statusPill(text: "projected \(presentation.projectedCount)", color: .blue)
-                    statusPill(text: "visible \(presentation.visibleCount)", color: Color.white.opacity(0.35))
+                    statusPill(text: "visible \(presentation.visibleCount)", color: Color.overlay(0.35))
                     Spacer()
                 }
             }
@@ -67,7 +67,7 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if let fallback = presentation.fallbackTransport {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Fallback") {
                     Text(fallback)
                         .font(BodyFont.system(size: 11.5))
@@ -75,7 +75,7 @@ extension ClawJSRuntimeLensSection {
                 }
             }
             if let path = presentation.sessionPath {
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Path") {
                     Text(path)
                         .font(BodyFont.system(size: 11.5))
@@ -208,7 +208,7 @@ extension ClawJSRuntimeLensSection {
                 HStack(spacing: 8) {
                     statusPill(text: "\(presentation.executableCount)", color: .blue)
                     if let authority = presentation.authority {
-                        statusPill(text: authority, color: Color.white.opacity(0.35))
+                        statusPill(text: authority, color: Color.overlay(0.35))
                     }
                     Spacer()
                 }
@@ -229,7 +229,7 @@ extension ClawJSRuntimeLensSection {
                             .truncationMode(.middle)
                         statusPill(text: command.writeDisposition, color: commandDispositionColor(command.writeDisposition))
                         if command.argumentCount > 0 {
-                            statusPill(text: "args \(command.argumentCount)", color: Color.white.opacity(0.28))
+                            statusPill(text: "args \(command.argumentCount)", color: Color.overlay(0.28))
                         }
                         Spacer()
                     }
@@ -282,7 +282,7 @@ extension ClawJSRuntimeLensSection {
                         statusPill(text: "\(conflicts) conflict", color: .orange)
                     }
                     if !presentation.writesRuntime {
-                        statusPill(text: "no write", color: Color.white.opacity(0.35))
+                        statusPill(text: "no write", color: Color.overlay(0.35))
                     }
                     Spacer()
                 }

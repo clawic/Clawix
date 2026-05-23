@@ -110,7 +110,7 @@ struct TelegramSettingsPage: View {
         case .availableOnDemand(let trigger):
             banner(text: "Telegram surface will start when \(trigger).", color: .blue)
         case .idle:
-            banner(text: "Telegram surface is idle.", color: Color.white.opacity(0.4))
+            banner(text: "Telegram surface is idle.", color: Color.overlay(0.4))
         }
     }
 
@@ -127,7 +127,7 @@ struct TelegramSettingsPage: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
     }
 
@@ -177,13 +177,13 @@ struct TelegramSettingsPage: View {
 
             Spacer(minLength: 0)
 
-            Divider().background(Color.white.opacity(0.06)).padding(.vertical, 8)
+            CardDivider().padding(.vertical, 8)
 
             Button {
                 addBotPresented = true
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "plus")
+                    IconImage("plus", size: 11)
                     Text("Add bot")
                 }
                 .font(BodyFont.system(size: 12, wght: 500))
@@ -193,7 +193,7 @@ struct TelegramSettingsPage: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color(white: 0.13))
+                        .fill(Color.gray(light: 0.94, dark: 0.13))
                 )
             }
             .buttonStyle(.plain)
@@ -203,11 +203,11 @@ struct TelegramSettingsPage: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.065))
+                .fill(Color.gray(light: 0.96, dark: 0.065))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
+                .stroke(Color.overlay(0.08), lineWidth: 0.6)
         )
     }
 
@@ -289,13 +289,13 @@ private struct BotListRow: View {
         switch bot.transport {
         case .polling: return .green
         case .webhook: return .blue
-        case .off:     return Color.white.opacity(0.35)
+        case .off:     return Color.overlay(0.35)
         }
     }
 
     private var backgroundFill: Color {
-        if isSelected { return Color.white.opacity(0.07) }
-        if hovered    { return Color.white.opacity(0.035) }
+        if isSelected { return Color.overlay(0.07) }
+        if hovered    { return Color.overlay(0.035) }
         return .clear
     }
 }
@@ -376,7 +376,7 @@ private struct BotDetailView: View {
                         .font(BodyFont.system(size: 12.5, wght: 500))
                         .foregroundColor(Palette.textPrimary)
                 }
-                Divider().background(Color.white.opacity(0.07))
+                CardDivider()
                 row("Account ID") {
                     Text(bot.accountId)
                         .font(BodyFont.system(size: 12.5))
@@ -384,7 +384,7 @@ private struct BotDetailView: View {
                         .monospaced()
                 }
                 if let username = bot.displayUsername {
-                    Divider().background(Color.white.opacity(0.07))
+                    CardDivider()
                     row("Username") {
                         Text(username)
                             .font(BodyFont.system(size: 12.5))
@@ -392,21 +392,21 @@ private struct BotDetailView: View {
                     }
                 }
                 if let firstName = bot.firstName, !firstName.isEmpty {
-                    Divider().background(Color.white.opacity(0.07))
+                    CardDivider()
                     row("First name") {
                         Text(firstName)
                             .font(BodyFont.system(size: 12.5))
                             .foregroundColor(Palette.textPrimary)
                     }
                 }
-                Divider().background(Color.white.opacity(0.07))
+                CardDivider()
                 row("Status") {
                     Text(bot.status)
                         .font(BodyFont.system(size: 12.5))
                         .foregroundColor(Palette.textPrimary)
                 }
                 if let masked = bot.maskedCredential, !masked.isEmpty {
-                    Divider().background(Color.white.opacity(0.07))
+                    CardDivider()
                     row("Token") {
                         Text(masked)
                             .font(BodyFont.system(size: 12, wght: 500))
@@ -428,19 +428,19 @@ private struct BotDetailView: View {
                         .font(BodyFont.system(size: 12.5, wght: 500))
                         .foregroundColor(Palette.textPrimary)
                 }
-                Divider().background(Color.white.opacity(0.07))
+                CardDivider()
 
                 HStack(spacing: 10) {
                     Button("Start polling") {
                         Task { await store.startPolling(bot) }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .disabled(inflight)
 
                     Button("Stop polling") {
                         Task { await store.stopPolling(bot) }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .disabled(inflight)
 
                     if inflight {
@@ -451,7 +451,7 @@ private struct BotDetailView: View {
                 .font(BodyFont.system(size: 11.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
 
-                Divider().background(Color.white.opacity(0.07))
+                CardDivider()
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Webhook URL")
@@ -484,7 +484,7 @@ private struct BotDetailView: View {
                         .disabled(inflight)
                         Spacer()
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .font(BodyFont.system(size: 11.5, wght: 500))
                     .foregroundColor(Palette.textPrimary)
                     .padding(.top, 4)
@@ -521,7 +521,7 @@ private struct BotDetailView: View {
                             Button {
                                 commandsDraft.remove(at: idx)
                             } label: {
-                                Image(systemName: "minus.circle")
+                                IconImage("minus", size: 13)
                             }
                             .buttonStyle(.plain)
                             .foregroundColor(Palette.textSecondary)
@@ -540,7 +540,7 @@ private struct BotDetailView: View {
                     Button("Add row") {
                         commandsDraft.append(TelegramCommandSpec(command: "", description: ""))
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .disabled(inflight || commandsReloading)
 
                     Button("Sync to Telegram") {
@@ -549,7 +549,7 @@ private struct BotDetailView: View {
                             await store.saveCommands(bot, commands: cleaned)
                         }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .disabled(!canSyncCommands)
 
                     Button("Reload") {
@@ -559,7 +559,7 @@ private struct BotDetailView: View {
                             commandsLoaded = true
                         }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .disabled(inflight || commandsReloading)
 
                     if commandsReloading {
@@ -588,7 +588,7 @@ private struct BotDetailView: View {
                     Button("Reload") {
                         Task { await store.reloadChats(bot) }
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(TGActionButtonStyle())
                     .font(BodyFont.system(size: 11.5, wght: 500))
                     .foregroundColor(Palette.textPrimary)
                     .disabled(inflight || chatsReloading)
@@ -605,7 +605,7 @@ private struct BotDetailView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(chats.enumerated()), id: \.element.id) { idx, chat in
                             if idx > 0 {
-                                Divider().background(Color.white.opacity(0.06))
+                                CardDivider()
                             }
                             HStack(spacing: 8) {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -620,7 +620,7 @@ private struct BotDetailView: View {
                                 Button("Send") {
                                     onSendMessageRequested(chat)
                                 }
-                                .buttonStyle(.borderless)
+                                .buttonStyle(TGActionButtonStyle())
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                                 .foregroundColor(Palette.textPrimary)
                             }
@@ -758,10 +758,12 @@ private struct AddBotSheet: View {
             HStack(spacing: 10) {
                 Spacer()
                 Button("Cancel") { isPresented = false }
+                    .buttonStyle(SheetCancelButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 Button("Connect") {
                     Task { await connect() }
                 }
+                .buttonStyle(SheetPrimaryButtonStyle(enabled: !(inflight || secretName.isEmpty)))
                 .keyboardShortcut(.defaultAction)
                 .disabled(inflight || secretName.isEmpty)
                 if inflight {
@@ -771,6 +773,7 @@ private struct AddBotSheet: View {
         }
         .padding(20)
         .frame(width: 460)
+        .sheetStandardBackground()
     }
 
     private func fieldGroup<Field: View>(
@@ -860,6 +863,40 @@ private extension String {
     }
 }
 
+/// Compact secondary action button used across the Telegram detail
+/// cards. Capsule with a soft white fill and hairline, replacing the
+/// system `.borderless` blue link look. Aligned with the canon
+/// secondary-button recipe (STYLE 6.6).
+private struct TGActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        TGActionButtonLabel(configuration: configuration)
+    }
+}
+
+private struct TGActionButtonLabel: View {
+    let configuration: ButtonStyle.Configuration
+    @State private var hovered = false
+
+    var body: some View {
+        configuration.label
+            .font(BodyFont.system(size: 11.5, wght: 600))
+            .foregroundColor(Palette.textPrimary)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 6)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.overlay(configuration.isPressed ? 0.12 : (hovered ? 0.10 : 0.06)))
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
+                    )
+            )
+            .contentShape(Capsule(style: .continuous))
+            .onHover { hovered = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
 // MARK: - Send message sheet
 
 private struct SendMessageSheet: View {
@@ -888,11 +925,11 @@ private struct SendMessageSheet: View {
                 .padding(8)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color(white: 0.07))
+                        .fill(Color.gray(light: 0.955, dark: 0.07))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.6)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.6)
                 )
 
             if let failure {
@@ -905,8 +942,10 @@ private struct SendMessageSheet: View {
             HStack(spacing: 10) {
                 Spacer()
                 Button("Cancel") { dismiss() }
+                    .buttonStyle(SheetCancelButtonStyle())
                     .keyboardShortcut(.cancelAction)
                 Button("Send") { Task { await send() } }
+                    .buttonStyle(SheetPrimaryButtonStyle(enabled: !(inflight || text.isEmpty)))
                     .keyboardShortcut(.defaultAction)
                     .disabled(inflight || text.isEmpty)
                 if inflight {
@@ -916,6 +955,7 @@ private struct SendMessageSheet: View {
         }
         .padding(20)
         .frame(width: 480)
+        .sheetStandardBackground()
     }
 
     private var chatLabel: String {

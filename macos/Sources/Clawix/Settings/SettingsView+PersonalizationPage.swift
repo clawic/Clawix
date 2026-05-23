@@ -60,10 +60,10 @@ struct PersonalizationPage: View {
 
             ZStack(alignment: .topTrailing) {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(white: 0.06))
+                    .fill(Color.gray(light: 0.96, dark: 0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
                 InstructionsTextEditor(
                     text: $instructions,
@@ -98,7 +98,7 @@ struct PersonalizationPage: View {
                         .padding(.vertical, 6)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.white.opacity(isDirty ? 0.12 : 0.06))
+                                .fill(Color.overlay(isDirty ? 0.12 : 0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -192,8 +192,8 @@ struct InstructionsTextEditor: NSViewRepresentable {
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-        textView.textColor = NSColor.white
-        textView.insertionPointColor = NSColor.white
+        textView.textColor = NSColor.dynamicGray(light: 0.12, dark: 1.0)
+        textView.insertionPointColor = NSColor.dynamicGray(light: 0.12, dark: 1.0)
         textView.allowsUndo = true
         textView.isRichText = false
         textView.usesFontPanel = false
@@ -243,14 +243,14 @@ struct ExpandIconButton: View {
     var body: some View {
         Button(action: onTap) {
             CornerBracketsIcon(size: 12, variant: .expanded, lineWidth: 1.5)
-                .foregroundColor(Color(white: hovered ? 0.95 : 0.78))
+                .foregroundColor((hovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.27, dark: 0.78)))
                 .padding(6)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.10 : 0.05))
+                        .fill(Color.overlay(hovered ? 0.10 : 0.05))
                         .overlay(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.08), lineWidth: 0.5)
                         )
                 )
         }
@@ -304,11 +304,11 @@ struct InstructionsExpandedSheet: View {
                 Spacer()
                 Button { isPresented = false } label: {
                     LucideIcon(.x, size: 11)
-                        .foregroundColor(Color(white: 0.78))
+                        .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -317,17 +317,17 @@ struct InstructionsExpandedSheet: View {
             .padding(.vertical, 14)
 
             Rectangle()
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
                 .frame(height: 1)
 
             TextEditor(text: $text)
                 .font(BodyFont.system(size: 13, design: .monospaced))
                 .scrollContentBackground(.hidden)
                 .padding(18)
-                .background(Color(white: 0.06))
+                .background(Color.gray(light: 0.96, dark: 0.06))
 
             Rectangle()
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
                 .frame(height: 1)
 
             HStack {
@@ -340,10 +340,10 @@ struct InstructionsExpandedSheet: View {
                         .padding(.vertical, 6)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.overlay(0.10))
                                 .overlay(
                                     Capsule(style: .continuous)
-                                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                                 )
                         )
                 }
@@ -354,6 +354,6 @@ struct InstructionsExpandedSheet: View {
         }
         .frame(minWidth: 820, idealWidth: 980, maxWidth: 1200,
                minHeight: 600, idealHeight: 720, maxHeight: 900)
-        .background(Color(white: 0.07))
+        .background(Color.gray(light: 0.955, dark: 0.07))
     }
 }

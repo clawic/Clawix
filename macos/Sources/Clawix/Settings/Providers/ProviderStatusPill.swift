@@ -38,7 +38,7 @@ struct ProviderStatusPill: View {
     private var dotColor: Color {
         switch status {
         case .configured: return Color.green
-        case .empty: return Color(white: 0.5)
+        case .empty: return Color.gray(light: 0.46, dark: 0.5)
         case .disabled: return Color(red: 0.85, green: 0.35, blue: 0.35)
         }
     }
@@ -53,7 +53,7 @@ struct ProviderStatusPill: View {
     private var fill: Color {
         switch status {
         case .configured: return Color.green.opacity(0.10)
-        case .empty: return Color.white.opacity(0.04)
+        case .empty: return Color.overlay(0.04)
         case .disabled: return Color.red.opacity(0.10)
         }
     }

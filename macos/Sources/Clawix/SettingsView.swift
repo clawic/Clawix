@@ -152,10 +152,10 @@ struct SettingsSidebar: View {
                 HStack(spacing: 11) {
                     LucideIcon(.arrowLeft, size: 13)
                         .frame(width: 15, alignment: .center)
-                        .foregroundColor(Color(white: backHovered ? 0.92 : 0.78))
+                        .foregroundColor((backHovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78)))
                     Text("Back to app")
                         .font(BodyFont.system(size: 13.5, wght: 500))
-                        .foregroundColor(Color(white: 0.92))
+                        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     Spacer(minLength: 6)
                 }
                 .padding(.horizontal, 10)
@@ -163,7 +163,7 @@ struct SettingsSidebar: View {
                 .contentShape(Rectangle())
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(backHovered ? Color.white.opacity(0.035) : .clear)
+                        .fill(backHovered ? Color.overlay(0.035) : .clear)
                 )
                 .animation(.easeOut(duration: 0.12), value: backHovered)
             }
@@ -221,16 +221,16 @@ private struct SettingsSidebarRow: View {
 
     private var iconColor: Color {
         if isSelected { return .white }
-        return Color(white: hovered ? 0.92 : 0.78)
+        return (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78))
     }
 
     private var labelColor: Color {
-        isSelected ? .white : Color(white: 0.92)
+        isSelected ? .white : Color.gray(light: 0.14, dark: 0.92)
     }
 
     private var backgroundFill: Color {
-        if isSelected { return Color.white.opacity(0.06) }
-        if hovered    { return Color.white.opacity(0.035) }
+        if isSelected { return Color.overlay(0.06) }
+        if hovered    { return Color.overlay(0.035) }
         return .clear
     }
 

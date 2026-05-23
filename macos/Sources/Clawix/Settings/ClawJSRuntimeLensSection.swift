@@ -27,7 +27,7 @@ struct ClawJSRuntimeLensSection: View {
                 let presentation = runtimeLensPresentation
                 ForEach(Array(presentation.sections.enumerated()), id: \.element.id) { index, section in
                     if index > 0 {
-                        Divider().background(Color.white.opacity(0.07))
+                        Divider().background(Color.overlay(0.07))
                     }
                     runtimeLensPresentationSection(section)
                 }

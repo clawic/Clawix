@@ -95,7 +95,7 @@ struct EditAccountSheet: View {
                 Button(action: save) {
                     Text("Save")
                         .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 7)
                         .background(

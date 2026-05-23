@@ -80,12 +80,12 @@ struct AddAccountSheet: View {
                 Button(action: save) {
                     Text("Save")
                         .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 7)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(saveDisabled ? Color.white.opacity(0.06) : Color(red: 0.16, green: 0.46, blue: 0.98))
+                                .fill(saveDisabled ? Color.overlay(0.06) : Color(red: 0.16, green: 0.46, blue: 0.98))
                         )
                 }
                 .buttonStyle(.plain)

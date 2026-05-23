@@ -36,14 +36,14 @@ struct IdentitySettingsPage: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 LucideIcon.auto("user", size: 18)
-                    .foregroundColor(.white.opacity(0.90))
+                    .foregroundColor(Color.overlay(0.90))
                 Text("Identity")
                     .font(BodyFont.system(size: 17, wght: 600))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
             }
             Text("Your protocol identity, the devices you trust, and the roles you publish under.")
                 .font(BodyFont.system(size: 12, wght: 400))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
         }
     }
 
@@ -58,7 +58,7 @@ struct IdentitySettingsPage: View {
                     .controlSize(.small)
                 Text(L10n.t("Loading identity records from the marketplace index."))
                     .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(.white.opacity(0.58))
+                    .foregroundColor(Color.overlay(0.58))
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(L10n.t("Loading identity records from the marketplace index"))
@@ -154,7 +154,7 @@ private struct Section<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(.white.opacity(0.50))
+                .foregroundColor(Color.overlay(0.50))
                 .textCase(nil)
             content
         }
@@ -171,21 +171,21 @@ private struct IdentityCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(.white.opacity(0.90))
+                    .foregroundColor(Color.overlay(0.90))
                 Text(subtitle)
                     .font(BodyFont.system(size: 11.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
             }
             Spacer()
             Text(meta)
                 .font(BodyFont.system(size: 11, wght: 500))
-                .foregroundColor(.white.opacity(0.50))
+                .foregroundColor(Color.overlay(0.50))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 }
@@ -197,15 +197,15 @@ private struct EmptyRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             LucideIcon.auto(icon, size: 14)
-                .foregroundColor(.white.opacity(0.45))
+                .foregroundColor(Color.overlay(0.45))
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(BodyFont.system(size: 12.5, wght: 600))
-                    .foregroundColor(.white.opacity(0.78))
+                    .foregroundColor(Color.overlay(0.78))
                 Text(description)
                     .font(BodyFont.system(size: 11.5, wght: 400))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundColor(Color.overlay(0.55))
             }
             Spacer()
         }
@@ -213,7 +213,7 @@ private struct EmptyRow: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.overlay(0.03))
         )
     }
 }

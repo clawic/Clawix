@@ -78,10 +78,11 @@ struct RemoteAccessSettingsPage: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Remote access")
-                .font(.system(size: 18, weight: .semibold))
+                .font(BodyFont.system(size: 22, weight: .semibold))
+                .foregroundColor(Palette.textPrimary)
             Text("Connect this Mac to a self-hosted clawix-relay so the iPhone and other devices can reach you from outside your LAN.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(BodyFont.system(size: 12.5))
+                .foregroundColor(Palette.textSecondary)
         }
         .padding(.horizontal, 24)
         .padding(.top, 18)
@@ -91,7 +92,7 @@ struct RemoteAccessSettingsPage: View {
         sectionCard(title: "Coordinator", subtitle: "Base URL of your relay deployment.") {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("https://relay.example.com", text: $coordinatorUrlString)
-                    .textFieldStyle(.roundedBorder)
+                    .sheetTextFieldStyle()
                     .onChange(of: coordinatorUrlString) { _, newValue in
                         PairingService.shared.coordinatorURL = URL(string: newValue.trimmingCharacters(in: .whitespacesAndNewlines))
                     }
@@ -99,8 +100,9 @@ struct RemoteAccessSettingsPage: View {
                     InfoBanner(text: L10n.t("Invalid coordinator URL"), kind: .error)
                 }
                 Text("Stored locally. Used by this Mac to register itself and by future pairings to embed the URL in the QR.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -109,9 +111,9 @@ struct RemoteAccessSettingsPage: View {
         sectionCard(title: "Magic-link sign-in", subtitle: "Request a sign-in link via email. The coordinator opens the link and copies a token back.") {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("you@example.com", text: $email)
-                    .textFieldStyle(.roundedBorder)
+                    .sheetTextFieldStyle()
                 HStack(spacing: 8) {
-                    Button("Send magic link") {
+                    IconChipButton(symbol: "paperplane", label: "Send magic link", isPrimary: true) {
                         store.sendMagicLink(
                             coordinatorUrlString: coordinatorUrlString,
                             email: email,
@@ -119,14 +121,16 @@ struct RemoteAccessSettingsPage: View {
                         )
                     }
                     .disabled(!canSendMagicLink)
+                    .opacity(canSendMagicLink ? 1 : 0.45)
                     if store.inFlight { ProgressView().controlSize(.small) }
                 }
-                Divider().padding(.vertical, 4)
+                CardDivider().padding(.vertical, 4)
                 Text("Paste the token from the email confirmation:")
-                    .font(.system(size: 12))
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
                 TextField("mlk_…", text: $pasteToken)
-                    .textFieldStyle(.roundedBorder)
-                Button("Register this Mac") {
+                    .sheetTextFieldStyle()
+                IconChipButton(symbol: "laptopcomputer", label: "Register this Mac", isPrimary: true) {
                     store.consumeToken(
                         coordinatorUrlString: coordinatorUrlString,
                         token: pasteToken,
@@ -141,6 +145,7 @@ struct RemoteAccessSettingsPage: View {
                     }
                 }
                 .disabled(!canRegisterMac)
+                .opacity(canRegisterMac ? 1 : 0.45)
                 statusView
             }
         }
@@ -150,17 +155,18 @@ struct RemoteAccessSettingsPage: View {
     private var pairedDeviceSection: some View {
         if !savedDeviceId.isEmpty {
             sectionCard(title: "Paired", subtitle: nil) {
-                VStack(alignment: .leading, spacing: 6) {
-                    LabeledContent("Device id") { Text(savedDeviceId).font(.system(size: 11, design: .monospaced)) }
-                    LabeledContent("Tenant") { Text(savedTenantId).font(.system(size: 11, design: .monospaced)) }
-                    Button("Forget local pairing") {
+                VStack(alignment: .leading, spacing: 8) {
+                    pairedRow(label: "Device id", value: savedDeviceId)
+                    pairedRow(label: "Tenant", value: savedTenantId)
+                    IconChipButton(symbol: "trash", label: "Forget local pairing") {
                         store.forget {
                             savedDeviceId = ""
                             savedTenantId = ""
                         }
                     }
-                    .controlSize(.small)
                     .disabled(store.inFlight)
+                    .opacity(store.inFlight ? 0.45 : 1)
+                    .padding(.top, 2)
                 }
             }
         }
@@ -173,12 +179,30 @@ struct RemoteAccessSettingsPage: View {
             EmptyView()
         case .info(let message):
             Text(message)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(BodyFont.system(size: 11, wght: 500))
+                .foregroundColor(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         case .error(let message):
             Text(message)
-                .font(.system(size: 11))
-                .foregroundStyle(.red)
+                .font(BodyFont.system(size: 11, wght: 500))
+                .foregroundColor(Palette.danger)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func pairedRow(label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(label)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textTertiary)
+                .frame(width: 76, alignment: .leading)
+            Text(value)
+                .font(BodyFont.system(size: 11, design: .monospaced))
+                .foregroundColor(Palette.textSecondary)
+                .textSelection(.enabled)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 0)
         }
     }
 
@@ -188,9 +212,16 @@ struct RemoteAccessSettingsPage: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .semibold))
-                if let subtitle { Text(subtitle).font(.system(size: 11)).foregroundStyle(.secondary) }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(BodyFont.system(size: 13, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(BodyFont.system(size: 11.5, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             content()
         }
@@ -198,11 +229,11 @@ struct RemoteAccessSettingsPage: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.secondary.opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
     }
 }

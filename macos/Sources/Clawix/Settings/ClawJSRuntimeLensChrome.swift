@@ -169,7 +169,7 @@ extension ClawJSRuntimeLensSection {
         case .info: return .blue
         case .warning: return .orange
         case .danger: return .red
-        case .muted: return Color.white.opacity(0.35)
+        case .muted: return Color.overlay(0.35)
         }
     }
 }

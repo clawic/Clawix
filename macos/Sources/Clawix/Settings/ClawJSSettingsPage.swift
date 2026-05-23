@@ -65,7 +65,7 @@ struct ClawJSSettingsPage: View {
                         .font(BodyFont.system(size: 12.5, weight: .medium))
                         .foregroundColor(Palette.textPrimary)
                 }
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Bundle available") {
                     if BackgroundBridgeService.shared.isDaemonReachable && !ClawJSRuntime.isAvailable {
                         statusPill(text: "Not required in daemon mode", color: .blue)
@@ -101,14 +101,14 @@ struct ClawJSSettingsPage: View {
                 if case .availableOnDemand(let trigger) = state {
                     blockedReason("Available when \(trigger).")
                 }
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 row(label: "Port") {
                     Text(verbatim: "127.0.0.1:\(service.port)")
                         .font(BodyFont.system(size: 12.5, weight: .medium))
                         .foregroundColor(Palette.textPrimary)
                         .monospacedDigit()
                 }
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 HStack(spacing: 12) {
                     serviceActionButton(service: service, state: state)
 
@@ -133,9 +133,9 @@ struct ClawJSSettingsPage: View {
                 }
 
                 if service == .database, state.isReady {
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     databaseProbeRow
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     DatabaseManagerStatusRow()
                 }
             }
@@ -205,7 +205,7 @@ struct ClawJSSettingsPage: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     ForEach(visibleClawJSServices) { service in
                         let state = manager.snapshots[service]?.state ?? .idle
                         let statusJSONValue = statusJSON(for: service)
@@ -363,7 +363,7 @@ struct ClawJSSettingsPage: View {
 
     private func stateColor(_ state: ClawJSServiceState) -> Color {
         switch state {
-        case .idle:                return Color.white.opacity(0.4)
+        case .idle:                return Color.overlay(0.4)
         case .availableOnDemand:   return .blue
         case .blocked:             return .orange
         case .starting:            return .yellow

@@ -151,23 +151,23 @@ struct ReplacementBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             LucideIcon(.circleAlert, size: 13)
-                .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.30))
+                .foregroundColor(Palette.warning)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 0) {
                     InlineCode("[features].collab")
                     Text(" has been replaced. Use ")
-                        .foregroundColor(Color(white: 0.85))
+                        .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                     InlineCode("[features].multi_agent")
                     Text(" instead.")
-                        .foregroundColor(Color(white: 0.85))
+                        .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 }
                 .font(BodyFont.system(size: 12, wght: 500))
                 HStack(spacing: 0) {
-                    Text("Enable it with ").foregroundColor(Color(white: 0.75))
+                    Text("Enable it with ").foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                     InlineCode("--enable multi_agent")
-                    Text(" or ").foregroundColor(Color(white: 0.75))
+                    Text(" or ").foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                     InlineCode("[features].multi_agent")
-                    Text(" in config.toml. See").foregroundColor(Color(white: 0.75))
+                    Text(" in config.toml. See").foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                 }
                 .font(BodyFont.system(size: 11.5, wght: 500))
                 HStack(spacing: 4) {
@@ -178,7 +178,7 @@ struct ReplacementBanner: View {
                         .foregroundColor(Palette.pastelBlue)
                     Text("for details.")
                         .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(Color(white: 0.75))
+                        .foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                 }
             }
             Spacer(minLength: 0)
@@ -202,12 +202,12 @@ struct InlineCode: View {
     var body: some View {
         Text(text)
             .font(BodyFont.system(size: 11.5, design: .monospaced))
-            .foregroundColor(Color(white: 0.95))
+            .foregroundColor(Color.gray(light: 0.11, dark: 0.95))
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
             )
     }
 }
@@ -231,10 +231,10 @@ struct ReinstallRow: View {
                 .padding(.vertical, 5)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
         }
@@ -268,10 +268,10 @@ struct WorkspaceDependencyStatusRow: View {
                 .padding(.vertical, 5)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                         .overlay(
                             Capsule(style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
         }

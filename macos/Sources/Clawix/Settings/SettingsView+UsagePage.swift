@@ -176,18 +176,18 @@ struct UsageBarRow: View {
             HStack(spacing: 14) {
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 999, style: .continuous)
-                        .fill(Color.white.opacity(0.10))
+                        .fill(Color.overlay(0.10))
                         .frame(width: 90, height: 7)
                     if displayPercent > 0 {
                         RoundedRectangle(cornerRadius: 999, style: .continuous)
-                            .fill(Color.white.opacity(0.95))
+                            .fill(Color.overlay(0.95))
                             .frame(width: max(7, 90 * CGFloat(displayPercent) / 100), height: 7)
                     }
                 }
                 VStack(alignment: .trailing, spacing: 1) {
                     Text(verbatim: "\(displayPercent) %")
                         .font(BodyFont.system(size: 13, wght: 500))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                     Text(mode == .used ? "used" : "remaining")
                         .font(BodyFont.system(size: 11, wght: 500))
                         .foregroundColor(Palette.textSecondary)

@@ -135,7 +135,7 @@ struct HostDetailView: View {
         case .fullTrust: label = "Full trust"
         case .askPerTask: label = "Ask"
         }
-        return pill(label, color: Color.white.opacity(0.10))
+        return pill(label, color: Color.overlay(0.10))
     }
 
     private func pill(_ text: String, color: Color) -> some View {
@@ -188,7 +188,7 @@ struct HostDetailView: View {
                             .frame(height: 20)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color.white.opacity(0.07))
+                                    .fill(Color.overlay(0.07))
                             )
                     }
                 }
@@ -218,7 +218,7 @@ struct HostDetailView: View {
                         .fill(Color.black.opacity(0.30))
                         .overlay(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.08), lineWidth: 0.5)
                         )
                 )
                 .onSubmit { commitWorkspace() }
@@ -328,10 +328,10 @@ private struct DetailCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }

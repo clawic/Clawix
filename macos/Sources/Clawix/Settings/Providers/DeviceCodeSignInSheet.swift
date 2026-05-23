@@ -69,7 +69,7 @@ struct DeviceCodeSignInSheet: View {
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.overlay(0.08))
                 )
             HStack(spacing: 10) {
                 Button {

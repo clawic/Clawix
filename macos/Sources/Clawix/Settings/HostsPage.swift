@@ -152,7 +152,7 @@ struct HostsPage: View {
                     Text("Add host")
                         .font(BodyFont.system(size: 12, weight: .medium))
                 }
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 12)
                 .frame(height: 24)
                 .background(
@@ -208,7 +208,7 @@ struct HostsPage: View {
                 .fill(Color.black.opacity(0.30))
                 .overlay(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
         )
     }
@@ -378,7 +378,7 @@ private struct HostFilterChip: View {
                     .frame(height: 14)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(active ? 0.10 : 0.05))
+                            .fill(Color.overlay(active ? 0.10 : 0.05))
                     )
             }
             .padding(.horizontal, 9)
@@ -387,8 +387,8 @@ private struct HostFilterChip: View {
                 Capsule(style: .continuous)
                     .fill(
                         active
-                            ? Color.white.opacity(0.12)
-                            : (hovered ? Color.white.opacity(0.07) : Color.white.opacity(0.04))
+                            ? Color.overlay(0.12)
+                            : (hovered ? Color.overlay(0.07) : Color.overlay(0.04))
                     )
             )
         }
@@ -440,7 +440,7 @@ struct HostEndpointRow: View {
             .frame(height: 16)
             .background(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.overlay(0.08))
             )
     }
 }
@@ -489,7 +489,7 @@ struct HostRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(hovered ? Color.white.opacity(0.03) : Color.clear)
+            .background(hovered ? Color.overlay(0.03) : Color.clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -515,7 +515,7 @@ struct HostRow: View {
         case .fullTrust: label = "Full trust"
         case .askPerTask: label = "Ask"
         }
-        return pill(text: label, color: Color.white.opacity(0.10))
+        return pill(text: label, color: Color.overlay(0.10))
     }
 
     private func pill(text: String, color: Color) -> some View {
@@ -547,7 +547,7 @@ struct HostEndpointChip: View {
             .frame(height: 17)
             .background(
                 Capsule(style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
     }
 }

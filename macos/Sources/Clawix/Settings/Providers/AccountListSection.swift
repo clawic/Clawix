@@ -74,7 +74,7 @@ struct AccountListSection: View {
                 Text(title)
                     .font(BodyFont.system(size: 12, wght: 600))
             }
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
@@ -126,7 +126,7 @@ private struct AccountRow: View {
                     .padding(6)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(hovered ? Color.white.opacity(0.05) : .clear)
+                            .fill(hovered ? Color.overlay(0.05) : .clear)
                     )
             }
             .buttonStyle(.plain)

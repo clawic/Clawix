@@ -197,10 +197,10 @@ struct DomainListSection: View {
                     .padding(.vertical, 5)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.overlay(0.08))
                             .overlay(
                                 Capsule(style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
                 }
@@ -275,10 +275,10 @@ struct DomainListSection: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(white: 0.085))
+                    .fill(Color.gray(light: 0.95, dark: 0.085))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
         }

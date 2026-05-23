@@ -454,7 +454,7 @@ private struct AppsSettingsRow: View {
         .padding(.vertical, 11)
     }
 
-    private static let internetOnColor = Color(red: 0.45, green: 0.78, blue: 0.55)
+    private static let internetOnColor = Palette.success
     private static let destructiveColor = Color.red.opacity(0.8)
 
     @ViewBuilder
@@ -697,7 +697,7 @@ private struct AppsAuditRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
         )
     }
 }
@@ -823,7 +823,7 @@ struct AppsSettingsTrustPresentation: Equatable {
         case .normal:
             return Palette.textSecondary
         case .warning:
-            return Color(red: 0.95, green: 0.62, blue: 0.30)
+            return Palette.warning
         case .muted:
             return Palette.textTertiary
         }
