@@ -939,22 +939,22 @@ struct AddMenuPopup: View {
                 }
             }
 
-            /*
-            MenuStandardDivider()
-                .padding(.vertical, 3)
+            if !plugins.isEmpty {
+                MenuStandardDivider()
+                    .padding(.vertical, 3)
 
-            AddMenuRow(
-                icon: "square.grid.2x2",
-                label: "Plugins",
-                trailing: "chevron.right",
-                highlighted: showComplementos
-            ) {
-                withAnimation(.easeOut(duration: 0.20)) { showComplementos.toggle() }
+                AddMenuRow(
+                    icon: "square.grid.2x2",
+                    label: L10n.t("Plugins"),
+                    trailing: "chevron.right",
+                    highlighted: showComplementos
+                ) {
+                    withAnimation(.easeOut(duration: 0.20)) { showComplementos.toggle() }
+                }
+                .onHover { hovering in
+                    if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = true } }
+                }
             }
-            .onHover { hovering in
-                if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = true } }
-            }
-            */
         }
         .padding(.vertical, MenuStyle.menuVerticalPadding)
         .frame(width: 186, alignment: .leading)
