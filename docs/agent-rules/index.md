@@ -77,7 +77,7 @@ domains are assistive only.
   `docs/adr/0026-adoption-and-canonicity-governance-mirror.md`, and sibling
   ClawJS `docs/governance/adoption-canonicity.md`.
 - Surface routes: `docs/adr/0011-surface-route-graph.md`, sibling ClawJS
-  `docs/adr/0012-surface-route-graph.md`.
+  `docs/adr/0049-surface-route-graph.md`.
 - Remote mesh/Gateway/Connector/Sync/Iroh/node trust: sibling ClawJS
   `docs/adr/0022-remote-gateway-sync-redesign.md`, sibling ClawJS
   `docs/relay.md`, local `docs/decision-map.md`.

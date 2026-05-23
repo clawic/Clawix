@@ -27,10 +27,17 @@ Maintain the decision map as an index, not a duplicate source of truth.
    `docs/adr-operational-coverage.manifest.json`; a map row without a real
    guard/test or CLI search/inspect route is incomplete.
 8. Remove stale rows only when the canonical source has been retired or superseded.
-9. Run docs alignment checks or add a guard if the map should enforce a snippet.
+9. Before closure, run `node scripts/discoverability-check.mjs closure
+   --changed-file docs/decision-map.md --json` and include the real
+   `claw search ... --json`, `claw inspect ... --json`, and discovered artifact
+   in the closing report. If discovery cannot run or cannot find the affected
+   row's artifact, close as `PARTIAL/BLOCKED`.
+10. Run docs alignment checks or add a guard if the map should enforce a snippet.
 
 ## Constraints
 
 - Keep rows short and factual.
 - Do not copy long ADR rationale into the map.
 - Every row should help an agent choose what to read next.
+- Do not accept "docs updated" as closure without CLI discovery evidence for
+  closure-gated decisions.

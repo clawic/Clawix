@@ -1,8 +1,11 @@
 # V1 Release Readiness
 
-This matrix names the central constitutional promises that block V1 release.
-It is intentionally shorter than the full Constitution: only promises listed in
-`docs/governance/release-readiness.manifest.json` are release-readiness blockers.
+`docs/governance/release-readiness.manifest.json` is the executable release
+readiness contract. This page explains the contract for humans; it is not the
+source of truth. Every release target in the manifest must declare concrete
+requirements as either an executable `command` or blocking `externalEvidence`.
+A target release is not ready while any required command fails, reports
+`EXTERNAL PENDING`, or lacks the required external receipt.
 
 `PARTIAL` and `EXTERNAL PENDING` are valid planning states, but they are not V1
 release-ready states for the promises below. A target release cannot proceed
@@ -13,8 +16,28 @@ Run:
 
 ```bash
 node scripts/release_readiness_check.mjs
-node scripts/release_readiness_check.mjs --target macos-release
+node scripts/release_readiness_check.mjs --target macos-release --phase preflight --run
+node scripts/release_readiness_check.mjs --target macos-release --phase publish --run --json
 ```
+
+## Target Contract
+
+Each `targetContracts[]` row in the manifest covers one target such as
+`macos-release`, `ios-release`, `linux-release`, `windows-release`, or
+`web-release`.
+
+Requirements use only two shapes:
+
+- `command`: a local executable check with `command.argv`, `command.cwd`, and
+  `command.requiredEnv`.
+- `externalEvidence`: a blocker with `blockerId`, `evidenceKind`, and
+  `verifier`, used when notarization, device validation, SBOM, provenance,
+  checksums/signatures, or manual accessibility evidence cannot be proven by a
+  local command alone.
+
+`preflight` runs only local preflight requirements. `publish` includes
+preflight plus publish-time evidence requirements and must block if artifact
+evidence is still missing.
 
 ## Matrix
 
@@ -38,6 +61,7 @@ node scripts/release_readiness_check.mjs --target macos-release
 - A promise can become release-ready only when every target-scoped assertion is
   `enforced` and every target-scoped central external row has accepted evidence
   or an explicit later `scope_revision`.
-- This matrix defines readiness. It does not authorize publishing, uploads,
-  tags, notarization, TestFlight, store submission, provider calls, paid APIs,
-  native permission prompts, or production-data access.
+- The manifest target contract defines readiness. This explanatory matrix does
+  not authorize publishing, uploads, tags, notarization, TestFlight, store
+  submission, provider calls, paid APIs, native permission prompts, or
+  production-data access.

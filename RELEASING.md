@@ -5,20 +5,28 @@ does not approve publishing, uploads, signing, notarization, TestFlight, store
 submission, tags, or website deployment.
 
 Every exact channel action requires a fresh maintainer approval for that action.
-Run `node scripts/legal_safety_check.mjs` before any channel-specific release
-step, and keep legal docs, EULA, safety policy, regulated-domain policy,
-settings copy, export/share labels, and support diagnostics opt-ins current.
+Run the executable release readiness contract before any channel-specific
+release step, and keep legal docs, EULA, safety policy, regulated-domain
+policy, settings copy, export/share labels, and support diagnostics opt-ins
+current.
 
 ## Shared Legal Gate
 
 1. Confirm the release candidate is on the intended branch and contains no
    private signing IDs, bundle IDs, Team IDs, local paths, credentials, logs, or
    production exports.
-2. Run `node scripts/legal_safety_check.mjs`.
-3. Run `node scripts/supply_chain_security_check.mjs --release --target <target>`.
-4. Run `node scripts/release_readiness_check.mjs --target <target>` to confirm
-   every in-scope V1 central promise in
-   `docs/governance/release-readiness.md` is release-ready for the exact target.
+2. Run `node scripts/release_readiness_check.mjs --target <target> --phase preflight --run`.
+   The contract executes `node scripts/legal_safety_check.mjs` plus the
+   interface, mirror, supply-chain, accessibility, and external-pending
+   preflight checks declared in `docs/governance/release-readiness.manifest.json`.
+3. Before any tag, upload, notarization-dependent publish step, TestFlight
+   submission, store submission, or hosted deployment, run
+   `node scripts/release_readiness_check.mjs --target <target> --phase publish --run`.
+   Publish readiness requires artifact evidence such as notarization or
+   platform signing receipt, device/signed-host validation, SBOM, provenance,
+   checksums/signatures, and manual accessibility evidence where applicable.
+4. Confirm every in-scope V1 central promise in the executable manifest is
+   release-ready for the exact target.
 5. Confirm `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`, `SAFETY.md`,
    `REGULATED_DOMAINS.md`, `EULA.md`, `SECURITY.md`, and
    `docs/governance/legal/source-audit.md` are current.
@@ -37,11 +45,7 @@ settings copy, export/share labels, and support diagnostics opt-ins current.
 10. Record any unavailable physical, provider, store, signed-host, or share-sheet
    validation in `docs/governance/legal/external-pending.md` as
    `EXTERNAL PENDING`; do not treat it as passed.
-11. Run the release external-pending gate for the exact target before any tag,
-   upload, notarization-dependent publish step, TestFlight submission, or store
-   submission:
-   `node scripts/release_external_pending_gate.mjs --target <target>`.
-   A `validation_only` or `future_extension` row may remain visible, but any
+11. A `validation_only` or `future_extension` row may remain visible, but any
    in-scope `central_promise_blocker` row must fail the release until accepted
    evidence exists or an explicit later `scope_revision` changes the promise.
 
@@ -57,7 +61,7 @@ available, verify concrete evidence with `claw verify release --manifest <file>
 
 ## GitHub Release Channel Checklist
 
-1. Run the shared legal gate.
+1. Run the shared executable release readiness gate.
 2. Confirm release notes do not expose private paths, screenshots, logs,
    credentials, signing details, or production user data.
 3. Confirm the GitHub release body links current legal docs and EULA where a

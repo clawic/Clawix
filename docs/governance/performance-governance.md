@@ -187,6 +187,25 @@ PENDING`.
 lane by blocking new obvious broad reads unless nearby code or the baseline
 shows cursor/window/batch/limit behavior.
 
+## Scale Lab Harness
+
+ClawJS owns the canonical synthetic scale harness at sibling
+`scripts/scale-lab.ts`. Clawix consumes it through
+`scripts/scale_lab_fixture_check.mjs` for fixture-backed sessions and
+attachment pressure without touching real conversations, real prompts, paid
+services, secrets, providers, or existing user data.
+
+Scale Lab runs use temporary `CLAW_HOME`, `CLAW_DATA_DIR`, session, database,
+skill, runtime, search, dense-data, and attachment roots. They require
+conservative disk preflight, a process lock, cleanup by default, and an
+explicit `--keep` when debugging needs artifacts preserved.
+
+Scale Lab reports are valid synthetic framework-scale evidence. They do not
+replace signed Clawix app validation, approved private UI performance
+baselines, physical-device validation, or live provider validation; those
+remain separate and must be reported as `PARTIAL` or `EXTERNAL PENDING` until
+measured.
+
 ## Visual Boundary
 
 Performance governance does not authorize visual changes. If a performance

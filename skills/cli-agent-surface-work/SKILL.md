@@ -23,9 +23,17 @@ Work on the public `claw` CLI as an agent-facing contract.
    `docs/adr/0017-discoverability-and-meta-code-routing.md`.
 7. Treat aliases as thin portals; avoid semantic routers that guess intent.
 8. Update docs and examples in the same change when public usage changes.
+9. Before closure for canon, route, storage, permission, ADR, skill, or
+   Clawix/ClawJS integration changes, run
+   `node scripts/discoverability-check.mjs closure --changed-file <path> --json`.
+   The closing report must cite the real `claw search ... --json` and
+   `claw inspect ... --json` evidence plus the discovered artifact, or mark
+   the work `PARTIAL/BLOCKED`.
 
 ## Constraints
 
 - `claw` is the public CLI. Do not add new public `clawjs`, `clawix`, or framework-domain CLIs.
 - Do not expose secret-bearing, destructive, cost-bearing, or native permission actions without host approval boundaries.
 - Do not make source files the primary map when the CLI registry can answer.
+- Do not report public CLI surface closure as complete when the affected
+  artifact cannot be found by `claw search` and inspected through `claw inspect`.

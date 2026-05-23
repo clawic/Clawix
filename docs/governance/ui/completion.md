@@ -23,7 +23,7 @@ re-read one by one.
   verified-complete with evidence or explicitly accepted by the completion gate
   as blocked with a ledger.
 - Private evidence plan: 166 records must be verified before completion.
-- Private approval evidence: 1 record(s) must be verified before completion.
+- Private approval evidence: 2 record(s) must be verified before completion.
 
 | Private evidence type | Required records |
 | --- | --- |

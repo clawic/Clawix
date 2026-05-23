@@ -57,9 +57,10 @@ Resource contract coverage:
   clarity, and support-claim honesty.
 - **Constrained axes**: exact visual cloning and broad native write-back are
   constrained.
-- **Tradeoffs accepted**: early Clawix UI can be template/partial while the
-  contract prevents misleading parity.
-- **Debt or pending evidence**: full OpenClaw lens UI, Codex/Hermes deep UI,
+- **Tradeoffs accepted**: Clawix UI can be partial while the contract prevents
+  misleading parity; current OpenClaw/Hermes runtime-lens evidence does not
+  promote full native parity.
+- **Debt or pending evidence**: full native-parity lens depth, Codex deep UI,
   live account validation, and native write-back are later slices or
   `EXTERNAL PENDING`.
 
@@ -69,8 +70,7 @@ This mirror does not claim broad adoption, PMF, or external canonicity.
 
 ## Source Decision Audit
 
-Conversation-derived decision from private source audit
-`/Users/trabajo/.codex/goals/clawix-clawjs-runtime-ecosystem-integration-standard-source-audit-2026-05-21.md`.
+Conversation-derived decision from private source audit, not published.
 The public-safe mirror is this ADR, `docs/runtime-ecosystem-lens.md`,
 decision-map routing, the interface registry row, and the local check.
 
@@ -83,8 +83,8 @@ decision-map routing, the interface registry row, and the local check.
   sibling runtime ecosystem manifest, and local mirror check.
 - **Persistence**: sibling manifest and Clawix interface registry. Clawix stores
   only host/UI state and explicitly local overlays.
-- **Gaps**: full UI implementation is `pending`; live providers and destructive
-  write-back are `EXTERNAL PENDING`.
+- **Gaps**: full native-parity UI remains unpromoted; live providers and
+  destructive write-back are `EXTERNAL PENDING`.
 - **Validation**: local mirror check plus sibling `npm run test:runtime-ecosystem`.
 
 ## Discovery Route

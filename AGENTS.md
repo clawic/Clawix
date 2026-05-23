@@ -7,8 +7,7 @@ Use this file as a router. Detailed operating rules live in
 ## Authority
 
 - Highest authority: `CONSTITUTION.md`, shared with ClawJS. Read it fully for
-  major architecture, product, data, agent, UX, security, or integration
-  decisions.
+  major architecture, product, data, agent, UX, security, or integration work.
 - Constitution router: `docs/constitution-map.md` maps constitutional
   principles to operational canon, guardrails, and affected surfaces; it is not
   a second source of truth.
@@ -16,9 +15,8 @@ Use this file as a router. Detailed operating rules live in
   validation and tells agents which canon/check applies.
 - Operating rules: `docs/agent-rules/index.md`. Keep always-loaded
   instructions short; move procedures and catalogs there or into skills.
-- Discovery contract: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
-  sibling ClawJS ADR 0017, `docs/discoverability.md`, and
-  `docs/discoverability.registry.json`.
+- Discoverability routes: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
+  sibling ClawJS ADR 0017, `docs/discoverability.md`, and registry.
 - `CLAUDE.md` is a shim. If it diverges from this file, this file wins.
 - Visual canon: `STYLE.md`; read it before changing screens, chrome, design tokens, icons, motion, or microcopy.
 
@@ -50,7 +48,7 @@ Treat source files as evidence after the CLI/registry map; if `claw` is unavaila
 
 Read the relevant canon before changing its surface:
 
-- Framework/host boundary: `docs/host-ownership.md`,
+- Host/framework boundary: `docs/host-ownership.md`,
   `docs/adr/0001-claw-framework-host-boundary.md`
 - Storage/data placement: `docs/data-storage-boundary.md`
 - Governance identity/workspaces/projects: sibling ClawJS `docs/adr/0027-governance-identity-scope-model.md`
@@ -58,32 +56,30 @@ Read the relevant canon before changing its surface:
 - Naming/source shape: `docs/naming-style-guide.md`, `docs/agentic-naming-guide.md`,
   `docs/vocabulary.md`, `docs/adr/0002-naming-and-stability-surfaces.md`,
   `docs/adr/0009-agentic-naming-and-code-structure.md`, `docs/adr/0004-source-file-boundaries.md`
-- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS `docs/adr/0012-surface-route-graph.md`
+- Surface routes: `docs/adr/0011-surface-route-graph.md` and sibling ClawJS `docs/adr/0049-surface-route-graph.md`
 - Open standard/trust: `docs/adr/0020-open-standard-official-trust-mirror.md`, `FORKS.md`, `TRADEMARKS.md`
 
 ## Red Lines
 
 - `claw` is the single public framework CLI. Clawix CLI surfaces are host,
   install, bridge, and diagnostic helpers only.
-- MIT-licensed forks, commercial use, source builds, and compatible
-  implementations are legitimate; `official Clawix` is reserved for upstream
-  app builds, channels, marks, and visual identity.
+- MIT forks, commercial use, source builds, and compatible implementations are
+  legitimate; `official Clawix` is reserved for upstream app builds, channels,
+  marks, and visual identity.
 - Clawix UI canon is governed by `docs/adr/0010-interface-governance.md` and
   `docs/ui/`. Non-authorized agents must not change visual/copy/layout
   decisions.
 - Framework data belongs under `~/.claw` and `.claw/`; Clawix host-operational
   state belongs under `~/.clawix`; `.clawjs/` is a retired pre-public path.
-- Governance uses principals, entities, scopes, stewards, grants, authority
-  edges, and restrictions; avoid generic ownership-like authority fields.
-- Workspaces are isolated contexts. Projects are collaborable scopes with
-  stable ids and mutable folder locators; project primary folders carry
-  `claw.project.json`, managed `AGENTS.md`, and `CLAUDE.md` shims.
-- Plaintext secrets never live in `core.sqlite`, logs, fixtures, screenshots,
+- Model governance with principals, entities, scopes, stewards, grants,
+  authority edges, and restrictions; avoid generic ownership-like fields.
+- Workspace contexts are isolated; project folders carry `claw.project.json`
+  plus managed instruction shims.
+- Never place plaintext secrets in databases, logs, fixtures, screenshots,
   generated artifacts, or public docs.
-- Sensitive native permissions, grants, approvals, audit, LaunchAgents, Mach
-  services, and native execution belong to the active signed host, not Node.
-- Regulated domains are assistive only; Clawix must not make final medical,
-  legal, financial, employment, education, government, emergency, or safety decisions.
+- Keep sensitive native permissions, grants, approvals, audit, launch services,
+  and native execution in the active signed host, not Node.
+- Regulated domains are assistive only; Clawix must not make final regulated decisions.
 - Do not send real prompts, touch production data, call paid APIs, mutate real
   services, reveal secrets, push, publish, upload, or tag without explicit
   approval in the current thread.
@@ -113,11 +109,11 @@ node scripts/check-clawjs-skills-sync.mjs
 
 ## Public Hygiene And Commits
 
-Public repositories must not contain maintainer-private paths, source session or
-goal references, signing identities, bundle IDs, Team IDs, SKUs, release
-credentials, release artifact directories, local launchers, private automation,
-private Q&A indexes, personal references, logs, caches, or screenshots. Run `bash macos/scripts/public_hygiene_check.sh`
-before publication or broad review.
+Public repositories must not contain maintainer-private paths, session or goal
+references, signing details, SKUs, release credentials/artifacts, local
+launchers, private automation/indexes, personal references, logs, caches, or
+screenshots. Run `bash macos/scripts/public_hygiene_check.sh` before publication
+or broad review.
 
 Use Conventional Commits, keep commits scoped by intention, do not sweep
 unrelated edits, and never push, publish, upload, or tag without explicit

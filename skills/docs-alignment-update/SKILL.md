@@ -20,10 +20,18 @@ Keep documentation aligned with behavior and routing.
    and skills in `docs/discoverability.registry.json` under
    `docs/adr/0017-discoverability-and-meta-code-routing.md`.
 7. Remove stale duplicated instructions when a canonical doc or skill supersedes them.
-8. Run docs alignment/link checks or record why they cannot run.
+8. For closure-gated docs, instruction, ADR, skill, route, storage, permission,
+   or Clawix/ClawJS integration changes, run
+   `node scripts/discoverability-check.mjs closure --changed-file <path> --json`.
+   The closing report must cite the real `claw search ... --json` and
+   `claw inspect ... --json` evidence and the discovered artifact, or mark the
+   work `PARTIAL/BLOCKED`.
+9. Run docs alignment/link checks or record why they cannot run.
 
 ## Constraints
 
 - Do not make `CLAUDE.md` a second instruction source.
 - Do not duplicate long ADR or playbook content inside `AGENTS.md`.
 - Public docs must not contain private paths, signing identities, or personal workflow instructions.
+- Do not close durable docs routing work as complete when CLI discovery cannot
+  find and inspect the affected registered artifact.

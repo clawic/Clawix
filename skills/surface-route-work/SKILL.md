@@ -21,7 +21,7 @@ permissions, grants, approvals, audit, or agent chat routes.
    - `claw inspect route <route-id> --json`
 3. Read the ADRs, docs, tests, and source files named by the inspection output.
    For the route graph contract itself, start from
-   `docs/adr/0012-surface-route-graph.md`. For remote, Relay, Gateway,
+   `docs/adr/0049-surface-route-graph.md`. For remote, Relay, Gateway,
    Coordinator, Connector, Sync, Iroh, node trust, or sync-resource route work,
    also read `docs/adr/0022-remote-gateway-sync-redesign.md`. The Clawix
    projection uses `docs/adr/0011-surface-route-graph.md`.
@@ -43,7 +43,13 @@ permissions, grants, approvals, audit, or agent chat routes.
 9. Register new durable route docs, skills, guards, or harnesses in
    `docs/discoverability.registry.json` per
    `docs/adr/0017-discoverability-and-meta-code-routing.md`.
-10. Validate with the route's listed tests or add a focused fixture/E2E when the
+10. Before closure, run the discoverability closure gate for the changed
+   canon/route files, for example
+   `node scripts/discoverability-check.mjs closure --changed-file <path> --json`.
+   The closing report must cite the real `claw search ... --json` and
+   `claw inspect ... --json` command evidence plus the discovered artifact,
+   or mark the work `PARTIAL/BLOCKED`.
+11. Validate with the route's listed tests or add a focused fixture/E2E when the
    route did not have one. Mark unavailable physical/provider validation as
    `EXTERNAL PENDING`, separate from defects.
 
@@ -60,3 +66,5 @@ permissions, grants, approvals, audit, or agent chat routes.
 - A route or surface without `resourceContract` is incomplete unless it is
   already captured as bounded pre-existing debt in the resource-contract
   baseline.
+- A closure-gated route or surface change is incomplete if `claw search` or
+  `claw inspect` cannot discover the affected registered artifact or route.

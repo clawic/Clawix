@@ -22,12 +22,15 @@ contract through local projection files:
 
 - `docs/discoverability.registry.json` for enforced Clawix discovery routes.
 - `docs/discoverability-baseline.json` for expiring inherited route debt.
-- `scripts/discoverability-check.mjs` for local validation.
+- `scripts/discoverability-check.mjs` for local validation and closure gating.
 
 New durable Clawix ADRs, docs routers, skills, UI governance artifacts,
 guardrails, harnesses, and surface-route work must be reachable from
 `AGENTS.md`/`CLAUDE.md`, the relevant skill, and applicable CLI/inspect
 surfaces within two hops.
+Closure-gated canon, route, storage, permission, ADR, skill, and Clawix/ClawJS
+integration changes must also prove discovery with a real
+`claw search ... --json` command and a real `claw inspect ... --json` command.
 ADR numbers are repo-local; `adr:*` canonical names are cross-repository
 semantic identifiers for shared decisions.
 
@@ -56,13 +59,18 @@ Clawix discoverability is static registry, docs, and generated routing metadata.
   `docs/ui/README.md`, and relevant skills route agents to the right source.
 - **Programmatic surface**: `scripts/discoverability-check.mjs`, projected
   skills sync, and ClawJS `claw search`/`claw inspect` cover the machine path.
+  The local wrapper delegates `closure` mode to the sibling ClawJS checker and
+  reports `BLOCKED` for complete closure when ClawJS is unavailable.
 - **Persistence**: Clawix stores local records in
   `docs/discoverability.registry.json` and inherited debt in
   `docs/discoverability-baseline.json`.
 - **Gaps**: older local ADRs and UI governance manifests are baseline debt
   until they receive per-artifact discovery route records.
 - **Validation**: `bash scripts/test.sh fast` runs the Clawix discoverability
-  check and projected skill sync.
+  check and projected skill sync. Closure-gated changes run
+  `node scripts/discoverability-check.mjs closure --changed-file <path> --json`
+  and cite its `status`, `commandsRun`, `discoveredArtifacts`,
+  `missingDiscovery`, and `failedCommands` output.
 
 ## Discovery Route
 
@@ -75,10 +83,16 @@ Clawix discoverability is static registry, docs, and generated routing metadata.
   row.
 - **CLI**: framework-level discovery remains in ClawJS `claw search` and
   `claw inspect`; Clawix validates the local projection with
-  `scripts/discoverability-check.mjs`.
+  `scripts/discoverability-check.mjs`. Closure reports must name the command
+  run and the artifact discovered; "docs updated" without CLI evidence is not
+  accepted as complete closure.
 
 ## Consequences
 
 Clawix can keep its private/public boundary and UI authority rules while still
 making meta-code findable. The registry is a route contract, not a new source
 of truth for visual, host, storage, or framework decisions.
+
+If the wrapper cannot run ClawJS, or if `claw search`/`claw inspect` cannot
+discover the changed artifact, closure remains `PARTIAL/BLOCKED` until the
+missing discovery path is fixed.

@@ -37,7 +37,12 @@ Make an ADR operational.
    ledgers, manifests, guards, or baselines `sin reducir blockers reales`, stop
    and classify the closure as `blocker directo`, `deuda lateral`, or
    `pendiente externo`; no más gobernanza para arreglar exceso de gobernanza.
-11. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
+11. Before closure, run `node scripts/discoverability-check.mjs closure
+   --changed-file <path> --json` for the changed ADR, decision map, registry,
+   or skill. The closing report must cite the real `claw search ... --json`
+   and `claw inspect ... --json` evidence and the discovered artifact, or mark
+   the work `PARTIAL/BLOCKED`.
+12. Record pending guardrails or migrations explicitly when full enforcement cannot land now.
 
 ## Constraints
 
@@ -47,6 +52,8 @@ Make an ADR operational.
 - Do not accept "doc only" for a decision that changes stable behavior.
 - Do not mark an ADR accepted while `scripts/adr-operational-coverage-check.mjs`
   fails.
+- Do not close a canon-changing ADR as complete when `claw search` or
+  `claw inspect` cannot discover the changed artifact.
 - Do not close a detected problem with only "fixed"; leave a guard/test,
   ADR/rule, or expiring debt.
 - Do not add governance to fix excess governance after `2 ciclos seguidos`

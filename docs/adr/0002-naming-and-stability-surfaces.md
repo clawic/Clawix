@@ -18,7 +18,7 @@ consume `claw inspect version-governance --json` before creating any owned
 schema, protocol, API, file-format, or surface version bump.
 
 This ADR mirrors the canonical ClawJS naming ADR:
-`docs/adr/0001-naming-and-stability-surfaces.md` in the ClawJS repository.
+`docs/adr/0048-naming-and-stability-surfaces.md` in the ClawJS repository.
 When implementing shared framework or public CLI behavior, the ClawJS ADR is the
 primary source. This Clawix ADR records the host-specific consequences.
 
