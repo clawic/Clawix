@@ -70,7 +70,7 @@ struct PublishingCalendarView: View {
     private var controls: some View {
         HStack(spacing: 10) {
             Button { shift(by: -1) } label: {
-                Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
+                IconImage("chevron.left", size: 12)
             }
             .buttonStyle(.plain)
             .frame(width: 26, height: 26)
@@ -93,7 +93,7 @@ struct PublishingCalendarView: View {
             .foregroundColor(Palette.textPrimary)
 
             Button { shift(by: 1) } label: {
-                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                IconImage("chevron.right", size: 12)
             }
             .buttonStyle(.plain)
             .frame(width: 26, height: 26)
@@ -218,7 +218,7 @@ struct PublishingCalendarView: View {
         let isPublished = post.publishStatus == "published"
         Text(verbatim: postLabel(post))
             .font(BodyFont.system(size: 10, weight: .medium))
-            .foregroundColor(isPublished ? Color.green.opacity(0.85) : Palette.textPrimary)
+            .foregroundColor(isPublished ? Palette.pastelBlue : Palette.textPrimary)
             .lineLimit(1)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
@@ -281,15 +281,14 @@ struct PublishingCalendarView: View {
     @ViewBuilder
     private func placeholder(_ message: String) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "megaphone")
-                .font(.system(size: 30, weight: .light))
+            IconImage("megaphone", size: 30)
                 .foregroundColor(Palette.textTertiary)
             Text(verbatim: message)
                 .font(BodyFont.system(size: 12.5, weight: .medium))
                 .foregroundColor(Palette.textSecondary)
                 .multilineTextAlignment(.center)
             if case .unavailable = store.state {
-                Button("Retry") {
+                Button {
                     Task { @MainActor in
                         guard ClawJSServiceDemandPolicy.isServiceVisible(
                             .publishing,
@@ -297,9 +296,14 @@ struct PublishingCalendarView: View {
                         ) else { return }
                         await ClawJSServiceManager.shared.restart(.publishing)
                     }
+                } label: {
+                    Text(verbatim: "Retry")
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Palette.textPrimary)
+                        .padding(.horizontal, 14).frame(height: 28)
+                        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
                 }
-                .buttonStyle(.borderless)
-                .font(BodyFont.system(size: 12, weight: .medium))
+                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

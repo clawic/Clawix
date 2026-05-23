@@ -82,7 +82,7 @@ struct PublishingComposerView: View {
                 appState.navigate(to: .publishingHome)
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
+                    IconImage("chevron.left", size: 11)
                     Text(verbatim: "Back").font(BodyFont.system(size: 12, weight: .medium))
                 }
                 .padding(.horizontal, 10)
@@ -152,7 +152,7 @@ struct PublishingComposerView: View {
         } label: {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(selected ? Color.green : Color.white.opacity(0.16))
+                    .fill(selected ? Palette.pastelBlue : Color.white.opacity(0.16))
                     .frame(width: 7, height: 7)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: account.displayName)
