@@ -10,18 +10,70 @@
       "timeoutSeconds": 1800,
       "costClass": "heavy",
       "realServices": false,
-      "pathPatterns": ["**/*"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "cpu:global:heavy", "mode": "write" },
-        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
-        { "id": "build-cache:clawix:web", "mode": "write" }
+      "pathPatterns": [
+        "**/*"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "write"
+        },
+        {
+          "id": "build-cache:clawix:swiftpm",
+          "mode": "write"
+        },
+        {
+          "id": "build-cache:clawix:web",
+          "mode": "write"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "report",
       "failureAction": "Inspect the selected changed-lane output and repair the owning boundary before rerunning.",
-      "repairPolicy": "Claim repair ownership for the failing check before broad reruns."
+      "repairPolicy": "Claim repair ownership for the failing check before broad reruns.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web"
+      ],
+      "produces": [
+        "test-result:clawix:changed"
+      ],
+      "mutates": [
+        "cpu:global:heavy",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web"
+      ],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 1800,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "fast",
@@ -31,18 +83,75 @@
       "timeoutSeconds": 3600,
       "costClass": "saturating",
       "realServices": false,
-      "pathPatterns": ["**/*"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "cpu:global:saturating", "mode": "exclusive" },
-        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
-        { "id": "build-cache:clawix:web", "mode": "write" }
+      "pathPatterns": [
+        "**/*"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:saturating",
+          "mode": "exclusive"
+        },
+        {
+          "id": "build-cache:clawix:swiftpm",
+          "mode": "write"
+        },
+        {
+          "id": "build-cache:clawix:web",
+          "mode": "write"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "report",
       "failureAction": "Inspect the first failing fast-lane guard or package test and repair that boundary.",
-      "repairPolicy": "Do not run repeated fast loops while another repair owner is active for the same fingerprint."
+      "repairPolicy": "Do not run repeated fast loops while another repair owner is active for the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web"
+      ],
+      "produces": [
+        "test-result:clawix:fast"
+      ],
+      "mutates": [
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web"
+      ],
+      "exclusiveResources": [
+        "cpu:global:saturating"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "cpu:global:saturating",
+        "cpu:global:heavy"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 3600,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "integration",
@@ -52,18 +161,75 @@
       "timeoutSeconds": 5400,
       "costClass": "saturating",
       "realServices": false,
-      "pathPatterns": ["macos/**", "packages/**", "scripts/**", "docs/**", "qa/**"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "packages/**", "docs/**", "qa/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "cpu:global:saturating", "mode": "exclusive" },
-        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
-        { "id": "fixture-db:clawix", "mode": "write" }
+      "pathPatterns": [
+        "macos/**",
+        "packages/**",
+        "scripts/**",
+        "docs/**",
+        "qa/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:saturating",
+          "mode": "exclusive"
+        },
+        {
+          "id": "build-cache:clawix:swiftpm",
+          "mode": "write"
+        },
+        {
+          "id": "fixture-db:clawix",
+          "mode": "write"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "report",
       "failureAction": "Inspect integration package, bridge, or fixture output and repair the failing boundary.",
-      "repairPolicy": "Claim the failing integration boundary before broad reruns."
+      "repairPolicy": "Claim the failing integration boundary before broad reruns.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "fixture-db:clawix"
+      ],
+      "produces": [
+        "test-result:clawix:integration"
+      ],
+      "mutates": [
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "fixture-db:clawix"
+      ],
+      "exclusiveResources": [
+        "cpu:global:saturating"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "cpu:global:saturating",
+        "cpu:global:heavy"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 5400,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "e2e",
@@ -73,17 +239,65 @@
       "timeoutSeconds": 3600,
       "costClass": "saturating",
       "realServices": false,
-      "pathPatterns": ["macos/scripts/**", "tests/e2e/**", "qa/**"],
-      "fingerprintInputs": ["scripts/**", "macos/scripts/**", "qa/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "fixture-db:clawix", "mode": "exclusive" },
-        { "id": "cpu:global:heavy", "mode": "write" }
+      "pathPatterns": [
+        "macos/scripts/**",
+        "tests/e2e/**",
+        "qa/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/scripts/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "fixture-db:clawix",
+          "mode": "exclusive"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "write"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "report",
       "failureAction": "Inspect fixture E2E output and repair the fixture or bridge contract.",
-      "repairPolicy": "Do not reset shared fixtures while another E2E owner is active."
+      "repairPolicy": "Do not reset shared fixtures while another E2E owner is active.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "fixture-db:clawix",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:e2e"
+      ],
+      "mutates": [
+        "fixture-db:clawix",
+        "cpu:global:heavy"
+      ],
+      "exclusiveResources": [
+        "fixture-db:clawix"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "fixture-db:clawix",
+        "cpu:global:heavy"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 3600,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "host",
@@ -93,16 +307,59 @@
       "timeoutSeconds": 1800,
       "costClass": "interactive",
       "realServices": false,
-      "pathPatterns": ["macos/**", "scripts/**", "qa/scenarios/**"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "qa/scenarios/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "signed-host:clawix-macos", "mode": "exclusive" }
+      "pathPatterns": [
+        "macos/**",
+        "scripts/**",
+        "qa/scenarios/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "qa/scenarios/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "signed-host:clawix-macos",
+          "mode": "exclusive"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "external_pending_without_CLAWIX_HOST_TEST_COMMAND",
       "failureAction": "Report EXTERNAL PENDING unless an approved signed-host command is configured.",
-      "repairPolicy": "Do not claim signed-host validation complete from public-only tests."
+      "repairPolicy": "Do not claim signed-host validation complete from public-only tests.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "signed-host:clawix-macos"
+      ],
+      "produces": [
+        "test-result:clawix:host"
+      ],
+      "mutates": [
+        "signed-host:clawix-macos"
+      ],
+      "exclusiveResources": [
+        "signed-host:clawix-macos"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "signed-host:clawix-macos",
+        "computer-use:shared-targets"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 1800,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "core-ux",
@@ -112,16 +369,59 @@
       "timeoutSeconds": 1800,
       "costClass": "interactive",
       "realServices": false,
-      "pathPatterns": ["macos/**", "scripts/**", "qa/scenarios/**"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "qa/scenarios/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "computer-use:macos:clawix-app", "mode": "exclusive" }
+      "pathPatterns": [
+        "macos/**",
+        "scripts/**",
+        "qa/scenarios/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "qa/scenarios/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "computer-use:macos:clawix-app",
+          "mode": "exclusive"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "external_pending_without_CLAWIX_CORE_UX_GATE_COMMAND",
       "failureAction": "Run public Core UX checks locally and report private real-app validation as EXTERNAL PENDING until approved.",
-      "repairPolicy": "Do not run multiple shared-app Core UX validations concurrently."
+      "repairPolicy": "Do not run multiple shared-app Core UX validations concurrently.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "computer-use:macos:clawix-app"
+      ],
+      "produces": [
+        "test-result:clawix:core-ux"
+      ],
+      "mutates": [
+        "computer-use:macos:clawix-app"
+      ],
+      "exclusiveResources": [
+        "computer-use:macos:clawix-app"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "computer-use:macos:clawix-app",
+        "computer-use:shared-targets"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 1800,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "device",
@@ -131,17 +431,69 @@
       "timeoutSeconds": 2400,
       "costClass": "interactive",
       "realServices": false,
-      "pathPatterns": ["android/**", "ios/**", "scripts/**", "qa/scenarios/**"],
-      "fingerprintInputs": ["android/**", "ios/**", "scripts/**", "qa/scenarios/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "device:ios-simulator", "mode": "exclusive" },
-        { "id": "device:android-emulator", "mode": "exclusive" }
+      "pathPatterns": [
+        "android/**",
+        "ios/**",
+        "scripts/**",
+        "qa/scenarios/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "android/**",
+        "ios/**",
+        "scripts/**",
+        "qa/scenarios/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "device:ios-simulator",
+          "mode": "exclusive"
+        },
+        {
+          "id": "device:android-emulator",
+          "mode": "exclusive"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "external_pending_without_CLAWIX_DEVICE_TEST_COMMAND",
       "failureAction": "Report EXTERNAL PENDING unless an approved simulator/device command is configured.",
-      "repairPolicy": "Do not emulate physical/device validation with public-only static checks."
+      "repairPolicy": "Do not emulate physical/device validation with public-only static checks.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "device:ios-simulator",
+        "device:android-emulator"
+      ],
+      "produces": [
+        "test-result:clawix:device"
+      ],
+      "mutates": [
+        "device:ios-simulator",
+        "device:android-emulator"
+      ],
+      "exclusiveResources": [
+        "device:ios-simulator",
+        "device:android-emulator"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "device:ios-simulator",
+        "device:android-emulator",
+        "computer-use:shared-targets"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 2400,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "live",
@@ -151,16 +503,61 @@
       "timeoutSeconds": 3600,
       "costClass": "interactive",
       "realServices": true,
-      "pathPatterns": ["scripts/**", "qa/scenarios/**", "macos/**", "web/**"],
-      "fingerprintInputs": ["scripts/**", "qa/scenarios/**", "macos/**", "web/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "live-provider:*", "mode": "exclusive" }
+      "pathPatterns": [
+        "scripts/**",
+        "qa/scenarios/**",
+        "macos/**",
+        "web/**"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "qa/scenarios/**",
+        "macos/**",
+        "web/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "live-provider:*",
+          "mode": "exclusive"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "blocked_without_CLAWIX_TEST_LIVE",
       "failureAction": "Live checks require explicit opt-in and approved disposable external state.",
-      "repairPolicy": "Do not run live checks while repairing unrelated local failures."
+      "repairPolicy": "Do not run live checks while repairing unrelated local failures.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "live-provider:*"
+      ],
+      "produces": [
+        "test-result:clawix:live"
+      ],
+      "mutates": [
+        "live-provider:*"
+      ],
+      "exclusiveResources": [
+        "live-provider:*"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "live-provider:*",
+        "computer-use:shared-targets"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 3600,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     },
     {
       "id": "release",
@@ -170,19 +567,1440 @@
       "timeoutSeconds": 10800,
       "costClass": "saturating",
       "realServices": false,
-      "pathPatterns": ["**/*"],
-      "fingerprintInputs": ["scripts/**", "macos/**", "ios/**", "android/**", "web/**", "linux/**", "packages/**", "docs/**", "qa/**"],
-      "resources": [
-        { "id": "repo:clawix:worktree", "mode": "read" },
-        { "id": "cpu:global:saturating", "mode": "exclusive" },
-        { "id": "build-cache:clawix:swiftpm", "mode": "write" },
-        { "id": "build-cache:clawix:web", "mode": "write" },
-        { "id": "signed-host:clawix-macos", "mode": "exclusive" }
+      "pathPatterns": [
+        "**/*"
       ],
-      "resultReuse": { "allowed": false, "validForSeconds": 0 },
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:saturating",
+          "mode": "exclusive"
+        },
+        {
+          "id": "build-cache:clawix:swiftpm",
+          "mode": "write"
+        },
+        {
+          "id": "build-cache:clawix:web",
+          "mode": "write"
+        },
+        {
+          "id": "signed-host:clawix-macos",
+          "mode": "exclusive"
+        }
+      ],
+      "resultReuse": {
+        "allowed": false,
+        "validForSeconds": 0
+      },
       "externalPendingPolicy": "report_host_device_core_ux_gaps",
       "failureAction": "Inspect the release preflight or first failing boundary before rerunning release.",
-      "repairPolicy": "Do not use release as a tight repair loop; claim and repair the failing boundary first."
+      "repairPolicy": "Do not use release as a tight repair loop; claim and repair the failing boundary first.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web",
+        "signed-host:clawix-macos"
+      ],
+      "produces": [
+        "test-result:clawix:release"
+      ],
+      "mutates": [
+        "cpu:global:saturating",
+        "build-cache:clawix:swiftpm",
+        "build-cache:clawix:web",
+        "signed-host:clawix-macos"
+      ],
+      "exclusiveResources": [
+        "cpu:global:saturating",
+        "signed-host:clawix-macos"
+      ],
+      "canRunWith": [],
+      "cannotRunWith": [
+        "cpu:global:saturating",
+        "signed-host:clawix-macos",
+        "cpu:global:heavy"
+      ],
+      "heartbeatSeconds": 30,
+      "ttlSeconds": 10800,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the lane",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "tracked-ignored",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/tracked-ignored-check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Remove the tracked ignored artifact or update ignore policy with a documented reason.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:tracked-ignored"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "agent-instructions",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/agent-instructions-check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Move procedure detail into routed docs or skills and keep AGENTS.md as a router.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:agent-instructions"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "agent-onboarding-discoverability",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/agent_onboarding_discoverability_check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Update docs/agent-onboarding.md, the routers, discoverability registry, and quick validation matrix together.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:agent-onboarding-discoverability"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "constitution-assertions",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/constitution-assertions-check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Update the assertion manifest or the referenced canon in the same change.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:constitution-assertions"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "constitution-sync",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/constitution-sync-check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Synchronize the mirror text or route the decision through the shared canon.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:constitution-sync"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "accessibility-governance",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/accessibility_governance_guard.mjs",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Add surface coverage, capability evidence, or an expiring gap with owner and repair path.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:accessibility-governance"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "bridge-contract-parity",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/bridge_contract_parity_check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Update the contract, fixture, or consumer on both sides of the boundary.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:bridge-contract-parity"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "surface-route-registry",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/generate-surface-route-registry.mjs --check",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Regenerate or correct the route registry and include the source change that explains it.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:surface-route-registry"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "surface-evidence-projection",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/surface-evidence-projection-check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Update the projection baseline or fix the surface evidence that changed unexpectedly.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:surface-evidence-projection"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "localization-macos-self-test",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/localization_surface_guard.mjs --self-test",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Fix the guard fixture or detector before relying on localization results.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:localization-macos-self-test"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "cross-platform-localization",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/cross_platform_localization_guard.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Move visible strings into the platform localization resource or update the approved baseline.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:cross-platform-localization"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "native-permission-broker",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/native_permission_broker_check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Route sensitive permissions through the signed host broker and update the allowlist or docs.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:native-permission-broker"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "native-action-broker",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/native_action_broker_check.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Keep native actions brokered by the signed host and update the registered action surface.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:native-action-broker"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "persistent-surface-self-test",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/persistent-surface-guard.mjs --self-test",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Fix detector fixtures before trusting app-source persistent key results.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:persistent-surface-self-test"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "persistent-surface-app-scan",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/persistent-surface-guard.mjs macos ios android windows web/src linux/app/src",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Register the persistent key/native permission surface or remove the unregistered literal.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:persistent-surface-app-scan"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "hot-path-guard",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/hot_path_guard.mjs",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Add boundedness metadata or move expensive work off the hot path.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:hot-path-guard"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "boundedness-guard",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/boundedness_guard.mjs",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Add concrete limits, windows, cursors, or an approved expiring baseline entry.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:boundedness-guard"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "ui-implementation-evidence",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/ui_implementation_evidence_check.mjs",
+      "timeoutSeconds": 20,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Update the UI evidence manifest and attach the required public validation commands.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:ui-implementation-evidence"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "markdown-render-heavy-self-test",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/markdown_render_heavy_check.mjs --self-test",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Fix detector fixtures before accepting markdown rendering changes.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:markdown-render-heavy-self-test"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "naming-shape",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/naming-shape-check.mjs",
+      "timeoutSeconds": 20,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Rename, split, or document exceptions according to the naming and source-shape canon.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:naming-shape"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "source-size",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/source-size-check.mjs",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Split the file, update an intentional baseline, or justify the generated/registry exception.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:source-size"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "code-hygiene",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/code-hygiene-check.mjs",
+      "timeoutSeconds": 15,
+      "costClass": "heavy",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:heavy",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Refresh the hygiene audit artifacts or fix the stale inventory source.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:heavy"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:code-hygiene"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
+    },
+    {
+      "id": "package-surface",
+      "repo": "clawix",
+      "lane": "agent-fast",
+      "command": "node scripts/package_surface_guard.mjs",
+      "timeoutSeconds": 10,
+      "costClass": "light",
+      "realServices": false,
+      "pathPatterns": [
+        "**/*"
+      ],
+      "fingerprintInputs": [
+        "scripts/**",
+        "macos/**",
+        "ios/**",
+        "android/**",
+        "web/**",
+        "linux/**",
+        "packages/**",
+        "docs/**",
+        "qa/**"
+      ],
+      "resources": [
+        {
+          "id": "repo:clawix:worktree",
+          "mode": "read"
+        },
+        {
+          "id": "cpu:global:light",
+          "mode": "read"
+        }
+      ],
+      "resultReuse": {
+        "allowed": true,
+        "validForSeconds": 1800
+      },
+      "externalPendingPolicy": "report",
+      "failureAction": "Keep public package surfaces explicit and aligned with package ownership.",
+      "repairPolicy": "Claim repair ownership for this quick validation check before rerunning the same fingerprint.",
+      "consumes": [
+        "repo:clawix:worktree",
+        "cpu:global:light"
+      ],
+      "produces": [
+        "test-result:clawix:agent-fast:package-surface"
+      ],
+      "mutates": [],
+      "exclusiveResources": [],
+      "canRunWith": [],
+      "cannotRunWith": [],
+      "heartbeatSeconds": 10,
+      "ttlSeconds": 60,
+      "cleanup": "release all acquired leases; record only the primary check result; clean temporary artifacts owned by the quick validation check",
+      "ownerObligations": [
+        "record pending demand instead of waiting on busy resources",
+        "inspect the first failure before rerunning the same fingerprint",
+        "release every acquired resource lease with passed, failed, partial, external_pending, blocked, or abandoned status"
+      ]
     }
   ]
 }

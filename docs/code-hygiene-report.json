@@ -9,11 +9,11 @@
   "auditScope": "tracked",
   "fileInventory": {
     "source": "git ls-files",
-    "count": 2668,
-    "pathHash": "sha256:54cec5aaf2d4e3520e67feae0427c3748b7f33c0b5a618a5c7b2c4e490e410c5"
+    "count": 2746,
+    "pathHash": "sha256:7f4f268059462eba3b091c303864a2de4045a5736c31991ccfa1c7ee364ca424"
   },
   "lastAuditSummary": {
-    "scannedFiles": 2668,
+    "scannedFiles": 2746,
     "todoFindings": 0,
     "duplicateAssetGroups": 6,
     "duplicateAssetFiles": 12,

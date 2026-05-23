@@ -57,7 +57,7 @@
     "critical_cleanup_owner"
   ],
   "expectedDecisions": [
-    { "id": "initial_scope", "choice": "Cross-platform desde dia 1" },
+    { "id": "initial_scope", "choice": "Cross-platform from day one" },
     { "id": "enforcement_mode", "choice": "Bloqueo estricto ya" },
     { "id": "canonical_source", "choice": "Registry + referencias" },
     { "id": "debt_strategy", "choice": "Baseline de deuda" },

@@ -243,6 +243,16 @@
       "steward": "host"
     },
     {
+      "id": "computerUse",
+      "featureFlag": "computerUse",
+      "status": "stable",
+      "humanSurface": "Clawix Computer Use settings, app allowlist and per-app authority controls",
+      "programmaticSurface": "ComputerUsePolicyStore and MacControlActionBroker per-app execution policy",
+      "storageOwner": "host-policy",
+      "validation": "Computer Use settings tests and persistent-surface guard track policy storage",
+      "steward": "host"
+    },
+    {
       "id": "git",
       "featureFlag": "git",
       "status": "stable",
