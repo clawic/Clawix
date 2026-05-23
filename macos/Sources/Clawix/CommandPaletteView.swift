@@ -142,13 +142,41 @@ struct CommandPaletteView: View {
             }
             return items.isEmpty ? nil : PaletteSection(id: section.id, title: section.title, items: items)
         }
+        var result: [(PaletteSection, [PaletteItem])]
         if q.isEmpty {
-            return sections.map { ($0, $0.items) }
+            result = sections.map { ($0, $0.items) }
+        } else {
+            result = sections.compactMap { section in
+                let matches = section.items.filter { $0.title.lowercased().contains(q) }
+                return matches.isEmpty ? nil : (section, matches)
+            }
         }
-        return sections.compactMap { section in
-            let matches = section.items.filter { $0.title.lowercased().contains(q) }
-            return matches.isEmpty ? nil : (section, matches)
+        if let recent = recentChatsSection(query: q) {
+            result.append((recent, recent.items))
         }
+        return result
+    }
+
+    /// Recent chats surfaced inside the command menu so it doubles as a quick
+    /// thread switcher: a few most-recent threads at rest, fuzzy-matched by
+    /// title while searching.
+    private func recentChatsSection(query q: String) -> PaletteSection? {
+        let matches = appState.chats
+            .filter { q.isEmpty || $0.title.lowercased().contains(q) }
+            .prefix(q.isEmpty ? 5 : 8)
+        guard !matches.isEmpty else { return nil }
+        let items = matches.map { chat -> PaletteItem in
+            let chatId = chat.id
+            let title = chat.title.trimmingCharacters(in: .whitespaces)
+            return PaletteItem(
+                id: "recent-\(chatId.uuidString)",
+                icon: "bubble.left",
+                title: title.isEmpty ? L10n.t("Untitled chat") : title,
+                shortcut: nil,
+                action: { $0.currentRoute = .chat(chatId) }
+            )
+        }
+        return PaletteSection(id: "recent-chats", title: "Recent chats", items: Array(items))
     }
 
     private var flatItems: [PaletteItem] {
