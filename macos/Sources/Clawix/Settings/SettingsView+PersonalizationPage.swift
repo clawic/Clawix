@@ -9,8 +9,10 @@ struct PersonalizationPage: View {
     @State private var loadError: String? = nil
     @State private var saveError: String? = nil
     @State private var didLoad: Bool = false
+    @State private var isSaving: Bool = false
 
     private var isDirty: Bool { instructions != savedSnapshot }
+    private var canSave: Bool { didLoad && isDirty && !isSaving }
 
     private func localizedPersonalityLabel(_ personality: Personality) -> String {
         switch personality {
@@ -67,7 +69,7 @@ struct PersonalizationPage: View {
                     )
                 InstructionsTextEditor(
                     text: $instructions,
-                    isEditable: didLoad || loadError != nil
+                    isEditable: didLoad && !isSaving
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 ExpandIconButton { expanded = true }
@@ -77,32 +79,41 @@ struct PersonalizationPage: View {
 
             HStack(spacing: 10) {
                 if let loadError {
-                    Text("Could not load AGENTS.md: \(loadError)")
-                        .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.55))
+                    HStack(spacing: 8) {
+                        Text("Could not load AGENTS.md: \(loadError)")
+                            .font(BodyFont.system(size: 11, wght: 500))
+                            .foregroundColor(Palette.danger)
+                        Button("Retry") { load() }
+                            .buttonStyle(.bordered)
+                            .disabled(isSaving)
+                    }
                 } else if let saveError {
                     Text("Save failed: \(saveError)")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.55))
+                        .foregroundColor(Palette.danger)
                 } else if isDirty {
                     Text("Unsaved changes")
                         .font(BodyFont.system(size: 11, wght: 500))
                         .foregroundColor(Palette.textSecondary)
                 }
                 Spacer()
+                if isSaving {
+                    ProgressView()
+                        .controlSize(.small)
+                }
                 Button { save() } label: {
                     Text("Save")
                         .font(BodyFont.system(size: 12, wght: 600))
-                        .foregroundColor(isDirty ? Palette.textPrimary : Palette.textSecondary)
+                        .foregroundColor(canSave ? Palette.textPrimary : Palette.textSecondary)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 6)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.overlay(isDirty ? 0.12 : 0.06))
+                                .fill(Color.overlay(canSave ? 0.12 : 0.06))
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(!isDirty)
+                .disabled(!canSave)
             }
             .padding(.top, 14)
 
@@ -118,19 +129,23 @@ struct PersonalizationPage: View {
     }
 
     private func load() {
+        guard !isSaving else { return }
         do {
             let text = try CodexInstructionsFile.sentinelBlockBody(id: CodexPersonalizationBlock.id) ?? ""
             instructions = text
             savedSnapshot = text
             loadError = nil
+            saveError = nil
             didLoad = true
         } catch {
             loadError = SettingsUtilities.failureMessage(for: error, surface: "settings.personalization.load")
             didLoad = false
+            instructions = savedSnapshot
         }
     }
 
     private func save() {
+        guard canSave else { return }
         let bodyToSave = instructions
         appState.pendingConfirmation = ConfirmationRequest(
             title: "Save Codex instructions?",
@@ -142,6 +157,12 @@ struct PersonalizationPage: View {
     }
 
     private func persistInstructions(_ body: String) {
+        guard didLoad else {
+            saveError = "AGENTS.md must load before saving."
+            return
+        }
+        isSaving = true
+        defer { isSaving = false }
         do {
             if body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 try CodexInstructionsFile.removeSentinelBlock(id: CodexPersonalizationBlock.id)

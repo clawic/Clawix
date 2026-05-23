@@ -4,6 +4,7 @@ import ClawixCore
 struct HostDetailView: View {
     let peer: PeerRecord
     @ObservedObject var store: MeshStore
+    @ObservedObject var remoteProjectionStore: ClawJSRemoteProjectionStore
     let onClose: () -> Void
 
     @State private var workspaceDraft: String = ""
@@ -22,6 +23,7 @@ struct HostDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     endpointsCard
                     capabilitiesCard
+                    remoteReadinessCard
                     workspaceCard
                     metadataCard
                     if let actionError {
@@ -150,6 +152,48 @@ struct HostDetailView: View {
     private var isOnline: Bool {
         guard let lastSeen = peer.lastSeenAt else { return false }
         return Date().timeIntervalSince(lastSeen) < 120
+    }
+
+    // MARK: - Framework remote readiness
+
+    private var remoteReadinessCard: some View {
+        DetailCard(title: "Framework remote readiness") {
+            switch remoteProjectionStore.state {
+            case .idle, .loading:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Loading ClawJS remote contract status")
+                        .font(BodyFont.system(size: 12))
+                        .foregroundColor(Palette.textSecondary)
+                }
+            case .unavailable(let message):
+                InfoBanner(text: message, kind: .error)
+            case .available(let snapshot):
+                VStack(alignment: .leading, spacing: 6) {
+                    readinessRow(label: "Conformance", value: snapshot.conformanceStatus ?? "unavailable")
+                    readinessRow(label: "Routes", value: "\(snapshot.requiredRoutes.count - snapshot.missingRouteIds.count)/\(snapshot.requiredRoutes.count) registered")
+                    readinessRow(label: "Contracts", value: "\(snapshot.contracts.count) \(snapshot.contractsStatus ?? "unknown")")
+                    readinessRow(label: "External pending", value: "\(snapshot.externalPendingCount)")
+                    readinessRow(label: "Readiness", value: snapshot.externalReadinessStatus)
+                    readinessRow(label: "Blocked", value: snapshot.blockedExternalRequirementSummary)
+                    readinessRow(label: "Closure", value: snapshot.closureBlockersSummary)
+                    readinessRow(label: "E2E plan", value: snapshot.providerDeviceE2ESummary)
+                }
+            }
+        }
+    }
+
+    private func readinessRow(label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textSecondary)
+            Spacer()
+            Text(value)
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(Palette.textPrimary)
+                .textSelection(.enabled)
+        }
     }
 
     // MARK: - Endpoints

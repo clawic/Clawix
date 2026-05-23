@@ -30,7 +30,6 @@ struct IoTDeviceDetailView: View {
             }
             .thinScrollers()
         }
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder

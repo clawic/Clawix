@@ -6,12 +6,14 @@ import SwiftUI
 /// (see `AppState.dispatchNextQueuedMessage`); this view is purely the
 /// pending-state surface. Visual language mirrors `ComposerAttachmentChip`.
 struct QueuedMessagesRow: View {
+    private static let visibleMessageLimit = 8
+
     let messages: [QueuedMessage]
     let onRemove: (UUID) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(messages) { message in
+            ForEach(messages.prefix(Self.visibleMessageLimit)) { message in
                 QueuedMessageChip(
                     message: message,
                     onRemove: { onRemove(message.id) }

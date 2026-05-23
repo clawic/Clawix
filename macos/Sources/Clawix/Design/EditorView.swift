@@ -175,7 +175,7 @@ struct EditorView: View {
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.55))
+                        .foregroundColor(Palette.danger)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 5)
                         .background(

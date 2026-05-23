@@ -12,9 +12,9 @@ struct BrowserUsagePage: View {
 
     private var browserStorageOptions: [(BrowserPermissionPolicy.BrowserStorageKind, String)] {
         [
-            (.all, "Clear all browsing data"),
-            (.cache, "Clear cache"),
-            (.cookies, "Clear cookies")
+            (.all, L10n.t("Clear all browsing data")),
+            (.cache, L10n.t("Clear cache")),
+            (.cookies, L10n.t("Clear cookies"))
         ]
     }
 
@@ -52,13 +52,25 @@ struct BrowserUsagePage: View {
                             selection: $browserStorage,
                             minWidth: 190
                         )
-                        Button(clearingBrowsingData ? "Clearing…" : "Clear") {
+                        .disabled(clearingBrowsingData)
+                        Button {
                             clearSelectedBrowserStorage()
+                        } label: {
+                            HStack(spacing: 5) {
+                                if clearingBrowsingData {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                        .frame(width: 11, height: 11)
+                                }
+                                Text(clearingBrowsingData ? L10n.t("Clearing…") : L10n.t("Clear"))
+                            }
                         }
                         .buttonStyle(.borderless)
                         .font(BodyFont.system(size: 11.5, wght: 600))
                         .foregroundColor(clearingBrowsingData ? Palette.textSecondary : Palette.textPrimary)
                         .disabled(clearingBrowsingData)
+                        .accessibilityLabel(Text("Clear browsing data"))
+                        .accessibilityHint(Text("Clears the selected persisted browser data from the in-app browser."))
                     }
                 }
                 .liftWhenSettingsDropdownOpen()
@@ -131,8 +143,25 @@ struct BrowserUsagePage: View {
         let selected = browserStorage
         BrowserPermissionPolicy.clearBrowserStorage(selected) {
             clearingBrowsingData = false
-            clearStatus = L10n.t("Browsing data cleared.")
-            ToastCenter.shared.show(clearStatus ?? L10n.t("Browsing data cleared."))
+            clearStatus = String(
+                format: L10n.t("WebKit reported completion for %@. Settings does not receive per-site deletion counts."),
+                locale: AppLocale.current,
+                selected.statusLabel
+            )
+            ToastCenter.shared.show(clearStatus ?? L10n.t("Browser storage clear completed."))
+        }
+    }
+}
+
+private extension BrowserPermissionPolicy.BrowserStorageKind {
+    var statusLabel: String {
+        switch self {
+        case .all:
+            return L10n.t("all browsing data")
+        case .cache:
+            return L10n.t("cache")
+        case .cookies:
+            return L10n.t("cookies")
         }
     }
 }
@@ -176,6 +205,11 @@ struct DomainListSection: View {
 
     @State private var draft = ""
     @State private var error: String?
+    @State private var isMutating = false
+
+    private var canAddDomain: Bool {
+        !isMutating && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -188,7 +222,13 @@ struct DomainListSection: View {
                     addDomain()
                 } label: {
                     HStack(spacing: 5) {
-                        LucideIcon(.plus, size: 11)
+                        if isMutating {
+                            ProgressView()
+                                .controlSize(.small)
+                                .frame(width: 11, height: 11)
+                        } else {
+                            LucideIcon(.plus, size: 11)
+                        }
                         Text("Add")
                             .font(BodyFont.system(size: 12, wght: 600))
                     }
@@ -205,7 +245,9 @@ struct DomainListSection: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!canAddDomain)
+                .accessibilityLabel(Text("Add browser domain"))
+                .accessibilityHint(Text("Adds the domain to this persisted browser permission list."))
             }
             Text(subtitle)
                 .font(BodyFont.system(size: 11.5, wght: 500))
@@ -219,6 +261,7 @@ struct DomainListSection: View {
                         .textFieldStyle(.plain)
                         .font(BodyFont.system(size: 12.5))
                         .foregroundColor(Palette.textPrimary)
+                        .disabled(isMutating)
                         .onSubmit(addDomain)
                     Button("Add") {
                         addDomain()
@@ -226,17 +269,16 @@ struct DomainListSection: View {
                     .buttonStyle(.borderless)
                     .font(BodyFont.system(size: 11.5, wght: 600))
                     .foregroundColor(Palette.textPrimary)
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!canAddDomain)
+                    .accessibilityLabel(Text("Add browser domain"))
+                    .accessibilityHint(Text("Adds the domain to this persisted browser permission list."))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
 
                 if let error {
                     CardDivider()
-                    Text(error)
-                        .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(.orange)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    InfoBanner(text: error, kind: .error)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                 }
@@ -261,12 +303,14 @@ struct DomainListSection: View {
                                 .foregroundColor(Palette.textPrimary)
                             Spacer()
                             Button("Remove") {
-                                BrowserPermissionPolicy.removeDomain(domain, from: list)
-                                onChanged()
+                                removeDomain(domain)
                             }
                             .buttonStyle(.borderless)
                             .font(BodyFont.system(size: 11.5, wght: 600))
                             .foregroundColor(Palette.textSecondary)
+                            .disabled(isMutating)
+                            .accessibilityLabel(Text(String(format: L10n.t("Remove %@ from browser permissions"), locale: AppLocale.current, domain)))
+                            .accessibilityHint(Text("Removes the domain from this persisted browser permission list."))
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
@@ -285,19 +329,36 @@ struct DomainListSection: View {
     }
 
     private func addDomain() {
+        guard canAddDomain else { return }
+        isMutating = true
+        defer { isMutating = false }
         guard let domain = BrowserPermissionPolicy.addDomain(draft, to: list) else {
-            error = "Enter a valid domain such as example.com."
+            error = L10n.t("Enter a valid domain such as example.com.")
             return
         }
         error = nil
         draft = ""
+        reloadFromPolicy()
+        onChanged()
+        ToastCenter.shared.show(String(format: L10n.t("Added %@"), locale: AppLocale.current, domain))
+    }
+
+    private func removeDomain(_ domain: String) {
+        guard !isMutating else { return }
+        isMutating = true
+        defer { isMutating = false }
+        BrowserPermissionPolicy.removeDomain(domain, from: list)
+        error = nil
+        reloadFromPolicy()
+        onChanged()
+    }
+
+    private func reloadFromPolicy() {
         switch list {
         case .blocked:
             domains = BrowserPermissionPolicy.blockedDomains
         case .allowed:
             domains = BrowserPermissionPolicy.allowedDomains
         }
-        onChanged()
-        ToastCenter.shared.show("Added \(domain)")
     }
 }

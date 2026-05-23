@@ -48,7 +48,18 @@ struct FeatureProviderPicker: View {
             )
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $isOpen) { popoverContent }
+        .overlay(alignment: .topLeading) {
+            if isOpen {
+                popoverContent
+                    .menuStandardBackground()
+                    .background(MenuOutsideClickWatcher(isPresented: $isOpen))
+                    .fixedSize()
+                    .offset(y: 36)
+                    .transition(.opacity)
+                    .zIndex(50)
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: isOpen)
     }
 
     private var popoverContent: some View {

@@ -4,6 +4,8 @@ struct MCPPage: View {
     @StateObject private var store: MCPServersStore = .shared
     @State private var sheet: MCPSheetItem? = nil
 
+    private var isBusy: Bool { store.isLoading || store.isSaving }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
@@ -32,6 +34,7 @@ struct MCPPage: View {
                         .scaleEffect(0.72)
                 }
                 Button {
+                    guard !isBusy else { return }
                     sheet = .init(
                         server: MCPServerConfig(),
                         isExisting: false
@@ -55,30 +58,33 @@ struct MCPPage: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
             }
             .padding(.bottom, 14)
 
             if store.servers.isEmpty && store.isLoading {
                 MCPEmptyState(onAdd: {
+                    guard !isBusy else { return }
                     sheet = .init(
                         server: MCPServerConfig(),
                         isExisting: false
                     )
-                })
+                }, isBusy: isBusy)
                 .redacted(reason: .placeholder)
             } else if store.servers.isEmpty {
                 MCPEmptyState(onAdd: {
+                    guard !isBusy else { return }
                     sheet = .init(
                         server: MCPServerConfig(),
                         isExisting: false
                     )
-                })
+                }, isBusy: isBusy)
             } else {
                 VStack(spacing: 7) {
                     ForEach(store.servers) { server in
                         MCPServerRow(
                             server: server,
-                            isBusy: store.isLoading || store.isSaving,
+                            isBusy: isBusy,
                             isOn: Binding(
                                 get: { server.enabled },
                                 set: { store.toggleEnabled(server, isOn: $0) }
@@ -95,7 +101,7 @@ struct MCPPage: View {
                 HStack(spacing: 10) {
                     Text(err)
                         .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.45))
+                        .foregroundColor(Palette.danger)
                     Button("Retry") {
                         Task { await store.refresh() }
                     }
@@ -195,6 +201,7 @@ struct MCPServerRow: View {
 
 struct MCPEmptyState: View {
     let onAdd: () -> Void
+    let isBusy: Bool
 
     var body: some View {
         VStack(spacing: 10) {
@@ -220,6 +227,7 @@ struct MCPEmptyState: View {
                 )
             }
             .buttonStyle(.plain)
+            .disabled(isBusy)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)

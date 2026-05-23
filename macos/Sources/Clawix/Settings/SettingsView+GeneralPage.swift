@@ -345,7 +345,7 @@ struct ResetLocalOverridesRow: View {
                 Text("Reset local overrides")
                     .font(BodyFont.system(size: 13, wght: 500))
                     .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
-                Text("Permanently delete all local pins, archives, custom titles, project overrides and hidden Codex folders. The app will resync from Codex on next refresh. Codex's data is not affected.")
+                Text("Permanently delete all local pins, archives, custom titles, project overrides and hidden upstream folders. The app will resync from the upstream source on next refresh. Upstream data is not affected.")
                     .font(BodyFont.system(size: 11, wght: 500))
                     .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .fixedSize(horizontal: false, vertical: true)

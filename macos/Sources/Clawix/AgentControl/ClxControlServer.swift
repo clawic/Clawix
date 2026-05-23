@@ -9,8 +9,9 @@ import Network
 /// This is a powerful surface, so it is fenced in hard:
 ///   - created only when CLAWIX_AGENT_INSTANCE=1 (never in user builds),
 ///   - bound to 127.0.0.1 only,
-///   - every request must carry the per-instance owner token.
+///   - every request must carry the per-instance steward token.
 final class ClxControlServer {
+    private let maxRequestBytes = 1 << 20
     private let port: UInt16
     private let token: String
     private var listener: NWListener?
@@ -54,6 +55,10 @@ final class ClxControlServer {
             guard let self else { return }
             var accumulated = buffer
             if let data { accumulated.append(data) }
+            guard accumulated.count <= self.maxRequestBytes else {
+                self.respond(connection, status: 413, json: ["error": "request too large"])
+                return
+            }
             if let request = ClxHTTPRequest(accumulated) {
                 self.handle(request, on: connection)
                 return
@@ -67,6 +72,7 @@ final class ClxControlServer {
     }
 
     private func handle(_ request: ClxHTTPRequest, on connection: NWConnection) {
+        // hot-path-ok maxBytes=1048576 reason=loopback control endpoint rejects oversized request bodies before JSON parse
         let parsed = (try? JSONSerialization.jsonObject(with: request.body)) as? [String: Any]
         let body = parsed ?? [:]
         guard let provided = body["token"] as? String, provided == token else {

@@ -36,8 +36,8 @@ struct SidebarButton: View {
                             .frame(width: customShapeSize, height: customShapeSize)
                             .frame(width: 15, height: 15)
                     } else {
-                        LucideIcon.auto(icon, size: 9.5)
-                            .frame(width: 15)
+                        LucideIcon.auto(icon, size: 15)
+                            .frame(width: 16)
                             .foregroundColor(iconColor)
                     }
                 }

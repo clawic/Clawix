@@ -68,7 +68,11 @@ struct DatabaseSearchOverlay: View {
         .frame(width: 560)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.92))
+                // Adaptive card surface: near-white on light, the original
+                // near-opaque black on dark. The rows use `Palette.text*`,
+                // which is dark in light mode and would vanish on a black card.
+                .fill(Color.dynamic(light: Color(white: 0.97),
+                                    dark: Color.black.opacity(0.92)))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

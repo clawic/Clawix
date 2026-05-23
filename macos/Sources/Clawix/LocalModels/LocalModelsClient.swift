@@ -14,7 +14,7 @@ struct LocalModelsClient {
     static let shared = LocalModelsClient()
 
     private var baseURL: URL {
-        URL(string: "http://\(LocalModelsDaemon.host):\(LocalModelsDaemon.port)")!
+        LocalModelsDaemon.origin
     }
 
     // MARK: - Wire types

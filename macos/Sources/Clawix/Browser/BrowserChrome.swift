@@ -56,7 +56,7 @@ struct BrowserTabStrip: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .frame(height: 40)
-        .background(Color.black)
+        .background(Palette.background)
         .task(id: appState.visibleSidebarFaviconPrefetchSignature) {
             await appState.prefetchVisibleSidebarFavicons()
             await MainActor.run {
@@ -389,7 +389,7 @@ struct BrowserNavigationBar: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 44)
-        .background(Color.black)
+        .background(Palette.background)
     }
 }
 

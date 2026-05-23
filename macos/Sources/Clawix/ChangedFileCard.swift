@@ -103,7 +103,7 @@ struct ChangedFileCard: View {
 
     // MARK: - Open pill
 
-    /// "Open ⌄" pill that mirrors the Codex Desktop card and presents
+    /// "Open ⌄" pill that matches the file card and presents
     /// the editor dropdown from a single accessible control.
     private var openPill: some View {
         HStack(spacing: 4) {

@@ -7,7 +7,7 @@ extension LocalModelsPage {
                 infoRow("Runtime version", service.runtimeVersion ?? "unknown")
                 infoRow("Models folder", LocalModelsDaemon.modelsDirectory.path)
                 infoRow("Logs", LocalModelsDaemon.logFileURL.path)
-                infoRow("Endpoint", "http://127.0.0.1:\(LocalModelsDaemon.port)")
+                infoRow("Endpoint", LocalModelsDaemon.endpointDisplay)
             }
         }
     }
@@ -31,6 +31,8 @@ extension LocalModelsPage {
         title: String,
         detail: String,
         buttonLabel: String,
+        isEnabled: Bool = true,
+        isWorking: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         HStack(alignment: .top) {
@@ -43,9 +45,16 @@ extension LocalModelsPage {
                     .foregroundColor(Palette.textSecondary)
             }
             Spacer()
-            Button(buttonLabel, action: action)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            HStack(spacing: 8) {
+                if isWorking {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Button(buttonLabel, action: action)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(!isEnabled)
+            }
         }
     }
 

@@ -29,7 +29,7 @@ struct FeedScreen: View {
             Divider().background(Palette.textSecondary.opacity(0.2))
             content
         }
-        .background(Color.black)
+        .background(Palette.background)
         .task { await store.bootstrap() }
         .onDisappear {
             store.cancelFeedSurfaceWork()

@@ -69,8 +69,8 @@ enum PermissionMode: String, CaseIterable, Identifiable {
         // not by brand colour: default is a dim neutral, the non-default
         // automatic-review is a brighter neutral (the "active" lift), and
         // only the risky full-access keeps a colour (warning orange). This
-        // keeps the composer chrome neutral-except-risk the way the Codex
-        // composer does, instead of spending brand blue on a mode label.
+        // keeps the composer chrome neutral-except-risk instead of spending
+        // brand blue on a mode label.
         case .defaultPermissions: return Color.gray(light: 0.27, dark: 0.78)
         case .autoReview:         return Color.gray(light: 0.16, dark: 0.92)
         case .fullAccess:         return Color(red: 0.95, green: 0.50, blue: 0.20)

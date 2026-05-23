@@ -24,7 +24,7 @@ struct HomeSuggestionsView: View {
         VStack(spacing: 1) {
             ForEach(ambient.visible) { suggestion in
                 HomeSuggestionRow(
-                    icon: .circleDot,
+                    icon: .sparkles,
                     text: suggestion.title,
                     dismissible: true,
                     onTap: { seed(suggestion.title) },

@@ -345,9 +345,9 @@ struct SearchEditorSheet: View {
                 } label: {
                     Text(saving ? "Saving…" : "Save")
                         .font(BodyFont.system(size: 12.5, wght: 600))
-                        .foregroundColor(Palette.textPrimary)
+                        .foregroundColor(Palette.background)
                         .padding(.horizontal, 14).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.5)))
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.9)))
                         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
                 }
                 .buttonStyle(.plain)

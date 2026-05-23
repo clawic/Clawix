@@ -149,7 +149,7 @@ struct MemorySettingsView: View {
                     )
             }
             .buttonStyle(.plain)
-            Text("The Memory daemon serves a D3 force-directed graph view at http://127.0.0.1:24105/. The macOS app keeps the simpler list browser; the graph stays one click away when you want it.")
+            Text("The Memory daemon serves a D3 force-directed graph view at \(memoryGraphURL.absoluteString). The macOS app keeps the simpler list browser; the graph stays one click away when you want it.")
                 .font(BodyFont.system(size: 11, wght: 400))
                 .foregroundColor(Color.overlay(0.55))
         }
@@ -169,8 +169,10 @@ struct MemorySettingsView: View {
     }
 
     private func openGraphView() {
-        if let url = URL(string: "http://127.0.0.1:\(ClawJSService.memory.port)/") {
-            NSWorkspace.shared.open(url)
-        }
+        NSWorkspace.shared.open(memoryGraphURL)
+    }
+
+    private var memoryGraphURL: URL {
+        ClawJSServiceEndpointResolver.origin(for: .memory)
     }
 }

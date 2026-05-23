@@ -270,7 +270,7 @@ struct SidebarView: View {
                         "Chats",
                         expanded: $noProjectExpanded,
                         leadingIcon: AnyView(
-                            LucideIcon(.messageCircle, size: 13)
+                            LucideIcon(.messageCircle, size: 16)
                         )
                     )
                     SidebarAccordion(
@@ -625,7 +625,7 @@ struct SidebarView: View {
         BasicSectionHeader(
             title: "Tools",
             expanded: $toolsExpanded,
-            leadingIcon: AnyView(WrenchIcon(size: 16.5, lineWidth: 1.28)),
+            leadingIcon: AnyView(WrenchLineIcon(size: 18)),
             trailingIcon: SidebarToolsCatalog.entries.count >= 2 ? AnyView(toolsFilterButton) : nil,
             trailingForceVisible: toolsFilterMenuOpen
         )
@@ -691,7 +691,7 @@ struct SidebarView: View {
                                   shortcut: "⌘G")
                     if flags.isVisible(.skills) {
                         SidebarButton(title: "Skills",
-                                      icon: "wand.and.stars",
+                                      icon: "puzzle",
                                       route: .skills,
                                       shortcut: "⌘⇧K")
                     }
@@ -964,7 +964,7 @@ struct SidebarView: View {
                       showAddProject: false,
                       showNewChat: false,
                       leadingIcon: AnyView(
-                          LucideIcon(.messageCircle, size: 13)
+                          LucideIcon(.messageCircle, size: 16)
                       ),
                       expanded: $chronoExpanded)
     }

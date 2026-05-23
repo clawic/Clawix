@@ -79,8 +79,7 @@ struct IDEContextChip: View {
                         // only. The chip body reads neutral like every other
                         // composer-footer pill, so an always-on default never
                         // fills an action surface with brand colour
-                        // (STYLE.md §2.3); the footer stays calm the way the
-                        // Codex composer keeps its chrome neutral.
+                        // (STYLE.md §2.3); the footer stays calm and neutral.
                         CheckIcon(size: 9)
                             .foregroundColor(Palette.pastelBlue)
                     }

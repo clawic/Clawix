@@ -13,6 +13,10 @@ struct HostsPage: View {
     @State private var detailItem: HostDetailItem? = nil
     @State private var bridgeLease: BridgeDemandLease?
     @State private var workspaceAddInFlight = false
+    @State private var workspaceAddPanelInFlight = false
+    @State private var workspaceActionMessage: String?
+    @State private var workspaceActionMessageKind: InfoBanner.Kind = .ok
+    @StateObject private var remoteProjectionStore = ClawJSRemoteProjectionStore()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,6 +32,9 @@ struct HostsPage: View {
 
             thisMacSection
 
+            SectionLabel(title: "Framework remote readiness")
+            remoteReadinessCard
+
             SectionLabel(title: "Hosts")
             hostsCard
 
@@ -38,10 +45,12 @@ struct HostsPage: View {
             if bridgeLease == nil {
                 bridgeLease = appState.acquireLocalBridge(reason: .remoteTools)
             }
+            remoteProjectionStore.load()
             await store.refreshAll()
         }
         .onDisappear {
             store.cancelHostsSurfaceWork()
+            remoteProjectionStore.cancel()
             bridgeLease?.release()
             bridgeLease = nil
         }
@@ -55,8 +64,60 @@ struct HostsPage: View {
             HostDetailView(
                 peer: item.peer,
                 store: store,
+                remoteProjectionStore: remoteProjectionStore,
                 onClose: { detailItem = nil }
             )
+        }
+    }
+
+    // MARK: - Framework remote readiness
+
+    @ViewBuilder
+    private var remoteReadinessCard: some View {
+        SettingsCard {
+            VStack(alignment: .leading, spacing: 8) {
+                switch remoteProjectionStore.state {
+                case .idle, .loading:
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Loading ClawJS remote contract status")
+                            .font(BodyFont.system(size: 12))
+                            .foregroundColor(Palette.textSecondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                case .unavailable(let message):
+                    InfoBanner(text: message, kind: .error)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                case .available(let snapshot):
+                    VStack(alignment: .leading, spacing: 6) {
+                        readinessRow(label: "Conformance", value: snapshot.conformanceStatus ?? "unavailable")
+                        readinessRow(label: "Routes", value: "\(snapshot.requiredRoutes.count - snapshot.missingRouteIds.count)/\(snapshot.requiredRoutes.count) registered")
+                        readinessRow(label: "Contracts", value: "\(snapshot.contracts.count) \(snapshot.contractsStatus ?? "unknown")")
+                        readinessRow(label: "External pending", value: "\(snapshot.externalPendingCount)")
+                        readinessRow(label: "Readiness", value: snapshot.externalReadinessStatus)
+                        readinessRow(label: "Blocked", value: snapshot.blockedExternalRequirementSummary)
+                        readinessRow(label: "Closure", value: snapshot.closureBlockersSummary)
+                        readinessRow(label: "E2E plan", value: snapshot.providerDeviceE2ESummary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+            }
+        }
+    }
+
+    private func readinessRow(label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textSecondary)
+            Spacer()
+            Text(value)
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(Palette.textPrimary)
+                .textSelection(.enabled)
         }
     }
 
@@ -271,6 +332,12 @@ struct HostsPage: View {
     private var workspacesCard: some View {
         SettingsCard {
             VStack(spacing: 0) {
+                if let message = workspaceActionMessage {
+                    InfoBanner(text: message, kind: workspaceActionMessageKind)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                    CardDivider()
+                }
                 if store.workspaces.isEmpty {
                     HStack {
                         Text("No allowed workspaces yet. Add a folder so peers can run jobs in it.")
@@ -290,7 +357,7 @@ struct HostsPage: View {
                 }
                 CardDivider()
                 HStack {
-                    if workspaceAddInFlight {
+                    if workspaceAddInFlight || workspaceAddPanelInFlight {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -298,8 +365,8 @@ struct HostsPage: View {
                     IconChipButton(symbol: "folder", label: "Add folder…", isPrimary: true) {
                         Task { await pickAndAddWorkspace() }
                     }
-                    .disabled(workspaceAddInFlight)
-                    .accessibilityHint(Text(workspaceAddInFlight ? "Adding a trusted workspace folder." : "Choose a local folder remote peers may run jobs in."))
+                    .disabled(workspaceAddInFlight || workspaceAddPanelInFlight)
+                    .accessibilityHint(Text(workspaceAddInFlight || workspaceAddPanelInFlight ? "Adding a trusted workspace folder." : "Choose a local folder remote peers may run jobs in."))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
@@ -308,18 +375,36 @@ struct HostsPage: View {
     }
 
     private func pickAndAddWorkspace() async {
-        guard !workspaceAddInFlight else { return }
+        guard !workspaceAddInFlight, !workspaceAddPanelInFlight else { return }
+        workspaceAddPanelInFlight = true
+        workspaceActionMessage = nil
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Choose a folder remote peers can run jobs in"
-        panel.prompt = "Allow"
+        panel.message = L10n.t("Choose a folder remote peers can run jobs in")
+        panel.prompt = L10n.t("Allow")
         let response = await MainActor.run { panel.runModal() }
-        guard response == .OK, let url = panel.url else { return }
+        workspaceAddPanelInFlight = false
+        guard response == .OK, let url = panel.url else {
+            workspaceActionMessageKind = .ok
+            workspaceActionMessage = L10n.t("Trusted workspace unchanged.")
+            return
+        }
         workspaceAddInFlight = true
         defer { workspaceAddInFlight = false }
         await store.addWorkspace(path: url.path)
+        if let error = store.lastError {
+            workspaceActionMessageKind = .error
+            workspaceActionMessage = error
+        } else {
+            workspaceActionMessageKind = .ok
+            workspaceActionMessage = String(
+                format: L10n.t("Trusted workspace added: %@"),
+                locale: AppLocale.current,
+                url.path
+            )
+        }
     }
 }
 

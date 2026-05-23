@@ -24,7 +24,7 @@ struct DesignSidebarSection: View {
             BasicSectionHeader(
                 title: "Design",
                 expanded: $expanded,
-                leadingIcon: AnyView(LucideIcon.auto("paintbrush", size: 13))
+                leadingIcon: AnyView(LucideIcon.auto("paintbrush", size: 17.5))
             )
             SidebarAccordion(
                 expanded: expanded,

@@ -7,6 +7,10 @@ struct DatabaseWorkbenchSettingsPage: View {
     @ObservedObject private var session = DatabaseWorkbenchSessionStore.shared
     @ObservedObject private var operations = DatabaseWorkbenchOperationStore.shared
     @State private var editedProfile: DatabaseConnectionProfile?
+    @State private var activeProfileAction: UUID?
+    @State private var activeOperationKind: DatabaseWorkbenchOperationKind?
+    @State private var databaseWorkbenchMessage: String?
+    @State private var databaseWorkbenchMessageKind: InfoBanner.Kind = .ok
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -17,6 +21,10 @@ struct DatabaseWorkbenchSettingsPage: View {
 
             if let error = profiles.lastPersistenceError {
                 InfoBanner(text: error, kind: .error)
+                    .padding(.bottom, 10)
+            }
+            if let databaseWorkbenchMessage {
+                InfoBanner(text: databaseWorkbenchMessage, kind: databaseWorkbenchMessageKind)
                     .padding(.bottom, 10)
             }
 
@@ -41,7 +49,9 @@ struct DatabaseWorkbenchSettingsPage: View {
                             onEdit: { editedProfile = profile },
                             onDuplicate: { profiles.duplicate(id: profile.id) },
                             onTest: { dryRun(profile) },
-                            onDelete: { profiles.delete(id: profile.id) }
+                            onDelete: { profiles.delete(id: profile.id) },
+                            isBusy: activeProfileAction == profile.id,
+                            isDisabled: activeProfileAction != nil || activeOperationKind != nil
                         )
                         if index < profiles.profiles.count - 1 {
                             CardDivider()
@@ -77,7 +87,9 @@ struct DatabaseWorkbenchSettingsPage: View {
                 ForEach(Array(DatabaseWorkbenchOperationKind.allCases.enumerated()), id: \.element.id) { index, kind in
                     OperationActionRow(
                         kind: kind,
-                        onPrepare: { prepareOperation(kind) }
+                        onPrepare: { prepareOperation(kind) },
+                        isBusy: activeOperationKind == kind,
+                        isDisabled: activeProfileAction != nil || activeOperationKind != nil
                     )
                     if index < DatabaseWorkbenchOperationKind.allCases.count - 1 {
                         CardDivider()
@@ -291,24 +303,36 @@ struct DatabaseWorkbenchSettingsPage: View {
     }
 
     private func dryRun(_ profile: DatabaseConnectionProfile) {
+        guard activeProfileAction == nil, activeOperationKind == nil else { return }
+        activeProfileAction = profile.id
         let result = profiles.dryRun(profile)
         switch result.status {
         case .passed:
             ToastCenter.shared.show(result.message)
+            databaseWorkbenchMessage = result.message
+            databaseWorkbenchMessageKind = .ok
         case .externalPending:
             ToastCenter.shared.show("EXTERNAL PENDING: \(result.message)", icon: .warning)
+            databaseWorkbenchMessage = "EXTERNAL PENDING: \(result.message)"
+            databaseWorkbenchMessageKind = .danger
         case .failed:
             ToastCenter.shared.show(result.message, icon: .error)
+            databaseWorkbenchMessage = result.message
+            databaseWorkbenchMessageKind = .error
         }
+        clearActiveProfileAction(profile.id)
     }
 
     private func prepareOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        guard activeProfileAction == nil, activeOperationKind == nil else { return }
         if kind.requiresSensitiveExportReview {
             LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
+                activeOperationKind = kind
                 prepareReviewedOperation(kind)
             }
             return
         }
+        activeOperationKind = kind
         prepareReviewedOperation(kind)
     }
 
@@ -318,10 +342,35 @@ struct DatabaseWorkbenchSettingsPage: View {
         switch plan.status {
         case .localReady:
             ToastCenter.shared.show(plan.message)
+            databaseWorkbenchMessage = plan.message
+            databaseWorkbenchMessageKind = .ok
         case .externalPending:
             ToastCenter.shared.show(plan.message, icon: .warning)
+            databaseWorkbenchMessage = plan.message
+            databaseWorkbenchMessageKind = .danger
         case .blocked:
             ToastCenter.shared.show(plan.message, icon: .error)
+            databaseWorkbenchMessage = plan.message
+            databaseWorkbenchMessageKind = .error
+        }
+        clearActiveOperation(kind)
+    }
+
+    private func clearActiveProfileAction(_ id: UUID) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            if activeProfileAction == id {
+                activeProfileAction = nil
+            }
+        }
+    }
+
+    private func clearActiveOperation(_ kind: DatabaseWorkbenchOperationKind) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            if activeOperationKind == kind {
+                activeOperationKind = nil
+            }
         }
     }
 }
@@ -329,13 +378,22 @@ struct DatabaseWorkbenchSettingsPage: View {
 private struct OperationActionRow: View {
     let kind: DatabaseWorkbenchOperationKind
     let onPrepare: () -> Void
+    let isBusy: Bool
+    let isDisabled: Bool
 
     var body: some View {
         SettingsRow {
             RowLabel(title: LocalizedStringKey(kind.label), detail: LocalizedStringKey(kind.detail))
         } trailing: {
-            Button("Prepare", action: onPrepare)
-                .buttonStyle(.bordered)
+            HStack(spacing: 8) {
+                if isBusy {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Button("Prepare", action: onPrepare)
+                    .buttonStyle(.bordered)
+                    .disabled(isDisabled)
+            }
         }
     }
 }
@@ -346,6 +404,8 @@ private struct ConnectionProfileRow: View {
     let onDuplicate: () -> Void
     let onTest: () -> Void
     let onDelete: () -> Void
+    let isBusy: Bool
+    let isDisabled: Bool
 
     @State private var confirmingDelete = false
 
@@ -354,16 +414,24 @@ private struct ConnectionProfileRow: View {
             RowLabel(title: LocalizedStringKey(profile.displayName), detail: LocalizedStringKey(detail))
         } trailing: {
             HStack(spacing: 8) {
+                if isBusy {
+                    ProgressView()
+                        .controlSize(.small)
+                }
                 Button("Test", action: onTest)
                     .buttonStyle(.bordered)
+                    .disabled(isDisabled)
                 Button("Duplicate", action: onDuplicate)
                     .buttonStyle(.bordered)
+                    .disabled(isDisabled)
                 Button("Edit", action: onEdit)
                     .buttonStyle(.bordered)
+                    .disabled(isDisabled)
                 Button("Remove") {
                     confirmingDelete = true
                 }
                 .buttonStyle(.bordered)
+                .disabled(isDisabled)
             }
         }
         .confirmationDialog(
@@ -534,12 +602,16 @@ private struct DatabaseConnectionProfileEditorSheet: View {
             }
 
             Divider().background(Color.overlay(0.07))
-            HStack {
+            HStack(spacing: 8) {
                 Button("Cancel", action: onCancel)
+                    .buttonStyle(SheetCancelButtonStyle())
+                    .keyboardShortcut(.cancelAction)
                 Spacer()
                 Button("Dry run") { onTest(draft) }
+                    .buttonStyle(SheetCancelButtonStyle())
                 Button("Save") { onSave(draft) }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(SheetPrimaryButtonStyle())
+                    .keyboardShortcut(.defaultAction)
             }
             .padding(20)
         }
@@ -582,8 +654,8 @@ private struct TextFieldRow: View {
             RowLabel(title: title, detail: detail)
         } trailing: {
             TextField("", text: $text)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 260)
+                .sheetTextFieldStyle()
+                .frame(width: 240)
         }
     }
 }
@@ -622,18 +694,59 @@ private struct NumberRow: View {
             RowLabel(title: title, detail: detail)
         } trailing: {
             HStack(spacing: 8) {
-                Stepper("", value: $value, in: range)
-                    .labelsHidden()
+                NumberStepButton(symbol: "minus") {
+                    if value > range.lowerBound { value -= 1 }
+                }
+                .disabled(value <= range.lowerBound)
                 Text("\(value)")
-                    .font(BodyFont.system(size: 12.5, wght: 600))
+                    .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
                     .foregroundColor(Palette.textPrimary)
-                    .monospacedDigit()
-                    .frame(minWidth: 58, alignment: .trailing)
-                Text(suffix)
-                    .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Palette.textSecondary)
+                    .frame(minWidth: 56)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.overlay(0.06))
+                            .overlay(Capsule(style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
+                    )
+                NumberStepButton(symbol: "plus") {
+                    if value < range.upperBound { value += 1 }
+                }
+                .disabled(value >= range.upperBound)
+                if !suffix.isEmpty {
+                    Text(suffix)
+                        .font(BodyFont.system(size: 11.5, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                }
             }
         }
+    }
+}
+
+/// Square 30pt minus / plus control replacing the system `Stepper`. Matches
+/// the icon-chip fill and hairline used across the settings canon.
+private struct NumberStepButton: View {
+    let symbol: String
+    let action: () -> Void
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            LucideIcon.auto(symbol, size: 12)
+                .foregroundColor(Palette.textPrimary)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.overlay(hovered ? 0.10 : 0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
+                        )
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovered)
     }
 }
 

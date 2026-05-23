@@ -48,10 +48,13 @@ final class AppshotHotkeyMonitor {
                 return event
             }
         }
-        if globalMonitor == nil {
+        if NativeMacPermissionBroker.status(for: .inputMonitoring).isGranted, globalMonitor == nil {
             globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
                 Task { @MainActor in self?.handle(event) }
             }
+        } else if !NativeMacPermissionBroker.status(for: .inputMonitoring).isGranted, let globalMonitor {
+            NSEvent.removeMonitor(globalMonitor)
+            self.globalMonitor = nil
         }
     }
 

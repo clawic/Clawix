@@ -22,6 +22,8 @@ struct AppsSettingsPage: View {
     @State private var highRiskAuditSheet: AppsSettingsHighRiskAuditSheetModel?
     @State private var actionInFlight: Set<UUID> = []
     @State private var appsError: String?
+    @State private var appsStatus: String?
+    @State private var appsStatusKind: InfoBanner.Kind = .ok
 
     private var totalSizeBytes: Int {
         appsStore.apps.reduce(0) { partial, record in
@@ -48,6 +50,10 @@ struct AppsSettingsPage: View {
                 CardDivider()
                 if let appsError {
                     InfoBanner(text: appsError, kind: .error)
+                        .padding(12)
+                }
+                if let appsStatus {
+                    InfoBanner(text: appsStatus, kind: appsStatusKind)
                         .padding(12)
                 }
                 if appsStore.apps.isEmpty {
@@ -223,6 +229,7 @@ struct AppsSettingsPage: View {
 
     private func runAppMutation(_ record: AppRecord, operation: @escaping @MainActor () throws -> Void) {
         appsError = nil
+        appsStatus = nil
         actionInFlight.insert(record.id)
         Task { @MainActor in
             await Task.yield()
@@ -254,9 +261,15 @@ struct AppsSettingsPage: View {
                 scope: scope,
                 workspaceId: scope == .workspace ? appState.selectedProject?.id : nil
             )
-            ToastCenter.shared.show(scope == .workspace ? "Workspace variant default set" : "User variant default set")
+            let message = scope == .workspace
+                ? L10n.t("Workspace variant default set")
+                : L10n.t("User variant default set")
+            setAppsStatus(message, kind: .ok)
+            ToastCenter.shared.show(message)
         } catch {
-            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.variantDefault"), icon: .error)
+            let message = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.variantDefault")
+            setAppsStatus(message, kind: .error)
+            ToastCenter.shared.show(message, icon: .error)
         }
     }
 
@@ -267,7 +280,11 @@ struct AppsSettingsPage: View {
             scope: scope,
             workspaceId: scope == .workspace ? appState.selectedProject?.id : nil
         )
-        ToastCenter.shared.show(scope == .workspace ? "Workspace variant default cleared" : "User variant default cleared")
+        let message = scope == .workspace
+            ? L10n.t("Workspace variant default cleared")
+            : L10n.t("User variant default cleared")
+        setAppsStatus(message, kind: .ok)
+        ToastCenter.shared.show(message)
     }
 
     private func showTrustAudit(_ record: AppRecord) {
@@ -275,7 +292,9 @@ struct AppsSettingsPage: View {
             let events = try AppTrustAudit.read(from: appsStore.trustAuditURL(for: record))
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(record: record, events: events)
         } catch {
-            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAudit"), icon: .error)
+            let message = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAudit")
+            setAppsStatus(message, kind: .error)
+            ToastCenter.shared.show(message, icon: .error)
         }
     }
 
@@ -287,7 +306,9 @@ struct AppsSettingsPage: View {
             }
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(entries: entries)
         } catch {
-            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAuditAll"), icon: .error)
+            let message = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAuditAll")
+            setAppsStatus(message, kind: .error)
+            ToastCenter.shared.show(message, icon: .error)
         }
     }
 
@@ -296,7 +317,9 @@ struct AppsSettingsPage: View {
             let receipts = try AppHighRiskActionAudit.read(from: appsStore.highRiskActionAuditURL(for: record))
             highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(record: record, receipts: receipts)
         } catch {
-            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAudit"), icon: .error)
+            let message = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAudit")
+            setAppsStatus(message, kind: .error)
+            ToastCenter.shared.show(message, icon: .error)
         }
     }
 
@@ -308,8 +331,15 @@ struct AppsSettingsPage: View {
             }
             highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(entries: entries)
         } catch {
-            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAuditAll"), icon: .error)
+            let message = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAuditAll")
+            setAppsStatus(message, kind: .error)
+            ToastCenter.shared.show(message, icon: .error)
         }
+    }
+
+    private func setAppsStatus(_ message: String, kind: InfoBanner.Kind) {
+        appsStatus = message
+        appsStatusKind = kind
     }
 
     private func appSizeOnDisk(_ record: AppRecord) -> Int {
@@ -408,6 +438,7 @@ private struct AppsSettingsRow: View {
 
             variantDefaultControl
                 .frame(width: 86, alignment: .center)
+                .disabled(isBusy)
 
             HStack(spacing: 6) {
                 Button(action: onOpen) {

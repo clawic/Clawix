@@ -40,7 +40,7 @@ enum HomeRole: String, CaseIterable, Codable, Identifiable {
         case .product:     return .listChecks
         case .writing:     return .fileText
         case .learning:    return .globe
-        case .other:       return .circleDot
+        case .other:       return .sparkles
         }
     }
 

@@ -29,7 +29,7 @@ struct SkillsSettingsPage: View {
             SettingsCard {
                 SkillsCapabilityStatusRow(
                     title: "Startup scan",
-                    detail: "Blocked until the framework exposes a persisted scan policy and last-scan report consumed by the Skills boot path.",
+                    detail: "Settings does not start skill scans directly. Blocked until the framework exposes a persisted scan policy and last-scan report consumed by the Skills boot path.",
                     status: "Blocked"
                 )
             }

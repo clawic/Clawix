@@ -41,7 +41,7 @@ struct AppsSidebarSection: View {
             BasicSectionHeader(
                 title: "Apps",
                 expanded: $expanded,
-                leadingIcon: AnyView(LucideIcon.auto("square.grid.2x2", size: 13)),
+                leadingIcon: AnyView(BlocksIcon(size: 16)),
                 trailingIcon: AnyView(allAppsButton)
             )
             SidebarAccordion(expanded: expanded, targetHeight: bodyHeight) {

@@ -9,6 +9,7 @@ import ClawixEngine
 /// guides them through pasting the resulting token. Everything is
 /// opt-in: a Mac without a coordinator configured keeps working
 /// exactly as before (LAN + Bonjour + Tailscale).
+@MainActor
 struct RemoteAccessSettingsPage: View {
 
     @AppStorage(ClawixPersistentSurfaceKeys.remoteCoordinatorUrl) private var coordinatorUrlString: String = ""
@@ -18,15 +19,24 @@ struct RemoteAccessSettingsPage: View {
 
     @State private var pasteToken: String = ""
     @StateObject private var store: RemoteAccessSettingsStore
+    @StateObject private var remoteProjectionStore: ClawJSRemoteProjectionStore
 
     @MainActor
     init() {
         _store = StateObject(wrappedValue: RemoteAccessSettingsStore())
+        _remoteProjectionStore = StateObject(wrappedValue: ClawJSRemoteProjectionStore())
     }
 
     @MainActor
     init(store: RemoteAccessSettingsStore) {
         _store = StateObject(wrappedValue: store)
+        _remoteProjectionStore = StateObject(wrappedValue: ClawJSRemoteProjectionStore())
+    }
+
+    @MainActor
+    init(store: RemoteAccessSettingsStore, remoteProjectionStore: ClawJSRemoteProjectionStore) {
+        _store = StateObject(wrappedValue: store)
+        _remoteProjectionStore = StateObject(wrappedValue: remoteProjectionStore)
     }
 
     private var trimmedCoordinatorURL: String {
@@ -63,6 +73,7 @@ struct RemoteAccessSettingsPage: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     coordinatorSection
+                    remoteProjectionSection
                     magicLinkSection
                     pairedDeviceSection
                 }
@@ -72,7 +83,11 @@ struct RemoteAccessSettingsPage: View {
             }
             .thinScrollers()
         }
-        .onDisappear { store.cancelInFlight() }
+        .task { remoteProjectionStore.load() }
+        .onDisappear {
+            store.cancelInFlight()
+            remoteProjectionStore.cancel()
+        }
     }
 
     private var header: some View {
@@ -103,6 +118,33 @@ struct RemoteAccessSettingsPage: View {
                     .font(BodyFont.system(size: 11, wght: 500))
                     .foregroundColor(Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var remoteProjectionSection: some View {
+        sectionCard(title: "Framework projection", subtitle: "Read-only ClawJS remote status.") {
+            VStack(alignment: .leading, spacing: 8) {
+                switch remoteProjectionStore.state {
+                case .idle, .loading:
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Loading remote projection")
+                            .font(BodyFont.system(size: 11.5, wght: 500))
+                            .foregroundColor(Palette.textSecondary)
+                    }
+                case .unavailable(let message):
+                    InfoBanner(text: message, kind: .danger)
+                case .available(let snapshot):
+                    pairedRow(label: "Conformance", value: snapshot.conformanceStatus ?? "unavailable")
+                    pairedRow(label: "Routes", value: "\(snapshot.requiredRoutes.count - snapshot.missingRouteIds.count)/\(snapshot.requiredRoutes.count) registered")
+                    pairedRow(label: "Contracts", value: "\(snapshot.contracts.count) \(snapshot.contractsStatus ?? "unknown")")
+                    pairedRow(label: "Pending", value: "\(snapshot.externalPendingCount) external")
+                    pairedRow(label: "Readiness", value: snapshot.externalReadinessStatus)
+                    pairedRow(label: "Blocked", value: snapshot.blockedExternalRequirementSummary)
+                    pairedRow(label: "Closure", value: snapshot.closureBlockersSummary)
+                    pairedRow(label: "E2E plan", value: snapshot.providerDeviceE2ESummary)
+                }
             }
         }
     }

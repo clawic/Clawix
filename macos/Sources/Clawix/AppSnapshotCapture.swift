@@ -136,7 +136,9 @@ final class AppSnapshotCapture: ObservableObject {
     /// Returns `(fallbackTitle, "")` when the permission is missing or the
     /// app exposes no AX tree.
     private func readWindowText(pid: pid_t, fallbackTitle: String?) -> (title: String?, text: String) {
-        guard AXIsProcessTrusted() else { return (fallbackTitle, "") }
+        guard NativeMacPermissionBroker.status(for: .accessibility) == .granted else {
+            return (fallbackTitle, "")
+        }
         let appElement = AXUIElementCreateApplication(pid)
         guard let window = focusedWindow(of: appElement) else { return (fallbackTitle, "") }
 

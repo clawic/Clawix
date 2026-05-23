@@ -114,6 +114,26 @@ final class MCPServersStore: ObservableObject {
         persistCurrentServers()
     }
 
+    @discardableResult
+    func upsertAndWait(_ server: MCPServerConfig) async -> Bool {
+        guard !isLoading && !isSaving else { return false }
+        let trimmed = server.sanitised()
+        var next = servers
+        if let idx = next.firstIndex(where: { $0.id == trimmed.id }) {
+            next[idx] = trimmed
+        } else {
+            next.append(trimmed)
+        }
+        return await replaceServersAndWait(next)
+    }
+
+    @discardableResult
+    func deleteAndWait(_ server: MCPServerConfig) async -> Bool {
+        guard !isLoading && !isSaving else { return false }
+        let next = servers.filter { $0.id != server.id }
+        return await replaceServersAndWait(next)
+    }
+
     // MARK: - Persistence
 
     private func persistCurrentServers() {
@@ -126,6 +146,31 @@ final class MCPServersStore: ObservableObject {
             await self.persist(snapshot, generation: generation)
         }
         saveTask = task
+    }
+
+    private func replaceServersAndWait(_ snapshot: [MCPServerConfig]) async -> Bool {
+        saveGeneration += 1
+        let generation = saveGeneration
+        saveTask?.cancel()
+        saveTask = nil
+        servers = snapshot
+        isSaving = true
+        do {
+            try await persistence.saveServers(snapshot)
+            try Task.checkCancellation()
+            guard generation == saveGeneration else { return false }
+            lastError = nil
+            finishSaveIfCurrent(generation)
+            return true
+        } catch is CancellationError {
+            finishSaveIfCurrent(generation)
+            return false
+        } catch {
+            guard generation == saveGeneration else { return false }
+            lastError = userFacingError(error, surface: "settings.mcp.save")
+            finishSaveIfCurrent(generation)
+            return false
+        }
     }
 
     private func persist(_ snapshot: [MCPServerConfig], generation: Int) async {

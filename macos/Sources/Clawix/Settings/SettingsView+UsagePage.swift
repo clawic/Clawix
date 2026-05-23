@@ -33,6 +33,9 @@ enum UsageDisplayMode: String, CaseIterable {
 struct UsagePage: View {
     @EnvironmentObject var appState: AppState
     @AppStorage(ClawixPersistentSurfaceKeys.usageDisplayMode) private var displayMode: UsageDisplayMode = .used
+    @State private var usageRefreshInFlight = false
+    @State private var usageRefreshError: String?
+    @State private var usageRefreshCompleted = false
 
     /// Per-bucket entries other than the base "codex" id (which mirrors
     /// the general snapshot we already render at the top). Sorted by
@@ -49,6 +52,10 @@ struct UsagePage: View {
         return general || !perModelBuckets.isEmpty
     }
 
+    private var hasAnyUsageData: Bool {
+        hasAnyBars || appState.rateLimits?.credits != nil
+    }
+
     private var usageOptions: [(UsageDisplayMode, String)] {
         [(.used, "Used"), (.remaining, "Remaining")]
     }
@@ -56,6 +63,8 @@ struct UsagePage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             PageHeader(title: "Usage")
+
+            usageStatus
 
             if let snapshot = appState.rateLimits, snapshot.primary != nil || snapshot.secondary != nil {
                 HStack(alignment: .center) {
@@ -96,7 +105,7 @@ struct UsagePage: View {
                 }
             }
 
-            if !hasAnyBars && appState.rateLimits?.credits == nil {
+            if !hasAnyUsageData {
                 SettingsCard {
                     HStack(alignment: .center, spacing: 12) {
                         UsageIcon(size: 15, lineWidth: 1.7)
@@ -105,7 +114,7 @@ struct UsagePage: View {
                             Text(verbatim: "No usage data yet")
                                 .font(BodyFont.system(size: 13, wght: 600))
                                 .foregroundColor(Palette.textPrimary)
-                            Text(verbatim: "Usage limits appear here after the runtime reports a rate-limit snapshot.")
+                            Text(usageEmptyDetail)
                                 .font(BodyFont.system(size: 11.5, wght: 500))
                                 .foregroundColor(Palette.textSecondary)
                         }
@@ -118,8 +127,84 @@ struct UsagePage: View {
             }
         }
         .task {
-            guard await appState.ensureAgentRuntimeReady(reason: .usageSurface) else { return }
-            await appState.clawix?.refreshBackendMetadata(reason: .usageSurface)
+            await refreshUsageSnapshot()
+        }
+    }
+
+    @ViewBuilder
+    private var usageStatus: some View {
+        if usageRefreshInFlight {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Loading usage limits from runtime")
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            .padding(.bottom, 12)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text("Loading usage limits from runtime"))
+        } else if let usageRefreshError {
+            InfoBanner(text: usageRefreshError, kind: .error)
+                .padding(.bottom, 12)
+        } else if usageRefreshCompleted && !hasAnyUsageData {
+            InfoBanner(
+                text: L10n.t("The runtime did not return a rate-limit snapshot for this account."),
+                kind: .danger
+            )
+            .padding(.bottom, 12)
+        }
+    }
+
+    private var usageEmptyDetail: LocalizedStringKey {
+        if usageRefreshInFlight {
+            return "Waiting for the runtime rate-limit snapshot."
+        }
+        if usageRefreshError != nil {
+            return "Usage limits are unavailable because the agent runtime could not be reached."
+        }
+        if usageRefreshCompleted {
+            return "The runtime responded without a rate-limit snapshot for this account."
+        }
+        return "Usage limits appear here after the runtime reports a rate-limit snapshot."
+    }
+
+    private func refreshUsageSnapshot() async {
+        guard !usageRefreshInFlight else { return }
+        usageRefreshInFlight = true
+        usageRefreshError = nil
+        defer {
+            usageRefreshInFlight = false
+            usageRefreshCompleted = true
+        }
+
+        guard await appState.ensureAgentRuntimeReady(reason: .usageSurface) else {
+            usageRefreshError = String(
+                format: L10n.t("Agent runtime is unavailable: %@"),
+                locale: AppLocale.current,
+                appState.clawixBackendStatus.usageSurfaceLabel
+            )
+            return
+        }
+        guard let clawix = appState.clawix else {
+            usageRefreshError = L10n.t("Agent runtime client is unavailable.")
+            return
+        }
+        await clawix.refreshBackendMetadata(reason: .usageSurface)
+    }
+}
+
+private extension ClawixService.Status {
+    var usageSurfaceLabel: String {
+        switch self {
+        case .idle:
+            return L10n.t("idle")
+        case .starting:
+            return L10n.t("starting")
+        case .ready:
+            return L10n.t("ready")
+        case .error(let message):
+            return message
         }
     }
 }

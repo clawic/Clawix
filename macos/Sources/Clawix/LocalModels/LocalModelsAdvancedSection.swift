@@ -48,7 +48,7 @@ extension LocalModelsPage {
                             infoRow("Acceleration", accelerationLabel)
                             infoRow("Runtime version", service.runtimeVersion ?? "unknown")
                             infoRow("Loaded models", "\(service.loadedModels.count)")
-                            infoRow("Endpoint", "http://127.0.0.1:\(LocalModelsDaemon.port)")
+                            infoRow("Endpoint", LocalModelsDaemon.endpointDisplay)
                             infoRow("Models folder", LocalModelsDaemon.modelsDirectory.path)
                             infoRow("Logs", LocalModelsDaemon.logFileURL.path)
                         }
@@ -71,12 +71,12 @@ extension LocalModelsPage {
                     .foregroundColor(Palette.textSecondary)
                     .monospacedDigit()
             }
-            Slider(
+            CanonSlider(
                 value: Binding(
                     get: { Double(service.contextLength) },
                     set: { service.contextLength = Int($0) }
                 ),
-                in: 1024...32768,
+                range: 1024...32768,
                 step: 1024
             )
             Text("Bigger contexts use more memory and slow first-token latency. Applies on next runtime restart.")
@@ -96,19 +96,20 @@ extension LocalModelsPage {
                     .foregroundColor(Palette.textSecondary)
             }
             Spacer()
-            Picker("", selection: Binding(
-                get: { service.keepAlive },
-                set: { service.keepAlive = $0 }
-            )) {
-                Text("Immediate").tag("0")
-                Text("5 minutes").tag("5m")
-                Text("1 hour").tag("1h")
-                Text("Until quit").tag("24h")
-                Text("Forever").tag("-1")
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(width: 130)
+            SettingsDropdown(
+                options: [
+                    ("0", L10n.t("Immediate")),
+                    ("5m", L10n.t("5 minutes")),
+                    ("1h", L10n.t("1 hour")),
+                    ("24h", L10n.t("Until quit")),
+                    ("-1", L10n.t("Forever")),
+                ],
+                selection: Binding(
+                    get: { service.keepAlive },
+                    set: { service.keepAlive = $0 }
+                ),
+                minWidth: 130
+            )
         }
     }
 
@@ -158,5 +159,59 @@ extension LocalModelsPage {
 
     var totalModelsSize: Int64 {
         service.installedModels.reduce(0) { $0 + $1.size }
+    }
+}
+
+/// Canon slider: thin track on `overlay(0.10)`, a soft pastelBlue fill and a
+/// neutral knob with a faint brand ring. Replaces the system `Slider`, which
+/// reads as stock macOS chrome in the dark settings surface.
+struct CanonSlider: View {
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    var step: Double = 0
+
+    private let knob: CGFloat = 16
+    private let trackHeight: CGFloat = 4
+
+    private func fraction(_ v: Double) -> CGFloat {
+        let span = range.upperBound - range.lowerBound
+        guard span > 0 else { return 0 }
+        return CGFloat(min(max(0, (v - range.lowerBound) / span), 1))
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let frac = fraction(value)
+            let cx = frac * w
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(Color.overlay(0.10))
+                    .frame(height: trackHeight)
+                Capsule(style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [Palette.pastelBlue.opacity(0.55), Palette.pastelBlue.opacity(0.85)],
+                        startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(0, cx), height: trackHeight)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: knob, height: knob)
+                    .overlay(Circle().stroke(Palette.pastelBlue.opacity(0.5), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.4), radius: 2, x: 0, y: 1)
+                    .offset(x: max(0, min(w - knob, cx - knob / 2)))
+            }
+            .frame(height: knob)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { g in
+                        let f = min(max(0, g.location.x / max(1, w)), 1)
+                        var raw = range.lowerBound + Double(f) * (range.upperBound - range.lowerBound)
+                        if step > 0 { raw = (raw / step).rounded() * step }
+                        value = min(max(range.lowerBound, raw), range.upperBound)
+                    }
+            )
+        }
+        .frame(height: knob)
     }
 }

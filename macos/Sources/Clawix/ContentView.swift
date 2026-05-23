@@ -191,7 +191,7 @@ struct ContentView: View {
                 // Darkens the sidebar material to the dark-theme tone. In
                 // light mode the material is already light, so only a faint
                 // tint keeps the column subtly distinct from the white panel.
-                .overlay(Color.dynamic(light: Color.black.opacity(0.04), dark: Color.black.opacity(0.26)))
+                .overlay(Color.dynamic(light: Color.black.opacity(0.02), dark: Color.black.opacity(0.26)))
                 .ignoresSafeArea()
 
             if !appState.auth.isLoggedIn {

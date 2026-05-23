@@ -887,7 +887,7 @@ struct AddMenuPopup: View {
     private var mainColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
             AddMenuRow(
-                icon: "paperclip",
+                icon: "photo",
                 label: L10n.t("Add photos and files"),
                 trailing: nil,
                 highlighted: false
@@ -919,7 +919,7 @@ struct AddMenuPopup: View {
             MenuStandardDivider()
                 .padding(.vertical, 3)
 
-            AddMenuToggleRow(icon: "checklist", label: L10n.t("Plan mode"), isOn: $planMode)
+            AddMenuToggleRow(icon: "list.todo", label: L10n.t("Plan mode"), isOn: $planMode)
                 .onHover { hovering in
                     if hovering { withAnimation(.easeOut(duration: 0.20)) { showComplementos = false } }
                 }
@@ -944,7 +944,7 @@ struct AddMenuPopup: View {
                     .padding(.vertical, 3)
 
                 AddMenuRow(
-                    icon: "square.grid.2x2",
+                    icon: "plug",
                     label: L10n.t("Plugins"),
                     trailing: "chevron.right",
                     highlighted: showComplementos
@@ -991,7 +991,7 @@ struct AddMenuRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: MenuStyle.rowIconLabelSpacing) {
-                LucideIcon.auto(icon, size: 11)
+                LucideIcon.auto(icon, size: 13)
                     .foregroundColor(MenuStyle.rowIcon)
                     .frame(width: 18, alignment: .center)
                 Text(label)
@@ -1030,7 +1030,7 @@ struct AddMenuToggleRow: View {
 
     var body: some View {
         HStack(spacing: MenuStyle.rowIconLabelSpacing) {
-            LucideIcon.auto(icon, size: 11)
+            LucideIcon.auto(icon, size: 13)
                 .foregroundColor(MenuStyle.rowIcon)
                 .frame(width: 18, alignment: .center)
             Text(label)

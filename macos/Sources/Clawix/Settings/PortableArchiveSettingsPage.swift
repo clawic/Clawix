@@ -52,6 +52,86 @@ enum PortableArchiveUXState: String, CaseIterable {
     }
 }
 
+private enum PortableArchiveAction: CaseIterable {
+    case exportFullBackup
+    case verifyArchive
+    case inspectManifest
+    case importPreview
+    case restore
+    case restoreReport
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .exportFullBackup: return "Export full backup"
+        case .verifyArchive: return "Verify archive"
+        case .inspectManifest: return "Inspect manifest"
+        case .importPreview: return "Import preview"
+        case .restore: return "Restore"
+        case .restoreReport: return "Restore report"
+        }
+    }
+
+    var detail: LocalizedStringKey {
+        switch self {
+        case .exportFullBackup:
+            return ".clawbackup includes canonical data, files, instructions, skills, sessions, audit metadata, policies, grants, and encrypted secrets envelopes."
+        case .verifyArchive:
+            return "Check manifest.json, hashes, compatibility, external references, cache exclusions, and restore graph."
+        case .inspectManifest:
+            return "Show deterministic .clawexport and .clawbackup inventory, counts, restore report schema, redacted receipts, and referenced external sources."
+        case .importPreview:
+            return "Map archive contents into a new or selected target before anything is applied."
+        case .restore:
+            return "Apply only after successful verification, explicit approval, exact target confirmation, and signed-host proof for encrypted secrets."
+        case .restoreReport:
+            return "Review restored counts, target root, blocked reasons, approvals, file hashes, and redacted receipts."
+        }
+    }
+
+    var status: String {
+        switch self {
+        case .restoreReport:
+            return L10n.t("External pending")
+        default:
+            return L10n.t("Blocked")
+        }
+    }
+
+    var blockedReason: String {
+        switch self {
+        case .exportFullBackup:
+            return L10n.t("Blocked until the signed host route returns a dry-run archive plan and approval evidence.")
+        case .verifyArchive:
+            return L10n.t("Blocked until Settings receives a verification report from the signed host route.")
+        case .inspectManifest:
+            return L10n.t("Blocked until the signed host route returns a redacted manifest inspection result.")
+        case .importPreview:
+            return L10n.t("Blocked until the signed host route returns an import preview without applying changes.")
+        case .restore:
+            return L10n.t("Blocked until import preview, verification, signed-host proof, explicit approval, and exact target confirmation all pass.")
+        case .restoreReport:
+            return L10n.t("External pending until a completed restore report exists; Settings does not synthesize one.")
+        }
+    }
+
+    var source: String {
+        switch self {
+        case .exportFullBackup:
+            return L10n.t("Source: claw archive plan/export --signed-host")
+        case .verifyArchive:
+            return L10n.t("Source: claw archive verify --signed-host")
+        case .inspectManifest:
+            return L10n.t("Source: claw archive inspect --signed-host")
+        case .importPreview:
+            return L10n.t("Source: claw archive import --signed-host")
+        case .restore:
+            return L10n.t("Source: claw archive restore --signed-host")
+        case .restoreReport:
+            return L10n.t("Source: PortableArchiveRestoreReport from signed host")
+        }
+    }
+}
+
 struct PortableArchiveSettingsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -76,32 +156,11 @@ struct PortableArchiveSettingsPage: View {
     private var archiveSection: some View {
         SectionLabel(title: "Portable archive")
         SettingsCard {
-            SettingsRow {
-                RowLabel(
-                    title: "Export full backup",
-                    detail: ".clawbackup includes canonical data, files, instructions, skills, sessions, audit metadata, policies, grants, and encrypted secrets envelopes."
-                )
-            } trailing: {
-                PortableArchiveActionStatus(label: "Blocked")
-            }
-            CardDivider()
-            SettingsRow {
-                RowLabel(
-                    title: "Verify archive",
-                    detail: "Check manifest.json, hashes, compatibility, external references, cache exclusions, and restore graph."
-                )
-            } trailing: {
-                PortableArchiveActionStatus(label: "Blocked")
-            }
-            CardDivider()
-            SettingsRow {
-                RowLabel(
-                    title: "Inspect manifest",
-                    detail: "Show deterministic .clawexport and .clawbackup inventory, counts, restore report schema, redacted receipts, and referenced external sources."
-                )
-            } trailing: {
-                PortableArchiveActionStatus(label: "Blocked")
-            }
+            portableArchiveActionRows([
+                .exportFullBackup,
+                .verifyArchive,
+                .inspectManifest
+            ])
         }
     }
 
@@ -109,31 +168,38 @@ struct PortableArchiveSettingsPage: View {
     private var restoreSection: some View {
         SectionLabel(title: "Import and restore")
         SettingsCard {
-            SettingsRow {
-                RowLabel(
-                    title: "Import preview",
-                    detail: "Map archive contents into a new or selected target before anything is applied."
-                )
-            } trailing: {
-                PortableArchiveActionStatus(label: "Blocked")
+            portableArchiveActionRows([
+                .importPreview,
+                .restore,
+                .restoreReport
+            ])
+        }
+    }
+
+    @ViewBuilder
+    private func portableArchiveActionRows(_ actions: [PortableArchiveAction]) -> some View {
+        ForEach(Array(actions.enumerated()), id: \.offset) { index, action in
+            if index > 0 {
+                CardDivider()
             }
-            CardDivider()
             SettingsRow {
-                RowLabel(
-                    title: "Restore",
-                    detail: "Apply only after successful verification, explicit approval, exact target confirmation, and signed-host proof for encrypted secrets."
-                )
+                VStack(alignment: .leading, spacing: 6) {
+                    RowLabel(title: action.title, detail: action.detail)
+                    Text(action.blockedReason)
+                        .font(BodyFont.system(size: 10.8, wght: 600))
+                        .foregroundColor(Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(action.source)
+                        .font(BodyFont.system(size: 10.5, wght: 600))
+                        .foregroundColor(Palette.textTertiary)
+                        .textSelection(.enabled)
+                }
             } trailing: {
-                PortableArchiveActionStatus(label: "Blocked")
-            }
-            CardDivider()
-            SettingsRow {
-                RowLabel(
-                    title: "Restore report",
-                    detail: "Review restored counts, target root, blocked reasons, approvals, file hashes, and redacted receipts."
+                PortableArchiveActionStatus(
+                    label: action.status,
+                    reason: action.blockedReason,
+                    source: action.source
                 )
-            } trailing: {
-                PortableArchiveActionStatus(label: "Pending")
             }
         }
     }
@@ -149,7 +215,11 @@ struct PortableArchiveSettingsPage: View {
                 SettingsRow {
                     RowLabel(title: LocalizedStringKey(item.label), detail: LocalizedStringKey(item.detail))
                 } trailing: {
-                    PortableArchiveActionStatus(label: LocalizedStringKey(item.status))
+                    PortableArchiveActionStatus(
+                        label: item.status,
+                        reason: L10n.t("Canonical portable archive state exposed for Settings/Data inspection."),
+                        source: L10n.t("Source: ADR 0034 mirror and ClawJS portable archive contract")
+                    )
                 }
             }
         }
@@ -157,7 +227,9 @@ struct PortableArchiveSettingsPage: View {
 }
 
 private struct PortableArchiveActionStatus: View {
-    let label: LocalizedStringKey
+    let label: String
+    let reason: String
+    let source: String
 
     var body: some View {
         Text(label)
@@ -174,5 +246,6 @@ private struct PortableArchiveActionStatus: View {
                     )
             )
             .accessibilityLabel(Text(label))
+            .accessibilityHint(Text("\(reason) \(source)"))
     }
 }

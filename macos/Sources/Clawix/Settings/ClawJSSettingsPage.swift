@@ -113,9 +113,7 @@ struct ClawJSSettingsPage: View {
                     serviceActionButton(service: service, state: state)
 
                     Button("Open admin console") {
-                        if let url = URL(string: "http://127.0.0.1:\(service.port)") {
-                            NSWorkspace.shared.open(url)
-                        }
+                        NSWorkspace.shared.open(ClawJSServiceEndpointResolver.origin(for: service))
                     }
                     .buttonStyle(.borderless)
                     .font(BodyFont.system(size: 11.5, wght: 500))

@@ -17,11 +17,14 @@ struct LocalModelsPage: View {
     @State var pullField: String = ""
     @State var showCatalog = false
     @State var showUninstallConfirm = false
+    @State private var uninstallInFlight = false
+    @State private var runtimeActionError: String?
     @AppStorage(ClawixPersistentSurfaceKeys.localModelsAdvancedExpanded) var advancedExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
+            runtimeBanners
 
             runtimeSection
                 .padding(.top, 18)
@@ -88,6 +91,7 @@ struct LocalModelsPage: View {
                         .buttonStyle(.borderless)
                         .foregroundColor(Palette.danger)
                         .font(BodyFont.system(size: 11.5, wght: 500))
+                        .disabled(uninstallInFlight || isRuntimeBusy)
                     }
                 }
             }
@@ -95,12 +99,34 @@ struct LocalModelsPage: View {
         .alert("Remove the local runtime?", isPresented: $showUninstallConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Remove", role: .destructive) {
-                service.disable()
-                launchAgent.disable()
-                try? LocalModelsRuntimeInstaller.shared.uninstall()
+                Task { await uninstallRuntime() }
             }
         } message: {
             Text("Downloaded models stay on disk. You can reinstall the runtime any time.")
+        }
+    }
+
+    @ViewBuilder
+    private var runtimeBanners: some View {
+        if let runtimeActionError {
+            InfoBanner(text: runtimeActionError, kind: .error)
+                .padding(.top, 14)
+        }
+        if let launchAgentError = launchAgent.lastError {
+            InfoBanner(text: launchAgentError, kind: .error)
+                .padding(.top, 14)
+        }
+        if uninstallInFlight {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Removing local runtime")
+                    .font(BodyFont.system(size: 11.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            .padding(.top, 14)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text("Removing local runtime"))
         }
     }
 
@@ -112,6 +138,8 @@ struct LocalModelsPage: View {
                 title: "Set up local runtime",
                 detail: "Downloads ~133 MB the first time, then runs entirely on this Mac.",
                 buttonLabel: "Set up",
+                isEnabled: !isRuntimeBusy,
+                isWorking: isRuntimeBusy,
                 action: { Task { await service.enable() } }
             )
         case .installing(let progress, let downloaded):
@@ -153,6 +181,8 @@ struct LocalModelsPage: View {
                 title: "Update available",
                 detail: "Installed \(installed). New: \(LocalModelsRuntimeInstaller.pinnedVersion).",
                 buttonLabel: "Update",
+                isEnabled: !isRuntimeBusy,
+                isWorking: isRuntimeBusy,
                 action: { Task { await service.enable() } }
             )
         case .failed(let message):
@@ -186,16 +216,16 @@ struct LocalModelsPage: View {
                     .foregroundColor(Palette.textSecondary)
             }
             Spacer()
-            Toggle("", isOn: Binding(
+            PillToggle(isOn: Binding(
                 get: { service.daemonState.isRunning },
                 set: { on in
+                    guard !isRuntimeBusy else { return }
                     Task {
                         if on { await service.enable() } else { service.disable() }
                     }
                 }
-            ))
-            .toggleStyle(.switch)
-            .labelsHidden()
+            ), accessibilityLabel: "Run local runtime")
+            .disabled(isRuntimeBusy)
         }
     }
 
@@ -210,12 +240,40 @@ struct LocalModelsPage: View {
                     .foregroundColor(Palette.textSecondary)
             }
             Spacer()
-            Toggle("", isOn: Binding(
+            PillToggle(isOn: Binding(
                 get: { launchAgent.isEnabled },
-                set: { launchAgent.toggle($0) }
-            ))
-            .toggleStyle(.switch)
-            .labelsHidden()
+                set: {
+                    guard !isRuntimeBusy else { return }
+                    launchAgent.toggle($0)
+                }
+            ), accessibilityLabel: "Start at login")
+            .disabled(isRuntimeBusy)
+        }
+    }
+
+    var isRuntimeBusy: Bool {
+        if uninstallInFlight { return true }
+        if case .installing = service.runtimeState { return true }
+        if case .extracting = service.runtimeState { return true }
+        if case .starting = service.daemonState { return true }
+        return false
+    }
+
+    private func uninstallRuntime() async {
+        guard !uninstallInFlight else { return }
+        uninstallInFlight = true
+        runtimeActionError = nil
+        defer { uninstallInFlight = false }
+
+        service.disable()
+        launchAgent.disable()
+        do {
+            try LocalModelsRuntimeInstaller.shared.uninstall()
+        } catch {
+            runtimeActionError = SettingsUtilities.failureMessage(
+                for: error,
+                surface: "settings.localModels.runtime.uninstall"
+            )
         }
     }
 

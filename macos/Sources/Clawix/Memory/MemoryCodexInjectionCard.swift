@@ -10,8 +10,11 @@ struct MemoryCodexInjectionCard: View {
     @State private var savedBody: String = CodexMemoryBlock.defaultBody
     @State private var error: String?
     @State private var didLoad = false
+    @State private var isWorking = false
 
     private var isDirty: Bool { isInjected && bodyText != savedBody }
+    private var canMutate: Bool { didLoad && !isWorking }
+    private var canSave: Bool { canMutate && isDirty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,8 +29,13 @@ struct MemoryCodexInjectionCard: View {
             HStack(alignment: .top, spacing: 10) {
                 PillToggle(isOn: Binding(
                     get: { isInjected },
-                    set: { newValue in toggle(newValue: newValue) }
-                ))
+                    set: { newValue in
+                        guard canMutate else { return }
+                        toggle(newValue: newValue)
+                    }
+                ), accessibilityLabel: "Memory Codex injection",
+                   accessibilityHint: "Writes or removes the Memory block in AGENTS.md.")
+                .disabled(!canMutate)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(isInjected ? "Codex runtime injection is on" : "Codex runtime injection is off")
                         .font(BodyFont.system(size: 12, wght: 600))
@@ -39,6 +47,10 @@ struct MemoryCodexInjectionCard: View {
                         .foregroundColor(Palette.textSecondary)
                 }
                 Spacer()
+                if isWorking {
+                    ProgressView()
+                        .controlSize(.small)
+                }
                 if isInjected {
                     Button { resetToDefault() } label: {
                         Text("Reset to default")
@@ -52,6 +64,7 @@ struct MemoryCodexInjectionCard: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canMutate)
                 }
             }
             .padding(.bottom, 14)
@@ -70,14 +83,22 @@ struct MemoryCodexInjectionCard: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 10)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .disabled(!canMutate)
                 }
                 .frame(height: 220)
 
                 HStack(spacing: 10) {
                     if let error {
-                        Text(error)
-                            .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.55))
+                        HStack(spacing: 8) {
+                            Text(error)
+                                .font(BodyFont.system(size: 11, wght: 500))
+                                .foregroundColor(Palette.danger)
+                            if !didLoad {
+                                Button("Retry") { load() }
+                                    .buttonStyle(.bordered)
+                                    .disabled(isWorking)
+                            }
+                        }
                     } else if isDirty {
                         Text("Unsaved changes")
                             .font(BodyFont.system(size: 11, wght: 500))
@@ -96,7 +117,7 @@ struct MemoryCodexInjectionCard: View {
                             )
                     }
                     .buttonStyle(.plain)
-                    .disabled(!isDirty)
+                    .disabled(!canSave)
                 }
                 .padding(.top, 10)
             }
@@ -105,8 +126,9 @@ struct MemoryCodexInjectionCard: View {
     }
 
     private func load() {
-        guard !didLoad else { return }
-        didLoad = true
+        guard !didLoad, !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             if let body = try CodexInstructionsFile.sentinelBlockBody(id: CodexMemoryBlock.id) {
                 self.isInjected = true
@@ -118,12 +140,17 @@ struct MemoryCodexInjectionCard: View {
                 self.savedBody = CodexMemoryBlock.defaultBody
             }
             self.error = nil
+            didLoad = true
         } catch {
             self.error = Self.failureMessage(for: error, surface: "memory.codexInjection.load")
+            didLoad = false
         }
     }
 
     private func toggle(newValue: Bool) {
+        guard canMutate else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             if newValue {
                 let bodyToWrite = bodyText.isEmpty ? CodexMemoryBlock.defaultBody : bodyText
@@ -142,6 +169,9 @@ struct MemoryCodexInjectionCard: View {
     }
 
     private func saveBody() {
+        guard canSave else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             try CodexInstructionsFile.replaceSentinelBlock(id: CodexMemoryBlock.id, body: bodyText)
             savedBody = bodyText

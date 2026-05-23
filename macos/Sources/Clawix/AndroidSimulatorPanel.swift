@@ -177,7 +177,7 @@ struct AndroidSimulatorPanel: View {
         .frame(maxWidth: 390, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.black.opacity(0.72))
+                .fill(Color.dynamic(light: Color(white: 0.95), dark: Color.black.opacity(0.72)))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

@@ -35,8 +35,8 @@ struct HostEditorSheet: View {
 
         var label: String {
             switch self {
-            case .pairMac:    return "Pair a Mac"
-            case .sshServer:  return "Add SSH server"
+            case .pairMac:    return L10n.t("Pair a Mac")
+            case .sshServer:  return L10n.t("Add SSH server")
             }
         }
     }
@@ -49,10 +49,10 @@ struct HostEditorSheet: View {
 
         var label: String {
             switch self {
-            case .linuxServer:  return "Server"
-            case .linuxDesktop: return "Linux"
-            case .windowsPC:    return "Windows"
-            case .sbc:          return "Board"
+            case .linuxServer:  return L10n.t("Server")
+            case .linuxDesktop: return L10n.t("Linux")
+            case .windowsPC:    return L10n.t("Windows")
+            case .sbc:          return L10n.t("Board")
             }
         }
 
@@ -105,10 +105,10 @@ struct HostEditorSheet: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Add a host")
+                Text(L10n.t("Add a host"))
                     .font(BodyFont.system(size: 16, weight: .semibold))
                     .foregroundColor(Palette.textPrimary)
-                Text("Register another machine so this Mac can run jobs on it.")
+                Text(L10n.t("Register another machine so this Mac can run jobs on it."))
                     .font(BodyFont.system(size: 12, wght: 500))
                     .foregroundColor(Palette.textSecondary)
             }
@@ -133,29 +133,48 @@ struct HostEditorSheet: View {
     private var pairMacBody: some View {
         EditorCard {
             EditorFieldLabel("Host")
-            EditorTextField(placeholder: "192.168.1.20 or my-mac.local", text: $pairingHost)
+            EditorTextField(
+                placeholder: "192.168.1.20 or my-mac.local",
+                text: $pairingHost,
+                accessibilityLabel: L10n.t("Mac host address"),
+                accessibilityHint: L10n.t("Host name or IP address for the Mac showing the pairing token.")
+            )
         }
         EditorCard {
             EditorFieldLabel("HTTP port")
-            EditorTextField(placeholder: "24081", text: $pairingPort)
+            EditorTextField(
+                placeholder: "24081",
+                text: $pairingPort,
+                accessibilityLabel: L10n.t("Mac pairing HTTP port"),
+                accessibilityHint: L10n.t("Numeric HTTP port exposed by the remote Mac bridge.")
+            )
         }
         EditorCard {
             EditorFieldLabel("Pairing token")
-            EditorTextField(placeholder: "Token from the other Mac", text: $pairingToken, secure: true)
+            EditorTextField(
+                placeholder: L10n.t("Token from the other Mac"),
+                text: $pairingToken,
+                secure: true,
+                accessibilityLabel: L10n.t("Pairing token"),
+                accessibilityHint: L10n.t("One-time token shown by the remote Mac for this pairing attempt.")
+            )
         }
         EditorCard {
             EditorFieldLabel("Trust profile")
             SlidingSegmented(
                 selection: $pairingProfile,
                 options: [
-                    (.scoped, "Scoped"),
-                    (.fullTrust, "Full trust"),
-                    (.askPerTask, "Ask")
+                    (.scoped, L10n.t("Scoped")),
+                    (.fullTrust, L10n.t("Full trust")),
+                    (.askPerTask, L10n.t("Ask"))
                 ]
             )
         }
         if let name = pairingSuccessName {
-            InfoBanner(text: "Linked with \(name)", kind: .ok)
+            InfoBanner(
+                text: String(format: L10n.t("Linked with %@"), locale: AppLocale.current, name),
+                kind: .ok
+            )
         }
         if let error = pairingError {
             InfoBanner(text: error, kind: .error)
@@ -173,19 +192,39 @@ struct HostEditorSheet: View {
         }
         EditorCard {
             EditorFieldLabel("Display name")
-            EditorTextField(placeholder: "e.g. Hetzner VPS", text: $sshDisplayName)
+            EditorTextField(
+                placeholder: L10n.t("e.g. Production VPS"),
+                text: $sshDisplayName,
+                accessibilityLabel: L10n.t("SSH host display name"),
+                accessibilityHint: L10n.t("Local name shown for this SSH host in Settings and remote-run surfaces.")
+            )
         }
         EditorCard {
             EditorFieldLabel("Host")
-            EditorTextField(placeholder: "vps.example.com or 1.2.3.4", text: $sshHost)
+            EditorTextField(
+                placeholder: "vps.example.com or 1.2.3.4",
+                text: $sshHost,
+                accessibilityLabel: L10n.t("SSH host address"),
+                accessibilityHint: L10n.t("Host name or IP address used by the bridge daemon for SSH jobs.")
+            )
         }
         EditorCard {
             EditorFieldLabel("SSH port")
-            EditorTextField(placeholder: "22", text: $sshPort)
+            EditorTextField(
+                placeholder: "22",
+                text: $sshPort,
+                accessibilityLabel: L10n.t("SSH port"),
+                accessibilityHint: L10n.t("Numeric SSH port used for this host.")
+            )
         }
         EditorCard {
             EditorFieldLabel("SSH user")
-            EditorTextField(placeholder: "ubuntu / deploy / root", text: $sshUser)
+            EditorTextField(
+                placeholder: L10n.t("deploy / admin / root"),
+                text: $sshUser,
+                accessibilityLabel: L10n.t("SSH user"),
+                accessibilityHint: L10n.t("User account the bridge daemon uses when starting SSH jobs.")
+            )
         }
         EditorCard {
             EditorFieldLabel("Auth")
@@ -196,13 +235,19 @@ struct HostEditorSheet: View {
             if sshAuth != .agent {
                 EditorTextField(
                     placeholder: sshAuth == .privateKey
-                        ? "Paste the private key (PEM)"
-                        : "Password",
+                        ? L10n.t("Paste the private key (PEM)")
+                        : L10n.t("Password"),
                     text: $sshSecretValue,
-                    secure: true
+                    secure: true,
+                    accessibilityLabel: sshAuth == .privateKey
+                        ? L10n.t("SSH private key")
+                        : L10n.t("SSH password"),
+                    accessibilityHint: sshAuth == .privateKey
+                        ? L10n.t("Private key stored by the bridge daemon for this SSH host.")
+                        : L10n.t("Password stored by the bridge daemon for this SSH host.")
                 )
             } else {
-                Text("Uses the SSH agent socket already exported to this Mac (SSH_AUTH_SOCK). The daemon will not store any credential for this host.")
+                Text(L10n.t("Uses the SSH agent socket already exported to this Mac (SSH_AUTH_SOCK). The daemon will not store any credential for this host."))
                     .font(BodyFont.system(size: 11.5, wght: 500))
                     .foregroundColor(Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -213,14 +258,17 @@ struct HostEditorSheet: View {
             SlidingSegmented(
                 selection: $sshProfile,
                 options: [
-                    (.scoped, "Scoped"),
-                    (.fullTrust, "Full trust"),
-                    (.askPerTask, "Ask")
+                    (.scoped, L10n.t("Scoped")),
+                    (.fullTrust, L10n.t("Full trust")),
+                    (.askPerTask, L10n.t("Ask"))
                 ]
             )
         }
         if let name = sshSuccessName {
-            InfoBanner(text: "Added \(name)", kind: .ok)
+            InfoBanner(
+                text: String(format: L10n.t("Added %@"), locale: AppLocale.current, name),
+                kind: .ok
+            )
         }
         if let error = sshError {
             InfoBanner(text: error, kind: .error)
@@ -232,7 +280,7 @@ struct HostEditorSheet: View {
     private var footer: some View {
         HStack(spacing: 8) {
             Spacer()
-            Button("Cancel") { onClose() }
+            Button(L10n.t("Cancel")) { onClose() }
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(SheetCancelButtonStyle())
             Button(action: { Task { await commit() } }) {
@@ -252,9 +300,9 @@ struct HostEditorSheet: View {
     private var commitLabel: String {
         switch mode {
         case .pairMac:
-            return pairingInFlight ? "Linking…" : "Link Mac"
+            return pairingInFlight ? L10n.t("Linking…") : L10n.t("Link Mac")
         case .sshServer:
-            return sshInFlight ? "Adding…" : "Add host"
+            return sshInFlight ? L10n.t("Adding…") : L10n.t("Add host")
         }
     }
 
@@ -382,6 +430,8 @@ private struct EditorTextField: View {
     let placeholder: String
     @Binding var text: String
     var secure: Bool = false
+    let accessibilityLabel: String
+    let accessibilityHint: String
 
     var body: some View {
         Group {
@@ -404,5 +454,7 @@ private struct EditorTextField: View {
                         .stroke(Color.overlay(0.08), lineWidth: 0.5)
                 )
         )
+        .accessibilityLabel(Text(accessibilityLabel))
+        .accessibilityHint(Text(accessibilityHint))
     }
 }

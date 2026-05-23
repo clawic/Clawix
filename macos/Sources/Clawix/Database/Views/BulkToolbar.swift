@@ -49,7 +49,7 @@ struct BulkToolbar: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.black.opacity(0.85))
+                .fill(Color.dynamic(light: Color(white: 0.97), dark: Color.black.opacity(0.85)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color.overlay(0.08), lineWidth: 0.5)

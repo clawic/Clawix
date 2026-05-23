@@ -12,12 +12,60 @@ struct AppshotsSettingsPage: View {
     @State private var screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)
     @State private var accessibilityStatus = NativeMacPermissionBroker.status(for: .accessibility)
     @State private var inputMonitoringStatus = NativeMacPermissionBroker.status(for: .inputMonitoring)
+    @State private var appshotSettingsMessage: String?
+
+    private var captureBlockedReason: String? {
+        if let reason = screenRecordingStatus.blockedReason {
+            return "Screen Recording: \(reason)"
+        }
+        if let reason = accessibilityStatus.blockedReason {
+            return "Accessibility: \(reason)"
+        }
+        return nil
+    }
+
+    private var hotkeyBlockedReason: String? {
+        guard hotkeyBinding.wrappedValue != .none,
+              let reason = inputMonitoringStatus.blockedReason else {
+            return nil
+        }
+        return "Input Monitoring: \(reason)"
+    }
+
+    private var enabledBinding: Binding<Bool> {
+        Binding {
+            enabled
+        } set: { newValue in
+            if newValue, let reason = captureBlockedReason {
+                enabled = false
+                appshotSettingsMessage = String(
+                    format: L10n.t("Appshots are blocked until permission is granted. %@"),
+                    locale: AppLocale.current,
+                    reason
+                )
+                AppshotHotkeyMonitor.shared.refreshRegistration()
+                return
+            }
+            enabled = newValue
+            appshotSettingsMessage = nil
+            AppshotHotkeyMonitor.shared.refreshRegistration()
+        }
+    }
 
     private var hotkeyBinding: Binding<AppshotHotkey> {
         Binding {
             AppshotHotkey(rawValue: hotkeyRaw) ?? .commandCommand
         } set: { newValue in
             hotkeyRaw = newValue.rawValue
+            if newValue != .none, let reason = hotkeyBlockedReason {
+                appshotSettingsMessage = String(
+                    format: L10n.t("The global appshot hotkey is inactive until permission is granted. %@"),
+                    locale: AppLocale.current,
+                    reason
+                )
+            } else if appshotSettingsMessage?.hasPrefix("The global appshot hotkey is inactive") == true {
+                appshotSettingsMessage = nil
+            }
             AppshotHotkeyMonitor.shared.refreshRegistration()
         }
     }
@@ -34,7 +82,7 @@ struct AppshotsSettingsPage: View {
                 ToggleRow(
                     title: "Enable appshots",
                     detail: "Take an appshot to show Clawix your frontmost window. Appshots include visual and text content, including text scrolled offscreen.",
-                    isOn: $enabled
+                    isOn: enabledBinding
                 )
                 CardDivider()
                 DropdownRow(
@@ -45,6 +93,10 @@ struct AppshotsSettingsPage: View {
                     descriptionForOption: { $0.optionDescription },
                     minWidth: 150
                 )
+                if let message = appshotSettingsMessage ?? captureBlockedReason ?? hotkeyBlockedReason {
+                    CardDivider()
+                    InfoBanner(text: message, kind: .error)
+                }
             }
 
             SectionLabel(title: "Permissions")
@@ -86,6 +138,13 @@ struct AppshotsSettingsPage: View {
         .onAppear {
             refreshPermissions()
             AppshotHotkeyMonitor.shared.refreshRegistration()
+            if enabled, let reason = captureBlockedReason {
+                appshotSettingsMessage = String(
+                    format: L10n.t("Appshots are enabled but blocked until permission is granted. %@"),
+                    locale: AppLocale.current,
+                    reason
+                )
+            }
         }
         .onChange(of: enabled) {
             AppshotHotkeyMonitor.shared.refreshRegistration()
@@ -118,5 +177,20 @@ struct AppshotsSettingsPage: View {
         screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)
         accessibilityStatus = NativeMacPermissionBroker.status(for: .accessibility)
         inputMonitoringStatus = NativeMacPermissionBroker.status(for: .inputMonitoring)
+        if enabled, let reason = captureBlockedReason {
+            appshotSettingsMessage = String(
+                format: L10n.t("Appshots are enabled but blocked until permission is granted. %@"),
+                locale: AppLocale.current,
+                reason
+            )
+        } else if let reason = hotkeyBlockedReason {
+            appshotSettingsMessage = String(
+                format: L10n.t("The global appshot hotkey is inactive until permission is granted. %@"),
+                locale: AppLocale.current,
+                reason
+            )
+        } else {
+            appshotSettingsMessage = nil
+        }
     }
 }

@@ -17,6 +17,7 @@ struct MCPEditorSheet: View {
 
     @State private var draft: MCPServerConfig
     @State private var confirmingUninstall: Bool = false
+    @State private var mutationInFlight: Bool = false
     @FocusState private var focusedField: Field?
 
     private enum Field: Hashable { case name }
@@ -34,7 +35,7 @@ struct MCPEditorSheet: View {
 
     private var canSave: Bool {
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return false }
+        guard !trimmedName.isEmpty, !mutationInFlight, !store.isSaving else { return false }
         switch draft.transport {
         case .stdio:
             return !draft.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -88,8 +89,7 @@ struct MCPEditorSheet: View {
                isPresented: $confirmingUninstall) {
             Button("Cancel", role: .cancel) { }
             Button("Uninstall", role: .destructive) {
-                store.delete(initial)
-                onClose()
+                Task { await uninstall() }
             }
         } message: {
             Text("It will be removed through the ClawJS MCP adapter. Codex sessions started afterwards won't see it.")
@@ -117,6 +117,7 @@ struct MCPEditorSheet: View {
                     .foregroundColor(Palette.pastelBlue)
                 }
                 .buttonStyle(.plain)
+                .disabled(mutationInFlight || store.isSaving)
             }
             Spacer(minLength: 8)
             if isExisting {
@@ -257,6 +258,10 @@ struct MCPEditorSheet: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
+            if mutationInFlight {
+                ProgressView()
+                    .controlSize(.small)
+            }
             if let err = store.lastError {
                 Text(err)
                     .font(BodyFont.system(size: 11.5, wght: 500))
@@ -267,13 +272,33 @@ struct MCPEditorSheet: View {
             Button("Cancel") { onClose() }
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(SheetCancelButtonStyle())
+                .disabled(mutationInFlight)
             Button("Save") {
-                store.upsert(draft)
-                onClose()
+                Task { await save() }
             }
             .keyboardShortcut(.defaultAction)
             .disabled(!canSave)
             .buttonStyle(SheetPrimaryButtonStyle(enabled: canSave))
+        }
+    }
+
+    private func save() async {
+        guard canSave else { return }
+        mutationInFlight = true
+        let saved = await store.upsertAndWait(draft)
+        mutationInFlight = false
+        if saved {
+            onClose()
+        }
+    }
+
+    private func uninstall() async {
+        guard !mutationInFlight else { return }
+        mutationInFlight = true
+        let deleted = await store.deleteAndWait(initial)
+        mutationInFlight = false
+        if deleted {
+            onClose()
         }
     }
 }

@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 /// Per-instance agent runtime. An "agent instance" is a Clawix process launched
-/// by the dev provisioner (scripts-dev/clawix-agents.sh) to be driven
+/// by the dev provisioner (the private development provisioner) to be driven
 /// programmatically and in parallel, isolated from the canonical app and from
 /// other instances. Everything here is gated on CLAWIX_AGENT_INSTANCE=1 and is
 /// inert in normal user builds.

@@ -2,27 +2,40 @@ import SwiftUI
 
 @MainActor
 enum SettingsUtilities {
-    static func revealDiagnosticsFolder() {
+    struct ActionFeedback {
+        let message: String
+        let kind: InfoBanner.Kind
+    }
+
+    @discardableResult
+    static func revealDiagnosticsFolder() -> ActionFeedback {
         ResourceSampler.sampleNowAndPersist()
         do {
             _ = try RescueRepairContextExporter.writeCurrentRescueContext()
         } catch {
-            ToastCenter.shared.show("Rescue context unavailable", icon: .warning)
+            let feedback = ActionFeedback(message: L10n.t("Rescue context unavailable"), kind: .danger)
+            ToastCenter.shared.show(feedback.message, icon: .warning)
+            return feedback
         }
         guard let file = ResourceSampler.diagnosticsFileURL(named: "last-resources.json") else {
-            ToastCenter.shared.show("Diagnostics folder unavailable", icon: .error)
-            return
+            let feedback = ActionFeedback(message: L10n.t("Diagnostics folder unavailable"), kind: .error)
+            ToastCenter.shared.show(feedback.message, icon: .error)
+            return feedback
         }
         let dir = file.deletingLastPathComponent()
         NSWorkspace.shared.activateFileViewerSelecting([dir])
-        ToastCenter.shared.show("Diagnostics folder opened")
+        let feedback = ActionFeedback(message: L10n.t("Diagnostics folder opened"), kind: .ok)
+        ToastCenter.shared.show(feedback.message)
+        return feedback
     }
 
-    static func openConfigToml(scope: String, selectedProject: Project?) async {
+    @discardableResult
+    static func openConfigToml(scope: String, selectedProject: Project?) async -> ActionFeedback {
         let projectPath = selectedProject?.path
         if scope == "Project settings", projectPath?.isEmpty ?? true {
-            ToastCenter.shared.show("Select a project before opening project config", icon: .warning)
-            return
+            let feedback = ActionFeedback(message: L10n.t("Select a project before opening project config"), kind: .danger)
+            ToastCenter.shared.show(feedback.message, icon: .warning)
+            return feedback
         }
         do {
             let result = try await ClawJSMCPClient().configPath(
@@ -30,13 +43,18 @@ enum SettingsUtilities {
                 projectPath: projectPath
             )
             guard result.exists else {
-                ToastCenter.shared.show("config.toml not found", icon: .warning)
-                return
+                let feedback = ActionFeedback(message: L10n.t("config.toml not found"), kind: .danger)
+                ToastCenter.shared.show(feedback.message, icon: .warning)
+                return feedback
             }
             NSWorkspace.shared.open(URL(fileURLWithPath: result.configPath))
-            ToastCenter.shared.show("config.toml opened")
+            let feedback = ActionFeedback(message: L10n.t("config.toml opened"), kind: .ok)
+            ToastCenter.shared.show(feedback.message)
+            return feedback
         } catch {
-            ToastCenter.shared.show(failureMessage(for: error, surface: "settings.config.open"), icon: .error)
+            let feedback = ActionFeedback(message: failureMessage(for: error, surface: "settings.config.open"), kind: .error)
+            ToastCenter.shared.show(feedback.message, icon: .error)
+            return feedback
         }
     }
 

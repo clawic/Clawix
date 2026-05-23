@@ -423,7 +423,11 @@ private struct SkillNewSheet: View {
                 } label: {
                     Text("Create")
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(canSubmit ? Color.black : Color.overlay(0.55))
+                        // Capsule fill is `Color.overlay(0.92)` (white on dark,
+                        // black on light); the label uses `Palette.background`
+                        // (the app-wide CTA idiom) so it inverts with the fill
+                        // instead of staying black-on-black in light mode.
+                        .foregroundColor(canSubmit ? Palette.background : Color.overlay(0.55))
                         .padding(.horizontal, 18)
                         .frame(height: 30)
                         .background(

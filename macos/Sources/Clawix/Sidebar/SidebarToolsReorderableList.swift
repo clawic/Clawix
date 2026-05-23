@@ -398,8 +398,7 @@ struct ToolDragChipView: View {
     private var iconView: some View {
         switch entry.icon {
         case .system(let name):
-            Image(systemName: name)
-                .font(.system(size: 12.5, weight: .medium))
+            LucideIcon.auto(name, size: 13.5)
                 .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
         case .secrets:
             SecretsIcon(

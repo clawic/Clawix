@@ -42,7 +42,7 @@ struct AgentsSidebarSection: View {
             BasicSectionHeader(
                 title: "Agents",
                 expanded: $expanded,
-                leadingIcon: AnyView(ClawixLogoIcon(size: 13)),
+                leadingIcon: AnyView(ClawixLogoIcon(size: 16)),
                 trailingIcon: AnyView(allAgentsButton)
             )
             SidebarAccordion(expanded: expanded, targetHeight: bodyHeight) {

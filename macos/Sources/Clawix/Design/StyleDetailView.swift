@@ -648,7 +648,7 @@ struct StyleDetailView: View {
                 Button(linked ? "Unlink" : "Link", action: onToggle)
                     .buttonStyle(.plain)
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(linked ? Color(red: 0.95, green: 0.55, blue: 0.55) : Palette.pastelBlue)
+                    .foregroundColor(linked ? Palette.danger : Palette.pastelBlue)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(

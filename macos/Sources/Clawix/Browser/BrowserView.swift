@@ -107,7 +107,7 @@ struct BrowserView: View {
                 }
             }
         }
-        .background(Color.black)
+        .background(Palette.background)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlayPreferenceValue(BrowserMoreMenuAnchorKey.self) { anchor in
             GeometryReader { proxy in

@@ -51,7 +51,7 @@ struct AttemptsSelector: View {
                 .monospacedDigit()
                 // Active reads as a neutral lift (the count itself is the
                 // signal), not a brand-colour fill, so the composer footer
-                // stays calm and uniform like the Codex composer chrome
+                // stays calm and uniform with the composer chrome
                 // (STYLE.md §2.3 — brand never fills an action surface).
                 .foregroundColor(active ? Color.gray(light: 0.16, dark: 0.92)
                                         : Color.overlay(hovering ? 0.7 : 0.45))

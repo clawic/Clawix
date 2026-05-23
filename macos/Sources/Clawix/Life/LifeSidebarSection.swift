@@ -26,7 +26,7 @@ struct LifeSidebarSection: View {
             BasicSectionHeader(
                 title: "Life",
                 expanded: $expanded,
-                leadingIcon: AnyView(LucideIcon.auto("heart", size: 13)),
+                leadingIcon: AnyView(UserIcon(size: 16)),
                 trailingIcon: AnyView(configureButton)
             )
             SidebarAccordion(

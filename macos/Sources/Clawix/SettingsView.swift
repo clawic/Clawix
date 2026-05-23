@@ -238,29 +238,47 @@ private struct SettingsSidebarRow: View {
     private var categoryIcon: some View {
         switch category {
         case .configuration:
-            SettingsIcon(size: 19, lineWidth: 0.9)
+            // Match the sidebar's bottom Settings glyph; bumped a touch.
+            SettingsIcon(size: 19)
         case .personalization:
-            BotIcon(size: 16, lineWidth: 1.4)
+            BotIcon(size: 17)
+        case .dictation:
+            // Custom mic, not Apple's mic.fill; enlarged so it doesn't read thin.
+            MicIcon().frame(width: 19, height: 19)
+        case .quickAsk:
+            Image(systemName: "command")
+                .font(.system(size: 12.5, weight: .semibold))
+        case .shortcuts:
+            KeyRoundIcon(size: 18)
+        case .skills:
+            PuzzleIcon(size: 18)
+        case .macControl:
+            // Distinct from Hosts (a laptop) — a pointer driving the screen.
+            SquareMousePointerIcon(size: 18)
+        case .apps:
+            BlocksIcon(size: 18)
+        case .appshots:
+            // Window without the close-button dots.
+            PanelTopIcon(size: 18)
+        case .machines:
+            IconImage(category.iconName, size: 19)
         case .browserUsage:
             IconImage(category.iconName, size: 20)
                 .offset(y: 2)
         case .git:
-            IconImage(category.iconName, size: 14)
+            IconImage(category.iconName, size: 16)
                 .offset(y: 1)
         case .usage:
             UsageIcon(size: 16, lineWidth: 1.7)
         case .localModels:
             LocalModelsIcon(size: 16, lineWidth: 1.4)
         case .secrets:
-            // Match the padlock used in the main sidebar's SecretsToolRow so
-            // both navs share the same glyph. `isLocked` is true here because
-            // this row is nav chrome — the actual secrets state is reflected on
-            // the Secrets page itself.
-            SecretsIcon(size: 15, lineWidth: 1.28, isLocked: true)
+            // Match the padlock used in the main sidebar's SecretsToolRow.
+            SecretsIcon(size: 16.5, lineWidth: 1.35, isLocked: true)
         case .mcp:
             McpIcon(size: 16, lineWidth: 1.28)
         default:
-            IconImage(category.iconName, size: 14)
+            IconImage(category.iconName, size: 19)
         }
     }
 }

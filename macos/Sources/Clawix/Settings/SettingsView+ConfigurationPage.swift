@@ -4,6 +4,7 @@ struct ConfigurationPage: View {
     @EnvironmentObject var appState: AppState
     @AppStorage(ClawixPersistentSurfaceKeys.settingsConfigurationScope) private var configScope: String = "User settings"
     @State private var openingConfig = false
+    @State private var configActionFeedback: SettingsUtilities.ActionFeedback?
 
     private var projectConfigUnavailable: Bool {
         configScope == "Project settings" && (appState.selectedProject?.path.isEmpty ?? true)
@@ -58,6 +59,10 @@ struct ConfigurationPage: View {
                 )
                 .padding(.bottom, 8)
             }
+            if let configActionFeedback {
+                InfoBanner(text: configActionFeedback.message, kind: configActionFeedback.kind)
+                    .padding(.bottom, 8)
+            }
 
             SectionLabel(title: "Permissions")
             SettingsCard {
@@ -104,7 +109,7 @@ struct ConfigurationPage: View {
                     title: "Diagnose Clawix Workspace issues",
                     detail: "Check the current bundle and save diagnostic logs",
                     primaryLabel: "Diagnose",
-                    onPrimary: { SettingsUtilities.revealDiagnosticsFolder() }
+                    onPrimary: { configActionFeedback = SettingsUtilities.revealDiagnosticsFolder() }
                 )
                 CardDivider()
                 ReinstallRow()
@@ -122,8 +127,9 @@ struct ConfigurationPage: View {
 
     private func openConfigToml() {
         openingConfig = true
+        configActionFeedback = nil
         Task { @MainActor in
-            await SettingsUtilities.openConfigToml(scope: configScope, selectedProject: appState.selectedProject)
+            configActionFeedback = await SettingsUtilities.openConfigToml(scope: configScope, selectedProject: appState.selectedProject)
             openingConfig = false
         }
     }
@@ -187,10 +193,15 @@ struct ReplacementBanner: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(red: 0.18, green: 0.10, blue: 0.04))
+                // Amber caution card: deep amber on dark, pale amber on light
+                // so the adaptive body text stays legible in both modes.
+                .fill(Color.dynamic(light: Color(red: 0.99, green: 0.95, blue: 0.87),
+                                    dark:  Color(red: 0.18, green: 0.10, blue: 0.04)))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color(red: 0.55, green: 0.30, blue: 0.10), lineWidth: 0.7)
+                        .stroke(Color.dynamic(light: Color(red: 0.85, green: 0.62, blue: 0.30),
+                                              dark:  Color(red: 0.55, green: 0.30, blue: 0.10)),
+                                lineWidth: 0.7)
                 )
         )
     }

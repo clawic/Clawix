@@ -38,7 +38,6 @@ struct IoTScreen: View {
                 tabContent
             }
         }
-        .preferredColorScheme(.dark)
         .task {
             let services = ClawJSServiceDemandPolicy.services(
                 for: .iotHome,

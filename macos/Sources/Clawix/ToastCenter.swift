@@ -156,7 +156,7 @@ private struct ToastPill: View {
                 .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
         case .warning:
             LucideIcon(.circleAlert, size: 14)
-                .foregroundColor(Color(red: 0.95, green: 0.78, blue: 0.40))
+                .foregroundColor(Palette.warning)
         case .error:
             LucideIcon(.circleAlert, size: 14)
                 .foregroundColor(Palette.danger)

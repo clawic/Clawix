@@ -280,8 +280,7 @@ struct ToolsFilterRow: View {
     private var iconView: some View {
         switch entry.icon {
         case .system(let name):
-            Image(systemName: name)
-                .font(BodyFont.system(size: 11))
+            LucideIcon.auto(name, size: 12)
                 .foregroundColor(isActive ? MenuStyle.rowIcon : MenuStyle.rowSubtle)
         case .secrets:
             SecretsIcon(

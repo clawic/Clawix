@@ -18,11 +18,26 @@ final class LocalModelsDaemon: ObservableObject {
     static let shared = LocalModelsDaemon()
 
     /// Loopback host. Constant; the daemon never listens off-host.
-    static let host = "127.0.0.1"
+    nonisolated static let host = "127.0.0.1"
 
     /// Hard-coded port. Picked one above the upstream default (11434) so
     /// a system-wide install keeps working independently of Clawix.
-    static let port: UInt16 = 11_435
+    nonisolated static let port: UInt16 = 11_435
+
+    nonisolated static var origin: URL {
+        var components = URLComponents()
+        components.scheme = "http"
+        components.host = host
+        components.port = Int(port)
+        guard let url = components.url else {
+            preconditionFailure("Invalid local models origin")
+        }
+        return url
+    }
+
+    nonisolated static var endpointDisplay: String {
+        origin.absoluteString
+    }
 
     enum State: Equatable {
         case stopped
