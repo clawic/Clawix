@@ -31,6 +31,12 @@ struct ChatDetailView: View {
     @State private var composerText: String = ""
     @State private var composerAttachments: [ComposerAttachment] = []
     @State private var composerResetToken: Int = 0
+    // Advanced mode (opt-in). Read in `body`/`bottomChrome` so the
+    // surface lights up the moment the user flips the master switch.
+    private let advanced = AdvancedSettings.shared
+    // Follow-up prompts queued while a turn is running (advanced mode).
+    // They flush one at a time as each turn finishes.
+    @State private var queuedDrafts: [QueuedDraft] = []
     @State private var expandedReasoning: Set<String> = []
     @State private var showProjectPicker: Bool = false
     @State private var showRenameAlert: Bool = false
@@ -221,6 +227,12 @@ struct ChatDetailView: View {
                 cachedAllProjects = DerivedProject.from(
                     chats: newChats.filter { !$0.isArchived }
                 )
+            }
+            // Advanced mode: drain the follow-up queue as turns finish.
+            // Fires `initial: true` too so a draft queued just before the
+            // turn ended (or restored on reopen) still flushes.
+            .onChange(of: chat?.hasActiveTurn ?? false, initial: true) { _, active in
+                if !active { flushNextQueuedDraftIfNeeded() }
             }
             #if canImport(UIKit)
             .fullScreenCover(item: $imageViewer) { selection in
@@ -562,21 +574,39 @@ struct ChatDetailView: View {
     // MARK: Bottom chrome
 
     private var bottomChrome: some View {
-        ComposerView(
-            text: $composerText,
-            attachments: $composerAttachments,
-            onSend: send,
-            onMicTap: { startRecording(.transcribeToText) },
-            onVoiceTap: { startRecording(.sendAsAudio) },
-            onStop: { store.interruptTurn(chatId: chatId) },
-            hasActiveTurn: chat?.hasActiveTurn ?? false,
-            autofocusOnAppear: shouldAutofocusComposer,
-            compact: !messages.isEmpty,
-            resetToken: composerResetToken
-        )
+        VStack(spacing: 8) {
+            // Slash-command palette (advanced mode): floats directly
+            // above the composer while the user is typing a "/" token.
+            if !paletteCommands.isEmpty {
+                CommandPalettePanel(commands: paletteCommands, onSelect: runCommand)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            // Queued follow-ups (advanced mode): the rail of prompts
+            // waiting for the running turn to finish.
+            if advanced.queuedDraftsActive, !queuedDrafts.isEmpty {
+                QueuedDraftsPanel(drafts: queuedDrafts, onRemove: removeQueuedDraft)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            ComposerView(
+                text: $composerText,
+                attachments: $composerAttachments,
+                onSend: send,
+                onMicTap: { startRecording(.transcribeToText) },
+                onVoiceTap: { startRecording(.sendAsAudio) },
+                onStop: { store.interruptTurn(chatId: chatId) },
+                hasActiveTurn: chat?.hasActiveTurn ?? false,
+                autofocusOnAppear: shouldAutofocusComposer,
+                compact: !messages.isEmpty,
+                resetToken: composerResetToken,
+                queueingEnabled: advanced.queuedDraftsActive,
+                onQueue: enqueueDraft
+            )
             .opacity(recording == nil ? 1 : 0)
             .allowsHitTesting(recording == nil)
+        }
             .padding(.bottom, 12)
+            .animation(.easeOut(duration: 0.18), value: queuedDrafts)
+            .animation(.easeOut(duration: 0.18), value: paletteCommands)
             .background(
                 LinearGradient(
                     colors: [Palette.background.opacity(0), Palette.background],
@@ -686,32 +716,96 @@ struct ChatDetailView: View {
         composerText = ""
         composerAttachments = []
         composerResetToken &+= 1
-        // Flip the chat's `hasActiveTurn` synchronously, in the same
-        // SwiftUI tick that `composerText = ""` makes `canSend` go
-        // false. Without this, the trailing glyph would animate
-        // arrow → waveform → stop because the network dispatch (and
-        // the flag flip) only landed one tick later via the detached
-        // task below. The attachment count flows in here too so the
-        // optimistic preview matches the Mac echo and the bubble does
-        // not duplicate when the round-trip lands.
+        dispatchDraft(text: text, attachments: attachmentSnapshot)
+    }
+
+    /// Core dispatch shared by the composer send button and the
+    /// advanced-mode queued-draft flush. Flips the chat's
+    /// `hasActiveTurn` synchronously, in the same SwiftUI tick the
+    /// caller cleared its inputs. Without this, the trailing glyph
+    /// would animate arrow → waveform → stop because the network
+    /// dispatch (and the flag flip) only landed one tick later via the
+    /// detached task below. The attachment count flows in here too so
+    /// the optimistic preview matches the Mac echo and the bubble does
+    /// not duplicate when the round-trip lands.
+    private func dispatchDraft(text: String, attachments: [ComposerAttachment]) {
         let optimisticId = store.beginPendingTurn(
             chatId: chatId,
             text: text,
-            attachmentCount: attachmentSnapshot.count
+            attachmentCount: attachments.count
         )
-        if let optimisticId, !attachmentSnapshot.isEmpty {
+        if let optimisticId, !attachments.isEmpty {
             store.attachLocalImages(
                 messageId: optimisticId,
-                images: attachmentSnapshot.map(\.preview)
+                images: attachments.map(\.preview)
             )
         }
         // Encode JPEG bytes off-main; the bridge call back on the main
         // actor only fires once we have all the wire payloads ready.
         Task.detached(priority: .userInitiated) {
-            let wire = attachmentSnapshot.compactMap { $0.wireAttachment() }
+            let wire = attachments.compactMap { $0.wireAttachment() }
             await MainActor.run {
                 store.dispatchPrompt(chatId: chatId, text: text, attachments: wire)
             }
+        }
+    }
+
+    // MARK: Advanced mode — queued drafts
+
+    /// Visible slash-command palette commands for the current composer
+    /// text. Empty (so the panel hides) unless advanced mode is on, the
+    /// recording overlay is down, and the text is a bare slash token.
+    private var paletteCommands: [ChatCommand] {
+        guard advanced.commandPaletteActive, recording == nil else { return [] }
+        return ChatCommandCatalog.matches(for: composerText)
+    }
+
+    /// Stash the current composer contents as a follow-up to send when
+    /// the running turn finishes. Invoked by the composer's queue button.
+    private func enqueueDraft() {
+        let trimmed = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty || !composerAttachments.isEmpty else { return }
+        queuedDrafts.append(QueuedDraft(text: composerText, attachments: composerAttachments))
+        composerText = ""
+        composerAttachments = []
+        composerResetToken &+= 1
+    }
+
+    private func removeQueuedDraft(_ draft: QueuedDraft) {
+        Haptics.tap()
+        queuedDrafts.removeAll { $0.id == draft.id }
+    }
+
+    /// Sends the next queued draft once no turn is active. Each send
+    /// re-arms `hasActiveTurn`, so subsequent drafts flush on the next
+    /// completion, one at a time and in order.
+    private func flushNextQueuedDraftIfNeeded() {
+        guard advanced.queuedDraftsActive else { return }
+        guard !(chat?.hasActiveTurn ?? false) else { return }
+        guard !queuedDrafts.isEmpty else { return }
+        let next = queuedDrafts.removeFirst()
+        dispatchDraft(text: next.text, attachments: next.attachments)
+    }
+
+    /// Runs a slash-command palette selection. Clears the "/" token so
+    /// the palette dismisses and the composer is left clean.
+    private func runCommand(_ cmd: ChatCommand) {
+        Haptics.tap()
+        composerText = ""
+        composerResetToken &+= 1
+        switch cmd.id {
+        case .newChat:
+            onNewChat()
+        case .project:
+            showProjectPicker = true
+        case .rename:
+            handleRename()
+        case .archive:
+            handleArchive()
+        case .voice:
+            startRecording(.sendAsAudio)
+        case .scrollToBottom:
+            withAnimation(.smooth(duration: 0.32)) { bottomId = ChatScroll.tail }
         }
     }
 

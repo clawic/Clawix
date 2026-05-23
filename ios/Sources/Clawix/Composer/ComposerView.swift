@@ -38,6 +38,12 @@ struct ComposerView: View {
     /// candidates / autocomplete state from the previous prompt into
     /// the next one.
     var resetToken: Int = 0
+    /// Advanced mode: while a turn is running and the user has typed a
+    /// follow-up, the primary button queues it instead of being a hard
+    /// stop. Stop stays reachable (it moves to the mic slot). With this
+    /// off, the composer behaves exactly as before.
+    var queueingEnabled: Bool = false
+    var onQueue: () -> Void = {}
 
     @FocusState private var focused: Bool
     @State private var didAutofocus: Bool = false
@@ -379,20 +385,39 @@ struct ComposerView: View {
         .accessibilityLabel(L10n.t("Expand composer"))
     }
 
+    /// Advanced mode: a follow-up is being composed mid-turn, so the
+    /// primary button queues it and Stop relocates to the mic slot.
+    private var isQueuingState: Bool {
+        hasActiveTurn && queueingEnabled && canSend
+    }
+
     /// Stable trailing layout: mic + white circle, always rendered.
     /// Only the glyph inside the white circle morphs (arrow / waveform
     /// / stop square) so the surrounding bubble never shifts when the
-    /// chat enters or leaves an active turn.
+    /// chat enters or leaves an active turn. In the queuing state the
+    /// mic slot becomes the Stop control so the running turn stays
+    /// interruptible while the white circle queues the follow-up.
     private var trailingButton: some View {
         HStack(spacing: 16) {
-            Button(action: onMicTap) {
-                MicIcon(lineWidth: 6)
-                    .foregroundColor(Color(white: 0.6))
-                    .frame(width: 20, height: 20)
-                    .contentShape(Rectangle())
+            if isQueuingState {
+                Button(action: triggerStop) {
+                    StopSquircle()
+                        .fill(Color(white: 0.6))
+                        .frame(width: 15, height: 15)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.t("Stop response"))
+            } else {
+                Button(action: onMicTap) {
+                    MicIcon(lineWidth: 6)
+                        .foregroundColor(Color(white: 0.6))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.t("Mic"))
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.t("Mic"))
 
             Button(action: triggerPrimary) {
                 ZStack {
@@ -408,7 +433,12 @@ struct ComposerView: View {
 
     @ViewBuilder
     private var primaryGlyph: some View {
-        if hasActiveTurn {
+        if isQueuingState {
+            LucideIcon(.arrowUp, size: 24)
+                .foregroundStyle(Color.black)
+                .transition(.scale.combined(with: .opacity))
+                .id("glyph-queue")
+        } else if hasActiveTurn {
             StopSquircle()
                 .fill(Color.black)
                 .frame(width: 12, height: 12)
@@ -429,19 +459,27 @@ struct ComposerView: View {
     }
 
     private var primaryLabel: String {
+        if isQueuingState { return "Queue follow-up" }
         if hasActiveTurn { return "Stop response" }
         if canSend { return "Send" }
         return "Voice"
     }
 
     private func triggerPrimary() {
-        if hasActiveTurn {
+        if isQueuingState {
+            triggerQueue()
+        } else if hasActiveTurn {
             triggerStop()
         } else if canSend {
             triggerSend()
         } else {
             onVoiceTap()
         }
+    }
+
+    private func triggerQueue() {
+        Haptics.selection()
+        onQueue()
     }
 
     private func triggerStop() {

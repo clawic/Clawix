@@ -612,6 +612,10 @@ struct ChatRow: View {
         HStack(spacing: 8) {
             titleView
                 .frame(maxWidth: .infinity, alignment: .leading)
+            if showsRunningBadge {
+                RunningDot()
+                    .transition(.scale(scale: 0.0, anchor: .center).combined(with: .opacity))
+            }
             if showsUnreadDot {
                 Circle()
                     .fill(Palette.unreadDot)
@@ -623,6 +627,13 @@ struct ChatRow: View {
         .padding(.vertical, 14)
         .animation(.spring(response: 0.45, dampingFraction: 0.72), value: chat.hasActiveTurn)
         .animation(.spring(response: 0.45, dampingFraction: 0.72), value: showsUnreadDot)
+        .animation(.spring(response: 0.45, dampingFraction: 0.72), value: showsRunningBadge)
+    }
+
+    /// Advanced-mode "running" cue: an explicit trailing indicator for
+    /// chats with an in-progress turn, complementing the title shimmer.
+    private var showsRunningBadge: Bool {
+        chat.hasActiveTurn && AdvancedSettings.shared.runningBadgeActive
     }
 
     @ViewBuilder
@@ -640,6 +651,27 @@ struct ChatRow: View {
 
     private var showsUnreadDot: Bool {
         isUnread && !chat.hasActiveTurn
+    }
+}
+
+/// Small green dot that breathes while a turn runs. Same hue the search
+/// rows already use for an active turn, so the "running" language reads
+/// as one across surfaces.
+private struct RunningDot: View {
+    @State private var pulsing = false
+
+    var body: some View {
+        Circle()
+            .fill(Color(red: 0.30, green: 0.78, blue: 0.45))
+            .frame(width: 7, height: 7)
+            .scaleEffect(pulsing ? 1.0 : 0.55)
+            .opacity(pulsing ? 1.0 : 0.5)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    pulsing = true
+                }
+            }
+            .accessibilityLabel(L10n.t("Running"))
     }
 }
 
@@ -882,6 +914,7 @@ private struct SettingsSheet: View {
 
     @State private var showScanner = false
     @State private var lastError: String?
+    @Bindable private var advanced = AdvancedSettings.shared
 
     var body: some View {
         NavigationStack {
@@ -891,6 +924,7 @@ private struct SettingsSheet: View {
                     VStack(alignment: .leading, spacing: 14) {
                         connectionCard
                         pairingActions
+                        advancedCard
                         if let lastError {
                             Text(lastError)
                                 .font(Typography.captionFont)
@@ -1022,6 +1056,82 @@ private struct SettingsSheet: View {
             )
         }
         .glassRounded(radius: AppLayout.cardCornerRadius)
+    }
+
+    // MARK: Advanced mode
+
+    // Opt-in power-user tools. The master switch reveals per-feature
+    // toggles so the user can light everything up with one tap and
+    // then trim back. All gated, all additive: off == today's UI.
+    private var advancedCard: some View {
+        VStack(spacing: 0) {
+            toggleRow(
+                title: L10n.t("Advanced mode"),
+                subtitle: L10n.t("Power-user tools in chat: queue follow-ups, a slash-command palette, and run indicators."),
+                iconName: "wand.and.stars",
+                isOn: $advanced.enabled
+            )
+            if advanced.enabled {
+                rowDivider
+                toggleRow(
+                    title: L10n.t("Queue follow-ups"),
+                    subtitle: L10n.t("Line up prompts while a turn is running."),
+                    iconName: "clock",
+                    isOn: $advanced.queuedDrafts
+                )
+                rowDivider
+                toggleRow(
+                    title: L10n.t("Command palette"),
+                    subtitle: L10n.t("Type / in the composer for quick actions."),
+                    iconName: "slash.circle",
+                    isOn: $advanced.commandPalette
+                )
+                rowDivider
+                toggleRow(
+                    title: L10n.t("Running indicator"),
+                    subtitle: L10n.t("Mark chats with an in-progress turn."),
+                    iconName: "circle.dotted",
+                    isOn: $advanced.runningBadge
+                )
+            }
+        }
+        .glassRounded(radius: AppLayout.cardCornerRadius)
+        .animation(.easeOut(duration: 0.20), value: advanced.enabled)
+    }
+
+    private func toggleRow(
+        title: String,
+        subtitle: String,
+        iconName: String,
+        isOn: Binding<Bool>
+    ) -> some View {
+        HStack(spacing: 14) {
+            LucideIcon.auto(iconName, size: 25.5)
+                .foregroundStyle(Palette.textPrimary)
+                .frame(width: 24, alignment: .center)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(Typography.bodyFont)
+                    .foregroundStyle(Palette.textPrimary)
+                Text(subtitle)
+                    .font(Typography.captionFont)
+                    .foregroundStyle(Palette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(Color(red: 0.30, green: 0.78, blue: 0.45))
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+    }
+
+    private var rowDivider: some View {
+        Rectangle()
+            .fill(Palette.borderSubtle)
+            .frame(height: 0.5)
+            .padding(.leading, 56)
     }
 
     private func actionRow(
