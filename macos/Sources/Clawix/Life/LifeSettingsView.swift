@@ -73,7 +73,7 @@ struct LifeSettingsView: View {
     private func row(for entry: LifeRegistryEntry) -> some View {
         let isEnabled = store.enabledVerticalIds.contains(entry.id)
         return HStack(spacing: 10) {
-            Toggle("", isOn: Binding(
+            PillToggle(isOn: Binding(
                 get: { isEnabled },
                 set: { newValue in
                     var next = store.enabledVerticalIds
@@ -85,8 +85,6 @@ struct LifeSettingsView: View {
                     store.setEnabled(next)
                 }
             ))
-            .labelsHidden()
-            .toggleStyle(.switch)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {

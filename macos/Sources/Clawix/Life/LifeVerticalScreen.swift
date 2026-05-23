@@ -255,14 +255,15 @@ struct GenericVerticalScreen: View {
                         .fill(Color.white.opacity(0.04))
                 )
         case .boolean:
-            Toggle(isOn: Binding(
-                get: { newValueText == "true" },
-                set: { newValueText = $0 ? "true" : "false" }
-            )) {
+            HStack(spacing: 12) {
                 Text("Yes / No").font(.system(size: 12))
                     .foregroundColor(Palette.textSecondary)
+                Spacer(minLength: 12)
+                PillToggle(isOn: Binding(
+                    get: { newValueText == "true" },
+                    set: { newValueText = $0 ? "true" : "false" }
+                ))
             }
-            .toggleStyle(.switch)
         default:
             TextField(variable.unit.label, text: $newValueText)
                 .textFieldStyle(.plain)
