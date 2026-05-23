@@ -110,7 +110,7 @@ final class BackendAuthCoordinator: ObservableObject {
 
     // MARK: - Logout
 
-    /// Runs runtime logout, which deletes `auth.json`. We optimistically
+    /// Runs runtime logout through the owning CLI. We optimistically
     /// clear the UI state so the login screen appears instantly even if
     /// the runtime CLI is slow to spin up; the file watcher will reconfirm.
     func logout(binary: ClawixBinaryResolution) {
@@ -130,9 +130,7 @@ final class BackendAuthCoordinator: ObservableObject {
         do {
             try proc.run()
         } catch {
-            // Runtime CLI unreachable. Delete auth.json directly so the UI
-            // is still in a consistent logged-out state.
-            try? FileManager.default.removeItem(at: BackendAuthReader.authURL)
+            loginError = L10n.t("Could not sign out.")
             refresh()
         }
     }
