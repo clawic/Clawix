@@ -730,14 +730,22 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.sidebar.toolsHidden", "Sidebar tools hidden", ClawixPersistentSurfaceKeys.sidebarToolsHidden, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.terminal.panelOpen", "Terminal panel open", ClawixPersistentSurfaceKeys.terminalPanelOpen, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.terminal.panelHeight", "Terminal panel height", ClawixPersistentSurfaceKeys.terminalPanelHeight, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.shortcuts.rootSearch", "Root Search keyboard shortcut", "KeyboardShortcuts_search.root.global", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.terminalToggle", "Terminal toggle keyboard shortcut", "KeyboardShortcuts_terminal.toggle", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.terminalNewTab", "Terminal new tab keyboard shortcut", "KeyboardShortcuts_terminal.newTab", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.terminalCloseTab", "Terminal close tab keyboard shortcut", "KeyboardShortcuts_terminal.closeTab", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.terminalSplitVertical", "Terminal split vertical keyboard shortcut", "KeyboardShortcuts_terminal.splitVertical", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.shortcuts.terminalSplitHorizontal", "Terminal split horizontal keyboard shortcut", "KeyboardShortcuts_terminal.splitHorizontal", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.apps.expanded", "Apps sidebar expanded", ClawixPersistentSurfaceKeys.sidebarAppsExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultInternetAllowed", "Apps default internet allowed", ClawixPersistentSurfaceKeys.appsDefaultInternetAllowed, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.defaultCallAgent", "Apps default call agent", ClawixPersistentSurfaceKeys.appsDefaultCallAgent, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.apps.variantDefaults", "Apps variant defaults", ClawixPersistentSurfaceKeys.appsVariantDefaults, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.design.expanded", "Design sidebar expanded", ClawixPersistentSurfaceKeys.sidebarDesignExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.life.expanded", "Life sidebar expanded", ClawixPersistentSurfaceKeys.sidebarLifeExpanded, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.agents.expanded", "Agents sidebar expanded", ClawixPersistentSurfaceKeys.sidebarAgentsExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.content.leftSidebarWidth", "Left sidebar width", ClawixPersistentSurfaceKeys.leftSidebarWidth, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.content.rightSidebarWidth", "Right sidebar width", ClawixPersistentSurfaceKeys.rightSidebarWidth, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.clawjs.advancedExpanded", "ClawJS advanced expanded", ClawixPersistentSurfaceKeys.clawJSAdvancedExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.secrets.advancedExpanded", "Secrets advanced expanded", ClawixPersistentSurfaceKeys.secretsAdvancedExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.dictation.advancedExpanded", "Dictation advanced expanded", ClawixPersistentSurfaceKeys.dictationAdvancedExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.dictation.activeModel", "Dictation active model", ClawixPersistentSurfaceKeys.dictationActiveModel, PersistentSurfaceKind.preferenceKey),
@@ -761,7 +769,6 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.browser.historyApproval", "Browser history approval", ClawixPersistentSurfaceKeys.browserHistoryApproval, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.settings.usageDisplayMode", "Usage display mode", ClawixPersistentSurfaceKeys.usageDisplayMode, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.systemTelemetry.menuBarWidgets", "System telemetry menu bar widgets", ClawixPersistentSurfaceKeys.systemTelemetryMenuBarWidgets, PersistentSurfaceKind.preferenceKey),
-            ("clawix.prefs.skills.autoImport", "Skills auto import", ClawixPersistentSurfaceKeys.skillsAutoImport, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.index.catalogDisplayMode", "Index catalog display mode", ClawixPersistentSurfaceKeys.indexCatalogDisplayMode, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.iot.tab", "IoT tab", ClawixPersistentSurfaceKeys.iotTab, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.publishing.calendarMode", "Publishing calendar mode", ClawixPersistentSurfaceKeys.publishingCalendarMode, PersistentSurfaceKind.appStorageKey),
@@ -778,6 +785,7 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.browser.websiteApproval", "Browser website approval", BrowserPermissionPolicy.approvalStorageKey, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.browser.blockedDomains", "Browser blocked domains", BrowserPermissionPolicy.blockedDomainsStorageKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.browser.allowedDomains", "Browser allowed domains", BrowserPermissionPolicy.allowedDomainsStorageKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.settings.configurationScope", "Settings configuration scope", ClawixPersistentSurfaceKeys.settingsConfigurationScope, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.hostPolicy.screenTools.approval", "Screen Tools host action approval", HostActionPolicy.screenToolsApprovalKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.hostPolicy.macUtilities.approval", "Mac Utilities host action approval", HostActionPolicy.macUtilitiesApprovalKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.hostPolicy.macControl.approval", "Mac Control host action approval", HostActionPolicy.macControlApprovalKey, PersistentSurfaceKind.preferenceKey),
@@ -891,7 +899,28 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.databaseWorkbench.selectedProfile", "Database workbench selected profile", "clawix.databaseWorkbench.selectedProfile.v1", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.databaseWorkbench.queryDrafts", "Database workbench query drafts", "clawix.databaseWorkbench.queryDrafts.v1", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.databaseWorkbench.history", "Database workbench history", "clawix.databaseWorkbench.history.v1", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.connectionProfiles", "Database workbench connection profiles", "clawix.databaseWorkbench.connectionProfiles.v1", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.showItemList", "Database workbench show item list", "clawix.databaseWorkbench.showItemList", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.showConsoleLog", "Database workbench show console log", "clawix.databaseWorkbench.showConsoleLog", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.showRowDetail", "Database workbench show row detail", "clawix.databaseWorkbench.showRowDetail", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.autoSaveQueries", "Database workbench auto-save queries", "clawix.databaseWorkbench.autoSaveQueries", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.uppercaseKeywords", "Database workbench uppercase keywords", "clawix.databaseWorkbench.uppercaseKeywords", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.insertClosingPairs", "Database workbench insert closing pairs", "clawix.databaseWorkbench.insertClosingPairs", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.indentWithTabs", "Database workbench indent with tabs", "clawix.databaseWorkbench.indentWithTabs", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.indentWidth", "Database workbench indent width", "clawix.databaseWorkbench.indentWidth", PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.databaseWorkbench.completeKey", "Database workbench completion key", "clawix.databaseWorkbench.completeKey", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.alternatingRows", "Database workbench alternating rows", "clawix.databaseWorkbench.alternatingRows", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.autoHideTableScrollers", "Database workbench auto-hide table scrollers", "clawix.databaseWorkbench.autoHideTableScrollers", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.estimateCountThreshold", "Database workbench estimate count threshold", "clawix.databaseWorkbench.estimateCountThreshold", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.csvDelimiter", "Database workbench CSV delimiter", "clawix.databaseWorkbench.csvDelimiter", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.csvLineBreak", "Database workbench CSV line break", "clawix.databaseWorkbench.csvLineBreak", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.defaultEncoding", "Database workbench default encoding", "clawix.databaseWorkbench.defaultEncoding", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.queryTimeoutSeconds", "Database workbench query timeout", "clawix.databaseWorkbench.queryTimeoutSeconds", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.keepConnectionAlive", "Database workbench keep connection alive", "clawix.databaseWorkbench.keepConnectionAlive", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.safeMode", "Database workbench safe mode", "clawix.databaseWorkbench.safeMode", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.passcodeEnabled", "Database workbench passcode enabled", "clawix.databaseWorkbench.passcodeEnabled", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.openTarget", "Database workbench open target", "clawix.databaseWorkbench.openTarget", PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.databaseWorkbench.assistantSidebar", "Database workbench assistant sidebar", "clawix.databaseWorkbench.assistantSidebar", PersistentSurfaceKind.preferenceKey),
         ].map { id, name, key, kind in
             ClawixPersistentSurface.preference(id: id, name: name, key: key, kind: kind)
         } + [
@@ -984,8 +1013,10 @@ enum ClawixPersistentSurfaceKeys {
     static let appsVariantDefaults = "clawix.apps.variantDefaults.v1"
     static let sidebarDesignExpanded = "SidebarDesignExpanded"
     static let sidebarLifeExpanded = "SidebarLifeExpanded"
+    static let sidebarAgentsExpanded = "SidebarAgentsExpanded"
     static let leftSidebarWidth = "LeftSidebarWidth"
     static let rightSidebarWidth = "RightSidebarWidth"
+    static let clawJSAdvancedExpanded = "clawjs.advancedExpanded"
     static let secretsAdvancedExpanded = "secrets.advancedExpanded"
     static let dictationAdvancedExpanded = "dictation.advancedExpanded"
     static let remoteCoordinatorUrl = "clawix.remote.coordinatorUrl"
@@ -993,9 +1024,9 @@ enum ClawixPersistentSurfaceKeys {
     static let remoteDeviceId = "clawix.remote.deviceId"
     static let remoteTenantId = "clawix.remote.tenantId"
     static let browserHistoryApproval = "clawix.browser.historyApproval"
+    static let settingsConfigurationScope = "clawix.settings.configuration.scope"
     static let usageDisplayMode = "clawix.settings.usage.displayMode"
     static let systemTelemetryMenuBarWidgets = "SystemTelemetry.MenuBar.EnabledWidgetIDs"
-    static let skillsAutoImport = "ClawixSkillsAutoImport"
     static let indexCatalogDisplayMode = "clawix.index.catalog.displayMode"
     static let iotTab = "clawix.iot.tab"
     static let publishingCalendarMode = "clawix.publishing.calendarMode.v1"
