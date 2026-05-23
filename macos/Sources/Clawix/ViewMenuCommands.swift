@@ -37,6 +37,15 @@ struct ViewMenuCommands: View {
         }
             .keyboardShortcut("j", modifiers: .command)
             .disabled(!canShowTerminal)
+        Button("Toggle File Tree") {
+            appState.requestOpenFileTreeSignal = UUID()
+        }
+        .keyboardShortcut("e", modifiers: [.command, .shift])
+        .disabled(!canShowTerminal)
+        Button(appState.isRightSidebarOpen ? "Hide Side Panel" : "Show Side Panel") {
+            appState.isRightSidebarOpen.toggle()
+        }
+        .keyboardShortcut("b", modifiers: [.command, .option])
         Button("New Terminal") {
             createTerminalTab()
         }
@@ -64,6 +73,11 @@ struct ViewMenuCommands: View {
         }
         .keyboardShortcut("r", modifiers: .command)
         .disabled(!flags.isVisible(.browserUsage) || !appState.hasActiveWebTab)
+        Button("Force Reload Browser Page") {
+            appState.requestBrowserCommand(.forceReload)
+        }
+        .keyboardShortcut("r", modifiers: [.command, .shift])
+        .disabled(!flags.isVisible(.browserUsage) || !appState.hasActiveWebTab)
         Button("Open Location") {
             appState.requestBrowserCommand(.focusURLBar)
         }
@@ -87,6 +101,37 @@ struct ViewMenuCommands: View {
             appState.currentRoute = .search
         }
         .keyboardShortcut("g", modifiers: .command)
+
+        Divider()
+
+        Button("Back") {
+            appState.navigateRouteBack()
+        }
+        .keyboardShortcut("[", modifiers: .command)
+        .disabled(!appState.canNavigateBack)
+        Button("Forward") {
+            appState.navigateRouteForward()
+        }
+        .keyboardShortcut("]", modifiers: .command)
+        .disabled(!appState.canNavigateForward)
+        Button(previousLabel) {
+            if terminalStore.keyboardFocused {
+                selectAdjacentTerminalTab(forward: false)
+            } else {
+                appState.goToAdjacentChat(forward: false)
+            }
+        }
+        .keyboardShortcut("[", modifiers: [.command, .shift])
+        .disabled(previousNextDisabled)
+        Button(nextLabel) {
+            if terminalStore.keyboardFocused {
+                selectAdjacentTerminalTab(forward: true)
+            } else {
+                appState.goToAdjacentChat(forward: true)
+            }
+        }
+        .keyboardShortcut("]", modifiers: [.command, .shift])
+        .disabled(previousNextDisabled)
 
         Divider()
 
@@ -142,5 +187,33 @@ struct ViewMenuCommands: View {
             return !hasActiveTerminalTab
         }
         return !flags.isVisible(.browserUsage) || !appState.hasActiveWebTab
+    }
+
+    // ⇧⌘[ / ⇧⌘] move between terminal tabs when the integrated terminal owns
+    // keyboard focus, otherwise between chats — matching the context switch
+    // the New/Close Tab shortcuts already use.
+    private var previousLabel: String {
+        terminalStore.keyboardFocused ? "Previous Terminal Tab" : "Previous Chat"
+    }
+
+    private var nextLabel: String {
+        terminalStore.keyboardFocused ? "Next Terminal Tab" : "Next Chat"
+    }
+
+    private var previousNextDisabled: Bool {
+        if terminalStore.keyboardFocused {
+            return !hasActiveTerminalTab
+        }
+        return appState.navigableChatIds.count < 2
+    }
+
+    private func selectAdjacentTerminalTab(forward: Bool) {
+        guard let currentChatId else { return }
+        let tabs = terminalStore.tabs(for: currentChatId)
+        guard !tabs.isEmpty,
+              let active = terminalStore.activeTabId(for: currentChatId),
+              let idx = tabs.firstIndex(where: { $0.id == active }) else { return }
+        let next = ((idx + (forward ? 1 : -1)) % tabs.count + tabs.count) % tabs.count
+        terminalStore.selectTab(chatId: currentChatId, tabId: tabs[next].id)
     }
 }

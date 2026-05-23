@@ -134,7 +134,7 @@ final class QuickAskCameraSession: ObservableObject {
                     onError("Camera access denied. Enable Clawix in System Settings → Privacy → Camera.")
                 }
             }
-        case .denied:
+        case .denied, .restricted, .revoked:
             onError("Camera access denied. Enable Clawix in System Settings → Privacy → Camera.")
         }
     }

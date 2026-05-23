@@ -52,6 +52,10 @@ final class AppState: ObservableObject {
                     closeFindBar()
                 }
             }
+            // Record this transition for Back/Forward (⌘[ / ⌘]) and the
+            // recently-viewed chat cycle (⌃Tab / ⌃⇧Tab). Skipped while a
+            // history/cycle navigation is replaying so the stacks stay sane.
+            recordNavigationHistory(oldValue: oldValue)
         }
     }
     @Published var driveQuickUploadRequestID: UUID? = nil
@@ -225,6 +229,40 @@ final class AppState: ObservableObject {
     @Published var pinnedItems: [PinnedItem] = []
     @Published var isLeftSidebarOpen: Bool = AppState.sidebarDefaults.object(forKey: AppState.leftSidebarOpenKey) as? Bool ?? true
     @Published var isCommandPaletteOpen: Bool = false
+    /// Read-only keyboard-shortcut reference overlay (⌘?). Distinct from the
+    /// command palette (⌘K). Presented globally from `ContentView`.
+    @Published var isKeyboardShortcutsOpen: Bool = false
+
+    // MARK: - Keyboard-driven navigation state
+    //
+    /// View history backing Back (⌘[) / Forward (⌘]). `routeBackStack` holds
+    /// routes we can return to; `routeForwardStack` is repopulated as we step
+    /// back so Forward can replay them. Bounded so a long session can't grow
+    /// them without limit.
+    @Published var routeBackStack: [SidebarRoute] = []
+    @Published var routeForwardStack: [SidebarRoute] = []
+    /// True while `navigateRouteBack/Forward` or `cycleRecentlyViewedChat`
+    /// is replaying a transition, so the `currentRoute` didSet doesn't record
+    /// the replay as a fresh navigation.
+    var isNavigatingViaHistory = false
+    /// Most-recently-viewed chat ids (front = newest) backing the recently
+    /// viewed cycle (⌃Tab / ⌃⇧Tab).
+    var recentlyViewedChatIds: [UUID] = []
+    /// Position within `recentlyViewedChatIds` while a cycle is in progress;
+    /// reset to nil on any non-cycle chat navigation.
+    var recentCycleIndex: Int? = nil
+    /// True only while a recently-viewed cycle step is replaying, so the MRU
+    /// list isn't reordered mid-cycle.
+    var isCyclingRecentChats = false
+
+    // MARK: - One-shot composer signals
+    //
+    /// Bumped by the menu layer to ask the (main) composer to open its model
+    /// picker, start dictation, or open the file tree. The composer observes
+    /// each via `.onChange` and clears nothing — the UUID just has to change.
+    @Published var requestModelPickerSignal: UUID? = nil
+    @Published var requestStartDictationSignal: UUID? = nil
+    @Published var requestOpenFileTreeSignal: UUID? = nil
     /// Drives the centered Send-feedback modal (Help → Send Feedback).
     @Published var isFeedbackOpen: Bool = false
     /// When non-nil, the global search popup is currently scoped to
@@ -417,6 +455,7 @@ final class AppState: ObservableObject {
     /// `messagesSnapshot` arrives for the chat.
     struct ChatPagination: Equatable {
         var oldestKnownId: String?
+        var oldestOffset: Int? = nil
         var hasMore: Bool
         var loadingOlder: Bool
     }

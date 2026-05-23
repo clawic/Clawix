@@ -4,123 +4,6 @@ import XCTest
 @testable import Clawix
 
 final class SystemTelemetryBridgeTests: XCTestCase {
-    private actor TelemetryRequestCounter {
-        private var widgets = 0
-        private var snapshots = 0
-        private var histories = 0
-
-        func incrementWidgets() {
-            widgets += 1
-        }
-
-        func incrementSnapshots() {
-            snapshots += 1
-        }
-
-        func incrementHistories() {
-            histories += 1
-        }
-
-        func counts() -> (widgets: Int, snapshots: Int, histories: Int) {
-            (widgets, snapshots, histories)
-        }
-    }
-
-    actor StringRecorder {
-        private var values: [String] = []
-
-        func append(_ value: String) {
-            values.append(value)
-        }
-
-        func recorded() -> [String] {
-            values
-        }
-    }
-
-    @MainActor
-    private final class StatusControllerProbe {
-        var diagnosticsActivations = 0
-        var recordCalls: [Bool] = []
-        var renderCount = 0
-
-        func record(forceHistory: Bool) async -> SystemTelemetryMonitorRecordResult {
-            recordCalls.append(forceHistory)
-            return SystemTelemetryMonitorRecordResult(
-                status: .skipped,
-                sampleCount: 0,
-                rollupCount: 0,
-                incidentCount: 0,
-                dbPath: nil,
-                reason: "test"
-            )
-        }
-    }
-
-    @MainActor
-    private func makeStatusController(
-        probe: StatusControllerProbe,
-        counter: TelemetryRequestCounter = TelemetryRequestCounter(),
-        isCapabilityVisible: @escaping @MainActor () -> Bool = { true }
-    ) -> (SystemTelemetryStatusItemController, TelemetryRequestCounter) {
-        let bridge = SystemTelemetryBridge { request in
-            switch (request.resource, request.action) {
-            case ("widgets", "list"):
-                await counter.incrementWidgets()
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "widgets": .array([
-                            .object([
-                                "id": .string("cpu-load"),
-                                "title": .string("CPU"),
-                                "placement": .string("menubar"),
-                                "metricKey": .string("system.cpu.load1"),
-                                "presentation": .string("text"),
-                            ]),
-                        ]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
-            case ("providers", "list"):
-                return CommandResponse(
-                    ok: true,
-                    data: .object(["providers": .array([])]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
-            default:
-                await counter.incrementSnapshots()
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "generatedAt": .string("2026-05-18T12:00:00Z"),
-                        "samples": .array([
-                            .object([
-                                "key": .string("system.cpu.load1"),
-                                "value": .number(1.25),
-                                "unit": .string("load"),
-                                "capturedAt": .string("2026-05-18T12:00:00Z"),
-                            ]),
-                        ]),
-                        "unavailableMetrics": .array([]),
-                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
-            }
-        }
-        let controller = SystemTelemetryStatusItemController(dependencies: .init(
-            makeModel: { SystemTelemetryMenuBarModel(bridge: bridge) },
-            recordIfDue: { forceHistory in await probe.record(forceHistory: forceHistory) },
-            renderModel: { _ in probe.renderCount += 1 },
-            isCapabilityVisible: isCapabilityVisible
-        ))
-        return (controller, counter)
-    }
-
     @MainActor
     func testStatusControllerStartDoesNotRefreshOrScheduleTelemetry() async {
         let probe = StatusControllerProbe()
@@ -1148,41 +1031,9 @@ final class SystemTelemetryBridgeTests: XCTestCase {
             case ("widgets", "list"):
                 await counter.incrementWidgets()
                 try? await Task.sleep(nanoseconds: 200_000_000)
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "widgets": .array([
-                            .object([
-                                "id": .string("cpu-load"),
-                                "title": .string("CPU"),
-                                "placement": .string("menubar"),
-                                "metricKey": .string("system.cpu.load1"),
-                                "presentation": .string("text"),
-                            ]),
-                        ]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.cpuTextWidget()
             default:
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "generatedAt": .string("2026-05-18T12:00:00Z"),
-                        "samples": .array([
-                            .object([
-                                "key": .string("system.cpu.load1"),
-                                "value": .number(1.25),
-                                "unit": .string("load"),
-                                "capturedAt": .string("2026-05-18T12:00:00Z"),
-                            ]),
-                        ]),
-                        "unavailableMetrics": .array([]),
-                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.cpuSnapshot()
             }
         }
         let model = SystemTelemetryMenuBarModel(bridge: bridge)
@@ -1221,46 +1072,9 @@ final class SystemTelemetryBridgeTests: XCTestCase {
                 )
             case ("history", "get"):
                 await counter.incrementHistories()
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "metric": .object(["key": .string("system.cpu.load1")]),
-                        "rangeMs": .integer(3600000),
-                        "retention": .object(["status": .string("recorded")]),
-                        "chart": .object([
-                            "kind": .string("line"),
-                            "metricKey": .string("system.cpu.load1"),
-                            "unit": .string("count"),
-                            "source": .string("metric_samples"),
-                            "empty": .bool(false),
-                            "points": .array([
-                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
-                                .object(["t": .integer(2), "value": .number(2), "sourceId": .string("system.telemetry.local")]),
-                            ]),
-                        ]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.history()
             default:
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "generatedAt": .string("2026-05-18T12:00:00Z"),
-                        "samples": .array([
-                            .object([
-                                "key": .string("system.cpu.load1"),
-                                "value": .number(1.25),
-                                "unit": .string("load"),
-                                "capturedAt": .string("2026-05-18T12:00:00Z"),
-                            ]),
-                        ]),
-                        "unavailableMetrics": .array([]),
-                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.cpuSnapshot()
             }
         }
         let model = SystemTelemetryMenuBarModel(bridge: bridge)
@@ -1285,49 +1099,12 @@ final class SystemTelemetryBridgeTests: XCTestCase {
         let bridge = SystemTelemetryBridge { request in
             switch (request.resource, request.action) {
             case ("widgets", "list"):
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "widgets": .array([
-                            .object([
-                                "id": .string("cpu-load"),
-                                "title": .string("CPU"),
-                                "placement": .string("menubar"),
-                                "metricKey": .string("system.cpu.load1"),
-                                "presentation": .string("text"),
-                            ]),
-                        ]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.cpuTextWidget()
             case ("providers", "list"):
-                return CommandResponse(
-                    ok: true,
-                    data: .object(["providers": .array([])]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.emptyProviders()
             default:
                 await counter.incrementSnapshots()
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "generatedAt": .string("2026-05-18T12:00:00Z"),
-                        "samples": .array([
-                            .object([
-                                "key": .string("system.cpu.load1"),
-                                "value": .number(1.25),
-                                "unit": .string("load"),
-                                "capturedAt": .string("2026-05-18T12:00:00Z"),
-                            ]),
-                        ]),
-                        "unavailableMetrics": .array([]),
-                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.cpuSnapshot()
             }
         }
         let model = SystemTelemetryMenuBarModel(bridge: bridge)
@@ -1371,39 +1148,9 @@ final class SystemTelemetryBridgeTests: XCTestCase {
             case ("history", "get"):
                 await counter.incrementHistories()
                 let metricKey = request.arguments["metric_key"] ?? "system.metric.unknown"
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "metric": .object(["key": .string(metricKey)]),
-                        "rangeMs": .integer(3600000),
-                        "retention": .object(["status": .string("recorded")]),
-                        "chart": .object([
-                            "kind": .string("line"),
-                            "metricKey": .string(metricKey),
-                            "unit": .string("count"),
-                            "source": .string("metric_samples"),
-                            "empty": .bool(false),
-                            "points": .array([
-                                .object(["t": .integer(1), "value": .number(1), "sourceId": .string("system.telemetry.local")]),
-                                .object(["t": .integer(2), "value": .number(2), "sourceId": .string("system.telemetry.local")]),
-                            ]),
-                        ]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.history(metricKey: metricKey)
             default:
-                return CommandResponse(
-                    ok: true,
-                    data: .object([
-                        "generatedAt": .string("2026-05-18T12:00:00Z"),
-                        "samples": .array([]),
-                        "unavailableMetrics": .array([]),
-                        "policy": .object(["defaultAgentAccess": .string("safe_read")]),
-                    ]),
-                    error: nil,
-                    meta: .init(adapter: "system-telemetry", source: .framework, durationMS: 0)
-                )
+                return SystemTelemetryBridgeResponses.emptySnapshot()
             }
         }
         let model = SystemTelemetryMenuBarModel(bridge: bridge)

@@ -110,6 +110,15 @@ private enum PaletteCatalog {
             PaletteItem(id: "go-memories", icon: "brain",
                         title: "Memories", shortcut: nil,
                         action: { $0.navigate(to: .memoryHome) }),
+            PaletteItem(id: "go-marketplace", icon: "bag",
+                        title: "Marketplace", shortcut: nil,
+                        action: { $0.navigate(to: .marketplaceHome) }),
+            PaletteItem(id: "go-drive", icon: "internaldrive",
+                        title: "Drive", shortcut: nil,
+                        action: { $0.navigate(to: .driveAdmin) }),
+            PaletteItem(id: "go-database", icon: "cylinder",
+                        title: "Database", shortcut: nil,
+                        action: { $0.navigate(to: .databaseHome) }),
         ]),
         PaletteSection(id: "aplicacion", title: "App", items: [
             // Automations row kept commented out for now.

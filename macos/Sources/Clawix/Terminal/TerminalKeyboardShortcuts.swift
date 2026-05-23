@@ -2,16 +2,19 @@ import Foundation
 import KeyboardShortcuts
 
 /// User-customizable bindings for the integrated terminal panel.
-/// Defaults track VS Code-ish conventions where they don't collide
+/// Defaults track familiar editor conventions where they don't collide
 /// with macOS or Clawix shortcuts:
 ///
 ///   ⌃`        toggle panel
 ///   ⇧⌘T       new terminal
 ///   ⇧⌘W       close terminal tab (NOT ⌘W — reserved for future
 ///              "close window" semantics)
-///   ⇧⌘]/[     next / previous tab
 ///   ⌘D        split vertical
 ///   ⇧⌘D       split horizontal
+///
+/// Next/previous terminal tab (⇧⌘] / ⇧⌘[) are NOT here: those keys are
+/// context-aware (terminal tab nav vs chat nav) and live in the View menu
+/// commands, so they aren't customizable global hotkeys.
 extension KeyboardShortcuts.Name {
     static let terminalToggle = Self(
         "terminal.toggle",
@@ -24,14 +27,6 @@ extension KeyboardShortcuts.Name {
     static let terminalCloseTab = Self(
         "terminal.closeTab",
         default: .init(.w, modifiers: [.command, .shift])
-    )
-    static let terminalNextTab = Self(
-        "terminal.nextTab",
-        default: .init(.rightBracket, modifiers: [.command, .shift])
-    )
-    static let terminalPreviousTab = Self(
-        "terminal.previousTab",
-        default: .init(.leftBracket, modifiers: [.command, .shift])
     )
     static let terminalSplitVertical = Self(
         "terminal.splitVertical",

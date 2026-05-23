@@ -67,6 +67,10 @@ final class BridgeFrameRoundTripTests: XCTestCase {
         ))
     }
 
+    func testInterruptTurn() throws {
+        try roundTrip(.interruptTurn(sessionId: "AB-123"))
+    }
+
     func testSendMessage() throws {
         try roundTrip(.sendMessage(sessionId: "AB-123", text: "hello world\nwith newline", attachments: []))
         try roundTrip(.sendMessage(

@@ -138,6 +138,8 @@ struct BrowserView: View {
             return  // already handled above
         case .reload:
             controller.reload()
+        case .forceReload:
+            controller.hardReload()
         case .focusURLBar:
             BrowserView.focusSequence &+= 1
             appState.pendingFocusURLBar = BrowserFocusURLBarRequest(

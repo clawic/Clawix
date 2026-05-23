@@ -17,7 +17,7 @@ struct LocalModelsPage: View {
     @State var pullField: String = ""
     @State var showCatalog = false
     @State var showUninstallConfirm = false
-    @State var advancedExpanded = false
+    @AppStorage(ClawixPersistentSurfaceKeys.localModelsAdvancedExpanded) var advancedExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

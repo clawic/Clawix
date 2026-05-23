@@ -730,6 +730,7 @@ struct BrowserCommandRequest: Equatable {
     enum Action: Equatable {
         case newTab
         case reload
+        case forceReload
         case focusURLBar
         case closeActiveTab
         case zoomIn

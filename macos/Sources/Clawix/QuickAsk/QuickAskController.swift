@@ -18,7 +18,7 @@ final class QuickAskController: ObservableObject {
     private let defaults = UserDefaults.standard
     nonisolated static let bottomCenterKey = "quickAsk.bottomCenter"
     nonisolated static let chatIdKey = "quickAsk.activeChatId"
-    private let defaultModelKey = "quickAsk.defaultModel"
+    nonisolated static let defaultModelKey = ClawixPersistentSurfaceKeys.quickAskDefaultModel
 
     weak var appState: AppState?
 
@@ -465,12 +465,12 @@ final class QuickAskController: ObservableObject {
     /// composer has", which is what the controller did before this
     /// setting existed.
     var quickAskDefaultModel: String? {
-        get { defaults.string(forKey: defaultModelKey) }
+        get { defaults.string(forKey: Self.defaultModelKey) }
         set {
             if let v = newValue, !v.isEmpty {
-                defaults.set(v, forKey: defaultModelKey)
+                defaults.set(v, forKey: Self.defaultModelKey)
             } else {
-                defaults.removeObject(forKey: defaultModelKey)
+                defaults.removeObject(forKey: Self.defaultModelKey)
             }
         }
     }

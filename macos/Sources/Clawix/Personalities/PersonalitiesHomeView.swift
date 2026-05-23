@@ -264,7 +264,7 @@ struct PersonalityEditorSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     field("Name") {
-                        TextField("Mentor irónico", text: $draft.name)
+                        TextField("Careful mentor", text: $draft.name)
                             .textFieldStyle(.plain)
                             .padding(.horizontal, 10).padding(.vertical, 7)
                             .background(fieldBg)

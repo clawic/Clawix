@@ -181,6 +181,21 @@ final class BridgeProtocolContractValidatorTests: XCTestCase {
         }
     }
 
+    func testRejectsUnsupportedAttachmentKindWithParseableError() throws {
+        let data = """
+        {"schemaVersion":1,"type":"sendMessage","sessionId":"abc","text":"hello","attachments":[{"id":"video-1","kind":"video","mimeType":"video/mp4","filename":"clip.mp4","dataBase64":"ZmFrZQ=="}]}
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.invalidPayload")
+            XCTAssertFalse(String(describing: bridgeError).contains("ZmFrZQ=="))
+        }
+    }
+
     func testRejectsMalformedJsonWithParseableError() throws {
         let data = #"{"schemaVersion":1,"type":"listSessions""#.data(using: .utf8)!
 

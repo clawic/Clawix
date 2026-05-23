@@ -356,7 +356,50 @@ struct SecretsSettingsPage: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let text = try String(contentsOf: url, encoding: .utf8)
-            let preview = try vault.importSecrets(from: text, format: format)
+            let preview = try previewImport(contents: text, format: format)
+            importPreview = preview
+            importPreviewFormat = format
+            importErrorBanner = nil
+            requestImportConfirmation(preview: preview, contents: text, format: format)
+        } catch {
+            importErrorBanner = "Import failed: \(error)"
+            importBanner = nil
+        }
+    }
+
+    private func previewImport(contents: String, format: SecretsManager.ImportFormat) throws -> ImportPreview {
+        // Provider compatibility importers for external password manager export formats.
+        switch format {
+        case .onePassword:
+            return try OnePasswordCSVImporter.parse(contents)
+        case .bitwarden:
+            return try BitwardenCSVImporter.parse(contents)
+        case .env:
+            return try EnvFileImporter.parse(contents)
+        }
+    }
+
+    private func requestImportConfirmation(preview: ImportPreview, contents: String, format: SecretsManager.ImportFormat) {
+        let count = preview.drafts.count
+        let warningCount = preview.warnings.count
+        let body = "\(preview.format) parsed \(count) secret\(count == 1 ? "" : "s")" +
+            (warningCount == 0 ? "." : " and \(warningCount) warning\(warningCount == 1 ? "" : "s").") +
+            " Importing writes new records into the unlocked Secrets vault. Secret values are not shown in this confirmation."
+        appState.pendingConfirmation = ConfirmationRequest(
+            title: "Import secrets?",
+            body: LocalizedStringKey(body),
+            confirmLabel: "Import",
+            isDestructive: false
+        ) {
+            performConfirmedImport(contents: contents, format: format)
+        }
+    }
+
+    private func performConfirmedImport(contents: String, format: SecretsManager.ImportFormat) {
+        do {
+            let preview = try vault.importSecrets(from: contents, format: format)
+            importPreview = preview
+            importPreviewFormat = format
             importBanner = "Imported \(preview.drafts.count) secret\(preview.drafts.count == 1 ? "" : "s") from \(preview.format)" +
                 (preview.warnings.isEmpty ? "." : ". \(preview.warnings.count) warning\(preview.warnings.count == 1 ? "" : "s") (rows skipped).")
             importErrorBanner = nil

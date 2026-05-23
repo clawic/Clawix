@@ -36,20 +36,24 @@ final class ChatHydrationTests: XCTestCase {
                 httpVersion: nil,
                 headerFields: ["Content-Type": "application/json"]
             )!
-            let body = Data("""
-            {
-              "items": [
-                {
+            let body = Data(Self.hydratedSessionJSON(
+                id: "thread-1",
+                title: "Thread",
+                messageCount: 1,
+                messagesJSON: """
+                [
+                  {
                   "id": "msg-1",
                   "sessionId": "thread-1",
                   "role": "assistant",
                   "contentText": "Recovered history",
                   "timestamp": 1710000000000,
                   "streamingState": "finished"
-                }
-              ]
-            }
-            """.utf8)
+                  }
+                ]
+                """,
+                hasOlderMessages: false
+            ).utf8)
             return (response, body)
         }
 
@@ -78,7 +82,7 @@ final class ChatHydrationTests: XCTestCase {
             state.chats.first?.historyHydrated == true
         }
 
-        XCTAssertEqual(attempts, 4)
+        XCTAssertEqual(attempts, 3)
         XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.map(\.content), ["Recovered history"])
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
@@ -95,7 +99,13 @@ final class ChatHydrationTests: XCTestCase {
                 httpVersion: nil,
                 headerFields: ["Content-Type": "application/json"]
             )!
-            return (response, Data(#"{"items":[]}"#.utf8))
+            return (response, Data(Self.hydratedSessionJSON(
+                id: "thread-1",
+                title: "Thread",
+                messageCount: 0,
+                messagesJSON: "[]",
+                hasOlderMessages: false
+            ).utf8))
         }
 
         let tmp = FileManager.default.temporaryDirectory
@@ -146,7 +156,7 @@ final class ChatHydrationTests: XCTestCase {
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
         let session = URLSession(configuration: configuration)
         let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
-        var messageRequests: [URLRequest] = []
+        var hydrationRequests: [URLRequest] = []
         SessionsHistoryURLProtocol.handler = { request in
             let response = HTTPURLResponse(
                 url: request.url!,
@@ -155,33 +165,8 @@ final class ChatHydrationTests: XCTestCase {
                 headerFields: ["Content-Type": "application/json"]
             )!
             switch request.url?.path {
-            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail":
-                return (response, Data("""
-                {
-                  "id": "thread-tail",
-                  "agent": "codex",
-                  "runtime": null,
-                  "machine": null,
-                  "workspaceId": null,
-                  "projectId": null,
-                  "projectPath": "/tmp",
-                  "runtimeAdapter": null,
-                  "runtimeSessionId": null,
-                  "title": "Tail",
-                  "createdAt": 1710000000000,
-                  "lastMessageAt": 1710000100000,
-                  "messageCount": 100,
-                  "pinned": false,
-                  "archived": false,
-                  "sidebarVisible": true,
-                  "branch": null,
-                  "cwd": "/tmp",
-                  "status": "active",
-                  "customMetadata": null
-                }
-                """.utf8))
-            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail/messages":
-                messageRequests.append(request)
+            case "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/thread-tail/hydrate":
+                hydrationRequests.append(request)
                 let items = (0..<ClawixCore.bridgeInitialPageLimit).map { idx in
                     """
                     {
@@ -194,7 +179,14 @@ final class ChatHydrationTests: XCTestCase {
                     }
                     """
                 }.joined(separator: ",")
-                return (response, Data("{\"items\":[\(items)]}".utf8))
+                return (response, Data(Self.hydratedSessionJSON(
+                    id: "thread-tail",
+                    title: "Tail",
+                    messageCount: 100,
+                    messagesJSON: "[\(items)]",
+                    hasOlderMessages: true,
+                    messageOffset: 100 - ClawixCore.bridgeInitialPageLimit
+                ).utf8))
             default:
                 let notFound = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
                 return (notFound, Data(#"{"error":"unexpected"}"#.utf8))
@@ -225,12 +217,92 @@ final class ChatHydrationTests: XCTestCase {
             state.chatStore.transcript(for: chatId)?.messageIds.count == ClawixCore.bridgeInitialPageLimit
         }
 
-        let request = try XCTUnwrap(messageRequests.first)
+        let request = try XCTUnwrap(hydrationRequests.first)
         let query = Self.queryItems(for: request)
-        XCTAssertEqual(query["limit"], "\(ClawixCore.bridgeInitialPageLimit)")
-        XCTAssertEqual(query["offset"], "\(100 - ClawixCore.bridgeInitialPageLimit)")
+        XCTAssertEqual(query["messageLimit"], "\(ClawixCore.bridgeInitialPageLimit)")
+        XCTAssertEqual(query["recent"], "true")
+        XCTAssertNil(query["messageOffset"])
         XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, true)
         XCTAssertEqual(state.chats.first?.messages.count, 0)
+    }
+
+    func testClawJSSessionOlderPageUsesHydrateOffsetWindow() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var hydrationRequests: [URLRequest] = []
+        SessionsHistoryURLProtocol.handler = { request in
+            hydrationRequests.append(request)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let query = Self.queryItems(for: request)
+            let isOlderPage = query["messageOffset"] == "0"
+            let range = isOlderPage ? (0..<ClawixCore.bridgeOlderPageLimit) : (ClawixCore.bridgeOlderPageLimit..<100)
+            let items = range.map { idx in
+                """
+                {
+                  "id": "msg-\(idx)",
+                  "sessionId": "thread-old",
+                  "role": "\(idx % 2 == 0 ? "user" : "assistant")",
+                  "contentText": "page \(idx)",
+                  "timestamp": \(1710000000000 + idx),
+                  "streamingState": "complete"
+                }
+                """
+            }.joined(separator: ",")
+            return (response, Data(Self.hydratedSessionJSON(
+                id: "thread-old",
+                title: "Old",
+                messageCount: 100,
+                messagesJSON: "[\(items)]",
+                hasOlderMessages: !isOlderPage,
+                messageOffset: isOlderPage ? 0 : ClawixCore.bridgeOlderPageLimit,
+                messageLimit: isOlderPage ? ClawixCore.bridgeOlderPageLimit : ClawixCore.bridgeInitialPageLimit
+            ).utf8))
+        }
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .chat(chatId)
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Old",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-old",
+                historyHydrated: false
+            )
+        ]
+        state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        state.hydrateHistoryIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messageIds.count == ClawixCore.bridgeInitialPageLimit
+        }
+
+        state.requestOlderIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messageIds.count == 100
+        }
+
+        XCTAssertEqual(hydrationRequests.count, 2)
+        let olderQuery = Self.queryItems(for: try XCTUnwrap(hydrationRequests.last))
+        XCTAssertEqual(olderQuery["messageLimit"], "\(ClawixCore.bridgeOlderPageLimit)")
+        XCTAssertEqual(olderQuery["messageOffset"], "0")
+        XCTAssertEqual(olderQuery["recent"], "false")
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, false)
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.oldestOffset, 0)
     }
 
     func testClawJSSessionsStartupLoadsOnlyBoundedPinnedAndRecentSessions() async throws {
@@ -547,7 +619,13 @@ final class ChatHydrationTests: XCTestCase {
         })
     }
 
-    nonisolated private static func sessionRecordJSON(id: String, title: String, pinned: Bool, archived: Bool) -> String {
+    nonisolated private static func sessionRecordJSON(
+        id: String,
+        title: String,
+        pinned: Bool,
+        archived: Bool,
+        messageCount: Int = 1
+    ) -> String {
         """
         {
           "id": "\(id)",
@@ -562,7 +640,7 @@ final class ChatHydrationTests: XCTestCase {
           "title": "\(title)",
           "createdAt": 1710000000000,
           "lastMessageAt": 1710000001000,
-          "messageCount": 1,
+          "messageCount": \(messageCount),
           "pinned": \(pinned ? "true" : "false"),
           "archived": \(archived ? "true" : "false"),
           "sidebarVisible": true,
@@ -570,6 +648,33 @@ final class ChatHydrationTests: XCTestCase {
           "cwd": "/tmp",
           "status": "active",
           "customMetadata": null
+        }
+        """
+    }
+
+    nonisolated private static func hydratedSessionJSON(
+        id: String,
+        title: String,
+        messageCount: Int,
+        messagesJSON: String,
+        hasOlderMessages: Bool,
+        messageOffset: Int = 0,
+        messageLimit: Int = ClawixCore.bridgeInitialPageLimit
+    ) -> String {
+        """
+        {
+          "session": \(sessionRecordJSON(id: id, title: title, pinned: false, archived: false, messageCount: messageCount)),
+          "messages": \(messagesJSON),
+          "messageOffset": \(messageOffset),
+          "messageLimit": \(messageLimit),
+          "hasOlderMessages": \(hasOlderMessages ? "true" : "false"),
+          "hasNewerMessages": false,
+          "turnSummaries": [],
+          "projectionMeta": null,
+          "dynamicTools": [],
+          "events": null,
+          "eventsLoaded": false,
+          "fallbackRequired": false
         }
         """
     }

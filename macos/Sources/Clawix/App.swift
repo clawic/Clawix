@@ -98,6 +98,20 @@ struct ClawixApp: App {
         return false
     }
 
+    /// Reveal the main window (reusing the cached NSWindow if SwiftUI still
+    /// holds it, otherwise opening a fresh one) and activate the app. Used by
+    /// menu commands like Settings that act on the main window even when it's
+    /// been closed to the menu bar.
+    static func bringMainWindowToFront(openWindow: OpenWindowAction) {
+        for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        openWindow(id: FileMenuActions.mainWindowID)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     init() {
         LaunchMilestones.mark(.appInitStart)
         // Apply the user-chosen language process-wide BEFORE any view
@@ -190,8 +204,18 @@ struct ClawixApp: App {
                     updater.checkForUpdates()
                 }
             }
+            CommandGroup(replacing: .appSettings) {
+                Button(L10n.t("Settings…")) {
+                    appState.currentRoute = .settings
+                    ClawixApp.bringMainWindowToFront(openWindow: openWindow)
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
             CommandGroup(replacing: .newItem) {
                 FileMenuCommands(appState: appState)
+            }
+            CommandMenu(L10n.t("Chat")) {
+                ChatMenuCommands(appState: appState)
             }
             CommandGroup(replacing: .saveItem) {}
             CommandGroup(replacing: .printItem) {}

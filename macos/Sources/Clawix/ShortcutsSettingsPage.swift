@@ -47,18 +47,6 @@ struct ShortcutsSettingsPage: View {
                 )
                 CardDivider()
                 ShortcutSettingRow(
-                    title: "Next terminal tab",
-                    detail: "Switch to the next tab in the terminal.",
-                    name: .terminalNextTab
-                )
-                CardDivider()
-                ShortcutSettingRow(
-                    title: "Previous terminal tab",
-                    detail: "Switch to the previous tab in the terminal.",
-                    name: .terminalPreviousTab
-                )
-                CardDivider()
-                ShortcutSettingRow(
                     title: "Split pane right",
                     detail: "Split the active pane horizontally into two side-by-side panes.",
                     name: .terminalSplitVertical

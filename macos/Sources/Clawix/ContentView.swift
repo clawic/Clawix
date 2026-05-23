@@ -398,6 +398,7 @@ struct ContentView: View {
             appState.enforceRuntimeVisibility()
         }
         .overlay(CommandPaletteOverlay(appState: appState))
+        .overlay(KeyboardShortcutsReferenceOverlay(appState: appState))
         .overlay(ImagePreviewOverlay(appState: appState))
         .overlay(FeedbackOverlay(appState: appState))
     }

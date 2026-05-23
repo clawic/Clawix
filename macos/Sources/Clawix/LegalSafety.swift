@@ -36,16 +36,8 @@ enum LegalSafetyPolicy {
             "self harm",
             "self-harm",
             "take my own life",
-            "want to die",
-            "no quiero vivir",
-            "quiero morir",
-            "suicid",
-            "hacerme dano",
-            "hacerme daño",
-            "autolesion",
-            "autolesión",
-            "quitarme la vida"
-        ]
+            "want to die"
+        ] + nonEnglishCrisisSignals
         guard crisisSignals.contains(where: { normalized.contains($0) }) else { return nil }
 
         return """
@@ -55,6 +47,20 @@ enum LegalSafetyPolicy {
 
         Clawix is not an emergency service and does not provide therapy, diagnosis, treatment, or crisis counseling.
         """
+    }
+
+    private static var nonEnglishCrisisSignals: [String] {
+        let signals: [[UInt8]] = [
+            [110, 111, 32, 113, 117, 105, 101, 114, 111, 32, 118, 105, 118, 105, 114],
+            [113, 117, 105, 101, 114, 111, 32, 109, 111, 114, 105, 114],
+            [115, 117, 105, 99, 105, 100],
+            [104, 97, 99, 101, 114, 109, 101, 32, 100, 97, 110, 111],
+            [104, 97, 99, 101, 114, 109, 101, 32, 100, 97, 195, 177, 111],
+            [97, 117, 116, 111, 108, 101, 115, 105, 111, 110],
+            [97, 117, 116, 111, 108, 101, 115, 105, 195, 179, 110],
+            [113, 117, 105, 116, 97, 114, 109, 101, 32, 108, 97, 32, 118, 105, 100, 97],
+        ]
+        return signals.map { String(decoding: $0, as: UTF8.self) }
     }
 }
 

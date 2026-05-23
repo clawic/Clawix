@@ -43,25 +43,10 @@ enum TerminalShortcutsInstaller {
             store.closeTab(chatId: chatId, tabId: active)
         }
 
-        KeyboardShortcuts.onKeyDown(for: .terminalNextTab) {
-            guard let chatId = resolveChatId() else { return }
-            let tabs = store.tabs(for: chatId)
-            guard !tabs.isEmpty,
-                  let active = store.activeTabId(for: chatId),
-                  let idx = tabs.firstIndex(where: { $0.id == active }) else { return }
-            let next = tabs[(idx + 1) % tabs.count]
-            store.selectTab(chatId: chatId, tabId: next.id)
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .terminalPreviousTab) {
-            guard let chatId = resolveChatId() else { return }
-            let tabs = store.tabs(for: chatId)
-            guard !tabs.isEmpty,
-                  let active = store.activeTabId(for: chatId),
-                  let idx = tabs.firstIndex(where: { $0.id == active }) else { return }
-            let prev = tabs[(idx - 1 + tabs.count) % tabs.count]
-            store.selectTab(chatId: chatId, tabId: prev.id)
-        }
+        // Next/previous terminal tab (⇧⌘] / ⇧⌘[) are driven by the View menu
+        // commands instead of a global hotkey: those keys are context-aware
+        // (terminal tab nav when the terminal owns focus, chat nav otherwise),
+        // so registering them globally here would double-fire against the menu.
 
         KeyboardShortcuts.onKeyDown(for: .terminalSplitVertical) {
             TerminalShortcutsInstaller.split(direction: .horizontal,

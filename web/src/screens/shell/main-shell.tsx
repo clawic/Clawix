@@ -22,7 +22,7 @@ import { PomodoroView } from "../pomodoro/pomodoro-view";
 import { McpView } from "../mcp/mcp-view";
 import { LocalModelsView } from "../local-models/local-models-view";
 import { SurfaceRouteView } from "../surfaces/surface-route-view";
-import { VersionMismatchBanner } from "./version-mismatch";
+import { OfflineBridgeBanner, VersionMismatchBanner } from "./version-mismatch";
 
 // Mac-side constants (ContentView.swift:4-15).
 const SIDEBAR_DEFAULT = 372;
@@ -76,6 +76,11 @@ export function MainShell() {
       {conn.kind === "version-mismatch" && (
         <div className="absolute inset-x-0 top-0 z-50">
           <VersionMismatchBanner serverVersion={conn.serverVersion} />
+        </div>
+      )}
+      {conn.kind === "offline" && (
+        <div className="absolute inset-x-0 top-0 z-50">
+          <OfflineBridgeBanner reason={conn.reason} />
         </div>
       )}
       <div className="h-full flex">

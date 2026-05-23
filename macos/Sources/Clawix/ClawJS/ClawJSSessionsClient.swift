@@ -144,6 +144,45 @@ struct ClawJSSessionsClient {
         let messages: [MessageRecord]
     }
 
+    struct SessionTurnSummaryRecord: Decodable, Equatable {
+        let sessionId: String
+        let turnId: String
+    }
+
+    struct SessionProjectionMetaRecord: Decodable, Equatable {
+        let sessionId: String
+        let projectionStatus: String
+    }
+
+    struct SessionDynamicToolRecord: Decodable, Equatable {
+        let sessionId: String
+        let position: Int
+        let name: String
+        let namespace: String?
+        let description: String
+        let inputSchemaJson: AnyJSON?
+        let schemaHash: String
+        let deferLoading: Bool
+        let source: String?
+        let createdAt: Int64
+        let updatedAt: Int64
+    }
+
+    struct HydratedSessionResult: Decodable, Equatable {
+        let session: SessionRecord
+        let messages: [MessageRecord]
+        let messageOffset: Int
+        let messageLimit: Int
+        let hasOlderMessages: Bool
+        let hasNewerMessages: Bool
+        let turnSummaries: [SessionTurnSummaryRecord]
+        let projectionMeta: SessionProjectionMetaRecord?
+        let dynamicTools: [SessionDynamicToolRecord]
+        let events: [AnyJSON]?
+        let eventsLoaded: Bool
+        let fallbackRequired: Bool
+    }
+
     struct TurnResponse: Decodable {
         let session: SessionRecord?
         let userMessage: MessageRecord
@@ -279,6 +318,26 @@ struct ClawJSSessionsClient {
         }
         let session: SessionRecord = try await request("\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(id)")
         return SessionWithMessages(session: session, messages: [])
+    }
+
+    func hydrateSession(
+        id: String,
+        messageLimit: Int? = nil,
+        messageOffset: Int? = nil,
+        recent: Bool? = true,
+        summaryLimit: Int? = nil,
+        includeEvents: Bool? = nil
+    ) async throws -> HydratedSessionResult {
+        var items: [URLQueryItem] = []
+        if let messageLimit { items.append(URLQueryItem(name: "messageLimit", value: "\(messageLimit)")) }
+        if let messageOffset { items.append(URLQueryItem(name: "messageOffset", value: "\(messageOffset)")) }
+        if let recent { items.append(URLQueryItem(name: "recent", value: recent ? "true" : "false")) }
+        if let summaryLimit { items.append(URLQueryItem(name: "summaryLimit", value: "\(summaryLimit)")) }
+        if let includeEvents { items.append(URLQueryItem(name: "includeEvents", value: includeEvents ? "true" : "false")) }
+        return try await request(
+            "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/sessions/\(id)/hydrate",
+            queryItems: items
+        )
     }
 
     @discardableResult

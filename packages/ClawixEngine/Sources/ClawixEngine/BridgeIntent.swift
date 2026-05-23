@@ -329,6 +329,7 @@ public enum BridgeIntent {
 /// synthesized body inferred from the basename and extension, so every
 /// pill resolves to plausible content even without curation.
 public enum BridgeFileReader {
+    public static let maxPreviewBytes = 2 * 1024 * 1024
 
     /// Opaque result used both by the bridge wire reply and the macOS
     /// `FileViewerPanel`. Keeps the on-disk → fixture → synthesized
@@ -421,6 +422,13 @@ public enum BridgeFileReader {
     }
 
     private static func decode(url: URL, originalPath: String) -> Result {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = (attrs[.size] as? NSNumber)?.intValue else {
+            return Result(content: nil, isMarkdown: false, error: "Couldn't read file")
+        }
+        guard size <= maxPreviewBytes else {
+            return Result(content: nil, isMarkdown: false, error: "File too large to preview")
+        }
         guard let data = try? Data(contentsOf: url) else {
             return Result(content: nil, isMarkdown: false, error: "Couldn't read file")
         }

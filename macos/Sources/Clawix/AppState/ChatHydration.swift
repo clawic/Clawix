@@ -221,6 +221,7 @@ extension AppState {
                 }
                 self.messagesPaginationByChat[chatId] = ChatPagination(
                     oldestKnownId: records.first?.id,
+                    oldestOffset: page.messageOffset,
                     hasMore: page.hasMore,
                     loadingOlder: false
                 )
@@ -271,27 +272,25 @@ extension AppState {
         return found
     }
 
-    private func loadClawJSSessionMessageTail(sessionId: String) async throws -> (records: [ClawJSSessionsClient.MessageRecord], hasMore: Bool) {
+    private func loadClawJSSessionMessageTail(sessionId: String) async throws -> (records: [ClawJSSessionsClient.MessageRecord], hasMore: Bool, messageOffset: Int) {
         var delay = sessionHistoryHydrationInitialDelayNanos
         let attempts = max(1, sessionHistoryHydrationAttempts)
         var lastError: Error?
         for attempt in 1...attempts {
             do {
                 let client = clawJSSessionsClientFactory()
-                do {
-                    let session = try await client.getSession(id: sessionId, includeMessages: false).session
-                    let limit = bridgeInitialPageLimit
-                    let offset = max(0, session.messageCount - limit)
-                    return (
-                        try await client.listMessages(sessionId: sessionId, limit: limit, offset: offset),
-                        offset > 0
-                    )
-                } catch {
-                    return (
-                        try await client.listMessages(sessionId: sessionId, limit: bridgeInitialPageLimit, offset: 0),
-                        false
-                    )
-                }
+                let hydrated = try await client.hydrateSession(
+                    id: sessionId,
+                    messageLimit: bridgeInitialPageLimit,
+                    recent: true,
+                    summaryLimit: 20,
+                    includeEvents: false
+                )
+                return (
+                    hydrated.messages,
+                    hydrated.hasOlderMessages,
+                    hydrated.messageOffset
+                )
             } catch {
                 lastError = error
                 guard attempt < attempts, Self.shouldRetryClawJSSessionHistory(error) else {
@@ -744,9 +743,14 @@ extension AppState {
                     guard let self else { return }
                     do {
                         let client = self.clawJSSessionsClientFactory()
-                        let session = try await client.getSession(id: threadId, includeMessages: false).session
-                        let loaded = self.chatStore.transcript(for: chatId)?.messageIds.count ?? 0
-                        let endOffset = max(0, session.messageCount - loaded)
+                        let endOffset: Int
+                        if let oldestOffset = self.messagesPaginationByChat[chatId]?.oldestOffset {
+                            endOffset = oldestOffset
+                        } else {
+                            let session = try await client.getSession(id: threadId, includeMessages: false).session
+                            let loaded = self.chatStore.transcript(for: chatId)?.messageIds.count ?? 0
+                            endOffset = max(0, session.messageCount - loaded)
+                        }
                         let offset = max(0, endOffset - bridgeOlderPageLimit)
                         let limit = max(0, endOffset - offset)
                         guard limit > 0 else {
@@ -754,14 +758,22 @@ extension AppState {
                             self.messagesPaginationByChat[chatId]?.hasMore = false
                             return
                         }
-                        let records = try await client.listMessages(sessionId: threadId, limit: limit, offset: offset)
+                        let page = try await client.hydrateSession(
+                            id: threadId,
+                            messageLimit: limit,
+                            messageOffset: offset,
+                            recent: false,
+                            includeEvents: false
+                        )
+                        let records = page.messages
                         let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
                         let transcript = self.chatStore.transcript(forCreating: chatId)
                         let existing = Set(transcript.messageIds)
                         transcript.prepend(messages.filter { !existing.contains($0.id) })
                         self.messagesPaginationByChat[chatId] = ChatPagination(
                             oldestKnownId: records.first?.id ?? cursor,
-                            hasMore: offset > 0,
+                            oldestOffset: page.messageOffset,
+                            hasMore: page.hasOlderMessages,
                             loadingOlder: false
                         )
                     } catch {

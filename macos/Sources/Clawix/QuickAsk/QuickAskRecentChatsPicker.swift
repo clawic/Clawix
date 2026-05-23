@@ -54,7 +54,7 @@ struct QuickAskRecentChatsPicker: View {
                 .background(Color.white.opacity(0.10))
 
             if filteredChats.isEmpty {
-                Text("No chats yet")
+                Text(emptyStateMessage)
                     .font(BodyFont.system(size: 12, wght: 500))
                     .foregroundColor(.white.opacity(0.45))
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -86,6 +86,12 @@ struct QuickAskRecentChatsPicker: View {
                 .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.7)
         )
         .onAppear { searchFocused = true }
+    }
+
+    private var emptyStateMessage: String {
+        query.trimmingCharacters(in: .whitespaces).isEmpty
+            ? UserFacingEmptyState.chats.message
+            : UserFacingEmptyState.chatsFiltered.message
     }
 }
 

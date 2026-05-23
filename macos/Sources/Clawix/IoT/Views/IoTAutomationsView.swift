@@ -68,10 +68,7 @@ private struct AutomationRow: View {
                     .foregroundColor(Palette.textTertiary)
             }
             Spacer()
-            Toggle("", isOn: Binding(get: { automation.enabled }, set: { _ in onToggle() }))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .tint(Color.accentColor)
+            PillToggle(isOn: Binding(get: { automation.enabled }, set: { _ in onToggle() }))
             Button(action: onRun) {
                 HStack(spacing: 4) {
                     if isBusy {
@@ -80,8 +77,7 @@ private struct AutomationRow: View {
                             .controlSize(.mini)
                             .tint(Palette.textPrimary)
                     } else {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 10))
+                        IconImage("play.fill", size: 10)
                     }
                     Text(verbatim: "Run")
                 }

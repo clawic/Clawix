@@ -39,7 +39,6 @@ struct ComposerView: View {
     @State private var composerContentHeight: CGFloat = 52
     @State private var planSuggestionDismissed = false
     @State private var mentionFilePickerActive = false
-    @State private var showShortcuts = false
     @State private var showInbox = false
     @State private var showStatus = false
     @State private var showFiles = false
@@ -191,7 +190,7 @@ struct ComposerView: View {
                                         GoalStore.shared.creationRequestChatId = chatId
                                     }
                                 } else if cmd.id == "shortcuts" {
-                                    showShortcuts = true
+                                    appState.isKeyboardShortcutsOpen = true
                                 } else if cmd.id == "inbox" {
                                     showInbox = true
                                 } else if cmd.id == "estado" {
@@ -696,9 +695,6 @@ struct ComposerView: View {
 
             mainComposerStack
         }
-        .sheet(isPresented: $showShortcuts) {
-            KeyboardShortcutsOverlay { showShortcuts = false }
-        }
         .sheet(isPresented: $showInbox) {
             InboxOverlay { showInbox = false }
                 .environmentObject(appState)
@@ -737,6 +733,25 @@ struct ComposerView: View {
             if appState.planMode, planSuggestionDismissed {
                 planSuggestionDismissed = false
             }
+        }
+        // Menu-driven composer actions (⌃⇧M model picker, ⌃⇧D dictation,
+        // ⇧⌘E file tree). Only the main composer reacts; the side-chat
+        // instance ignores the global signals so they don't double-fire.
+        .onChange(of: appState.requestModelPickerSignal) { _, signal in
+            guard sideChatId == nil, signal != nil else { return }
+            modelMenuOpen = true
+        }
+        .onChange(of: appState.requestStartDictationSignal) { _, signal in
+            guard sideChatId == nil, signal != nil else { return }
+            if dictation.state == .recording, dictation.activeSource == .composer {
+                stopAndAppendTranscription()
+            } else if dictation.state == .idle {
+                startVoice()
+            }
+        }
+        .onChange(of: appState.requestOpenFileTreeSignal) { _, signal in
+            guard sideChatId == nil, signal != nil else { return }
+            showFiles = true
         }
     }
 

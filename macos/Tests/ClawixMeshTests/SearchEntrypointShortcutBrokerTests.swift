@@ -1,4 +1,5 @@
 import XCTest
+import KeyboardShortcuts
 @testable import Clawix
 
 final class SearchEntrypointShortcutBrokerTests: XCTestCase {
@@ -93,5 +94,20 @@ final class SearchEntrypointShortcutBrokerTests: XCTestCase {
 
         XCTAssertTrue(decision.allowed)
         XCTAssertEqual(decision.state, .ready)
+    }
+
+    func testRootSearchInstallerValidatesCurrentRecordedShortcut() {
+        let blocked = SearchEntrypointShortcutsInstaller.validateRootSearchShortcut(
+            KeyboardShortcuts.Shortcut(.g, modifiers: [.command])
+        )
+        let ready = SearchEntrypointShortcutsInstaller.validateRootSearchShortcut(
+            KeyboardShortcuts.Shortcut(.space, modifiers: [.command, .option])
+        )
+
+        XCTAssertFalse(blocked.allowed)
+        XCTAssertEqual(blocked.state, .blocked)
+        XCTAssertEqual(blocked.reason, "Root Search must not reuse Command-G.")
+        XCTAssertTrue(ready.allowed)
+        XCTAssertEqual(ready.state, .ready)
     }
 }

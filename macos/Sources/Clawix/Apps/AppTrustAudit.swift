@@ -91,7 +91,7 @@ enum AppTrustAudit {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        let data = try encoder.encode(event)
+        let data = try redactedJSONData(for: event, encoder: encoder)
         if FileManager.default.fileExists(atPath: auditURL.path) {
             let handle = try FileHandle(forWritingTo: auditURL)
             try handle.seekToEnd()
@@ -101,6 +101,12 @@ enum AppTrustAudit {
         } else {
             try data.write(to: auditURL, options: .atomic)
         }
+    }
+
+    private static func redactedJSONData(for event: AppTrustAuditEvent, encoder: JSONEncoder) throws -> Data {
+        let data = try encoder.encode(event)
+        let text = String(decoding: data, as: UTF8.self)
+        return Data(ClawixDiagnosticRedactor.redact(text).utf8)
     }
 
     static func read(from auditURL: URL) throws -> [AppTrustAuditEvent] {

@@ -14,7 +14,7 @@ struct QuickAskSettingsPage: View {
     @ObservedObject private var flags = FeatureFlags.shared
     @EnvironmentObject private var appState: AppState
     @State private var recording = false
-    @State private var advancedExpanded = false
+    @AppStorage(ClawixPersistentSurfaceKeys.quickAskAdvancedExpanded) private var advancedExpanded = false
     @State private var defaultModelSelection: String = ""
 
     var body: some View {
