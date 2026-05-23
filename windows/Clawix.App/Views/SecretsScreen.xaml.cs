@@ -1,5 +1,4 @@
 using Clawix.Core.Models;
-using Clawix.Secrets.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -27,13 +26,11 @@ public sealed partial class SecretsScreen : UserControl
         try
         {
             var secrets = App.Services.Secrets.List();
-            SecretsList.ItemsSource = secrets
-                .Select(secret => $"{secret.Label} - {DisplayKind(secret.Kind)}")
-                .ToList();
-            SetVaultControls(enabled: true);
+            SecretsList.ItemsSource = secrets;
+            SetVaultControls(enabled: App.Services.Secrets.IsUnlocked);
             StatusText.Text = secrets.Count == 0
-                ? "Secrets vault is unlocked. Plaintext secret values are encrypted before storage and are not shown in the list."
-                : $"Secrets vault is unlocked. {secrets.Count} secret metadata entries listed.";
+                ? App.Services.Secrets.StatusText()
+                : $"{App.Services.Secrets.StatusText()} {secrets.Count} secret metadata entries listed.";
         }
         catch (Exception ex)
         {
@@ -48,14 +45,12 @@ public sealed partial class SecretsScreen : UserControl
         var service = services.FirstOrDefault(item => item.Id.Equals("secrets", StringComparison.OrdinalIgnoreCase));
         if (service is null)
         {
-            if (!App.Services.Secrets.IsUnlocked)
-                StatusText.Text = "Secrets vault is locked. Restart Clawix to unlock it from Windows Credential Manager.";
+            StatusText.Text = App.Services.Secrets.StatusText();
             return;
         }
 
         var detail = service.LastError is null ? $"port {service.Port}" : service.LastError;
-        if (App.Services.Secrets.IsUnlocked)
-            StatusText.Text = $"Local secrets vault is unlocked. ClawJS Secrets is {service.State} ({detail}).";
+        StatusText.Text = $"{App.Services.Secrets.StatusText()} Service status: {service.State} ({detail}).";
     }
 
     private async void AddSecret_Click(object sender, RoutedEventArgs e)
@@ -84,10 +79,17 @@ public sealed partial class SecretsScreen : UserControl
 
     private void LockVault_Click(object sender, RoutedEventArgs e)
     {
-        App.Services.Secrets.Lock();
-        SecretsList.ItemsSource = Array.Empty<string>();
-        SetVaultControls(enabled: false);
-        StatusText.Text = "Secrets vault locked. Restart Clawix to unlock it from Windows Credential Manager.";
+        try
+        {
+            App.Services.Secrets.Lock();
+            SecretsList.ItemsSource = Array.Empty<string>();
+            SetVaultControls(enabled: false);
+            StatusText.Text = "ClawJS Secrets locked.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = ex.Message;
+        }
     }
 
     private void SetVaultControls(bool enabled)
@@ -97,13 +99,4 @@ public sealed partial class SecretsScreen : UserControl
         LockVaultButton.IsEnabled = enabled;
     }
 
-    private static string DisplayKind(SecretKind kind)
-    {
-        return kind switch
-        {
-            SecretKind.ApiKey => "API key",
-            SecretKind.Token => "Token",
-            _ => "Generic",
-        };
-    }
 }

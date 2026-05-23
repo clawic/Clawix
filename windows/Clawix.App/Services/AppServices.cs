@@ -65,7 +65,7 @@ public sealed class AppServices
             State = state,
             Shell = new ShellService(),
             Clipboard = new ClipboardService(),
-            Secrets = new WindowsSecretsVaultService(credentials),
+            Secrets = new WindowsSecretsVaultService(),
             Hotkeys = new GlobalHotkeyService(loggerFactory.CreateLogger<GlobalHotkeyService>()),
             Screens = new ScreenService(),
             Tray = new SystemTrayService(),
