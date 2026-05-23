@@ -22,13 +22,13 @@
       "path": "web/package.json",
       "releaseCritical": true,
       "releaseTargets": ["web-release"],
-      "lockfile": { "status": "pass", "evidence": "web/pnpm-lock.yaml" },
-      "sbom": { "status": "pass", "evidence": "release evidence must include CycloneDX JSON for the web bundle" },
-      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for official web artifacts" },
-      "dependencyReview": { "status": "pass", "evidence": "PR template and CODEOWNERS supply-chain review routing" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md" },
-      "artifactIntegrity": { "status": "pass", "evidence": "release evidence includes SHA-256 checksum and signed-checksum/signature refs" },
-      "malwareReview": { "status": "pass", "evidence": "custom app/plugin activation policy in docs/supply-chain-security.md" }
+      "lockfile": { "status": "pass", "evidence": "web/pnpm-lock.yaml", "evidenceRefs": [{ "type": "path", "ref": "web/pnpm-lock.yaml" }] },
+      "sbom": { "status": "external_pending", "evidence": "CycloneDX JSON for the web bundle is not present in this repo.", "exception": "Web release remains blocked until the exact release SBOM artifact is generated and verified." },
+      "provenance": { "status": "external_pending", "evidence": "CI build provenance or artifact attestation for official web artifacts is not present in this repo.", "exception": "Web release remains blocked until provenance or attestation evidence exists for the exact artifact." },
+      "dependencyReview": { "status": "pass", "evidence": ".github/PULL_REQUEST_TEMPLATE.md and .github/CODEOWNERS", "evidenceRefs": [{ "type": "path", "ref": ".github/PULL_REQUEST_TEMPLATE.md" }, { "type": "path", "ref": ".github/CODEOWNERS" }] },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-vulnerability-triage.md" }] },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "SHA-256 checksum and signature references for the web release artifact are not present in this repo.", "exception": "Web release remains blocked until checksum and signature refs exist for the exact artifact." },
+      "malwareReview": { "status": "pass", "evidence": "docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-security.md" }] }
     },
     {
       "id": "clawix.linux-tauri",
@@ -36,13 +36,13 @@
       "path": "linux/app/package.json",
       "releaseCritical": true,
       "releaseTargets": ["linux-release"],
-      "lockfile": { "status": "pass", "evidence": "linux/app/package-lock.json and linux/app/src-tauri/Cargo.lock" },
-      "sbom": { "status": "pass", "evidence": "release evidence must include CycloneDX JSON for npm and Cargo components" },
-      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for AppImage/deb artifacts" },
-      "dependencyReview": { "status": "pass", "evidence": "PR template and CODEOWNERS dependency review routing" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md tracks current moderate dev-server advisory" },
-      "artifactIntegrity": { "status": "pass", "evidence": "GPG signatures, checksums, and release evidence for AppImage/deb" },
-      "malwareReview": { "status": "pass", "evidence": "native permission and shell plugin review before activation" }
+      "lockfile": { "status": "pass", "evidence": "linux/app/package-lock.json and linux/app/src-tauri/Cargo.lock", "evidenceRefs": [{ "type": "path", "ref": "linux/app/package-lock.json" }, { "type": "path", "ref": "linux/app/src-tauri/Cargo.lock" }] },
+      "sbom": { "status": "external_pending", "evidence": "CycloneDX JSON for npm and Cargo components is not present in this repo.", "exception": "Linux release remains blocked until the exact release SBOM artifact is generated and verified." },
+      "provenance": { "status": "external_pending", "evidence": "CI build provenance or artifact attestation for AppImage/deb artifacts is not present in this repo.", "exception": "Linux release remains blocked until provenance or attestation evidence exists for the exact artifacts." },
+      "dependencyReview": { "status": "pass", "evidence": ".github/PULL_REQUEST_TEMPLATE.md and .github/CODEOWNERS", "evidenceRefs": [{ "type": "path", "ref": ".github/PULL_REQUEST_TEMPLATE.md" }, { "type": "path", "ref": ".github/CODEOWNERS" }] },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "docs/supply-chain-vulnerability-triage.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-vulnerability-triage.md" }] },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "GPG signatures and checksums for AppImage/deb artifacts are not present in this repo.", "exception": "Linux release remains blocked until signature and checksum refs exist for the exact artifacts." },
+      "malwareReview": { "status": "pass", "evidence": "docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-security.md" }] }
     },
     {
       "id": "clawix.macos-swiftpm",
@@ -50,13 +50,13 @@
       "path": "macos/Package.swift",
       "releaseCritical": true,
       "releaseTargets": ["macos-release", "ios-release"],
-      "lockfile": { "status": "pass", "evidence": "macos/Package.resolved plus helper Package.resolved files" },
-      "sbom": { "status": "pass", "evidence": "release evidence must include SwiftPM SBOM references" },
-      "provenance": { "status": "pass", "evidence": "CI build provenance or local signed release evidence" },
-      "dependencyReview": { "status": "pass", "evidence": "Package.swift and Package.resolved changes route through supply-chain review" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and ClawJS SLA" },
-      "artifactIntegrity": { "status": "pass", "evidence": "codesign, notarization evidence, checksums, and signed update channel" },
-      "malwareReview": { "status": "pass", "evidence": "signed-host helper and custom-surface activation review policy" }
+      "lockfile": { "status": "pass", "evidence": "macos/Package.resolved plus helper Package.resolved files", "evidenceRefs": [{ "type": "path", "ref": "macos/Package.resolved" }, { "type": "path", "ref": "macos/Helpers/Bridged/Package.resolved" }, { "type": "path", "ref": "macos/Helpers/Menubar/Package.resolved" }] },
+      "sbom": { "status": "external_pending", "evidence": "SwiftPM SBOM references are not present in this repo.", "exception": "macOS/iOS release remains blocked until the exact release SBOM artifact is generated and verified." },
+      "provenance": { "status": "external_pending", "evidence": "CI build provenance or local signed release evidence is not present in this repo.", "exception": "macOS/iOS release remains blocked until provenance or signed build evidence exists for the exact artifact." },
+      "dependencyReview": { "status": "pass", "evidence": "macos/Package.swift and .github/CODEOWNERS", "evidenceRefs": [{ "type": "path", "ref": "macos/Package.swift" }, { "type": "path", "ref": ".github/CODEOWNERS" }] },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "SECURITY.md" }, { "type": "path", "ref": "docs/supply-chain-security.md" }] },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "codesign, notarization, checksum, and signed update-channel evidence is not present in this repo.", "exception": "macOS/iOS release remains blocked until integrity refs exist for the exact artifacts." },
+      "malwareReview": { "status": "pass", "evidence": "docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-security.md" }] }
     },
     {
       "id": "clawix.windows-dotnet",
@@ -65,12 +65,12 @@
       "releaseCritical": true,
       "releaseTargets": ["windows-release"],
       "lockfile": { "status": "baseline_exception", "evidence": "NuGet lockfile is pending for Windows projects", "exception": "Release guard records the gap; Windows release remains blocked until lockfile evidence or explicit scope revision exists." },
-      "sbom": { "status": "pass", "evidence": "release evidence must include .NET/NuGet SBOM references" },
-      "provenance": { "status": "pass", "evidence": "CI build provenance or artifact attestation for MSIX" },
-      "dependencyReview": { "status": "pass", "evidence": "csproj dependency changes route through supply-chain review" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and ClawJS SLA" },
-      "artifactIntegrity": { "status": "pass", "evidence": "Authenticode signature plus release checksums" },
-      "malwareReview": { "status": "pass", "evidence": "native helper and plugin activation review policy" }
+      "sbom": { "status": "external_pending", "evidence": ".NET/NuGet SBOM references are not present in this repo.", "exception": "Windows release remains blocked until the exact release SBOM artifact is generated and verified." },
+      "provenance": { "status": "external_pending", "evidence": "CI build provenance or artifact attestation for MSIX is not present in this repo.", "exception": "Windows release remains blocked until provenance or attestation evidence exists for the exact artifact." },
+      "dependencyReview": { "status": "pass", "evidence": "windows/Clawix.App/Clawix.App.csproj and .github/CODEOWNERS", "evidenceRefs": [{ "type": "path", "ref": "windows/Clawix.App/Clawix.App.csproj" }, { "type": "path", "ref": ".github/CODEOWNERS" }] },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "SECURITY.md" }, { "type": "path", "ref": "docs/supply-chain-security.md" }] },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "Authenticode signature and release checksums are not present in this repo.", "exception": "Windows release remains blocked until signature and checksum refs exist for the exact artifact." },
+      "malwareReview": { "status": "pass", "evidence": "docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-security.md" }] }
     },
     {
       "id": "clawix.bundled-clawjs",
@@ -78,13 +78,13 @@
       "path": "macos/scripts/bundle_clawjs.sh",
       "releaseCritical": true,
       "releaseTargets": ["macos-release"],
-      "lockfile": { "status": "pass", "evidence": "bundled @clawjs/cli version is pinned in macos/CLAWJS_VERSION and verified through ClawJS release evidence" },
-      "sbom": { "status": "pass", "evidence": "release evidence must include bundled ClawJS SBOM refs" },
-      "provenance": { "status": "pass", "evidence": "npm package provenance for bundled @clawjs/cli" },
-      "dependencyReview": { "status": "pass", "evidence": "CLAWJS_VERSION changes require supply-chain review" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "ClawJS SECURITY.md and supply-chain triage" },
-      "artifactIntegrity": { "status": "pass", "evidence": "bundled package checksums and app codesign verification" },
-      "malwareReview": { "status": "pass", "evidence": "bundled runtime is official ClawJS release only" }
+      "lockfile": { "status": "pass", "evidence": "macos/CLAWJS_VERSION and macos/scripts/bundle_clawjs.sh", "evidenceRefs": [{ "type": "path", "ref": "macos/CLAWJS_VERSION" }, { "type": "path", "ref": "macos/scripts/bundle_clawjs.sh" }] },
+      "sbom": { "status": "external_pending", "evidence": "Bundled ClawJS SBOM refs are not present in this repo.", "exception": "macOS release remains blocked until bundled ClawJS SBOM evidence exists for the exact bundled version." },
+      "provenance": { "status": "external_pending", "evidence": "npm package provenance for bundled @clawjs/cli is not present in this repo.", "exception": "macOS release remains blocked until bundled package provenance exists for the exact bundled version." },
+      "dependencyReview": { "status": "pass", "evidence": "macos/CLAWJS_VERSION and .github/CODEOWNERS", "evidenceRefs": [{ "type": "path", "ref": "macos/CLAWJS_VERSION" }, { "type": "path", "ref": ".github/CODEOWNERS" }] },
+      "vulnerabilityTriage": { "status": "pass", "evidence": "SECURITY.md and docs/supply-chain-vulnerability-triage.md", "evidenceRefs": [{ "type": "path", "ref": "SECURITY.md" }, { "type": "path", "ref": "docs/supply-chain-vulnerability-triage.md" }] },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "Bundled package checksums and app codesign verification are not present in this repo.", "exception": "macOS release remains blocked until bundled package checksum and app signing refs exist for the exact artifacts." },
+      "malwareReview": { "status": "pass", "evidence": "docs/supply-chain-security.md", "evidenceRefs": [{ "type": "path", "ref": "docs/supply-chain-security.md" }] }
     },
     {
       "id": "clawix.release-channel",
@@ -92,13 +92,13 @@
       "path": "RELEASING.md",
       "releaseCritical": true,
       "releaseTargets": ["macos-release", "ios-release", "linux-release", "windows-release", "web-release", "all"],
-      "lockfile": { "status": "pass", "evidence": "release preflights require lockfile/resolved dependency evidence" },
-      "sbom": { "status": "pass", "evidence": "release checklist requires SBOM refs" },
-      "provenance": { "status": "pass", "evidence": "release checklist requires provenance/attestation refs" },
-      "dependencyReview": { "status": "pass", "evidence": "PR checklist and CODEOWNERS supply-chain routes" },
-      "vulnerabilityTriage": { "status": "pass", "evidence": "release checklist requires vulnerability triage status" },
-      "artifactIntegrity": { "status": "pass", "evidence": "signed checksums, platform signatures, appcast signatures, and package signatures" },
-      "malwareReview": { "status": "pass", "evidence": "plugin/sub-app quarantine and activation review policy" }
+      "lockfile": { "status": "external_pending", "evidence": "Release-channel lockfile preflight output is not present in this repo.", "exception": "Release remains blocked until the target release run records lockfile/resolved dependency evidence." },
+      "sbom": { "status": "external_pending", "evidence": "Release-channel SBOM refs are not present in this repo.", "exception": "Release remains blocked until the target release run records SBOM refs." },
+      "provenance": { "status": "external_pending", "evidence": "Release-channel provenance or attestation refs are not present in this repo.", "exception": "Release remains blocked until the target release run records provenance or attestation refs." },
+      "dependencyReview": { "status": "external_pending", "evidence": "Release-channel dependency-review result is not present in this repo.", "exception": "Release remains blocked until the target release run records dependency-review approval." },
+      "vulnerabilityTriage": { "status": "external_pending", "evidence": "Release-channel vulnerability triage result is not present in this repo.", "exception": "Release remains blocked until the target release run records vulnerability triage status." },
+      "artifactIntegrity": { "status": "external_pending", "evidence": "Signed checksums, platform signatures, appcast signatures, and package signatures are not present in this repo.", "exception": "Release remains blocked until target artifact integrity refs exist." },
+      "malwareReview": { "status": "external_pending", "evidence": "Release-channel malware review result is not present in this repo.", "exception": "Release remains blocked until the target release run records malware-review approval." }
     }
   ]
 }

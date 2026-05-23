@@ -62,6 +62,15 @@
         "malwareReview": { "$ref": "#/$defs/control" }
       }
     },
+    "evidenceRef": {
+      "type": "object",
+      "required": ["type", "ref"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["path", "command", "hash", "attestation", "capture", "log", "validation"] },
+        "ref": { "type": "string", "minLength": 1 }
+      }
+    },
     "control": {
       "type": "object",
       "required": ["status", "evidence"],
@@ -69,8 +78,19 @@
       "properties": {
         "status": { "$ref": "#/$defs/status" },
         "evidence": { "type": "string", "minLength": 1 },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRef" },
+          "minItems": 1
+        },
         "exception": { "type": "string", "minLength": 1 }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "pass" } }, "required": ["status"] },
+          "then": { "required": ["evidenceRefs"] }
+        }
+      ]
     }
   }
 }
