@@ -11,10 +11,10 @@ struct SteeredConversationDivider: View {
             line
             HStack(spacing: 6) {
                 LucideIcon.auto("bubble.left", size: 11)
-                    .foregroundColor(Color(white: 0.50))
+                    .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                 Text("Steered conversation")
                     .font(BodyFont.system(size: 11.5, wght: 600))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .fixedSize()
             }
             line
@@ -26,7 +26,7 @@ struct SteeredConversationDivider: View {
 
     private var line: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.08))
+            .fill(Color.overlay(0.08))
             .frame(height: 1)
     }
 }

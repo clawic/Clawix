@@ -30,7 +30,7 @@ struct UserMessageEditor: View {
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color(white: 0.22))
+                                .fill(Color.gray(light: 0.87, dark: 0.22))
                         )
                 }
                 .buttonStyle(.plain)
@@ -38,12 +38,12 @@ struct UserMessageEditor: View {
                 Button(action: onSubmit) {
                     Text("Send")
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(Color.black)
+                        .foregroundColor(Palette.background)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.white)
+                                .fill(Palette.textPrimary)
                         )
                 }
                 .buttonStyle(.plain)
@@ -54,11 +54,11 @@ struct UserMessageEditor: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color(white: 0.13))
+                .fill(Color.gray(light: 0.94, dark: 0.13))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color(white: 0.22), lineWidth: 0.5)
+                .strokeBorder(Color.gray(light: 0.87, dark: 0.22), lineWidth: 0.5)
         )
     }
 }
@@ -81,7 +81,7 @@ struct ChatFooterPill: View {
                     .lineLimit(1)
                 LucideIcon(.chevronDown, size: 12)
             }
-            .foregroundColor(Color(white: (hovered || isOpen) ? 0.82 : 0.55))
+            .foregroundColor(((hovered || isOpen) ? Color.gray(light: 0.23, dark: 0.82) : Color.gray(light: 0.45, dark: 0.55)))
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             .contentShape(Rectangle())
@@ -340,11 +340,11 @@ struct BranchCreateSheet: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(String(localized: "Create and switch branch", bundle: AppLocale.bundle, locale: AppLocale.current))
                     .font(BodyFont.system(size: 20, weight: .medium))
-                    .foregroundColor(Color(white: 0.97))
+                    .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                 Spacer(minLength: 12)
                 Button(action: onCancel) {
                     LucideIcon(.x, size: 11)
-                        .foregroundColor(Color(white: 0.70))
+                        .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
                         .frame(width: 22, height: 22)
                         .contentShape(Rectangle())
                 }
@@ -356,7 +356,7 @@ struct BranchCreateSheet: View {
             HStack {
                 Text(String(localized: "Branch name", bundle: AppLocale.bundle, locale: AppLocale.current))
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.78))
+                    .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 Spacer(minLength: 8)
                 Button {
                     // Prefix toggle is visual-only for now: same suggestion
@@ -364,7 +364,7 @@ struct BranchCreateSheet: View {
                 } label: {
                     Text(String(localized: "Set prefix", bundle: AppLocale.bundle, locale: AppLocale.current))
                         .font(BodyFont.system(size: 12.5, wght: 500))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 }
                 .buttonStyle(.plain)
             }
@@ -373,16 +373,16 @@ struct BranchCreateSheet: View {
             TextField("", text: $name)
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 14, wght: 500))
-                .foregroundColor(Color(white: 0.95))
+                .foregroundColor(Color.gray(light: 0.11, dark: 0.95))
                 .focused($nameFocused)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 11)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(white: 0.10))
+                        .fill(Color.gray(light: 0.95, dark: 0.10))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
                 .padding(.bottom, 22)

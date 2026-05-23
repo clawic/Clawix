@@ -193,7 +193,7 @@ struct ForkedFromBanner: View {
         Color(red: 0.34, green: 0.62, blue: 1.0)
     }
 
-    private var ruleColor: Color { Color.white.opacity(0.10) }
+    private var ruleColor: Color { Color.overlay(0.10) }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -296,7 +296,7 @@ struct LinkPreviewCard: View {
                     .fill(Color(red: 0.20, green: 0.45, blue: 0.92))
                     .frame(width: 38, height: 38)
                 LucideIcon(.globe, size: 12)
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title)
@@ -306,7 +306,7 @@ struct LinkPreviewCard: View {
                     .truncationMode(.tail)
                 Text(verbatim: String(localized: "Website", bundle: AppLocale.bundle, locale: AppLocale.current))
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             Spacer(minLength: 8)
             Button {
@@ -314,16 +314,16 @@ struct LinkPreviewCard: View {
             } label: {
                 Text(verbatim: String(localized: "Open", bundle: AppLocale.bundle, locale: AppLocale.current))
                     .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.white.opacity(openHovered ? 0.10 : 0.05))
+                            .fill(Color.overlay(openHovered ? 0.10 : 0.05))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.14), lineWidth: 0.5)
                     )
             }
             .buttonStyle(.plain)
@@ -333,11 +333,11 @@ struct LinkPreviewCard: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.05 : 0.035))
+                .fill(Color.overlay(hovered ? 0.05 : 0.035))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
         .contentShape(Rectangle())
         .onHover { hovered = $0 }

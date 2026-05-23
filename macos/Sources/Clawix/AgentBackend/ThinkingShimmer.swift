@@ -31,7 +31,7 @@ struct ThinkingShimmer: View {
                         .opacity(opacity(at: Double(index), center: center))
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
         }
         .accessibilityLabel(text)
     }

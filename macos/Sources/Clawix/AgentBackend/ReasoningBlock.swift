@@ -22,10 +22,10 @@ struct ReasoningBlock: View {
             } label: {
                 HStack(spacing: 6) {
                     LucideIcon.auto(expanded ? "chevron.down" : "chevron.right", size: 10)
-                        .foregroundColor(Color(white: 0.50))
+                        .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                     Text(headerLabel)
                         .font(BodyFont.system(size: 12.5, wght: 600))
-                        .foregroundColor(Color(white: 0.62))
+                        .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                     if isStreaming {
                         ReasoningPulseDot()
                     }
@@ -37,7 +37,7 @@ struct ReasoningBlock: View {
             if expanded {
                 Text(text)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.leading, 14)
@@ -59,7 +59,7 @@ private struct ReasoningPulseDot: View {
 
     var body: some View {
         Circle()
-            .fill(Color(white: 0.6))
+            .fill(Color.gray(light: 0.42, dark: 0.6))
             .frame(width: 5, height: 5)
             .opacity(Double(phase))
             .onAppear {

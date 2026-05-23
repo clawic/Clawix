@@ -279,7 +279,7 @@ struct MessageRow: View, Equatable {
                                 renderKey: .custom("message:\(message.id.uuidString):segment:\(segmentIndex)"),
                                 weight: message.isError ? .regular : .light,
                                 color: message.isError
-                                    ? Color(red: 0.95, green: 0.45, blue: 0.45)
+                                    ? Palette.danger
                                     : Palette.textPrimary,
                                 checkpoints: onlyTextSegment ? message.streamCheckpoints : [],
                                 streamingFinished: message.streamingFinished,
@@ -481,7 +481,7 @@ struct MessageRow: View, Equatable {
                         renderKey: .custom("timeline:\(entryId.uuidString):segment:\(segmentIndex)"),
                         weight: message.isError ? .regular : .light,
                         color: message.isError
-                            ? Color(red: 0.95, green: 0.45, blue: 0.45)
+                            ? Palette.danger
                             : Palette.textPrimary,
                         checkpoints: useCheckpoints ? message.streamCheckpoints : [],
                         streamingFinished: message.streamingFinished,
@@ -551,7 +551,7 @@ struct MessageRow: View, Equatable {
     private var timestampLabel: some View {
         Text(verbatim: formattedTimestamp)
             .font(BodyFont.system(size: 11, wght: 500))
-            .foregroundColor(Color(white: 0.45))
+            .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             .padding(.horizontal, 4)
     }
 
@@ -609,7 +609,7 @@ struct MessageActionIcon: View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(hovered ? 0.07 : 0))
+                    .fill(Color.overlay(hovered ? 0.07 : 0))
                 iconView
             }
             .frame(width: 27, height: 27)
@@ -629,22 +629,22 @@ struct MessageActionIcon: View {
         case .copy(let showCheck):
             if showCheck {
                 CheckIcon(size: 14.3)
-                    .foregroundColor(Color(white: hovered ? 0.94 : 0.78))
+                    .foregroundColor((hovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.27, dark: 0.78)))
                     .transition(.opacity.combined(with: .scale(scale: 0.85)))
             } else {
-                CopyIconViewSquircle(color: Color(white: hovered ? 0.88 : 0.55), lineWidth: 0.85)
+                CopyIconViewSquircle(color: (hovered ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)), lineWidth: 0.85)
                     .frame(width: 14.3, height: 14.3)
                     .transition(.opacity)
             }
         case .pencil:
-            PencilIconView(color: Color(white: hovered ? 0.88 : 0.55), lineWidth: 0.85)
+            PencilIconView(color: (hovered ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)), lineWidth: 0.85)
                 .frame(width: 16.5, height: 16.5)
         case .branchArrows:
-            BranchArrowsIconView(color: Color(white: hovered ? 0.88 : 0.55), lineWidth: 0.85)
+            BranchArrowsIconView(color: (hovered ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)), lineWidth: 0.85)
                 .frame(width: 14.3, height: 14.3)
         case .system(let name):
             IconImage(name, size: 14.3)
-                .foregroundColor(Color(white: hovered ? 0.82 : 0.45))
+                .foregroundColor((hovered ? Color.gray(light: 0.23, dark: 0.82) : Color.gray(light: 0.50, dark: 0.45)))
         }
     }
 }

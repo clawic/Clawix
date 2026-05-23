@@ -905,7 +905,7 @@ struct AssistantTableView: View {
     var now: Date = .distantPast
     let onLinkTap: (URL) -> Void
 
-    private let divider = Color.white.opacity(0.14)
+    private let divider = Color.overlay(0.14)
     private let dividerThickness: CGFloat = 0.75
     private let cellVPad: CGFloat = 7
     private let cellHPad: CGFloat = 32
@@ -1022,8 +1022,8 @@ struct AssistantCodeBlockView: View {
     }
     private var wrapForegroundColor: Color {
         let on = appState.chatCodeBlockWordWrap
-        if hoverWrap { return Color(white: on ? 0.94 : 0.85) }
-        return Color(white: on ? 0.78 : 0.45)
+        if hoverWrap { return (on ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.20, dark: 0.85)) }
+        return (on ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.50, dark: 0.45))
     }
 
     var body: some View {
@@ -1031,7 +1031,7 @@ struct AssistantCodeBlockView: View {
             HStack(spacing: 8) {
                 Text(verbatim: language.isEmpty ? "code" : language)
                     .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 Spacer(minLength: 8)
                 Button(action: toggleWrap) {
                     WordWrapToggleIcon(
@@ -1053,10 +1053,10 @@ struct AssistantCodeBlockView: View {
                     Group {
                         if copied {
                             CheckIcon(size: 11)
-                                .foregroundColor(Color(white: hoverCopy ? 0.94 : 0.78))
+                                .foregroundColor((hoverCopy ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.27, dark: 0.78)))
                         } else {
                             CopyIconViewSquircle(
-                                color: Color(white: hoverCopy ? 0.88 : 0.55),
+                                color: (hoverCopy ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)),
                                 lineWidth: 0.85
                             )
                             .frame(width: 14, height: 14)
@@ -1076,11 +1076,11 @@ struct AssistantCodeBlockView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.10))
+                .fill(Color.gray(light: 0.95, dark: 0.10))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 
@@ -1288,12 +1288,12 @@ struct AtomView: View, Equatable {
         case .code(let s):
             styledText(s)
                 .font(BodyFont.system(size: fontSize - 1.5, weight: .regular, design: .monospaced))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(0.09))
+                        .fill(Color.overlay(0.09))
                 )
                 .padding(.horizontal, 2)
                 .offset(y: -3)

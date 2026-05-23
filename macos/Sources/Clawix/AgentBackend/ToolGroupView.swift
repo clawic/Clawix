@@ -54,7 +54,7 @@ struct ToolGroupView: View {
     private func inlineRow(prefix: String, body: String, animated: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             TerminalIcon(size: 14)
-                .foregroundColor(Color(white: 0.45))
+                .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                 .frame(width: 16, alignment: .leading)
             if animated {
                 ShimmerText(
@@ -69,7 +69,7 @@ struct ToolGroupView: View {
             } else {
                 Text(verbatim: prefix + " " + body)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -96,7 +96,7 @@ struct ToolGroupView: View {
                 case "clawix.computerUse":
                     LucideIcon(.appWindow, size: 13)
                 case "clawix.pencil":
-                    PencilIconView(color: Color(white: 0.45), lineWidth: 1.0)
+                    PencilIconView(color: Color.gray(light: 0.50, dark: 0.45), lineWidth: 1.0)
                         .frame(width: 15, height: 15)
                         .offset(y: 2)
                 case "magnifyingglass":
@@ -117,11 +117,11 @@ struct ToolGroupView: View {
                     LucideIcon.auto(row.icon, size: 12)
                 }
             }
-            .foregroundColor(Color(white: 0.45))
+            .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             .frame(width: 16, alignment: .leading)
             Text(verbatim: row.text)
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

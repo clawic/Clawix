@@ -217,16 +217,16 @@ struct UserImageThumbnail: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             } else {
-                Color.white.opacity(0.05)
+                Color.overlay(0.05)
                 LucideIcon(.image, size: 12.5)
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             }
         }
         .frame(width: side, height: side)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .stroke(Color.white.opacity(hovered ? 0.18 : 0.08), lineWidth: 0.6)
+                .stroke(Color.overlay(hovered ? 0.18 : 0.08), lineWidth: 0.6)
         )
         .scaleEffect(hovered ? 0.985 : 1.0)
         .animation(.easeOut(duration: 0.12), value: hovered)
@@ -501,7 +501,7 @@ struct UserFileMentionChip: View {
     var body: some View {
         HStack(spacing: 6) {
             FileChipIcon(size: 11)
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
             Text(verbatim: url.lastPathComponent)
                 .font(BodyFont.system(size: 14, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -513,7 +513,7 @@ struct UserFileMentionChip: View {
         .padding(.vertical, 7)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.overlay(0.08))
         )
         .help(url.path)
     }
@@ -532,7 +532,7 @@ struct UserMessageTextBubble: View {
 
     private static let maxCollapsedContentHeight: CGFloat = 575
     private static let verticalPadding: CGFloat = 11
-    private static let bubbleSolid = Color(white: 0.12)
+    private static let bubbleSolid = Color.gray(light: 0.945, dark: 0.12)
 
     var body: some View {
         let exceedsCap = measuredHeight > Self.maxCollapsedContentHeight + 1
@@ -567,7 +567,7 @@ struct UserMessageTextBubble: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.overlay(0.08))
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onPreferenceChange(UserBubbleContentHeightKey.self) { newValue in
@@ -612,7 +612,7 @@ struct UserMessageTextBubble: View {
                     .font(BodyFont.system(size: 12, wght: 600))
                     LucideIcon(.chevronDown, size: 11)
                 }
-                .foregroundColor(Color(white: collapsedHovered ? 0.95 : 0.78))
+                .foregroundColor((collapsedHovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.27, dark: 0.78)))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 16)
