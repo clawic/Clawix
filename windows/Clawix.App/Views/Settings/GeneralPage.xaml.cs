@@ -6,11 +6,13 @@ namespace Clawix.App.Views.Settings;
 
 public sealed partial class GeneralPage : Page
 {
+    private bool _suppressPreferenceWrites;
+
     public GeneralPage()
     {
         InitializeComponent();
         StartAtLogin.IsOn = App.Services.AutoStart.IsEnabled;
-        ShowInTray.IsOn = App.Services.Preferences.Get(WindowsPreferenceKeys.ShowInTray, true);
+        SetShowInTray(App.Services.Preferences.Get(WindowsPreferenceKeys.ShowInTray, true));
         ApplyTrayVisibility(ShowInTray.IsOn);
 
         StartAtLogin.Toggled += (_, _) =>
@@ -27,6 +29,7 @@ public sealed partial class GeneralPage : Page
 
         ShowInTray.Toggled += (_, _) =>
         {
+            if (_suppressPreferenceWrites) return;
             App.Services.Preferences.Set(WindowsPreferenceKeys.ShowInTray, ShowInTray.IsOn);
             ApplyTrayVisibility(ShowInTray.IsOn);
         };
@@ -53,7 +56,16 @@ public sealed partial class GeneralPage : Page
         var r = await dlg.ShowAsync();
         if (r == ContentDialogResult.Primary)
         {
-            // Phase 4.x: clear settings.json and re-launch.
+            App.Services.Preferences.Clear();
+            SetShowInTray(true);
+            ApplyTrayVisibility(true);
         }
+    }
+
+    private void SetShowInTray(bool value)
+    {
+        _suppressPreferenceWrites = true;
+        ShowInTray.IsOn = value;
+        _suppressPreferenceWrites = false;
     }
 }

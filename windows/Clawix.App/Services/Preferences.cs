@@ -49,6 +49,16 @@ public sealed class Preferences
         }
     }
 
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _state.Clear();
+            if (File.Exists(_path))
+                File.Delete(_path);
+        }
+    }
+
     private Dictionary<string, JsonElement> Load()
     {
         if (!File.Exists(_path)) return new();
