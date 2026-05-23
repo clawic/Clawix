@@ -34,11 +34,13 @@ struct DriveScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
+            Rectangle()
+                .fill(Palette.popupStroke)
+                .frame(height: 0.5)
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Palette.background)
         .onAppear {
             applyMode()
             DriveTools.bind(store)
@@ -163,10 +165,18 @@ struct DriveScreen: View {
     private var content: some View {
         switch store.state {
         case .loading, .authenticating:
-            ProgressView("Connecting to Drive...").frame(maxWidth: .infinity, maxHeight: .infinity)
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Connecting to Drive…")
+                    .font(BodyFont.system(size: 12.5, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .error(let message):
-            ContentUnavailableView("Drive unavailable", systemImage: "exclamationmark.triangle", description: Text(message))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            DrivePlaceholder(icon: "exclamationmark.triangle",
+                             title: "Drive unavailable",
+                             message: message)
         case .unauthenticated, .ready:
             HSplitView {
                 folderTree
@@ -195,36 +205,44 @@ struct DriveScreen: View {
     }
 
     private var folderTree: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 1) {
             ForEach(["my-drive", "recent", "starred", "shared", "trash"], id: \.self) { view in
-                Button {
-                    store.setView(view)
-                } label: {
-                    HStack {
-                        IconImage(iconFor(view), size: 12)
-                        Text(label(for: view))
-                        Spacer()
-                        Text(String(count(for: view)))
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
+                DriveSidebarRow(
+                    icon: iconFor(view),
+                    title: label(for: view),
+                    count: count(for: view),
+                    isSelected: store.currentView == view,
+                    action: { store.setView(view) }
+                )
+            }
+            if !store.breadcrumbs.isEmpty {
+                Rectangle()
+                    .fill(Palette.popupStroke)
+                    .frame(height: 0.5)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+                Text("Breadcrumbs")
+                    .font(BodyFont.system(size: 11.5, wght: 600))
+                    .foregroundColor(Palette.textSecondary)
+                    .padding(.horizontal, 11)
+                    .padding(.bottom, 4)
+                ForEach(store.breadcrumbs, id: \.id) { crumb in
+                    Button {
+                        store.setParent(crumb.id)
+                    } label: {
+                        Text(crumb.name)
+                            .font(BodyFont.system(size: 12.5, wght: 500))
+                            .foregroundColor(Palette.textSecondary)
+                            .lineLimit(1)
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 5)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(store.currentView == view ? Color.white.opacity(0.10) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
-            Divider().padding(.vertical, 6)
-            Text("Breadcrumbs").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 10)
-            ForEach(store.breadcrumbs, id: \.id) { crumb in
-                Button {
-                    store.setParent(crumb.id)
-                } label: {
-                    Text(crumb.name).padding(.horizontal, 10)
-                }.buttonStyle(.plain)
-            }
+            Spacer(minLength: 0)
         }
         .padding(8)
     }
@@ -232,11 +250,9 @@ struct DriveScreen: View {
     private var contentBody: some View {
         Group {
             if visibleItems.isEmpty {
-                ContentUnavailableView(
-                    "Empty",
-                    systemImage: "tray",
-                    description: Text("Drag a file here or click Upload."),
-                )
+                DrivePlaceholder(icon: "tray.and.arrow.down",
+                                 title: "Nothing here yet",
+                                 message: "Drag a file here or click Upload.")
             } else {
                 if effectiveLayout == .grid {
                     DriveGridView(items: visibleItems, selectedId: $selectedItemId, store: store)
@@ -389,6 +405,7 @@ struct DriveGridView: View {
             }
             .padding(12)
         }
+        .thinScrollers()
     }
 }
 
@@ -400,14 +417,24 @@ struct DriveListView: View {
     var body: some View {
         Table(items, selection: $selectedId) {
             TableColumn("Name") { item in
-                HStack {
-                    Image(systemName: item.kind == "folder" ? "folder.fill" : "doc")
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    IconImage(item.kind == "folder" ? "folder" : "doc.text", size: 13)
+                        .foregroundColor(Palette.textSecondary)
                     Text(item.name)
+                        .font(BodyFont.system(size: 12.5, wght: 500))
+                        .foregroundColor(Palette.textPrimary)
                 }
             }
-            TableColumn("Modified") { item in Text(formatRelative(item.updatedAt)).foregroundStyle(.secondary) }
-            TableColumn("Size") { item in Text(formatSize(item.sizeBytes)).foregroundStyle(.secondary) }
+            TableColumn("Modified") { item in
+                Text(formatRelative(item.updatedAt))
+                    .font(BodyFont.system(size: 12))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            TableColumn("Size") { item in
+                Text(formatSize(item.sizeBytes))
+                    .font(BodyFont.system(size: 12))
+                    .foregroundColor(Palette.textSecondary)
+            }
         }
         .background(DriveListDoubleClickBridge(items: items, selectedId: selectedId, store: store))
     }
@@ -521,18 +548,26 @@ struct DriveItemTile: View {
         VStack(spacing: 6) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                    .fill(Palette.cardFill)
                 if let img = thumbnail {
                     Image(nsImage: img).resizable().scaledToFill()
                         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                 } else {
                     LucideIcon.auto(placeholderIconName, size: 36)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(Palette.textTertiary)
                 }
             }
             .frame(height: 110)
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(isSelected ? Palette.pastelBlue : .clear, lineWidth: 2))
-            Text(item.name).lineLimit(2).multilineTextAlignment(.center).font(.caption)
+            .overlay(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(isSelected ? Palette.pastelBlue : Palette.popupStroke,
+                                  lineWidth: isSelected ? 2 : 0.5)
+            )
+            Text(item.name)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textSecondary)
         }
         .task(id: item.id) {
             if (item.mimeType ?? "").starts(with: "image/") {
@@ -598,70 +633,83 @@ struct DriveItemDetailPane: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(item.name).font(.headline)
-                Text(item.mimeType ?? item.kind).foregroundStyle(.secondary)
-                if item.sizeBytes > 0 {
-                    Text(ByteCountFormatter.string(fromByteCount: Int64(item.sizeBytes), countStyle: .file)).font(.caption)
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.name)
+                        .font(BodyFont.system(size: 15, wght: 700))
+                        .foregroundColor(Palette.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(item.mimeType ?? item.kind)
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                    if item.sizeBytes > 0 {
+                        Text(ByteCountFormatter.string(fromByteCount: Int64(item.sizeBytes), countStyle: .file))
+                            .font(BodyFont.system(size: 11.5, wght: 500))
+                            .foregroundColor(Palette.textTertiary)
+                    }
                 }
-                Divider()
+
                 if let exif {
-                    Group {
-                        Text("EXIF").font(.subheadline.bold())
-                        if let taken = exif.takenAt { Text("Taken: \(taken)") }
-                        if let cam = exif.cameraModel { Text("Camera: \(cam)") }
+                    CardDivider()
+                    VStack(alignment: .leading, spacing: 5) {
+                        DriveDetailSectionLabel("EXIF")
+                        if let taken = exif.takenAt { DriveDetailField("Taken", taken) }
+                        if let cam = exif.cameraModel { DriveDetailField("Camera", cam) }
                         if let lat = exif.latitude, let lon = exif.longitude {
-                            Text(String(format: "GPS: %.4f, %.4f", lat, lon))
+                            DriveDetailField("GPS", String(format: "%.4f, %.4f", lat, lon))
                         }
                         if let w = exif.width, let h = exif.height {
-                            Text("Size: \(w)×\(h)")
+                            DriveDetailField("Dimensions", "\(w)×\(h)")
                         }
                     }
                 }
-                Divider()
-                Text("Sharing").font(.subheadline.bold())
-                if let detailError {
-                    Text(detailError)
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-                HStack {
-                    Button("Share via Tailnet") {
-                        Task { await createTailnetShare() }
+
+                CardDivider()
+                VStack(alignment: .leading, spacing: 8) {
+                    DriveDetailSectionLabel("Sharing")
+                    if let detailError {
+                        Text(detailError)
+                            .font(BodyFont.system(size: 11.5, wght: 500))
+                            .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    Button("Public link") {
-                        Task { await createTunnelShare() }
+                    HStack(spacing: 6) {
+                        DrivePillButton(title: "Tailnet") { Task { await createTailnetShare() } }
+                        DrivePillButton(title: "Public link") { Task { await createTunnelShare() } }
+                        DrivePillButton(title: "Agent token") { Task { await createAgentShare() } }
                     }
-                    Button("Agent token") {
-                        Task { await createAgentShare() }
+                    if let shares {
+                        VStack(alignment: .leading, spacing: 3) {
+                            if !shares.tailnet.isEmpty { DriveDetailField("Tailnet", "\(shares.tailnet.count)") }
+                            if !shares.tunnel.isEmpty { DriveDetailField("Tunnels", "\(shares.tunnel.count)") }
+                            if !shares.agent.isEmpty { DriveDetailField("Agents", "\(shares.agent.count)") }
+                        }
                     }
                 }
-                if let shares {
-                    if !shares.tailnet.isEmpty { Text("Tailnet: \(shares.tailnet.count)") }
-                    if !shares.tunnel.isEmpty { Text("Tunnels: \(shares.tunnel.count)") }
-                    if !shares.agent.isEmpty { Text("Agents: \(shares.agent.count)") }
-                }
-                Divider()
-                HStack {
+
+                CardDivider()
+                HStack(spacing: 6) {
                     if item.trashedAt == nil {
-                        Button("Trash", role: .destructive) {
+                        DrivePillButton(title: "Trash", role: .destructive) {
                             Task { @MainActor in await store.trash(item.id) }
                         }
                     } else {
-                        Button("Restore") {
+                        DrivePillButton(title: "Restore") {
                             Task { @MainActor in await store.restore(item.id) }
                         }
-                        Button("Delete", role: .destructive) {
+                        DrivePillButton(title: "Delete", role: .destructive) {
                             confirmDelete = true
                         }
                     }
-                    Button(item.starred ? "Unstar" : "Star") {
+                    DrivePillButton(title: item.starred ? "Unstar" : "Star") {
                         Task { @MainActor in await store.star(item.id, starred: !item.starred) }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
         }
+        .thinScrollers()
         .task(id: item.id) {
             await store.markViewed(item.id)
             var detailErrors: [String] = []
@@ -737,6 +785,143 @@ struct DriveItemDetailPane: View {
         } catch {
             detailError = error.localizedDescription
             store.lastError = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Drive chrome primitives (canon-aligned)
+
+/// Source/breadcrumb row in the Drive left pane. Mirrors the sidebar
+/// canon: 9-pt continuous corners, soft white hover, brighter selected
+/// fill, leading icon + title + trailing count.
+private struct DriveSidebarRow: View {
+    let icon: String
+    let title: String
+    let count: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                IconImage(icon, size: 13)
+                    .foregroundColor(isSelected ? Palette.textPrimary : Palette.textSecondary)
+                Text(title)
+                    .font(BodyFont.system(size: 12.5, wght: isSelected ? 600 : 500))
+                    .foregroundColor(isSelected ? Palette.textPrimary : Palette.textSecondary)
+                Spacer(minLength: 6)
+                if count > 0 {
+                    Text(String(count))
+                        .font(BodyFont.system(size: 11, wght: 500))
+                        .foregroundColor(Palette.textTertiary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(isSelected ? Color.white.opacity(0.10)
+                          : (hovered ? Color.white.opacity(0.06) : Color.clear))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
+/// Centered empty/error placeholder for the Drive panes.
+private struct DrivePlaceholder: View {
+    let icon: String
+    let title: String
+    var message: String? = nil
+
+    var body: some View {
+        VStack(spacing: 10) {
+            IconImage(icon, size: 34)
+                .foregroundColor(Palette.textTertiary)
+            Text(title)
+                .font(BodyFont.system(size: 14, wght: 600))
+                .foregroundColor(Palette.textSecondary)
+            if let message {
+                Text(message)
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(Palette.textTertiary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(40)
+    }
+}
+
+/// Secondary text button (canon recipe 6.6): capsule, soft white fill,
+/// hairline stroke, hover lift. `destructive` tints the label red.
+private struct DrivePillButton: View {
+    enum Role { case normal, destructive }
+    let title: String
+    var role: Role = .normal
+    let action: () -> Void
+
+    @State private var hovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(role == .destructive ? Color.red.opacity(0.9) : Palette.textPrimary)
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(hovered ? 0.14 : 0.08))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        )
+                )
+                .contentShape(Capsule(style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
+/// Small section label inside the Drive detail pane.
+private struct DriveDetailSectionLabel: View {
+    let title: String
+    init(_ title: String) { self.title = title }
+    var body: some View {
+        Text(title)
+            .font(BodyFont.system(size: 12, wght: 600))
+            .foregroundColor(Palette.textPrimary)
+    }
+}
+
+/// Label/value field in the Drive detail pane.
+private struct DriveDetailField: View {
+    let label: String
+    let value: String
+    init(_ label: String, _ value: String) {
+        self.label = label
+        self.value = value
+    }
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(label)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textTertiary)
+                .frame(width: 84, alignment: .leading)
+            Text(value)
+                .font(BodyFont.system(size: 11.5, wght: 500))
+                .foregroundColor(Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
