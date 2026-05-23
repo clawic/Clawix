@@ -28,6 +28,7 @@ struct SkillDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .thinScrollers()
         .onAppear {
             appState.ensureSkillsStoreLoaded()
             hydrateDrafts()
@@ -77,45 +78,45 @@ struct SkillDetailView: View {
     private var backLink: some View {
         Button { appState.navigate(to: .skills) } label: {
             HStack(spacing: 5) {
-                Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
-                Text("All skills").font(.system(size: 12, weight: .medium))
+                IconImage("chevron.left", size: 11)
+                Text("All skills").font(BodyFont.system(size: 12, wght: 500))
             }
-            .foregroundColor(.secondary)
+            .foregroundColor(Palette.textSecondary)
         }
         .buttonStyle(.plain)
     }
 
     private func headerBlock(_ skill: SkillSpec) -> some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: skill.kind.icon)
-                .font(.system(size: 22, weight: .regular))
-                .foregroundColor(.secondary)
+            IconImage(skill.kind.icon, size: 22)
+                .foregroundColor(Palette.textSecondary)
                 .frame(width: 44, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.gray.opacity(0.12))
+                        .fill(Color.white.opacity(0.06))
                 )
             VStack(alignment: .leading, spacing: 4) {
                 Text(skill.name)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(BodyFont.system(size: 22, weight: .semibold))
+                    .foregroundColor(Palette.textPrimary)
                 HStack(spacing: 6) {
                     Text(skill.kind.label)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .font(BodyFont.system(size: 11, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(Color.gray.opacity(0.12)))
-                    Text("v\(skill.version)").font(.system(size: 11)).foregroundColor(.secondary)
+                        .background(Capsule().fill(Color.white.opacity(0.06)))
+                    Text("v\(skill.version)").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                     if let author = skill.author {
-                        Text("·").foregroundColor(.secondary)
-                        Text("by \(author)").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text("·").foregroundColor(Palette.textSecondary)
+                        Text("by \(author)").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                     }
                     if skill.builtin {
-                        Text("·").foregroundColor(.secondary)
-                        Text("Built-in").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text("·").foregroundColor(Palette.textSecondary)
+                        Text("Built-in").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                     }
                     if let importedFrom = skill.importedFrom {
-                        Text("·").foregroundColor(.secondary)
-                        Text("imported from \(importedFrom)").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text("·").foregroundColor(Palette.textSecondary)
+                        Text("imported from \(importedFrom)").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                     }
                 }
             }
@@ -125,8 +126,8 @@ struct SkillDetailView: View {
 
     private func descriptionBlock(_ skill: SkillSpec) -> some View {
         Text(skill.description)
-            .font(.system(size: 14))
-            .foregroundColor(.primary)
+            .font(BodyFont.system(size: 14))
+            .foregroundColor(Palette.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -134,7 +135,7 @@ struct SkillDetailView: View {
 
     private func activationBlock(_ skill: SkillSpec) -> some View {
         sectionCard(title: "Activation", subtitle: "Where this skill is on. Chat overrides project; project overrides global.") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 activationToggle(skill: skill, scopeTag: "global", label: "Active globally")
                 if let projectId = currentProjectId, let projectName = currentProjectName {
                     activationToggle(skill: skill, scopeTag: "project:\(projectId)", label: "Active in project: \(projectName)")
@@ -148,16 +149,18 @@ struct SkillDetailView: View {
 
     private func activationToggle(skill: SkillSpec, scopeTag: String, label: String) -> some View {
         let isOn = store?.isActive(slug: skill.slug, atScope: scopeTag) ?? false
-        return Toggle(isOn: Binding(
-            get: { isOn },
-            set: { newValue in
-                store?.setActive(slug: skill.slug, scopeTag: scopeTag, active: newValue, params: paramDraft.isEmpty ? nil : paramDraft)
-            }
-        )) {
-            Text(label).font(.system(size: 12.5))
+        return HStack(spacing: 12) {
+            Text(label)
+                .font(BodyFont.system(size: 12.5))
+                .foregroundColor(Palette.textPrimary)
+            Spacer(minLength: 12)
+            PillToggle(isOn: Binding(
+                get: { isOn },
+                set: { newValue in
+                    store?.setActive(slug: skill.slug, scopeTag: scopeTag, active: newValue, params: paramDraft.isEmpty ? nil : paramDraft)
+                }
+            ))
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
     }
 
     // MARK: - Params (templates)
@@ -177,10 +180,10 @@ struct SkillDetailView: View {
                         store?.instantiate(template: skill, params: paramDraft, frozen: false)
                     } label: {
                         Text("Save as my skill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.accentColor))
+                            .font(BodyFont.system(size: 12, wght: 600))
+                            .foregroundColor(Color.black)
+                            .padding(.horizontal, 14).frame(height: 28)
+                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
                     }
                     .buttonStyle(.plain)
                     Button {
@@ -189,10 +192,14 @@ struct SkillDetailView: View {
                         store?.setActive(slug: skill.slug, scopeTag: "global", active: true, params: paramDraft)
                     } label: {
                         Text("Use once")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.gray.opacity(0.15)))
+                            .font(BodyFont.system(size: 12, wght: 500))
+                            .foregroundColor(Palette.textPrimary)
+                            .padding(.horizontal, 14).frame(height: 28)
+                            .background(
+                                Capsule(style: .continuous)
+                                    .fill(Color.white.opacity(0.10))
+                                    .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                            )
                     }
                     .buttonStyle(.plain)
                 }
@@ -204,19 +211,19 @@ struct SkillDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
                 Text(param.label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(BodyFont.system(size: 11, wght: 600))
+                    .foregroundColor(Palette.textSecondary)
                 if param.required {
                     Text("required")
-                        .font(.system(size: 9.5, weight: .semibold))
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 4).padding(.vertical, 1)
-                        .background(Capsule().fill(Color.orange.opacity(0.15)))
+                        .font(BodyFont.system(size: 9.5, wght: 600))
+                        .foregroundColor(Palette.textSecondary)
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(Capsule().fill(Color.white.opacity(0.06)))
                 }
             }
             paramControl(param)
             if let prompt = param.prompt {
-                Text(prompt).font(.system(size: 10.5)).foregroundColor(.secondary)
+                Text(prompt).font(BodyFont.system(size: 10.5)).foregroundColor(Palette.textSecondary)
             }
         }
     }
@@ -226,24 +233,23 @@ struct SkillDetailView: View {
         switch param.type {
         case .enumValue:
             let options = param.options ?? []
-            Picker("", selection: Binding(
-                get: { (paramDraft[param.key] ?? param.defaultValue ?? .string("")).displayString },
-                set: { newValue in paramDraft[param.key] = .string(newValue) }
-            )) {
-                ForEach(options, id: \.self) { option in
-                    Text(option).tag(option)
-                }
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
+            SettingsDropdown(
+                options: options.map { ($0, $0) },
+                selection: Binding(
+                    get: { (paramDraft[param.key] ?? param.defaultValue ?? .string("")).displayString },
+                    set: { newValue in paramDraft[param.key] = .string(newValue) }
+                )
+            )
             .frame(maxWidth: 240, alignment: .leading)
         case .string:
             TextField("", text: Binding(
                 get: { (paramDraft[param.key] ?? param.defaultValue ?? .string("")).displayString },
                 set: { newValue in paramDraft[param.key] = .string(newValue) }
             ))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: 12))
+            .textFieldStyle(.plain)
+            .font(BodyFont.system(size: 12))
+            .foregroundColor(Palette.textPrimary)
+            .modifier(DetailFieldChrome())
             .frame(maxWidth: 360)
         case .number:
             TextField("", value: Binding(
@@ -254,10 +260,13 @@ struct SkillDetailView: View {
                 },
                 set: { newValue in paramDraft[param.key] = .number(newValue) }
             ), formatter: NumberFormatter())
-            .textFieldStyle(.roundedBorder)
+            .textFieldStyle(.plain)
+            .font(BodyFont.system(size: 12))
+            .foregroundColor(Palette.textPrimary)
+            .modifier(DetailFieldChrome())
             .frame(maxWidth: 160)
         case .bool:
-            Toggle("", isOn: Binding(
+            PillToggle(isOn: Binding(
                 get: {
                     if case .bool(let b) = paramDraft[param.key] { return b }
                     if case .bool(let b) = param.defaultValue { return b }
@@ -265,8 +274,6 @@ struct SkillDetailView: View {
                 },
                 set: { newValue in paramDraft[param.key] = .bool(newValue) }
             ))
-            .toggleStyle(.switch)
-            .labelsHidden()
         case .secretRef:
             secretReferenceField(param)
         }
@@ -277,39 +284,43 @@ struct SkillDetailView: View {
         if vault.state != .unlocked {
             HStack(spacing: 8) {
                 Text("Unlock Secrets to choose a secret.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                Button("Open Secrets") {
+                    .font(BodyFont.system(size: 11))
+                    .foregroundColor(Palette.textSecondary)
+                Button {
                     appState.navigate(to: .secretsHome)
+                } label: {
+                    Text("Open Secrets")
+                        .font(BodyFont.system(size: 11, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                        .padding(.horizontal, 12).frame(height: 26)
+                        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
                 }
-                .font(.system(size: 11, weight: .semibold))
+                .buttonStyle(.plain)
             }
         } else if vault.secrets.isEmpty {
             Text("No secrets available.")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .font(BodyFont.system(size: 11))
+                .foregroundColor(Palette.textSecondary)
         } else {
-            Picker("", selection: Binding(
-                get: {
-                    if case .secretRef(let id) = paramDraft[param.key] { return id }
-                    if case .secretRef(let id) = param.defaultValue { return id }
-                    return ""
+            SettingsDropdown(
+                options: [("", "Choose a secret")] + vault.secrets.map { secret in
+                    (secret.internalName, secret.title.isEmpty ? secret.internalName : "\(secret.title) · \(secret.internalName)")
                 },
-                set: { newValue in
-                    if newValue.isEmpty {
-                        paramDraft.removeValue(forKey: param.key)
-                    } else {
-                        paramDraft[param.key] = .secretRef(id: newValue)
+                selection: Binding(
+                    get: {
+                        if case .secretRef(let id) = paramDraft[param.key] { return id }
+                        if case .secretRef(let id) = param.defaultValue { return id }
+                        return ""
+                    },
+                    set: { newValue in
+                        if newValue.isEmpty {
+                            paramDraft.removeValue(forKey: param.key)
+                        } else {
+                            paramDraft[param.key] = .secretRef(id: newValue)
+                        }
                     }
-                }
-            )) {
-                Text("Choose a secret").tag("")
-                ForEach(vault.secrets, id: \.internalName) { secret in
-                    Text(secret.title.isEmpty ? secret.internalName : "\(secret.title) · \(secret.internalName)")
-                        .tag(secret.internalName)
-                }
-            }
-            .labelsHidden()
+                )
+            )
             .frame(maxWidth: 360, alignment: .leading)
         }
     }
@@ -324,18 +335,18 @@ struct SkillDetailView: View {
                         store?.instantiate(template: skill, params: preset.params, saveAs: preset.slug, frozen: false)
                     } label: {
                         HStack {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
+                            IconImage("sparkles", size: 11)
+                                .foregroundColor(Palette.textSecondary)
                             Text(preset.label)
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(BodyFont.system(size: 12.5, wght: 500))
+                                .foregroundColor(Palette.textPrimary)
                             Spacer(minLength: 8)
                             Text("Save as instance")
-                                .font(.system(size: 11)).foregroundColor(.accentColor)
+                                .font(BodyFont.system(size: 11)).foregroundColor(Palette.pastelBlue)
                         }
                         .padding(.horizontal, 10).padding(.vertical, 7)
                         .background(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.gray.opacity(0.08))
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.06))
                         )
                     }
                     .buttonStyle(.plain)
@@ -355,24 +366,24 @@ struct SkillDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let template {
                     HStack(spacing: 6) {
-                        Image(systemName: "link").font(.system(size: 11)).foregroundColor(.secondary)
-                        Text("Template:").font(.system(size: 11)).foregroundColor(.secondary)
+                        IconImage("link", size: 11).foregroundColor(Palette.textSecondary)
+                        Text("Template:").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                         Button { appState.navigate(to: .skillDetail(slug: template.slug)) } label: {
-                            Text(template.name).font(.system(size: 12, weight: .medium)).foregroundColor(.accentColor)
+                            Text(template.name).font(BodyFont.system(size: 12, wght: 500)).foregroundColor(Palette.pastelBlue)
                         }
                         .buttonStyle(.plain)
                     }
                 }
                 if !ref.params.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Params").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                        Text("Params").font(BodyFont.system(size: 11, wght: 600)).foregroundColor(Palette.textSecondary)
                         ForEach(ref.params.keys.sorted(), id: \.self) { key in
                             HStack(spacing: 6) {
-                                Text(key).font(.system(size: 11, weight: .medium))
-                                Text("=").foregroundColor(.secondary)
+                                Text(key).font(BodyFont.system(size: 11, wght: 500)).foregroundColor(Palette.textPrimary)
+                                Text("=").foregroundColor(Palette.textSecondary)
                                 Text(ref.params[key]?.displayString ?? "")
                                     .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(Palette.textPrimary)
                             }
                         }
                     }
@@ -384,10 +395,10 @@ struct SkillDetailView: View {
                             store?.freeze(instanceSlug: skill.slug)
                         } label: {
                             Text("Freeze")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12).padding(.vertical, 6)
-                                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.orange))
+                                .font(BodyFont.system(size: 12, wght: 600))
+                                .foregroundColor(Color.black)
+                                .padding(.horizontal, 14).frame(height: 28)
+                                .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
                         }
                         .buttonStyle(.plain)
                     }
@@ -400,31 +411,28 @@ struct SkillDetailView: View {
 
     private func syncBlock(_ skill: SkillSpec) -> some View {
         sectionCard(title: "Sync to other agents", subtitle: "Materialise this skill in other agents' home dirs (\(ClawixSkillsRoutes.defaultExternalDirectoriesSummary)) via symlinks. They consume it as a normal SKILL.md.") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(store?.syncTargets ?? []) { target in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(target.label).font(.system(size: 12.5, weight: .medium))
+                            Text(target.label).font(BodyFont.system(size: 12.5, wght: 500)).foregroundColor(Palette.textPrimary)
                             Text(target.home)
                                 .font(.system(size: 10.5, design: .monospaced))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Palette.textSecondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
                         Spacer()
-                        Toggle("", isOn: Binding(
+                        PillToggle(isOn: Binding(
                             get: { skill.syncTo.contains(target.id) },
                             set: { newValue in store?.setSyncTarget(slug: skill.slug, target: target.id, enabled: newValue) }
                         ))
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                        .labelsHidden()
                     }
                     .padding(.vertical, 2)
                 }
                 if (store?.syncTargets.isEmpty ?? true) {
                     Text("No sync targets configured. Add them in Settings → Skills.")
-                        .font(.system(size: 11)).foregroundColor(.secondary)
+                        .font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                 }
             }
         }
@@ -437,12 +445,22 @@ struct SkillDetailView: View {
             if editingBody {
                 TextEditor(text: $bodyDraft)
                     .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(Palette.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
                     .frame(minHeight: 240)
-                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.gray.opacity(0.20), lineWidth: 0.5))
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            )
+                    )
             } else {
                 Text(skill.body)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Palette.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
@@ -453,7 +471,7 @@ struct SkillDetailView: View {
         if skill.builtin {
             return AnyView(
                 Text("Built-in (clone to edit)")
-                    .font(.system(size: 11)).foregroundColor(.secondary)
+                    .font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
             )
         }
         if editingBody {
@@ -464,8 +482,8 @@ struct SkillDetailView: View {
                         bodyDraft = skill.body
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Palette.textSecondary)
+                    .font(BodyFont.system(size: 11, wght: 500))
                     Button {
                         var copy = skill
                         copy.body = bodyDraft
@@ -474,10 +492,10 @@ struct SkillDetailView: View {
                         editingBody = false
                     } label: {
                         Text("Save")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10).padding(.vertical, 4)
-                            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.accentColor))
+                            .font(BodyFont.system(size: 11, wght: 600))
+                            .foregroundColor(Color.black)
+                            .padding(.horizontal, 12).frame(height: 24)
+                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -485,10 +503,9 @@ struct SkillDetailView: View {
         }
         return AnyView(
             Button { editingBody = true } label: {
-                Text("Edit").font(.system(size: 11, weight: .semibold))
+                Text("Edit").font(BodyFont.system(size: 11, wght: 600)).foregroundColor(Palette.pastelBlue)
             }
             .buttonStyle(.plain)
-            .foregroundColor(.accentColor)
         )
     }
 
@@ -503,10 +520,13 @@ struct SkillDetailView: View {
                     pendingDelete = skill
                 } label: {
                     Text("Delete skill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.red)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Color.red.opacity(0.4), lineWidth: 0.7))
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Color.red.opacity(0.9))
+                        .padding(.horizontal, 14).frame(height: 28)
+                        .background(
+                            Capsule(style: .continuous)
+                                .stroke(Color.red.opacity(0.4), lineWidth: 0.7)
+                        )
                 }
                 .buttonStyle(.plain)
             }
@@ -517,13 +537,19 @@ struct SkillDetailView: View {
 
     private var missingState: some View {
         VStack(spacing: 14) {
-            Image(systemName: "questionmark.circle")
-                .font(.system(size: 36, weight: .light))
-                .foregroundColor(.secondary)
-            Text("Skill not found.").font(.system(size: 15, weight: .semibold))
-            Button("Back to all skills") { appState.navigate(to: .skills) }
-                .buttonStyle(.plain)
-                .foregroundColor(.accentColor)
+            IconImage("questionmark.circle", size: 34)
+                .foregroundColor(Palette.textSecondary)
+            Text("Skill not found.")
+                .font(BodyFont.system(size: 15, weight: .semibold))
+                .foregroundColor(Palette.textPrimary)
+            Button { appState.navigate(to: .skills) } label: {
+                Text("Back to all skills")
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(Palette.textPrimary)
+                    .padding(.horizontal, 14).frame(height: 28)
+                    .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
+            }
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
@@ -581,12 +607,12 @@ struct SkillDetailView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(title).font(.system(size: 12.5, weight: .semibold))
+                Text(title).font(BodyFont.system(size: 12.5, weight: .semibold)).foregroundColor(Palette.textPrimary)
                 Spacer(minLength: 4)
                 if let trailing { trailing }
             }
             if let subtitle {
-                Text(subtitle).font(.system(size: 11)).foregroundColor(.secondary)
+                Text(subtitle).font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
             }
             content()
                 .padding(.top, 4)
@@ -595,11 +621,29 @@ struct SkillDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.gray.opacity(0.06))
+                .fill(Color(white: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.gray.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
         )
+    }
+}
+
+/// Canon single-line input chrome for detail-panel text fields: soft
+/// dark fill, hairline stroke, squircle corners (STYLE section 6.8).
+private struct DetailFieldChrome: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.white.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    )
+            )
     }
 }
