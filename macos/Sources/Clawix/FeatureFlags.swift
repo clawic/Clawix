@@ -93,12 +93,14 @@ enum AppFeature: Equatable, CaseIterable {
     var maturity: FeatureMaturity {
         switch self {
         case .voiceToText, .quickAsk, .secrets, .mcp, .localModels,
-             .browserUsage, .git, .remoteMesh, .publishing, .apps,
+             .browserUsage, .git, .remoteMesh, .apps,
              .design, .life, .skills, .skillCollections, .claw,
              .identity, .telegram, .screenTools, .macUtilities, .macControl,
              .databaseWorkbench, .marketplace, .calendar, .contacts,
              .database, .index, .iotHome, .agents, .openCode:
             return .stable
+        case .publishing:
+            return .beta
         case .simulators:
             return .incomplete
         }
