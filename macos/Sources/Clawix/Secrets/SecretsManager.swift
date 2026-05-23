@@ -74,20 +74,24 @@ final class SecretsManager: ObservableObject {
     @Published private(set) var openAnomalies: [Anomaly] = []
     private var seenAnomalyIDs: Set<String> = []
 
-    private static func userFacingError(_ error: Swift.Error) -> String {
-        if let localized = (error as? LocalizedError)?.errorDescription, !localized.isEmpty {
-            return localized
-        }
+    static func failureMessage(for error: Swift.Error, surface: String) -> String {
+        let rawMessage: String
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain {
             switch URLError.Code(rawValue: nsError.code) {
             case .cannotConnectToHost, .networkConnectionLost, .timedOut, .notConnectedToInternet:
-                return "Secrets service is not reachable on 127.0.0.1:\(ClawJSService.secrets.port)."
+                rawMessage = "Secrets service is not reachable on 127.0.0.1:\(ClawJSService.secrets.port)."
             default:
-                return "Secrets service request failed: \(nsError.localizedDescription)"
+                rawMessage = "Secrets service request failed: \(nsError.localizedDescription)"
             }
+        } else {
+            rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-        return error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
+    }
+
+    private static func userFacingError(_ error: Swift.Error) -> String {
+        failureMessage(for: error, surface: "secrets.service")
     }
 
     // MARK: - Internal
@@ -353,7 +357,7 @@ final class SecretsManager: ObservableObject {
             self.secrets = try store.listSecrets()
             self.trashedSecrets = try store.listSecrets(includeTrashed: true).filter { $0.trashedAt != nil }
         } catch {
-            lastError = String(describing: error)
+            lastError = Self.failureMessage(for: error, surface: "secrets.reload")
         }
     }
 
@@ -438,7 +442,7 @@ final class SecretsManager: ObservableObject {
             lastError = nil
             return linkURL
         } catch {
-            lastError = String(describing: error)
+            lastError = Self.failureMessage(for: error, surface: "secrets.installCliSymlink")
             return nil
         }
     }
@@ -469,7 +473,7 @@ final class SecretsManager: ObservableObject {
             self.integrityReport = report
             return report
         } catch {
-            lastError = String(describing: error)
+            lastError = Self.failureMessage(for: error, surface: "secrets.integrity")
             return nil
         }
     }

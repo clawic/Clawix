@@ -127,7 +127,7 @@ struct SecretsTrashView: View {
                 vault.reload()
             }
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.trash.restore")
         }
     }
 
@@ -141,7 +141,7 @@ struct SecretsTrashView: View {
                 vault.reload()
             }
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.trash.deleteForever")
         }
     }
 }

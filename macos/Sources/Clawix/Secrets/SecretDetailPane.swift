@@ -61,7 +61,7 @@ struct SecretDetailPane: View {
         }
         .sheet(isPresented: $grantsSheetOpen) {
             DetailModalSheet(
-                title: "Agent grants",
+                title: "Grants for agents",
                 subtitle: secret.title,
                 isPresented: $grantsSheetOpen
             ) {
@@ -172,7 +172,7 @@ struct SecretDetailPane: View {
             Button("Copy title") { copyTitle() }
             Divider()
             Button("Permissions") { permissionsSheetOpen = true }
-            Button("Agent grants") { grantsSheetOpen = true }
+            Button("Grants for agents") { grantsSheetOpen = true }
             Divider()
             Button(secret.isCompromised ? "Clear compromise flag" : "Mark as compromised") {
                 toggleCompromised()
@@ -332,7 +332,7 @@ struct SecretDetailPane: View {
             revealed = [:]
             error = nil
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.fields")
         }
     }
 
@@ -344,7 +344,7 @@ struct SecretDetailPane: View {
         do {
             events = try audit.eventsForSecret(secret.id, limit: 100)
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.events")
         }
     }
 
@@ -365,7 +365,7 @@ struct SecretDetailPane: View {
                 }
                 reloadEvents()
             } catch {
-                self.error = String(describing: error)
+                self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.reveal")
             }
         }
     }
@@ -406,7 +406,7 @@ struct SecretDetailPane: View {
                     }
                 }
             } catch {
-                self.error = String(describing: error)
+                self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.copy")
             }
         }
     }
@@ -438,7 +438,7 @@ struct SecretDetailPane: View {
             try store.trashSecret(id: secret.id)
             vault.reload()
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.trash")
         }
     }
 
@@ -449,7 +449,7 @@ struct SecretDetailPane: View {
             vault.reload()
             reloadEvents()
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.detail.compromised")
         }
     }
 }

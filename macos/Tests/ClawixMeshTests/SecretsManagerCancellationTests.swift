@@ -4,6 +4,35 @@ import XCTest
 
 @MainActor
 final class SecretsManagerCancellationTests: XCTestCase {
+    func testLoadFailureUsesClassifiedServiceMessage() async {
+        let manager = makeManager {
+            throw URLError(.notConnectedToInternet)
+        }
+
+        await manager.load()
+
+        let expected = L10n.t("The service is unavailable. Try again in a moment.")
+        XCTAssertEqual(manager.lastError, expected)
+        if case .openFailed(let message) = manager.state {
+            XCTAssertEqual(message, expected)
+        } else {
+            XCTFail("Expected Secrets load to publish openFailed")
+        }
+    }
+
+    func testFailureMessageClassifiesPermissionDenied() {
+        let error = NSError(
+            domain: "SecretsTest",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "HTTP 403 permission denied"]
+        )
+
+        XCTAssertEqual(
+            SecretsManager.failureMessage(for: error, surface: "secrets.test"),
+            L10n.t("Permission was denied. Review permissions, then try again.")
+        )
+    }
+
     func testStartingSecondLoadCancelsStaleSecretsState() async {
         let staleStarted = expectation(description: "Stale Secrets load started")
         let staleCancelled = expectation(description: "Stale Secrets load cancelled")

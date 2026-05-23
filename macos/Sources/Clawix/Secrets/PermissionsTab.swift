@@ -25,6 +25,10 @@ struct PermissionsTab: View {
     @State private var error: String?
     @State private var saved: String?
 
+    private var canSave: Bool {
+        vault.store != nil
+    }
+
     init(secret: SecretRecord, onChanged: @escaping () -> Void) {
         self.secret = secret
         self.onChanged = onChanged
@@ -141,12 +145,12 @@ struct PermissionsTab: View {
                 Button { save() } label: {
                     Text("Save permissions")
                         .font(BodyFont.system(size: 12, wght: 700))
-                        .foregroundColor(.white)
+                        .foregroundColor(canSave ? .white : Color.white.opacity(0.45))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Color.black.opacity(0.92))
+                                .fill(Color.black.opacity(canSave ? 0.92 : 0.42))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -154,6 +158,7 @@ struct PermissionsTab: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .disabled(!canSave)
             }
         }
     }
@@ -203,7 +208,11 @@ struct PermissionsTab: View {
     }
 
     private func save() {
-        guard let store = vault.store else { return }
+        guard let store = vault.store else {
+            error = "Unlock Secrets before saving permissions."
+            saved = nil
+            return
+        }
         var newGovernance = governance
         newGovernance.allowedHosts = parseCSV(hostsCSV)
         newGovernance.allowedHeaders = parseCSV(headersCSV)
@@ -223,7 +232,7 @@ struct PermissionsTab: View {
             error = nil
             onChanged()
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.permissions.save")
             saved = nil
         }
     }

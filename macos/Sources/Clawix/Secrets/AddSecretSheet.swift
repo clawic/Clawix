@@ -343,7 +343,7 @@ struct AddSecretSheet: View {
                 onCreated(secret.id)
                 isPresented = false
             } catch {
-                let message = String(describing: error)
+                let message = SecretsManager.failureMessage(for: error, surface: "secrets.addSecret.create")
                 await MainActor.run {
                     withAnimation(.easeOut(duration: 0.18)) {
                         self.error = message

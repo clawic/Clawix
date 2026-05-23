@@ -20,6 +20,7 @@ struct SecretsSettingsPage: View {
     @State private var integrityResult: AuditIntegrityReport?
     @State private var integrityMessage: String?
     @State private var symlinkResult: String?
+    @State private var symlinkResultIsError = false
     @State private var showBackupSheet = false
     @State private var showRestoreSheet = false
     @State private var pendingBackupData: Data?
@@ -97,9 +98,7 @@ struct SecretsSettingsPage: View {
                 )
             }
             if let symlinkResult {
-                Text(symlinkResult)
-                    .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Color.green.opacity(0.78))
+                InfoBanner(text: symlinkResult, kind: symlinkResultIsError ? .error : .ok)
                     .padding(.horizontal, 14)
                     .padding(.bottom, 10)
             }
@@ -134,6 +133,7 @@ struct SecretsSettingsPage: View {
                     label: "Verify",
                     action: runIntegrity
                 )
+                .disabled(!secretsUnlocked)
             }
             if let report = integrityResult {
                 Text(verbatim: integritySummary(report))
@@ -158,10 +158,13 @@ struct SecretsSettingsPage: View {
             SettingsRow {
                 RowLabel(
                     title: "Bring secrets from another manager",
-                    detail: "1Password, Bitwarden, or a .env file."
+                    detail: secretsUnlocked
+                        ? "1Password, Bitwarden, or a .env file."
+                        : "Unlock Secrets before importing external files."
                 )
             } trailing: {
                 importMenu(label: "Import…")
+                    .disabled(!secretsUnlocked)
             }
         }
     }
@@ -182,12 +185,15 @@ struct SecretsSettingsPage: View {
                     isPrimary: true,
                     action: { showBackupSheet = true }
                 )
+                .disabled(!secretsUnlocked)
             }
             CardDivider()
             SettingsRow {
                 RowLabel(
                     title: "Restore from a backup file",
-                    detail: "Pick a .clawixsecrets backup. Existing secrets keep their newest version."
+                    detail: secretsUnlocked
+                        ? "Pick a .clawixsecrets backup. Existing secrets keep their newest version."
+                        : "Unlock Secrets before choosing a backup file."
                 )
             } trailing: {
                 IconChipButton(
@@ -195,6 +201,7 @@ struct SecretsSettingsPage: View {
                     label: "Choose file…",
                     action: pickRestoreFile
                 )
+                .disabled(!secretsUnlocked)
             }
         }
     }
@@ -214,6 +221,15 @@ struct SecretsSettingsPage: View {
                     isPrimary: true,
                     action: installSymlink
                 )
+            }
+        } else if !secretsUnlocked {
+            setupBannerCard(
+                icon: "lock.fill",
+                tint: Color.orange,
+                title: "Secrets locked",
+                detail: "Unlock Secrets before importing, exporting, restoring, or verifying encrypted vault data."
+            ) {
+                EmptyView()
             }
         } else if vault.secrets.isEmpty {
             setupBannerCard(
@@ -329,15 +345,26 @@ struct SecretsSettingsPage: View {
         )
     }
 
+    private var secretsUnlocked: Bool {
+        vault.store != nil
+    }
+
     private func installSymlink() {
         if let url = vault.installCliSymlink() {
             symlinkResult = "Installed at \(url.path)"
+            symlinkResultIsError = false
         } else {
             symlinkResult = vault.lastError ?? "Could not install symlink (helper not found in app bundle?)"
+            symlinkResultIsError = true
         }
     }
 
     private func runIntegrity() {
+        guard secretsUnlocked else {
+            integrityResult = nil
+            integrityMessage = "Unlock Secrets before verifying the audit log."
+            return
+        }
         integrityResult = vault.runIntegrityCheck()
         if integrityResult == nil {
             integrityMessage = vault.lastError ?? "Unlock Secrets before verifying the audit log."
@@ -347,6 +374,11 @@ struct SecretsSettingsPage: View {
     }
 
     private func pickAndImport(format: SecretsManager.ImportFormat, allowed: [UTType]) {
+        guard secretsUnlocked else {
+            importErrorBanner = "Unlock Secrets before importing external files."
+            importBanner = nil
+            return
+        }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = allowed
         panel.allowsMultipleSelection = false
@@ -362,7 +394,7 @@ struct SecretsSettingsPage: View {
             importErrorBanner = nil
             requestImportConfirmation(preview: preview, contents: text, format: format)
         } catch {
-            importErrorBanner = "Import failed: \(error)"
+            importErrorBanner = SecretsManager.failureMessage(for: error, surface: "secrets.import.preview")
             importBanner = nil
         }
     }
@@ -396,6 +428,11 @@ struct SecretsSettingsPage: View {
     }
 
     private func performConfirmedImport(contents: String, format: SecretsManager.ImportFormat) {
+        guard secretsUnlocked else {
+            importErrorBanner = "Unlock Secrets before importing external files."
+            importBanner = nil
+            return
+        }
         do {
             let preview = try vault.importSecrets(from: contents, format: format)
             importPreview = preview
@@ -404,12 +441,17 @@ struct SecretsSettingsPage: View {
                 (preview.warnings.isEmpty ? "." : ". \(preview.warnings.count) warning\(preview.warnings.count == 1 ? "" : "s") (rows skipped).")
             importErrorBanner = nil
         } catch {
-            importErrorBanner = "Import failed: \(error)"
+            importErrorBanner = SecretsManager.failureMessage(for: error, surface: "secrets.import.perform")
             importBanner = nil
         }
     }
 
     private func pickRestoreFile() {
+        guard secretsUnlocked else {
+            importErrorBanner = "Unlock Secrets before choosing a backup file."
+            importBanner = nil
+            return
+        }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.data]
         panel.allowsMultipleSelection = false
@@ -424,7 +466,7 @@ struct SecretsSettingsPage: View {
             pendingBackupData = data
             showRestoreSheet = true
         } catch {
-            importErrorBanner = "Could not read file: \(error)"
+            importErrorBanner = SecretsManager.failureMessage(for: error, surface: "secrets.backup.pickFile")
         }
     }
 }
@@ -446,6 +488,10 @@ private struct BackupExportSheet: View {
     @State private var passphraseConfirm: String = ""
     @State private var error: String?
     @State private var isWorking = false
+
+    private var canExport: Bool {
+        !isWorking && vault.store != nil && passphrase.count >= 8 && passphrase == passphraseConfirm
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -475,7 +521,7 @@ private struct BackupExportSheet: View {
                         SecretsPrimaryButton(
                             title: "Export and choose location…",
                             isLoading: isWorking,
-                            isEnabled: passphrase.count >= 8 && passphrase == passphraseConfirm
+                            isEnabled: canExport
                         ) {
                             requestExportReview()
                         }
@@ -489,6 +535,11 @@ private struct BackupExportSheet: View {
     }
 
     private func requestExportReview() {
+        guard !isWorking else { return }
+        guard vault.store != nil else {
+            error = "Unlock Secrets before exporting a backup."
+            return
+        }
         guard passphrase == passphraseConfirm, passphrase.count >= 8 else {
             error = "Passphrase too short or doesn't match."
             return
@@ -499,6 +550,11 @@ private struct BackupExportSheet: View {
     }
 
     private func exportReviewedBackup() {
+        guard !isWorking else { return }
+        guard vault.store != nil else {
+            error = "Unlock Secrets before exporting a backup."
+            return
+        }
         isWorking = true
         Task {
             defer { isWorking = false }
@@ -514,7 +570,7 @@ private struct BackupExportSheet: View {
                     isPresented = false
                 }
             } catch {
-                self.error = String(describing: error)
+                self.error = SecretsManager.failureMessage(for: error, surface: "secrets.backup.export")
             }
         }
     }
@@ -528,6 +584,10 @@ private struct BackupImportSheet: View {
     @State private var error: String?
     @State private var isWorking = false
     @State private var resultText: String?
+
+    private var canRestore: Bool {
+        !isWorking && vault.store != nil && !passphrase.isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -559,7 +619,7 @@ private struct BackupImportSheet: View {
                     }
                     HStack(spacing: 10) {
                         SecretsSecondaryButton(title: "Cancel") { isPresented = false }
-                        SecretsPrimaryButton(title: "Restore", isLoading: isWorking, isEnabled: !passphrase.isEmpty) {
+                        SecretsPrimaryButton(title: "Restore", isLoading: isWorking, isEnabled: canRestore) {
                             restore()
                         }
                     }
@@ -572,6 +632,11 @@ private struct BackupImportSheet: View {
     }
 
     private func restore() {
+        guard !isWorking else { return }
+        guard vault.store != nil else {
+            error = "Unlock Secrets before restoring a backup."
+            return
+        }
         guard !passphrase.isEmpty else { return }
         isWorking = true
         Task {
@@ -582,7 +647,7 @@ private struct BackupImportSheet: View {
                 resultText = "Restored \(result.created) secret\(result.created == 1 ? "" : "s"); \(result.skipped) skipped as duplicates."
                 error = nil
             } catch {
-                self.error = String(describing: error)
+                self.error = SecretsManager.failureMessage(for: error, surface: "secrets.backup.restore")
                 resultText = nil
             }
         }

@@ -191,7 +191,7 @@ struct SecretsAuditView: View {
             events = try audit.filteredEvents(filter, limit: 500)
             error = nil
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.audit.reload")
         }
     }
 }

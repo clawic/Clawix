@@ -13,7 +13,7 @@ struct GrantsTab: View {
         VStack(alignment: .leading, spacing: 12) {
             if let error { SecretsErrorLine(text: error) }
             if grantsForSecret.isEmpty {
-                Text("No agent grants for this secret yet.")
+                Text("No grants for agents on this secret yet.")
                     .font(BodyFont.system(size: 12))
                     .foregroundColor(Palette.textSecondary)
                 Text("Grants are created via `claw secrets grants issue`. Approving the prompt issues a one-time token bound to a specific capability.")
@@ -104,7 +104,7 @@ struct GrantsTab: View {
             reload()
             onChanged()
         } catch {
-            self.error = String(describing: error)
+            self.error = SecretsManager.failureMessage(for: error, surface: "secrets.grants.revoke")
         }
     }
 }
