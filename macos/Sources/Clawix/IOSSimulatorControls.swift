@@ -10,11 +10,11 @@ struct IOSSimulatorIconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(enabled ? Color(white: hovered ? 0.95 : 0.72) : Color(white: 0.32))
+                .foregroundColor(enabled ? (hovered ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.31, dark: 0.72)) : Color.gray(light: 0.84, dark: 0.32))
                 .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(hovered && enabled ? Color.white.opacity(0.08) : Color.clear)
+                        .fill(hovered && enabled ? Color.overlay(0.08) : Color.clear)
                 )
                 .contentShape(Rectangle())
         }
@@ -29,12 +29,12 @@ struct IOSSimulatorPanelButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(BodyFont.system(size: 11.5, wght: 600))
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.18 : 0.11))
+                    .fill(Color.overlay(configuration.isPressed ? 0.18 : 0.11))
             )
     }
 }

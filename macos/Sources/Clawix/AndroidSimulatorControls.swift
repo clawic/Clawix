@@ -13,7 +13,7 @@ struct AndroidSimulatorIconButton: View {
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(hovered && enabled ? Color.white.opacity(0.07) : Color.clear)
+                        .fill(hovered && enabled ? Color.overlay(0.07) : Color.clear)
                 )
                 .contentShape(Rectangle())
         }
@@ -24,8 +24,8 @@ struct AndroidSimulatorIconButton: View {
     }
 
     private var foreground: Color {
-        if !enabled { return Color(white: 0.32) }
-        return hovered ? Color(white: 0.92) : Color(white: 0.72)
+        if !enabled { return Color.gray(light: 0.84, dark: 0.32) }
+        return hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.31, dark: 0.72)
     }
 }
 
@@ -33,12 +33,12 @@ struct AndroidSimulatorPanelButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(BodyFont.system(size: 11.5, wght: 600))
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .padding(.horizontal, 10)
             .frame(height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(configuration.isPressed ? Color.white.opacity(0.20) : Color.white.opacity(0.12))
+                    .fill(configuration.isPressed ? Color.overlay(0.20) : Color.overlay(0.12))
             )
     }
 }

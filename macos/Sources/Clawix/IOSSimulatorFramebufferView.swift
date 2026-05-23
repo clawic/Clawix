@@ -15,12 +15,12 @@ struct IOSSimulatorFrameSurface: View {
 
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 36, style: .continuous)
-                .fill(Color(white: 0.025))
+                .fill(Color.gray(light: 0.97, dark: 0.025))
                 .frame(width: chromeRect.width, height: chromeRect.height)
                 .position(x: chromeRect.midX, y: chromeRect.midY)
                 .overlay(
                     RoundedRectangle(cornerRadius: 36, style: .continuous)
-                        .stroke(Color.white.opacity(0.13), lineWidth: 0.9)
+                        .stroke(Color.overlay(0.13), lineWidth: 0.9)
                         .frame(width: chromeRect.width, height: chromeRect.height)
                         .position(x: chromeRect.midX, y: chromeRect.midY)
                 )

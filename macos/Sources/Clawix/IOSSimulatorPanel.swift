@@ -8,7 +8,7 @@ struct IOSSimulatorPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             ZStack {
                 Color.black
                 simulatorStage
@@ -67,16 +67,16 @@ struct IOSSimulatorPanel: View {
                 HStack(spacing: 5) {
                     Text(controller.selectedDeviceName)
                         .font(BodyFont.system(size: 11.5, wght: 600))
-                        .foregroundColor(Color(white: 0.82))
+                        .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
                         .lineLimit(1)
                     LucideIcon(.chevronDown, size: 10)
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 }
                 .padding(.horizontal, 9)
                 .frame(height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.07))
+                        .fill(Color.overlay(0.07))
                 )
             }
             .menuStyle(.borderlessButton)
@@ -87,7 +87,7 @@ struct IOSSimulatorPanel: View {
 
             Text(controller.statusLine)
                 .font(BodyFont.system(size: 11.5, wght: 500))
-                .foregroundColor(Color(white: 0.58))
+                .foregroundColor(Color.gray(light: 0.43, dark: 0.58))
                 .lineLimit(1)
         }
         .padding(.horizontal, 10)
@@ -115,10 +115,10 @@ struct IOSSimulatorPanel: View {
         } else {
             VStack(spacing: 10) {
                 LucideIcon(.appWindow, size: 28)
-                    .foregroundColor(Color(white: 0.32))
+                    .foregroundColor(Color.gray(light: 0.84, dark: 0.32))
                 Text("Waiting for iOS display")
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.54))
+                    .foregroundColor(Color.gray(light: 0.44, dark: 0.54))
             }
         }
     }
@@ -142,13 +142,13 @@ struct IOSSimulatorPanel: View {
 
                 Text(controller.state.title)
                     .font(BodyFont.system(size: 12.5, wght: 600))
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
             }
 
             if let detail = controller.state.detail {
                 Text(detail)
                     .font(BodyFont.system(size: 11.5, wght: 400))
-                    .foregroundColor(Color(white: 0.66))
+                    .foregroundColor(Color.gray(light: 0.37, dark: 0.66))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -168,7 +168,7 @@ struct IOSSimulatorPanel: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
+                .stroke(Color.overlay(0.12), lineWidth: 0.8)
         )
     }
 }
