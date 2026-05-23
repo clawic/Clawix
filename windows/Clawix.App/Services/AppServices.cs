@@ -1,3 +1,4 @@
+using Clawix.Core;
 using Clawix.Engine.Pairing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -43,7 +44,10 @@ public sealed class AppServices
         var prefs = new Preferences();
         var credentials = new CredentialStore();
         var pairingStore = new FilePairingStore();
-        var pairing = new PairingService(pairingStore);
+        var pairingPort = WindowsGeneralSettingsDefaults.NormalizeBridgeLoopbackPort(prefs.Get(
+            WindowsPreferenceKeys.BridgeLoopbackPort,
+            WindowsGeneralSettingsDefaults.BridgeLoopbackPort));
+        var pairing = new PairingService(pairingStore, (ushort)pairingPort);
         var bridge = new BackgroundBridgeService(loggerFactory.CreateLogger<BackgroundBridgeService>());
         var state = new AppState(bridge, loggerFactory.CreateLogger<AppState>());
 

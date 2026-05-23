@@ -3,6 +3,11 @@ namespace Clawix.App.Services;
 public static class WindowsPreferenceKeys
 {
     public const string ShowInTray = "windows.showInTray";
+    public const string Theme = "windows.theme";
+    public const string Language = "windows.language";
+    public const string UseDevMicaBackdrop = "windows.useDevMicaBackdrop";
+    public const string DisableHardwareAcceleration = "windows.disableHardwareAcceleration";
+    public const string BridgeLoopbackPort = "windows.bridgeLoopbackPort";
     public const string DictationEnabled = "dictation.enabled";
     public const string DictationModel = "dictation.model";
     public const string DictationLanguage = "dictation.language";

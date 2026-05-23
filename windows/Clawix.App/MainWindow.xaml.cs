@@ -17,7 +17,8 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        TrySetMicaBackdrop();
+        ApplyThemePreference();
+        ApplyBackdropPreference();
         ExtendsContentIntoTitleBar = true;
         LoginGate.SignInRequested += OpenAccountSettings;
         LoginGate.ContinueRequested += ShowShell;
@@ -45,6 +46,10 @@ public sealed partial class MainWindow : Window
     {
         if (key is WindowsPreferenceKeys.QuickAskEnabled or "*")
             DispatcherQueue.TryEnqueue(SyncQuickAskHotkey);
+        if (key is WindowsPreferenceKeys.Theme or "*")
+            DispatcherQueue.TryEnqueue(ApplyThemePreference);
+        if (key is WindowsPreferenceKeys.UseDevMicaBackdrop or "*")
+            DispatcherQueue.TryEnqueue(ApplyBackdropPreference);
     }
 
     private void SyncQuickAskHotkey()
@@ -109,6 +114,28 @@ public sealed partial class MainWindow : Window
 
     private void OpenQuickAsk() => DispatcherQueue.TryEnqueue(QuickAskWindow.ShowOrFocus);
     private void OpenCommandPalette() => DispatcherQueue.TryEnqueue(CommandPaletteWindow.ShowOrFocus);
+
+    private void ApplyThemePreference()
+    {
+        if (Content is not FrameworkElement root) return;
+
+        root.RequestedTheme = WindowsGeneralSettingsDefaults.NormalizeTheme(App.Services.Preferences.Get(
+            WindowsPreferenceKeys.Theme,
+            WindowsGeneralSettingsDefaults.ThemeSystem)) switch
+        {
+            WindowsGeneralSettingsDefaults.ThemeLight => ElementTheme.Light,
+            WindowsGeneralSettingsDefaults.ThemeDark => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+    }
+
+    private void ApplyBackdropPreference()
+    {
+        if (App.Services.Preferences.Get(WindowsPreferenceKeys.UseDevMicaBackdrop, true))
+            TrySetMicaBackdrop();
+        else
+            SystemBackdrop = new DesktopAcrylicBackdrop();
+    }
 
     private void TrySetMicaBackdrop()
     {

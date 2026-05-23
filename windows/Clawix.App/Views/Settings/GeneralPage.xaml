@@ -10,22 +10,25 @@
       <!-- Visible: top-level toggles users care about -->
       <ToggleSwitch x:Name="StartAtLogin" Header="Start Clawix at login" />
       <ToggleSwitch x:Name="ShowInTray" Header="Show in system tray" />
-      <ComboBox Header="Theme" PlaceholderText="System default">
+      <ComboBox x:Name="ThemeCombo" Header="Theme" PlaceholderText="System default" SelectionChanged="ThemeCombo_SelectionChanged">
         <ComboBoxItem>System default</ComboBoxItem>
         <ComboBoxItem>Light</ComboBoxItem>
         <ComboBoxItem>Dark</ComboBoxItem>
       </ComboBox>
-      <ComboBox Header="Language" PlaceholderText="English (US)" />
+      <ComboBox x:Name="LanguageCombo" Header="Language" PlaceholderText="English (US)" SelectionChanged="LanguageCombo_SelectionChanged">
+        <ComboBoxItem>English (US)</ComboBoxItem>
+      </ComboBox>
 
       <!-- Advanced: collapsed by default per user feedback -->
       <Expander Header="Advanced" HorizontalAlignment="Stretch" IsExpanded="False">
         <StackPanel Spacing="12" Padding="0,8,0,0">
-          <ToggleSwitch Header="Use dev-only Mica backdrop" />
-          <ToggleSwitch Header="Disable hardware acceleration" />
+          <ToggleSwitch x:Name="UseDevMicaBackdrop" Header="Use dev-only Mica backdrop" Toggled="UseDevMicaBackdrop_Toggled" />
+          <ToggleSwitch x:Name="DisableHardwareAcceleration" Header="Disable hardware acceleration" Toggled="DisableHardwareAcceleration_Toggled" />
           <ToggleSwitch Header="Anonymous diagnostics unavailable" IsEnabled="False" />
-          <NumberBox Header="Bridge loopback port (advanced)" Value="24080" Minimum="1024" Maximum="65535" />
+          <NumberBox x:Name="BridgeLoopbackPort" Header="Bridge loopback port (advanced)" Value="24080" Minimum="1024" Maximum="65535" ValueChanged="BridgeLoopbackPort_ValueChanged" />
           <Button Content="Reveal config folder..." Click="RevealConfig_Click" />
           <Button Content="Reset all preferences..." Style="{ThemeResource AccentButtonStyle}" Click="Reset_Click" />
+          <TextBlock x:Name="StatusText" Opacity="0.7" TextWrapping="Wrap" />
         </StackPanel>
       </Expander>
     </StackPanel>
