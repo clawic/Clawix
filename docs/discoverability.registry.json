@@ -301,76 +301,6 @@
       "canonicalName": "adr:agentic-naming-code-structure"
     },
     {
-      "id": "adr-docs-adr-0010-interface-governance",
-      "kind": "ui-governance",
-      "steward": "clawix",
-      "canonicalSource": "docs/adr/0010-interface-governance.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "CONSTITUTION.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "ADR 0010: Interface governance and visual mutation boundary",
-        "0010-interface-governance",
-        "ADR 0010",
-        "adr:interface-governance"
-      ],
-      "searchQueries": [
-        {
-          "query": "ADR 0010: Interface governance and visual mutation boundary",
-          "expectPath": "docs/adr/0010-interface-governance.md"
-        },
-        {
-          "query": "adr:interface-governance",
-          "expectPath": "docs/adr/0010-interface-governance.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18",
-      "canonicalName": "adr:interface-governance"
-    },
-    {
-      "id": "clawix-surface-route-graph",
-      "kind": "surface-route",
-      "steward": "clawix",
-      "canonicalSource": "docs/adr/0011-surface-route-graph.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "CONSTITUTION.md",
-        "docs/decision-map.md",
-        "skills/surface-route-work/SKILL.md"
-      ],
-      "discoveryTerms": [
-        "ADR 0011: Surface route graph mirror",
-        "0011-surface-route-graph",
-        "ADR 0011",
-        "surface route graph",
-        "Clawix bridge",
-        "runtime-critical",
-        "adr:surface-route-graph"
-      ],
-      "searchQueries": [
-        {
-          "query": "surface route graph",
-          "expectPath": "docs/adr/0011-surface-route-graph.md"
-        },
-        {
-          "query": "adr:surface-route-graph",
-          "expectPath": "docs/adr/0011-surface-route-graph.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-17",
-      "canonicalName": "adr:surface-route-graph"
-    },
-    {
       "id": "adr-docs-adr-0016-code-hygiene-program",
       "kind": "adr",
       "steward": "clawix",
@@ -1189,820 +1119,41 @@
       "canonicalName": "adr:adr-number-reservation-governance"
     },
     {
-      "id": "clawix-agent-rules-index",
-      "kind": "docs-page",
-      "canonicalSource": "docs/agent-rules/index.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "agent rules",
-        "always-loaded instructions",
-        "Clawix agent instruction router"
-      ],
-      "searchQueries": [
-        {
-          "query": "agent rules",
-          "expectPath": "docs/agent-rules/index.md"
-        },
-        {
-          "query": "always-loaded instructions",
-          "expectPath": "docs/agent-rules/index.md"
-        }
-      ],
-      "guard": "scripts/agent-instructions-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-constitution-operational-map",
-      "kind": "docs-page",
-      "canonicalSource": "docs/constitution-map.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "CONSTITUTION.md",
-        "docs/decision-map.md",
-        "docs/agent-rules/index.md",
-        "skills/decision-map-maintenance/SKILL.md"
-      ],
-      "discoveryTerms": [
-        "constitution-map",
-        "Constitution Operational Map",
-        "constitutional principle router",
-        "principle to canon guardrail surfaces"
-      ],
-      "searchQueries": [
-        {
-          "query": "constitution-map",
-          "expectPath": "docs/constitution-map.md"
-        },
-        {
-          "query": "constitutional principle router",
-          "expectPath": "docs/constitution-map.md"
-        }
-      ],
-      "guard": "scripts/doc_alignment_check.sh",
-      "status": "enforced",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-constitution-assertions-projection",
-      "kind": "docs-page",
-      "canonicalSource": "docs/constitution.assertions.json",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "CONSTITUTION.md",
-        "docs/decision-map.md",
-        "docs/constitution-map.md"
-      ],
-      "discoveryTerms": [
-        "constitution assertions",
-        "constitution.assertions.json",
-        "Clawix constitutional assertion projection",
-        "principle assertion coverage",
-        "constitutional principle guardrails"
-      ],
-      "searchQueries": [
-        {
-          "query": "constitution assertions",
-          "expectPath": "docs/constitution.assertions.json"
-        },
-        {
-          "query": "Clawix constitutional assertion projection",
-          "expectPath": "docs/constitution.assertions.json"
-        }
-      ],
-      "guard": "scripts/constitution-assertions-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18",
-      "canonicalName": "clawix-constitution-assertions",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-debt-ledger-projection",
-      "kind": "docs-page",
-      "canonicalSource": "docs/debt-ledger-projection.manifest.json",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "scripts/debt-ledger-projection-check.mjs"
-      ],
-      "discoveryTerms": [
-        "debt ledger",
-        "pending ledger",
-        "external pending ledger",
-        "lateral_debt",
-        "Clawix public debt projection"
-      ],
-      "searchQueries": [
-        {
-          "query": "debt pending ledger external pending lateral_debt",
-          "expectPath": "docs/debt-ledger-projection.manifest.json"
-        },
-        {
-          "query": "Clawix public debt projection",
-          "expectPath": "docs/debt-ledger-projection.manifest.json"
-        }
-      ],
-      "guard": "scripts/debt-ledger-projection-check.mjs",
-      "status": "baseline",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-decision-tension-rubric-mirror",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/decision-tension-rubric.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/README.md",
-        "docs/adr/TEMPLATE.md"
-      ],
-      "discoveryTerms": [
-        "decision tension rubric",
-        "Decision Tension Rubric Mirror",
-        "ADR Decision Tensions",
-        "healthy tensions",
-        "durable ADR tradeoffs"
-      ],
-      "searchQueries": [
-        {
-          "query": "decision tension rubric",
-          "expectPath": "docs/governance/decision-tension-rubric.md"
-        },
-        {
-          "query": "durable ADR tradeoffs",
-          "expectPath": "docs/governance/decision-tension-rubric.md"
-        }
-      ],
-      "guard": "scripts/doc_alignment_check.sh",
-      "status": "enforced",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-no-irreversible-data-loss-governance",
-      "kind": "docs-page",
+      "id": "clawix-surface-route-graph",
+      "kind": "surface-route",
       "steward": "clawix",
-      "canonicalSource": "docs/governance/no-irreversible-data-loss/README.md",
+      "canonicalSource": "docs/adr/0011-surface-route-graph.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
         "docs/discoverability.md",
         "CONSTITUTION.md",
         "docs/decision-map.md",
-        "docs/constitution-map.md"
+        "skills/surface-route-work/SKILL.md"
       ],
       "discoveryTerms": [
-        "Clawix No Irreversible Data Loss",
-        "Clawix no irreversible data loss manifest",
-        "signed host delete purge trash archive snapshots rollback import export migrations sync agent actions external provider mutations",
-        "host recovery class baseline plus blocking"
+        "ADR 0011: Surface route graph mirror",
+        "0011-surface-route-graph",
+        "ADR 0011",
+        "surface route graph",
+        "Clawix bridge",
+        "runtime-critical",
+        "adr:surface-route-graph"
       ],
       "searchQueries": [
         {
-          "query": "Clawix delete purge recovery policy",
-          "expectPath": "docs/governance/no-irreversible-data-loss/README.md"
+          "query": "surface route graph",
+          "expectPath": "docs/adr/0011-surface-route-graph.md"
         },
         {
-          "query": "host recovery class baseline plus blocking",
-          "expectPath": "docs/governance/no-irreversible-data-loss/README.md"
+          "query": "adr:surface-route-graph",
+          "expectPath": "docs/adr/0011-surface-route-graph.md"
         }
       ],
-      "guard": "scripts/no-irreversible-data-loss-check.mjs",
+      "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-21",
-      "canonicalName": "clawix-no-irreversible-data-loss"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-completion-audit",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/completion.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces completion audit",
-        "custom app SDK completion audit gate",
-        "SDK-first custom surfaces closure blockers"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces completion audit",
-          "expectPath": "docs/governance/sdk-first-custom-surfaces/completion.md"
-        }
-      ],
-      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-external-evidence-fixtures",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
-        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces external evidence fixtures",
-        "SDK-first synthetic evidence packets",
-        "custom surface external validator negative fixtures"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces external evidence fixtures",
-          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json"
-        }
-      ],
-      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-external-evidence-schema",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
-        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces external evidence schema",
-        "SDK-first external evidence packet",
-        "custom surface external closure schema"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces external evidence schema",
-          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json"
-        }
-      ],
-      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-external-pending",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-pending.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/sdk-first-custom-surfaces/completion.md"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces external pending validation",
-        "signed-host native IoT provider performance marketplace blockers",
-        "SDK-first external evidence lanes"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces external pending validation",
-          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-pending.md"
-        }
-      ],
-      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-external-validation-runbook",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/sdk-first-custom-surfaces/external-pending.md"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces external validation runbook",
-        "SDK-first exact approval runbook",
-        "signed-host native IoT provider baseline marketplace evidence checklist"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces external validation runbook",
-          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md"
-        }
-      ],
-      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-source-decision-audit-governance",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/source-decision-audits.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/README.md",
-        "docs/adr/TEMPLATE.md"
-      ],
-      "discoveryTerms": [
-        "source decision audits",
-        "Clawix source decision audit mirror",
-        "conversation decision audit",
-        "implemented documented blocked superseded"
-      ],
-      "searchQueries": [
-        {
-          "query": "Clawix source decision audit mirror",
-          "expectPath": "docs/governance/source-decision-audits.md"
-        }
-      ],
-      "guard": "scripts/source_decision_audit_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-source-decision-audit-registry",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/source-decision-audits.registry.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/source-decision-audits.md"
-      ],
-      "discoveryTerms": [
-        "Clawix source decision audit registry",
-        "Clawix source decision audit seed precedents",
-        "UI source decision verification"
-      ],
-      "searchQueries": [
-        {
-          "query": "Clawix source decision audit registry",
-          "expectPath": "docs/governance/source-decision-audits.registry.json"
-        }
-      ],
-      "guard": "scripts/source_decision_audit_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-completion-audit",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/system-telemetry/completion.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/decision-matrix.md"
-      ],
-      "discoveryTerms": [
-        "system telemetry completion audit",
-        "system telemetry requirement status",
-        "system telemetry requirement-by-requirement closure gate"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry completion audit",
-          "expectPath": "docs/governance/system-telemetry/completion.md"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-decision-matrix",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/system-telemetry/decision-matrix.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "system telemetry decision matrix",
-        "system telemetry D01 D11 decisions",
-        "system telemetry completion audit gate"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry decision matrix",
-          "expectPath": "docs/governance/system-telemetry/decision-matrix.md"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-approval-fixtures",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-approval.fixtures.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-approval.schema.json",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external approval fixtures",
-        "system telemetry synthetic app approval packets",
-        "system telemetry app approval schema negative fixtures"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external approval fixtures",
-          "expectPath": "docs/governance/system-telemetry/external-approval.fixtures.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-approval-schema",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-approval.schema.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-approval.fixtures.json",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external approval schema",
-        "system telemetry exact-run app approval packet",
-        "system telemetry signed app approval gate"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external approval schema",
-          "expectPath": "docs/governance/system-telemetry/external-approval.schema.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-closure-fixtures",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-closure.fixtures.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external closure fixtures",
-        "system telemetry same-lane app closure bundle fixtures",
-        "system telemetry app approval evidence closure fixtures"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external closure fixtures",
-          "expectPath": "docs/governance/system-telemetry/external-closure.fixtures.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-evidence-fixtures",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-evidence.fixtures.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-evidence.schema.json",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external evidence fixtures",
-        "system telemetry synthetic evidence packets",
-        "system telemetry evidence schema negative fixtures"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external evidence fixtures",
-          "expectPath": "docs/governance/system-telemetry/external-evidence.fixtures.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-evidence-schema",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-evidence.schema.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-evidence.fixtures.json",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external evidence schema",
-        "system telemetry external evidence packet",
-        "system telemetry lane closing evidence"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external evidence schema",
-          "expectPath": "docs/governance/system-telemetry/external-evidence.schema.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-pending-ledger",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/system-telemetry/external-pending.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "system telemetry external pending validation",
-        "system telemetry external validation lanes",
-        "system telemetry provider sensor control blockers"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external pending validation",
-          "expectPath": "docs/governance/system-telemetry/external-pending.md"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-validation-runbook",
-      "kind": "docs-page",
-      "canonicalSource": "docs/governance/system-telemetry/external-validation-runbook.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external validation runbook",
-        "system telemetry exact approval runbook",
-        "system telemetry external lane evidence checklist"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external validation runbook",
-          "expectPath": "docs/governance/system-telemetry/external-validation-runbook.md"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-validation-manifest-fixtures",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-validation.manifest.json",
-        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external validation manifest fixtures",
-        "system telemetry manifest schema negative fixtures",
-        "system telemetry accidental completion fixture"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external validation manifest fixtures",
-          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-validation-manifest",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "system telemetry external validation manifest",
-        "system telemetry structured external lane manifest",
-        "system telemetry completion blocking manifest"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external validation manifest",
-          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-external-validation-manifest-schema",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/system-telemetry/external-pending.md",
-        "docs/governance/system-telemetry/external-validation-runbook.md",
-        "docs/governance/system-telemetry/external-validation.manifest.json"
-      ],
-      "discoveryTerms": [
-        "system telemetry external validation manifest schema",
-        "system telemetry manifest schema",
-        "system telemetry external lane manifest contract"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry external validation manifest schema",
-          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.schema.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-system-telemetry-source-qa-review",
-      "kind": "validation-manifest",
-      "canonicalSource": "docs/governance/system-telemetry/source-review.json",
-      "requiredEntrypoints": [
-        "docs/decision-map.md",
-        "docs/discoverability.md",
-        "docs/governance/system-telemetry/decision-matrix.md"
-      ],
-      "discoveryTerms": [
-        "system telemetry source Q/A review",
-        "system telemetry source decision review",
-        "system telemetry final source audit gate"
-      ],
-      "searchQueries": [
-        {
-          "query": "system telemetry source Q/A review",
-          "expectPath": "docs/governance/system-telemetry/source-review.json"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-incident-response-mirror",
-      "kind": "docs-page",
-      "steward": "clawix",
-      "canonicalSource": "docs/incident-response.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "SECURITY.md"
-      ],
-      "discoveryTerms": [
-        "Incident response",
-        "Clawix Incident Response Mirror",
-        "remote exploit",
-        "compromised connector",
-        "private-data redaction"
-      ],
-      "searchQueries": [
-        {
-          "query": "incident response",
-          "expectPath": "docs/incident-response.md"
-        },
-        {
-          "query": "remote exploit",
-          "expectPath": "docs/incident-response.md"
-        },
-        {
-          "query": "compromised connector",
-          "expectPath": "docs/incident-response.md"
-        }
-      ],
-      "guard": "scripts/incident_response_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-21",
-      "canonicalName": "clawix-incident-response"
-    },
-    {
-      "id": "clawix-runtime-ecosystem-lens",
-      "kind": "docs-page",
-      "steward": "clawix",
-      "canonicalSource": "docs/runtime-ecosystem-lens.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "CONSTITUTION.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "runtime ecosystem lens",
-        "semantic native parity",
-        "runtime local overlays",
-        "OpenClaw Codex Hermes lens"
-      ],
-      "searchQueries": [
-        {
-          "query": "runtime ecosystem lens",
-          "expectPath": "docs/runtime-ecosystem-lens.md"
-        },
-        {
-          "query": "semantic native parity runtime",
-          "expectPath": "docs/runtime-ecosystem-lens.md"
-        }
-      ],
-      "guard": "scripts/runtime_ecosystem_lens_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-21",
-      "canonicalName": "runtime-ecosystem-lens"
-    },
-    {
-      "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
-      "kind": "docs-page",
-      "canonicalSource": "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/sdk-first-custom-surfaces/completion.md"
-      ],
-      "discoveryTerms": [
-        "sdk-first custom surfaces performance closure summary",
-        "CLX-SDK-008 performance baseline blocker",
-        "custom surface performance review packet"
-      ],
-      "searchQueries": [
-        {
-          "query": "sdk-first custom surfaces performance closure summary",
-          "expectPath": "docs/sdk-first-custom-surfaces-performance-closure-summary.md"
-        }
-      ],
-      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-05-20",
-      "steward": "clawix"
+      "reviewDate": "2026-08-17",
+      "canonicalName": "adr:surface-route-graph"
     },
     {
       "id": "clawix-surface-route-registry-manifest",
@@ -2039,29 +1190,850 @@
       "canonicalName": "surface-route-registry-manifest"
     },
     {
-      "id": "clawix-ui-governance-discoverability",
-      "kind": "ui-governance",
-      "canonicalSource": "docs/ui/README.md",
+      "id": "skill-skills-accessibility-governance",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/accessibility-governance/SKILL.md",
       "requiredEntrypoints": [
         "AGENTS.md",
-        "docs/decision-map.md",
-        "skills/ui-implementation/SKILL.md"
+        "CLAUDE.md",
+        "docs/discoverability.md"
       ],
       "discoveryTerms": [
-        "interface governance",
-        "UI governance",
-        "visual mutation boundary"
+        "accessibility-governance",
+        "Govern Clawix accessibility changes across screen reader behavior, keyboard navigation, focus order, contrast, reduced motion, text scaling, timed interactions, and agent-generated UI."
       ],
       "searchQueries": [
         {
-          "query": "UI governance",
-          "expectPath": "docs/ui/README.md"
+          "query": "accessibility-governance",
+          "expectPath": "skills/accessibility-governance/SKILL.md"
         }
       ],
-      "guard": "scripts/ui_governance_guard.mjs",
+      "guard": "scripts/discoverability-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-17",
-      "steward": "clawix"
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-adoption-canonicity-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/adoption-canonicity-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "adoption-canonicity-review",
+        "Review or update stable, canonical, any-human, PMF, and adoption claims using adoption/canonicity governance packets.",
+        "Review Clawix stable, canonical, any-human, PMF, and UI canon promotion claims against adoption/canonicity evidence packets."
+      ],
+      "searchQueries": [
+        {
+          "query": "adoption-canonicity-review",
+          "expectPath": "skills/adoption-canonicity-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-adr-to-guardrail",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/adr-to-guardrail/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "adr-to-guardrail",
+        "Turn a new or changed ADR into implemented behavior, routing docs, tests, and guardrails rather than leaving it as standalone prose."
+      ],
+      "searchQueries": [
+        {
+          "query": "adr-to-guardrail",
+          "expectPath": "skills/adr-to-guardrail/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-architecture-drift-repair",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/architecture-drift-repair/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "architecture-drift-repair",
+        "Repair confirmed architecture drift in small batches while preserving public canon and avoiding broad opportunistic refactors."
+      ],
+      "searchQueries": [
+        {
+          "query": "architecture-drift-repair",
+          "expectPath": "skills/architecture-drift-repair/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-brand-guidelines",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/brand-guidelines/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "brand-guidelines",
+        "Given an existing Style, generate a human-readable brand guidelines document covering colors, typography, voice, do/don't, imagery rules, and usage examples. Use when the user asks for a brand book, brand guide, or design system document."
+      ],
+      "searchQueries": [
+        {
+          "query": "brand-guidelines",
+          "expectPath": "skills/brand-guidelines/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-canonical-catalog-expansion",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/canonical-catalog-expansion/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "canonical-catalog-expansion",
+        "Add or improve canonical data catalog collections, fields, aliases, relations, evidence tags, docs, and tests."
+      ],
+      "searchQueries": [
+        {
+          "query": "canonical-catalog-expansion",
+          "expectPath": "skills/canonical-catalog-expansion/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-canvas-design",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/canvas-design/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "canvas-design",
+        "Apply the 90/10 visual-to-text rule when composing a piece on a canvas (poster, card, social post). Use when the deliverable lives on a single fixed surface where each element competes for attention."
+      ],
+      "searchQueries": [
+        {
+          "query": "canvas-design",
+          "expectPath": "skills/canvas-design/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-cli-agent-surface-work",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/cli-agent-surface-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "cli-agent-surface-work",
+        "Change the public agent-facing CLI surface while preserving registry-backed discovery, JSON envelopes, aliases, docs, and tests."
+      ],
+      "searchQueries": [
+        {
+          "query": "cli-agent-surface-work",
+          "expectPath": "skills/cli-agent-surface-work/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-hygiene-audit",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/code-hygiene-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-hygiene-audit",
+        "Audit ClawJS/Clawix code hygiene without editing code, producing categorized findings, baseline status, and validation evidence."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-hygiene-audit",
+          "expectPath": "skills/code-hygiene-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-hygiene-cleanup",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/code-hygiene-cleanup/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-hygiene-cleanup",
+        "Execute a bounded ClawJS/Clawix code hygiene cleanup campaign from an audit report, one category and repo at a time."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-hygiene-cleanup",
+          "expectPath": "skills/code-hygiene-cleanup/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-code-review-risk",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/code-review-risk/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "code-review-risk",
+        "Review changes for bugs, regressions, missing tests, safety gaps, public/private leaks, and architecture drift before stylistic comments."
+      ],
+      "searchQueries": [
+        {
+          "query": "code-review-risk",
+          "expectPath": "skills/code-review-risk/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-commit-hygiene-public",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/commit-hygiene-public/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "commit-hygiene-public",
+        "Apply public, contributor-safe commit hygiene without maintainer-private automation, timestamps, ledger rules, or push policy."
+      ],
+      "searchQueries": [
+        {
+          "query": "commit-hygiene-public",
+          "expectPath": "skills/commit-hygiene-public/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-compatibility-evolution-work",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/compatibility-evolution-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "compatibility-evolution-work",
+        "Add or change stable public state, contracts, routes, migrations, adapters, rescue behavior, or compatibility-sensitive surfaces through the evolution ledger."
+      ],
+      "searchQueries": [
+        {
+          "query": "compatibility-evolution-work",
+          "expectPath": "skills/compatibility-evolution-work/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-constitution-drift-audit",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/constitution-drift-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "constitution-drift-audit",
+        "Audit code, docs, tests, and registries against the Constitution, ADRs, and decision map without making broad repairs. Use when checking whether the repository is drifting away from accepted architecture."
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution-drift-audit",
+          "expectPath": "skills/constitution-drift-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-data-storage-boundary-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/data-storage-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "data-storage-boundary-review",
+        "Review storage placement across framework global data, workspace data, host state, sidecars, caches, vaults, and external sources."
+      ],
+      "searchQueries": [
+        {
+          "query": "data-storage-boundary-review",
+          "expectPath": "skills/data-storage-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-decision-map-maintenance",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/decision-map-maintenance/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "decision-map-maintenance",
+        "Keep decision maps as concise routers from decisions to canonical documents and validation guardrails."
+      ],
+      "searchQueries": [
+        {
+          "query": "decision-map-maintenance",
+          "expectPath": "skills/decision-map-maintenance/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-docs-alignment-update",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/docs-alignment-update/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "docs-alignment-update",
+        "Update docs, playbooks, shims, generated docs, and alignment checks so public instructions route to the right canonical sources."
+      ],
+      "searchQueries": [
+        {
+          "query": "docs-alignment-update",
+          "expectPath": "skills/docs-alignment-update/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-host-boundary-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/host-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "host-boundary-review",
+        "Review framework vs host ownership for permissions, approvals, grants, native execution, storage, daemons, and Clawix integration."
+      ],
+      "searchQueries": [
+        {
+          "query": "host-boundary-review",
+          "expectPath": "skills/host-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-host-dependent-validation",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/host-dependent-validation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "host-dependent-validation",
+        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, real conversations, or signed native helpers.",
+        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, or signed native helpers."
+      ],
+      "searchQueries": [
+        {
+          "query": "host-dependent-validation",
+          "expectPath": "skills/host-dependent-validation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-integration-qa-lab",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/integration-qa-lab/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "integration-qa-lab",
+        "Build or review an external integration QA lab with official surface snapshots, coverage matrices, fixtures, opt-in live lanes, and safe credential handling."
+      ],
+      "searchQueries": [
+        {
+          "query": "integration-qa-lab",
+          "expectPath": "skills/integration-qa-lab/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-naming-surface-audit",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/naming-surface-audit/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "naming-surface-audit",
+        "Audit and improve stable names, aliases, vocabulary, field casing, routes, ports, packages, and agent-search discoverability."
+      ],
+      "searchQueries": [
+        {
+          "query": "naming-surface-audit",
+          "expectPath": "skills/naming-surface-audit/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-performance-investigation",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/performance-investigation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "performance-investigation",
+        "Investigate latency, freezes, memory growth, hitches, dropped frames, or perceived slowness with reproduction and instrumentation before optimizing."
+      ],
+      "searchQueries": [
+        {
+          "query": "performance-investigation",
+          "expectPath": "skills/performance-investigation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-public-hygiene-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/public-hygiene-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "public-hygiene-review",
+        "Review public repository changes for secrets, private paths, signing identities, bundle IDs, generated artifacts, local logs, and private workflow leaks."
+      ],
+      "searchQueries": [
+        {
+          "query": "public-hygiene-review",
+          "expectPath": "skills/public-hygiene-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-secrets-boundary-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/secrets-boundary-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "secrets-boundary-review",
+        "Review secret handling, brokered execution, redaction, vault boundaries, host approval, and public hygiene."
+      ],
+      "searchQueries": [
+        {
+          "query": "secrets-boundary-review",
+          "expectPath": "skills/secrets-boundary-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-source-file-boundary-refactor",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/source-file-boundary-refactor/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "source-file-boundary-refactor",
+        "Split or contain large source files according to the source-file boundary ADR without changing behavior opportunistically."
+      ],
+      "searchQueries": [
+        {
+          "query": "source-file-boundary-refactor",
+          "expectPath": "skills/source-file-boundary-refactor/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-style-apply",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/style-apply/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "style-apply",
+        "Apply a Style to any artifact in the workspace (presentation, card, poster, social post, web page). Use when the user says \"apply style X\", \"render this with style X\", or wants to reuse a saved style on a new piece."
+      ],
+      "searchQueries": [
+        {
+          "query": "style-apply",
+          "expectPath": "skills/style-apply/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-style-extract",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/style-extract/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "style-extract",
+        "Inspect a reference (web URL, image, PDF, screenshot) and propose a candidate Style for the workspace. Use when the user says \"save this style\", \"guarda este estilo\", or shares a reference and wants to reapply it later."
+      ],
+      "searchQueries": [
+        {
+          "query": "style-extract",
+          "expectPath": "skills/style-extract/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-surface-registry-alignment",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/surface-registry-alignment/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "surface-registry-alignment",
+        "Align stable paths, APIs, CLI commands, schemas, events, IDs, storage keys, and UI/programmatic parity with the surface registries."
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-registry-alignment",
+          "expectPath": "skills/surface-registry-alignment/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-surface-route-work",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/surface-route-work/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "surface-route-work",
+        "Work from a registered surface or transverse route by inspecting nodes, neighbors, edges, contracts, owners, tests, and gaps before editing."
+      ],
+      "searchQueries": [
+        {
+          "query": "surface-route-work",
+          "expectPath": "skills/surface-route-work/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-template-render",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/template-render/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "template-render",
+        "Render a Template + data + Style into a final artifact in one of HTML, PDF, PNG, SVG or PPTX. Use whenever the user asks for a concrete deliverable like \"make me a poster\", \"render a card\", \"give me a one-pager\"."
+      ],
+      "searchQueries": [
+        {
+          "query": "template-render",
+          "expectPath": "skills/template-render/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-theme-factory",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/theme-factory/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "theme-factory",
+        "Produce variants of an existing Style by shifting tone (light/dark), density (compact/relaxed), or accent (palette rotation) while preserving the brand identity. Use when the user wants alternate themes derived from one brand."
+      ],
+      "searchQueries": [
+        {
+          "query": "theme-factory",
+          "expectPath": "skills/theme-factory/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-ui-canon-review",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/ui-canon-review/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "ui-canon-review",
+        "Review whether a Clawix UI pattern, visual decision, copy change, or component extraction belongs in canon, debt, exception, or protected-surface scope."
+      ],
+      "searchQueries": [
+        {
+          "query": "ui-canon-review",
+          "expectPath": "skills/ui-canon-review/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "clawix-ui-implementation-skill",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/ui-implementation/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/ui/README.md"
+      ],
+      "discoveryTerms": [
+        "ui-implementation",
+        "Implement functional Clawix UI wiring while respecting visual mutation boundaries, pattern contracts, protected surfaces, and debt baselines.",
+        "ui implementation",
+        "mutation class",
+        "discovery registration"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui implementation",
+          "expectPath": "skills/ui-implementation/SKILL.md"
+        }
+      ],
+      "guard": "scripts/ui_skill_contract_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17"
+    },
+    {
+      "id": "skill-skills-ui-performance-budget",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/ui-performance-budget/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "ui-performance-budget",
+        "Capture and compare Clawix UI performance budgets for critical flows before optimizing visible or runtime UI behavior."
+      ],
+      "searchQueries": [
+        {
+          "query": "ui-performance-budget",
+          "expectPath": "skills/ui-performance-budget/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "skill-skills-visual-regression",
+      "kind": "skill",
+      "steward": "clawix",
+      "canonicalSource": "skills/visual-regression/SKILL.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md"
+      ],
+      "discoveryTerms": [
+        "visual-regression",
+        "Run and interpret Clawix UI geometry, screenshot, protected-surface, and debt-baseline checks without authorizing visual repair."
+      ],
+      "searchQueries": [
+        {
+          "query": "visual-regression",
+          "expectPath": "skills/visual-regression/SKILL.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
     },
     {
       "id": "guard-scripts-accessibility-governance-guard",
@@ -2163,6 +2135,31 @@
         }
       ],
       "guard": "scripts/adr-operational-coverage-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-agent-onboarding-discoverability-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/agent_onboarding_discoverability_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "agent_onboarding_discoverability_check",
+        "Agent Onboarding Discoverability Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "agent_onboarding_discoverability_check",
+          "expectPath": "scripts/agent_onboarding_discoverability_check.mjs"
+        }
+      ],
+      "guard": "scripts/agent_onboarding_discoverability_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -2460,6 +2457,8 @@
       "steward": "clawix",
       "canonicalSource": "scripts/cross_platform_localization_guard.mjs",
       "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
         "docs/discoverability.md",
         "docs/decision-map.md",
         "qa/scenarios/localization-backlog.md",
@@ -3229,6 +3228,31 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-public-hygiene-text-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/public_hygiene_text_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "public_hygiene_text_check",
+        "Public Hygiene Text Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "public_hygiene_text_check",
+          "expectPath": "scripts/public_hygiene_text_check.mjs"
+        }
+      ],
+      "guard": "scripts/public_hygiene_text_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-release-external-pending-gate",
       "kind": "guardrail",
       "steward": "clawix",
@@ -3652,6 +3676,164 @@
       "guard": "scripts/tracked-ignored-check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-v1-surface-closure-audit-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/v1_surface_closure_audit_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "v1_surface_closure_audit_check",
+        "V1 Surface Closure Audit Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "v1_surface_closure_audit_check",
+          "expectPath": "scripts/v1_surface_closure_audit_check.mjs"
+        }
+      ],
+      "guard": "scripts/v1_surface_closure_audit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-verify-sdk-first-custom-surfaces-goal",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "verify-sdk-first-custom-surfaces-goal",
+        "Verify Sdk First Custom Surfaces Goal"
+      ],
+      "searchQueries": [
+        {
+          "query": "verify-sdk-first-custom-surfaces-goal",
+          "expectPath": "scripts/verify-sdk-first-custom-surfaces-goal.mjs"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-verify-system-telemetry-goal",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/verify-system-telemetry-goal.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "verify-system-telemetry-goal",
+        "Verify System Telemetry Goal"
+      ],
+      "searchQueries": [
+        {
+          "query": "verify-system-telemetry-goal",
+          "expectPath": "scripts/verify-system-telemetry-goal.mjs"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-zero-accidental-work-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/zero_accidental_work_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "zero_accidental_work_check",
+        "Zero Accidental Work Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "zero_accidental_work_check",
+          "expectPath": "scripts/zero_accidental_work_check.mjs"
+        }
+      ],
+      "guard": "scripts/zero_accidental_work_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "adr-docs-adr-0010-interface-governance",
+      "kind": "ui-governance",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0010-interface-governance.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0010: Interface governance and visual mutation boundary",
+        "0010-interface-governance",
+        "ADR 0010",
+        "adr:interface-governance"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0010: Interface governance and visual mutation boundary",
+          "expectPath": "docs/adr/0010-interface-governance.md"
+        },
+        {
+          "query": "adr:interface-governance",
+          "expectPath": "docs/adr/0010-interface-governance.md"
+        }
+      ],
+      "guard": "scripts/discoverability-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:interface-governance"
+    },
+    {
+      "id": "clawix-ui-governance-discoverability",
+      "kind": "ui-governance",
+      "canonicalSource": "docs/ui/README.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "docs/decision-map.md",
+        "skills/ui-implementation/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "interface governance",
+        "UI governance",
+        "visual mutation boundary"
+      ],
+      "searchQueries": [
+        {
+          "query": "UI governance",
+          "expectPath": "docs/ui/README.md"
+        }
+      ],
+      "guard": "scripts/ui_governance_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-17",
+      "steward": "clawix"
     },
     {
       "id": "guard-scripts-ui-approval-authority-check",
@@ -4754,10 +4936,42 @@
       "reviewDate": "2026-08-18"
     },
     {
-      "id": "guard-scripts-v1-surface-closure-audit-check",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/v1_surface_closure_audit_check.mjs",
+      "id": "clawix-agent-onboarding-playbook",
+      "kind": "docs-page",
+      "canonicalSource": "docs/agent-onboarding.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/agent-rules/index.md",
+        "playbooks/README.md"
+      ],
+      "discoveryTerms": [
+        "agent onboarding playbook",
+        "large task work family router",
+        "new agent start here",
+        "minimum validation decision boundary closure criteria smoke check"
+      ],
+      "searchQueries": [
+        {
+          "query": "agent onboarding playbook",
+          "expectPath": "docs/agent-onboarding.md"
+        },
+        {
+          "query": "large task work family router",
+          "expectPath": "docs/agent-onboarding.md"
+        }
+      ],
+      "guard": "scripts/agent_onboarding_discoverability_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-23",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-agent-rules-index",
+      "kind": "docs-page",
+      "canonicalSource": "docs/agent-rules/index.md",
       "requiredEntrypoints": [
         "AGENTS.md",
         "CLAUDE.md",
@@ -4765,18 +4979,810 @@
         "docs/decision-map.md"
       ],
       "discoveryTerms": [
-        "v1_surface_closure_audit_check",
-        "V1 Surface Closure Audit Check"
+        "agent rules",
+        "always-loaded instructions",
+        "Clawix agent instruction router"
       ],
       "searchQueries": [
         {
-          "query": "v1_surface_closure_audit_check",
-          "expectPath": "scripts/v1_surface_closure_audit_check.mjs"
+          "query": "agent rules",
+          "expectPath": "docs/agent-rules/index.md"
+        },
+        {
+          "query": "always-loaded instructions",
+          "expectPath": "docs/agent-rules/index.md"
         }
       ],
-      "guard": "scripts/v1_surface_closure_audit_check.mjs",
+      "guard": "scripts/agent-instructions-check.mjs",
       "status": "enforced",
-      "reviewDate": "2026-08-18"
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-constitution-operational-map",
+      "kind": "docs-page",
+      "canonicalSource": "docs/constitution-map.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/agent-rules/index.md",
+        "skills/decision-map-maintenance/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "constitution-map",
+        "Constitution Operational Map",
+        "constitutional principle router",
+        "principle to canon guardrail surfaces"
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution-map",
+          "expectPath": "docs/constitution-map.md"
+        },
+        {
+          "query": "constitutional principle router",
+          "expectPath": "docs/constitution-map.md"
+        }
+      ],
+      "guard": "scripts/doc_alignment_check.sh",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-constitution-assertions-projection",
+      "kind": "docs-page",
+      "canonicalSource": "docs/constitution.assertions.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/constitution-map.md"
+      ],
+      "discoveryTerms": [
+        "constitution assertions",
+        "constitution.assertions.json",
+        "Clawix constitutional assertion projection",
+        "principle assertion coverage",
+        "constitutional principle guardrails"
+      ],
+      "searchQueries": [
+        {
+          "query": "constitution assertions",
+          "expectPath": "docs/constitution.assertions.json"
+        },
+        {
+          "query": "Clawix constitutional assertion projection",
+          "expectPath": "docs/constitution.assertions.json"
+        }
+      ],
+      "guard": "scripts/constitution-assertions-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "clawix-constitution-assertions",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-debt-ledger-projection",
+      "kind": "docs-page",
+      "canonicalSource": "docs/debt-ledger-projection.manifest.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "scripts/debt-ledger-projection-check.mjs"
+      ],
+      "discoveryTerms": [
+        "debt ledger",
+        "pending ledger",
+        "external pending ledger",
+        "lateral_debt",
+        "Clawix public debt projection"
+      ],
+      "searchQueries": [
+        {
+          "query": "debt pending ledger external pending lateral_debt",
+          "expectPath": "docs/debt-ledger-projection.manifest.json"
+        },
+        {
+          "query": "Clawix public debt projection",
+          "expectPath": "docs/debt-ledger-projection.manifest.json"
+        }
+      ],
+      "guard": "scripts/debt-ledger-projection-check.mjs",
+      "status": "baseline",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-decision-tension-rubric-mirror",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/decision-tension-rubric.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/README.md",
+        "docs/adr/TEMPLATE.md"
+      ],
+      "discoveryTerms": [
+        "decision tension rubric",
+        "Decision Tension Rubric Mirror",
+        "ADR Decision Tensions",
+        "healthy tensions",
+        "durable ADR tradeoffs"
+      ],
+      "searchQueries": [
+        {
+          "query": "decision tension rubric",
+          "expectPath": "docs/governance/decision-tension-rubric.md"
+        },
+        {
+          "query": "durable ADR tradeoffs",
+          "expectPath": "docs/governance/decision-tension-rubric.md"
+        }
+      ],
+      "guard": "scripts/doc_alignment_check.sh",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-no-irreversible-data-loss-governance",
+      "kind": "docs-page",
+      "steward": "clawix",
+      "canonicalSource": "docs/governance/no-irreversible-data-loss/README.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/constitution-map.md"
+      ],
+      "discoveryTerms": [
+        "Clawix No Irreversible Data Loss",
+        "Clawix no irreversible data loss manifest",
+        "signed host delete purge trash archive snapshots rollback import export migrations sync agent actions external provider mutations",
+        "host recovery class baseline plus blocking"
+      ],
+      "searchQueries": [
+        {
+          "query": "Clawix delete purge recovery policy",
+          "expectPath": "docs/governance/no-irreversible-data-loss/README.md"
+        },
+        {
+          "query": "host recovery class baseline plus blocking",
+          "expectPath": "docs/governance/no-irreversible-data-loss/README.md"
+        }
+      ],
+      "guard": "scripts/no-irreversible-data-loss-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "clawix-no-irreversible-data-loss"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-completion-audit",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/completion.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces completion audit",
+        "custom app SDK completion audit gate",
+        "SDK-first custom surfaces closure blockers"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces completion audit",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/completion.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-pending",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/completion.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external pending validation",
+        "signed-host native IoT provider performance marketplace blockers",
+        "SDK-first external evidence lanes"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external pending validation",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-pending.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-validation-runbook",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external validation runbook",
+        "SDK-first exact approval runbook",
+        "signed-host native IoT provider baseline marketplace evidence checklist"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external validation runbook",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-validation-runbook.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-source-decision-audit-governance",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/source-decision-audits.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/README.md",
+        "docs/adr/TEMPLATE.md"
+      ],
+      "discoveryTerms": [
+        "source decision audits",
+        "Clawix source decision audit mirror",
+        "conversation decision audit",
+        "implemented documented blocked superseded"
+      ],
+      "searchQueries": [
+        {
+          "query": "Clawix source decision audit mirror",
+          "expectPath": "docs/governance/source-decision-audits.md"
+        }
+      ],
+      "guard": "scripts/source_decision_audit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-completion-audit",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/system-telemetry/completion.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/decision-matrix.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry completion audit",
+        "system telemetry requirement status",
+        "system telemetry requirement-by-requirement closure gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry completion audit",
+          "expectPath": "docs/governance/system-telemetry/completion.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-decision-matrix",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/system-telemetry/decision-matrix.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry decision matrix",
+        "system telemetry D01 D11 decisions",
+        "system telemetry completion audit gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry decision matrix",
+          "expectPath": "docs/governance/system-telemetry/decision-matrix.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-pending-ledger",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/system-telemetry/external-pending.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry external pending validation",
+        "system telemetry external validation lanes",
+        "system telemetry provider sensor control blockers"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external pending validation",
+          "expectPath": "docs/governance/system-telemetry/external-pending.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-runbook",
+      "kind": "docs-page",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation-runbook.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation runbook",
+        "system telemetry exact approval runbook",
+        "system telemetry external lane evidence checklist"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation runbook",
+          "expectPath": "docs/governance/system-telemetry/external-validation-runbook.md"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-incident-response-mirror",
+      "kind": "docs-page",
+      "steward": "clawix",
+      "canonicalSource": "docs/incident-response.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "SECURITY.md"
+      ],
+      "discoveryTerms": [
+        "Incident response",
+        "Clawix Incident Response Mirror",
+        "remote exploit",
+        "compromised connector",
+        "private-data redaction"
+      ],
+      "searchQueries": [
+        {
+          "query": "incident response",
+          "expectPath": "docs/incident-response.md"
+        },
+        {
+          "query": "remote exploit",
+          "expectPath": "docs/incident-response.md"
+        },
+        {
+          "query": "compromised connector",
+          "expectPath": "docs/incident-response.md"
+        }
+      ],
+      "guard": "scripts/incident_response_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-21",
+      "canonicalName": "clawix-incident-response"
+    },
+    {
+      "id": "clawix-runtime-ecosystem-lens",
+      "kind": "docs-page",
+      "steward": "clawix",
+      "canonicalSource": "docs/runtime-ecosystem-lens.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "runtime ecosystem lens",
+        "semantic native parity",
+        "runtime local overlays",
+        "OpenClaw Codex Hermes lens"
+      ],
+      "searchQueries": [
+        {
+          "query": "runtime ecosystem lens",
+          "expectPath": "docs/runtime-ecosystem-lens.md"
+        },
+        {
+          "query": "semantic native parity runtime",
+          "expectPath": "docs/runtime-ecosystem-lens.md"
+        }
+      ],
+      "guard": "scripts/runtime_ecosystem_lens_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-21",
+      "canonicalName": "runtime-ecosystem-lens"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-performance-closure-summary",
+      "kind": "docs-page",
+      "canonicalSource": "docs/sdk-first-custom-surfaces-performance-closure-summary.md",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/sdk-first-custom-surfaces/completion.md"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces performance closure summary",
+        "CLX-SDK-008 performance baseline blocker",
+        "custom surface performance review packet"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces performance closure summary",
+          "expectPath": "docs/sdk-first-custom-surfaces-performance-closure-summary.md"
+        }
+      ],
+      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-evidence-fixtures",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external evidence fixtures",
+        "SDK-first synthetic evidence packets",
+        "custom surface external validator negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external evidence fixtures",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.fixtures.json"
+        }
+      ],
+      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-sdk-first-custom-surfaces-external-evidence-schema",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/governance/sdk-first-custom-surfaces/external-pending.md",
+        "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs"
+      ],
+      "discoveryTerms": [
+        "sdk-first custom surfaces external evidence schema",
+        "SDK-first external evidence packet",
+        "custom surface external closure schema"
+      ],
+      "searchQueries": [
+        {
+          "query": "sdk-first custom surfaces external evidence schema",
+          "expectPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json"
+        }
+      ],
+      "guard": "scripts/validate-sdk-first-custom-surfaces-external-evidence.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-source-decision-audit-registry",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/source-decision-audits.registry.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/source-decision-audits.md"
+      ],
+      "discoveryTerms": [
+        "Clawix source decision audit registry",
+        "Clawix source decision audit seed precedents",
+        "UI source decision verification"
+      ],
+      "searchQueries": [
+        {
+          "query": "Clawix source decision audit registry",
+          "expectPath": "docs/governance/source-decision-audits.registry.json"
+        }
+      ],
+      "guard": "scripts/source_decision_audit_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-approval-fixtures",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-approval.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-approval.schema.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external approval fixtures",
+        "system telemetry synthetic app approval packets",
+        "system telemetry app approval schema negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external approval fixtures",
+          "expectPath": "docs/governance/system-telemetry/external-approval.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-approval-schema",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-approval.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-approval.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external approval schema",
+        "system telemetry exact-run app approval packet",
+        "system telemetry signed app approval gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external approval schema",
+          "expectPath": "docs/governance/system-telemetry/external-approval.schema.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-closure-fixtures",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-closure.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external closure fixtures",
+        "system telemetry same-lane app closure bundle fixtures",
+        "system telemetry app approval evidence closure fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external closure fixtures",
+          "expectPath": "docs/governance/system-telemetry/external-closure.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-evidence-fixtures",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-evidence.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-evidence.schema.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external evidence fixtures",
+        "system telemetry synthetic evidence packets",
+        "system telemetry evidence schema negative fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external evidence fixtures",
+          "expectPath": "docs/governance/system-telemetry/external-evidence.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-evidence-schema",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-evidence.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-evidence.fixtures.json",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external evidence schema",
+        "system telemetry external evidence packet",
+        "system telemetry lane closing evidence"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external evidence schema",
+          "expectPath": "docs/governance/system-telemetry/external-evidence.schema.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-manifest-fixtures",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json",
+        "docs/governance/system-telemetry/external-validation.manifest.schema.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest fixtures",
+        "system telemetry manifest schema negative fixtures",
+        "system telemetry accidental completion fixture"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest fixtures",
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.fixtures.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-manifest",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest",
+        "system telemetry structured external lane manifest",
+        "system telemetry completion blocking manifest"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest",
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-external-validation-manifest-schema",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/system-telemetry/external-pending.md",
+        "docs/governance/system-telemetry/external-validation-runbook.md",
+        "docs/governance/system-telemetry/external-validation.manifest.json"
+      ],
+      "discoveryTerms": [
+        "system telemetry external validation manifest schema",
+        "system telemetry manifest schema",
+        "system telemetry external lane manifest contract"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry external validation manifest schema",
+          "expectPath": "docs/governance/system-telemetry/external-validation.manifest.schema.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-20",
+      "steward": "clawix"
+    },
+    {
+      "id": "clawix-system-telemetry-source-qa-review",
+      "kind": "validation-manifest",
+      "canonicalSource": "docs/governance/system-telemetry/source-review.json",
+      "requiredEntrypoints": [
+        "docs/decision-map.md",
+        "docs/discoverability.md",
+        "docs/governance/system-telemetry/decision-matrix.md"
+      ],
+      "discoveryTerms": [
+        "system telemetry source Q/A review",
+        "system telemetry source decision review",
+        "system telemetry final source audit gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "system telemetry source Q/A review",
+          "expectPath": "docs/governance/system-telemetry/source-review.json"
+        }
+      ],
+      "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-20",
+      "steward": "clawix"
     },
     {
       "id": "clawix-system-telemetry-external-approval-validator",
@@ -4834,927 +5840,6 @@
       "status": "enforced",
       "reviewDate": "2026-05-20",
       "steward": "clawix"
-    },
-    {
-      "id": "guard-scripts-verify-sdk-first-custom-surfaces-goal",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "verify-sdk-first-custom-surfaces-goal",
-        "Verify Sdk First Custom Surfaces Goal"
-      ],
-      "searchQueries": [
-        {
-          "query": "verify-sdk-first-custom-surfaces-goal",
-          "expectPath": "scripts/verify-sdk-first-custom-surfaces-goal.mjs"
-        }
-      ],
-      "guard": "scripts/verify-sdk-first-custom-surfaces-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "guard-scripts-verify-system-telemetry-goal",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/verify-system-telemetry-goal.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "verify-system-telemetry-goal",
-        "Verify System Telemetry Goal"
-      ],
-      "searchQueries": [
-        {
-          "query": "verify-system-telemetry-goal",
-          "expectPath": "scripts/verify-system-telemetry-goal.mjs"
-        }
-      ],
-      "guard": "scripts/verify-system-telemetry-goal.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "guard-scripts-zero-accidental-work-check",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/zero_accidental_work_check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "zero_accidental_work_check",
-        "Zero Accidental Work Check"
-      ],
-      "searchQueries": [
-        {
-          "query": "zero_accidental_work_check",
-          "expectPath": "scripts/zero_accidental_work_check.mjs"
-        }
-      ],
-      "guard": "scripts/zero_accidental_work_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-accessibility-governance",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/accessibility-governance/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "accessibility-governance",
-        "Govern Clawix accessibility changes across screen reader behavior, keyboard navigation, focus order, contrast, reduced motion, text scaling, timed interactions, and agent-generated UI."
-      ],
-      "searchQueries": [
-        {
-          "query": "accessibility-governance",
-          "expectPath": "skills/accessibility-governance/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-adoption-canonicity-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/adoption-canonicity-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "adoption-canonicity-review",
-        "Review or update stable, canonical, any-human, PMF, and adoption claims using adoption/canonicity governance packets.",
-        "Review Clawix stable, canonical, any-human, PMF, and UI canon promotion claims against adoption/canonicity evidence packets."
-      ],
-      "searchQueries": [
-        {
-          "query": "adoption-canonicity-review",
-          "expectPath": "skills/adoption-canonicity-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-adr-to-guardrail",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/adr-to-guardrail/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "adr-to-guardrail",
-        "Turn a new or changed ADR into implemented behavior, routing docs, tests, and guardrails rather than leaving it as standalone prose."
-      ],
-      "searchQueries": [
-        {
-          "query": "adr-to-guardrail",
-          "expectPath": "skills/adr-to-guardrail/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-architecture-drift-repair",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/architecture-drift-repair/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "architecture-drift-repair",
-        "Repair confirmed architecture drift in small batches while preserving public canon and avoiding broad opportunistic refactors."
-      ],
-      "searchQueries": [
-        {
-          "query": "architecture-drift-repair",
-          "expectPath": "skills/architecture-drift-repair/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-brand-guidelines",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/brand-guidelines/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "brand-guidelines",
-        "Given an existing Style, generate a human-readable brand guidelines document covering colors, typography, voice, do/don't, imagery rules, and usage examples. Use when the user asks for a brand book, brand guide, or design system document."
-      ],
-      "searchQueries": [
-        {
-          "query": "brand-guidelines",
-          "expectPath": "skills/brand-guidelines/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-canonical-catalog-expansion",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/canonical-catalog-expansion/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "canonical-catalog-expansion",
-        "Add or improve canonical data catalog collections, fields, aliases, relations, evidence tags, docs, and tests."
-      ],
-      "searchQueries": [
-        {
-          "query": "canonical-catalog-expansion",
-          "expectPath": "skills/canonical-catalog-expansion/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-canvas-design",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/canvas-design/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "canvas-design",
-        "Apply the 90/10 visual-to-text rule when composing a piece on a canvas (poster, card, social post). Use when the deliverable lives on a single fixed surface where each element competes for attention."
-      ],
-      "searchQueries": [
-        {
-          "query": "canvas-design",
-          "expectPath": "skills/canvas-design/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-cli-agent-surface-work",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/cli-agent-surface-work/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "cli-agent-surface-work",
-        "Change the public agent-facing CLI surface while preserving registry-backed discovery, JSON envelopes, aliases, docs, and tests."
-      ],
-      "searchQueries": [
-        {
-          "query": "cli-agent-surface-work",
-          "expectPath": "skills/cli-agent-surface-work/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-code-hygiene-audit",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/code-hygiene-audit/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "code-hygiene-audit",
-        "Audit ClawJS/Clawix code hygiene without editing code, producing categorized findings, baseline status, and validation evidence."
-      ],
-      "searchQueries": [
-        {
-          "query": "code-hygiene-audit",
-          "expectPath": "skills/code-hygiene-audit/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-code-hygiene-cleanup",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/code-hygiene-cleanup/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "code-hygiene-cleanup",
-        "Execute a bounded ClawJS/Clawix code hygiene cleanup campaign from an audit report, one category and repo at a time."
-      ],
-      "searchQueries": [
-        {
-          "query": "code-hygiene-cleanup",
-          "expectPath": "skills/code-hygiene-cleanup/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-code-review-risk",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/code-review-risk/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "code-review-risk",
-        "Review changes for bugs, regressions, missing tests, safety gaps, public/private leaks, and architecture drift before stylistic comments."
-      ],
-      "searchQueries": [
-        {
-          "query": "code-review-risk",
-          "expectPath": "skills/code-review-risk/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-commit-hygiene-public",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/commit-hygiene-public/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "commit-hygiene-public",
-        "Apply public, contributor-safe commit hygiene without maintainer-private automation, timestamps, ledger rules, or push policy."
-      ],
-      "searchQueries": [
-        {
-          "query": "commit-hygiene-public",
-          "expectPath": "skills/commit-hygiene-public/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-compatibility-evolution-work",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/compatibility-evolution-work/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "compatibility-evolution-work",
-        "Add or change stable public state, contracts, routes, migrations, adapters, rescue behavior, or compatibility-sensitive surfaces through the evolution ledger."
-      ],
-      "searchQueries": [
-        {
-          "query": "compatibility-evolution-work",
-          "expectPath": "skills/compatibility-evolution-work/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-constitution-drift-audit",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/constitution-drift-audit/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "constitution-drift-audit",
-        "Audit code, docs, tests, and registries against the Constitution, ADRs, and decision map without making broad repairs. Use when checking whether the repository is drifting away from accepted architecture."
-      ],
-      "searchQueries": [
-        {
-          "query": "constitution-drift-audit",
-          "expectPath": "skills/constitution-drift-audit/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-data-storage-boundary-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/data-storage-boundary-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "data-storage-boundary-review",
-        "Review storage placement across framework global data, workspace data, host state, sidecars, caches, vaults, and external sources."
-      ],
-      "searchQueries": [
-        {
-          "query": "data-storage-boundary-review",
-          "expectPath": "skills/data-storage-boundary-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-decision-map-maintenance",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/decision-map-maintenance/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "decision-map-maintenance",
-        "Keep decision maps as concise routers from decisions to canonical documents and validation guardrails."
-      ],
-      "searchQueries": [
-        {
-          "query": "decision-map-maintenance",
-          "expectPath": "skills/decision-map-maintenance/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-docs-alignment-update",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/docs-alignment-update/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "docs-alignment-update",
-        "Update docs, playbooks, shims, generated docs, and alignment checks so public instructions route to the right canonical sources."
-      ],
-      "searchQueries": [
-        {
-          "query": "docs-alignment-update",
-          "expectPath": "skills/docs-alignment-update/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-host-boundary-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/host-boundary-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "host-boundary-review",
-        "Review framework vs host ownership for permissions, approvals, grants, native execution, storage, daemons, and Clawix integration."
-      ],
-      "searchQueries": [
-        {
-          "query": "host-boundary-review",
-          "expectPath": "skills/host-boundary-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-host-dependent-validation",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/host-dependent-validation/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "host-dependent-validation",
-        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, real conversations, or signed native helpers.",
-        "Validate bugs and features that depend on local hosts, localhost, filesystem home state, auth, polling, installed apps, or signed native helpers."
-      ],
-      "searchQueries": [
-        {
-          "query": "host-dependent-validation",
-          "expectPath": "skills/host-dependent-validation/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-integration-qa-lab",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/integration-qa-lab/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "integration-qa-lab",
-        "Build or review an external integration QA lab with official surface snapshots, coverage matrices, fixtures, opt-in live lanes, and safe credential handling."
-      ],
-      "searchQueries": [
-        {
-          "query": "integration-qa-lab",
-          "expectPath": "skills/integration-qa-lab/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-naming-surface-audit",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/naming-surface-audit/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "naming-surface-audit",
-        "Audit and improve stable names, aliases, vocabulary, field casing, routes, ports, packages, and agent-search discoverability."
-      ],
-      "searchQueries": [
-        {
-          "query": "naming-surface-audit",
-          "expectPath": "skills/naming-surface-audit/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-performance-investigation",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/performance-investigation/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "performance-investigation",
-        "Investigate latency, freezes, memory growth, hitches, dropped frames, or perceived slowness with reproduction and instrumentation before optimizing."
-      ],
-      "searchQueries": [
-        {
-          "query": "performance-investigation",
-          "expectPath": "skills/performance-investigation/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-public-hygiene-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/public-hygiene-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "public-hygiene-review",
-        "Review public repository changes for secrets, private paths, signing identities, bundle IDs, generated artifacts, local logs, and private workflow leaks."
-      ],
-      "searchQueries": [
-        {
-          "query": "public-hygiene-review",
-          "expectPath": "skills/public-hygiene-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-secrets-boundary-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/secrets-boundary-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "secrets-boundary-review",
-        "Review secret handling, brokered execution, redaction, vault boundaries, host approval, and public hygiene."
-      ],
-      "searchQueries": [
-        {
-          "query": "secrets-boundary-review",
-          "expectPath": "skills/secrets-boundary-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-source-file-boundary-refactor",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/source-file-boundary-refactor/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "source-file-boundary-refactor",
-        "Split or contain large source files according to the source-file boundary ADR without changing behavior opportunistically."
-      ],
-      "searchQueries": [
-        {
-          "query": "source-file-boundary-refactor",
-          "expectPath": "skills/source-file-boundary-refactor/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-style-apply",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/style-apply/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "style-apply",
-        "Apply a Style to any artifact in the workspace (presentation, card, poster, social post, web page). Use when the user says \"apply style X\", \"render this with style X\", or wants to reuse a saved style on a new piece."
-      ],
-      "searchQueries": [
-        {
-          "query": "style-apply",
-          "expectPath": "skills/style-apply/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-style-extract",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/style-extract/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "style-extract",
-        "Inspect a reference (web URL, image, PDF, screenshot) and propose a candidate Style for the workspace. Use when the user says \"save this style\", \"guarda este estilo\", or shares a reference and wants to reapply it later."
-      ],
-      "searchQueries": [
-        {
-          "query": "style-extract",
-          "expectPath": "skills/style-extract/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-surface-registry-alignment",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/surface-registry-alignment/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "surface-registry-alignment",
-        "Align stable paths, APIs, CLI commands, schemas, events, IDs, storage keys, and UI/programmatic parity with the surface registries."
-      ],
-      "searchQueries": [
-        {
-          "query": "surface-registry-alignment",
-          "expectPath": "skills/surface-registry-alignment/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-surface-route-work",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/surface-route-work/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "surface-route-work",
-        "Work from a registered surface or transverse route by inspecting nodes, neighbors, edges, contracts, owners, tests, and gaps before editing."
-      ],
-      "searchQueries": [
-        {
-          "query": "surface-route-work",
-          "expectPath": "skills/surface-route-work/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-template-render",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/template-render/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "template-render",
-        "Render a Template + data + Style into a final artifact in one of HTML, PDF, PNG, SVG or PPTX. Use whenever the user asks for a concrete deliverable like \"make me a poster\", \"render a card\", \"give me a one-pager\"."
-      ],
-      "searchQueries": [
-        {
-          "query": "template-render",
-          "expectPath": "skills/template-render/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-theme-factory",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/theme-factory/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "theme-factory",
-        "Produce variants of an existing Style by shifting tone (light/dark), density (compact/relaxed), or accent (palette rotation) while preserving the brand identity. Use when the user wants alternate themes derived from one brand."
-      ],
-      "searchQueries": [
-        {
-          "query": "theme-factory",
-          "expectPath": "skills/theme-factory/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-ui-canon-review",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/ui-canon-review/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "ui-canon-review",
-        "Review whether a Clawix UI pattern, visual decision, copy change, or component extraction belongs in canon, debt, exception, or protected-surface scope."
-      ],
-      "searchQueries": [
-        {
-          "query": "ui-canon-review",
-          "expectPath": "skills/ui-canon-review/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "clawix-ui-implementation-skill",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/ui-implementation/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/ui/README.md"
-      ],
-      "discoveryTerms": [
-        "ui-implementation",
-        "Implement functional Clawix UI wiring while respecting visual mutation boundaries, pattern contracts, protected surfaces, and debt baselines.",
-        "ui implementation",
-        "mutation class",
-        "discovery registration"
-      ],
-      "searchQueries": [
-        {
-          "query": "ui implementation",
-          "expectPath": "skills/ui-implementation/SKILL.md"
-        }
-      ],
-      "guard": "scripts/ui_skill_contract_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-17"
-    },
-    {
-      "id": "skill-skills-ui-performance-budget",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/ui-performance-budget/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "ui-performance-budget",
-        "Capture and compare Clawix UI performance budgets for critical flows before optimizing visible or runtime UI behavior."
-      ],
-      "searchQueries": [
-        {
-          "query": "ui-performance-budget",
-          "expectPath": "skills/ui-performance-budget/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "skill-skills-visual-regression",
-      "kind": "skill",
-      "steward": "clawix",
-      "canonicalSource": "skills/visual-regression/SKILL.md",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md"
-      ],
-      "discoveryTerms": [
-        "visual-regression",
-        "Run and interpret Clawix UI geometry, screenshot, protected-surface, and debt-baseline checks without authorizing visual repair."
-      ],
-      "searchQueries": [
-        {
-          "query": "visual-regression",
-          "expectPath": "skills/visual-regression/SKILL.md"
-        }
-      ],
-      "guard": "scripts/discoverability-check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
     }
   ]
 }

@@ -13,6 +13,9 @@ Use this file as a router. Detailed operating rules live in
   a second source of truth.
 - Main router: `docs/decision-map.md`. It maps decision -> document ->
   validation and tells agents which canon/check applies.
+- Task-start router: `docs/agent-onboarding.md`. Use it to pick the work
+  family, canon, minimum validation, decision boundary, closure criteria, and
+  discoverability smoke before large tasks.
 - Operating rules: `docs/agent-rules/index.md`. Keep always-loaded
   instructions short; move procedures and catalogs there or into skills.
 - Discoverability routes: `docs/adr/0017-discoverability-and-meta-code-routing.md`,
@@ -107,6 +110,12 @@ bash macos/scripts/public_hygiene_check.sh
 node scripts/check-clawjs-skills-sync.mjs
 ```
 
+Canonical `bash scripts/test.sh <lane>` and
+`node scripts/agent-fast-validation.mjs ...` paths are coordination-aware. If
+they report `PENDING`, do not launch the same lane manually or wait idly; record
+the pending status and continue with non-conflicting work. Bypass requires
+`CLAW_AGENT_COORDINATION_BYPASS_REASON` and is partial/degraded evidence.
+
 ## Public Hygiene And Commits
 
 Public repositories must not contain maintainer-private paths, session or goal
@@ -115,6 +124,8 @@ launchers, private automation/indexes, personal references, logs, caches, or
 screenshots. Run `bash macos/scripts/public_hygiene_check.sh` before publication
 or broad review.
 
-Use Conventional Commits, keep commits scoped by intention, do not sweep
+Use Conventional Commits in English only, keep commits scoped by intention, and
+include a body for every non-trivial commit explaining why the change exists,
+what changed, and what validation was run or remains pending. Do not sweep
 unrelated edits, and never push, publish, upload, or tag without explicit
 approval.

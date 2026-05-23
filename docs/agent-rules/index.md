@@ -14,6 +14,9 @@ domains are assistive only.
 - Highest authority: `CONSTITUTION.md`.
 - Constitution router: `docs/constitution-map.md`.
 - Decision router: `docs/decision-map.md`.
+- Agent onboarding and work playbooks: `docs/agent-onboarding.md` maps large
+  tasks to work family, canon, minimum validation, decision boundary, closure
+  criteria, and discoverability smoke before editing.
 - Decision Tension Rubric: `docs/governance/decision-tension-rubric.md` for
   accepted durable ADRs and governance changes.
 - Performance governance: `docs/governance/performance-governance.md` and

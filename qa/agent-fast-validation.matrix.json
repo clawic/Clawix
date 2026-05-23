@@ -5,6 +5,7 @@
   "measurementNotes": [
     "Measured locally with warm caches and a 15s per-check timeout.",
     "Timings are advisory; the runner prints fresh timings on every run.",
+    "Each selected check acquires an agent coordination ledger lease before execution; PENDING exits without running duplicate work.",
     "The current scripts/test.sh fast lane contains 131 run commands before Swift package and web tests, including 35 self-tests, 44 UI checks, and 39 governance-like checks."
   ],
   "quickSuite": [
@@ -37,6 +38,15 @@
       "realServices": false,
       "detects": "bloated or divergent always-loaded agent instructions",
       "failureAction": "Move procedure detail into routed docs or skills and keep AGENTS.md as a router."
+    },
+    {
+      "id": "agent-onboarding-discoverability",
+      "command": "node scripts/agent_onboarding_discoverability_check.mjs",
+      "measuredMs": 1000,
+      "maxSeconds": 10,
+      "realServices": false,
+      "detects": "missing large-task onboarding routes, work-family coverage, prompt starters, or discoverability registry wiring",
+      "failureAction": "Update docs/agent-onboarding.md, the routers, discoverability registry, and quick validation matrix together."
     },
     {
       "id": "constitution-assertions",
@@ -223,8 +233,8 @@
     {
       "id": "agent-docs",
       "label": "Agent instructions or routed docs",
-      "pathPatterns": ["AGENTS.md", "CLAUDE.md", "docs/agent-rules/**", "skills/**"],
-      "recommendedChecks": ["agent-instructions", "tracked-ignored", "constitution-sync"],
+      "pathPatterns": ["AGENTS.md", "CLAUDE.md", "docs/agent-rules/**", "docs/agent-onboarding.md", "skills/**"],
+      "recommendedChecks": ["agent-instructions", "agent-onboarding-discoverability", "tracked-ignored", "constitution-sync"],
       "escalateTo": ["scripts/test.sh fast when instructions alter public policy"]
     },
     {

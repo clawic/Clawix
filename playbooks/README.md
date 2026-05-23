@@ -7,6 +7,9 @@ The playbooks are documentation. They do not run code, install hooks, send promp
 Architecture, storage, host, naming, validation, release, and privacy decisions
 are indexed in [docs/decision-map.md](../docs/decision-map.md). Playbooks should
 link to the canonical decision there instead of restating long-lived rules.
+Large coding tasks start from [docs/agent-onboarding.md](../docs/agent-onboarding.md),
+which maps each work family to its entrypoint, canon, minimum validation,
+decision boundary, closure criteria, and discoverability smoke.
 
 ## Platforms
 

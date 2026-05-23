@@ -54,6 +54,7 @@ current worktree state rather than this playbook.
 | --- | ---: | ---: |
 | `tracked-ignored` | pass | 1.0 s |
 | `agent-instructions` | pass | 0.9 s |
+| `agent-onboarding-discoverability` | pass | pending sample |
 | `constitution-assertions` | pass | 3.0 s |
 | `constitution-sync` | pass | 1.0 s |
 | `bridge-contract-parity` | pass | 1.9 s |
@@ -114,7 +115,7 @@ The machine-readable source is
 
 | Change type | Recommended checks | Escalate when |
 | --- | --- | --- |
-| Agent instructions or routed docs | `agent-instructions`, `tracked-ignored`, `constitution-sync` | Public policy changes need `scripts/test.sh fast`. |
+| Agent instructions or routed docs | `agent-instructions`, `agent-onboarding-discoverability`, `tracked-ignored`, `constitution-sync` | Public policy changes need `scripts/test.sh fast`. |
 | Constitution, ADR, release, or governance policy | `constitution-assertions`, `constitution-sync`, `surface-route-registry`, `surface-evidence-projection`, `tracked-ignored` | Broad canon changes need `scripts/test.sh fast`; release work needs release lane. |
 | Bridge, route, protocol, Relay, or surface graph | `bridge-contract-parity`, `surface-route-registry`, `surface-evidence-projection`, `persistent-surface-self-test`, `persistent-surface-app-scan` | macOS bridge/runtime changes need integration. |
 | Native permissions, approvals, grants, or host actions | `native-permission-broker`, `native-action-broker`, `persistent-surface-app-scan`, `bridge-contract-parity` | Signed-host behavior needs host validation. |
