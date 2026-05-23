@@ -89,6 +89,9 @@ enum ClawixMethod {
     static let threadUnarchive   = "thread/unarchive"
     static let turnStart         = "turn/start"
     static let turnInterrupt     = "turn/interrupt"
+    /// Stop + clear every background terminal the agent started in a
+    /// thread (the "Stop all background terminals" affordance).
+    static let backgroundTerminalsClean = "thread/backgroundTerminals/clean"
     static let modelList         = "model/list"
     static let accountRateLimitsRead = "account/rateLimits/read"
 
@@ -322,6 +325,14 @@ struct TurnInterruptParams: Encodable {
 
 struct TurnInterruptResult: Decodable {}
 
+// MARK: - thread/backgroundTerminals/clean
+
+struct BackgroundTerminalsCleanParams: Encodable {
+    let threadId: String
+}
+
+struct BackgroundTerminalsCleanResult: Decodable {}
+
 // MARK: - thread/fork
 //
 // Forks an existing thread into a new one that mirrors the parent's
@@ -480,6 +491,16 @@ struct ItemPayload: Decodable {
     // mcpToolCall / dynamicToolCall
     let server: String?
     let tool: String?
+
+    // plan (update_plan checklist; arrives as a `plan` thread item via
+    // item/started + item/completed). Each step carries a status of
+    // "pending" | "in_progress" | "completed".
+    let steps: [PlanStepPayload]?
+}
+
+struct PlanStepPayload: Decodable {
+    let step: String
+    let status: String?
 }
 
 struct CommandActionPayload: Decodable {

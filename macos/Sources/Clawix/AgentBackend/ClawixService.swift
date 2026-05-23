@@ -433,6 +433,18 @@ final class ClawixService: ObservableObject {
         )
     }
 
+    /// Stop and clear every background terminal the agent started in this
+    /// chat's thread. Backs the thread-summary panel's "Stop all" control.
+    /// Safe no-op server-side when the thread has none.
+    func cleanBackgroundTerminals(chatId: UUID) async {
+        guard let threadId = threadByChat[chatId] else { return }
+        _ = try? await client.send(
+            method: ClawixMethod.backgroundTerminalsClean,
+            params: BackgroundTerminalsCleanParams(threadId: threadId),
+            expecting: BackgroundTerminalsCleanResult.self
+        )
+    }
+
     private func dismissPendingPlanQuestionIfAny(chatId: UUID) async {
         guard let pending = appState?.pendingPlanQuestions[chatId] else { return }
         appState?.pendingPlanQuestions[chatId] = nil
@@ -708,6 +720,21 @@ final class ClawixService: ObservableObject {
         guard !interruptedTurnIds.contains(payload.turnId),
               let chatId = chatByThread[payload.threadId]
         else { return }
+
+        if payload.item.type == "plan" {
+            // The agent's `update_plan` checklist. Chat-level, not a
+            // per-message work item: feed the thread-summary Progress
+            // section live as the agent revises the plan mid-turn.
+            let steps = (payload.item.steps ?? []).compactMap { p -> PlanStep? in
+                let trimmed = p.step.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return nil }
+                return PlanStep(step: trimmed, status: PlanStep.Status(raw: p.status ?? "pending"))
+            }
+            if !steps.isEmpty {
+                appState?.planByChat[chatId] = steps
+            }
+            return
+        }
 
         if payload.item.type == "agentMessage" {
             // Don't flip `streamingFinished` here. A turn can include an

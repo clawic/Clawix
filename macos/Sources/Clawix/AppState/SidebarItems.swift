@@ -402,6 +402,12 @@ extension AppState {
         SidebarPrefs.store.set(true, forKey: ClawixPersistentSurfaceKeys.terminalPanelOpen)
     }
 
+    /// Stop and clear every background terminal the agent started in the
+    /// given chat's thread. Backs the thread-summary "Stop all" control.
+    func stopBackgroundTerminals(chatId: UUID) {
+        Task { await clawix?.cleanBackgroundTerminals(chatId: chatId) }
+    }
+
     /// Whether the current route can host the integrated terminal panel.
     /// Drives the enabled state of the launcher's "Terminal" tile.
     var canHostIntegratedTerminal: Bool {

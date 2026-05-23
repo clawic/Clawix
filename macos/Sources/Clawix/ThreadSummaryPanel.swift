@@ -294,7 +294,10 @@ private struct ThreadSummaryContent: View {
     }
 
     private var terminalSection: some View {
-        section(L10n.t("Terminal")) {
+        section(
+            L10n.t("Terminal"),
+            action: (L10n.t("Stop all"), { appState.stopBackgroundTerminals(chatId: chatId) })
+        ) {
             sourceRow(icon: .terminal, text: "\(L10n.t("Terminal activity")) · \(terminalCount)")
         }
     }
