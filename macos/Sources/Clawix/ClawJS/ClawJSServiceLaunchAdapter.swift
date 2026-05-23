@@ -59,7 +59,7 @@ enum ClawJSServiceLaunchAdapter {
             return arguments
         case .secrets:
             return arguments
-        case let service where service.rawValue == String(["t", "e", "l", "e", "g", "r", "a", "m"]):
+        case .telegram:
             return arguments
         case .memory, .drive, .sessions:
             arguments += ["--data-dir", ClawJSServiceDirectoryResolver.dataDirectoryURL(for: service).path]
