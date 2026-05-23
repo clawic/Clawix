@@ -40,6 +40,8 @@ describe("web route catalog", () => {
     expect(routeEntry("tasks").webSurface).toBe("implemented");
     expect(routeEntry("goals").webSurface).toBe("implemented");
     expect(routeEntry("notes").webSurface).toBe("implemented");
+    expect(routeEntry("calendar").webSurface).toBe("implemented");
+    expect(routeEntry("contacts").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });

@@ -28,6 +28,8 @@ import { McpView } from "../mcp/mcp-view";
 import { LocalModelsView } from "../local-models/local-models-view";
 import { CollectionView } from "../collections/collection-view";
 import { collectionForRoute } from "../collections/collection-model";
+import { CalendarView } from "../personal/calendar-view";
+import { ContactsView } from "../personal/contacts-view";
 import { SurfaceRouteView } from "../surfaces/surface-route-view";
 import { OfflineBridgeBanner, VersionMismatchBanner } from "./version-mismatch";
 
@@ -136,6 +138,8 @@ export function MainShell() {
           {route === "memory" && <MemoryView />}
           {route === "secrets" && <SecretsView />}
           {collection && <CollectionView collection={collection} />}
+          {route === "calendar" && <CalendarView />}
+          {route === "contacts" && <ContactsView />}
           {route === "database" && <DatabaseView />}
           {route === "pomodoro" && <PomodoroView />}
           {route === "mcp" && <McpView />}
@@ -174,6 +178,8 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
     "tasks",
     "goals",
     "notes",
+    "calendar",
+    "contacts",
     "projects",
     "memory",
     "secrets",
