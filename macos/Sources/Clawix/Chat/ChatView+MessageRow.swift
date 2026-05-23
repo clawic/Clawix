@@ -157,6 +157,10 @@ struct MessageRow: View, Equatable {
         let _ = PerfSignpost.uiChat.event("row.body")
         VStack(alignment: isUser ? .trailing : .leading, spacing: 24) {
             if isUser {
+                if message.steeredByAnnotation {
+                    SteeredConversationDivider()
+                        .frame(maxWidth: .infinity)
+                }
                 if isEditing {
                     UserMessageEditor(
                         text: $editDraft,

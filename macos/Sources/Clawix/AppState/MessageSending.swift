@@ -20,7 +20,13 @@ extension AppState {
             .filter { !$0.isEmpty }
             .joined(separator: "\n\n")
 
-        let userMsg = ChatMessage(role: .user, content: combined, timestamp: Date())
+        let steeredByAnnotation = attachments.contains { $0.isAnnotation }
+        let userMsg = ChatMessage(
+            role: .user,
+            content: combined,
+            timestamp: Date(),
+            steeredByAnnotation: steeredByAnnotation
+        )
         let chatId: UUID
         if case .chat(let id) = currentRoute,
            chatStore.summary(id: id) != nil {
