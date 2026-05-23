@@ -199,6 +199,19 @@ public sealed class BridgeSessionDispatchParityTests
             new Dictionary<string, WireRateLimitSnapshot>());
         Assert.IsType<BridgeBody.RateLimitsUpdated>((await ReceiveAsync(client)).Body);
 
+        host.SetClawJSServiceStatus(new WireClawJSServiceSnapshot
+        {
+            Id = "secrets",
+            State = "ready",
+            Port = 24108,
+            RestartCount = 1,
+            UpdatedAtMs = 1777000001000,
+            Source = "daemon",
+        });
+        var service = Assert.IsType<BridgeBody.ClawJSServiceStatusUpdated>((await ReceiveAsync(client)).Body);
+        Assert.Equal("secrets", service.Service.Id);
+        Assert.Equal("ready", service.Service.State);
+
         host.SetState(new BridgeRuntimeState.Error("boom"));
         var state = Assert.IsType<BridgeBody.BridgeState>((await ReceiveAsync(client)).Body);
         Assert.Equal("error", state.State);

@@ -41,6 +41,7 @@ public sealed partial class DaemonEngineHost : IEngineHost, IAsyncDisposable
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
     public event Action<MessagesEvent>? MessagesChanged;
     public event Action<(WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId)>? RateLimitsChanged;
+    public event Action<WireClawJSServiceSnapshot>? ClawJSServiceStatusChanged;
 
     public async Task BootstrapAsync(CancellationToken ct)
     {

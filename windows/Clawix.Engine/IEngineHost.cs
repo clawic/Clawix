@@ -64,6 +64,8 @@ public interface IEngineHost
 
     IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; }
 
+    event Action<WireClawJSServiceSnapshot>? ClawJSServiceStatusChanged;
+
     // ===== Audio catalog =====
 
     Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioRegisterAsync(string requestId, WireAudioRegisterRequest request, CancellationToken ct);

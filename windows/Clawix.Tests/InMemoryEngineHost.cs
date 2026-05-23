@@ -26,6 +26,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
     public event Action<MessagesEvent>? MessagesChanged;
     public event Action<(WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId)>? RateLimitsChanged;
+    public event Action<WireClawJSServiceSnapshot>? ClawJSServiceStatusChanged;
 
     public void SetSessions(IEnumerable<WireSession> sessions)
     {
@@ -48,6 +49,16 @@ public sealed class InMemoryEngineHost : IEngineHost
     {
         _rateLimits = (snapshot, byLimitId);
         RateLimitsChanged?.Invoke(_rateLimits);
+    }
+
+    public void SetClawJSServiceStatus(WireClawJSServiceSnapshot service)
+    {
+        ClawJSServiceStatusesCurrent = ClawJSServiceStatusesCurrent
+            .Where(item => item.Id != service.Id)
+            .Prepend(service)
+            .OrderBy(item => item.Id, StringComparer.Ordinal)
+            .ToList();
+        ClawJSServiceStatusChanged?.Invoke(service);
     }
 
     public Task HandleSendMessageAsync(string sessionId, string text, IReadOnlyList<WireAttachment> attachments, CancellationToken ct) => Task.CompletedTask;

@@ -104,6 +104,7 @@ public sealed class BridgeSession
         _host.BridgeSessionsChanged += OnBridgeSessionsChanged;
         _host.MessagesChanged += OnMessagesChanged;
         _host.RateLimitsChanged += OnRateLimitsChanged;
+        _host.ClawJSServiceStatusChanged += OnClawJSServiceStatusChanged;
         _hostEventsAttached = true;
     }
 
@@ -114,6 +115,7 @@ public sealed class BridgeSession
         _host.BridgeSessionsChanged -= OnBridgeSessionsChanged;
         _host.MessagesChanged -= OnMessagesChanged;
         _host.RateLimitsChanged -= OnRateLimitsChanged;
+        _host.ClawJSServiceStatusChanged -= OnClawJSServiceStatusChanged;
         _hostEventsAttached = false;
     }
 
@@ -152,6 +154,12 @@ public sealed class BridgeSession
     {
         if (_clientKind != ClientKind.Desktop) return;
         SendEvent(new BridgeFrame(new BridgeBody.RateLimitsUpdated(payload.Snapshot, payload.ByLimitId)));
+    }
+
+    private void OnClawJSServiceStatusChanged(WireClawJSServiceSnapshot service)
+    {
+        if (_clientKind != ClientKind.Desktop) return;
+        SendEvent(new BridgeFrame(new BridgeBody.ClawJSServiceStatusUpdated(service)));
     }
 
     private void SendEvent(BridgeFrame frame)
