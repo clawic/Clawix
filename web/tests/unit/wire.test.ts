@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
-import { decodeFrame, encodeFrame, peekSchemaVersion, BRIDGE_SCHEMA_VERSION, type FrameBody } from "../../src/bridge/frames";
+import { decodeFrame, encodeFrame, peekSchemaVersion, BRIDGE_MAX_FRAME_BYTES, BRIDGE_SCHEMA_VERSION, type FrameBody } from "../../src/bridge/frames";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,9 +81,17 @@ describe("frames", () => {
     }
   });
 
-  it("returns null on unknown frame types (forward-compat)", () => {
+  it("returns null on unknown schema versions and frame types", () => {
     const raw = JSON.stringify({ schemaVersion: 99, type: "futureFrame", foo: "bar" });
     expect(decodeFrame(raw)).toBeNull();
+  });
+
+  it("returns null on malformed, non-object, oversized, or extra-field frames", () => {
+    expect(decodeFrame("{")).toBeNull();
+    expect(decodeFrame(JSON.stringify(["not", "object"]))).toBeNull();
+    expect(decodeFrame(JSON.stringify({ schemaVersion: BRIDGE_SCHEMA_VERSION }))).toBeNull();
+    expect(decodeFrame(JSON.stringify({ schemaVersion: BRIDGE_SCHEMA_VERSION, type: "listSessions", sessionId: "extra" }))).toBeNull();
+    expect(decodeFrame(" ".repeat(BRIDGE_MAX_FRAME_BYTES + 1))).toBeNull();
   });
 
   it("peeks the schema version without parsing", () => {

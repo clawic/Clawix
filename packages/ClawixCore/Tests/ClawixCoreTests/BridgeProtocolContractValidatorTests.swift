@@ -167,4 +167,99 @@ final class BridgeProtocolContractValidatorTests: XCTestCase {
             .rateLimitsSnapshot(snapshot: nil, byLimitId: [:])
         )
     }
+
+    func testRejectsOversizedFramesBeforeJsonDecode() throws {
+        let data = Data(repeating: UInt8(ascii: " "), count: bridgeMaxFrameBytes + 1)
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard case BridgeDecodingError.oversizedFrame(let actualBytes, let maxBytes) = error else {
+                XCTFail("expected oversizedFrame, got \(error)")
+                return
+            }
+            XCTAssertEqual(actualBytes, bridgeMaxFrameBytes + 1)
+            XCTAssertEqual(maxBytes, bridgeMaxFrameBytes)
+        }
+    }
+
+    func testRejectsMalformedJsonWithParseableError() throws {
+        let data = #"{"schemaVersion":1,"type":"listSessions""#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.invalidJson")
+        }
+    }
+
+    func testRejectsNonObjectFrames() throws {
+        let data = #"["not","an","object"]"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.nonObjectFrame")
+            XCTAssertEqual(bridgeError, .nonObjectFrame)
+        }
+    }
+
+    func testRejectsMissingRequiredEnvelopeFields() throws {
+        let data = #"{"schemaVersion":1}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.missingField")
+            XCTAssertEqual(bridgeError, .missingField("type"))
+        }
+    }
+
+    func testRejectsUnknownSchemaVersionWithParseableError() throws {
+        let data = #"{"schemaVersion":2,"type":"listSessions"}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.unknownSchemaVersion")
+            XCTAssertEqual(bridgeError, .unknownSchemaVersion(2))
+        }
+    }
+
+    func testRejectsExtraTopLevelPayloadFields() throws {
+        let data = #"{"schemaVersion":1,"type":"listSessions","sessionId":"abc"}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard case BridgeDecodingError.unknownField(let type, let field) = error else {
+                XCTFail("expected unknownField, got \(error)")
+                return
+            }
+            XCTAssertEqual(type, "listSessions")
+            XCTAssertEqual(field, "sessionId")
+        }
+    }
+
+    func testInvalidPayloadErrorsAreStableAndParseable() throws {
+        let data = #"{"schemaVersion":1,"type":"auth","token":"abc","deviceName":"iPhone"}"#.data(using: .utf8)!
+
+        XCTAssertThrowsError(try BridgeCoder.decode(data)) { error in
+            guard let bridgeError = error as? BridgeDecodingError else {
+                XCTFail("expected BridgeDecodingError, got \(error)")
+                return
+            }
+            XCTAssertEqual(bridgeError.code, "bridge.decode.invalidPayload")
+            if case BridgeDecodingError.invalidPayload(let type, let message) = bridgeError {
+                XCTAssertEqual(type, "auth")
+                XCTAssertTrue(message.contains("clientKind"), message)
+            } else {
+                XCTFail("expected invalidPayload, got \(bridgeError)")
+            }
+        }
+    }
 }

@@ -15,17 +15,101 @@ internal sealed partial class BridgeFrameConverter : JsonConverter<BridgeFrame>
     {
         using var doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new BridgeDecodingException("bridge frame must be a JSON object");
 
         if (!root.TryGetProperty("schemaVersion", out var protocolProp))
             throw new JsonException("frame missing 'schemaVersion'");
         var schemaVersion = protocolProp.GetInt32();
+        if (schemaVersion != BridgeConstants.SchemaVersion)
+            throw new BridgeDecodingException($"unsupported schemaVersion: {schemaVersion}");
 
         if (!root.TryGetProperty("type", out var typeProp))
             throw new JsonException("frame missing 'type'");
         var type = typeProp.GetString() ?? throw new JsonException("frame 'type' is null");
+        ValidateTopLevel(root, type);
 
         var body = DecodeBody(root, type, options);
         return new BridgeFrame(body, schemaVersion);
+    }
+
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> AllowedPayloadKeys =
+        new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
+        {
+            ["auth"] = Keys("token", "deviceName", "clientKind", "clientId", "installationId", "deviceId"),
+            ["listSessions"] = Keys(),
+            ["openSession"] = Keys("sessionId", "limit"),
+            ["loadOlderMessages"] = Keys("sessionId", "beforeMessageId", "limit"),
+            ["sendMessage"] = Keys("sessionId", "text", "attachments"),
+            ["newSession"] = Keys("sessionId", "text", "attachments"),
+            ["interruptTurn"] = Keys("sessionId"),
+            ["authOk"] = Keys("hostDisplayName"),
+            ["authFailed"] = Keys("reason"),
+            ["versionMismatch"] = Keys("serverVersion"),
+            ["sessionsSnapshot"] = Keys("sessions"),
+            ["sessionUpdated"] = Keys("session"),
+            ["messagesSnapshot"] = Keys("sessionId", "messages", "hasMore"),
+            ["messagesPage"] = Keys("sessionId", "messages", "hasMore"),
+            ["messageAppended"] = Keys("sessionId", "message"),
+            ["messageStreaming"] = Keys("sessionId", "messageId", "content", "reasoningText", "finished"),
+            ["errorEvent"] = Keys("code", "message"),
+            ["editPrompt"] = Keys("sessionId", "messageId", "text"),
+            ["archiveSession"] = Keys("sessionId"),
+            ["unarchiveSession"] = Keys("sessionId"),
+            ["pinSession"] = Keys("sessionId"),
+            ["unpinSession"] = Keys("sessionId"),
+            ["renameSession"] = Keys("sessionId", "title"),
+            ["pairingStart"] = Keys(),
+            ["listProjects"] = Keys(),
+            ["readFile"] = Keys("path"),
+            ["pairingPayload"] = Keys("qrJson", "token", "shortCode"),
+            ["projectsSnapshot"] = Keys("projects"),
+            ["fileSnapshot"] = Keys("path", "content", "isMarkdown", "error"),
+            ["transcribeAudio"] = Keys("requestId", "audioBase64", "mimeType", "language"),
+            ["transcriptionResult"] = Keys("requestId", "text", "errorMessage"),
+            ["requestAudio"] = Keys("audioId"),
+            ["audioSnapshot"] = Keys("audioId", "audioBase64", "mimeType", "errorMessage"),
+            ["requestGeneratedImage"] = Keys("path"),
+            ["generatedImageSnapshot"] = Keys("path", "dataBase64", "mimeType", "errorMessage"),
+            ["requestRolloutAttachment"] = Keys("attachmentId"),
+            ["rolloutAttachmentSnapshot"] = Keys("attachmentId", "dataBase64", "mimeType", "errorMessage"),
+            ["bridgeState"] = Keys("state", "chatCount", "message"),
+            ["requestRateLimits"] = Keys(),
+            ["rateLimitsSnapshot"] = Keys("rateLimits", "rateLimitsByLimitId"),
+            ["rateLimitsUpdated"] = Keys("rateLimits", "rateLimitsByLimitId"),
+            ["requestClawJSServiceStatuses"] = Keys(),
+            ["clawJSServiceStatusesSnapshot"] = Keys("services"),
+            ["clawJSServiceStatusUpdated"] = Keys("service"),
+            ["audioRegister"] = Keys("requestId", "request"),
+            ["audioAttachTranscript"] = Keys("requestId", "audioId", "transcript"),
+            ["audioGet"] = Keys("requestId", "audioId", "appId"),
+            ["audioGetBytes"] = Keys("requestId", "audioId", "appId"),
+            ["audioList"] = Keys("requestId", "filter"),
+            ["audioDelete"] = Keys("requestId", "audioId", "appId"),
+            ["audioRegisterResult"] = Keys("requestId", "asset", "errorMessage"),
+            ["audioAttachTranscriptResult"] = Keys("requestId", "transcript", "errorMessage"),
+            ["audioGetResult"] = Keys("requestId", "asset", "errorMessage"),
+            ["audioBytesResult"] = Keys("requestId", "audioBase64", "mimeType", "durationMs", "errorMessage"),
+            ["audioListResult"] = Keys("requestId", "list", "errorMessage"),
+            ["audioDeleteResult"] = Keys("requestId", "deleted", "errorMessage"),
+        };
+
+    private static HashSet<string> Keys(params string[] keys)
+    {
+        var allowed = new HashSet<string>(StringComparer.Ordinal) { "schemaVersion", "type" };
+        foreach (var key in keys) allowed.Add(key);
+        return allowed;
+    }
+
+    private static void ValidateTopLevel(JsonElement root, string type)
+    {
+        if (!AllowedPayloadKeys.TryGetValue(type, out var allowed))
+            throw BridgeDecodingException.UnknownType(type);
+        foreach (var property in root.EnumerateObject())
+        {
+            if (!allowed.Contains(property.Name))
+                throw new BridgeDecodingException($"unexpected field for {type}: {property.Name}");
+        }
     }
 
     private static BridgeBody DecodeBody(JsonElement root, string type, JsonSerializerOptions options)

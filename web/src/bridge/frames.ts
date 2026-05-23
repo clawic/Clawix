@@ -23,6 +23,7 @@ import {
 } from "./wire";
 
 export const BRIDGE_SCHEMA_VERSION = 1 as const;
+export const BRIDGE_MAX_FRAME_BYTES = 8 * 1024 * 1024;
 export const BRIDGE_INITIAL_PAGE_LIMIT = 60 as const;
 export const BRIDGE_OLDER_PAGE_LIMIT = 40 as const;
 
@@ -404,6 +405,79 @@ export type FrameOf<T extends FrameType> = Extract<BridgeFrame, { type: T }>;
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 export type FrameBody = DistributiveOmit<BridgeFrame, "schemaVersion">;
 
+const TOP_LEVEL_KEYS = new Set(["schemaVersion", "type"]);
+const ALLOWED_PAYLOAD_KEYS: Record<FrameType, readonly string[]> = {
+  auth: ["token", "deviceName", "clientKind", "clientId", "installationId", "deviceId"],
+  listSessions: [],
+  openSession: ["sessionId", "limit"],
+  loadOlderMessages: ["sessionId", "beforeMessageId", "limit"],
+  sendMessage: ["sessionId", "text", "attachments"],
+  newSession: ["sessionId", "text", "attachments"],
+  interruptTurn: ["sessionId"],
+  editPrompt: ["sessionId", "messageId", "text"],
+  archiveSession: ["sessionId"],
+  unarchiveSession: ["sessionId"],
+  pinSession: ["sessionId"],
+  unpinSession: ["sessionId"],
+  renameSession: ["sessionId", "title"],
+  pairingStart: [],
+  listProjects: [],
+  readFile: ["path"],
+  transcribeAudio: ["requestId", "audioBase64", "mimeType", "language"],
+  requestAudio: ["audioId"],
+  requestGeneratedImage: ["path"],
+  requestRolloutAttachment: ["attachmentId"],
+  requestRateLimits: [],
+  requestClawJSServiceStatuses: [],
+  authOk: ["hostDisplayName"],
+  authFailed: ["reason"],
+  versionMismatch: ["serverVersion"],
+  sessionsSnapshot: ["sessions"],
+  sessionUpdated: ["session"],
+  messagesSnapshot: ["sessionId", "messages", "hasMore"],
+  messagesPage: ["sessionId", "messages", "hasMore"],
+  messageAppended: ["sessionId", "message"],
+  messageStreaming: ["sessionId", "messageId", "content", "reasoningText", "finished"],
+  errorEvent: ["code", "message"],
+  pairingPayload: ["qrJson", "token", "shortCode"],
+  projectsSnapshot: ["projects"],
+  fileSnapshot: ["path", "content", "isMarkdown", "error"],
+  transcriptionResult: ["requestId", "text", "errorMessage"],
+  audioSnapshot: ["audioId", "audioBase64", "mimeType", "errorMessage"],
+  generatedImageSnapshot: ["path", "dataBase64", "mimeType", "errorMessage"],
+  rolloutAttachmentSnapshot: ["attachmentId", "dataBase64", "mimeType", "errorMessage"],
+  bridgeState: ["state", "chatCount", "message"],
+  rateLimitsSnapshot: ["rateLimits", "rateLimitsByLimitId"],
+  rateLimitsUpdated: ["rateLimits", "rateLimitsByLimitId"],
+  clawJSServiceStatusesSnapshot: ["services"],
+  clawJSServiceStatusUpdated: ["service"],
+  audioRegister: ["requestId", "request"],
+  audioAttachTranscript: ["requestId", "audioId", "transcript"],
+  audioGet: ["requestId", "audioId", "appId"],
+  audioGetBytes: ["requestId", "audioId", "appId"],
+  audioList: ["requestId", "filter"],
+  audioDelete: ["requestId", "audioId", "appId"],
+  audioRegisterResult: ["requestId", "asset", "errorMessage"],
+  audioAttachTranscriptResult: ["requestId", "transcript", "errorMessage"],
+  audioGetResult: ["requestId", "asset", "errorMessage"],
+  audioBytesResult: ["requestId", "audioBase64", "mimeType", "durationMs", "errorMessage"],
+  audioListResult: ["requestId", "list", "errorMessage"],
+  audioDeleteResult: ["requestId", "deleted", "errorMessage"],
+};
+
+function frameByteLength(raw: string): number {
+  return new TextEncoder().encode(raw).byteLength;
+}
+
+function hasStrictTopLevelShape(obj: unknown): obj is { schemaVersion: number; type: FrameType } {
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return false;
+  const record = obj as Record<string, unknown>;
+  if (record.schemaVersion !== BRIDGE_SCHEMA_VERSION) return false;
+  if (typeof record.type !== "string" || !(record.type in ALLOWED_PAYLOAD_KEYS)) return false;
+  const allowed = new Set([...TOP_LEVEL_KEYS, ...ALLOWED_PAYLOAD_KEYS[record.type as FrameType]]);
+  return Object.keys(record).every((key) => allowed.has(key));
+}
+
 /** Encode a frame body to a JSON string ready to send over WebSocket. */
 export function encodeFrame(body: FrameBody): string {
   const frame = { schemaVersion: BRIDGE_SCHEMA_VERSION, ...body };
@@ -417,7 +491,9 @@ export function encodeFrame(body: FrameBody): string {
  */
 export function decodeFrame(raw: string): BridgeFrame | null {
   try {
+    if (frameByteLength(raw) > BRIDGE_MAX_FRAME_BYTES) return null;
     const obj = JSON.parse(raw);
+    if (!hasStrictTopLevelShape(obj)) return null;
     const result = ZBridgeFrame.safeParse(obj);
     if (result.success) {
       return result.data;

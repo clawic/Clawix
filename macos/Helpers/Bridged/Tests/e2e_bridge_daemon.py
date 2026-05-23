@@ -56,9 +56,19 @@ def write_fake_backend(tmp: Path) -> Path:
             import json, os, sys, threading, time
             rollout = {str(rollout)!r}
             cwd = {str(tmp)!r}
+            cancelled_turns = set()
+            thread_counter = 0
 
             def send(obj):
                 print(json.dumps(obj), flush=True)
+
+            def input_text(msg):
+                parts = msg.get("params", {{}}).get("input", [])
+                text = []
+                for part in parts:
+                    if isinstance(part, dict) and isinstance(part.get("text"), str):
+                        text.append(part["text"])
+                return " ".join(text)
 
             for line in sys.stdin:
                 if not line.strip():
@@ -84,21 +94,40 @@ def write_fake_backend(tmp: Path) -> Path:
                         "archived":False
                     }}],"nextCursor":None}}}})
                 elif method == "thread/start":
-                    send({{"jsonrpc":"2.0","id":mid,"result":{{"thread":{{"id":"thread-new","cwd":cwd,"createdAt":"2026-05-05T10:00:00Z","cliVersion":"e2e"}},"model":None}}}})
+                    thread_counter += 1
+                    thread_id = "thread-new-" + str(thread_counter)
+                    send({{"jsonrpc":"2.0","id":mid,"result":{{"thread":{{"id":thread_id,"cwd":cwd,"createdAt":"2026-05-05T10:00:00Z","cliVersion":"e2e"}},"model":None}}}})
                 elif method in ("thread/archive", "thread/unarchive"):
                     send({{"jsonrpc":"2.0","id":mid,"result":{{}}}})
                 elif method == "turn/start":
                     thread_id = msg["params"]["threadId"]
                     turn_id = "turn-" + thread_id
+                    text = input_text(msg)
+                    is_slow_fixture = "slow prompt" in text or thread_id.endswith("-3")
+                    is_error_fixture = "fail prompt" in text or thread_id.endswith("-4")
+                    if is_error_fixture:
+                        send({{"jsonrpc":"2.0","id":mid,"error":{{"code":-32000,"message":"fixture failure"}}}})
+                        continue
                     send({{"jsonrpc":"2.0","id":mid,"result":{{"turn":{{"id":turn_id}}}}}})
                     def stream():
                         send({{"jsonrpc":"2.0","method":"turn/started","params":{{"threadId":thread_id,"turn":{{"id":turn_id}}}}}})
                         time.sleep(0.05)
-                        send({{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{{"threadId":thread_id,"turnId":turn_id,"itemId":"assistant-e2e","delta":"hello from daemon"}}}})
+                        delta = "partial slow" if is_slow_fixture else "hello from daemon"
+                        send({{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{{"threadId":thread_id,"turnId":turn_id,"itemId":"assistant-e2e","delta":delta}}}})
+                        if is_slow_fixture:
+                            for _ in range(40):
+                                if turn_id in cancelled_turns:
+                                    return
+                                time.sleep(0.05)
                         time.sleep(0.05)
+                        if turn_id in cancelled_turns:
+                            return
                         send({{"jsonrpc":"2.0","method":"item/completed","params":{{"threadId":thread_id,"turnId":turn_id,"item":{{"id":"assistant-e2e","type":"agentMessage","text":"hello from daemon"}}}}}})
                         send({{"jsonrpc":"2.0","method":"turn/completed","params":{{"threadId":thread_id,"turn":{{"id":turn_id}}}}}})
                     threading.Thread(target=stream, daemon=True).start()
+                elif method == "turn/interrupt":
+                    cancelled_turns.add(msg.get("params", {{}}).get("turnId"))
+                    send({{"jsonrpc":"2.0","id":mid,"result":{{}}}})
                 else:
                     send({{"jsonrpc":"2.0","id":mid,"result":{{}}}})
             """
@@ -168,13 +197,42 @@ class WebSocket:
         deadline = time.time() + timeout
         last = None
         while time.time() < deadline:
-            last = self.recv_json(timeout=max(0.1, deadline - time.time()))
+            try:
+                last = self.recv_json(timeout=max(0.1, deadline - time.time()))
+            except TimeoutError as exc:
+                raise AssertionError(f"timed out waiting for websocket frame, last={last}") from exc
             if predicate(last):
                 return last
         raise AssertionError(f"timed out waiting for frame, last={last}")
 
     def close(self):
         self.sock.close()
+
+
+def connect_authenticated(port: int, token: str, device_name: str, client_kind: str, identity: str) -> WebSocket:
+    ws = WebSocket(port)
+    ws.send_json(auth_frame(token, device_name, client_kind, identity))
+    ws.recv_until(lambda f: f["type"] == "authOk")
+    return ws
+
+
+def assert_no_active_generation(ws: WebSocket, session_id: str):
+    frame = ws.recv_until(
+        lambda f: (
+            f["type"] == "sessionUpdated"
+            and f["session"]["id"] == session_id
+            and f["session"].get("hasActiveTurn") is False
+        )
+        or (
+            f["type"] == "sessionsSnapshot"
+            and any(s["id"] == session_id and s.get("hasActiveTurn") is False for s in f["sessions"])
+        )
+    )
+    if frame["type"] == "sessionsSnapshot":
+        session = next(s for s in frame["sessions"] if s["id"] == session_id)
+        return {"schemaVersion": frame["schemaVersion"], "type": "sessionUpdated", "session": session}
+    assert frame["session"].get("hasActiveTurn") is False
+    return frame
 
 
 def main():
@@ -208,12 +266,9 @@ def main():
                 _, err = daemon.communicate(timeout=1)
                 raise AssertionError(err)
 
-            ws.send_json(auth_frame(token, "E2E iPhone", "companion", "iphone"))
-            ws.recv_until(lambda f: f["type"] == "authOk")
+            ws = connect_authenticated(port, token, "E2E iPhone", "companion", "iphone")
 
-            desktop = WebSocket(port)
-            desktop.send_json(auth_frame(token, "E2E Mac", "desktop", "desktop"))
-            desktop.recv_until(lambda f: f["type"] == "authOk")
+            desktop = connect_authenticated(port, token, "E2E Mac", "desktop", "desktop")
             desktop.send_json({"schemaVersion": 1, "type": "pairingStart"})
             pairing = desktop.recv_until(lambda f: f["type"] == "pairingPayload")
             qr = json.loads(pairing["qrJson"])
@@ -227,34 +282,51 @@ def main():
             qr_ws.send_json(auth_frame(qr["token"], "QR iPhone", "companion", "qr-iphone"))
             qr_ws.recv_until(lambda f: f["type"] == "authOk")
             qr_ws.close()
-            desktop.close()
 
-            snapshot = ws.recv_until(lambda f: f["type"] == "sessionsSnapshot" and f["sessions"])
-            ws.send_json({"schemaVersion": 1, "type": "requestClawJSServiceStatuses"})
-            service_statuses = ws.recv_until(lambda f: f["type"] == "clawJSServiceStatusesSnapshot")
-            assert isinstance(service_statuses["services"], list)
-            chat_id = snapshot["sessions"][0]["id"]
+            invalid_ws = WebSocket(port)
+            invalid_ws.send_json({"schemaVersion": 1, "type": "listSessions", "sessionId": "extra"})
+            invalid = invalid_ws.recv_until(lambda f: f["type"] == "errorEvent")
+            assert invalid["code"] == "bridge.decode.unknownField"
+            assert "listSessions" in invalid["message"]
+            invalid_ws.close()
 
-            ws.send_json({"schemaVersion": 1, "type": "openSession", "sessionId": chat_id})
-            ws.recv_until(
-                lambda f: f["type"] == "messagesSnapshot"
-                and f["sessionId"] == chat_id
-                and any(m["content"] == "existing answer" for m in f["messages"])
+            mismatch_ws = WebSocket(port)
+            mismatch = auth_frame(token, "Mismatch iPhone", "companion", "mismatch-iphone")
+            mismatch["schemaVersion"] = 2
+            mismatch_ws.send_json(mismatch)
+            mismatch_reply = mismatch_ws.recv_until(lambda f: f["type"] == "versionMismatch")
+            assert mismatch_reply["serverVersion"] == 1
+            mismatch_ws.close()
+
+            desktop_chat_id = "44444444-5555-4666-8777-888888888888"
+            desktop.send_json({"schemaVersion": 1, "type": "newSession", "sessionId": desktop_chat_id, "text": "desktop prompt"})
+            desktop.recv_until(
+                lambda f: (
+                    f["type"] == "sessionsSnapshot"
+                    and any(c["id"] == desktop_chat_id and c["title"] == "desktop prompt" for c in f["sessions"])
+                )
             )
-
-            ws.send_json({"schemaVersion": 1, "type": "sendMessage", "sessionId": chat_id, "text": "new prompt"})
-            ws.recv_until(
+            desktop.recv_until(
                 lambda f: (
                     f["type"] == "messageStreaming"
+                    and f["sessionId"] == desktop_chat_id
                     and f["content"] == "hello from daemon"
                     and f["finished"] is True
                 )
                 or (
                     f["type"] == "messageAppended"
+                    and f["sessionId"] == desktop_chat_id
                     and f["message"]["role"] == "assistant"
                     and f["message"]["content"] == "hello from daemon"
                 )
             )
+            assert_no_active_generation(desktop, desktop_chat_id)
+            desktop.close()
+
+            ws.recv_until(lambda f: f["type"] == "sessionsSnapshot" and f["sessions"])
+            ws.send_json({"schemaVersion": 1, "type": "requestClawJSServiceStatuses"})
+            service_statuses = ws.recv_until(lambda f: f["type"] == "clawJSServiceStatusesSnapshot")
+            assert isinstance(service_statuses["services"], list)
 
             new_chat_id = "11111111-2222-4333-8444-555555555555"
             ws.send_json({"schemaVersion": 1, "type": "openSession", "sessionId": new_chat_id})
@@ -279,6 +351,80 @@ def main():
                     and f["message"]["content"] == "hello from daemon"
                 )
             )
+            assert_no_active_generation(ws, new_chat_id)
+
+            ws.send_json({"schemaVersion": 1, "type": "sendMessage", "sessionId": new_chat_id, "text": "follow-up prompt"})
+            ws.recv_until(
+                lambda f: (
+                    f["type"] == "messageStreaming"
+                    and f["sessionId"] == new_chat_id
+                    and f["content"] == "hello from daemon"
+                    and f["finished"] is True
+                )
+                or (
+                    f["type"] == "messageAppended"
+                    and f["sessionId"] == new_chat_id
+                    and f["message"]["role"] == "assistant"
+                    and f["message"]["content"] == "hello from daemon"
+                )
+            )
+            assert_no_active_generation(ws, new_chat_id)
+
+            cancel_chat_id = "22222222-3333-4444-8555-666666666666"
+            ws.send_json({"schemaVersion": 1, "type": "openSession", "sessionId": cancel_chat_id})
+            ws.send_json({"schemaVersion": 1, "type": "newSession", "sessionId": cancel_chat_id, "text": "slow prompt"})
+            ws.recv_until(
+                lambda f: (
+                    f["type"] == "messageStreaming"
+                    and f["sessionId"] == cancel_chat_id
+                    and f["content"] == "partial slow"
+                    and f["finished"] is False
+                )
+                or (
+                    f["type"] == "messageAppended"
+                    and f["sessionId"] == cancel_chat_id
+                    and f["message"]["role"] == "assistant"
+                    and f["message"]["content"] == "partial slow"
+                    and f["message"]["streamingFinished"] is False
+                )
+                or (
+                    f["type"] == "messagesSnapshot"
+                    and f["sessionId"] == cancel_chat_id
+                    and any(
+                        m["role"] == "assistant"
+                        and m["content"] == "partial slow"
+                        and m["streamingFinished"] is False
+                        for m in f["messages"]
+                    )
+                )
+            )
+            ws.send_json({"schemaVersion": 1, "type": "interruptTurn", "sessionId": cancel_chat_id})
+            cancelled = assert_no_active_generation(ws, cancel_chat_id)
+            assert cancelled["session"].get("lastTurnInterrupted") is True
+
+            error_chat_id = "33333333-4444-4555-8666-777777777777"
+            ws.send_json({"schemaVersion": 1, "type": "openSession", "sessionId": error_chat_id})
+            ws.send_json({"schemaVersion": 1, "type": "newSession", "sessionId": error_chat_id, "text": "fail prompt"})
+            ws.recv_until(
+                lambda f: (
+                    f["type"] == "messageAppended"
+                    and f["sessionId"] == error_chat_id
+                    and f["message"]["role"] == "assistant"
+                    and f["message"].get("isError") is True
+                    and "fixture failure" in f["message"]["content"]
+                )
+                or (
+                    f["type"] == "messagesSnapshot"
+                    and f["sessionId"] == error_chat_id
+                    and any(
+                        m["role"] == "assistant"
+                        and m.get("isError") is True
+                        and "fixture failure" in m["content"]
+                        for m in f["messages"]
+                    )
+                )
+            )
+            assert_no_active_generation(ws, error_chat_id)
 
             ws.send_json({"schemaVersion": 1, "type": "archiveSession", "sessionId": new_chat_id})
             ws.recv_until(
@@ -321,8 +467,9 @@ def main():
                 if timeout_ws is None:
                     _, err = timeout_daemon.communicate(timeout=1)
                     raise AssertionError(err)
-                timeout_ws.send_json(auth_frame(token, "Timeout iPhone", "companion", "timeout-iphone"))
+                timeout_ws.send_json(auth_frame(token, "Timeout Desktop", "desktop", "timeout-desktop"))
                 timeout_ws.recv_until(lambda f: f["type"] == "authOk")
+                timeout_ws.send_json({"schemaVersion": 1, "type": "listSessions"})
                 timeout_ws.recv_until(lambda f: f["type"] == "bridgeState" and f["state"] == "ready", timeout=5)
             finally:
                 if timeout_ws is not None:

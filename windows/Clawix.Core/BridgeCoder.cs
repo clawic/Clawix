@@ -1,4 +1,5 @@
 using System.Text.Encodings.Web;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -29,11 +30,19 @@ public static class BridgeCoder
 
     public static byte[] EncodeBytes(BridgeFrame frame) => JsonSerializer.SerializeToUtf8Bytes(frame, Options);
 
-    public static BridgeFrame Decode(string json) =>
-        JsonSerializer.Deserialize<BridgeFrame>(json, Options)
-        ?? throw new JsonException("frame decoded as null");
+    public static BridgeFrame Decode(string json)
+    {
+        if (Encoding.UTF8.GetByteCount(json) > BridgeConstants.MaxFrameBytes)
+            throw new BridgeDecodingException($"bridge frame exceeds {BridgeConstants.MaxFrameBytes} bytes");
+        return JsonSerializer.Deserialize<BridgeFrame>(json, Options)
+            ?? throw new JsonException("frame decoded as null");
+    }
 
-    public static BridgeFrame Decode(ReadOnlySpan<byte> json) =>
-        JsonSerializer.Deserialize<BridgeFrame>(json, Options)
-        ?? throw new JsonException("frame decoded as null");
+    public static BridgeFrame Decode(ReadOnlySpan<byte> json)
+    {
+        if (json.Length > BridgeConstants.MaxFrameBytes)
+            throw new BridgeDecodingException($"bridge frame exceeds {BridgeConstants.MaxFrameBytes} bytes");
+        return JsonSerializer.Deserialize<BridgeFrame>(json, Options)
+            ?? throw new JsonException("frame decoded as null");
+    }
 }

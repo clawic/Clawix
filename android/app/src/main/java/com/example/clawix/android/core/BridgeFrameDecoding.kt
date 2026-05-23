@@ -193,7 +193,7 @@ internal fun decodePayload(type: String, obj: JsonObject): BridgeBody = when (ty
         obj.requireBool("deleted"),
         obj.optString("errorMessage"),
     )
-    else -> BridgeBody.Unknown(type, obj)
+    else -> error("unknown frame type $type")
 }
 
 internal fun JsonObject.requireString(key: String): String =

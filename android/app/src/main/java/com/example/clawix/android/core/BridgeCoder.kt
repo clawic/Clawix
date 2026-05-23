@@ -7,7 +7,7 @@ import kotlinx.serialization.json.Json
  * iOS:
  *   - dates are ISO-8601 strings (we encode/decode them manually via
  *     `IsoDateSerializer`)
- *   - extra unknown fields are tolerated for forward-compatible v1 peers
+ *   - Bridge frame envelopes reject unknown top-level fields before payload decode
  *   - `encodeDefaults = false` so optional nullables that hold their
  *     default (`null`/`false`/`""`) don't bloat outbound frames. iOS uses
  *     `encodeIfPresent` for the same effect.
@@ -41,6 +41,10 @@ object BridgeCoder {
     fun encode(frame: BridgeFrame): String =
         BridgeJson.encodeToString(BridgeFrameSerializer, frame)
 
-    fun decode(raw: String): BridgeFrame =
+    fun decode(raw: String): BridgeFrame {
+        require(raw.toByteArray(Charsets.UTF_8).size <= BRIDGE_MAX_FRAME_BYTES) {
+            "bridge frame exceeds $BRIDGE_MAX_FRAME_BYTES bytes"
+        }
         BridgeJson.decodeFromString(BridgeFrameSerializer, raw)
+    }
 }

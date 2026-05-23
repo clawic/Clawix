@@ -18,7 +18,13 @@ public enum BridgeCoder {
         try encoder.encode(frame)
     }
 
-    public static func decode(_ data: Data) throws -> BridgeFrame {
-        try decoder.decode(BridgeFrame.self, from: data)
+    public static func decode(_ data: Data, maxBytes: Int = bridgeMaxFrameBytes) throws -> BridgeFrame {
+        try BridgeFrameValidation.validate(data, maxBytes: maxBytes)
+        let type = BridgeFrameValidation.frameType(in: data) ?? "unknown"
+        do {
+            return try decoder.decode(BridgeFrame.self, from: data)
+        } catch {
+            throw BridgeFrameValidation.wrapDecodeError(error, type: type)
+        }
     }
 }

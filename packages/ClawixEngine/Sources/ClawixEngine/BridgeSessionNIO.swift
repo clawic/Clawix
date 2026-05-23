@@ -48,6 +48,13 @@ public final class BridgeSession: Identifiable {
         let frame: BridgeFrame
         do {
             frame = try BridgeCoder.decode(data)
+        } catch BridgeDecodingError.unknownSchemaVersion {
+            send(BridgeFrame(.versionMismatch(serverVersion: bridgeSchemaVersion)))
+            close(.protocolError)
+            return
+        } catch let error as BridgeDecodingError {
+            send(BridgeFrame(.errorEvent(code: error.code, message: error.description)))
+            return
         } catch {
             send(BridgeFrame(.errorEvent(code: "decode", message: "\(error)")))
             return

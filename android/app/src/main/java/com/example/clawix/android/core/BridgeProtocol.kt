@@ -1,13 +1,13 @@
 package com.example.clawix.android.core
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
 /**
  * Wire-format version. Mirrors `bridgeSchemaVersion` in
  * `clawix/packages/ClawixCore/Sources/ClawixCore/BridgeProtocol.swift`.
  */
 const val BRIDGE_SCHEMA_VERSION: Int = 1
+const val BRIDGE_MAX_FRAME_BYTES: Int = 8 * 1024 * 1024
 
 const val BRIDGE_INITIAL_PAGE_LIMIT: Int = 60
 const val BRIDGE_OLDER_PAGE_LIMIT: Int = 40
@@ -225,6 +225,4 @@ sealed class BridgeBody {
         override val typeTag = "audioDeleteResult"
     }
 
-    // MARK: - unknown future type (forward-compat)
-    data class Unknown(val type: String, val raw: JsonObject) : BridgeBody() { override val typeTag = type }
 }

@@ -1,7 +1,8 @@
 # Bridge protocol (Clawix clients <-> bridge daemon)
 
 Wire format used by Clawix clients to talk to the signed bridge daemon over a
-local WebSocket. Frames are JSON, one frame per WS text message.
+local WebSocket. Frames are JSON, one frame per WS text message. Peers reject
+frames larger than `bridgeMaxFrameBytes` before JSON decoding.
 
 ## Envelope
 
@@ -16,6 +17,10 @@ contract. Clients refuse to talk to a daemon reporting a different
 `schemaVersion` and show an "Update Clawix" empty state.
 
 The current schema version is `1`.
+
+Unknown top-level fields are rejected. Compatibility defaults are limited to
+the explicitly optional v1 fields documented in the Swift protocol sources and
+covered by the fixture corpus.
 
 ## Lifecycle
 

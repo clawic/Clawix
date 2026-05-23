@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text;
 using Clawix.Core;
 using Clawix.Core.Models;
 using Xunit;
@@ -11,6 +12,7 @@ public sealed class BridgeProtocolTests
     public void SchemaVersion_Matches_Swift()
     {
         Assert.Equal(1, BridgeConstants.SchemaVersion);
+        Assert.Equal(8 * 1024 * 1024, BridgeConstants.MaxFrameBytes);
         Assert.Equal(60, BridgeConstants.InitialPageLimit);
         Assert.Equal(40, BridgeConstants.OlderPageLimit);
     }
@@ -121,6 +123,25 @@ public sealed class BridgeProtocolTests
     public void Unknown_Type_Throws()
     {
         var json = "{\"schemaVersion\":1,\"type\":\"someUnknownThing\",\"sessionId\":\"x\"}";
+        Assert.ThrowsAny<Exception>(() => BridgeCoder.Decode(json));
+    }
+
+    [Theory]
+    [InlineData("{\"schemaVersion\":2,\"type\":\"listSessions\"}")]
+    [InlineData("{\"schemaVersion\":1,\"type\":\"listSessions\",\"sessionId\":\"extra\"}")]
+    [InlineData("{\"schemaVersion\":1}")]
+    [InlineData("[\"not\",\"object\"]")]
+    [InlineData("{")]
+    public void Invalid_Frame_Throws(string json)
+    {
+        Assert.ThrowsAny<Exception>(() => BridgeCoder.Decode(json));
+    }
+
+    [Fact]
+    public void Oversized_Frame_Throws_Before_Decode()
+    {
+        var json = new string(' ', BridgeConstants.MaxFrameBytes + 1);
+        Assert.True(Encoding.UTF8.GetByteCount(json) > BridgeConstants.MaxFrameBytes);
         Assert.ThrowsAny<Exception>(() => BridgeCoder.Decode(json));
     }
 

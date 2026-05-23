@@ -30,8 +30,10 @@ object BridgeFrameSerializer : KSerializer<BridgeFrame> {
         val obj = decoder.decodeJsonElement().jsonObject
         val schemaVersion = obj["schemaVersion"]?.jsonPrimitive?.content?.toInt()
             ?: error("BridgeFrame missing schemaVersion")
+        require(schemaVersion == BRIDGE_SCHEMA_VERSION) { "unsupported schemaVersion $schemaVersion" }
         val type = obj["type"]?.jsonPrimitive?.content
             ?: error("BridgeFrame missing type")
+        BridgeFrameValidation.validateTopLevel(type, obj)
         val body = decodePayload(type, obj)
         return BridgeFrame(schemaVersion, body)
     }

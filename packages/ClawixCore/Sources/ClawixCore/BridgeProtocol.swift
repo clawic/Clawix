@@ -5,6 +5,11 @@ import Foundation
 /// empty state.
 public let bridgeSchemaVersion: Int = 1
 
+/// Maximum accepted bridge WebSocket text frame size. The bridge still carries
+/// v1 inline audio/image bytes when needed, but rejects oversized frames before
+/// decoding so invalid peers cannot force unbounded JSON work.
+public let bridgeMaxFrameBytes: Int = 8 * 1024 * 1024
+
 /// Default count of trailing messages the server returns on
 /// `openSession(limit:)` when the client opts into pagination. 60 covers
 /// the last ~6-10 turns including their tool-call timelines and inline
@@ -297,7 +302,63 @@ public enum BridgeBody: Equatable, Sendable {
 }
 
 public enum BridgeDecodingError: Error, Equatable {
+    case oversizedFrame(actualBytes: Int, maxBytes: Int)
+    case invalidJSON(String)
+    case nonObjectFrame
+    case missingField(String)
+    case invalidField(String)
+    case unknownSchemaVersion(Int)
     case unknownType(String)
+    case unknownField(type: String, field: String)
+    case invalidPayload(type: String, message: String)
+}
+
+extension BridgeDecodingError: CustomStringConvertible {
+    public var code: String {
+        switch self {
+        case .oversizedFrame:
+            return "bridge.decode.oversizedFrame"
+        case .invalidJSON:
+            return "bridge.decode.invalidJson"
+        case .nonObjectFrame:
+            return "bridge.decode.nonObjectFrame"
+        case .missingField:
+            return "bridge.decode.missingField"
+        case .invalidField:
+            return "bridge.decode.invalidField"
+        case .unknownSchemaVersion:
+            return "bridge.decode.unknownSchemaVersion"
+        case .unknownType:
+            return "bridge.decode.unknownType"
+        case .unknownField:
+            return "bridge.decode.unknownField"
+        case .invalidPayload:
+            return "bridge.decode.invalidPayload"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .oversizedFrame(let actualBytes, let maxBytes):
+            return "frame is \(actualBytes) bytes; maximum is \(maxBytes)"
+        case .invalidJSON(let reason):
+            return "invalid JSON: \(reason)"
+        case .nonObjectFrame:
+            return "bridge frame must be a JSON object"
+        case .missingField(let field):
+            return "missing required field: \(field)"
+        case .invalidField(let field):
+            return "invalid field: \(field)"
+        case .unknownSchemaVersion(let version):
+            return "unsupported schemaVersion: \(version)"
+        case .unknownType(let type):
+            return "unknown frame type: \(type)"
+        case .unknownField(let type, let field):
+            return "unexpected field for \(type): \(field)"
+        case .invalidPayload(let type, let message):
+            return "invalid payload for \(type): \(message)"
+        }
+    }
 }
 
 /// Runtime state of the host that drives a `BridgeServer`. The daemon starts

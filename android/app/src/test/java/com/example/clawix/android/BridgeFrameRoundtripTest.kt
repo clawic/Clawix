@@ -4,6 +4,7 @@ import com.example.clawix.android.core.BridgeBody
 import com.example.clawix.android.core.BridgeCoder
 import com.example.clawix.android.core.BridgeFrame
 import com.example.clawix.android.core.BridgeJson
+import com.example.clawix.android.core.BRIDGE_MAX_FRAME_BYTES
 import com.example.clawix.android.core.BRIDGE_SCHEMA_VERSION
 import com.example.clawix.android.core.ClientKind
 import com.example.clawix.android.core.PairingPayload
@@ -37,6 +38,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 /**
@@ -105,6 +107,14 @@ class BridgeFrameRoundtripTest {
         assertEquals(BRIDGE_SCHEMA_VERSION, obj["schemaVersion"]?.jsonPrimitive?.content?.toInt())
         assertEquals(expectedType, obj["type"]?.jsonPrimitive?.content)
         assertNotNull("expected $expectedFlatKey at top level (no payload nesting)", obj[expectedFlatKey])
+    }
+
+    private fun assertDecodeFails(raw: String) {
+        try {
+            BridgeCoder.decode(raw)
+            fail("expected decode to fail for $raw")
+        } catch (_: Throwable) {
+        }
     }
 
     @Test fun auth_flat_envelope() {
@@ -319,18 +329,19 @@ class BridgeFrameRoundtripTest {
         roundtrip(BridgeBody.MessageAppended("c-1", msg))
     }
 
-    @Test fun unknown_frame_type_decodes_as_unknown() {
+    @Test fun unknown_frame_type_is_rejected() {
         val raw = """{"schemaVersion":1,"type":"futureFrame","extraField":42}"""
-        val decoded = BridgeCoder.decode(raw)
-        assertTrue(decoded.body is BridgeBody.Unknown)
-        val unk = decoded.body as BridgeBody.Unknown
-        assertEquals("futureFrame", unk.type)
+        assertDecodeFails(raw)
     }
 
-    @Test fun unknown_fields_in_known_type_are_ignored() {
+    @Test fun invalid_bridge_frames_are_rejected() {
         val raw = """{"schemaVersion":1,"type":"openSession","sessionId":"c-1","limit":60,"thisIsFromTheFuture":true}"""
-        val decoded = BridgeCoder.decode(raw)
-        assertEquals(BridgeBody.OpenSession("c-1", 60), decoded.body)
+        assertDecodeFails(raw)
+        assertDecodeFails("""["not","object"]""")
+        assertDecodeFails("""{"schemaVersion":2,"type":"listSessions"}""")
+        assertDecodeFails("""{"schemaVersion":1}""")
+        assertDecodeFails("""{"schemaVersion":1,"type":"auth","token":"abc"}""")
+        assertDecodeFails(" ".repeat(BRIDGE_MAX_FRAME_BYTES + 1))
     }
 
     @Test fun open_session_omits_limit_when_null() {
