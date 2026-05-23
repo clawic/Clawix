@@ -32,6 +32,10 @@ struct ScreenToolsSettingsPage: View {
     @AppStorage(ScreenToolSettings.openRecordingEditorAfterRecordingKey) private var openRecordingEditorAfterRecording = false
     @AppStorage(ScreenToolSettings.keepTextLineBreaksKey) private var keepTextLineBreaks = false
     @AppStorage(ScreenToolSettings.autoDetectTextLanguageKey) private var autoDetectTextLanguage = true
+    @State private var activeScreenToolAction: String?
+    @State private var screenToolActionMessage: String?
+    @State private var screenToolActionIsError = false
+    @State private var screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)
 
     private var actionBinding: Binding<ScreenToolService.CaptureAction> {
         Binding {
@@ -88,9 +92,12 @@ struct ScreenToolsSettingsPage: View {
                 subtitle: "Capture, record, recognize text, pin references and manage local outputs."
             )
 
+            statusBanner
+
             SectionLabel(title: "Actions")
             SettingsCard {
                 actionRow(
+                    id: "allInOne",
                     title: "All-In-One",
                     detail: "Open one menu with capture, recording, text, pin and history actions.",
                     symbol: "camera.viewfinder",
@@ -98,6 +105,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureArea",
                     title: "Capture area",
                     detail: "Select a rectangular region and apply the default after-capture action.",
                     symbol: "crop",
@@ -105,6 +113,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "capturePreviousArea",
                     title: "Capture previous area",
                     detail: "Repeat the last selected area without selecting again.",
                     symbol: "rectangle.dashed",
@@ -112,6 +121,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureFullscreen",
                     title: "Capture fullscreen",
                     detail: "Capture the active display directly.",
                     symbol: "rectangle.inset.filled",
@@ -119,6 +129,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureWindow",
                     title: "Capture window",
                     detail: "Pick one window and capture it.",
                     symbol: "macwindow",
@@ -126,6 +137,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureScrolling",
                     title: "Scrolling capture",
                     detail: "Select an area, scroll it, and save a stitched local capture.",
                     symbol: "arrow.down.doc",
@@ -133,6 +145,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureSelfTimer",
                     title: "Self-timer",
                     detail: "Capture after the configured delay.",
                     symbol: "timer",
@@ -140,6 +153,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "recordScreen",
                     title: "Record screen",
                     detail: "Open the system screen-recording selector and save a movie file locally.",
                     symbol: "record.circle",
@@ -147,6 +161,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "captureText",
                     title: "Capture text",
                     detail: "Select an area, recognize text on device, and copy it to the clipboard.",
                     symbol: "text.viewfinder",
@@ -154,6 +169,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "recognizeLastCaptureText",
                     title: "Recognize last capture text",
                     detail: "Recognize text from the most recent local capture and copy it.",
                     symbol: "doc.text.viewfinder",
@@ -161,11 +177,38 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "toggleDesktopIcons",
                     title: "Hide desktop icons",
                     detail: "Toggle Finder desktop items for cleaner captures.",
                     symbol: "square.grid.3x3",
                     action: { macUtilities.perform(.toggleDesktopIcons) }
                 )
+            }
+
+            SectionLabel(title: "Permissions")
+            SettingsCard {
+                SettingsRow {
+                    RowLabel(title: "Screen Recording", detail: screenRecordingDetail)
+                } trailing: {
+                    HStack(spacing: 8) {
+                        Text(screenRecordingStatus.displayLabel)
+                            .font(BodyFont.system(size: 11, wght: 700))
+                            .foregroundColor(screenRecordingStatus.isGranted ? Color.green : Color.orange)
+                        IconChipButton(symbol: "arrow.triangle.2.circlepath", label: "Request") {
+                            refreshScreenRecordingStatus()
+                            if !screenRecordingStatus.isGranted {
+                                _ = NativeMacPermissionBroker.requestScreenRecording()
+                                screenToolActionMessage = "Screen Recording permission requested. macOS may require a Settings change and app restart before capture works."
+                                screenToolActionIsError = false
+                            }
+                            refreshScreenRecordingStatus()
+                        }
+                        .disabled(screenRecordingStatus.isGranted)
+                        IconChipButton(symbol: "gear", label: "Open") {
+                            NativeMacPermissionBroker.openSettings(for: .screenRecording)
+                        }
+                    }
+                }
             }
 
             SectionLabel(title: "Output")
@@ -286,10 +329,11 @@ struct ScreenToolsSettingsPage: View {
                 SettingsRow {
                     RowLabel(title: "Quick Access overlays", detail: "\(service.overlays.count) active")
                 } trailing: {
-                    IconChipButton(symbol: "xmark", label: "Close all", action: service.closeAllOverlays)
+                    actionButton(id: "closeAllOverlays", symbol: "xmark", label: "Close all", action: service.closeAllOverlays)
                 }
                 CardDivider()
                 actionRow(
+                    id: "chooseAndOpenImage",
                     title: "Open image",
                     detail: "Choose a local image and show it in a Quick Access overlay.",
                     symbol: "photo",
@@ -297,6 +341,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "chooseAndPinImage",
                     title: "Choose and pin an image",
                     detail: "Open an image in an always-on-top reference window.",
                     symbol: "pin",
@@ -304,6 +349,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "pinLastCapture",
                     title: "Pin last capture",
                     detail: "Pin the most recent local screenshot.",
                     symbol: "pin.fill",
@@ -311,6 +357,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "showLastCaptureOverlay",
                     title: "Show last capture",
                     detail: "Reopen the most recent local capture in a Quick Access overlay.",
                     symbol: "rectangle.on.rectangle",
@@ -318,6 +365,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "markupLastCapture",
                     title: "Markup last capture",
                     detail: "Open the most recent local capture for system markup.",
                     symbol: "pencil.and.outline",
@@ -325,6 +373,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "restoreLastCapture",
                     title: "Restore last capture",
                     detail: "Make the most recent local capture active again and reopen it.",
                     symbol: "arrow.counterclockwise",
@@ -332,6 +381,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "copyLastCapture",
                     title: "Copy last capture",
                     detail: "Copy the most recent local capture to the clipboard.",
                     symbol: "doc.on.doc",
@@ -339,6 +389,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "openLastCapture",
                     title: "Open last capture",
                     detail: "Open the most recent local capture in its default app.",
                     symbol: "arrow.up.right.square",
@@ -346,6 +397,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "revealLastCapture",
                     title: "Reveal last capture",
                     detail: "Show the most recent local capture in Finder.",
                     symbol: "folder",
@@ -353,6 +405,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "openCaptureHistory",
                     title: "Open capture history",
                     detail: "Open a local list of recent captures with actions.",
                     symbol: "clock",
@@ -360,6 +413,7 @@ struct ScreenToolsSettingsPage: View {
                 )
                 CardDivider()
                 actionRow(
+                    id: "revealCaptureFolder",
                     title: "Reveal capture folder",
                     detail: "Show the local export folder in Finder.",
                     symbol: "folder",
@@ -369,10 +423,11 @@ struct ScreenToolsSettingsPage: View {
                 SettingsRow {
                     RowLabel(title: "Open pins", detail: "\(service.pins.count) active")
                 } trailing: {
-                    IconChipButton(symbol: "xmark", label: "Close all", action: service.closeAllPins)
+                    actionButton(id: "closeAllPins", symbol: "xmark", label: "Close all", action: service.closeAllPins)
                 }
             }
         }
+        .onAppear(perform: refreshScreenRecordingStatus)
     }
 
     private var currentExportLocation: LocalizedStringKey {
@@ -381,7 +436,35 @@ struct ScreenToolsSettingsPage: View {
     }
 
     @ViewBuilder
+    private var statusBanner: some View {
+        if !service.featureVisible {
+            InfoBanner(
+                text: "Screen Tools are disabled by feature flags; Settings keeps the saved preferences visible but action buttons are unavailable.",
+                kind: .danger
+            )
+            .padding(.bottom, 10)
+        } else if let screenToolActionMessage {
+            InfoBanner(
+                text: screenToolActionMessage,
+                kind: screenToolActionIsError ? .error : .ok
+            )
+            .padding(.bottom, 10)
+        }
+    }
+
+    private var screenRecordingDetail: LocalizedStringKey {
+        if screenRecordingStatus.isGranted {
+            return "Native capture, recording, OCR capture, and scrolling capture can request screen pixels from macOS."
+        }
+        if let reason = screenRecordingStatus.blockedReason {
+            return LocalizedStringKey("\(reason) Capture actions will request the permission, but macOS may require approval in System Settings.")
+        }
+        return "Capture actions will request the permission, but macOS may require approval in System Settings."
+    }
+
+    @ViewBuilder
     private func actionRow(
+        id: String,
         title: LocalizedStringKey,
         detail: LocalizedStringKey,
         symbol: String,
@@ -390,8 +473,52 @@ struct ScreenToolsSettingsPage: View {
         SettingsRow {
             RowLabel(title: title, detail: detail)
         } trailing: {
-            IconChipButton(symbol: symbol, label: "Run", isPrimary: true, action: action)
+            actionButton(id: id, symbol: symbol, label: "Run", action: action)
         }
+    }
+
+    @ViewBuilder
+    private func actionButton(
+        id: String,
+        symbol: String,
+        label: LocalizedStringKey,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 8) {
+            if activeScreenToolAction == id {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            IconChipButton(symbol: symbol, label: label, isPrimary: true) {
+                runScreenToolAction(id: id, action: action)
+            }
+            .disabled(activeScreenToolAction != nil || !service.featureVisible)
+        }
+    }
+
+    private func runScreenToolAction(id: String, action: @escaping () -> Void) {
+        guard service.featureVisible else {
+            screenToolActionMessage = "Screen Tools are disabled by feature flags."
+            screenToolActionIsError = true
+            return
+        }
+        activeScreenToolAction = id
+        screenToolActionMessage = nil
+        screenToolActionIsError = false
+        action()
+        refreshScreenRecordingStatus()
+        screenToolActionMessage = "Action requested. The native command reports completion, cancellation, permission failures, or host-policy blocks through the app status channel."
+        screenToolActionIsError = false
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            if activeScreenToolAction == id {
+                activeScreenToolAction = nil
+            }
+        }
+    }
+
+    private func refreshScreenRecordingStatus() {
+        screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)
     }
 
     private func chooseExportDirectory() {

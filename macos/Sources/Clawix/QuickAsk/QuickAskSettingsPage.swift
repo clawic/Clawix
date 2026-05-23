@@ -239,9 +239,7 @@ struct QuickAskSettingsPage: View {
                     .font(BodyFont.system(size: 11, wght: 500))
                     .foregroundColor(Palette.textSecondary)
                 QASSecondaryButton(label: "Open Accessibility settings") {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    NativeMacPermissionBroker.openSettings(for: .accessibility)
                 }
             }
             .padding(14)

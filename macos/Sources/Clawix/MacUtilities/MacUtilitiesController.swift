@@ -209,20 +209,33 @@ final class MacUtilitiesController: ObservableObject {
     static let shared = MacUtilitiesController()
 
     @Published private(set) var keepAwakeEnabled = false
+    @Published private(set) var activeAction: MacUtilityActionID?
+    @Published private(set) var lastStatusMessage: String?
+    @Published private(set) var lastStatusIsError = false
 
     private var keepAwakeAssertion: IOPMAssertionID = 0
 
     private init() {}
 
     func perform(_ action: MacUtilityActionID) {
-        guard FeatureFlags.shared.isVisible(.macUtilities) else { return }
+        guard activeAction == nil else { return }
+        activeAction = action
+        lastStatusMessage = nil
+        defer { activeAction = nil }
+
+        guard FeatureFlags.shared.isVisible(.macUtilities) else {
+            publishStatus("Mac Utilities are disabled by feature flags.", isError: true)
+            return
+        }
         let authorization = HostActionPolicy.authorize(
             surface: .macUtilities,
             action: action.id,
             origin: .userInterface
         )
         guard authorization.allowed else {
-            ToastCenter.shared.show(authorization.reason ?? "Action blocked by host policy", icon: .warning)
+            let message = authorization.reason ?? "Action blocked by host policy"
+            publishStatus(message, isError: true)
+            ToastCenter.shared.show(message, icon: .warning)
             return
         }
         do {
@@ -286,10 +299,17 @@ final class MacUtilitiesController: ObservableObject {
             case .openPrivacySettings:
                 openSystemSettings("x-apple.systempreferences:com.apple.preference.security")
             }
+            publishStatus("\(action.title) done", isError: false)
             ToastCenter.shared.show("\(action.title) done")
         } catch {
+            publishStatus(error.localizedDescription, isError: true)
             ToastCenter.shared.show(error.localizedDescription, icon: .error)
         }
+    }
+
+    private func publishStatus(_ message: String, isError: Bool) {
+        lastStatusMessage = message
+        lastStatusIsError = isError
     }
 
     private func setKeepAwake(_ enabled: Bool) throws {

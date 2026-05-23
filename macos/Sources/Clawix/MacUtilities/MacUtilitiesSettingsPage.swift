@@ -11,6 +11,12 @@ struct MacUtilitiesSettingsPage: View {
                 subtitle: "Run common macOS actions from Clawix and the menu bar."
             )
 
+            if let message = controller.lastStatusMessage {
+                InfoBanner(text: message, kind: controller.lastStatusIsError ? .error : .ok)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 12)
+            }
+
             ForEach(MacUtilityGroup.allCases) { group in
                 SectionLabel(title: LocalizedStringKey(group.title))
                 SettingsCard {
@@ -19,6 +25,7 @@ struct MacUtilitiesSettingsPage: View {
                         MacUtilityActionRow(
                             action: action,
                             keepAwakeEnabled: controller.keepAwakeEnabled,
+                            activeAction: controller.activeAction,
                             onRun: { request(action) }
                         )
                         if index < actions.count - 1 {
@@ -69,6 +76,7 @@ struct MacUtilitiesSettingsPage: View {
 private struct MacUtilityActionRow: View {
     let action: MacUtilityActionID
     let keepAwakeEnabled: Bool
+    let activeAction: MacUtilityActionID?
     let onRun: () -> Void
 
     var body: some View {
@@ -80,9 +88,16 @@ private struct MacUtilityActionRow: View {
                 RowLabel(title: LocalizedStringKey(action.title), detail: LocalizedStringKey(detailText))
             }
         } trailing: {
-            Button(actionButtonTitle, action: onRun)
-                .buttonStyle(.borderless)
-                .controlSize(.small)
+            HStack(spacing: 8) {
+                if activeAction == action {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Button(actionButtonTitle, action: onRun)
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    .disabled(activeAction != nil)
+            }
         }
     }
 
