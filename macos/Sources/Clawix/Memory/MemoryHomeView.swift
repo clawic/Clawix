@@ -82,7 +82,7 @@ struct MemoryHomeView: View {
                         }
                     } catch {
                         await MainActor.run {
-                            actionError = error.localizedDescription
+                            actionError = Self.failureMessage(for: error, surface: "memory.delete")
                             deleteTarget = nil
                         }
                     }
@@ -104,6 +104,11 @@ struct MemoryHomeView: View {
         } message: {
             Text(actionError ?? "")
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     private var pendingCapturesCount: Int {

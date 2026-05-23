@@ -119,7 +119,7 @@ struct MemoryCodexInjectionCard: View {
             }
             self.error = nil
         } catch {
-            self.error = String(describing: error)
+            self.error = Self.failureMessage(for: error, surface: "memory.codexInjection.load")
         }
     }
 
@@ -137,7 +137,7 @@ struct MemoryCodexInjectionCard: View {
             }
             self.error = nil
         } catch {
-            self.error = String(describing: error)
+            self.error = Self.failureMessage(for: error, surface: "memory.codexInjection.toggle")
         }
     }
 
@@ -147,8 +147,13 @@ struct MemoryCodexInjectionCard: View {
             savedBody = bodyText
             error = nil
         } catch {
-            self.error = String(describing: error)
+            self.error = Self.failureMessage(for: error, surface: "memory.codexInjection.save")
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     private func resetToDefault() {

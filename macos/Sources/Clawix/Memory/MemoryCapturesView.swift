@@ -150,9 +150,14 @@ struct MemoryCapturesView: View {
             } catch {
                 await MainActor.run {
                     promotingId = nil
-                    errorText = error.localizedDescription
+                    errorText = Self.failureMessage(for: error, surface: "memory.capturePromote")
                 }
             }
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 }

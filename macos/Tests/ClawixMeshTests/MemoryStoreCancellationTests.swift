@@ -108,6 +108,40 @@ final class MemoryStoreCancellationTests: XCTestCase {
         XCTAssertNil(store.stats)
     }
 
+    func testRefreshFailureUsesClassifiedLocalizedMessage() async {
+        let store = MemoryStore(
+            listNotesOperation: {
+                throw TestError(message: "The Internet connection appears to be offline.")
+            },
+            listCapturesOperation: { [] },
+            statsOperation: { Self.stats(total: 0) },
+            attachSupervisor: false
+        )
+
+        await store.refresh()
+
+        XCTAssertEqual(
+            store.state.errorMessage,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
+    }
+
+    func testDoctorFailureUsesClassifiedLocalizedMessage() async {
+        let store = MemoryStore(
+            doctorOperation: {
+                throw TestError(message: "ClawJS memory service is not running.")
+            },
+            attachSupervisor: false
+        )
+
+        await store.runDoctor()
+
+        XCTAssertEqual(
+            store.doctorError,
+            L10n.t("The service is unavailable. Try again in a moment.")
+        )
+    }
+
     func testStaleRefreshCannotOverwriteFreshRefresh() async {
         let staleStarted = expectation(description: "Stale refresh started")
         let staleReturned = expectation(description: "Stale refresh returned")
@@ -704,5 +738,12 @@ final class MemoryStoreCancellationTests: XCTestCase {
             continuation?.resume()
             continuation = nil
         }
+    }
+}
+
+private extension MemoryStore.State {
+    var errorMessage: String? {
+        if case .error(let message) = self { return message }
+        return nil
     }
 }

@@ -55,16 +55,26 @@ struct MemorySettingsView: View {
                     .foregroundColor(.white)
                 Spacer()
                 Button(action: { Task { await store.runDoctor() } }) {
-                    Text("Refresh")
-                        .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule().fill(Color.white.opacity(0.06))
-                        )
+                    HStack(spacing: 6) {
+                        if store.isDoctorLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        Text(store.isDoctorLoading ? "Checking" : "Refresh")
+                            .font(BodyFont.system(size: 11.5, wght: 500))
+                    }
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule().fill(Color.white.opacity(0.06))
+                    )
                 }
                 .buttonStyle(.plain)
+                .disabled(store.isDoctorLoading)
+            }
+            if let error = store.doctorError {
+                InfoBanner(text: error, kind: .error)
             }
             doctorRow(label: "Notes", value: store.doctor?.notes.map { String($0) } ?? "—")
             doctorRow(label: "Captures pending", value: store.doctor?.captures.map { String($0) } ?? "—")

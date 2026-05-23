@@ -36,6 +36,8 @@ final class MemoryStore: ObservableObject {
     @Published private(set) var captures: [ClawJSMemoryClient.Capture] = []
     @Published private(set) var stats: ClawJSMemoryClient.MemoryStatsResponse?
     @Published private(set) var doctor: ClawJSMemoryClient.DoctorResponse?
+    @Published private(set) var isDoctorLoading = false
+    @Published private(set) var doctorError: String?
     @Published private(set) var lastSearch: ClawJSMemoryClient.SearchResponse?
     @Published var isSearching: Bool = false
 
@@ -158,10 +160,10 @@ final class MemoryStore: ObservableObject {
         } catch is CancellationError {
         } catch let error as ClawJSMemoryClient.Error {
             guard isCurrentRefresh(generation) else { return }
-            state = .error(error.localizedDescription)
+            state = .error(Self.failureMessage(for: error, surface: "memory.refresh"))
         } catch {
             guard isCurrentRefresh(generation) else { return }
-            state = .error(error.localizedDescription)
+            state = .error(Self.failureMessage(for: error, surface: "memory.refresh"))
         }
         finishRefreshIfCurrent(generation)
     }
@@ -170,7 +172,21 @@ final class MemoryStore: ObservableObject {
     /// `state` so a doctor refresh from the Settings page does not show
     /// a transient loading shimmer over the list.
     func runDoctor() async {
-        doctor = try? await doctorOperation()
+        guard !isDoctorLoading else { return }
+        isDoctorLoading = true
+        doctorError = nil
+        defer { isDoctorLoading = false }
+        do {
+            doctor = try await doctorOperation()
+        } catch is CancellationError {
+        } catch {
+            doctorError = Self.failureMessage(for: error, surface: "memory.doctor")
+        }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 
     // MARK: - Search
