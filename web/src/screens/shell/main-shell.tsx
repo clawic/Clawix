@@ -31,6 +31,7 @@ import { collectionForRoute } from "../collections/collection-model";
 import { CalendarView } from "../personal/calendar-view";
 import { ContactsView } from "../personal/contacts-view";
 import { DriveView } from "../drive/drive-view";
+import { AgentFamilyView } from "../agents/agent-family-view";
 import { SurfaceRouteView } from "../surfaces/surface-route-view";
 import { OfflineBridgeBanner, VersionMismatchBanner } from "./version-mismatch";
 
@@ -145,6 +146,10 @@ export function MainShell() {
           {route === "photos" && <DriveView view="photos" />}
           {route === "documents" && <DriveView view="documents" />}
           {route === "recent" && <DriveView view="recent" />}
+          {route === "agents" && <AgentFamilyView view="agents" />}
+          {route === "personalities" && <AgentFamilyView view="personalities" />}
+          {route === "skill-collections" && <AgentFamilyView view="skill-collections" />}
+          {route === "connections" && <AgentFamilyView view="connections" />}
           {route === "database" && <DatabaseView />}
           {route === "pomodoro" && <PomodoroView />}
           {route === "mcp" && <McpView />}
@@ -189,6 +194,10 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
     "photos",
     "documents",
     "recent",
+    "agents",
+    "personalities",
+    "skill-collections",
+    "connections",
     "projects",
     "memory",
     "secrets",

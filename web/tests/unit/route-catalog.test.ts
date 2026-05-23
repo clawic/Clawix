@@ -46,6 +46,10 @@ describe("web route catalog", () => {
     expect(routeEntry("documents").webSurface).toBe("implemented");
     expect(routeEntry("recent").webSurface).toBe("implemented");
     expect(routeEntry("drive").webSurface).toBe("implemented");
+    expect(routeEntry("agents").webSurface).toBe("implemented");
+    expect(routeEntry("personalities").webSurface).toBe("implemented");
+    expect(routeEntry("skill-collections").webSurface).toBe("implemented");
+    expect(routeEntry("connections").webSurface).toBe("implemented");
     expect(routeEntry("network").macRoute).toBe("networkControl");
   });
 });
