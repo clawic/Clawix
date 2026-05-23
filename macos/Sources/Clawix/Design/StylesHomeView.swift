@@ -56,18 +56,18 @@ struct StylesHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("Saved design recipes. Each style codes color, typography, voice and imagery for reuse across any artifact.")
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.62))
+                    .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                     .lineLimit(2)
             }
             Spacer()
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 TextField("Search styles", text: $query)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                     .frame(width: 200)
             }
             .padding(.horizontal, 12)
@@ -87,13 +87,13 @@ struct StylesHomeView: View {
         VStack(spacing: 14) {
             Image(systemName: "paintpalette")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(Color(white: 0.40))
+                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
             Text("No styles match")
                 .font(BodyFont.system(size: 15, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             Text("Try a different search term, or remove the filter.")
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.50))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
         }
     }
 }
@@ -116,12 +116,12 @@ private struct StyleCard: View {
                         if style.builtin == true {
                             Text("BUILTIN")
                                 .font(BodyFont.system(size: 9, wght: 700))
-                                .foregroundColor(Color(white: 0.45))
+                                .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
                                 .background(
                                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                        .fill(Color.white.opacity(0.06))
+                                        .fill(Color.overlay(0.06))
                                 )
                         }
                         Spacer(minLength: 0)
@@ -129,7 +129,7 @@ private struct StyleCard: View {
                     if let desc = style.description {
                         Text(desc)
                             .font(BodyFont.system(size: 12, wght: 400))
-                            .foregroundColor(Color(white: 0.60))
+                            .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -161,7 +161,7 @@ private struct StyleCard: View {
                     .frame(height: 36)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
                     .help("\(name) · \(hex)")
             }
@@ -177,7 +177,7 @@ private struct StyleCard: View {
                 .foregroundColor(Palette.textPrimary)
             Text("Body sample — a quick brown fox jumps")
                 .font(.custom(firstFamily(body), size: 11))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .lineLimit(1)
         }
     }

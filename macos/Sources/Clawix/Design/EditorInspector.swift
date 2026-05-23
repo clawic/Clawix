@@ -44,17 +44,17 @@ struct EditorInspector: View {
                 Spacer()
                 Text(slot.kind.rawValue.uppercased())
                     .font(BodyFont.system(size: 9, wght: 700))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
                     .background(
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
             Text(slot.id)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
     }
 
@@ -88,7 +88,7 @@ struct EditorInspector: View {
                 TextEditor(text: binding)
                     .scrollContentBackground(.hidden)
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     .frame(minHeight: 120)
                     .padding(10)
                     .background(controlBackground)
@@ -96,7 +96,7 @@ struct EditorInspector: View {
                 TextField(slot.placeholder ?? "", text: binding)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(controlBackground)
@@ -112,17 +112,17 @@ struct EditorInspector: View {
                 HStack(spacing: 6) {
                     Text("\(index + 1).")
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     TextField("Item \(index + 1)", text: itemBinding(slot.id, index: index))
                         .textFieldStyle(.plain)
                         .font(BodyFont.system(size: 13, wght: 500))
-                        .foregroundColor(Color(white: 0.92))
+                        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     Button {
                         removeItem(slot.id, at: index)
                     } label: {
                         Image(systemName: "minus.circle")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     }
                     .buttonStyle(.plain)
                 }
@@ -163,12 +163,12 @@ struct EditorInspector: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(asset.filename)
                             .font(.system(size: 11.5, design: .monospaced))
-                            .foregroundColor(Color(white: 0.85))
+                            .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                             .lineLimit(1)
                         if let width = asset.width, let height = asset.height {
                             Text("\(Int(width)) × \(Int(height)) px")
                                 .font(BodyFont.system(size: 10.5, wght: 500))
-                                .foregroundColor(Color(white: 0.55))
+                                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         }
                     }
                     Spacer()
@@ -178,7 +178,7 @@ struct EditorInspector: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(white: 0.65))
+                            .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                     }
                     .buttonStyle(.plain)
                 }
@@ -215,7 +215,7 @@ struct EditorInspector: View {
                 TextField("Untitled", text: documentNameBinding())
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(controlBackground)
@@ -247,10 +247,10 @@ struct EditorInspector: View {
                 fieldLabel("TEMPLATE")
                 Text(template.name)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.85))
+                    .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 Text("\(template.category.displayName) · \(template.aspect.displayLabel)")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             emptyHint("Click a slot on the canvas to edit it.")
         }
@@ -340,14 +340,14 @@ struct EditorInspector: View {
     private func sectionTitle(_ text: String) -> some View {
         Text(text.uppercased())
             .font(BodyFont.system(size: 10, wght: 700))
-            .foregroundColor(Color(white: 0.55))
+            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             .tracking(0.5)
     }
 
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 9.5, wght: 700))
-            .foregroundColor(Color(white: 0.50))
+            .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             .tracking(0.5)
     }
 
@@ -363,12 +363,12 @@ struct EditorInspector: View {
     private func emptyHint(_ text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 12, wght: 400))
-            .foregroundColor(Color(white: 0.50))
+            .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.03))
+                    .fill(Color.overlay(0.03))
             )
     }
 
@@ -376,11 +376,11 @@ struct EditorInspector: View {
         HStack {
             Text(label)
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(Color(white: 0.50))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             Spacer()
             Text(value)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(Color(white: 0.65))
+                .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
         }
     }
 

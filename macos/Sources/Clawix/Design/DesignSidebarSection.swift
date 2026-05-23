@@ -87,7 +87,7 @@ private struct DesignSidebarRow: View {
                 if count > 0 {
                     Text("\(count)")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 }
             }
             .padding(.horizontal, 10)
@@ -107,16 +107,16 @@ private struct DesignSidebarRow: View {
 
     private var iconColor: Color {
         if isSelected { return .white }
-        return Color(white: hovered ? 0.92 : 0.78)
+        return (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.27, dark: 0.78))
     }
 
     private var labelColor: Color {
-        isSelected ? .white : Color(white: 0.92)
+        isSelected ? .white : Color.gray(light: 0.14, dark: 0.92)
     }
 
     private var rowBackground: Color {
-        if isSelected { return Color.white.opacity(0.06) }
-        if hovered    { return Color.white.opacity(0.035) }
+        if isSelected { return Color.overlay(0.06) }
+        if hovered    { return Color.overlay(0.035) }
         return .clear
     }
 }

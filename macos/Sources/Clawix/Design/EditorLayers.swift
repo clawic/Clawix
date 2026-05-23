@@ -14,15 +14,15 @@ struct EditorLayers: View {
             HStack(spacing: 6) {
                 Image(systemName: "square.stack.3d.up")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 Text("Layers")
                     .font(BodyFont.system(size: 11, wght: 700))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                     .tracking(0.4)
                 Spacer()
                 Text("\(template.slots.count)")
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(Color(white: 0.50))
+                    .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -48,16 +48,16 @@ struct EditorLayers: View {
             HStack(spacing: 8) {
                 Image(systemName: slotIcon(slot.kind))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(selected ? Palette.pastelBlue : Color(white: 0.75))
+                    .foregroundColor(selected ? Palette.pastelBlue : Color.gray(light: 0.28, dark: 0.75))
                     .frame(width: 18, alignment: .center)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(slot.label)
                         .font(BodyFont.system(size: 12.5, wght: selected ? 600 : 500))
-                        .foregroundColor(selected ? Palette.textPrimary : Color(white: 0.85))
+                        .foregroundColor(selected ? Palette.textPrimary : Color.gray(light: 0.20, dark: 0.85))
                         .lineLimit(1)
                     Text(summary(slot))
                         .font(.system(size: 10.5, design: .monospaced))
-                        .foregroundColor(Color(white: 0.50))
+                        .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -66,7 +66,7 @@ struct EditorLayers: View {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(selected ? Color.white.opacity(0.08) : Color.clear)
+                    .fill(selected ? Color.overlay(0.08) : Color.clear)
             )
         }
         .buttonStyle(.plain)

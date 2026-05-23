@@ -111,7 +111,7 @@ struct ReferencesHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("Inspiration library. Web pages, PDFs, images and screenshots feed your styles. Drag-and-drop files anywhere on this screen to add them.")
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.62))
+                    .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                     .lineLimit(2)
             }
             Spacer()
@@ -129,7 +129,7 @@ struct ReferencesHomeView: View {
                 .padding(.vertical, 7)
                 .background(
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.overlay(0.08))
                         .overlay(
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
                                 .stroke(Palette.border, lineWidth: 0.5)
@@ -140,11 +140,11 @@ struct ReferencesHomeView: View {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 TextField("Search references", text: $query)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                     .frame(width: 200)
             }
             .padding(.horizontal, 12)
@@ -178,12 +178,12 @@ struct ReferencesHomeView: View {
         Button(action: action) {
             Text(label)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(active ? Palette.textPrimary : Color(white: 0.65))
+                .foregroundColor(active ? Palette.textPrimary : Color.gray(light: 0.38, dark: 0.65))
                 .padding(.horizontal, 11)
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(active ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                        .fill(active ? Color.overlay(0.08) : Color.overlay(0.03))
                 )
         }
         .buttonStyle(.plain)
@@ -193,13 +193,13 @@ struct ReferencesHomeView: View {
         VStack(spacing: 10) {
             Image(systemName: dropTargeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(dropTargeted ? Palette.pastelBlue : Color(white: 0.55))
+                .foregroundColor(dropTargeted ? Palette.pastelBlue : Color.gray(light: 0.45, dark: 0.55))
             Text(dropTargeted ? "Release to ingest" : "Drop images, PDFs or web links here")
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(dropTargeted ? Palette.pastelBlue : Color(white: 0.75))
+                .foregroundColor(dropTargeted ? Palette.pastelBlue : Color.gray(light: 0.28, dark: 0.75))
             Text("Supports JPG, PNG, PDF and URLs. The reference is saved to your library and can be linked to any style.")
                 .font(BodyFont.system(size: 11.5, wght: 400))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 460)
         }
@@ -207,11 +207,11 @@ struct ReferencesHomeView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(dropTargeted ? Palette.pastelBlue.opacity(0.10) : Color.white.opacity(0.025))
+                .fill(dropTargeted ? Palette.pastelBlue.opacity(0.10) : Color.overlay(0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(
-                            dropTargeted ? Palette.pastelBlue.opacity(0.50) : Color.white.opacity(0.12),
+                            dropTargeted ? Palette.pastelBlue.opacity(0.50) : Color.overlay(0.12),
                             style: StrokeStyle(lineWidth: 1, dash: dropTargeted ? [] : [4, 4])
                         )
                 )
@@ -223,7 +223,7 @@ struct ReferencesHomeView: View {
         return HStack(spacing: 10) {
             Image(systemName: isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(isError ? Color(red: 0.95, green: 0.45, blue: 0.45) : Color(red: 0.40, green: 0.85, blue: 0.55))
+                .foregroundColor(isError ? Palette.danger : Palette.success)
             Text(status.text)
                 .font(BodyFont.system(size: 12.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -234,7 +234,7 @@ struct ReferencesHomeView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .buttonStyle(.plain)
         }
@@ -433,13 +433,13 @@ private struct ReferenceCard: View {
                 if let source = reference.source {
                     Text(source)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .lineLimit(1)
                 }
                 HStack(spacing: 6) {
                     Text(reference.type.displayName)
                         .font(BodyFont.system(size: 10.5, wght: 600))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     if let styleIds = reference.styleIds, !styleIds.isEmpty {
                         Text("· linked to \(styleIds.count) style\(styleIds.count == 1 ? "" : "s")")
                             .font(BodyFont.system(size: 10.5, wght: 500))
@@ -448,7 +448,7 @@ private struct ReferenceCard: View {
                     } else if let tags = reference.tags, !tags.isEmpty {
                         Text("· \(tags.joined(separator: ", "))")
                             .font(BodyFont.system(size: 10.5, wght: 500))
-                            .foregroundColor(Color(white: 0.45))
+                            .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                             .lineLimit(1)
                     }
                 }
@@ -512,12 +512,12 @@ private struct ReferenceCard: View {
                         Text("Open source")
                             .font(BodyFont.system(size: 11, wght: 600))
                     }
-                    .foregroundColor(Color(white: 0.72))
+                    .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
                 }
                 .buttonStyle(.plain)
@@ -533,7 +533,7 @@ private struct ReferenceCard: View {
                     Text("Delete")
                         .font(BodyFont.system(size: 11, wght: 600))
                 }
-                .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.45))
+                .foregroundColor(Palette.danger)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
@@ -563,10 +563,10 @@ private struct ReferenceCard: View {
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
                 Image(systemName: icon)
                     .font(.system(size: 28, weight: .light))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .frame(height: 110)
             .overlay(
@@ -635,7 +635,7 @@ private struct AddReferenceSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("TYPE")
                     .font(BodyFont.system(size: 10, wght: 700))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .tracking(0.5)
                 Picker("", selection: $type) {
                     ForEach(ReferenceType.allCases) { t in
@@ -650,7 +650,7 @@ private struct AddReferenceSheet: View {
                 Spacer()
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.plain)
-                    .foregroundColor(Color(white: 0.80))
+                    .foregroundColor(Color.gray(light: 0.25, dark: 0.80))
                 Button("Add") {
                     let tags = tagsText.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
                     onAdd(name, source, type, tags)
@@ -677,12 +677,12 @@ private struct AddReferenceSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 700))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .tracking(0.5)
             TextField(placeholder, text: text)
                 .textFieldStyle(.plain)
                 .font(monospaced ? .system(size: 12, design: .monospaced) : BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(
@@ -736,7 +736,7 @@ private struct ExtractPaletteSheet: View {
             if let error = loadError {
                 Text(error)
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(Color(red: 0.95, green: 0.50, blue: 0.50))
+                    .foregroundColor(Palette.danger)
             }
             if let result = result {
                 paletteRow(result)
@@ -751,13 +751,13 @@ private struct ExtractPaletteSheet: View {
             } else if loadError == nil {
                 ProgressView("Sampling image…")
                     .controlSize(.small)
-                    .foregroundColor(Color(white: 0.75))
+                    .foregroundColor(Color.gray(light: 0.28, dark: 0.75))
             }
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.plain)
-                    .foregroundColor(Color(white: 0.80))
+                    .foregroundColor(Color.gray(light: 0.25, dark: 0.80))
                 Button("Apply") { apply() }
                     .buttonStyle(.plain)
                     .foregroundColor(Palette.pastelBlue)
@@ -792,7 +792,7 @@ private struct ExtractPaletteSheet: View {
                     .frame(height: 38)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
                     .help(hex)
             }
@@ -818,7 +818,7 @@ private struct ExtractPaletteSheet: View {
                 .frame(width: 22, height: 22)
                 .overlay(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
@@ -826,14 +826,14 @@ private struct ExtractPaletteSheet: View {
                     .foregroundColor(Palette.textPrimary)
                 Text(hex.uppercased())
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
     }
 
@@ -841,7 +841,7 @@ private struct ExtractPaletteSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("APPLY")
                 .font(BodyFont.system(size: 10, wght: 700))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .tracking(0.5)
             Picker("", selection: $applyMode) {
                 ForEach(ApplyMode.allCases) { m in Text(m.label).tag(m) }
@@ -855,13 +855,13 @@ private struct ExtractPaletteSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("TARGET STYLE")
                 .font(BodyFont.system(size: 10, wght: 700))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .tracking(0.5)
             let candidates = store.styles.filter { $0.builtin != true }
             if candidates.isEmpty {
                 Text("No editable styles. Duplicate a builtin first or pick \"Apply to a new style\" above.")
                     .font(BodyFont.system(size: 12, wght: 400))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             } else {
                 Picker("", selection: $selectedStyleId) {
                     Text("Choose…").tag("")
@@ -879,12 +879,12 @@ private struct ExtractPaletteSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 700))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .tracking(0.5)
             TextField(placeholder, text: text)
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(

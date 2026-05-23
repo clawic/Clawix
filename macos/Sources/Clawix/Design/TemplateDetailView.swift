@@ -66,7 +66,7 @@ struct TemplateDetailView: View {
                     Text("Templates")
                         .font(BodyFont.system(size: 12.5, wght: 500))
                 }
-                .foregroundColor(Color(white: 0.60))
+                .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 6) {
@@ -75,7 +75,7 @@ struct TemplateDetailView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text(template.description ?? "")
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                 HStack(spacing: 8) {
                     metaPill(template.category.displayName, icon: "rectangle.grid.2x2")
                     metaPill(template.aspect.displayLabel, icon: "aspectratio")
@@ -133,12 +133,12 @@ struct TemplateDetailView: View {
             Text(text)
                 .font(BodyFont.system(size: 11, wght: 500))
         }
-        .foregroundColor(Color(white: 0.65))
+        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.overlay(0.05))
         )
     }
 
@@ -176,13 +176,13 @@ struct TemplateDetailView: View {
                                 .frame(width: 10, height: 10)
                             Text(style.name)
                                 .font(BodyFont.system(size: 12, wght: 500))
-                                .foregroundColor(selectedStyleId == style.id ? Palette.textPrimary : Color(white: 0.65))
+                                .foregroundColor(selectedStyleId == style.id ? Palette.textPrimary : Color.gray(light: 0.38, dark: 0.65))
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(selectedStyleId == style.id ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                                .fill(selectedStyleId == style.id ? Color.overlay(0.08) : Color.overlay(0.03))
                         )
                     }
                     .buttonStyle(.plain)
@@ -201,12 +201,12 @@ struct TemplateDetailView: View {
                     } label: {
                         Text(variant.label)
                             .font(BodyFont.system(size: 12, wght: 500))
-                            .foregroundColor(selectedVariantId == variant.id ? Palette.textPrimary : Color(white: 0.65))
+                            .foregroundColor(selectedVariantId == variant.id ? Palette.textPrimary : Color.gray(light: 0.38, dark: 0.65))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(selectedVariantId == variant.id ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                                    .fill(selectedVariantId == variant.id ? Color.overlay(0.08) : Color.overlay(0.03))
                             )
                     }
                     .buttonStyle(.plain)
@@ -223,7 +223,7 @@ struct TemplateDetailView: View {
                     HStack(spacing: 10) {
                         Image(systemName: slotIcon(slot.kind))
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(Color(white: 0.75))
+                            .foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                             .frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 6) {
@@ -245,25 +245,25 @@ struct TemplateDetailView: View {
                             HStack(spacing: 6) {
                                 Text(slot.id)
                                     .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(Color(white: 0.55))
+                                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                                 Text("·")
-                                    .foregroundColor(Color(white: 0.40))
+                                    .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                                 Text(slot.kind.rawValue)
                                     .font(BodyFont.system(size: 11, wght: 500))
-                                    .foregroundColor(Color(white: 0.55))
+                                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                                 if let maxLength = slot.maxLength {
                                     Text("·")
-                                        .foregroundColor(Color(white: 0.40))
+                                        .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                                     Text("max \(maxLength) chars")
                                         .font(BodyFont.system(size: 11, wght: 500))
-                                        .foregroundColor(Color(white: 0.55))
+                                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                                 }
                                 if let maxItems = slot.maxItems {
                                     Text("·")
-                                        .foregroundColor(Color(white: 0.40))
+                                        .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                                     Text("max \(maxItems) items")
                                         .font(BodyFont.system(size: 11, wght: 500))
-                                        .foregroundColor(Color(white: 0.55))
+                                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                                 }
                             }
                         }
@@ -295,15 +295,15 @@ struct TemplateDetailView: View {
                         Text(format.uppercased())
                             .font(.system(size: 11, design: .monospaced))
                     }
-                    .foregroundColor(Color(white: 0.85))
+                    .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(Color.white.opacity(0.05))
+                            .fill(Color.overlay(0.05))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
                 }
@@ -320,12 +320,12 @@ struct TemplateDetailView: View {
                         ForEach(tags, id: \.self) { tag in
                             Text(tag)
                                 .font(BodyFont.system(size: 11, wght: 500))
-                                .foregroundColor(Color(white: 0.65))
+                                .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(
                                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                        .fill(Color.white.opacity(0.05))
+                                        .fill(Color.overlay(0.05))
                                 )
                         }
                     }
@@ -337,7 +337,7 @@ struct TemplateDetailView: View {
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 11, wght: 700))
-            .foregroundColor(Color(white: 0.60))
+            .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
             .textCase(.uppercase)
             .tracking(0.5)
     }
@@ -382,10 +382,10 @@ struct TemplateDetailView: View {
         VStack(spacing: 10) {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(Color(white: 0.40))
+                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
             Text("Template not found")
                 .font(BodyFont.system(size: 15, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             Button("Back to templates") {
                 appState.navigate(to: .designTemplatesHome)
             }
@@ -424,7 +424,7 @@ private struct TemplatePreviewCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
             )
         }
     }

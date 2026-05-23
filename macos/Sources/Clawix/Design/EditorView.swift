@@ -133,7 +133,7 @@ struct EditorView: View {
                     Text("Back")
                         .font(BodyFont.system(size: 12.5, wght: 500))
                 }
-                .foregroundColor(Color(white: 0.65))
+                .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 1) {
@@ -143,7 +143,7 @@ struct EditorView: View {
                     .lineLimit(1)
                 Text("\(template.name) · \(template.aspect.displayLabel)")
                     .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .lineLimit(1)
             }
             Spacer()
@@ -154,12 +154,12 @@ struct EditorView: View {
                     } label: {
                         Text(format.label)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(Color(white: 0.85))
+                            .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                             .padding(.horizontal, 9)
                             .padding(.vertical, 5)
                             .background(
                                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(Color.white.opacity(0.06))
+                                    .fill(Color.overlay(0.06))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 7, style: .continuous)
                                             .stroke(Palette.border, lineWidth: 0.5)
@@ -194,7 +194,7 @@ struct EditorView: View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(red: 0.40, green: 0.85, blue: 0.55))
+                .foregroundColor(Palette.success)
             Text(text)
                 .font(BodyFont.system(size: 12.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -205,7 +205,7 @@ struct EditorView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .buttonStyle(.plain)
         }
@@ -225,7 +225,7 @@ struct EditorView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.45))
+                .foregroundColor(Palette.danger)
             Text(text)
                 .font(BodyFont.system(size: 12.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -236,7 +236,7 @@ struct EditorView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .buttonStyle(.plain)
         }
@@ -402,10 +402,10 @@ struct EditorView: View {
         VStack(spacing: 10) {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(Color(white: 0.40))
+                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
             Text("Editor document not found")
                 .font(BodyFont.system(size: 15, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             Button("Back to templates") {
                 appState.navigate(to: .designTemplatesHome)
             }

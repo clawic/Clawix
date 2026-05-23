@@ -118,7 +118,7 @@ struct StyleDetailView: View {
                     Text("Styles")
                         .font(BodyFont.system(size: 12.5, wght: 500))
                 }
-                .foregroundColor(Color(white: 0.60))
+                .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
             }
             .buttonStyle(.plain)
             VStack(alignment: .leading, spacing: 6) {
@@ -138,12 +138,12 @@ struct StyleDetailView: View {
                     if style.builtin == true {
                         Text("BUILTIN")
                             .font(BodyFont.system(size: 9, wght: 700))
-                            .foregroundColor(Color(white: 0.50))
+                            .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
                             .background(
                                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                    .fill(Color.white.opacity(0.06))
+                                    .fill(Color.overlay(0.06))
                             )
                     }
                 }
@@ -151,14 +151,14 @@ struct StyleDetailView: View {
                     TextField("Description", text: bindingForDescription(), axis: .vertical)
                         .textFieldStyle(.plain)
                         .font(BodyFont.system(size: 13, wght: 400))
-                        .foregroundColor(Color(white: 0.78))
+                        .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                         .lineLimit(1...3)
                         .frame(maxWidth: 560)
                         .onSubmit { persist() }
                 } else if let desc = style.description {
                     Text(desc)
                         .font(BodyFont.system(size: 13, wght: 400))
-                        .foregroundColor(Color(white: 0.65))
+                        .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                 }
                 tagsRow(style)
             }
@@ -182,12 +182,12 @@ struct StyleDetailView: View {
                 Text(label)
                     .font(BodyFont.system(size: 12, wght: 500))
             }
-            .foregroundColor(role == .destructive ? Color(red: 0.95, green: 0.45, blue: 0.45) : Color(white: 0.85))
+            .foregroundColor(role == .destructive ? Palette.danger : Color.gray(light: 0.20, dark: 0.85))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
                             .stroke(Palette.border, lineWidth: 0.5)
@@ -203,11 +203,11 @@ struct StyleDetailView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "tag")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Color(white: 0.50))
+                        .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                     TextField("tag1, tag2, tag3", text: bindingForTags())
                         .textFieldStyle(.plain)
                         .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(Color(white: 0.80))
+                        .foregroundColor(Color.gray(light: 0.25, dark: 0.80))
                         .frame(maxWidth: 360)
                         .onSubmit { persist() }
                 }
@@ -216,12 +216,12 @@ struct StyleDetailView: View {
                     ForEach(tags, id: \.self) { tag in
                         Text(tag)
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(white: 0.65))
+                            .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
                             .background(
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(Color.white.opacity(0.05))
+                                    .fill(Color.overlay(0.05))
                             )
                     }
                 }
@@ -240,7 +240,7 @@ struct StyleDetailView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("Duplicate this style to make a custom copy you can edit.")
                     .font(BodyFont.system(size: 12, wght: 400))
-                    .foregroundColor(Color(white: 0.60))
+                    .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
             }
             Spacer()
             Button("Duplicate to edit", action: duplicate)
@@ -258,7 +258,7 @@ struct StyleDetailView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.overlay(0.04))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(Palette.pastelBlue.opacity(0.30), lineWidth: 0.5)
@@ -270,7 +270,7 @@ struct StyleDetailView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.45))
+                .foregroundColor(Palette.danger)
             Text(message)
                 .font(BodyFont.system(size: 12.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -281,7 +281,7 @@ struct StyleDetailView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(white: 0.65))
+                    .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             }
             .buttonStyle(.plain)
         }
@@ -305,12 +305,12 @@ struct StyleDetailView: View {
                 } label: {
                     Text(tab.label)
                         .font(BodyFont.system(size: 12.5, wght: 500))
-                        .foregroundColor(tab == selectedTab ? Palette.textPrimary : Color(white: 0.55))
+                        .foregroundColor(tab == selectedTab ? Palette.textPrimary : Color.gray(light: 0.45, dark: 0.55))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(tab == selectedTab ? Color.white.opacity(0.08) : Color.clear)
+                                .fill(tab == selectedTab ? Color.overlay(0.08) : Color.clear)
                         )
                 }
                 .buttonStyle(.plain)
@@ -323,11 +323,11 @@ struct StyleDetailView: View {
     private var livePreviewBadge: some View {
         HStack(spacing: 5) {
             Circle()
-                .fill(Color(red: 0.40, green: 0.85, blue: 0.55))
+                .fill(Palette.success)
                 .frame(width: 6, height: 6)
             Text("Live preview")
                 .font(BodyFont.system(size: 11, wght: 600))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
     }
 
@@ -466,7 +466,7 @@ struct StyleDetailView: View {
                 Divider().opacity(0.18).padding(.vertical, 4)
                 Text("AVAILABLE REFERENCES")
                     .font(BodyFont.system(size: 10, wght: 700))
-                    .foregroundColor(Color(white: 0.50))
+                    .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
                     .tracking(0.5)
                 ForEach(available) { ref in
                     referenceRow(ref, linked: false) {
@@ -487,7 +487,7 @@ struct StyleDetailView: View {
                 ForEach(examples, id: \.self) { id in
                     Text(id)
                         .font(BodyFont.system(size: 12.5, wght: 500))
-                        .foregroundColor(Color(white: 0.70))
+                        .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
                 }
             }
         }
@@ -516,7 +516,7 @@ struct StyleDetailView: View {
                     .frame(width: 28, height: 28)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             }
             VStack(alignment: .leading, spacing: 1) {
@@ -525,7 +525,7 @@ struct StyleDetailView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text(hex.uppercased())
                     .font(.system(size: 10.5, design: .monospaced))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             Spacer()
         }
@@ -553,7 +553,7 @@ struct StyleDetailView: View {
         HStack(alignment: .center, spacing: 12) {
             Text(label.uppercased())
                 .font(BodyFont.system(size: 10, wght: 700))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .frame(width: 62, alignment: .leading)
             if isEditable {
                 TextField("Font stack", text: Binding(
@@ -566,12 +566,12 @@ struct StyleDetailView: View {
                 ))
                 .textFieldStyle(.plain)
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 6)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                         .overlay(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .stroke(Palette.border, lineWidth: 0.5)
@@ -581,7 +581,7 @@ struct StyleDetailView: View {
             } else {
                 Text(binding.wrappedValue.family)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(Color(white: 0.75))
+                    .foregroundColor(Color.gray(light: 0.28, dark: 0.75))
             }
             Spacer()
             Text("Aa")
@@ -608,7 +608,7 @@ struct StyleDetailView: View {
             TextEditor(text: binding)
                 .scrollContentBackground(.hidden)
                 .font(mono ? .system(size: 12, design: .monospaced) : BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.88))
+                .foregroundColor(Color.gray(light: 0.17, dark: 0.88))
                 .frame(minHeight: minHeight)
                 .padding(10)
                 .background(
@@ -627,7 +627,7 @@ struct StyleDetailView: View {
         HStack(spacing: 10) {
             Image(systemName: referenceIcon(ref.type))
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(white: 0.75))
+                .foregroundColor(Color.gray(light: 0.28, dark: 0.75))
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
                 Text(ref.name)
@@ -636,14 +636,14 @@ struct StyleDetailView: View {
                 if let source = ref.source {
                     Text(source)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Color(white: 0.55))
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .lineLimit(1)
                 }
             }
             Spacer()
             Text(ref.type.displayName)
                 .font(BodyFont.system(size: 10, wght: 600))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             if isEditable {
                 Button(linked ? "Unlink" : "Link", action: onToggle)
                     .buttonStyle(.plain)
@@ -678,7 +678,7 @@ struct StyleDetailView: View {
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 11, wght: 700))
-            .foregroundColor(Color(white: 0.60))
+            .foregroundColor(Color.gray(light: 0.42, dark: 0.60))
             .textCase(.uppercase)
             .tracking(0.5)
     }
@@ -687,16 +687,16 @@ struct StyleDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Base unit · \(Int(spacing.unit))px")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             HStack(alignment: .bottom, spacing: 10) {
                 ForEach(spacing.scale.sorted(by: { (Int($0.key) ?? 0) < (Int($1.key) ?? 0) }), id: \.key) { key, value in
                     VStack(spacing: 4) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.10))
+                            .fill(Color.overlay(0.10))
                             .frame(width: 18, height: CGFloat(min(value, 80)))
                         Text(key)
                             .font(BodyFont.system(size: 10, wght: 500))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     }
                 }
             }
@@ -717,11 +717,11 @@ struct StyleDetailView: View {
     private func radiusSample(_ label: String, _ value: Double) -> some View {
         VStack(spacing: 6) {
             RoundedRectangle(cornerRadius: CGFloat(value), style: .continuous)
-                .fill(Color.white.opacity(0.10))
+                .fill(Color.overlay(0.10))
                 .frame(width: 52, height: 52)
             Text(label)
                 .font(BodyFont.system(size: 10, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
     }
 
@@ -736,7 +736,7 @@ struct StyleDetailView: View {
     private func shadowSample(_ label: String, _ token: StyleShadowToken) -> some View {
         VStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.92))
+                .fill(Color.overlay(0.92))
                 .frame(width: 60, height: 60)
                 .shadow(color: Color(hex: token.color) ?? .black.opacity(0.2),
                         radius: CGFloat(token.blur / 2),
@@ -744,7 +744,7 @@ struct StyleDetailView: View {
                         y: CGFloat(token.offsetY))
             Text(label)
                 .font(BodyFont.system(size: 10, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
     }
 
@@ -760,18 +760,18 @@ struct StyleDetailView: View {
             if let label {
                 Text(label.uppercased())
                     .font(BodyFont.system(size: 10, wght: 700))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 6)], alignment: .leading, spacing: 4) {
                 ForEach(pairs, id: \.0) { k, v in
                     HStack(spacing: 8) {
                         Text(k)
                             .font(BodyFont.system(size: 11.5, wght: 500))
-                            .foregroundColor(Color(white: 0.85))
+                            .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                             .frame(width: 110, alignment: .leading)
                         Text(v)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                             .lineLimit(1)
                         Spacer(minLength: 0)
                     }
@@ -786,7 +786,7 @@ struct StyleDetailView: View {
             ForEach(lines, id: \.self) { line in
                 Text(line)
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.85))
+                    .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
             }
         }
     }
@@ -796,7 +796,7 @@ struct StyleDetailView: View {
             sectionTitle(title)
             Text(body)
                 .font(mono ? .system(size: 12, design: .monospaced) : BodyFont.system(size: 13.5, wght: 400))
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .lineSpacing(3)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding(14)
@@ -814,12 +814,12 @@ struct StyleDetailView: View {
     private func emptyHint(_ text: String) -> some View {
         Text(text)
             .font(BodyFont.system(size: 13, wght: 400))
-            .foregroundColor(Color(white: 0.55))
+            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.03))
+                    .fill(Color.overlay(0.03))
             )
     }
 
@@ -978,10 +978,10 @@ struct StyleDetailView: View {
         VStack(spacing: 10) {
             Image(systemName: "questionmark.circle")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(Color(white: 0.40))
+                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
             Text("Style not found")
                 .font(BodyFont.system(size: 15, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             Button("Back to styles") {
                 appState.navigate(to: .designStylesHome)
             }
@@ -1042,7 +1042,7 @@ struct LivePreviewCard: View {
         .background(bg)
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color(hex: style.tokens.color.border ?? style.tokens.color.fg) ?? Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color(hex: style.tokens.color.border ?? style.tokens.color.fg) ?? Color.overlay(0.10), lineWidth: 0.5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }

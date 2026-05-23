@@ -63,18 +63,18 @@ struct TemplatesHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("Parametrised pieces by category. Render any template with any style to get the finished artifact.")
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.62))
+                    .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                     .lineLimit(2)
             }
             Spacer()
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 TextField("Search templates", text: $query)
                     .textFieldStyle(.plain)
                     .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.94))
+                    .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                     .frame(width: 200)
             }
             .padding(.horizontal, 12)
@@ -112,12 +112,12 @@ struct TemplatesHomeView: View {
         Button(action: action) {
             Text(label)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(active ? Palette.textPrimary : Color(white: 0.65))
+                .foregroundColor(active ? Palette.textPrimary : Color.gray(light: 0.38, dark: 0.65))
                 .padding(.horizontal, 11)
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(active ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
+                        .fill(active ? Color.overlay(0.08) : Color.overlay(0.03))
                 )
         }
         .buttonStyle(.plain)
@@ -131,7 +131,7 @@ struct TemplatesHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("\(list.count)")
                     .font(BodyFont.system(size: 11, wght: 600))
-                    .foregroundColor(Color(white: 0.50))
+                    .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
             }
             LazyVGrid(columns: [
                 GridItem(.adaptive(minimum: 200, maximum: 260), spacing: 14, alignment: .top)
@@ -158,13 +158,13 @@ struct TemplatesHomeView: View {
         VStack(spacing: 14) {
             Image(systemName: "rectangle.grid.2x2")
                 .font(.system(size: 28, weight: .light))
-                .foregroundColor(Color(white: 0.40))
+                .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
             Text("No templates match")
                 .font(BodyFont.system(size: 15, wght: 500))
-                .foregroundColor(Color(white: 0.70))
+                .foregroundColor(Color.gray(light: 0.33, dark: 0.70))
             Text("Try a different search or clear the category filter.")
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.50))
+                .foregroundColor(Color.gray(light: 0.46, dark: 0.50))
         }
     }
 }
@@ -188,12 +188,12 @@ private struct TemplateCard: View {
                     HStack(spacing: 6) {
                         Text(template.aspect.displayLabel)
                             .font(.system(size: 10.5, design: .monospaced))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         Text("·")
-                            .foregroundColor(Color(white: 0.40))
+                            .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                         Text("\(template.slots.count) slots")
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     }
                 }
             }
@@ -245,7 +245,7 @@ private struct TemplateCard: View {
         .aspectRatio(CGFloat(ratio), contentMode: .fit)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 }
