@@ -60,9 +60,9 @@ fileprivate func runSync<T>(_ operation: @escaping @Sendable () async throws -> 
 // MARK: - Mappers (HTTP DTO → SecretsModels DTO)
 
 enum ClawJSMapper {
-    static func mapFolder(_ row: ClawJSSecretsClient.Folder) -> VaultRecord {
+    static func mapFolder(_ row: ClawJSSecretsClient.Folder) throws -> VaultRecord {
         VaultRecord(
-            id: parseId(row.id),
+            id: try parseRequiredId(row.id, field: "folder.id"),
             accountId: 0,
             name: row.name,
             icon: row.icon,
@@ -74,10 +74,10 @@ enum ClawJSMapper {
         )
     }
 
-    static func mapDescribedSecret(_ s: ClawJSSecretsClient.DescribedSecret) -> SecretRecord {
-        let id = parseId(s.id)
-        let folderId = s.folderId.flatMap { parseId($0) } ?? UUID()
-        let kind: SecretKind = SecretKind(rawValue: s.typeId ?? "generic") ?? .apiKey
+    static func mapDescribedSecret(_ s: ClawJSSecretsClient.DescribedSecret) throws -> SecretRecord {
+        let id = try parseRequiredId(s.id, field: "secret.id")
+        let folderId = try parseRequiredId(s.folderId, field: "secret.folderId")
+        let kind = try parseSecretKind(s.typeId, field: "secret.typeId")
         var record = SecretRecord(
             id: id,
             accountId: 0,
@@ -99,7 +99,7 @@ enum ClawJSMapper {
         record.allowInEnv = s.governance.allowInEnv
         record.allowInsecureTransport = s.governance.allowInsecureTransport
         record.allowLocalNetwork = s.governance.allowLocalNetwork
-        record.approvalMode = ApprovalMode(rawValue: s.governance.approvalMode) ?? .auto
+        record.approvalMode = try parseApprovalMode(s.governance.approvalMode, field: "secret.governance.approvalMode")
         record.approvalWindowMinutes = s.governance.approvalWindowMinutes
         record.ttlExpiresAt = parseTimestamp(s.governance.ttlExpiresAt)
         record.maxUses = s.governance.maxUses
@@ -136,16 +136,16 @@ enum ClawJSMapper {
         )
     }
 
-    static func mapAuditEvent(_ e: ClawJSSecretsClient.AuditEvent) -> DecryptedAuditEvent {
+    static func mapAuditEvent(_ e: ClawJSSecretsClient.AuditEvent) throws -> DecryptedAuditEvent {
         let payload = AuditEventPayload(notes: stringify(e.payload))
         return DecryptedAuditEvent(
-            id: parseId(e.id),
-            secretId: e.secretId.flatMap { parseId($0) },
+            id: try parseRequiredId(e.id, field: "audit.id"),
+            secretId: try parseOptionalId(e.secretId, field: "audit.secretId"),
             vaultId: nil,
             versionId: nil,
-            kind: AuditEventKind(rawValue: e.kind) ?? .anomalyDetected,
+            kind: try parseAuditKind(e.kind, field: "audit.kind"),
             timestamp: parseTimestamp(e.timestamp) ?? Clock.now(),
-            source: AuditEventSource(rawValue: e.source) ?? .system,
+            source: try parseAuditSource(e.source, field: "audit.source"),
             success: e.success,
             deviceId: nil,
             sessionId: nil,
@@ -153,9 +153,9 @@ enum ClawJSMapper {
         )
     }
 
-    static func mapGrantSummary(_ g: ClawJSSecretsClient.AgentGrantSummary) -> AgentGrantRecord {
-        let capabilityKind = (g.capability["kind"]?.value as? String) ?? "custom"
-        let capability = AgentCapability(rawValue: capabilityKind) ?? .githubGitPush
+    static func mapGrantSummary(_ g: ClawJSSecretsClient.AgentGrantSummary) throws -> AgentGrantRecord {
+        let capabilityKind = g.capability["kind"]?.value as? String
+        let capability = try parseAgentCapability(capabilityKind, field: "grant.capability.kind")
         let scopeJson: String? = {
             var scope = g.capability
             scope.removeValue(forKey: "kind")
@@ -164,10 +164,10 @@ enum ClawJSMapper {
             return try? String(data: JSONSerialization.data(withJSONObject: cleaned), encoding: .utf8)
         }()
         return AgentGrantRecord(
-            id: parseId(g.id),
+            id: try parseRequiredId(g.id, field: "grant.id"),
             accountId: 0,
             agent: g.agent,
-            secretId: parseId(g.secretId),
+            secretId: try parseRequiredId(g.secretId, field: "grant.secretId"),
             capability: capability,
             scopeJson: scopeJson,
             reason: g.reason,
@@ -180,8 +180,51 @@ enum ClawJSMapper {
         )
     }
 
-    private static func parseId(_ s: String) -> EntityID {
-        UUID(uuidString: s) ?? UUID()
+    private static func parseRequiredId(_ s: String?, field: String) throws -> EntityID {
+        guard let s, !s.isEmpty, let id = UUID(uuidString: s) else {
+            throw ClawJSBackendError.invalidResponse("\(field) must be a UUID")
+        }
+        return id
+    }
+
+    private static func parseOptionalId(_ s: String?, field: String) throws -> EntityID? {
+        guard let s else { return nil }
+        return try parseRequiredId(s, field: field)
+    }
+
+    private static func parseSecretKind(_ raw: String?, field: String) throws -> SecretKind {
+        guard let raw, let kind = SecretKind(rawValue: raw) else {
+            throw ClawJSBackendError.invalidResponse("\(field) has unknown value \(raw ?? "<missing>")")
+        }
+        return kind
+    }
+
+    private static func parseApprovalMode(_ raw: String, field: String) throws -> ApprovalMode {
+        guard let mode = ApprovalMode(rawValue: raw) else {
+            throw ClawJSBackendError.invalidResponse("\(field) has unknown value \(raw)")
+        }
+        return mode
+    }
+
+    private static func parseAuditKind(_ raw: String, field: String) throws -> AuditEventKind {
+        guard let kind = AuditEventKind(rawValue: raw) else {
+            throw ClawJSBackendError.invalidResponse("\(field) has unknown value \(raw)")
+        }
+        return kind
+    }
+
+    private static func parseAuditSource(_ raw: String, field: String) throws -> AuditEventSource {
+        guard let source = AuditEventSource(rawValue: raw) else {
+            throw ClawJSBackendError.invalidResponse("\(field) has unknown value \(raw)")
+        }
+        return source
+    }
+
+    private static func parseAgentCapability(_ raw: String?, field: String) throws -> AgentCapability {
+        guard let raw, let capability = AgentCapability(rawValue: raw) else {
+            throw ClawJSBackendError.invalidResponse("\(field) has unknown value \(raw ?? "<missing>")")
+        }
+        return capability
     }
 
     private static func parseTimestamp(_ s: String?) -> Timestamp? {
@@ -219,13 +262,13 @@ final class ClawJSSecretsStore {
 
     func listVaults(includeTrashed: Bool = false) throws -> [VaultRecord] {
         let containers = try runSync { try await self.client.listContainers(includeTrashed: includeTrashed) }
-        return containers.map(ClawJSMapper.mapFolder)
+        return try containers.map(ClawJSMapper.mapFolder)
     }
 
     @discardableResult
     func createVault(name: String, icon: String? = nil, color: String? = nil) throws -> VaultRecord {
         let row = try runSync { try await self.client.createContainer(name: name, icon: icon, color: color) }
-        return ClawJSMapper.mapFolder(row)
+        return try ClawJSMapper.mapFolder(row)
     }
 
     func listSecrets(includeTrashed: Bool = false) throws -> [SecretRecord] {
@@ -238,19 +281,19 @@ final class ClawJSSecretsStore {
                 includePublicValues: true
             )
         }
-        return described.map(ClawJSMapper.mapDescribedSecret)
+        return try described.map(ClawJSMapper.mapDescribedSecret)
     }
 
     @discardableResult
     func createSecret(in vault: VaultRecord, draft: DraftSecret) throws -> SecretRecord {
         let payload = ClawJSDraftEncoder.encode(draft, folderId: vault.id.uuidString)
         let described = try runSync { try await self.client.createSecret(draft: payload) }
-        return ClawJSMapper.mapDescribedSecret(described)
+        return try ClawJSMapper.mapDescribedSecret(described)
     }
 
     func fetchSecret(byInternalName name: String) throws -> SecretRecord? {
         let described = try runSync { try await self.client.describeSecret(name: name, includePublicValues: true) }
-        return described.map(ClawJSMapper.mapDescribedSecret)
+        return try described.map(ClawJSMapper.mapDescribedSecret)
     }
 
     func fetchFields(forSecret secretId: EntityID, version: EntityID) throws -> [SecretFieldRecord] {
@@ -308,7 +351,7 @@ final class ClawJSSecretsStore {
         let payload = ClawJSGovernanceEncoder.encode(governance)
         let described = try runSync { try await self.client.updateSecret(name: secret.internalName, governance: payload) }
         guard let described else { throw ClawJSBackendError.notFound }
-        return ClawJSMapper.mapDescribedSecret(described)
+        return try ClawJSMapper.mapDescribedSecret(described)
     }
 
     @discardableResult
@@ -336,7 +379,7 @@ final class ClawJSSecretsStore {
             try await self.client.updateSecret(name: secret.internalName, metadata: metadata)
         }
         guard let described else { throw ClawJSBackendError.notFound }
-        return ClawJSMapper.mapDescribedSecret(described)
+        return try ClawJSMapper.mapDescribedSecret(described)
     }
 
     func purgeTrashed(olderThan: Timestamp) throws -> Int {
@@ -369,12 +412,12 @@ final class ClawJSAuditStore {
 
     func recentEvents(limit: Int) throws -> [DecryptedAuditEvent] {
         let events = try runSync { try await self.client.queryAudit(limit: limit) }
-        return events.map(ClawJSMapper.mapAuditEvent)
+        return try events.map(ClawJSMapper.mapAuditEvent)
     }
 
     func eventsForSecret(_ secretId: EntityID, limit: Int) throws -> [DecryptedAuditEvent] {
         let events = try runSync { try await self.client.queryAudit(limit: limit) }
-        return events
+        return try events
             .filter { $0.secretId == secretId.uuidString }
             .map(ClawJSMapper.mapAuditEvent)
     }
@@ -384,7 +427,7 @@ final class ClawJSAuditStore {
         let events = try runSync {
             try await self.client.queryAudit(kinds: kinds, since: nil, limit: limit)
         }
-        var mapped = events.map(ClawJSMapper.mapAuditEvent)
+        var mapped = try events.map(ClawJSMapper.mapAuditEvent)
         if let secretId = filter.secretId {
             mapped = mapped.filter { $0.secretId == secretId }
         }
@@ -413,7 +456,7 @@ final class ClawJSGrantStore {
     func listActive() throws -> [AgentGrantRecord] {
         let grants = try runSync { try await self.client.listGrants() }
         let now = Clock.now()
-        return grants
+        return try grants
             .filter { $0.revokedAt == nil }
             .map(ClawJSMapper.mapGrantSummary)
             .filter { $0.expiresAt > now }
@@ -421,13 +464,13 @@ final class ClawJSGrantStore {
 
     func listAll(limit: Int) throws -> [AgentGrantRecord] {
         let grants = try runSync { try await self.client.listGrants() }
-        return Array(grants.map(ClawJSMapper.mapGrantSummary).prefix(limit))
+        return try Array(grants.map(ClawJSMapper.mapGrantSummary).prefix(limit))
     }
 
     @discardableResult
     func revoke(grantId: EntityID) throws -> AgentGrantRecord? {
         let revoked = try runSync { try await self.client.revokeGrant(id: grantId.uuidString) }
-        return revoked.map(ClawJSMapper.mapGrantSummary)
+        return try revoked.map(ClawJSMapper.mapGrantSummary)
     }
 }
 

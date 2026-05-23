@@ -109,7 +109,7 @@ enum GitInspector {
 
     private static func countUncommittedFiles(at workingDirectory: String) -> Int? {
         let proc = Process()
-        proc.launchPath = "/usr/bin/env"
+        proc.launchPath = ClawixAgentBackendRoutes.envCLI
         proc.arguments = ["git", "status", "--porcelain"]
         proc.currentDirectoryPath = workingDirectory
 

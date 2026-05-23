@@ -78,8 +78,7 @@ final class TitleGenerator {
         prompt: String,
         timeoutSeconds: Double
     ) -> String? {
-        let outFile = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clawix-title-\(UUID().uuidString).txt")
+        let outFile = ClawixAgentBackendRoutes.generatedTitleOutputURL()
         defer { try? FileManager.default.removeItem(at: outFile) }
 
         let proc = Process()

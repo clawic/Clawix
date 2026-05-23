@@ -65,9 +65,7 @@ final class BackendAuthCoordinator: ObservableObject {
         // even though we launch with an absolute executable URL.
         var env = ProcessInfo.processInfo.environment
         let path = env["PATH"] ?? ""
-        if !path.contains("/usr/bin") {
-            env["PATH"] = path + ":/usr/bin:/bin:/usr/sbin:/sbin"
-        }
+        env["PATH"] = ClawixAgentBackendRoutes.ensureLoginSystemPath(in: path)
         proc.environment = env
 
         proc.terminationHandler = { [weak self] p in

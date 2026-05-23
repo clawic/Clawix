@@ -81,11 +81,6 @@ enum ClawixHostBootstrap {
     }
 
     private static func registryFileURL() throws -> URL {
-        let appSupport = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library", isDirectory: true)
-            .appendingPathComponent("Application Support", isDirectory: true)
-            .appendingPathComponent("Claw", isDirectory: true)
-            .appendingPathComponent("hosts", isDirectory: true)
-        return appSupport.appendingPathComponent("registry.json")
+        ClawixHostBootstrapRoutes.registryFileURL()
     }
 }

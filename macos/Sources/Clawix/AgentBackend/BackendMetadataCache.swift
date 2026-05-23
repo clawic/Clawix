@@ -66,10 +66,6 @@ struct BackendMetadataCache {
     }
 
     private static func defaultDirectory() -> URL {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        return caches
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent("BackendMetadata", isDirectory: true)
+        ClawixCacheRoutes.backendMetadataDirectory()
     }
 }

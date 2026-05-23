@@ -538,12 +538,10 @@ enum RolloutReader {
                     pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 let imagePath: String? = sessionId.map { sid in
-                    FileManager.default.homeDirectoryForCurrentUser
-                        .appendingPathComponent(".codex", isDirectory: true)
-                        .appendingPathComponent("generated_images", isDirectory: true)
-                        .appendingPathComponent(sid, isDirectory: true)
-                        .appendingPathComponent("\(callId).png")
-                        .path
+                    ClawixAgentBackendRoutes.codexGeneratedImageURL(
+                        sessionId: sid,
+                        callId: callId
+                    ).path
                 }
                 pending?.appendOther(
                     WorkItem(

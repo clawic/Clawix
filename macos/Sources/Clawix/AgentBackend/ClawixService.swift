@@ -523,7 +523,7 @@ final class ClawixService: ObservableObject {
 
     private func ensureThread(for chatId: UUID, activeSkills: [ActiveSkill]?) async throws -> String {
         if let id = threadByChat[chatId] { return id }
-        let cwd = appState?.threadCwd ?? FileManager.default.homeDirectoryForCurrentUser.path
+        let cwd = appState?.threadCwd ?? ClawixAgentBackendRoutes.defaultThreadCwd()
         let modelSlug = appState?.clawixModelSlug
         let serviceTier = appState?.clawixServiceTier
         let permissionMode = appState?.permissionMode ?? .defaultPermissions
@@ -732,12 +732,10 @@ final class ClawixService: ObservableObject {
         // yet during `inProgress`; the iPhone retries on snapshot.
         var generatedImagePath: String? = nil
         if case .imageGeneration = kind {
-            generatedImagePath = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".codex", isDirectory: true)
-                .appendingPathComponent("generated_images", isDirectory: true)
-                .appendingPathComponent(payload.threadId, isDirectory: true)
-                .appendingPathComponent("\(payload.item.id).png")
-                .path
+            generatedImagePath = ClawixAgentBackendRoutes.codexGeneratedImageURL(
+                sessionId: payload.threadId,
+                callId: payload.item.id
+            ).path
         }
         let item = WorkItem(
             id: payload.item.id,

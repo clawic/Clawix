@@ -11,12 +11,8 @@ struct BackendAccountProfile: Equatable {
 }
 
 enum BackendAuthReader {
-
-    private static let backendDirectoryName = ".codex"
-
     static var authURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("\(backendDirectoryName)/auth.json")
+        ClawixAgentBackendRoutes.codexAuthFileURL()
     }
 
     static func read() -> BackendAccountProfile {

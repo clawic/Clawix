@@ -124,11 +124,24 @@ private final class ClawJSAsyncProcessTimeoutState: @unchecked Sendable {
     }
 }
 
+enum ClawJSMacProcessToolRoutes {
+    static let shell = ClawixSystemToolRoutes.shellCLI
+    static let lsof = ClawixSystemToolRoutes.lsofCLI
+    static let ps = ClawixSystemToolRoutes.psCLI
+    static let nullDevice = ClawixTemporaryRoutes.nullDevicePath
+    static let bundledClawJSSidecarFragment = "/Clawix.app/Contents/Resources/clawjs/"
+    static let appSupportClawJSSidecarFragment = "/Application Support/Clawix/clawjs/"
+
+    static func listenerPIDCommand(port: UInt16) -> String {
+        "\(lsof) -nP -tiTCP:\(port) -sTCP:LISTEN 2>\(nullDevice) | head -n 1"
+    }
+}
+
 enum ClawJSProcessInspector {
     static func listenerPID(on port: UInt16) async throws -> pid_t? {
         let result = try await ClawJSAsyncProcessRunner.run(
-            executable: "/bin/sh",
-            arguments: ["-c", "/usr/sbin/lsof -nP -tiTCP:\(port) -sTCP:LISTEN 2>/dev/null | head -n 1"]
+            executable: ClawJSMacProcessToolRoutes.shell,
+            arguments: ["-c", ClawJSMacProcessToolRoutes.listenerPIDCommand(port: port)]
         )
         let raw = String(data: result.standardOutput, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -138,17 +151,17 @@ enum ClawJSProcessInspector {
 
     static func isClawixSidecar(pid: pid_t) async throws -> Bool {
         let result = try await ClawJSAsyncProcessRunner.run(
-            executable: "/bin/ps",
+            executable: ClawJSMacProcessToolRoutes.ps,
             arguments: ["-p", String(pid), "-o", "command="]
         )
         let command = String(data: result.standardOutput, encoding: .utf8) ?? ""
-        return command.contains("/Clawix.app/Contents/Resources/clawjs/")
-            || command.contains("/Application Support/Clawix/clawjs/")
+        return command.contains(ClawJSMacProcessToolRoutes.bundledClawJSSidecarFragment)
+            || command.contains(ClawJSMacProcessToolRoutes.appSupportClawJSSidecarFragment)
     }
 
     static func parentPID(of pid: pid_t) async throws -> pid_t? {
         let result = try await ClawJSAsyncProcessRunner.run(
-            executable: "/bin/ps",
+            executable: ClawJSMacProcessToolRoutes.ps,
             arguments: ["-p", String(pid), "-o", "ppid="]
         )
         let raw = String(data: result.standardOutput, encoding: .utf8)?

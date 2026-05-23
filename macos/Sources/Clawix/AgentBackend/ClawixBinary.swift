@@ -47,12 +47,11 @@ enum ClawixBinary {
         // shebang. Preferred because launching the nvm script via
         // Process() fails with "env: node: No such file" when our app
         // is launched outside a shell with PATH.
-        out.append(URL(fileURLWithPath: "/Applications/Codex.app/Contents/Resources/\(backendExecutableName)"))
+        out.append(ClawixAgentBackendRoutes.codexAppBackendURL(executableName: backendExecutableName))
 
         // nvm: scan newest versions first. Falls back if Codex.app
         // is not installed; relies on a user PATH that includes node.
-        let nvmRoot = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".nvm/versions/node", isDirectory: true)
+        let nvmRoot = ClawixAgentBackendRoutes.nvmNodeVersionsRoot()
         if let versions = try? FileManager.default.contentsOfDirectory(
             at: nvmRoot,
             includingPropertiesForKeys: nil
@@ -63,9 +62,9 @@ enum ClawixBinary {
             }
         }
 
-        out.append(URL(fileURLWithPath: "/opt/homebrew/bin/\(backendExecutableName)"))
-        out.append(URL(fileURLWithPath: "/usr/local/bin/\(backendExecutableName)"))
-        out.append(URL(fileURLWithPath: "/usr/bin/\(backendExecutableName)"))
+        out.append(ClawixAgentBackendRoutes.homebrewBackendURL(executableName: backendExecutableName))
+        out.append(ClawixAgentBackendRoutes.usrLocalBackendURL(executableName: backendExecutableName))
+        out.append(ClawixAgentBackendRoutes.usrBinBackendURL(executableName: backendExecutableName))
         return out
     }
 
