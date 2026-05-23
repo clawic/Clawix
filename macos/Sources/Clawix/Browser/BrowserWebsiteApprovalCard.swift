@@ -48,33 +48,27 @@ private struct CardBody: View {
     let request: BrowserWebsiteApprovalRequest
     let onDecide: (BrowserWebsiteApprovalDecision) -> Void
 
-    private enum Scope: CaseIterable {
-        case thisSite
-        case anyWebsite
-
-        var label: LocalizedStringKey {
-            switch self {
-            case .thisSite:   return "Always allow this site"
-            case .anyWebsite: return "Always allow any website"
-            }
-        }
-    }
-
-    @State private var persist = false
-    @State private var scope: Scope = .thisSite
-    @State private var scopeMenuOpen = false
+    /// User's chosen scope. Defaults to the safest option ("just this
+    /// time"); the Allow button resolves to whichever row is selected.
+    @State private var choice: BrowserWebsiteApprovalDecision = .allowOnce
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 11) {
                 LucideIcon(.globe, size: 16)
                     .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
-                    .frame(width: 26, height: 26)
+                    .frame(width: 30, height: 30)
                     .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
                             .fill(Color.overlay(0.08))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
+                            )
                     )
-                Text("Allow Clawix to access \(request.origin)?")
+                (Text("Allow Clawix to open ")
+                    + Text(verbatim: request.origin).font(.system(size: 13, design: .monospaced))
+                    + Text("?"))
                     .font(BodyFont.system(size: 14.5, weight: .medium))
                     .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                     .fixedSize(horizontal: false, vertical: true)
@@ -82,26 +76,23 @@ private struct CardBody: View {
             }
             .padding(.horizontal, 18)
             .padding(.top, 16)
-            .padding(.bottom, 12)
+            .padding(.bottom, 14)
 
-            scopeRow
-                .padding(.horizontal, 18)
-                .padding(.bottom, scope == .anyWebsite && persist ? 6 : 14)
-
-            if scope == .anyWebsite && persist {
-                Text("The agent won't ask again before opening other websites.")
-                    .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color.orange.opacity(0.9))
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 14)
+            VStack(spacing: 7) {
+                scopeOption(.allowOnce, title: "Just this time")
+                scopeOption(.allowSite, title: "Always for this site")
+                scopeOption(.allowAnyWebsite, title: "Always for any website",
+                            warning: "The agent won't ask again before opening other sites.")
             }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 14)
 
             HStack(spacing: 8) {
                 Spacer()
                 Button("Cancel") { onDecide(.cancel) }
                     .keyboardShortcut(.cancelAction)
                     .buttonStyle(SheetCancelButtonStyle())
-                Button("Allow") { onDecide(resolvedDecision) }
+                Button("Allow") { onDecide(choice) }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(SheetPrimaryButtonStyle())
             }
@@ -112,84 +103,51 @@ private struct CardBody: View {
         .sheetStandardBackground()
     }
 
-    private var resolvedDecision: BrowserWebsiteApprovalDecision {
-        guard persist else { return .allowOnce }
-        return scope == .thisSite ? .allowSite : .allowAnyWebsite
-    }
-
-    private var scopeRow: some View {
-        HStack(spacing: 10) {
-            Button { persist.toggle() } label: {
-                checkbox
-            }
-            .buttonStyle(.plain)
-
-            Button { scopeMenuOpen.toggle() } label: {
-                HStack(spacing: 6) {
-                    Text(scope.label)
-                        .font(BodyFont.system(size: 12.5, wght: 500))
-                        .foregroundColor(persist ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.40, dark: 0.62))
-                    LucideIcon.auto("chevron.down", size: 10)
-                        .foregroundColor(persist ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.46, dark: 0.5))
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .overlay(alignment: .topLeading) {
-                if scopeMenuOpen {
-                    scopeMenu.offset(y: 26)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var checkbox: some View {
-        RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(persist ? Color.overlay(0.92) : Color.overlay(0.06))
-            .overlay(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .stroke(Color.overlay(persist ? 0 : 0.22), lineWidth: 1)
-            )
-            .frame(width: 18, height: 18)
-            .overlay {
-                if persist {
-                    CheckIcon(size: 10)
-                        .foregroundColor(Palette.background)
-                }
-            }
-    }
-
-    private var scopeMenu: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Scope.allCases, id: \.self) { option in
-                Button {
-                    scope = option
-                    persist = true
-                    scopeMenuOpen = false
-                } label: {
-                    HStack(spacing: MenuStyle.rowIconLabelSpacing) {
-                        Text(option.label)
-                            .font(BodyFont.system(size: 12.5))
-                            .foregroundColor(MenuStyle.rowText)
-                        Spacer(minLength: 12)
-                        if scope == option {
-                            CheckIcon(size: 10)
-                                .foregroundColor(MenuStyle.rowText)
-                        }
+    @ViewBuilder
+    private func scopeOption(
+        _ option: BrowserWebsiteApprovalDecision,
+        title: LocalizedStringKey,
+        warning: LocalizedStringKey? = nil
+    ) -> some View {
+        let selected = choice == option
+        Button { choice = option } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 11) {
+                    ZStack {
+                        Circle()
+                            .stroke(selected ? Palette.pastelBlue : Color.overlay(0.22),
+                                    lineWidth: selected ? 5 : 1.5)
+                            .frame(width: 16, height: 16)
                     }
-                    .padding(.horizontal, MenuStyle.rowHorizontalPadding + 4)
-                    .padding(.vertical, MenuStyle.rowVerticalPadding + 1)
-                    .contentShape(Rectangle())
+                    Text(title)
+                        .font(BodyFont.system(size: 12.5, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(.plain)
+                if let warning, selected {
+                    HStack(spacing: 6) {
+                        Circle().fill(Palette.warning).frame(width: 6, height: 6)
+                        Text(warning)
+                            .font(BodyFont.system(size: 11, wght: 500))
+                            .foregroundColor(Palette.warning)
+                    }
+                    .padding(.leading, 27)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(selected ? Palette.pastelBlue.opacity(0.08) : Color.overlay(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(selected ? Palette.pastelBlue.opacity(0.35) : Color.overlay(0.10),
+                                    lineWidth: 0.5)
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .padding(.vertical, MenuStyle.menuVerticalPadding)
-        .frame(width: 220, alignment: .leading)
-        .menuStandardBackground()
-        .background(MenuOutsideClickWatcher(isPresented: $scopeMenuOpen))
-        .zIndex(1)
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.14), value: selected)
     }
 }

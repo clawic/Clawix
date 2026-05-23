@@ -1,6 +1,5 @@
-import AppKit
+import Combine
 import Foundation
-import IOKit.pwr_mgt
 
 enum MacUtilityGroup: String, CaseIterable, Identifiable {
     case windows
@@ -213,9 +212,16 @@ final class MacUtilitiesController: ObservableObject {
     @Published private(set) var lastStatusMessage: String?
     @Published private(set) var lastStatusIsError = false
 
-    private var keepAwakeAssertion: IOPMAssertionID = 0
+    private let runner: NativeMacActionCommandRunning
+    private let auditURL: URL?
 
-    private init() {}
+    init(
+        runner: NativeMacActionCommandRunning = NativeMacActionProcessRunner(),
+        auditURL: URL? = nil
+    ) {
+        self.runner = runner
+        self.auditURL = auditURL
+    }
 
     func perform(_ action: MacUtilityActionID) {
         guard activeAction == nil else { return }
@@ -239,65 +245,9 @@ final class MacUtilitiesController: ObservableObject {
             return
         }
         do {
-            switch action {
-            case .hideAllWindows:
-                try runAppleScript(Self.hideAllWindowsScript)
-            case .minimizeAllWindows:
-                try runAppleScript(Self.minimizeWindowsScript(mode: "all"))
-            case .minimizeAllWindowsExceptFrontmost:
-                try runAppleScript(Self.minimizeWindowsScript(mode: "allExceptFrontmost"))
-            case .minimizeAppWindowsExceptFrontmost:
-                try runAppleScript(Self.minimizeWindowsScript(mode: "frontmostExceptFirst"))
-            case .isolateWindow:
-                try runAppleScript(Self.isolateWindowScript)
-            case .unminimizeAllWindows:
-                try runAppleScript(Self.unminimizeAllWindowsScript)
-            case .showDesktop:
-                try runAppleScript(Self.showDesktopScript)
-            case .clearClipboard:
-                NSPasteboard.general.clearContents()
-            case .sleepDisplays:
-                try runProcess(ClawixMacUtilityRoutes.pmsetCLI, arguments: ["displaysleepnow"])
-            case .centerMousePointer:
-                try centerMousePointer()
-            case .showColorPicker:
-                showColorPicker()
-            case .toggleDarkMode:
-                try runAppleScript(Self.toggleDarkModeScript)
-            case .toggleMuteSound:
-                try runAppleScript(Self.toggleMuteSoundScript)
-            case .toggleKeepAwake:
-                try setKeepAwake(!keepAwakeEnabled)
-            case .toggleDesktopIcons:
-                try toggleDesktopIcons()
-            case .openFinder:
-                openApplication(ClawixMacUtilityRoutes.finderApp)
-            case .openTerminal:
-                openApplication(ClawixMacUtilityRoutes.terminalApp)
-            case .openShortcuts:
-                openApplication(ClawixMacUtilityRoutes.shortcutsApp)
-            case .openPasswords:
-                openApplication(ClawixMacUtilityRoutes.passwordsApp)
-            case .openAirDrop:
-                try runAppleScript(Self.openAirDropScript)
-            case .openVPNSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Network-Settings.extension")
-            case .openPrivateRelaySettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.preferences.AppleIDPrefPane?PRIVATERELAY")
-            case .openHideMyEmailSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.preferences.AppleIDPrefPane?HIDE_MY_EMAIL")
-            case .openKeyboardSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Keyboard-Settings.extension")
-            case .openDisplaySettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Displays-Settings.extension")
-            case .openDesktopDockSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Desktop-Settings.extension")
-            case .openNotificationsSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Notifications-Settings.extension")
-            case .openSoundSettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.Sound-Settings.extension")
-            case .openPrivacySettings:
-                openSystemSettings("x-apple.systempreferences:com.apple.preference.security")
+            try executeBrokeredAction(action)
+            if action == .toggleKeepAwake {
+                keepAwakeEnabled.toggle()
             }
             publishStatus("\(action.title) done", isError: false)
             ToastCenter.shared.show("\(action.title) done")
@@ -312,104 +262,20 @@ final class MacUtilitiesController: ObservableObject {
         lastStatusIsError = isError
     }
 
-    private func setKeepAwake(_ enabled: Bool) throws {
-        if enabled {
-            guard !keepAwakeEnabled else { return }
-            var assertionID: IOPMAssertionID = 0
-            let reason = "Clawix Keep Awake" as CFString
-            let result = IOPMAssertionCreateWithName(
-                kIOPMAssertionTypeNoIdleSleep as CFString,
-                IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                reason,
-                &assertionID
-            )
-            guard result == kIOReturnSuccess else {
-                throw MacUtilityError.message("Could not keep the Mac awake")
-            }
-            keepAwakeAssertion = assertionID
-            keepAwakeEnabled = true
-        } else {
-            if keepAwakeAssertion != 0 {
-                IOPMAssertionRelease(keepAwakeAssertion)
-                keepAwakeAssertion = 0
-            }
-            keepAwakeEnabled = false
-        }
-    }
-
-    private func toggleDesktopIcons() throws {
-        let current = try runProcess(
-            ClawixMacUtilityRoutes.defaultsCLI,
-            arguments: ["read", "com.apple.finder", "CreateDesktop"],
-            allowFailure: true
+    private func executeBrokeredAction(_ action: MacUtilityActionID) throws {
+        let receipt = NativeMacActionBroker.evaluate(
+            NativeMacActionRequest(
+                capabilityId: action.brokerCapabilityId(keepAwakeEnabled: keepAwakeEnabled),
+                actorId: "clawix.mac-utilities",
+                origin: .userUI,
+                actorKind: "user_ui"
+            ),
+            auditURL: auditURL,
+            runner: runner
         )
-        let showsDesktop = current.trimmingCharacters(in: .whitespacesAndNewlines) != "false"
-        try runProcess(
-            ClawixMacUtilityRoutes.defaultsCLI,
-            arguments: ["write", "com.apple.finder", "CreateDesktop", showsDesktop ? "false" : "true"]
-        )
-        try runProcess(ClawixMacUtilityRoutes.killallCLI, arguments: ["Finder"], allowFailure: true)
-    }
-
-    private func centerMousePointer() throws {
-        let bounds = CGDisplayBounds(CGMainDisplayID())
-        let result = CGWarpMouseCursorPosition(CGPoint(x: bounds.midX, y: bounds.midY))
-        guard result == .success else {
-            throw MacUtilityError.message("Could not move the pointer")
+        guard receipt.outcome == .executed else {
+            throw MacUtilityError.message(receipt.error ?? "Mac Utility action did not execute.")
         }
-        CGAssociateMouseAndMouseCursorPosition(1)
-    }
-
-    private func showColorPicker() {
-        NSColorPanel.shared.orderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private func openApplication(_ path: String) {
-        let url = URL(fileURLWithPath: path)
-        NSWorkspace.shared.open(url)
-    }
-
-    private func openSystemSettings(_ urlString: String) {
-        guard let url = URL(string: urlString) else { return }
-        NSWorkspace.shared.open(url)
-    }
-
-    private func runAppleScript(_ source: String) throws {
-        var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else {
-            throw MacUtilityError.message("Could not prepare action")
-        }
-        script.executeAndReturnError(&error)
-        if let error {
-            let message = error[NSAppleScript.errorMessage] as? String ?? "Action failed"
-            throw MacUtilityError.message(message)
-        }
-    }
-
-    @discardableResult
-    private func runProcess(
-        _ executable: String,
-        arguments: [String],
-        allowFailure: Bool = false
-    ) throws -> String {
-        let process = Process()
-        let output = Pipe()
-        let error = Pipe()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        process.standardOutput = output
-        process.standardError = error
-        try process.run()
-        process.waitUntilExit()
-
-        let out = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-        let err = String(data: error.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-
-        if process.terminationStatus != 0 && !allowFailure {
-            throw MacUtilityError.message(err.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Command failed" : err)
-        }
-        return out
     }
 }
 
@@ -423,111 +289,38 @@ private enum MacUtilityError: LocalizedError {
     }
 }
 
-private extension MacUtilitiesController {
-    static let hideAllWindowsScript = """
-    tell application "System Events"
-        repeat with appProcess in application processes
-            try
-                if background only of appProcess is false then
-                    set visible of appProcess to false
-                end if
-            end try
-        end repeat
-    end tell
-    """
-
-    static func minimizeWindowsScript(mode: String) -> String {
-        """
-        tell application "System Events"
-            set frontName to name of first application process whose frontmost is true
-            repeat with appProcess in application processes
-                try
-                    set windowIndex to 0
-                    repeat with appWindow in windows of appProcess
-                        set windowIndex to windowIndex + 1
-                        set shouldMinimize to true
-                        if "\(mode)" is "allExceptFrontmost" and name of appProcess is frontName and windowIndex is 1 then
-                            set shouldMinimize to false
-                        end if
-                        if "\(mode)" is "frontmostExceptFirst" and name of appProcess is not frontName then
-                            set shouldMinimize to false
-                        end if
-                        if "\(mode)" is "frontmostExceptFirst" and name of appProcess is frontName and windowIndex is 1 then
-                            set shouldMinimize to false
-                        end if
-                        if shouldMinimize then
-                            try
-                                set value of attribute "AXMinimized" of appWindow to true
-                            end try
-                        end if
-                    end repeat
-                end try
-            end repeat
-        end tell
-        """
+private extension MacUtilityActionID {
+    func brokerCapabilityId(keepAwakeEnabled: Bool) -> String {
+        switch self {
+        case .hideAllWindows: return "mac.utility.hide_all_windows"
+        case .minimizeAllWindows: return "mac.utility.minimize_all_windows"
+        case .minimizeAllWindowsExceptFrontmost: return "mac.utility.minimize_all_windows_except_frontmost"
+        case .minimizeAppWindowsExceptFrontmost: return "mac.utility.minimize_app_windows_except_frontmost"
+        case .isolateWindow: return "mac.utility.isolate_window"
+        case .unminimizeAllWindows: return "mac.utility.unminimize_all_windows"
+        case .showDesktop: return "mac.utility.show_desktop"
+        case .clearClipboard: return "mac.utility.clear_clipboard"
+        case .sleepDisplays: return "mac.utility.sleep_displays"
+        case .centerMousePointer: return "mac.utility.center_mouse_pointer"
+        case .showColorPicker: return "mac.utility.show_color_picker"
+        case .toggleDarkMode: return "mac.utility.toggle_dark_mode"
+        case .toggleMuteSound: return "mac.utility.toggle_mute_sound"
+        case .toggleKeepAwake: return keepAwakeEnabled ? "mac.utility.keep_awake_off" : "mac.utility.keep_awake_on"
+        case .toggleDesktopIcons: return "mac.utility.toggle_desktop_icons"
+        case .openFinder: return "mac.utility.open_finder"
+        case .openTerminal: return "mac.utility.open_terminal"
+        case .openShortcuts: return "mac.utility.open_shortcuts"
+        case .openPasswords: return "mac.utility.open_passwords"
+        case .openAirDrop: return "mac.utility.open_airdrop"
+        case .openVPNSettings: return "mac.utility.open_vpn_settings"
+        case .openPrivateRelaySettings: return "mac.utility.open_private_relay_settings"
+        case .openHideMyEmailSettings: return "mac.utility.open_hide_my_email_settings"
+        case .openKeyboardSettings: return "mac.utility.open_keyboard_settings"
+        case .openDisplaySettings: return "mac.utility.open_display_settings"
+        case .openDesktopDockSettings: return "mac.utility.open_desktop_dock_settings"
+        case .openNotificationsSettings: return "mac.utility.open_notifications_settings"
+        case .openSoundSettings: return "mac.utility.open_sound_settings"
+        case .openPrivacySettings: return "mac.utility.open_privacy_settings"
+        }
     }
-
-    static let isolateWindowScript = """
-    tell application "System Events"
-        set frontName to name of first application process whose frontmost is true
-        repeat with appProcess in application processes
-            try
-                if background only of appProcess is false and name of appProcess is not frontName then
-                    set visible of appProcess to false
-                end if
-                if name of appProcess is frontName then
-                    set windowIndex to 0
-                    repeat with appWindow in windows of appProcess
-                        set windowIndex to windowIndex + 1
-                        if windowIndex is greater than 1 then
-                            try
-                                set value of attribute "AXMinimized" of appWindow to true
-                            end try
-                        end if
-                    end repeat
-                end if
-            end try
-        end repeat
-    end tell
-    """
-
-    static let unminimizeAllWindowsScript = """
-    tell application "System Events"
-        repeat with appProcess in application processes
-            try
-                repeat with appWindow in windows of appProcess
-                    try
-                        set value of attribute "AXMinimized" of appWindow to false
-                    end try
-                end repeat
-            end try
-        end repeat
-    end tell
-    """
-
-    static let showDesktopScript = """
-    tell application "System Events"
-        key code 103
-    end tell
-    """
-
-    static let toggleDarkModeScript = """
-    tell application "System Events"
-        tell appearance preferences
-            set dark mode to not dark mode
-        end tell
-    end tell
-    """
-
-    static let toggleMuteSoundScript = """
-    set currentMute to output muted of (get volume settings)
-    set volume output muted (not currentMute)
-    """
-
-    static let openAirDropScript = """
-    tell application "Finder"
-        activate
-        open AirDrop
-    end tell
-    """
 }

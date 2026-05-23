@@ -35,10 +35,12 @@ final class ComputerUseSettings: ObservableObject {
     @Published private(set) var alwaysAllowedApps: [AlwaysAllowedApp] {
         didSet { persistAllowed(); syncHostPolicy() }
     }
+    @Published private(set) var allowedAppsLoadError: String?
+    @Published private(set) var policySyncError: String?
 
     private let store: UserDefaults
 
-    private enum Keys {
+    enum Keys {
         static let anyApp = "clawix.computerUse.anyAppEnabled"
         static let lockedUse = "clawix.computerUse.lockedUseEnabled"
         static let allowed = "clawix.computerUse.alwaysAllowedApps"
@@ -48,9 +50,16 @@ final class ComputerUseSettings: ObservableObject {
         self.store = store
         self.anyAppEnabled = (store.object(forKey: Keys.anyApp) as? Bool) ?? true
         self.lockedUseEnabled = store.bool(forKey: Keys.lockedUse)
-        if let data = store.data(forKey: Keys.allowed),
-           let decoded = try? JSONDecoder().decode([AlwaysAllowedApp].self, from: data) {
-            self.alwaysAllowedApps = decoded
+        if let data = store.data(forKey: Keys.allowed) {
+            do {
+                self.alwaysAllowedApps = try JSONDecoder().decode([AlwaysAllowedApp].self, from: data)
+            } catch {
+                self.alwaysAllowedApps = []
+                self.allowedAppsLoadError = SettingsUtilities.failureMessage(
+                    for: error,
+                    surface: "settings.computerUse.allowedApps.load"
+                )
+            }
         } else {
             self.alwaysAllowedApps = []
         }
@@ -61,14 +70,20 @@ final class ComputerUseSettings: ObservableObject {
 
     /// Write the host-readable Computer Use policy that the signed-host broker
     /// reads to gate `mac.app.*` actions (block when off, auto-approve
-    /// always-allowed apps, otherwise require approval).
+    /// always-allowed apps, otherwise require approval). `lockedUse` is persisted
+    /// in the policy schema but stays hidden in Settings until the host consumes it.
     private func syncHostPolicy() {
         let policy = ComputerUsePolicy(
             anyApp: anyAppEnabled,
             lockedUse: lockedUseEnabled,
             allowedApps: alwaysAllowedApps.map { ComputerUseAllowedApp(bundleId: $0.bundleId, name: $0.name) }
         )
-        try? ComputerUsePolicyStore.save(policy, to: ComputerUsePolicyStore.defaultURL())
+        do {
+            try ComputerUsePolicyStore.save(policy, to: ComputerUsePolicyStore.defaultURL())
+            policySyncError = nil
+        } catch {
+            policySyncError = SettingsUtilities.failureMessage(for: error, surface: "settings.computerUse.policySync")
+        }
     }
 
     /// Whether the agent may control this app right now without prompting:
@@ -92,7 +107,12 @@ final class ComputerUseSettings: ObservableObject {
     }
 
     private func persistAllowed() {
-        guard let data = try? JSONEncoder().encode(alwaysAllowedApps) else { return }
-        store.set(data, forKey: Keys.allowed)
+        do {
+            let data = try JSONEncoder().encode(alwaysAllowedApps)
+            store.set(data, forKey: Keys.allowed)
+            allowedAppsLoadError = nil
+        } catch {
+            policySyncError = SettingsUtilities.failureMessage(for: error, surface: "settings.computerUse.allowedApps")
+        }
     }
 }

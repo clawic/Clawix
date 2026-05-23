@@ -23,21 +23,29 @@ struct ComputerUseSettingsPage: View {
 
             SectionLabel(title: "Access")
             SettingsCard {
+                if let error = settings.policySyncError {
+                    InfoBanner(text: error, kind: .error)
+                    CardDivider()
+                }
                 ToggleRow(
                     title: "Any app",
-                    detail: "Allow the agent to control any running app. Turn this off to limit control to the always-allowed list below.",
+                    detail: "Allow the agent to request control of any running app. Accessibility is still required and unlisted apps still go through the per-app approval path.",
                     isOn: $settings.anyAppEnabled
                 )
                 CardDivider()
-                ToggleRow(
+                ComputerUseCapabilityStatusRow(
                     title: "Use while locked",
-                    detail: "Allow Computer Use to keep running while the Mac is locked.",
-                    isOn: $settings.lockedUseEnabled
+                    detail: "Blocked until the signed host consumes lock-screen state and the persisted locked-use policy.",
+                    status: "Blocked"
                 )
             }
 
             SectionLabel(title: "Always-allowed apps")
             SettingsCard {
+                if let error = settings.allowedAppsLoadError {
+                    InfoBanner(text: error, kind: .error)
+                    CardDivider()
+                }
                 if settings.alwaysAllowedApps.isEmpty {
                     SettingsRow {
                         RowLabel(
@@ -60,6 +68,12 @@ struct ComputerUseSettingsPage: View {
                                 .buttonStyle(.plain)
                                 .font(BodyFont.system(size: 12, wght: 600))
                                 .foregroundColor(Palette.textSecondary)
+                                .accessibilityLabel(Text("Remove \(app.name) from always-allowed apps"))
+                                .help(String(
+                                    format: L10n.t("Remove %@ from always-allowed apps"),
+                                    locale: AppLocale.current,
+                                    app.name
+                                ))
                         }
                         if index < apps.count - 1 { CardDivider() }
                     }
@@ -93,6 +107,33 @@ struct ComputerUseSettingsPage: View {
                     .foregroundColor(Color.accentColor)
                 }
             }
+        }
+    }
+}
+
+private struct ComputerUseCapabilityStatusRow: View {
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let status: LocalizedStringKey
+
+    var body: some View {
+        SettingsRow {
+            RowLabel(title: title, detail: detail)
+        } trailing: {
+            Text(status)
+                .font(BodyFont.system(size: 11, wght: 700))
+                .foregroundColor(Color.orange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.orange.opacity(0.12))
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.orange.opacity(0.25), lineWidth: 0.5)
+                        )
+                )
+                .accessibilityLabel(Text(status))
         }
     }
 }

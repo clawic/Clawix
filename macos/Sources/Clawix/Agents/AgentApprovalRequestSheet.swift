@@ -31,54 +31,121 @@ struct AgentApprovalRequestSheet: View {
     let request: AgentApprovalRequest
     let onDecide: (AgentApprovalDecision) -> Void
 
+    /// When set, Deny/Allow resolve to their persistent variants so the
+    /// runtime stores the choice under `request.action`. Collapses the
+    /// old four-button row into two choices plus one scope toggle.
+    @State private var remember = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.shield")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(red: 1.0, green: 0.78, blue: 0.34))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Approval required")
-                        .font(BodyFont.system(size: 14, wght: 600))
-                        .foregroundColor(Palette.textPrimary)
-                    Text("Agent \(request.agentId) wants to run \(request.action).")
-                        .font(BodyFont.system(size: 11.5, wght: 500))
+        VStack(alignment: .leading, spacing: 16) {
+            header
+            if !request.detail.isEmpty { detailPanel }
+            actions
+        }
+        .padding(22)
+        .frame(width: 500)
+        .background(Palette.background)
+        .preferredColorScheme(.dark)
+    }
+
+    private var header: some View {
+        HStack(spacing: 13) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Palette.warning.opacity(0.16))
+                .frame(width: 42, height: 42)
+                .overlay(
+                    LucideIcon.auto("shield-check", size: 19)
+                        .foregroundColor(Palette.warning)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Palette.warning.opacity(0.28), lineWidth: 0.5)
+                )
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Approval required")
+                    .font(BodyFont.system(size: 16, weight: .semibold))
+                    .foregroundColor(Palette.textPrimary)
+                Text("Agent \(request.agentId) wants to run a gated action.")
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            actionPill
+        }
+    }
+
+    private var actionPill: some View {
+        HStack(spacing: 6) {
+            LucideIcon.auto("git-branch", size: 12)
+                .foregroundColor(Color(red: 0.62, green: 0.72, blue: 1.0))
+            Text(verbatim: request.action)
+                .font(.system(size: 11.5, design: .monospaced))
+                .foregroundColor(Color.gray(light: 0.18, dark: 0.90))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Capsule(style: .continuous).fill(Color.overlay(0.05)))
+    }
+
+    private var detailPanel: some View {
+        ScrollView {
+            Text(request.detail)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.86))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+        }
+        .frame(minHeight: 70, maxHeight: 150)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.overlay(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
+                )
+        )
+        .thinScrollers()
+    }
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            Button { remember.toggle() } label: {
+                HStack(spacing: 9) {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(remember ? Palette.pastelBlue.opacity(0.85) : Color.overlay(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(Color.overlay(remember ? 0 : 0.22), lineWidth: 1)
+                        )
+                        .frame(width: 18, height: 18)
+                        .overlay {
+                            if remember {
+                                LucideIcon.auto("check", size: 11)
+                                    .foregroundColor(Palette.background)
+                            }
+                        }
+                    Text("Remember for \(request.action)")
+                        .font(BodyFont.system(size: 12, wght: 500))
                         .foregroundColor(Palette.textSecondary)
                 }
-                Spacer()
+                .contentShape(Rectangle())
             }
-            if !request.detail.isEmpty {
-                ScrollView {
-                    Text(request.detail)
-                        .font(BodyFont.system(size: 12, wght: 500))
-                        .foregroundColor(Palette.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                }
-                .frame(minHeight: 80, maxHeight: 160)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.overlay(0.04))
-                )
-                .thinScrollers()
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 8)
+
+            Button("Deny") {
+                onDecide(remember ? .denyAlways : .deny)
             }
-            HStack(spacing: 8) {
-                IconChipButton(symbol: "xmark", label: "Deny") {
-                    onDecide(.deny)
-                }
-                IconChipButton(symbol: "xmark.octagon", label: "Always deny") {
-                    onDecide(.denyAlways)
-                }
-                Spacer()
-                IconChipButton(symbol: "checkmark", label: "Allow always") {
-                    onDecide(.allowAlways)
-                }
-                IconChipButton(symbol: "checkmark.circle", label: "Allow", isPrimary: true) {
-                    onDecide(.allow)
-                }
+            .buttonStyle(SheetCancelButtonStyle())
+            .keyboardShortcut(.cancelAction)
+
+            Button("Allow") {
+                onDecide(remember ? .allowAlways : .allow)
             }
+            .buttonStyle(SheetPrimaryButtonStyle())
+            .keyboardShortcut(.defaultAction)
         }
-        .padding(20)
-        .frame(width: 520)
     }
 }

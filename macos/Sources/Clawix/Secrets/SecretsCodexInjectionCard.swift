@@ -10,8 +10,11 @@ struct SecretsCodexInjectionCard: View {
     @State private var savedBody: String = CodexSecretsBlock.defaultBody
     @State private var error: String?
     @State private var didLoad = false
+    @State private var isWorking = false
 
     private var isDirty: Bool { isInjected && body_ != savedBody }
+    private var canMutate: Bool { didLoad && !isWorking }
+    private var canSave: Bool { canMutate && isDirty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,10 +29,16 @@ struct SecretsCodexInjectionCard: View {
             HStack(alignment: .top, spacing: 10) {
                 Toggle("", isOn: Binding(
                     get: { isInjected },
-                    set: { newValue in toggle(newValue: newValue) }
+                    set: { newValue in
+                        guard canMutate else { return }
+                        toggle(newValue: newValue)
+                    }
                 ))
                 .toggleStyle(.switch)
                 .labelsHidden()
+                .disabled(!canMutate)
+                .accessibilityLabel(Text("Secrets Codex injection"))
+                .accessibilityHint(Text("Writes or removes the Secrets block in AGENTS.md."))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(isInjected ? "Codex injection is on" : "Codex injection is off")
                         .font(BodyFont.system(size: 12, wght: 600))
@@ -41,6 +50,10 @@ struct SecretsCodexInjectionCard: View {
                         .foregroundColor(Palette.textSecondary)
                 }
                 Spacer()
+                if isWorking {
+                    ProgressView()
+                        .controlSize(.small)
+                }
                 if isInjected {
                     Button { resetToDefault() } label: {
                         Text("Reset to default")
@@ -54,6 +67,7 @@ struct SecretsCodexInjectionCard: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .disabled(!canMutate)
                 }
             }
             .padding(.bottom, 14)
@@ -72,14 +86,22 @@ struct SecretsCodexInjectionCard: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 10)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .disabled(!canMutate)
                 }
                 .frame(height: 220)
 
                 HStack(spacing: 10) {
                     if let error {
-                        Text(error)
-                            .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.55))
+                        HStack(spacing: 8) {
+                            Text(error)
+                                .font(BodyFont.system(size: 11, wght: 500))
+                                .foregroundColor(Palette.danger)
+                            if !didLoad {
+                                Button("Retry") { load() }
+                                    .buttonStyle(.bordered)
+                                    .disabled(isWorking)
+                            }
+                        }
                     } else if isDirty {
                         Text("Unsaved changes")
                             .font(BodyFont.system(size: 11, wght: 500))
@@ -98,7 +120,7 @@ struct SecretsCodexInjectionCard: View {
                             )
                     }
                     .buttonStyle(.plain)
-                    .disabled(!isDirty)
+                    .disabled(!canSave)
                 }
                 .padding(.top, 10)
             }
@@ -107,8 +129,9 @@ struct SecretsCodexInjectionCard: View {
     }
 
     private func load() {
-        guard !didLoad else { return }
-        didLoad = true
+        guard !didLoad, !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             if let body = try CodexInstructionsFile.sentinelBlockBody(id: CodexSecretsBlock.id) {
                 self.isInjected = true
@@ -120,12 +143,17 @@ struct SecretsCodexInjectionCard: View {
                 self.savedBody = CodexSecretsBlock.defaultBody
             }
             self.error = nil
+            didLoad = true
         } catch {
             self.error = Self.failureMessage(for: error, surface: "secrets.codexInjection.load")
+            didLoad = false
         }
     }
 
     private func toggle(newValue: Bool) {
+        guard canMutate else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             if newValue {
                 let bodyToWrite = body_.isEmpty ? CodexSecretsBlock.defaultBody : body_
@@ -144,6 +172,9 @@ struct SecretsCodexInjectionCard: View {
     }
 
     private func saveBody() {
+        guard canSave else { return }
+        isWorking = true
+        defer { isWorking = false }
         do {
             try CodexInstructionsFile.replaceSentinelBlock(id: CodexSecretsBlock.id, body: body_)
             savedBody = body_

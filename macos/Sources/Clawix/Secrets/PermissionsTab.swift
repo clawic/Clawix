@@ -113,7 +113,7 @@ struct PermissionsTab: View {
                             }
                         }
                         labeledField("Allowed agents", subtitle: "Comma-separated agent names. Empty = any agent allowed.") {
-                            TextField("codex, claude-code", text: $allowedAgentsCSV)
+                            TextField("agent-a, cli-agent", text: $allowedAgentsCSV)
                                 .textFieldStyle(.roundedBorder)
                                 .font(.system(size: 12, design: .monospaced))
                         }

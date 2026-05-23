@@ -13,121 +13,139 @@ struct IoTCatastrophicApprovalModal: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.red.opacity(0.85))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: "Approval required")
-                        .font(BodyFont.system(size: 15, weight: .semibold))
-                        .foregroundColor(Palette.textPrimary)
-                    Text(verbatim: "This action is rated catastrophic and needs your explicit approval before reaching the device.")
-                        .font(BodyFont.system(size: 11))
-                        .foregroundColor(Palette.textSecondary)
-                        .multilineTextAlignment(.leading)
-                }
-            }
+        VStack(alignment: .leading, spacing: 16) {
+            header
 
-            VStack(alignment: .leading, spacing: 6) {
-                row(label: "Action", value: approval.action.action)
-                row(label: "Target", value: targetLabel)
-                row(label: "Capability", value: approval.action.capability ?? "(default)")
-                row(label: "Reason", value: approval.reason)
-                row(label: "Created", value: approval.createdAt)
+            VStack(spacing: 0) {
+                detailRow(label: "Action", value: approval.action.action, mono: true)
+                rowDivider
+                detailRow(label: "Target", value: targetLabel, mono: true)
+                rowDivider
+                detailRow(label: "Capability", value: approval.action.capability ?? "(default)", mono: true)
+                rowDivider
+                detailRow(label: "Reason", value: approval.reason, mono: false, trailing: approval.createdAt)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.overlay(0.04))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.overlay(0.06))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.overlay(0.06), lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
 
             if let errorMessage {
                 Text(verbatim: errorMessage)
-                    .font(BodyFont.system(size: 11))
-                    .foregroundColor(.red.opacity(0.85))
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.danger)
             }
 
-            HStack(spacing: 8) {
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Text(verbatim: "Later")
-                        .font(BodyFont.system(size: 12, weight: .medium))
-                        .foregroundColor(Palette.textPrimary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.overlay(0.06))
-                        )
-                }
-                .buttonStyle(.plain)
-                Button {
-                    Task { await deny() }
-                } label: {
-                    Text(verbatim: "Deny")
-                        .font(BodyFont.system(size: 12, weight: .medium))
-                        .foregroundColor(Palette.textPrimary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.red.opacity(0.35))
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(inFlight)
-                Button {
-                    Task { await approve() }
-                } label: {
-                    HStack(spacing: 4) {
-                        if inFlight {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .controlSize(.mini)
-                                .tint(Palette.textPrimary)
-                        }
-                        Text(verbatim: "Approve and run")
-                    }
-                    .font(BodyFont.system(size: 12, weight: .medium))
-                    .foregroundColor(Palette.textPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.accentColor.opacity(0.50))
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(inFlight)
-            }
+            actions
         }
-        .padding(20)
-        .frame(minWidth: 420, idealWidth: 480, maxWidth: 540)
+        .padding(22)
+        .frame(minWidth: 440, idealWidth: 480, maxWidth: 540)
         .background(Palette.background.ignoresSafeArea())
         .preferredColorScheme(.dark)
     }
 
+    private var header: some View {
+        HStack(spacing: 13) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Palette.danger.opacity(0.14))
+                .frame(width: 42, height: 42)
+                .overlay(
+                    LucideIcon.auto("triangle-alert", size: 20)
+                        .foregroundColor(Palette.danger)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Palette.danger.opacity(0.3), lineWidth: 0.5)
+                )
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 9) {
+                    Text(verbatim: "Approval required")
+                        .font(BodyFont.system(size: 16, weight: .semibold))
+                        .foregroundColor(Palette.textPrimary)
+                    statusPill
+                }
+                Text(verbatim: "Needs explicit approval before it reaches the device.")
+                    .font(BodyFont.system(size: 12, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+        }
+    }
+
+    private var statusPill: some View {
+        HStack(spacing: 6) {
+            Circle().fill(Palette.danger).frame(width: 6, height: 6)
+            Text(verbatim: "Catastrophic")
+                .font(BodyFont.system(size: 11, wght: 600))
+                .foregroundColor(Palette.danger)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(Capsule(style: .continuous).fill(Palette.danger.opacity(0.14)))
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button { dismiss() } label: { Text(verbatim: "Later") }
+                .buttonStyle(SheetCancelButtonStyle())
+            Spacer(minLength: 8)
+            Button { Task { await deny() } } label: { Text(verbatim: "Deny") }
+                .buttonStyle(SheetCancelButtonStyle())
+                .disabled(inFlight)
+            Button { Task { await approve() } } label: {
+                HStack(spacing: 6) {
+                    if inFlight {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .controlSize(.mini)
+                            .tint(.white)
+                    }
+                    Text(verbatim: "Approve and run")
+                }
+                .font(BodyFont.system(size: 13, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Palette.danger.opacity(inFlight ? 0.6 : 0.9))
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(inFlight)
+        }
+    }
+
     @ViewBuilder
-    private func row(label: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+    private func detailRow(label: String, value: String, mono: Bool, trailing: String? = nil) -> some View {
+        HStack(alignment: .center, spacing: 10) {
             Text(verbatim: label)
-                .font(BodyFont.system(size: 11))
+                .font(BodyFont.system(size: 11, wght: 600))
                 .foregroundColor(Palette.textTertiary)
-                .frame(width: 88, alignment: .leading)
+                .frame(width: 92, alignment: .leading)
             Text(verbatim: value)
-                .font(BodyFont.system(size: 11))
+                .font(mono ? .system(size: 12, design: .monospaced) : BodyFont.system(size: 12, wght: 500))
                 .foregroundColor(Palette.textPrimary)
                 .multilineTextAlignment(.leading)
-            Spacer()
+            Spacer(minLength: 8)
+            if let trailing {
+                Text(verbatim: trailing)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(Palette.textTertiary)
+            }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+
+    private var rowDivider: some View {
+        Rectangle().fill(Color.overlay(0.07)).frame(height: 0.5).padding(.horizontal, 14)
     }
 
     private var targetLabel: String {

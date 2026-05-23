@@ -35,6 +35,7 @@ struct ScreenToolsSettingsPage: View {
     @State private var activeScreenToolAction: String?
     @State private var screenToolActionMessage: String?
     @State private var screenToolActionIsError = false
+    @State private var exportDirectoryPanelInFlight = false
     @State private var screenRecordingStatus = NativeMacPermissionBroker.status(for: .screenRecording)
 
     private var actionBinding: Binding<ScreenToolService.CaptureAction> {
@@ -94,7 +95,7 @@ struct ScreenToolsSettingsPage: View {
 
             statusBanner
 
-            SectionLabel(title: "Actions")
+            SectionLabel(title: "Capture")
             SettingsCard {
                 actionRow(
                     id: "allInOne",
@@ -151,7 +152,10 @@ struct ScreenToolsSettingsPage: View {
                     symbol: "timer",
                     action: service.captureSelfTimer
                 )
-                CardDivider()
+            }
+
+            SectionLabel(title: "Recording")
+            SettingsCard {
                 actionRow(
                     id: "recordScreen",
                     title: "Record screen",
@@ -160,6 +164,17 @@ struct ScreenToolsSettingsPage: View {
                     action: service.recordScreen
                 )
                 CardDivider()
+                actionRow(
+                    id: "toggleDesktopIcons",
+                    title: "Hide desktop icons",
+                    detail: "Toggle Finder desktop items for cleaner captures.",
+                    symbol: "square.grid.3x3",
+                    action: { macUtilities.perform(.toggleDesktopIcons) }
+                )
+            }
+
+            SectionLabel(title: "Text & OCR")
+            SettingsCard {
                 actionRow(
                     id: "captureText",
                     title: "Capture text",
@@ -175,14 +190,6 @@ struct ScreenToolsSettingsPage: View {
                     symbol: "doc.text.viewfinder",
                     action: { service.recognizeLastCaptureText(keepLineBreaks: keepTextLineBreaks) }
                 )
-                CardDivider()
-                actionRow(
-                    id: "toggleDesktopIcons",
-                    title: "Hide desktop icons",
-                    detail: "Toggle Finder desktop items for cleaner captures.",
-                    symbol: "square.grid.3x3",
-                    action: { macUtilities.perform(.toggleDesktopIcons) }
-                )
             }
 
             SectionLabel(title: "Permissions")
@@ -193,7 +200,7 @@ struct ScreenToolsSettingsPage: View {
                     HStack(spacing: 8) {
                         Text(screenRecordingStatus.displayLabel)
                             .font(BodyFont.system(size: 11, wght: 700))
-                            .foregroundColor(screenRecordingStatus.isGranted ? Color.green : Color.orange)
+                            .foregroundColor(screenRecordingStatus.isGranted ? Palette.success : Palette.warning)
                         IconChipButton(symbol: "arrow.triangle.2.circlepath", label: "Request") {
                             refreshScreenRecordingStatus()
                             if !screenRecordingStatus.isGranted {
@@ -216,7 +223,16 @@ struct ScreenToolsSettingsPage: View {
                 SettingsRow {
                     RowLabel(title: "Export location", detail: currentExportLocation)
                 } trailing: {
-                    IconChipButton(symbol: "folder", label: "Choose…", action: chooseExportDirectory)
+                    HStack(spacing: 8) {
+                        if exportDirectoryPanelInFlight {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        IconChipButton(symbol: "folder", label: "Choose…", action: chooseExportDirectory)
+                            .disabled(exportDirectoryPanelInFlight || !service.featureVisible)
+                            .accessibilityLabel(Text("Choose Screen Tools export location"))
+                            .accessibilityHint(Text("Stores the local folder used for screenshots, recordings, OCR captures, pins, and capture history."))
+                    }
                 }
                 CardDivider()
                 DropdownRow(
@@ -522,6 +538,15 @@ struct ScreenToolsSettingsPage: View {
     }
 
     private func chooseExportDirectory() {
+        guard service.featureVisible else {
+            screenToolActionMessage = L10n.t("Screen Tools are disabled by feature flags.")
+            screenToolActionIsError = true
+            return
+        }
+        guard !exportDirectoryPanelInFlight else { return }
+        exportDirectoryPanelInFlight = true
+        screenToolActionMessage = nil
+        screenToolActionIsError = false
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -529,9 +554,21 @@ struct ScreenToolsSettingsPage: View {
         panel.directoryURL = ScreenToolSettings.exportDirectoryURL
         NSApp.activate(ignoringOtherApps: true)
         panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
+            exportDirectoryPanelInFlight = false
+            guard response == .OK, let url = panel.url else {
+                screenToolActionMessage = L10n.t("Export location unchanged.")
+                screenToolActionIsError = false
+                return
+            }
             exportDirectory = url.path
-            ToastCenter.shared.show("Export location updated")
+            let message = String(
+                format: L10n.t("Export location updated to %@"),
+                locale: AppLocale.current,
+                url.path
+            )
+            screenToolActionMessage = message
+            screenToolActionIsError = false
+            ToastCenter.shared.show(message)
         }
     }
 }
