@@ -747,11 +747,12 @@ extension AppState {
     }
 
     func addComposerAttachments(_ urls: [URL]) {
-        let existing = Set(composer.attachments.map { $0.url.standardizedFileURL.path })
+        var existing = Set(composer.attachments.map { $0.url.standardizedFileURL.path })
         for url in urls {
             let path = url.standardizedFileURL.path
             guard !existing.contains(path) else { continue }
             composer.attachments.append(ComposerAttachment(url: url))
+            existing.insert(path)
         }
     }
 

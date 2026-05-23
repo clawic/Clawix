@@ -9,11 +9,12 @@ import Foundation
 /// Files live under
 /// `NSTemporaryDirectory()/clawix-attachments/<thread-or-chat-id>/<attachment-id>.<ext>`
 /// so they are easy to spot, easy to delete, and grouped together if
-/// debugging is needed. We never delete them eagerly: a thread may be
-/// resumed minutes later and the rollout still references the path. The
-/// system reaps `NSTemporaryDirectory()` on its own schedule, which is
-/// good enough for a chat companion.
+/// debugging is needed. Call `cleanup(scope:)` only for drafts or simulated
+/// sends whose references are no longer needed; resumed threads may still
+/// point at the materialized paths.
 public enum AttachmentSpooler {
+    public static let directoryName = "clawix-attachments"
+
     /// Writes the attachments to disk and returns the absolute paths in
     /// the same order the inputs were provided. Decoding/IO failures are
     /// silently skipped: a missing image is preferable to bringing the
@@ -25,32 +26,52 @@ public enum AttachmentSpooler {
         log: ((String) -> Void)? = nil
     ) -> [String] {
         guard !attachments.isEmpty else { return [] }
-        let root = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("clawix-attachments", isDirectory: true)
-            .appendingPathComponent(scope, isDirectory: true)
+        let root = scopedDirectory(scope: scope)
         do {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         } catch {
-            log?("attachment dir failed \(error)")
+            log?("attachment directory unavailable")
             return []
         }
         var paths: [String] = []
         for attachment in attachments {
             guard let dataBase64 = attachment.dataBase64,
                   let data = Data(base64Encoded: dataBase64) else {
-                log?("attachment decode failed id=\(attachment.id)")
+                log?("attachment decode failed")
                 continue
             }
             let ext = preferredExtension(filename: attachment.filename, mimeType: attachment.mimeType)
-            let url = root.appendingPathComponent("\(attachment.id).\(ext)")
+            let url = root.appendingPathComponent("\(safePathComponent(attachment.id)).\(ext)")
             do {
                 try data.write(to: url, options: .atomic)
                 paths.append(url.path)
             } catch {
-                log?("attachment write failed \(error)")
+                log?("attachment write failed")
             }
         }
         return paths
+    }
+
+    @discardableResult
+    public static func cleanup(
+        scope: String,
+        log: ((String) -> Void)? = nil
+    ) -> Bool {
+        let root = scopedDirectory(scope: scope)
+        guard FileManager.default.fileExists(atPath: root.path) else { return true }
+        do {
+            try FileManager.default.removeItem(at: root)
+            return true
+        } catch {
+            log?("attachment cleanup failed")
+            return false
+        }
+    }
+
+    public static func scopedDirectory(scope: String) -> URL {
+        URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(directoryName, isDirectory: true)
+            .appendingPathComponent(safePathComponent(scope), isDirectory: true)
     }
 
     private static func preferredExtension(filename: String?, mimeType: String) -> String {
@@ -66,5 +87,15 @@ public enum AttachmentSpooler {
         case "image/gif":  return "gif"
         default:           return "jpg"
         }
+    }
+
+    private static func safePathComponent(_ raw: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let scalars = raw.unicodeScalars.map { scalar -> Character in
+            allowed.contains(scalar) ? Character(scalar) : "_"
+        }
+        let sanitized = String(scalars)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        return sanitized.isEmpty ? "attachment" : sanitized
     }
 }

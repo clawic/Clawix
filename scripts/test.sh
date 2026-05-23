@@ -306,6 +306,7 @@ fast() {
   run node "$ROOT_DIR/scripts/interface_surface_guard.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/goal_completion_gate_check.mjs" --self-test
+  run node "$ROOT_DIR/scripts/attachment_lifecycle_matrix_check.mjs"
   run node "$ROOT_DIR/scripts/release_external_pending_gate.mjs" --self-test
   run node "$ROOT_DIR/scripts/release_readiness_check.mjs"
   run node "$ROOT_DIR/scripts/release_readiness_check.mjs" --self-test
@@ -349,6 +350,8 @@ fast() {
   run node "$ROOT_DIR/scripts/localization_surface_guard.mjs" --self-test
   run python3 "$ROOT_DIR/macos/scripts/compile_xcstrings.py"
   run node "$ROOT_DIR/scripts/localization_surface_guard.mjs" macos
+  run node "$ROOT_DIR/scripts/cross_platform_localization_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/cross_platform_localization_guard.mjs"
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/persistent-surface-guard.mjs" macos ios android windows web/src linux/app/src
   run node "$ROOT_DIR/scripts/surface-evidence-projection-check.mjs" --self-test
@@ -381,6 +384,7 @@ fast() {
   run node "$ROOT_DIR/scripts/ui_completion_source_manifest_check.mjs"
   run node "$ROOT_DIR/scripts/ui_completion_gate_check.mjs"
   run node "$ROOT_DIR/scripts/ui_state_invalidation_boundary_check.mjs"
+  run node "$ROOT_DIR/scripts/markdown_render_heavy_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/ui_implementation_evidence_check.mjs"
   run node "$ROOT_DIR/scripts/ui_implementation_phase_check.mjs"
   run node "$ROOT_DIR/scripts/ui_skill_contract_check.mjs"

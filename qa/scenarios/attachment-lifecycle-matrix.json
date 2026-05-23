@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-05-23",
+  "scope": "Attachment lifecycle from selection/drop/bridge input through render, temporary persistence, thumbnails, cancellation, errors, cleanup, privacy-safe logs, and simulated chat send.",
+  "requiredCases": [
+    "happy_path",
+    "error_path",
+    "cancellation",
+    "cleanup",
+    "size_limit"
+  ],
+  "attachmentTypes": [
+    {
+      "id": "composer.image-file",
+      "support": "supported",
+      "surface": "macos composer",
+      "description": "Image selected or dropped as a composer file, rendered as a chip, previewed as a thumbnail, sent as a path mention plus inline image bytes when the bridge path is active.",
+      "validationState": "partial",
+      "cases": {
+        "happy_path": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testLargeFileThumbnailIsDownsampled",
+            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText"
+          ],
+          "fixture": "generated PNG fixture"
+        },
+        "error_path": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testMissingFileThumbnailFailsWithoutCachingPlaceholder",
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testCorruptImagePreviewFailsGracefullyWithoutCacheHit"
+          ],
+          "fixture": "missing path and corrupt PNG fixtures"
+        },
+        "cancellation": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testAlreadyCancelledTaskDoesNotPopulateCache"
+          ],
+          "fixture": "generated PNG fixture"
+        },
+        "cleanup": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testCleanupRemovesScopedTemporaryFiles"
+          ],
+          "fixture": "temporary scoped attachment directory"
+        },
+        "size_limit": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testLargeFileThumbnailIsDownsampled",
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsOversizedFramesBeforeJsonDecode"
+          ],
+          "fixture": "large generated PNG and oversized bridge frame"
+        }
+      }
+    },
+    {
+      "id": "bridge.image-wire",
+      "support": "supported",
+      "surface": "Clawix bridge v1",
+      "description": "Inline image attachment sent over the bridge and materialized into a scoped temp file before simulated chat/runtime send.",
+      "validationState": "validated",
+      "cases": {
+        "happy_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testWritesAttachmentToSanitizedScopedTempDirectory",
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessage",
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testWireAttachmentsIncludeOnlyImageBytesForSimulatedBridgeSend"
+          ],
+          "fixture": "inline base64 image bytes"
+        },
+        "error_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testInvalidAttachmentIsSkippedWithoutPrivateLogMaterial"
+          ],
+          "fixture": "invalid base64 image attachment"
+        },
+        "cancellation": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserImageThumbnailLoaderTests.swift:testAlreadyCancelledTaskDoesNotPopulateCache"
+          ],
+          "fixture": "generated PNG thumbnail task"
+        },
+        "cleanup": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testCleanupRemovesScopedTemporaryFiles"
+          ],
+          "fixture": "temporary scoped attachment directory"
+        },
+        "size_limit": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsOversizedFramesBeforeJsonDecode"
+          ],
+          "fixture": "oversized bridge frame"
+        }
+      }
+    },
+    {
+      "id": "bridge.audio-wire",
+      "support": "supported",
+      "surface": "Clawix bridge v1",
+      "description": "Audio attachment sent over the bridge, registered for replay, and represented in chat as a voice/audio user message.",
+      "validationState": "partial",
+      "cases": {
+        "happy_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessageCarriesAudioAttachment"
+          ],
+          "fixture": "inline base64 audio bytes"
+        },
+        "error_path": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/ClawixAudioRoutesTests.swift:testDictationSpoolFilesAreCleanedOnTranscriptionCompletionPaths"
+          ],
+          "fixture": "invalid audio base64 decode path and privacy-safe log source check"
+        },
+        "cancellation": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testInterruptTurn",
+            "packages/ClawixCore/Fixtures/BridgeV1/007-interruptTurn.json"
+          ],
+          "fixture": "turn interruption fixture"
+        },
+        "cleanup": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/ClawixAudioRoutesTests.swift:testAudioTemporaryRoutesSanitizePathComponents",
+            "macos/Tests/ClawixMeshTests/ClawixAudioRoutesTests.swift:testDictationSpoolFilesAreCleanedOnTranscriptionCompletionPaths"
+          ],
+          "fixture": "audio temporary route and transcription spool cleanup source fixture"
+        },
+        "size_limit": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsOversizedFramesBeforeJsonDecode"
+          ],
+          "fixture": "oversized bridge frame"
+        }
+      }
+    },
+    {
+      "id": "composer.file-mention",
+      "support": "supported",
+      "surface": "macos composer",
+      "description": "Non-image file staged by path and rendered as a file mention chip instead of inline bridge bytes.",
+      "validationState": "partial",
+      "cases": {
+        "happy_path": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/UserMessageAttachmentRenderingTests.swift:testFilesMentionedWrapperRendersImagesAndCleanRequestText"
+          ],
+          "fixture": "synthetic path mention fixture"
+        },
+        "error_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixEngine/Tests/ClawixEngineTests/BridgeFileReaderTests.swift:testMissingFileReturnsStableError",
+            "packages/ClawixEngine/Tests/ClawixEngineTests/BridgeFileReaderTests.swift:testBinaryFileReturnsUnsupportedPreviewError",
+            "packages/ClawixEngine/Tests/ClawixEngineTests/BridgeFileReaderTests.swift:testUnreadableFileReturnsStableError"
+          ],
+          "fixture": "missing path, binary preview, and chmod-denied fixtures"
+        },
+        "cancellation": {
+          "status": "validated",
+          "evidence": [
+            "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAddRemoveDeduplicatesAndCancelsBeforeSend"
+          ],
+          "fixture": "remove-before-send host flow"
+        },
+        "cleanup": {
+          "status": "validated",
+          "evidence": [
+            "macos/Sources/Clawix/AppState/MessageSending.swift:removeComposerAttachment"
+          ],
+          "fixture": "composer removal path"
+        },
+        "size_limit": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixEngine/Tests/ClawixEngineTests/BridgeFileReaderTests.swift:testOversizedTextFileReturnsSizeLimitBeforeDecode",
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsOversizedFramesBeforeJsonDecode"
+          ],
+          "fixture": "oversized text preview fixture and bridge frame limit"
+        }
+      }
+    },
+    {
+      "id": "wire.unsupported-kind",
+      "support": "unsupported",
+      "surface": "Clawix bridge v1",
+      "description": "Attachment kind outside the public enum, such as video, must fail closed before runtime dispatch.",
+      "validationState": "validated",
+      "cases": {
+        "happy_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsUnsupportedAttachmentKindWithParseableError"
+          ],
+          "fixture": "video/mp4 attachment rejected as expected"
+        },
+        "error_path": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsUnsupportedAttachmentKindWithParseableError"
+          ],
+          "fixture": "unsupported kind decode error"
+        },
+        "cancellation": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsUnsupportedAttachmentKindWithParseableError"
+          ],
+          "fixture": "decode fails before an async task starts"
+        },
+        "cleanup": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsUnsupportedAttachmentKindWithParseableError"
+          ],
+          "fixture": "no temp file created for unsupported kind"
+        },
+        "size_limit": {
+          "status": "validated",
+          "evidence": [
+            "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsOversizedFramesBeforeJsonDecode"
+          ],
+          "fixture": "oversized bridge frame"
+        }
+      }
+    }
+  ],
+  "privacy": {
+    "status": "validated",
+    "evidence": [
+      "packages/ClawixCore/Tests/ClawixCoreTests/AttachmentSpoolerTests.swift:testInvalidAttachmentIsSkippedWithoutPrivateLogMaterial",
+      "packages/ClawixCore/Tests/ClawixCoreTests/BridgeProtocolContractValidatorTests.swift:testRejectsUnsupportedAttachmentKindWithParseableError"
+    ]
+  },
+  "simulatedChatSend": {
+    "status": "validated",
+    "evidence": [
+      "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testAttachmentOnlySendStaysLocalAndClearsComposerWhenRuntimeUnavailable",
+      "macos/Tests/ClawixMeshTests/ComposerAttachmentLifecycleTests.swift:testWireAttachmentsIncludeOnlyImageBytesForSimulatedBridgeSend",
+      "packages/ClawixCore/Tests/ClawixCoreTests/BridgeFrameRoundTripTests.swift:testSendMessage"
+    ]
+  }
+}
