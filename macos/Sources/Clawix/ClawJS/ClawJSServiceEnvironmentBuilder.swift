@@ -29,40 +29,40 @@ enum ClawJSServiceEnvironmentBuilder {
         env["CLAW_FILES_DIR"] = ClawJSServiceDirectoryResolver.mainFilesDirectoryURL.path
         env["CLAW_SERVICE_PORT"] = String(service.port)
         env["CLAW_SERVICE_NAME"] = service.rawValue
-        env["RUNTIME_HOST"] = "127.0.0.1"
+        env["RUNTIME_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["RUNTIME_PORT"] = String(ClawJSService.runtime.port)
         env["RUNTIME_DATA_DIR"] = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .runtime).path
         env["RUNTIME_DB_PATH"] = ClawJSServiceSupervisorRoutes.runtimeDatabaseURL(
             runtimeDataDirectoryURL: ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .runtime)
         ).path
-        env["CLAW_RUNTIME_SESSIONS_URL"] = "http://127.0.0.1:\(ClawJSService.sessions.port)"
+        env["CLAW_RUNTIME_SESSIONS_URL"] = ClawJSServiceEndpointResolver.originString(for: .sessions)
         for (key, value) in ClawJSActorAssertion.environment() {
             env[key] = value
         }
         env["CLAW_SECRETS_PROXY_PATH"] = ClawJSServiceSupervisorRoutes.secretsProxyURL().path
         env["PORT"] = String(service.port)
-        env["HOST"] = "127.0.0.1"
-        env["CLAW_DATABASE_HOST"] = "127.0.0.1"
+        env["HOST"] = ClawJSServiceEndpointResolver.loopbackHost
+        env["CLAW_DATABASE_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["CLAW_DATABASE_PORT"] = String(ClawJSService.database.port)
         env["CLAW_DATABASE_DATA_DIR"] = ClawJSServiceDirectoryResolver.mainDataDirectoryURL.path
         env["CLAW_DATABASE_DB_PATH"] = ClawJSServiceDirectoryResolver.mainDatabaseURL.path
         env["CLAW_DATABASE_FILES_DIR"] = ClawJSServiceDirectoryResolver.mainFilesDirectoryURL.path
-        env["CLAW_DRIVE_HOST"] = "127.0.0.1"
+        env["CLAW_DRIVE_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["CLAW_DRIVE_PORT"] = String(ClawJSService.drive.port)
         env["CLAW_DRIVE_DATA_DIR"] = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .drive).path
-        env["CLAW_SESSIONS_HOST"] = "127.0.0.1"
+        env["CLAW_SESSIONS_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["CLAW_SESSIONS_PORT"] = String(ClawJSService.sessions.port)
         env["CLAW_SESSIONS_DATA_DIR"] = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .sessions).path
         env["CLAW_SESSIONS_DB_PATH"] = ClawJSServiceSupervisorRoutes.sessionsDatabaseURL(
             dataDirectoryURL: ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .sessions)
         ).path
-        env["CLAW_SECRETS_HOST"] = "127.0.0.1"
+        env["CLAW_SECRETS_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["CLAW_SECRETS_PORT"] = String(ClawJSService.secrets.port)
         env["CLAW_SECRETS_DATA_DIR"] = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .secrets).path
         env["CLAW_SECRETS_DB_PATH"] = ClawJSServiceSupervisorRoutes.secretsDatabaseURL(
             dataDirectoryURL: ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .secrets)
         ).path
-        env["CLAW_SECRETS_BASE_URL"] = "http://127.0.0.1:\(ClawJSService.secrets.port)"
+        env["CLAW_SECRETS_BASE_URL"] = ClawJSServiceEndpointResolver.originString(for: .secrets)
         env["CLAW_SECRETS_TENANT_ID"] = ClawJSSecretsClient.defaultTenantId
 
         if service == .telegram {
@@ -71,7 +71,7 @@ enum ClawJSServiceEnvironmentBuilder {
         }
         if service == .publishing {
             let publishingData = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .publishing).path
-            env["CLAW_PUBLISHING_HOST"] = "127.0.0.1"
+            env["CLAW_PUBLISHING_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
             env["CLAW_PUBLISHING_PORT"] = String(service.port)
             env["CLAW_PUBLISHING_DATA_DIR"] = publishingData
             env["CLAW_PUBLISHING_STATUS_FILE"] = ClawJSServiceDirectoryResolver.statusFileURL(for: service).path
@@ -93,7 +93,7 @@ enum ClawJSServiceEnvironmentBuilder {
 
     static func iotEnvironment(base: [String: String] = ProcessInfo.processInfo.environment) -> [String: String] {
         var env = base
-        env["IOT_HOST"] = "127.0.0.1"
+        env["IOT_HOST"] = ClawJSServiceEndpointResolver.loopbackHost
         env["IOT_PORT"] = String(ClawJSService.iot.port)
         let dataDir = ClawJSServiceDirectoryResolver.dataDirectoryURL(for: .iot)
         env["IOT_DATA_DIR"] = dataDir.path

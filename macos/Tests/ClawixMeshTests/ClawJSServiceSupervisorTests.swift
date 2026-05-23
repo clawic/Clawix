@@ -107,6 +107,38 @@ final class ClawJSServiceSupervisorTests: XCTestCase {
         XCTAssertFalse(launchAdapterSource.contains("URL(fileURLWithPath: \"/usr/bin/env\")"))
     }
 
+    func testClawJSServiceEndpointResolverCentralizesLoopbackOrigins() throws {
+        let resolverSource = try readSource("ClawJS/ClawJSServiceEndpointResolver.swift")
+        let runtimeSource = try readSource("ClawJS/ClawJSRuntimeClient.swift")
+        let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
+        let environmentSource = try readSource("ClawJS/ClawJSServiceEnvironmentBuilder.swift")
+
+        XCTAssertEqual(ClawJSServiceEndpointResolver.loopbackHost, "127.0.0.1")
+        XCTAssertEqual(
+            ClawJSServiceEndpointResolver.origin(for: .runtime).absoluteString,
+            "http://127.0.0.1:24100"
+        )
+        XCTAssertEqual(
+            ClawJSServiceEndpointResolver.webSocketOrigin(for: .drive).absoluteString,
+            "ws://127.0.0.1:24104"
+        )
+        XCTAssertEqual(
+            ClawJSServiceEndpointResolver.healthURL(for: .publishing).absoluteString,
+            "http://127.0.0.1:24111/healthz"
+        )
+        XCTAssertEqual(
+            ClawJSServiceEndpointResolver.url(
+                for: .iot,
+                path: "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/events/stream"
+            ).absoluteString,
+            "http://127.0.0.1:24152/v1/events/stream"
+        )
+        XCTAssertTrue(resolverSource.contains("static let loopbackHost = \"127.0.0.1\""))
+        XCTAssertTrue(runtimeSource.contains("ClawJSServiceEndpointResolver.origin(for: .runtime)"))
+        XCTAssertTrue(supervisorSource.contains("ClawJSServiceEndpointResolver.healthURL(for: service)"))
+        XCTAssertTrue(environmentSource.contains("ClawJSServiceEndpointResolver.originString(for: .sessions)"))
+    }
+
     func testServiceSupervisorStorageRoutesAreCentralized() throws {
         let supervisorSource = try readSource("ClawJS/ClawJSServiceSupervisor.swift")
         let routesSource = try readSource("ClawJS/ClawJSServiceSupervisorRoutes.swift")

@@ -48,7 +48,7 @@ final class AudioCatalogBootstrap: ObservableObject {
     private func installClient(port: UInt16) {
         if currentClient != nil { return }
         guard let token = resolveBearerToken() else { return }
-        let origin = URL(string: "http://127.0.0.1:\(port)")!
+        let origin = ClawJSServiceEndpointResolver.loopbackURL(port: port)
         let client = ClawJSAudioClient(bearerToken: token, origin: origin)
         currentClient = client
     }

@@ -42,9 +42,7 @@ final class IoTDiscoveryFeed: NSObject, ObservableObject {
     /// Connect to the daemon's SSE stream. Idempotent.
     func connect() {
         guard task == nil else { return }
-        guard let url = URL(string: "http://127.0.0.1:\(ClawJSService.iot.port)/v1/events/stream") else {
-            return
-        }
+        let url = ClawJSServiceEndpointResolver.url(for: .iot, path: "\(ClawixPersistentSurfaceKeys.publicApiPrefix)/events/stream")
         var request = URLRequest(url: url)
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.timeoutInterval = TimeInterval.infinity

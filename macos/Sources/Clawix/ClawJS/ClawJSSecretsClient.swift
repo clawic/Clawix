@@ -49,7 +49,7 @@ final class ClawJSSecretsClient {
         let signedHostToken = ClawJSServiceManager.shared.signedHostTokenIfSpawned(for: .secrets)
         let hostAssertionKeyBase64 = ClawJSServiceManager.shared.hostAssertionKeyIfSpawned(for: .secrets)
         return ClawJSSecretsClient(
-            baseURL: URL(string: "http://127.0.0.1:\(ClawJSService.secrets.port)")!,
+            baseURL: ClawJSServiceEndpointResolver.origin(for: .secrets),
             bearerToken: token,
             signedHostToken: signedHostToken,
             hostAssertionKeyBase64: hostAssertionKeyBase64

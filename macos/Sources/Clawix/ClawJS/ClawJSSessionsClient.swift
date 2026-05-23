@@ -28,7 +28,7 @@ struct ClawJSSessionsClient {
 
     init(
         bearerToken: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.sessions.port)")!,
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .sessions),
         session: URLSession = .shared
     ) {
         self.bearerToken = bearerToken

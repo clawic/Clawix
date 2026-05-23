@@ -31,7 +31,7 @@ struct ClawJSRuntimeClient {
 
     init(
         bearerToken: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.runtime.port)")!
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .runtime)
     ) {
         self.bearerToken = bearerToken
         self.origin = origin

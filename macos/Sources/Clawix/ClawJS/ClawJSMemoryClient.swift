@@ -35,7 +35,7 @@ struct ClawJSMemoryClient {
     /// inject custom origins for ephemeral fixtures.
     let origin: URL
 
-    init(origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.memory.port)")!) {
+    init(origin: URL = ClawJSServiceEndpointResolver.origin(for: .memory)) {
         self.origin = origin
     }
 

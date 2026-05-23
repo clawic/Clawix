@@ -59,16 +59,15 @@ struct IoTClient {
         }
     }
 
-    /// Loopback base URL `http://127.0.0.1:<iot port>`. Resolved from
-    /// `ClawJSService.iot.port` so a port change in one place rewires
-    /// every consumer.
+    /// Loopback base URL resolved from `ClawJSService.iot.port` so a
+    /// port change in one place rewires every consumer.
     let origin: URL
 
     /// Bearer token for deployments that require authenticated routes.
     var bearerToken: String?
 
     init(origin: URL? = nil, bearerToken: String? = nil) {
-        self.origin = origin ?? URL(string: "http://127.0.0.1:\(ClawJSService.iot.port)")!
+        self.origin = origin ?? ClawJSServiceEndpointResolver.origin(for: .iot)
         self.bearerToken = bearerToken
     }
 

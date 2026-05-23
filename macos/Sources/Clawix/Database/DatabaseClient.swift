@@ -89,7 +89,7 @@ struct DatabaseClient {
 
     init(
         bearerToken: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.database.port)")!
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .database)
     ) {
         self.bearerToken = bearerToken
         self.origin = origin

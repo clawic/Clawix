@@ -2,8 +2,8 @@ import Foundation
 
 /// HTTP client for the `@clawjs/telegram` surface. Mirrors
 /// `ClawJSDatabaseClient.swift` in style. Talks to
-/// `127.0.0.1:CLAW_TELEGRAM_PORT`; the path layout
-/// mirrors `clawjs/telegram/src/server/app.ts`.
+/// the canonical Telegram service endpoint; the path layout mirrors
+/// `clawjs/telegram/src/server/app.ts`.
 struct TelegramServiceClient {
 
     enum Error: Swift.Error, LocalizedError {
@@ -34,7 +34,7 @@ struct TelegramServiceClient {
 
     let origin: URL
 
-    init(origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.telegram.port)")!) {
+    init(origin: URL = ClawJSServiceEndpointResolver.origin(for: .telegram)) {
         self.origin = origin
     }
 

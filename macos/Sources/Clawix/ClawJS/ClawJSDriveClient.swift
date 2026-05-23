@@ -74,7 +74,7 @@ final class ClawJSDriveClient {
 
     init(
         bearerToken: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.drive.port)")!,
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .drive),
         session: URLSession = ClawJSDriveClient.defaultSession
     ) {
         self.bearerToken = bearerToken

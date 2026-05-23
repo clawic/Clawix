@@ -44,7 +44,7 @@ final class ClawJSPublishingClient {
     init(
         bearerToken: String? = nil,
         workspaceId: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.publishing.port)")!,
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .publishing),
         session: URLSession = ClawJSPublishingClient.defaultSession
     ) {
         self.bearerToken = bearerToken

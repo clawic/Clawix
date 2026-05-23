@@ -64,7 +64,7 @@ struct ClawJSIndexClient {
 
     init(
         bearerToken: String? = nil,
-        origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.index.port)")!
+        origin: URL = ClawJSServiceEndpointResolver.origin(for: .index)
     ) {
         self.bearerToken = bearerToken
         self.origin = origin

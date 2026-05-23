@@ -28,7 +28,7 @@ final class DatabaseRealtimeClient: ObservableObject {
 
     private static let backoff: [UInt64] = [1, 2, 4, 8, 16, 32, 60]
 
-    init(origin: URL = URL(string: "http://127.0.0.1:\(ClawJSService.database.port)")!) {
+    init(origin: URL = ClawJSServiceEndpointResolver.origin(for: .database)) {
         self.origin = origin
     }
 
