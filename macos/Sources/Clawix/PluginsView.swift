@@ -22,7 +22,7 @@ struct PluginsView: View {
                 .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .background(Capsule().fill(Color.overlay(0.06)))
                 .padding(.horizontal, 24)
                 .padding(.bottom, 10)
 

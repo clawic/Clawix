@@ -30,7 +30,7 @@ struct PetView: View {
             if hovering {
                 Button(action: onTuck) {
                     XIcon(size: 9)
-                        .foregroundColor(Color.white.opacity(0.7))
+                        .foregroundColor(Color.overlay(0.7))
                         .frame(width: 18, height: 18)
                         .background(Circle().fill(Color.black.opacity(0.45)))
                 }
@@ -65,7 +65,7 @@ struct PetView: View {
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color(white: 0.20), Color(white: 0.12)],
+                        colors: [Color.gray(light: 0.88, dark: 0.20), Color.gray(light: 0.945, dark: 0.12)],
                         startPoint: .top, endPoint: .bottom
                     )
                 )
@@ -79,7 +79,7 @@ struct PetView: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color.white.opacity(0.10), Color.clear],
+                                colors: [Color.overlay(0.10), Color.clear],
                                 startPoint: .top, endPoint: .center
                             )
                         )
@@ -98,7 +98,7 @@ struct PetView: View {
 
     private var eye: some View {
         Capsule()
-            .fill(Color.white.opacity(0.92))
+            .fill(Color.overlay(0.92))
             .frame(width: 9, height: 14 * eyeOpen)
             .frame(height: 14, alignment: .center)
     }

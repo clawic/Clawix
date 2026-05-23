@@ -21,7 +21,7 @@ struct AutomationsView: View {
             ForEach(items.prefix(50)) { automation in
                 HStack(spacing: 12) {
                     Circle()
-                        .fill(automation.isEnabled ? Palette.pastelBlue : Color.white.opacity(0.25))
+                        .fill(automation.isEnabled ? Palette.pastelBlue : Color.overlay(0.25))
                         .frame(width: 7, height: 7)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(automation.name)
@@ -59,7 +59,7 @@ struct AutomationsView: View {
             cards: [
                 AutomationTemplateCard(icon: "bubble.left.fill", color: Color(red: 0.55, green: 0.42, blue: 0.95), text: "Wrap up yesterday’s git activity into standup notes."),
                 AutomationTemplateCard(icon: "doc.text.fill", color: Color(red: 0.62, green: 0.88, blue: 0.82), text: "Roll this week’s PRs, deploys, incidents and reviews into a digest."),
-                AutomationTemplateCard(icon: "rectangle.fill", color: Color(white: 0.72), text: "Group last week’s PRs by teammate and topic; call out risks.")
+                AutomationTemplateCard(icon: "rectangle.fill", color: Color.gray(light: 0.31, dark: 0.72), text: "Group last week’s PRs by teammate and topic; call out risks.")
             ],
             tallCards: false
         ),
@@ -76,7 +76,7 @@ struct AutomationsView: View {
             title: "Incidents & triage",
             cards: [
                 AutomationTemplateCard(icon: "globe.americas.fill", color: Color(red: 0.28, green: 0.74, blue: 0.64), text: "Round up CI failures and flaky tests from the last window and propose the top fixes."),
-                AutomationTemplateCard(icon: "tray.fill", color: Color(white: 0.72), text: "Triage CI failures by grouping them by likely root cause, and propose a minimal fix per bucket."),
+                AutomationTemplateCard(icon: "tray.fill", color: Color.gray(light: 0.31, dark: 0.72), text: "Triage CI failures by grouping them by likely root cause, and propose a minimal fix per bucket."),
                 AutomationTemplateCard(icon: "sparkle", color: Color(red: 0.34, green: 0.58, blue: 0.92), text: "Group recent errors into clusters by pattern and stage a follow-up summary.")
             ],
             tallCards: true
@@ -179,10 +179,10 @@ private struct AutomationCardView: View {
         .frame(minHeight: tallCards ? 116 : 96, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: 0.145))
+                .fill(Color.gray(light: 0.94, dark: 0.145))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color(white: 0.18), lineWidth: 0.5)
+                        .stroke(Color.gray(light: 0.905, dark: 0.18), lineWidth: 0.5)
                 )
         )
     }

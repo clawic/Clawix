@@ -41,7 +41,7 @@ struct SearchView: View {
                     .fill(Palette.cardFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(fieldFocused ? Color(white: 0.35) : Palette.border, lineWidth: 0.5)
+                            .stroke(fieldFocused ? Color.gray(light: 0.58, dark: 0.35) : Palette.border, lineWidth: 0.5)
                     )
             )
             .padding(.horizontal, 24)

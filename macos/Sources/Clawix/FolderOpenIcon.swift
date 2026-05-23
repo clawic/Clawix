@@ -523,8 +523,8 @@ struct ArchiveUnarchiveMorphIcon: View {
         // the icon itself is hovered. The morph animation no longer
         // dims the box — the row-hover state opens the hole, the box
         // keeps its resting weight.
-        let strokeColor = iconHovered ? Color(white: 0.94) : Color(white: 0.55)
-        let arrowColor = Color(white: 0.96)
+        let strokeColor = iconHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.45, dark: 0.55)
+        let arrowColor = Color.gray(light: 0.10, dark: 0.96)
         // Stroke width matches the section header's ArchiveIcon (1.28pt
         // fixed) so the per-row morph reads at the same visual weight as
         // the "Archived" section icon. Without this, the formula-derived

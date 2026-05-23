@@ -83,7 +83,7 @@ private struct LoginCard: View {
                     Button(action: { appState.auth.cancelLogin() }) {
                         Text("Cancel")
                             .font(BodyFont.system(size: 12, wght: 600))
-                            .foregroundColor(Color(white: 0.78))
+                            .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                     }
                     .buttonStyle(.plain)
                 }
@@ -92,7 +92,7 @@ private struct LoginCard: View {
             if let error {
                 Text(error)
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -111,11 +111,11 @@ private struct LoginCard: View {
         .padding(.vertical, 38)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 0.7)
+                .stroke(Color.overlay(0.06), lineWidth: 0.7)
         )
         .shadow(color: Color.black.opacity(0.35), radius: 30, x: 0, y: 18)
     }
@@ -127,16 +127,16 @@ private struct BrandMark: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(white: 0.16))
+                .fill(Color.gray(light: 0.92, dark: 0.16))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 0.7)
+                        .stroke(Color.overlay(0.08), lineWidth: 0.7)
                 )
                 .frame(width: 56, height: 56)
 
             Text(">_")
                 .font(BodyFont.system(size: 20, weight: .semibold, design: .monospaced))
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                 .offset(x: -1)
         }
     }
@@ -158,7 +158,7 @@ private struct PrimaryLoginButton: View {
                     ProgressView()
                         .controlSize(.small)
                         .progressViewStyle(.circular)
-                        .tint(.black)
+                        .tint(Palette.background)
                     Text("Waiting for confirmation…")
                 } else {
                     LucideIcon(.arrowRightToLine, size: 13)
@@ -166,7 +166,7 @@ private struct PrimaryLoginButton: View {
                 }
             }
             .font(BodyFont.system(size: 13.5, wght: 700))
-            .foregroundColor(.black)
+            .foregroundColor(Palette.background)
             .padding(.horizontal, 22)
             .padding(.vertical, 11)
             .frame(maxWidth: .infinity)
@@ -176,7 +176,7 @@ private struct PrimaryLoginButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 0.7)
+                    .stroke(Color.overlay(0.18), lineWidth: 0.7)
             )
             .contentShape(Rectangle())
         }
@@ -187,8 +187,8 @@ private struct PrimaryLoginButton: View {
     }
 
     private var buttonFill: Color {
-        if !enabled { return Color(white: 0.55) }
-        if hovered  { return Color(white: 1.0) }
-        return Color(white: 0.94)
+        if !enabled { return Color.gray(light: 0.45, dark: 0.55) }
+        if hovered  { return Color.gray(light: 0.05, dark: 1.0) }
+        return Color.gray(light: 0.12, dark: 0.94)
     }
 }

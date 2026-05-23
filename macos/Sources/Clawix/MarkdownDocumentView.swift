@@ -272,8 +272,8 @@ struct MarkdownDocumentView: View {
         for run in out.runs {
             if run.inlinePresentationIntent?.contains(.code) == true {
                 out[run.range].font = BodyFont.system(size: 12.5, design: .monospaced)
-                out[run.range].backgroundColor = Color(white: 0.18)
-                out[run.range].foregroundColor = Color(white: 0.92)
+                out[run.range].backgroundColor = Color.gray(light: 0.905, dark: 0.18)
+                out[run.range].foregroundColor = Color.gray(light: 0.14, dark: 0.92)
             }
         }
         return out
@@ -312,7 +312,7 @@ private struct CodeBlockView: View {
             HStack(spacing: 8) {
                 Text(language.isEmpty ? "code" : language)
                     .font(BodyFont.system(size: 11.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 Spacer(minLength: 8)
                 Button(action: toggleWrap) {
                     WordWrapToggleIcon(
@@ -336,10 +336,10 @@ private struct CodeBlockView: View {
                     Group {
                         if copied {
                             CheckIcon(size: 11)
-                                .foregroundColor(Color(white: hoverCopy ? 0.94 : 0.78))
+                                .foregroundColor((hoverCopy ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.27, dark: 0.78)))
                         } else {
                             CopyIconViewSquircle(
-                                color: Color(white: hoverCopy ? 0.88 : 0.55),
+                                color: (hoverCopy ? Color.gray(light: 0.17, dark: 0.88) : Color.gray(light: 0.45, dark: 0.55)),
                                 lineWidth: 0.85
                             )
                             .frame(width: 14, height: 14)
@@ -359,11 +359,11 @@ private struct CodeBlockView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.10))
+                .fill(Color.gray(light: 0.95, dark: 0.10))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                .stroke(Color.overlay(0.08), lineWidth: 0.5)
         )
     }
 
@@ -393,8 +393,8 @@ private struct CodeBlockView: View {
 
     private var wrapForegroundColor: Color {
         let on = appState.chatCodeBlockWordWrap
-        if hoverWrap { return Color(white: on ? 0.94 : 0.85) }
-        return Color(white: on ? 0.78 : 0.45)
+        if hoverWrap { return (on ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.20, dark: 0.85)) }
+        return (on ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.50, dark: 0.45))
     }
 
     private func toggleWrap() {

@@ -26,7 +26,7 @@ struct MermaidDiagramView: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)

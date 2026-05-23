@@ -126,7 +126,7 @@ struct RolePickerStrip: View {
                         withAnimation(.easeOut(duration: 0.18)) { store.dismiss() }
                     } label: {
                         XIcon(size: 11)
-                            .foregroundColor(Color.white.opacity(0.45))
+                            .foregroundColor(Color.overlay(0.45))
                             .frame(width: 20, height: 20)
                             .contentShape(Rectangle())
                     }
@@ -157,16 +157,16 @@ private struct RoleChip: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 LucideIcon(role.icon, size: 12)
-                    .foregroundColor(Color.white.opacity(hovering ? 0.8 : 0.55))
+                    .foregroundColor(Color.overlay(hovering ? 0.8 : 0.55))
                 Text(role.label)
                     .font(BodyFont.system(size: 12, wght: 500))
-                    .foregroundColor(Color.white.opacity(hovering ? 0.95 : 0.8))
+                    .foregroundColor(Color.overlay(hovering ? 0.95 : 0.8))
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(Color.white.opacity(hovering ? 0.09 : 0.05))
+                    .fill(Color.overlay(hovering ? 0.09 : 0.05))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 11, style: .continuous)

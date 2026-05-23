@@ -18,7 +18,7 @@ import SwiftUI
 /// Usage is unchanged from the font-based version:
 ///
 ///     LucideIcon(.chevronDown, size: 13)
-///         .foregroundColor(Color(white: 0.86))
+///         .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
 ///
 /// `.font(.system(...))` set on the call site is IGNORED — pass the
 /// size explicitly via the `size:` parameter so the stroke weight scales
