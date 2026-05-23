@@ -45,6 +45,6 @@ object BridgeCoder {
         require(raw.toByteArray(Charsets.UTF_8).size <= BRIDGE_MAX_FRAME_BYTES) {
             "bridge frame exceeds $BRIDGE_MAX_FRAME_BYTES bytes"
         }
-        BridgeJson.decodeFromString(BridgeFrameSerializer, raw)
+        return BridgeJson.decodeFromString(BridgeFrameSerializer, raw)
     }
 }
