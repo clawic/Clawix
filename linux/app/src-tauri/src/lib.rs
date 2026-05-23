@@ -77,6 +77,11 @@ pub fn run() {
             commands::request_generated_image,
             commands::request_rollout_attachment,
             commands::request_audio,
+            commands::audio_get,
+            commands::audio_register,
+            commands::audio_attach_transcript,
+            commands::audio_list,
+            commands::audio_delete,
             commands::request_rate_limits,
             commands::request_clawjs_service_statuses,
             commands::start_pairing,
@@ -270,9 +275,60 @@ mod commands {
     pub async fn request_audio(
         audio_id: String,
         state: State<'_, AppState>,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
         let client = state.daemon.lock().await;
         client.request_audio(&audio_id).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn audio_get(
+        audio_id: String,
+        app_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client.audio_get(&audio_id, &app_id).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn audio_register(
+        request: serde_json::Value,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client.audio_register(request).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn audio_attach_transcript(
+        audio_id: String,
+        transcript: serde_json::Value,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client
+            .audio_attach_transcript(&audio_id, transcript)
+            .await
+            .map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn audio_list(
+        filter: serde_json::Value,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client.audio_list(filter).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn audio_delete(
+        audio_id: String,
+        app_id: String,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client.audio_delete(&audio_id, &app_id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]

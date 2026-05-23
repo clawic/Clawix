@@ -177,13 +177,84 @@ impl DaemonClient {
         Ok(())
     }
 
-    pub async fn request_audio(&self, audio_id: &str) -> Result<()> {
+    pub async fn request_audio(&self, audio_id: &str) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioGetBytes",
+            "requestId": request_id,
+            "audioId": audio_id,
+            "appId": "clawix"
+        }))
+        .await?;
+
         self.send_intent(serde_json::json!({
             "type": "requestAudio",
             "audioId": audio_id
         }))
         .await?;
-        Ok(())
+        Ok(request_id)
+    }
+
+    pub async fn audio_get(&self, audio_id: &str, app_id: &str) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioGet",
+            "requestId": request_id,
+            "audioId": audio_id,
+            "appId": app_id
+        }))
+        .await?;
+        Ok(request_id)
+    }
+
+    pub async fn audio_register(&self, request: serde_json::Value) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioRegister",
+            "requestId": request_id,
+            "request": request
+        }))
+        .await?;
+        Ok(request_id)
+    }
+
+    pub async fn audio_attach_transcript(
+        &self,
+        audio_id: &str,
+        transcript: serde_json::Value,
+    ) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioAttachTranscript",
+            "requestId": request_id,
+            "audioId": audio_id,
+            "transcript": transcript
+        }))
+        .await?;
+        Ok(request_id)
+    }
+
+    pub async fn audio_list(&self, filter: serde_json::Value) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioList",
+            "requestId": request_id,
+            "filter": filter
+        }))
+        .await?;
+        Ok(request_id)
+    }
+
+    pub async fn audio_delete(&self, audio_id: &str, app_id: &str) -> Result<String> {
+        let request_id = uuid_v4();
+        self.send_intent(serde_json::json!({
+            "type": "audioDelete",
+            "requestId": request_id,
+            "audioId": audio_id,
+            "appId": app_id
+        }))
+        .await?;
+        Ok(request_id)
     }
 
     pub async fn request_rate_limits(&self) -> Result<()> {

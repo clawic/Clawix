@@ -1,6 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { createSignal, onCleanup, onMount } from "solid-js";
+import { applyAudioAttachTranscriptResult, applyAudioDeleteResult, applyAudioGetResult, applyAudioListResult, emptyAudioCatalogState } from "./audio_catalog_model";
 import { bridgeDiagnostic } from "./bridge_diagnostics_model";
 import { appendMessage, applyStreamingMessage, editPromptMessage, prependMessagesPage, updateSessionFlags, updateSessionTitle, upsertSession } from "./bridge_state_model";
 
@@ -25,6 +26,9 @@ const [fileSnapshots, setFileSnapshots] = createSignal<Record<string, unknown>>(
 const [generatedImages, setGeneratedImages] = createSignal<Record<string, unknown>>({});
 const [rolloutAttachments, setRolloutAttachments] = createSignal<Record<string, unknown>>({});
 const [audioById, setAudioById] = createSignal<Record<string, unknown>>({});
+const [audioRequestIds, setAudioRequestIds] = createSignal<Record<string, string>>({});
+const [audioDeleteRequestIds, setAudioDeleteRequestIds] = createSignal<Record<string, string>>({});
+const [audioCatalog, setAudioCatalog] = createSignal(emptyAudioCatalogState);
 const [rateLimits, setRateLimits] = createSignal<unknown | null>(null);
 const [rateLimitsByLimitId, setRateLimitsByLimitId] = createSignal<Record<string, unknown>>({});
 const [clawJSServiceStatuses, setClawJSServiceStatuses] = createSignal<unknown[]>([]);
@@ -44,6 +48,7 @@ export const daemonStore = {
   generatedImages,
   rolloutAttachments,
   audioById,
+  audioCatalog,
   rateLimits,
   rateLimitsByLimitId,
   clawJSServiceStatuses,
@@ -151,6 +156,43 @@ export function useDaemonStream(): void {
                     ? { mimeType: frame.mimeType ?? "audio/mp4", base64: frame.audioBase64 }
                     : { error: frame.errorMessage ?? "Audio no longer available" }
                 }));
+              }
+              break;
+            case "audioBytesResult": {
+              const audioId = typeof frame.requestId === "string" ? audioRequestIds()[frame.requestId] : null;
+              if (audioId) {
+                setAudioById((prev) => ({
+                  ...prev,
+                  [audioId]: frame.audioBase64
+                    ? { mimeType: frame.mimeType ?? "audio/mp4", base64: frame.audioBase64, durationMs: frame.durationMs }
+                    : { error: frame.errorMessage ?? "Audio no longer available" }
+                }));
+                setAudioRequestIds((prev) => {
+                  const next = { ...prev };
+                  delete next[frame.requestId as string];
+                  return next;
+                });
+              }
+              break;
+            }
+            case "audioGetResult":
+            case "audioRegisterResult":
+              setAudioCatalog((prev) => applyAudioGetResult(prev, frame));
+              break;
+            case "audioAttachTranscriptResult":
+              setAudioCatalog((prev) => applyAudioAttachTranscriptResult(prev, frame));
+              break;
+            case "audioListResult":
+              setAudioCatalog((prev) => applyAudioListResult(prev, frame));
+              break;
+            case "audioDeleteResult":
+              setAudioCatalog((prev) => applyAudioDeleteResult(prev, frame, audioDeleteRequestIds()));
+              if (typeof frame.requestId === "string") {
+                setAudioDeleteRequestIds((prev) => {
+                  const next = { ...prev };
+                  delete next[frame.requestId as string];
+                  return next;
+                });
               }
               break;
             case "rateLimitsSnapshot":
@@ -292,9 +334,55 @@ export async function requestRolloutAttachment(attachmentId: string): Promise<vo
 
 export async function requestAudio(audioId: string): Promise<void> {
   try {
-    await invoke("request_audio", { audioId });
+    const requestId = await invoke<string>("request_audio", { audioId });
+    if (requestId) {
+      setAudioRequestIds((prev) => ({ ...prev, [requestId]: audioId }));
+    }
   } catch (_) {
     setAudioById((prev) => ({ ...prev, [audioId]: { error: "Audio unavailable." } }));
+  }
+}
+
+export async function requestAudioAsset(audioId: string, appId = "clawix"): Promise<void> {
+  try {
+    await invoke<string>("audio_get", { audioId, appId });
+  } catch (_) {
+    /* preview mode or bridge unavailable */
+  }
+}
+
+export async function registerAudioAsset(request: Record<string, unknown>): Promise<void> {
+  try {
+    await invoke<string>("audio_register", { request });
+  } catch (_) {
+    /* preview mode or bridge unavailable */
+  }
+}
+
+export async function attachAudioTranscript(audioId: string, transcript: Record<string, unknown>): Promise<void> {
+  try {
+    await invoke<string>("audio_attach_transcript", { audioId, transcript });
+  } catch (_) {
+    /* preview mode or bridge unavailable */
+  }
+}
+
+export async function requestAudioCatalog(filter: Record<string, unknown> = { appId: "clawix", limit: 50, offset: 0 }): Promise<void> {
+  try {
+    await invoke<string>("audio_list", { filter });
+  } catch (_) {
+    setAudioCatalog(emptyAudioCatalogState);
+  }
+}
+
+export async function deleteAudioAsset(audioId: string, appId = "clawix"): Promise<void> {
+  try {
+    const requestId = await invoke<string>("audio_delete", { audioId, appId });
+    if (requestId) {
+      setAudioDeleteRequestIds((prev) => ({ ...prev, [requestId]: audioId }));
+    }
+  } catch (_) {
+    /* preview mode or bridge unavailable */
   }
 }
 

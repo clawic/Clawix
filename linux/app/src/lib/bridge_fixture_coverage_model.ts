@@ -29,7 +29,19 @@ export const supportedLinuxBridgeV1FixtureTypes = [
   "projectsSnapshot",
   "fileSnapshot",
   "requestAudio",
+  "audioGetBytes",
   "audioSnapshot",
+  "audioBytesResult",
+  "audioGet",
+  "audioRegister",
+  "audioAttachTranscript",
+  "audioList",
+  "audioDelete",
+  "audioGetResult",
+  "audioRegisterResult",
+  "audioAttachTranscriptResult",
+  "audioListResult",
+  "audioDeleteResult",
   "requestGeneratedImage",
   "generatedImageSnapshot",
   "requestRolloutAttachment",
@@ -46,18 +58,6 @@ export const supportedLinuxBridgeV1FixtureTypes = [
 export const pendingLinuxBridgeV1FixtureTypes = [
   "transcribeAudio",
   "transcriptionResult",
-  "audioRegister",
-  "audioAttachTranscript",
-  "audioGet",
-  "audioGetBytes",
-  "audioList",
-  "audioDelete",
-  "audioRegisterResult",
-  "audioAttachTranscriptResult",
-  "audioGetResult",
-  "audioBytesResult",
-  "audioListResult",
-  "audioDeleteResult"
 ] as const;
 
 export interface BridgeFixtureCoverage {
