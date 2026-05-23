@@ -4,7 +4,7 @@ import Foundation
 /// here (rather than referenced from `ClawJSService.audio`) because the
 /// client lives in `ClawixEngine` and the macOS-only supervisor enum is
 /// not reachable from the daemon helper that also consumes this client.
-public let clawJSAudioDefaultPort: UInt16 = 7794
+public let clawJSAudioDefaultPort: UInt16 = ClawJSAudioEndpointResolver.defaultPort
 
 /// Loopback HTTP client for the `@clawjs/audio` service that the ClawJS
 /// supervisor spawns on `127.0.0.1:7794`. Endpoint paths mirror what
@@ -44,7 +44,7 @@ public struct ClawJSAudioClient: Sendable {
 
     public init(
         bearerToken: String,
-        origin: URL = URL(string: "http://127.0.0.1:\(clawJSAudioDefaultPort)")!
+        origin: URL = ClawJSAudioEndpointResolver.origin()
     ) {
         self.bearerToken = bearerToken
         self.origin = origin

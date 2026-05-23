@@ -363,7 +363,7 @@ extension BridgeDecodingError: CustomStringConvertible {
         case .oversizedFrame:
             return "Send a smaller bridge frame or use a file/audio handoff instead of inline payload bytes."
         case .invalidJSON:
-            return "Serialize the bridge frame as valid JSON using BridgeCoder-compatible keys."
+            return "Serialize the bridge frame as valid JSON using bridge-frame-compatible keys."
         case .nonObjectFrame:
             return "Send a top-level JSON object with schemaVersion and type."
         case .missingField, .invalidField:

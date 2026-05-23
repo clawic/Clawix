@@ -28,12 +28,13 @@ public final class BridgeServer {
     ///   disable Bonjour when another signed host owns discovery.
     public init(
         host: EngineHost,
-        port: UInt16 = 24080,
+        port: UInt16 = ClawixBridgeEndpointResolver.defaultWebSocketPort,
         pairing: PairingService? = nil,
         publishBonjour: Bool = true
     ) {
         self.host = host
-        self.port = NWEndpoint.Port(rawValue: port) ?? NWEndpoint.Port(rawValue: 24080)!
+        self.port = NWEndpoint.Port(rawValue: port)
+            ?? NWEndpoint.Port(rawValue: ClawixBridgeEndpointResolver.defaultWebSocketPort)!
         self.pairing = pairing ?? .shared
         self.publishBonjour = publishBonjour
     }

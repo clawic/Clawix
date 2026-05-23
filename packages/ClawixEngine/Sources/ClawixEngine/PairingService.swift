@@ -31,7 +31,10 @@ public final class PairingService {
     /// singleton uses the host app's `appPrefsSuite`. The default
     /// initialiser falls back to `.standard`, which is fine for the
     /// stand-alone daemon binary that has its own bundle id.
-    public init(defaults: UserDefaults = .standard, port: UInt16 = 24080) {
+    public init(
+        defaults: UserDefaults = .standard,
+        port: UInt16 = ClawixBridgeEndpointResolver.defaultWebSocketPort
+    ) {
         self.defaults = defaults
         self.port = port
     }
