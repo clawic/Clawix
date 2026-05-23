@@ -44,6 +44,10 @@ enum ClawixAppRole {
 @main
 enum ClawixAppEntry {
     static func main() {
+        // Translate `open -n --args …` agent flags into the environment before
+        // anything reads it, so a provisioned instance isolates its state and
+        // starts its control server. No-op on normal launches.
+        ClxAgentInstance.applyLaunchArguments()
         LaunchMilestones.mark(.processStart)
         switch ClawixAppRole.current {
         case .main:    ClawixApp.main()
@@ -846,6 +850,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         ClawixHostBootstrap.runOnce()
+        // Agent instances expose a loopback control server and write heartbeats.
+        // Gated on CLAWIX_AGENT_INSTANCE, so this is inert in normal builds.
+        ClxAgentInstance.startIfAgent()
 
         // Install the user-chosen interface appearance (system / light /
         // dark). Replaces the old hardcoded dark lock; the persisted
