@@ -13,22 +13,41 @@ public sealed class InMemoryEngineHost : IEngineHost
 {
     private BridgeRuntimeState _state = new BridgeRuntimeState.Ready();
     private List<WireSession> _sessions = new();
+    private (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) _rateLimits
+        = (null, new Dictionary<string, WireRateLimitSnapshot>());
 
     public BridgeRuntimeState BridgeStateCurrent => _state;
     public IReadOnlyList<WireSession> BridgeSessionsCurrent => _sessions;
     public (WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) BridgeRateLimitsCurrent
-        => (null, new Dictionary<string, WireRateLimitSnapshot>());
+        => _rateLimits;
     public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; set; } = [];
 
-    public event Action<BridgeRuntimeState>? BridgeStateChanged { add { } remove { } }
+    public event Action<BridgeRuntimeState>? BridgeStateChanged;
     public event Action<IReadOnlyList<WireSession>>? BridgeSessionsChanged;
-    public event Action<MessagesEvent>? MessagesChanged { add { } remove { } }
-    public event Action<(WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId)>? RateLimitsChanged { add { } remove { } }
+    public event Action<MessagesEvent>? MessagesChanged;
+    public event Action<(WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId)>? RateLimitsChanged;
 
     public void SetSessions(IEnumerable<WireSession> sessions)
     {
         _sessions = sessions.ToList();
         BridgeSessionsChanged?.Invoke(_sessions);
+    }
+
+    public void SetState(BridgeRuntimeState state)
+    {
+        _state = state;
+        BridgeStateChanged?.Invoke(state);
+    }
+
+    public void PublishMessage(MessagesEvent ev)
+    {
+        MessagesChanged?.Invoke(ev);
+    }
+
+    public void SetRateLimits(WireRateLimitSnapshot? snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> byLimitId)
+    {
+        _rateLimits = (snapshot, byLimitId);
+        RateLimitsChanged?.Invoke(_rateLimits);
     }
 
     public Task HandleSendMessageAsync(string sessionId, string text, IReadOnlyList<WireAttachment> attachments, CancellationToken ct) => Task.CompletedTask;

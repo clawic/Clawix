@@ -119,6 +119,95 @@ public sealed class BridgeSessionDispatchParityTests
         await server.StopAsync();
     }
 
+    [Fact]
+    public async Task HostEvents_PushBridgeFramesToAuthenticatedDesktopClients()
+    {
+        var port = ReserveLoopbackPort();
+        var pairing = new PairingService(new InMemoryPairingStore(), (ushort)port);
+        var host = new InMemoryEngineHost();
+
+        await using var server = new BridgeServer(
+            host,
+            pairing,
+            bindAddress: IPAddress.Loopback,
+            port: (ushort)port);
+        await server.StartAsync();
+
+        using var client = new ClientWebSocket();
+        await client.ConnectAsync(new Uri($"ws://127.0.0.1:{port}"), CancellationToken.None);
+
+        await SendAsync(client, new BridgeBody.Auth(
+            pairing.Bearer,
+            "Windows desktop",
+            ClientKind.Desktop,
+            "client-win",
+            "install-win",
+            "device-win"));
+        Assert.IsType<BridgeBody.AuthOk>((await ReceiveAsync(client)).Body);
+        Assert.IsType<BridgeBody.BridgeState>((await ReceiveAsync(client)).Body);
+
+        await SendAsync(client, new BridgeBody.OpenSession("session-1", null));
+        Assert.IsType<BridgeBody.MessagesSnapshot>((await ReceiveAsync(client)).Body);
+
+        host.SetSessions([
+            new WireSession
+            {
+                Id = "session-1",
+                Title = "Parity",
+                CreatedAt = DateTimeOffset.Parse("2026-05-23T00:00:00Z"),
+            },
+        ]);
+        var sessions = Assert.IsType<BridgeBody.SessionsSnapshot>((await ReceiveAsync(client)).Body);
+        Assert.Single(sessions.Sessions);
+
+        host.PublishMessage(new MessagesEvent.Appended
+        {
+            SessionId = "session-1",
+            Message = new WireMessage
+            {
+                Id = "message-1",
+                Role = WireRole.Assistant,
+                Content = "hello",
+                Timestamp = DateTimeOffset.Parse("2026-05-23T00:00:01Z"),
+            },
+        });
+        var appended = Assert.IsType<BridgeBody.MessageAppended>((await ReceiveAsync(client)).Body);
+        Assert.Equal("message-1", appended.Message.Id);
+
+        host.PublishMessage(new MessagesEvent.Streaming
+        {
+            SessionId = "session-1",
+            MessageId = "message-1",
+            Content = "hello world",
+            ReasoningText = "thinking",
+            Finished = false,
+        });
+        var streaming = Assert.IsType<BridgeBody.MessageStreaming>((await ReceiveAsync(client)).Body);
+        Assert.Equal("hello world", streaming.Content);
+
+        host.SetRateLimits(
+            new WireRateLimitSnapshot
+            {
+                LimitId = "codex",
+                Primary = new WireRateLimitWindow
+                {
+                    UsedPercent = 20,
+                    ResetsAt = 1777000000,
+                    WindowDurationMins = 60,
+                },
+            },
+            new Dictionary<string, WireRateLimitSnapshot>());
+        Assert.IsType<BridgeBody.RateLimitsUpdated>((await ReceiveAsync(client)).Body);
+
+        host.SetState(new BridgeRuntimeState.Error("boom"));
+        var state = Assert.IsType<BridgeBody.BridgeState>((await ReceiveAsync(client)).Body);
+        Assert.Equal("error", state.State);
+        Assert.Equal("boom", state.Message);
+
+        await client.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
+        await server.StopAsync();
+    }
+
     private static int ReserveLoopbackPort()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -136,12 +225,13 @@ public sealed class BridgeSessionDispatchParityTests
 
     private static async Task<BridgeFrame> ReceiveAsync(ClientWebSocket socket)
     {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var buffer = new byte[32 * 1024];
         using var stream = new MemoryStream();
         WebSocketReceiveResult result;
         do
         {
-            result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), timeout.Token);
             stream.Write(buffer, 0, result.Count);
         } while (!result.EndOfMessage);
 

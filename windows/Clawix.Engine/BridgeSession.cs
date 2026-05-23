@@ -20,6 +20,7 @@ public sealed class BridgeSession
     private readonly ILogger _logger;
     private readonly SemaphoreSlim _sendGate = new(1, 1);
     private bool _authenticated;
+    private bool _hostEventsAttached;
     private ClientKind _clientKind = ClientKind.Companion;
     private readonly HashSet<string> _subscribedSessionIds = new(StringComparer.Ordinal);
 
@@ -59,6 +60,7 @@ public sealed class BridgeSession
         }
         finally
         {
+            DetachHostEvents();
             try { await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", CancellationToken.None); }
             catch { }
         }
@@ -88,10 +90,84 @@ public sealed class BridgeSession
 
         _authenticated = true;
         _clientKind = auth.ClientKind;
+        AttachHostEvents();
         await SendAsync(new BridgeFrame(new BridgeBody.AuthOk(_pairing.BonjourServiceName)), ct);
         var state = _host.BridgeStateCurrent;
         await SendAsync(new BridgeFrame(new BridgeBody.BridgeState(
             state.WireTag, _host.BridgeSessionsCurrent.Count, state.ErrorMessage)), ct);
+    }
+
+    private void AttachHostEvents()
+    {
+        if (_hostEventsAttached) return;
+        _host.BridgeStateChanged += OnBridgeStateChanged;
+        _host.BridgeSessionsChanged += OnBridgeSessionsChanged;
+        _host.MessagesChanged += OnMessagesChanged;
+        _host.RateLimitsChanged += OnRateLimitsChanged;
+        _hostEventsAttached = true;
+    }
+
+    private void DetachHostEvents()
+    {
+        if (!_hostEventsAttached) return;
+        _host.BridgeStateChanged -= OnBridgeStateChanged;
+        _host.BridgeSessionsChanged -= OnBridgeSessionsChanged;
+        _host.MessagesChanged -= OnMessagesChanged;
+        _host.RateLimitsChanged -= OnRateLimitsChanged;
+        _hostEventsAttached = false;
+    }
+
+    private void OnBridgeStateChanged(BridgeRuntimeState state)
+    {
+        SendEvent(new BridgeFrame(new BridgeBody.BridgeState(
+            state.WireTag,
+            _host.BridgeSessionsCurrent.Count,
+            state.ErrorMessage)));
+    }
+
+    private void OnBridgeSessionsChanged(IReadOnlyList<WireSession> sessions)
+    {
+        SendEvent(new BridgeFrame(new BridgeBody.SessionsSnapshot(sessions)));
+    }
+
+    private void OnMessagesChanged(MessagesEvent ev)
+    {
+        if (!_subscribedSessionIds.Contains(ev.SessionId)) return;
+        BridgeBody body = ev switch
+        {
+            MessagesEvent.Snapshot snapshot => new BridgeBody.MessagesSnapshot(ev.SessionId, snapshot.Messages, snapshot.HasMore),
+            MessagesEvent.Appended appended => new BridgeBody.MessageAppended(ev.SessionId, appended.Message),
+            MessagesEvent.Streaming streaming => new BridgeBody.MessageStreaming(
+                ev.SessionId,
+                streaming.MessageId,
+                streaming.Content,
+                streaming.ReasoningText,
+                streaming.Finished),
+            _ => throw new InvalidOperationException($"Unknown messages event: {ev.GetType().Name}"),
+        };
+        SendEvent(new BridgeFrame(body));
+    }
+
+    private void OnRateLimitsChanged((WireRateLimitSnapshot? Snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> ByLimitId) payload)
+    {
+        if (_clientKind != ClientKind.Desktop) return;
+        SendEvent(new BridgeFrame(new BridgeBody.RateLimitsUpdated(payload.Snapshot, payload.ByLimitId)));
+    }
+
+    private void SendEvent(BridgeFrame frame)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (_socket.State == WebSocketState.Open)
+                    await SendAsync(frame, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "failed to push bridge frame {Type}", frame.Body.TypeTag);
+            }
+        });
     }
 
     private async Task DispatchAsync(BridgeFrame frame, CancellationToken ct)
