@@ -36,8 +36,13 @@ enum SettingsUtilities {
             NSWorkspace.shared.open(URL(fileURLWithPath: result.configPath))
             ToastCenter.shared.show("config.toml opened")
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(failureMessage(for: error, surface: "settings.config.open"), icon: .error)
         }
+    }
+
+    static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 }
 

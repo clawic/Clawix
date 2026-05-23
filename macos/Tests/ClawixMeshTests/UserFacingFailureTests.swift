@@ -25,6 +25,10 @@ final class UserFacingFailureTests: XCTestCase {
             .daemonUnavailable
         )
         XCTAssertEqual(
+            UserFacingFailure.classify("background bridge registered but not loaded").kind,
+            .daemonUnavailable
+        )
+        XCTAssertEqual(
             UserFacingFailure.classify("workspace is denied on this host").kind,
             .permissionDenied
         )
@@ -47,6 +51,10 @@ final class UserFacingFailureTests: XCTestCase {
         XCTAssertEqual(
             UserFacingFailure.classify("Network is unreachable").kind,
             .networkOffline
+        )
+        XCTAssertEqual(
+            UserFacingFailure.classify("ClawJS index service is not running.").kind,
+            .serviceUnavailable
         )
         XCTAssertEqual(
             UserFacingFailure.classify("opaque provider error").displayMessage,

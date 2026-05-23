@@ -43,6 +43,7 @@ struct UserFacingFailure: Equatable {
             "permissions were denied",
             "permission was denied",
             "workspace is denied",
+            "rejected this workspace",
             "workspacedenied",
             "forbidden",
             "http 401",
@@ -72,9 +73,13 @@ struct UserFacingFailure: Equatable {
         if containsAny(lower, [
             "background bridge",
             "bridge is not ready",
+            "connection refused",
             "daemonunreachable",
             "daemon unreachable",
             "daemon is unavailable",
+            "ollama server",
+            "runtime did not respond",
+            "runtime exited",
             "reconnects",
             "reconnecting"
         ]) {
@@ -94,15 +99,23 @@ struct UserFacingFailure: Equatable {
 
         if containsAny(lower, [
             "service is unavailable",
+            "service is not running",
             "service unavailable",
             "servicenotready",
             "service not ready",
+            "not reachable",
             "could not reach"
         ]) {
             return UserFacingFailure(kind: .serviceUnavailable, rawMessage: trimmed, retryable: true)
         }
 
         return UserFacingFailure(kind: .unknown, rawMessage: trimmed, retryable: true)
+    }
+
+    static func displayMessage(for rawMessage: String, surface: String) -> String {
+        let failure = classify(rawMessage)
+        failure.log(surface: surface)
+        return failure.displayMessage
     }
 
     var displayMessage: String {
