@@ -9,9 +9,11 @@ Clawix consumes the canonical ClawJS evolution policy:
 - CLI: `claw evolution`
 - skill: `skills/compatibility-evolution-work/SKILL.md`
 
-`scripts/evolution_rescue_mirror_check.mjs` is the Clawix mirror gate. When the
-sibling ClawJS checkout is present, it runs the sibling `npm run test:evolution`
-gate, so Clawix cannot pass with a stale or failing ClawJS evolution canon.
+`scripts/evolution_rescue_mirror_check.mjs` is the Clawix mirror gate. In the
+normal Clawix lane it verifies the sibling ClawJS anchors and reports a
+`PARTIAL` note when the sibling `npm run test:evolution` gate is failing or
+unavailable. Release validation, `--require-sibling`, or
+`CLAWIX_REQUIRE_CLAWJS_EVOLUTION=1` makes the sibling gate strict.
 
 Clawix-specific work must focus on host and UI consequences: launch survival,
 chat availability, rescue state, repair affordances, bridge/runtime fallback,

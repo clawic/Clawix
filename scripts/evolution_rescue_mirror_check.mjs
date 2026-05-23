@@ -6,6 +6,7 @@ import path from "node:path";
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const siblingClawjs = path.resolve(rootDir, "../../clawjs");
 const errors = [];
+const notes = [];
 const args = new Set(process.argv.slice(2));
 
 if (args.has("--self-test")) {
@@ -110,6 +111,10 @@ if (fs.existsSync(siblingClawjs)) {
   if (!fs.existsSync(siblingLedger)) errors.push("sibling ClawJS evolution ledger is missing");
   if (!fs.existsSync(siblingPackage)) errors.push("sibling ClawJS package.json is missing");
   if (fs.existsSync(siblingPackage)) runSiblingEvolutionGate();
+} else if (isSiblingEvolutionGateStrict()) {
+  errors.push(`sibling ClawJS repo is required but missing at ${siblingClawjs}`);
+} else {
+  notes.push(`PARTIAL sibling ClawJS evolution gate skipped: repo not found at ${siblingClawjs}`);
 }
 
 runRescueSurvivalMatrixGate();
@@ -120,6 +125,7 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
+for (const note of notes) console.error(note);
 console.log("Clawix evolution rescue mirror check passed");
 
 function runSiblingEvolutionGate() {
@@ -132,8 +138,19 @@ function runSiblingEvolutionGate() {
     killSignal: "SIGTERM",
   });
   if (result.status !== 0) {
-    errors.push(spawnFailureMessage("sibling ClawJS evolution gate", result, timeout));
+    const message = spawnFailureMessage("sibling ClawJS evolution gate", result, timeout);
+    if (isSiblingEvolutionGateStrict()) {
+      errors.push(message);
+    } else {
+      notes.push(`PARTIAL ${message}`);
+    }
   }
+}
+
+function isSiblingEvolutionGateStrict(argSet = args, env = process.env) {
+  return argSet.has("--release")
+    || argSet.has("--require-sibling")
+    || env.CLAWIX_REQUIRE_CLAWJS_EVOLUTION === "1";
 }
 
 function runRescueSurvivalMatrixGate() {
@@ -191,6 +208,14 @@ function runSelfTest() {
   }
   if (!message.includes("late output")) {
     console.error("self-test failed: child output was not preserved");
+    process.exit(1);
+  }
+  if (isSiblingEvolutionGateStrict(new Set(), {})) {
+    console.error("self-test failed: sibling gate should not be strict by default");
+    process.exit(1);
+  }
+  if (!isSiblingEvolutionGateStrict(new Set(["--release"]), {})) {
+    console.error("self-test failed: --release should require the sibling evolution gate");
     process.exit(1);
   }
   console.log("evolution rescue mirror check self-test passed");

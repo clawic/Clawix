@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "description": "Clawix-wide destructive/data-moving source classifications. The local no-irreversible-data-loss check scans source files for delete/archive/trash/purge-like operations and requires every match to map to one of these entries or an explicit non-data-loss ignore.",
+  "sourceScan": {
+    "roots": [
+      "macos/Sources",
+      "macos/Helpers/Bridged/Sources",
+      "ios/Sources",
+      "android/app/src",
+      "linux/app/src",
+      "windows",
+      "cli/lib",
+      "web/src",
+      "packages"
+    ],
+    "extensions": [
+      ".swift",
+      ".kt",
+      ".ts",
+      ".tsx",
+      ".js",
+      ".mjs",
+      ".cs",
+      ".sh"
+    ],
+    "excludePathPatterns": [
+      "/.build/",
+      "/build/",
+      "/node_modules/",
+      "/__pycache__/",
+      "/web-dist/assets/",
+      "BIP39Wordlist.swift$",
+      "/Tests/"
+    ],
+    "keywordPattern": "\\b(delete|deleteAll|archive|unarchive|trash|purge|wipe|erase|destroy|rmSync|removeItem|DELETE|DROP)\\b|fs\\.rm|\\.deleteAll\\("
+  },
+  "ignoredMatches": [
+    {
+      "id": "visual-icons-copy-and-comments",
+      "reason": "Icon names, glyph bridges, explanatory text, and comments that do not execute deletion or data movement.",
+      "pathPattern": ".*",
+      "linePattern": "(Lucide|TrashIcon|ArchiveIcon|archivebox|FolderOpenIcon|MenuIconImage|Theme/LucideBridge|LucideBridge|Image\\(systemName|Comment|///|//|\\* |Text\\(|title:|subtitle:|detail:|return \"|case \\.?(trash|archive)|case \"trash\"|case \"archive\"|static let (delete|archive)|public static let delete|price-drop|removed id|Removed|DiffLineKind|\\.removed|destroy\\(|Delete is intentionally|nothing to delete)"
+    },
+    {
+      "id": "in-memory-listener-or-cache-remove",
+      "reason": "In-memory listener sets, render caches, transient dictionaries, or DOM/request bookkeeping; no durable user data is deleted.",
+      "pathPattern": ".*",
+      "linePattern": "(listeners\\.delete|stateListeners\\.delete|htmlCache\\.delete|delete pending|pending\\[|inflight\\.remove|activeRequests\\.removeAll|remove\\(key\\)|eventCoalescer\\.reset|stdoutFramer\\.reset|recognizer\\?\\.destroy|socket\\.destroy)"
+    },
+    {
+      "id": "ui-state-reset-or-selection-remove",
+      "reason": "Ephemeral UI state, array selection, visual state, or reorder bookkeeping; no durable record is deleted.",
+      "pathPattern": ".*",
+      "linePattern": "(Color\\.clear|\\.clearContents|selectedIds\\.remove|items\\.remove\\(|entries\\.remove|commandsDraft\\.remove|chips\\.remove|browserTabsLoading\\.remove|expandedReasoning\\.remove|enabledCapabilityIDs\\.remove|removeItem\\(slot|remove\\(at: index\\)|remove\\(at idx|remove\\(at: idx|removeAll \\{ \\$0 ==|removeAll \\{ \\$0\\.id|messagesByChat|reset selection|resetWidget|reset\\(reason|StoreCancellation|DatabaseManagerCancellation|DriveStoreCancellation|MemoryStoreCancellation)"
+    },
+    {
+      "id": "tests-fixtures-and-dump-cleanup",
+      "reason": "Test fixture cleanup and generated fixture dump cleanup.",
+      "pathPattern": "(windows/scripts/dump-fixtures\\.sh|.*Tests.*)",
+      "linePattern": ".*"
+    }
+  ],
+  "classifiedActions": [
+    {
+      "id": "chat-archive-unarchive",
+      "class": "recoverable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["trash-archive", "local-delete"],
+      "status": "verified",
+      "confirmation": "ordinary_ui_action",
+      "recoveryOrReport": ["archived chat section", "unarchive action", "runtime mirror rollback on failure"],
+      "sourcePatterns": [
+        { "pathPattern": "(ConversationActions|ArchivesRepository|SidebarThreadProjection|ClawixProtocol|BridgeProtocol|DaemonEngineHost|OpenCodeDaemonEngineHost|clawix-bridge/main|windows/Clawix\\.Bridged|web/src/bridge/store|android/app/src/main/java/.*/chatlist/ChatActionsSheet)", "linePattern": "(archive|unarchive|thread/archive|thread/unarchive|archived)" },
+        { "pathPattern": "(ContentChrome|SidebarChatContextMenu|SidebarView|Sidebar/)", "linePattern": "(archive|unarchive)" }
+      ]
+    },
+    {
+      "id": "local-overrides-reset",
+      "class": "rebuildable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["local-delete"],
+      "status": "verified",
+      "confirmation": "destructive confirmation sheet with itemized counts",
+      "recoveryOrReport": ["reload from framework state", "Codex data explicitly unaffected"],
+      "sourcePatterns": [
+        { "pathPattern": "SettingsView\\+GeneralPage\\.swift", "linePattern": "(Permanently delete|permanently delete|Reset local overrides|Local archive entries|onConfirm: \\{ appState\\.resetLocalOverrides)" },
+        { "pathPattern": "Persistence/Database\\.swift", "linePattern": "DELETE FROM (pinned_threads|projects|chat_project_overrides|projectless_threads|local_archives|session_titles|hidden_codex_roots|sidebar_snapshot|sidebar_snapshot_project|project_sort_order|app_state_outbox|app_state_sync_receipts|meta)" },
+        { "pathPattern": "(AppState/Projects|Persistence/ProjectsRepository)\\.swift", "linePattern": "(projectsRepo\\.delete|func delete\\(id: UUID\\))" }
+      ]
+    },
+    {
+      "id": "state-sync-replace-cache",
+      "class": "rebuildable",
+      "policyId": "host-sync-apply-plan-reconcile",
+      "targets": ["sync-apply"],
+      "status": "verified",
+      "confirmation": "not required for framework-owned cache replacement",
+      "recoveryOrReport": ["rebuild from ClawJS app-state source", "sync receipts/outbox remain separate"],
+      "sourcePatterns": [
+        { "pathPattern": "ClawJSAppStateCacheSync\\.swift", "linePattern": "(DELETE FROM (projects|project_sort_order|pinned_threads|session_titles|local_archives|sidebar_snapshot|sidebar_snapshot_project|terminal_tabs)|archive)" },
+        { "pathPattern": "(PinsRepository|ProjectOrdersRepository|SnapshotRepository|TerminalPersistence)\\.swift", "linePattern": "(DELETE FROM|\\.deleteAll\\()" },
+        { "pathPattern": "ClawJSAppStateClient\\.swift", "linePattern": "(project\\.delete|pin\\.delete|archive\\.delete|archive\\.set|terminal\\.delete|static func (un)?archive)" }
+      ]
+    },
+    {
+      "id": "temporary-file-and-cache-cleanup",
+      "class": "rebuildable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["local-delete"],
+      "status": "verified",
+      "confirmation": "not required for temporary files, generated outputs, cache misses, logs, runtime installers, or token handoff files",
+      "recoveryOrReport": ["regenerated on demand", "best-effort cleanup failure is non-fatal or reported by caller"],
+      "sourcePatterns": [
+        { "pathPattern": ".*", "linePattern": "(removeItem\\(at: (outFile|stdoutURL|stderrURL|tmpURL|temporaryURL|tempURL|tempSourceURL|tarball|rotatedLogURL|planFileURL|tokenURL|target|entry|path|url|dest|destination|runtimeRoot|Self\\.runtimeRoot|root|audioURL)\\)|removeItem\\(atPath: path\\)|file\\.delete\\(\\)|out\\.delete\\(\\)|outputFile\\?\\.delete\\(\\)|tmp\\.delete\\(\\)|fs\\.rmSync\\(stagingDir|fs\\.rmSync\\(archive|fs\\.renameSync\\(archive|fs\\.renameSync\\(platform\\.BIN_DIR)" },
+        { "pathPattern": "(FaviconCache|FirstPaintCache|SnapshotCache|BridgeFixtureExporter|AudioCatalogRegistration|MacControlCenter|ScreenToolService|QuickAskDiag|AndroidSimulatorProcess|IOSSimulatorFramebufferController|LocalModelsRuntime|ClawJSService|ClawJSMacCareClient|DatabaseClient|DatabaseWorkbenchOperations|ReferencesHomeView|ImagePreviewOverlay|EngineHost|DaemonAudioIngest)", "linePattern": "(removeItem|delete\\(\\)|fs\\.rm|DELETE)" }
+      ]
+    },
+    {
+      "id": "host-auth-and-secret-token-cleanup",
+      "class": "rebuildable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["agent-action", "local-delete"],
+      "status": "verified",
+      "confirmation": "logout or supervisor cleanup action",
+      "recoveryOrReport": ["reauthentication recreates token material", "supervisor reports service errors separately"],
+      "sourcePatterns": [
+        { "pathPattern": "(BackendAuthCoordinator|ClawJSServiceDirectoryResolver|ClawJSServiceSupervisor|SecretsLocalSecretKey|SecretsManager)\\.swift", "linePattern": "(authURL|tokenURL|delete\\(\\)|removeItem|eventMask)" }
+      ]
+    },
+    {
+      "id": "agent-library-record-delete",
+      "class": "recoverable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["agent-action", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "mixed: several UI call sites set deleteConfirm; local folder fallback needs a dedicated recovery receipt audit",
+      "recoveryOrReport": ["framework delete path reports via refresh/error state", "local file fallback currently removes folder"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Attach exact confirmation/recovery receipts to all agent/personality/skill-collection/connection delete fallbacks or convert them to trash/archive."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(AgentStore|AgentDetailView|AgentEditorSheet|ConnectionsHomeView|PersonalitiesHomeView|SkillCollectionsHomeView|Skills/SkillDetailView)\\.swift", "linePattern": "(deleteConfirm|trash|delete|removeItem)" },
+        { "pathPattern": "ClawJSFrameworkRecordsClient\\.swift", "linePattern": "(\\[\"(snippets|skills|agents|personalities|skill-collections|connections|providers).*delete|\"providers\", \"routing\", \"delete\")" }
+      ]
+    },
+    {
+      "id": "custom-app-storage-delete",
+      "class": "recoverable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["agent-action", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "app SDK storage delete is programmatic and currently lacks per-key human confirmation",
+      "recoveryOrReport": ["host operation policy gate", "surface reporter partial/failure state"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Classify SDK storage delete by app trust level and require a host-visible receipt for durable keys."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(AppBridgeMessageHandler|ClawixAppsSDK)\\.swift", "linePattern": "storage\\.delete|delete: function" },
+        { "pathPattern": "web/src/lib/storage\\.ts", "linePattern": "localStorage\\.removeItem" }
+      ]
+    },
+    {
+      "id": "app-folder-delete",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "policyId": "host-purge-human-only",
+      "targets": ["hard-purge", "local-delete"],
+      "status": "verified",
+      "confirmation": "destructive alert names the app and states folder removal cannot be undone",
+      "recoveryOrReport": ["app list refresh", "error shown through throwing call sites"],
+      "sourcePatterns": [
+        { "pathPattern": "(AppsHomeView|AppsSidebarSection|AppsSettingsPage|AppsStore)\\.swift", "linePattern": "(appsStore\\.delete|func delete\\(|removeItem\\(at: dir\\)|Delete|removed from disk|cannot be undone|pin/delete)" }
+      ]
+    },
+    {
+      "id": "remote-mesh-host-delete",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "policyId": "host-provider-hard-delete-exact-approval",
+      "targets": ["external-provider-mutation", "provider-hard-delete"],
+      "status": "baseline_gap",
+      "confirmation": "hard-delete client/store path exists; exact human confirmation evidence is not established in this slice",
+      "recoveryOrReport": ["revoke/unrevoke soft-delete path exists", "store surfaces lastError on failure"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Require UI-level exact confirmation and signed-host receipt before Mesh removeHost can be invoked."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(MeshClient|MeshStore)\\.swift", "linePattern": "(DELETE /v1/mesh/hosts|removeHost|drop the host|Hard-delete|delete\\(|httpMethod = \"DELETE\")" }
+      ]
+    },
+    {
+      "id": "contacts-calendar-delete",
+      "class": "external_recoverable",
+      "policyId": "host-provider-recoverable-first",
+      "targets": ["external-provider-mutation"],
+      "status": "baseline_gap",
+      "confirmation": "contacts delete button and calendar delete store path need explicit confirmation evidence",
+      "recoveryOrReport": ["backend result reloaded or lastError set"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Add exact confirmation or provider trash/undo evidence for Contacts and Calendar delete actions."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(Contacts|Calendar)/.*\\.swift", "linePattern": "(delete\\(|Delete|backend\\.delete|deleteEvent|eventID)" }
+      ]
+    },
+    {
+      "id": "database-delete-and-sql-drop",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "policyId": "host-provider-hard-delete-exact-approval",
+      "targets": ["external-provider-mutation", "provider-hard-delete"],
+      "status": "baseline_gap",
+      "confirmation": "database mutation manager has mutation keys; workbench SQL DELETE/DROP needs exact approval evidence per connection",
+      "recoveryOrReport": ["mutation result/error state", "external database backup/transaction evidence pending"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Bind database DELETE/DROP execution to explicit confirmation, transaction/preview, and receipt evidence."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "Database/.*\\.swift", "linePattern": "(DELETE|DROP|TRUNCATE|delete|removeItem|DatabaseMutationKey|onDelete|method: \"DELETE\")" }
+      ]
+    },
+    {
+      "id": "drive-trash-and-hard-delete",
+      "class": "external_recoverable",
+      "policyId": "host-provider-recoverable-first",
+      "targets": ["trash-archive", "provider-hard-delete"],
+      "status": "verified",
+      "confirmation": "trash is direct recoverable action; hard delete uses Delete item alert and DriveTools confirm flag",
+      "recoveryOrReport": ["trash view", "restore action", "mutation error published on failure"],
+      "sourcePatterns": [
+        { "pathPattern": "Drive/.*\\.swift", "linePattern": "(trash|delete|Delete item|confirm|restore|removeItem)" },
+        { "pathPattern": "ClawJSDriveClient\\.swift", "linePattern": "(/trash|DELETE|deleteItem|removeItem|let trash|private func delete|/items/)" }
+      ]
+    },
+    {
+      "id": "framework-record-delete",
+      "class": "external_recoverable",
+      "policyId": "host-provider-recoverable-first",
+      "targets": ["external-provider-mutation", "agent-action"],
+      "status": "baseline_gap",
+      "confirmation": "framework clients expose delete APIs; individual UI confirmations are mixed and not fully inventoried here",
+      "recoveryOrReport": ["client errors surface to store/UI", "framework source of truth may provide restore depending on resource"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Attach per-resource confirmation and recovery/report evidence for searches, monitors, memory notes, profile blocks, publishing channels, sessions projects, MCP, and Telegram deletes."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "ClawJS/(ClawJSIndexClient|ClawJSMemoryClient|ClawJSProfileClient|ClawJSPublishingClient|ClawJSSessionsClient|ClawJSSecretsClient|ClawJSSecretsBackend)\\.swift", "linePattern": "(DELETE|delete|archive|purge)" },
+        { "pathPattern": "(MCP|Memory|Telegram|Profile|Index|Life)/.*\\.swift", "linePattern": "(delete|DELETE|trash|purge)" }
+      ]
+    },
+    {
+      "id": "design-and-reference-delete",
+      "class": "recoverable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "some delete buttons set pending confirmation; design document/reference file deletes need complete recovery evidence",
+      "recoveryOrReport": ["local store reload/error messages"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Move design/reference deletes to trash or add exact confirmation plus export/snapshot receipt."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(Design|References).*\\.swift", "linePattern": "(delete|trash|removeItem|Could not delete)" },
+        { "pathPattern": "ios/Sources/Clawix/Design/.*\\.swift", "linePattern": "(delete|removeItem|trash)" }
+      ]
+    },
+    {
+      "id": "dictation-transcript-and-customization-delete",
+      "class": "snapshot_recoverable",
+      "policyId": "host-migration-snapshot-repair",
+      "targets": ["hard-purge", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "manual transcript delete and auto-delete retention settings exist; recovery-window/audit receipt is tracked as baseline debt",
+      "recoveryOrReport": ["recent cache refresh", "settings disclose auto-delete", "errors logged"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Backfill transcript/audio purge recovery-window metadata and audit receipts."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(Dictation|TranscriptionsRepository).*\\.swift", "linePattern": "(delete|deleteAll|Auto-delete|purge|trash|wipe|removeItem|removeItem\\(atPath)" }
+      ]
+    },
+    {
+      "id": "goal-banner-remove",
+      "class": "recoverable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["agent-action"],
+      "status": "baseline_gap",
+      "confirmation": "goal removal is destructive UI but needs explicit recovery/report classification",
+      "recoveryOrReport": ["goal state can be reloaded from thread goal metadata when available"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Confirm goal removal recovery semantics and add receipt or undo evidence."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "Goals/GoalBannerView\\.swift", "linePattern": "(Remove goal|trash)" }
+      ]
+    },
+    {
+      "id": "local-model-and-runtime-delete",
+      "class": "external_recoverable",
+      "policyId": "host-provider-recoverable-first",
+      "targets": ["external-provider-mutation", "local-delete"],
+      "status": "verified",
+      "confirmation": "model UI states deletion and redownload; runtime cleanup deletes only installed runtime/cache artifacts",
+      "recoveryOrReport": ["redownload model/runtime", "service actionError reports failures"],
+      "sourcePatterns": [
+        { "pathPattern": "(LocalModels|DictationModelStore|TranscriptionService).*\\.swift", "linePattern": "(delete|DELETE|trash|wipe|removeItem|could not delete|redownload|Use/Delete)" }
+      ]
+    },
+    {
+      "id": "mcp-server-delete",
+      "class": "external_recoverable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["agent-action", "external-provider-mutation"],
+      "status": "baseline_gap",
+      "confirmation": "MCP editor delete has visible copy but recovery/receipt semantics need classification",
+      "recoveryOrReport": ["MCP adapter refresh/error path"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Add MCP delete confirmation receipt and restore/recreate guidance."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "MCP/.*\\.swift", "linePattern": "(delete|trash|removed through the ClawJS MCP adapter)" }
+      ]
+    },
+    {
+      "id": "secrets-trash-restore-purge",
+      "class": "snapshot_recoverable",
+      "policyId": "host-purge-human-only",
+      "targets": ["trash-archive", "hard-purge"],
+      "status": "verified",
+      "confirmation": "move-to-trash and delete-forever confirmation requests name recovery window or irreversibility",
+      "recoveryOrReport": ["30-day trash", "restore action", "audit event for purge"],
+      "sourcePatterns": [
+        { "pathPattern": "(Secrets|SecretsVault|SecretsPersistence).*\\.swift", "linePattern": "(trash|purge|delete|DELETE|destroyed|ON DELETE CASCADE|Auto-purged|Moved to trash|Restored from trash|removeItem)" }
+      ]
+    },
+    {
+      "id": "provider-account-delete",
+      "class": "recoverable",
+      "policyId": "host-provider-recoverable-first",
+      "targets": ["external-provider-mutation", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "account edit sheet currently deletes directly; confirmation/recovery receipt is not verified",
+      "recoveryOrReport": ["account inventory refresh", "token refresh service notified"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Require confirmation and credential/keychain recovery or export note before provider account delete."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "Settings/Providers/.*\\.swift", "linePattern": "(delete|trash|Delete account)" },
+        { "pathPattern": "AIProviders/.*\\.swift", "linePattern": "(delete|trash|Remove the account)" }
+      ]
+    },
+    {
+      "id": "terminal-tab-delete",
+      "class": "recoverable",
+      "policyId": "host-agent-action-reversible-by-default",
+      "targets": ["local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "terminal tab delete/dropPersisted path lacks full recovery classification",
+      "recoveryOrReport": ["repository delete is local state only"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Confirm terminal tab persistence deletion has undo/recreate or explicit receipt."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "Terminal/.*\\.swift", "linePattern": "(delete|deleteAll|dropPersisted)" }
+      ]
+    },
+    {
+      "id": "platform-install-uninstall-purge",
+      "class": "irreversible_external_requires_exact_human_approval",
+      "policyId": "host-purge-human-only",
+      "targets": ["hard-purge", "local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "CLI uninstall purge deletes state when requested; exact host/user approval evidence is outside this source scan",
+      "recoveryOrReport": ["setup keeps .old archive during replacement", "uninstall --purge intentionally removes state"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Bind CLI purge/uninstall to explicit confirmation text and backup/export receipt."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "cli/lib/(setup|uninstall|taskscheduler|unpair)\\.js", "linePattern": "(rmSync|archive|reg.*delete|defaults.*delete|stateDir)" }
+      ]
+    },
+    {
+      "id": "web-pomodoro-local-delete",
+      "class": "recoverable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["local-delete", "trash-archive"],
+      "status": "baseline_gap",
+      "confirmation": "local example delete/archive actions are immediate and need undo/confirmation semantics if promoted",
+      "recoveryOrReport": ["local reducer state only", "not a provider mutation"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Add undo or confirmation to Pomodoro task/schedule/tracker delete actions before treating the screen as production data."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "web/src/screens/pomodoro/.*\\.(ts|tsx)", "linePattern": "(delete|archive|trash|category-archive|task-delete|schedule-delete|tracker-delete)" }
+      ]
+    },
+    {
+      "id": "portable-archive-verify-restore",
+      "class": "snapshot_recoverable",
+      "policyId": "host-import-overwrite-stage-or-snapshot",
+      "targets": ["import-overwrite", "export"],
+      "status": "verified",
+      "required": false,
+      "confirmation": "restore is staged/mapped before apply; verify reports incompatibility before mutation",
+      "recoveryOrReport": ["archive verification report", "restore graph"],
+      "sourcePatterns": [
+        { "pathPattern": "PortableArchiveSettingsPage\\.swift", "linePattern": "(archive|restore graph|Verify archive)" }
+      ]
+    },
+    {
+      "id": "audio-catalog-delete",
+      "class": "recoverable",
+      "policyId": "host-delete-archive-first",
+      "targets": ["local-delete"],
+      "status": "baseline_gap",
+      "confirmation": "audio catalog DELETE route is registered and bridged; UI confirmation/recovery evidence is not complete",
+      "recoveryOrReport": ["engine returns deleted bool", "client error path"],
+      "debt": {
+        "expiresAt": "2026-08-21",
+        "repair": "Classify audio catalog delete UI, receipt, and recovery behavior."
+      },
+      "sourcePatterns": [
+        { "pathPattern": "(Audio|ClawixEngine/Sources/ClawixEngine/EngineHost|PersistentSurfaceRegistry).*\\.swift", "linePattern": "(DELETE|delete\\(|deleted|/v1/audio)" }
+      ]
+    }
+  ]
+}

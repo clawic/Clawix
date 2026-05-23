@@ -10,6 +10,11 @@ and redacted receipts. Existing host gaps are tracked in `baseline.json`; new or
 touched destructive/data-moving Clawix surfaces must carry recovery policy
 evidence.
 
+`source-actions.json` classifies delete/archive/trash/purge-like source hits
+across the app. The checker scans platform, web, CLI, and shared package source
+files and fails when a new destructive/data-moving hit is not classified or
+explicitly ignored as non-data-loss behavior.
+
 Run:
 
 ```bash
