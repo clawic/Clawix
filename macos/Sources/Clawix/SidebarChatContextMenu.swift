@@ -72,6 +72,7 @@ struct SidebarChatContextMenuContent: View {
     let onCopyWorkingDirectory: () -> Void
     let onCopySessionId: () -> Void
     let onCopyDeeplink: () -> Void
+    let onCopyAsMarkdown: () -> Void
     let onForkLocal: () -> Void
 
     @State private var hovered: String?
@@ -147,6 +148,12 @@ struct SidebarChatContextMenuContent: View {
                  shortcut: "⌥⌘L",
                  enabled: hasThread,
                  action: onCopyDeeplink),
+            Item(id: "copyMarkdown",
+                 icon: "doc.on.doc",
+                 title: "Copy as Markdown",
+                 shortcut: nil,
+                 enabled: hasThread,
+                 action: onCopyAsMarkdown),
         ]
     }
 
@@ -332,6 +339,15 @@ final class SidebarChatContextMenuPanel: NSObject {
                 if let id = chat.clawixThreadId {
                     setPasteboardString("clawix://session/\(id)")
                 }
+                dismiss()
+            },
+            onCopyAsMarkdown: {
+                let messages = appState.chatStore.transcript(for: chat.id)?.messages ?? []
+                let markdown = messages.map { message -> String in
+                    let header = message.role == .user ? "## You" : "## Assistant"
+                    return "\(header)\n\n\(message.content)"
+                }.joined(separator: "\n\n")
+                setPasteboardString(markdown.isEmpty ? chat.title : markdown)
                 dismiss()
             },
             onForkLocal: {
