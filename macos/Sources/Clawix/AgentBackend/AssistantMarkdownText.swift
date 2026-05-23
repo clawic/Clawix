@@ -375,6 +375,7 @@ enum MarkdownParseCache {
         if let renderKey {
             if phase == .settled, let cached = cache.get(for: text) {
                 PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+                RenderProbe.tick("MarkdownParse.cache_hit")
                 let hit = cached.markingCacheHit()
                 return Result(
                     document: hit,
@@ -406,9 +407,11 @@ enum MarkdownParseCache {
             )
             if document.cacheHit {
                 PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+                RenderProbe.tick("MarkdownParse.cache_hit")
             } else if document.reusedBlockCount > 0 {
                 PerfSignpost.renderMarkdown.event("parse.incremental.reused_blocks", document.reusedBlockCount)
                 PerfSignpost.renderMarkdown.event("parse.incremental.tail_chars", document.reparsedCharacterCount)
+                RenderProbe.tick("MarkdownParse.incremental_reuse")
             }
             if phase == .settled, !document.cacheHit {
                 cache.set(document, for: text, cost: documentCacheCost(document))
@@ -425,6 +428,7 @@ enum MarkdownParseCache {
 
         if let cached = cache.get(for: text) {
             PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+            RenderProbe.tick("MarkdownParse.cache_hit")
             let hit = cached.markingCacheHit()
             return Result(
                 document: hit,
@@ -436,6 +440,7 @@ enum MarkdownParseCache {
             )
         }
         PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
+        RenderProbe.tick("MarkdownParse.cache_miss")
         let document = buildFullDocument(text, idPrefix: "full")
         cache.set(document, for: text, cost: documentCacheCost(document))
         return Result(
@@ -493,6 +498,7 @@ enum MarkdownParseCache {
         stableBlocks: [IndexedAnnotatedBlock]
     ) -> AssistantMarkdownDocument {
         PerfSignpost.renderMarkdown.event("parse.cache_miss.bytes", text.utf8.count)
+        RenderProbe.tick("MarkdownParse.cache_miss")
         return PerfSignpost.renderMarkdown.interval("parse") {
             let parseT0 = streamingPerfLogEnabled ? CFAbsoluteTimeGetCurrent() : 0
             // hot-path-ok maxBytes=2097152 reason=macOS assistant markdown parser rejects oversized sources before parse

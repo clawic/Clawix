@@ -48,22 +48,36 @@ struct ChatScrollBottomSentinel: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 15, *) {
-            content.onScrollGeometryChange(for: Bool.self) { geom in
+            content.onScrollGeometryChange(for: ChatScrollBottomGeometryState.self) { geom in
                 let visible = geom.containerSize.height
                     - geom.contentInsets.top - geom.contentInsets.bottom
                 let realOverflow = geom.contentSize.height > visible + 1
                 let distanceFromBottom = geom.contentSize.height
                     - (geom.contentOffset.y + visible)
-                return realOverflow && distanceFromBottom > threshold
-            } action: { _, isAway in
-                if awayFromBottom != isAway {
-                    awayFromBottom = isAway
+                let probeBucket = realOverflow
+                    ? Int(max(0, distanceFromBottom) / 320)
+                    : 0
+                return ChatScrollBottomGeometryState(
+                    isAwayFromBottom: realOverflow && distanceFromBottom > threshold,
+                    probeBucket: probeBucket
+                )
+            } action: { oldState, newState in
+                if oldState.probeBucket != newState.probeBucket {
+                    RenderProbe.tick("ChatScroll.position")
+                }
+                if awayFromBottom != newState.isAwayFromBottom {
+                    awayFromBottom = newState.isAwayFromBottom
                 }
             }
         } else {
             content
         }
     }
+}
+
+private struct ChatScrollBottomGeometryState: Equatable {
+    let isAwayFromBottom: Bool
+    let probeBucket: Int
 }
 
 struct WorkPillAnchorKey: PreferenceKey {
