@@ -27,7 +27,7 @@ import {
   PrimaryButton,
   type PomodoroPanel,
 } from "./pomodoro-view-controls";
-import { storage } from "../../lib/storage";
+import { StorageKeys, storage } from "../../lib/storage";
 import cx from "../../lib/cx";
 import { t } from "../../localization/i18n";
 import {
@@ -50,7 +50,9 @@ import {
   ZapIcon,
 } from "../../icons";
 
-const STORE_KEY = "pomodoro.sessionParity.v1";
+// UI-only Pomodoro scratchpad. This is not framework sessions/messages,
+// Calendar/Reminders authority, blocker enforcement, or runtime state.
+const STORE_KEY = StorageKeys.pomodoroSessionParity;
 
 export function PomodoroView() {
   const [state, dispatch] = useReducer(pomodoroReducer, undefined, () => {

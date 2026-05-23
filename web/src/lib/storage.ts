@@ -43,6 +43,7 @@ export const StorageKeys = {
   rightSidebarWidth: "ui.rightSidebarWidth",
   rightSidebarOpen: "ui.rightSidebarOpen",
   currentRoute: "ui.route",
+  pomodoroSessionParity: "ui.pomodoro.sessionParity",
   pluginEnabledState: "ui.plugins.enabledState",
   skillActiveState: "ui.skills.activeState",
   localSkills: "ui.skills.localCatalog",
