@@ -32,6 +32,12 @@ public sealed partial class AppState : ObservableObject
     [ObservableProperty]
     private bool _connected;
 
+    [ObservableProperty]
+    private WireRateLimitSnapshot? _rateLimits;
+
+    [ObservableProperty]
+    private Dictionary<string, WireRateLimitSnapshot> _rateLimitsByLimitId = new(StringComparer.Ordinal);
+
     public AppState(BackgroundBridgeService bridge, ILogger<AppState> logger)
     {
         _bridge = bridge;
@@ -49,6 +55,7 @@ public sealed partial class AppState : ObservableObject
         _client.FrameReceived += ApplyFrame;
         await _client.ConnectAsync(ct);
         await _client.SendAsync(new BridgeFrame(new BridgeBody.ListSessions()), ct);
+        await _client.SendAsync(new BridgeFrame(new BridgeBody.RequestRateLimits()), ct);
     }
 
     public void ApplyFrame(BridgeFrame frame)
@@ -81,7 +88,19 @@ public sealed partial class AppState : ObservableObject
                     ? m with { Content = mst.Content, ReasoningText = mst.ReasoningText, StreamingFinished = mst.Finished }
                     : m).ToList();
                 break;
+            case BridgeBody.RateLimitsSnapshot rl:
+                ApplyRateLimits(rl.Snapshot, rl.ByLimitId);
+                break;
+            case BridgeBody.RateLimitsUpdated rl:
+                ApplyRateLimits(rl.Snapshot, rl.ByLimitId);
+                break;
         }
+    }
+
+    private void ApplyRateLimits(WireRateLimitSnapshot? snapshot, IReadOnlyDictionary<string, WireRateLimitSnapshot> byLimitId)
+    {
+        RateLimits = snapshot;
+        RateLimitsByLimitId = new Dictionary<string, WireRateLimitSnapshot>(byLimitId, StringComparer.Ordinal);
     }
 
     public Task SelectChatAsync(WireSession chat)

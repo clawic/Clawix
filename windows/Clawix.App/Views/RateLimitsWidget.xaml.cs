@@ -19,16 +19,8 @@ public sealed partial class RateLimitsWidget : UserControl
 
     public void Render(WireRateLimitWindow? primary, WireRateLimitWindow? secondary)
     {
-        if (primary is not null)
-        {
-            PrimaryBar.Value = primary.UsedPercent;
-            PrimaryText.Text = $"{primary.UsedPercent}%";
-        }
-        if (secondary is not null)
-        {
-            SecondaryBar.Value = secondary.UsedPercent;
-            SecondaryText.Text = $"{secondary.UsedPercent}%";
-        }
+        RenderWindow(PrimaryBar, PrimaryText, primary);
+        RenderWindow(SecondaryBar, SecondaryText, secondary);
     }
 
     public void RenderCredits(WireCreditsSnapshot? credits)
@@ -36,5 +28,12 @@ public sealed partial class RateLimitsWidget : UserControl
         if (credits is null) { CreditsText.Visibility = Visibility.Collapsed; return; }
         CreditsText.Visibility = Visibility.Visible;
         CreditsText.Text = credits.Unlimited ? "Credits: unlimited" : $"Credits: {credits.Balance ?? "0"}";
+    }
+
+    private static void RenderWindow(ProgressBar bar, TextBlock label, WireRateLimitWindow? window)
+    {
+        var percent = window?.UsedPercent ?? 0;
+        bar.Value = percent;
+        label.Text = $"{percent}%";
     }
 }

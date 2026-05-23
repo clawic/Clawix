@@ -28,8 +28,16 @@ public sealed partial class SidebarView : UserControl
                 });
             if (args.PropertyName == nameof(state.BridgeStateLabel))
                 DispatcherQueue.TryEnqueue(() => BridgeStatusText.Text = state.BridgeStateLabel);
+            if (args.PropertyName == nameof(state.RateLimits))
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    RateLimits.Render(state.RateLimits?.Primary, state.RateLimits?.Secondary);
+                    RateLimits.RenderCredits(state.RateLimits?.Credits);
+                });
         };
         BridgeStatusText.Text = state.BridgeStateLabel;
+        RateLimits.Render(state.RateLimits?.Primary, state.RateLimits?.Secondary);
+        RateLimits.RenderCredits(state.RateLimits?.Credits);
     }
 
     private async void ChatList_SelectionChanged(object sender, SelectionChangedEventArgs e)
