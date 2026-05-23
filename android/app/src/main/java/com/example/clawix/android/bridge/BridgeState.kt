@@ -40,6 +40,24 @@ data class GeneratedImageState(
     val errorMessage: String?,
 )
 
+data class BridgeSummaryState(
+    val connection: ConnectionState = ConnectionState.Idle,
+    val runtime: BridgeRuntimeState? = null,
+    val chats: List<WireSession> = emptyList(),
+    val openSessionId: String? = null,
+    val pendingNewSessions: Set<String> = emptySet(),
+    val projects: List<WireProject> = emptyList(),
+    val fileSnapshots: Map<String, FileSnapshotState> = emptyMap(),
+    val generatedImages: Map<String, GeneratedImageState> = emptyMap(),
+    val pendingTranscriptions: Map<String, String> = emptyMap(), // requestId -> chatId
+    val transcriptionResults: Map<String, String> = emptyMap(),  // requestId -> text
+)
+
+data class BridgeTranscriptState(
+    val messagesBySession: Map<String, List<WireMessage>> = emptyMap(),
+    val hasMoreBySession: Map<String, Boolean> = emptyMap(),
+)
+
 data class BridgeState(
     val connection: ConnectionState = ConnectionState.Idle,
     val runtime: BridgeRuntimeState? = null,
@@ -54,3 +72,19 @@ data class BridgeState(
     val pendingTranscriptions: Map<String, String> = emptyMap(), // requestId -> chatId
     val transcriptionResults: Map<String, String> = emptyMap(),  // requestId -> text
 )
+
+fun BridgeSummaryState.withTranscript(transcript: BridgeTranscriptState): BridgeState =
+    BridgeState(
+        connection = connection,
+        runtime = runtime,
+        chats = chats,
+        messagesBySession = transcript.messagesBySession,
+        hasMoreBySession = transcript.hasMoreBySession,
+        openSessionId = openSessionId,
+        pendingNewSessions = pendingNewSessions,
+        projects = projects,
+        fileSnapshots = fileSnapshots,
+        generatedImages = generatedImages,
+        pendingTranscriptions = pendingTranscriptions,
+        transcriptionResults = transcriptionResults,
+    )

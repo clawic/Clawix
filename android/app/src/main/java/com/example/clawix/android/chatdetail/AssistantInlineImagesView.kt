@@ -66,7 +66,7 @@ fun AssistantInlineImagesView(
 private fun InlineImage(container: AppContainer, path: String) {
     var bitmap by remember(path) { mutableStateOf<ImageBitmap?>(null) }
     var error by remember(path) { mutableStateOf<String?>(null) }
-    val state by container.bridgeStore.state.collectAsState()
+    val state by container.bridgeStore.summaryState.collectAsState()
 
     LaunchedEffect(path) {
         if (state.generatedImages[path] == null) {

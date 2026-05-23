@@ -33,7 +33,7 @@ fun FileViewerSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val state by container.bridgeStore.state.collectAsState()
+    val state by container.bridgeStore.summaryState.collectAsState()
     val snapshot = state.fileSnapshots[path]
 
     LaunchedEffect(path) {

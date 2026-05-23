@@ -42,7 +42,7 @@ fun ImageViewerDialog(
     path: String,
     onDismiss: () -> Unit,
 ) {
-    val state by container.bridgeStore.state.collectAsState()
+    val state by container.bridgeStore.summaryState.collectAsState()
     val cached = state.generatedImages[path]
 
     LaunchedEffect(path) {

@@ -5,16 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.clawix.android.AppContainer
 import com.example.clawix.android.bridge.ConnectionState
 import com.example.clawix.android.bridge.DerivedProject
-import com.example.clawix.android.core.BridgeBody
 import com.example.clawix.android.core.WireSession
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class ChatListUi(
@@ -31,7 +28,7 @@ class ChatListViewModel(private val container: AppContainer) : ViewModel() {
     val query: StateFlow<String> = _query.asStateFlow()
 
     val ui: StateFlow<ChatListUi> = combine(
-        container.bridgeStore.state,
+        container.bridgeStore.summaryState,
         _query,
     ) { state, q ->
         val unread = container.unreadCache.load()

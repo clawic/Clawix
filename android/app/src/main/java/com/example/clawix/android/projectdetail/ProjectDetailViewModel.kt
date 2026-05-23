@@ -20,7 +20,7 @@ class ProjectDetailViewModel(
     private val projectId: String,
 ) : ViewModel() {
 
-    val ui: StateFlow<ProjectDetailUi> = container.bridgeStore.state
+    val ui: StateFlow<ProjectDetailUi> = container.bridgeStore.summaryState
         .map { state ->
             val derived = DerivedProject.from(state.chats).firstOrNull { it.id == projectId }
             val chats = derived?.chatIds.orEmpty()

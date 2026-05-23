@@ -9,25 +9,33 @@ import android.content.SharedPreferences
  * in plain SharedPreferences (no secrets) so cold-start can paint the
  * dot before the WebSocket lands.
  */
-class UnreadChatsCache(context: Context) {
+interface UnreadChatTracker {
+    fun load(): Set<String>
+    fun save(ids: Set<String>)
+    fun mark(id: String)
+    fun clear(id: String)
+    fun clearAll()
+}
+
+class UnreadChatsCache(context: Context) : UnreadChatTracker {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences("clawix_unread_v1", Context.MODE_PRIVATE)
 
-    fun load(): Set<String> = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
+    override fun load(): Set<String> = prefs.getStringSet(KEY, emptySet()) ?: emptySet()
 
-    fun save(ids: Set<String>) {
+    override fun save(ids: Set<String>) {
         prefs.edit().putStringSet(KEY, ids.toList().takeLast(maxEntries).toSet()).apply()
     }
 
-    fun mark(id: String) {
+    override fun mark(id: String) {
         save(load() + id)
     }
 
-    fun clear(id: String) {
+    override fun clear(id: String) {
         save(load() - id)
     }
 
-    fun clearAll() {
+    override fun clearAll() {
         prefs.edit().remove(KEY).apply()
     }
 

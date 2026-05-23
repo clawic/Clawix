@@ -8,8 +8,11 @@ import com.example.clawix.android.core.WireProject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -19,54 +22,63 @@ import kotlinx.coroutines.sync.withLock
  * Single source of truth for chat / message / connection state on the
  * client. Mirrors iOS `BridgeStore`.
  *
- * Public API is read-only via `state: StateFlow<BridgeState>`. Mutations
- * happen through dedicated `apply*` methods that the BridgeClient invokes
- * when frames arrive. The store also persists to `SnapshotCache` on
- * every chat-list / messages mutation so cold-start can hydrate.
+ * The public state is split by invalidation boundary. `summaryState` is
+ * safe for chat lists, project surfaces, and attachment shells; streaming
+ * transcript churn is isolated in `transcriptState`. `state` remains as a
+ * compatibility projection for callers that genuinely need both.
  */
 class BridgeStore(
     private val scope: CoroutineScope,
     private val snapshotCache: SnapshotCache,
-    private val unreadCache: UnreadChatsCache,
-    private val projectLabelsCache: ProjectLabelsCache,
+    private val unreadCache: UnreadChatTracker,
+    private val projectLabelsCache: ProjectLabelStore,
 ) {
-    private val _state = MutableStateFlow(BridgeState())
-    val state: StateFlow<BridgeState> = _state.asStateFlow()
+    private val _summaryState = MutableStateFlow(BridgeSummaryState())
+    val summaryState: StateFlow<BridgeSummaryState> = _summaryState.asStateFlow()
+
+    private val _transcriptState = MutableStateFlow(BridgeTranscriptState())
+    val transcriptState: StateFlow<BridgeTranscriptState> = _transcriptState.asStateFlow()
+
+    val state: StateFlow<BridgeState> = combine(summaryState, transcriptState) { summary, transcript ->
+        summary.withTranscript(transcript)
+    }.stateIn(scope, SharingStarted.Eagerly, BridgeState())
 
     private val cacheMutex = Mutex()
 
     /** Hydrate from disk before the WebSocket connects. Idempotent. */
     fun hydrateFromCache() {
         val payload = snapshotCache.load() ?: return
-        _state.update {
+        _summaryState.update {
             it.copy(
                 chats = payload.sessions.take(maxSessionCount),
-                messagesBySession = trimMessagesBySession(payload.messagesBySession, payload.sessions.map { it.id }.toSet()),
             )
+        }
+        _transcriptState.update {
+            it.copy(messagesBySession = trimMessagesBySession(payload.messagesBySession, payload.sessions.map { it.id }.toSet()))
         }
     }
 
     fun setConnection(state: ConnectionState) {
-        _state.update { it.copy(connection = state) }
+        _summaryState.update { it.copy(connection = state) }
     }
 
     fun setRuntime(state: BridgeRuntimeState) {
-        _state.update { it.copy(runtime = state) }
+        _summaryState.update { it.copy(runtime = state) }
     }
 
     fun applySessionsSnapshot(chats: List<WireSession>) {
-        _state.update { current ->
-            val trimmedChats = chats.take(maxSessionCount)
-            current.copy(
-                chats = trimmedChats,
-                messagesBySession = trimMessagesBySession(current.messagesBySession, trimmedChats.map { it.id }.toSet()),
-            )
+        val trimmedChats = chats.take(maxSessionCount)
+        _summaryState.update { current ->
+            current.copy(chats = trimmedChats)
+        }
+        _transcriptState.update { current ->
+            current.copy(messagesBySession = trimMessagesBySession(current.messagesBySession, trimmedChats.map { it.id }.toSet()))
         }
         persistAsync()
     }
 
     fun applySessionUpdated(chat: WireSession) {
-        _state.update { current ->
+        _summaryState.update { current ->
             val existing = current.chats.toMutableList()
             val idx = existing.indexOfFirst { it.id == chat.id }
             if (idx >= 0) existing[idx] = chat else existing.add(0, chat)
@@ -82,12 +94,12 @@ class BridgeStore(
      * locally before the round-trip resolves.
      */
     private inline fun mutateChat(chatId: String, transform: (WireSession) -> WireSession) {
-        _state.update { current ->
+        _summaryState.update { current ->
             val list = current.chats.toMutableList()
             val idx = list.indexOfFirst { it.id == chatId }
             if (idx < 0) return@update current
             list[idx] = transform(list[idx])
-            current.copy(chats = list)
+            current.copy(chats = list.take(maxSessionCount))
         }
         persistAsync()
     }
@@ -105,7 +117,7 @@ class BridgeStore(
     }
 
     fun applyMessagesSnapshot(sessionId: String, messages: List<WireMessage>, hasMore: Boolean?) {
-        _state.update { current ->
+        _transcriptState.update { current ->
             val map = current.messagesBySession.toMutableMap()
             map[sessionId] = messages.takeLast(maxMessagesPerSession)
             val more = current.hasMoreBySession.toMutableMap()
@@ -116,7 +128,7 @@ class BridgeStore(
     }
 
     fun applyMessagesPage(sessionId: String, older: List<WireMessage>, hasMore: Boolean) {
-        _state.update { current ->
+        _transcriptState.update { current ->
             val existing = current.messagesBySession[sessionId] ?: emptyList()
             val merged = (older + existing).distinctBy { it.id }.takeLast(maxMessagesPerSession)
             val map = current.messagesBySession.toMutableMap().apply { put(sessionId, merged) }
@@ -127,14 +139,14 @@ class BridgeStore(
     }
 
     fun applyMessageAppended(sessionId: String, message: WireMessage) {
-        _state.update { current ->
+        _transcriptState.update { current ->
             val existing = current.messagesBySession[sessionId] ?: emptyList()
             val map = current.messagesBySession.toMutableMap().apply {
                 put(sessionId, (existing + message).takeLast(maxMessagesPerSession))
             }
             current.copy(messagesBySession = trimMessagesBySession(map))
         }
-        if (message.role == com.example.clawix.android.core.WireRole.assistant && _state.value.openSessionId != sessionId) {
+        if (message.role == com.example.clawix.android.core.WireRole.assistant && _summaryState.value.openSessionId != sessionId) {
             unreadCache.mark(sessionId)
         }
         persistAsync()
@@ -148,7 +160,7 @@ class BridgeStore(
      */
     fun applyStreamingBatch(batch: Map<String, PendingStreamUpdate>) {
         if (batch.isEmpty()) return
-        _state.update { current ->
+        _transcriptState.update { current ->
             val updatedChats = current.messagesBySession.toMutableMap()
             for ((messageId, upd) in batch) {
                 val list = updatedChats[upd.sessionId] ?: continue
@@ -168,51 +180,51 @@ class BridgeStore(
     }
 
     fun applyProjects(projects: List<WireProject>) {
-        _state.update { it.copy(projects = projects) }
+        _summaryState.update { it.copy(projects = projects) }
         for (p in projects) {
             projectLabelsCache.put(p.id, p.title)
         }
     }
 
     fun applyFileSnapshot(snapshot: FileSnapshotState) {
-        _state.update {
+        _summaryState.update {
             val map = it.fileSnapshots.toMutableMap().apply { put(snapshot.path, snapshot) }
             it.copy(fileSnapshots = trimMapToLast(map, maxFileSnapshots))
         }
     }
 
     fun applyGeneratedImage(image: GeneratedImageState) {
-        _state.update {
+        _summaryState.update {
             val map = it.generatedImages.toMutableMap().apply { put(image.path, image) }
             it.copy(generatedImages = trimMapToLast(map, maxGeneratedImages))
         }
     }
 
     fun setOpenSession(id: String?) {
-        _state.update { it.copy(openSessionId = id) }
+        _summaryState.update { it.copy(openSessionId = id) }
         if (id != null) unreadCache.clear(id)
     }
 
     fun registerPendingNewSession(sessionId: String) {
-        _state.update {
+        _summaryState.update {
             it.copy(pendingNewSessions = (it.pendingNewSessions + sessionId).toList().takeLast(maxPendingSessions).toSet())
         }
     }
 
     fun unregisterPendingNewSession(sessionId: String) {
-        _state.update {
+        _summaryState.update {
             it.copy(pendingNewSessions = it.pendingNewSessions - sessionId)
         }
     }
 
     fun registerPendingTranscription(requestId: String, chatId: String) {
-        _state.update {
+        _summaryState.update {
             it.copy(pendingTranscriptions = trimMapToLast(it.pendingTranscriptions + (requestId to chatId), maxPendingTranscriptions))
         }
     }
 
     fun applyTranscriptionResult(requestId: String, text: String) {
-        _state.update {
+        _summaryState.update {
             val pending = it.pendingTranscriptions - requestId
             val results = trimMapToLast(it.transcriptionResults + (requestId to text), maxTranscriptionResults)
             it.copy(pendingTranscriptions = pending, transcriptionResults = results)
@@ -220,8 +232,8 @@ class BridgeStore(
     }
 
     fun consumeTranscriptionResult(requestId: String): String? {
-        val text = _state.value.transcriptionResults[requestId] ?: return null
-        _state.update {
+        val text = _summaryState.value.transcriptionResults[requestId] ?: return null
+        _summaryState.update {
             it.copy(transcriptionResults = it.transcriptionResults - requestId)
         }
         return text
@@ -230,8 +242,7 @@ class BridgeStore(
     private fun persistAsync() {
         scope.launch(Dispatchers.IO) {
             cacheMutex.withLock {
-                val s = _state.value
-                snapshotCache.save(s.chats, s.messagesBySession)
+                snapshotCache.save(_summaryState.value.chats, _transcriptState.value.messagesBySession)
             }
         }
     }
