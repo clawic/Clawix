@@ -4,16 +4,15 @@
 $ErrorActionPreference = "Stop"
 $ROOT = Split-Path -Parent $PSScriptRoot
 
-# Forbidden literals are read from the workspace .signing.env so they
+# Forbidden literals are read from the optional local signing environment so they
 # are NEVER hardcoded in this script (listing them here would be a leak).
 # Pattern: BUNDLE_ID, APP_SKU, WIN_SIGN_THUMBPRINT, AAD_TENANT_ID,
 # APPLE_TEAM_ID, plus generic Apple Team-ID regex.
 
-$workspace = (Resolve-Path (Join-Path $ROOT "..\..")).Path
-$signingEnv = Join-Path $workspace ".signing.env"
+$signingEnv = $env:CLAWIX_SIGNING_ENV_FILE
 
 $forbiddenLiterals = @()
-if (Test-Path $signingEnv) {
+if (-not [string]::IsNullOrEmpty($signingEnv) -and (Test-Path $signingEnv)) {
     Get-Content $signingEnv | ForEach-Object {
         if ($_ -match '^\s*([A-Z_][A-Z0-9_]*)=(.+)$') {
             $name = $Matches[1]

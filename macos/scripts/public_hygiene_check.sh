@@ -25,6 +25,11 @@ if [[ -f "$ROOT_DIR/scripts/privacy_artifact_safety_check.mjs" ]]; then
   node "$ROOT_DIR/scripts/privacy_artifact_safety_check.mjs" --public-artifacts >/dev/null
 fi
 
+if [[ -f "$ROOT_DIR/scripts/public_hygiene_text_check.mjs" ]]; then
+  node "$ROOT_DIR/scripts/public_hygiene_text_check.mjs" --self-test >/dev/null
+  node "$ROOT_DIR/scripts/public_hygiene_text_check.mjs" >/dev/null
+fi
+
 COMMON_GLOBS=(
   --glob '!**/.build/**'
   --glob '!**/build/**'
