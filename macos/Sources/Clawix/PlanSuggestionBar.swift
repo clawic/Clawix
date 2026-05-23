@@ -14,11 +14,11 @@ struct PlanSuggestionBar: View {
     var body: some View {
         HStack(spacing: 10) {
             LucideIcon(.listChecks, size: 13)
-                .foregroundColor(Color(white: 0.88))
+                .foregroundColor(Color.gray(light: 0.17, dark: 0.88))
 
             Text(L10n.t("Create a plan"))
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
 
             shortcutPill
 
@@ -33,11 +33,11 @@ struct PlanSuggestionBar: View {
         .padding(.vertical, 5)
         .background(
             Capsule(style: .continuous)
-                .fill(Color(white: 0.13))
+                .fill(Color.gray(light: 0.94, dark: 0.13))
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(Color.overlay(0.06), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 4)
     }
@@ -46,13 +46,13 @@ struct PlanSuggestionBar: View {
         HStack(spacing: 0) {
             Text(verbatim: "Shift + Tab")
                 .font(BodyFont.system(size: 11, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 2.5)
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.overlay(0.12), lineWidth: 1)
         )
         .accessibilityHidden(true)
     }
@@ -61,12 +61,12 @@ struct PlanSuggestionBar: View {
         Button(action: onUsePlanMode) {
             Text(L10n.t("Use plan mode"))
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 5)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(hoverUse ? 0.13 : 0.08))
+                        .fill(Color.overlay(hoverUse ? 0.13 : 0.08))
                 )
                 .contentShape(Capsule(style: .continuous))
         }
@@ -80,7 +80,7 @@ struct PlanSuggestionBar: View {
     private var dismissButton: some View {
         Button(action: onDismiss) {
             LucideIcon(.x, size: 11)
-                .foregroundColor(Color.white.opacity(hoverDismiss ? 0.9 : 0.55))
+                .foregroundColor(Color.overlay(hoverDismiss ? 0.9 : 0.55))
                 .frame(width: 26, height: 26)
                 .contentShape(Rectangle())
         }

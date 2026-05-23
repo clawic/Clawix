@@ -107,11 +107,11 @@ struct PlanCardView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                .stroke(Color.overlay(0.06), lineWidth: 0.5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onChange(of: completed) { _, isDone in
@@ -132,7 +132,7 @@ struct PlanCardView: View {
                 if completed {
                     Text(verbatim: String(localized: "Plan", bundle: AppLocale.bundle, locale: AppLocale.current))
                         .font(BodyFont.system(size: 14, wght: 700))
-                        .foregroundColor(Color(white: 0.94))
+                        .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 } else {
                     ThinkingShimmer(
                         text: String(localized: "Writing plan", bundle: AppLocale.bundle, locale: AppLocale.current),
@@ -182,7 +182,7 @@ struct PlanCardView: View {
         rotationDegrees: Double = 0,
         action: @escaping () -> Void
     ) -> some View {
-        let tint = Color(white: hovered.wrappedValue ? 1.0 : 0.62)
+        let tint = (hovered.wrappedValue ? Color.gray(light: 0.05, dark: 1.0) : Color.gray(light: 0.40, dark: 0.62))
         return Button(action: action) {
             Group {
                 if systemName == "square.on.square" {
@@ -196,7 +196,7 @@ struct PlanCardView: View {
             .frame(width: 26, height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.white.opacity(hovered.wrappedValue ? 0.07 : 0))
+                    .fill(Color.overlay(hovered.wrappedValue ? 0.07 : 0))
             )
             .rotationEffect(.degrees(rotationDegrees))
             .animation(.easeOut(duration: 0.18), value: rotationDegrees)
@@ -228,9 +228,9 @@ struct PlanCardView: View {
                 ZStack(alignment: .bottom) {
                     LinearGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Color(white: 0.085).opacity(0.0), location: 0.0),
-                            .init(color: Color(white: 0.085).opacity(0.85), location: 0.55),
-                            .init(color: Color(white: 0.085), location: 1.0)
+                            .init(color: Color.gray(light: 0.95, dark: 0.085).opacity(0.0), location: 0.0),
+                            .init(color: Color.gray(light: 0.95, dark: 0.085).opacity(0.85), location: 0.55),
+                            .init(color: Color.gray(light: 0.95, dark: 0.085), location: 1.0)
                         ]),
                         startPoint: .top,
                         endPoint: .bottom
@@ -251,12 +251,12 @@ struct PlanCardView: View {
         } label: {
             Text(String(localized: "Expand plan", bundle: AppLocale.bundle, locale: AppLocale.current))
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(Color(white: 0.10))
+                .foregroundColor(Color.gray(light: 0.95, dark: 0.10))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color(white: 0.94))
+                        .fill(Color.gray(light: 0.12, dark: 0.94))
                 )
                 .shadow(color: Color.black.opacity(0.30), radius: 10, x: 0, y: 4)
         }
@@ -395,21 +395,21 @@ private struct PlanBlocksView: View {
         case .heading1(let s):
             inlineText(s)
                 .font(BodyFont.system(size: 24, weight: .bold))
-                .foregroundColor(Color(white: 0.97))
+                .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                 .padding(.top, isFirst ? 4 : 22)
                 .padding(.bottom, 4)
                 .fixedSize(horizontal: false, vertical: true)
         case .heading2(let s):
             inlineText(s)
                 .font(BodyFont.system(size: 19, weight: .semibold))
-                .foregroundColor(Color(white: 0.97))
+                .foregroundColor(Color.gray(light: 0.09, dark: 0.97))
                 .padding(.top, isFirst ? 0 : 18)
                 .padding(.bottom, 2)
                 .fixedSize(horizontal: false, vertical: true)
         case .heading3(let s):
             inlineText(s)
                 .font(BodyFont.system(size: 15, wght: 700))
-                .foregroundColor(Color(white: 0.95))
+                .foregroundColor(Color.gray(light: 0.11, dark: 0.95))
                 .padding(.top, isFirst ? 0 : 14)
                 .padding(.bottom, 2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -417,10 +417,10 @@ private struct PlanBlocksView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("•")
                     .font(BodyFont.system(size: 14, wght: 500))
-                    .foregroundColor(Color(white: 0.78))
+                    .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 inlineText(s)
                     .font(BodyFont.system(size: 14, wght: 500))
-                    .foregroundColor(Color(white: 0.86))
+                    .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.top, 4)
@@ -428,7 +428,7 @@ private struct PlanBlocksView: View {
         case .paragraph(let s):
             inlineText(s)
                 .font(BodyFont.system(size: 14, wght: 500))
-                .foregroundColor(Color(white: 0.78))
+                .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                 .padding(.top, 12)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -454,7 +454,7 @@ enum PlanInline {
             var piece = AttributedString(run)
             if bold {
                 piece.font = BodyFont.system(size: 14, wght: 700)
-                piece.foregroundColor = Color(white: 0.97)
+                piece.foregroundColor = Color.gray(light: 0.09, dark: 0.97)
             }
             result.append(piece)
             run.removeAll(keepingCapacity: true)
@@ -476,7 +476,7 @@ enum PlanInline {
                     flush()
                     var piece = AttributedString(String(input[afterTick..<close]))
                     piece.font = BodyFont.system(size: 13, design: .monospaced)
-                    piece.foregroundColor = Color(white: 0.92)
+                    piece.foregroundColor = Color.gray(light: 0.14, dark: 0.92)
                     result.append(piece)
                     i = input.index(after: close)
                     continue

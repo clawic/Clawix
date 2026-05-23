@@ -65,11 +65,11 @@ struct PlanQuestionCard: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                .stroke(Color.overlay(0.06), lineWidth: 0.5)
         )
         .shadow(color: Color.black.opacity(0.35), radius: 18, x: 0, y: 10)
         .background(planCardKeyHandler)
@@ -140,12 +140,12 @@ struct PlanQuestionCard: View {
                         .foregroundColor(Palette.textSecondary)
                     Text("ESC")
                         .font(BodyFont.system(size: 11, wght: 700))
-                        .foregroundColor(Color(white: 0.85))
+                        .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
                             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                 }
                 .contentShape(Rectangle())
@@ -164,10 +164,10 @@ struct PlanQuestionCard: View {
                         .padding(.vertical, 2)
                         .background(
                             RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(Color.white.opacity(0.18))
+                                .fill(Color.overlay(0.18))
                         )
                 }
-                .foregroundColor(.white)
+                .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
@@ -258,18 +258,18 @@ private struct PlanOptionRow: View {
         HStack(alignment: .center, spacing: 12) {
             Text("\(index).")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(muted ? Color(white: 0.40) : Color(white: 0.55))
+                .foregroundColor(muted ? Color.gray(light: 0.54, dark: 0.40) : Color.gray(light: 0.45, dark: 0.55))
                 .frame(width: 18, alignment: .leading)
 
             Text(label)
                 .font(BodyFont.system(size: 13.5, wght: isSelected ? 700 : 500))
-                .foregroundColor(muted ? Color(white: 0.55) : Palette.textPrimary)
+                .foregroundColor(muted ? Color.gray(light: 0.45, dark: 0.55) : Palette.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             if description != nil {
                 LucideIcon(.info, size: 11)
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                     .help(description ?? "")
                     .onHover { infoHovered = $0 }
             }
@@ -288,8 +288,8 @@ private struct PlanOptionRow: View {
     }
 
     private var rowFill: Color {
-        if isSelected { return Color.white.opacity(0.06) }
-        if hovered    { return Color.white.opacity(0.025) }
+        if isSelected { return Color.overlay(0.06) }
+        if hovered    { return Color.overlay(0.025) }
         return .clear
     }
 }
@@ -305,10 +305,10 @@ private struct PlanOtherFieldRow: View {
         HStack(alignment: .center, spacing: 12) {
             Text("\(index).")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .frame(width: 18, alignment: .leading)
             TextField("", text: $text, prompt: Text("Tell the agent what to do instead")
-                .foregroundColor(Color(white: 0.42)))
+                .foregroundColor(Color.gray(light: 0.52, dark: 0.42)))
                 .textFieldStyle(.plain)
                 .font(BodyFont.system(size: 13.5, wght: 500))
                 .foregroundColor(Palette.textPrimary)
@@ -319,7 +319,7 @@ private struct PlanOtherFieldRow: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
         )
     }
 }
