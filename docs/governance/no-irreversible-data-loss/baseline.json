@@ -11,7 +11,29 @@
       "reason": "Clawix has host-local caches and snapshot projections with delete/replace paths that are rebuildable or cache-only, but this slice does not attach policy ids to every individual source path.",
       "expiresAt": "2026-08-21",
       "repair": "Classify each host-local delete or replace path as recoverable, rebuildable, or snapshot_recoverable and attach tests.",
-      "reference": "docs/adr/0024-no-irreversible-data-loss-mirror.md"
+      "reference": "docs/adr/0024-no-irreversible-data-loss-mirror.md",
+      "debtControl": {
+        "ownerArea": "clawix",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "data_loss_guardrail_gaps",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 data-loss guardrail debt must block new destructive growth until repaired."
+        }
+      }
     },
     {
       "id": "host-transcript-purge-recovery-audit",
@@ -21,7 +43,29 @@
       "reason": "Transcript and audio purge paths exist for retention cleanup; this slice freezes growth while a dedicated recovery-window and audit receipt implementation is backfilled.",
       "expiresAt": "2026-08-21",
       "repair": "Add explicit purge UI policy, recovery-window metadata, audit receipts, and retention tests for transcript/audio purge paths.",
-      "reference": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift"
+      "reference": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift",
+      "debtControl": {
+        "ownerArea": "clawix",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "data_loss_guardrail_gaps",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 data-loss guardrail debt must block new destructive growth until repaired."
+        }
+      }
     },
     {
       "id": "host-provider-hard-delete-ui-evidence",
@@ -31,25 +75,139 @@
       "reason": "Clawix can present framework connector decisions, but live provider hard-delete evidence requires exact approval, real provider receipt, and same-machine host validation.",
       "expiresAt": "2026-08-21",
       "repair": "Add provider hard-delete confirmation UI evidence packets and signed-host/provider receipt fixtures once an approved live validation lane exists.",
-      "reference": "docs/interface-matrix.md"
+      "reference": "docs/interface-matrix.md",
+      "debtControl": {
+        "ownerArea": "clawix",
+        "expiresAt": "2026-08-21",
+        "severity": "P1",
+        "budget": {
+          "metric": "data_loss_guardrail_gaps",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_release",
+          "targets": [
+            "macos-release",
+            "ios-release",
+            "linux-release",
+            "windows-release",
+            "web-release"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "External destructive-operation evidence blocks release until approved receipts exist."
+        }
+      }
     }
   ],
   "monitoredKeywordBaselines": [
     {
       "path": "docs/interface-matrix.md",
-      "maxKeywordHits": 120
+      "maxKeywordHits": 120,
+      "debtControl": {
+        "ownerArea": "no-irreversible-data-loss",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "destructive_keyword_hits",
+          "unit": "hit",
+          "current": 120,
+          "maxAllowed": 120,
+          "nextMaxAllowed": 119,
+          "target": 0,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 destructive/data-moving keyword baselines must shrink or block new growth."
+        }
+      }
     },
     {
       "path": "docs/persistent-surface-clawix.manifest.json",
-      "maxKeywordHits": 180
+      "maxKeywordHits": 180,
+      "debtControl": {
+        "ownerArea": "no-irreversible-data-loss",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "destructive_keyword_hits",
+          "unit": "hit",
+          "current": 180,
+          "maxAllowed": 180,
+          "nextMaxAllowed": 179,
+          "target": 0,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 destructive/data-moving keyword baselines must shrink or block new growth."
+        }
+      }
     },
     {
       "path": "macos/Sources/Clawix/Persistence/Database.swift",
-      "maxKeywordHits": 80
+      "maxKeywordHits": 80,
+      "debtControl": {
+        "ownerArea": "no-irreversible-data-loss",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "destructive_keyword_hits",
+          "unit": "hit",
+          "current": 80,
+          "maxAllowed": 80,
+          "nextMaxAllowed": 79,
+          "target": 0,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 destructive/data-moving keyword baselines must shrink or block new growth."
+        }
+      }
     },
     {
       "path": "macos/Sources/Clawix/Persistence/TranscriptionsRepository.swift",
-      "maxKeywordHits": 60
+      "maxKeywordHits": 60,
+      "debtControl": {
+        "ownerArea": "no-irreversible-data-loss",
+        "expiresAt": "2026-08-21",
+        "severity": "P0",
+        "budget": {
+          "metric": "destructive_keyword_hits",
+          "unit": "hit",
+          "current": 60,
+          "maxAllowed": 60,
+          "nextMaxAllowed": 59,
+          "target": 0,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/no-irreversible-data-loss-check.mjs",
+          "reason": "P0 destructive/data-moving keyword baselines must shrink or block new growth."
+        }
+      }
     }
   ]
 }
