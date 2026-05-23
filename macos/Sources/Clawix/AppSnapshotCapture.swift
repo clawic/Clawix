@@ -74,7 +74,7 @@ final class AppSnapshotCapture: ObservableObject {
         guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
         var best: (id: CGWindowID, area: Double)?
         for window in windows {
-            guard let owner = window[kCGWindowOwnerPID as String] as? Int, pid_t(owner) == pid else { continue }
+            guard let pidValue = window[kCGWindowOwnerPID as String] as? Int, pid_t(pidValue) == pid else { continue }
             guard (window[kCGWindowLayer as String] as? Int) == 0 else { continue }
             guard let bounds = window[kCGWindowBounds as String] as? [String: Any],
                   let width = bounds["Width"] as? Double,
