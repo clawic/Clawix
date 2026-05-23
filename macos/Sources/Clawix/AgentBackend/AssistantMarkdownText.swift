@@ -1296,12 +1296,37 @@ struct LinkAtom: View {
     @State private var hovered = false
     private let linkColor = Color(red: 0.42, green: 0.72, blue: 1.0)
 
+    /// Leading glyph for a file link, hinted by its type so a Swift file, an
+    /// image and a config file read differently at a glance.
+    @ViewBuilder
+    private func fileLeadingIcon(for url: URL) -> some View {
+        switch url.pathExtension.lowercased() {
+        case "swift", "py", "js", "jsx", "ts", "tsx", "rs", "go", "java", "kt",
+             "c", "cc", "cpp", "h", "hpp", "rb", "php", "cs", "m", "mm":
+            LucideIcon(.braces, size: 15)
+        case "json", "yaml", "yml", "toml", "xml", "plist", "lock":
+            LucideIcon(.braces, size: 15)
+        case "md", "markdown", "txt", "rtf", "pdf", "doc", "docx":
+            LucideIcon(.fileText, size: 15)
+        case "png", "jpg", "jpeg", "gif", "svg", "webp", "heic", "bmp", "tiff":
+            LucideIcon(.image, size: 15)
+        case "sh", "bash", "zsh", "fish", "ps1":
+            LucideIcon(.terminal, size: 15)
+        case "html", "htm", "css", "scss":
+            LucideIcon(.globe, size: 15)
+        case "sql", "db", "sqlite":
+            LucideIcon(.database, size: 15)
+        default:
+            FileChipIcon(size: 15)
+        }
+    }
+
     var body: some View {
         Button(action: { onTap(url) }) {
             HStack(alignment: .center, spacing: 4) {
                 Group {
                     if url.isFileURL {
-                        FileChipIcon(size: 15)
+                        fileLeadingIcon(for: url)
                     } else {
                         GlobeIcon(size: 15)
                     }
