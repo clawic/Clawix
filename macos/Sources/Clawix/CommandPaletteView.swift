@@ -54,6 +54,13 @@ private enum PaletteCatalog {
             PaletteItem(id: "quick-chat", icon: "square.and.pencil",
                         title: "New quick chat", shortcut: "⌥⌘N",
                         action: { FileMenuActions.quickChat(appState: $0) }),
+            PaletteItem(id: "set-goal", icon: "target",
+                        title: "Set a goal", shortcut: nil,
+                        action: { state in
+                            if case let .chat(id) = state.currentRoute {
+                                GoalStore.shared.creationRequestChatId = id
+                            }
+                        }),
         ]),
         PaletteSection(id: "paneles", title: "Panels", items: [
             PaletteItem(id: "toggle-sidebar", icon: "sidebar.left",
