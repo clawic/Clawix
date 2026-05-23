@@ -49,13 +49,18 @@ struct AttemptsSelector: View {
             ))
                 .font(BodyFont.system(size: 11.5, wght: 600))
                 .monospacedDigit()
-                .foregroundColor(active ? Palette.pastelBlue : Color.overlay(hovering ? 0.7 : 0.45))
+                // Active reads as a neutral lift (the count itself is the
+                // signal), not a brand-colour fill, so the composer footer
+                // stays calm and uniform like the Codex composer chrome
+                // (STYLE.md §2.3 — brand never fills an action surface).
+                .foregroundColor(active ? Color.gray(light: 0.16, dark: 0.92)
+                                        : Color.overlay(hovering ? 0.7 : 0.45))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .fill(active ? Palette.pastelBlue.opacity(0.10)
-                                     : Color.overlay(hovering ? 0.06 : 0.0))
+                        .fill(Color.overlay(active ? (hovering ? 0.09 : 0.06)
+                                                   : (hovering ? 0.06 : 0.0)))
                 )
                 .contentShape(Rectangle())
         }
