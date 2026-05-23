@@ -59,7 +59,7 @@ the rescue runtime health snapshot from the persisted `last-resources.json`,
 so post-mortem repair still gives the agent CPU/memory and runtime metadata.
 That file is the stable handoff artifact for rescue agents and remains
 redacted/local unless the user explicitly approves sharing support diagnostics.
-The private launcher also exposes `scripts-dev/clawix-launcher.sh open-rescue`,
+The local launcher also exposes an `open-rescue` action,
 which opens the canonical app through `clawix://rescue` and triggers the same
 local rescue diagnostics handoff.
 Inside the app, that URL now routes to the dedicated `SidebarRoute.rescue`

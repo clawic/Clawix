@@ -3,7 +3,7 @@
 ## Status
 
 Accepted. Source conversation:
-`private-runtime-conversation:evolution-rescue-backbone`.
+`source:evolution-rescue-backbone`.
 
 ## Context
 

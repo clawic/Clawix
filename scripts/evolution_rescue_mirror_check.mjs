@@ -100,8 +100,7 @@ for (const snippet of [
 ]) requireSnippet("macos/Tests/ClawixMeshTests/RescueSurvivalMatrixTests.swift", snippet);
 requireSnippet("docs/evolution/README.md", "rescue-context.json");
 requireSnippet("docs/evolution/README.md", "discreet");
-requireSnippet("../scripts-dev/clawix-launcher.sh", "open-rescue");
-requireSnippet("../scripts-dev/clawix-launcher.sh", "clawix://rescue");
+requireSnippet("docs/evolution/README.md", "open-rescue");
 
 if (fs.existsSync(siblingClawjs)) {
   const siblingAdr = path.join(siblingClawjs, "docs/adr/0030-post-v1-evolution-rescue-backbone.md");
@@ -165,6 +164,7 @@ function shouldRunSiblingEvolutionGate(argSet = args, env = process.env) {
 function runRescueSurvivalMatrixGate() {
   const scratchPath =
     process.env.CLAWIX_RESCUE_SWIFTPM_SCRATCH_PATH || path.join("/tmp", `clawix-rescue-survival-matrix-${process.pid}`);
+  const timeout = parsePositiveIntegerEnv("CLAWIX_RESCUE_SWIFTPM_TIMEOUT_MS", 5 * 60 * 1000);
   const result = spawnSync("swift", [
     "test",
     "--disable-sandbox",
@@ -180,9 +180,11 @@ function runRescueSurvivalMatrixGate() {
     cwd: rootDir,
     encoding: "utf8",
     maxBuffer: 20 * 1024 * 1024,
+    timeout,
+    killSignal: "SIGTERM",
   });
   if (result.status !== 0) {
-    errors.push(spawnFailureMessage("Clawix rescue survival matrix", result));
+    errors.push(spawnFailureMessage("Clawix rescue survival matrix", result, timeout));
   }
 }
 
