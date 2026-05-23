@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainContentView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject private var composer: ComposerState
 
     var body: some View {
         RenderProbe.tick("MainContentView")
@@ -20,9 +21,22 @@ struct MainContentView: View {
                         .accessibilityAddTraits(.isHeader)
                         .accessibilityLabel(heading)
 
-                    ComposerView()
-                        .frame(maxWidth: 720)
-                        .padding(.top, 10)
+                    VStack(spacing: 18) {
+                        ComposerView()
+                            .frame(maxWidth: 720)
+
+                        // Quick-start suggestions only while the draft is
+                        // empty; they fade out the moment the user starts
+                        // typing so they never compete with real input.
+                        if composer.text.isEmpty {
+                            RolePickerStrip()
+                                .transition(.opacity)
+                            HomeSuggestionsView()
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.top, 10)
+                    .animation(.easeOut(duration: 0.18), value: composer.text.isEmpty)
                 }
                 .padding(.horizontal, 40)
                 .offset(y: smallOffset)
