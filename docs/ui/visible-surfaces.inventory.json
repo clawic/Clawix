@@ -15,7 +15,7 @@
     {
       "id": "macos-root-chrome",
       "platform": "macos",
-      "scopes": ["macos/Sources/Clawix/*.swift"],
+      "scopes": ["macos/Sources/Clawix/*.swift", "macos/Sources/Clawix/Goals/**"],
       "excludeScopes": ["macos/Sources/Clawix/AutomationsView.swift", "macos/Sources/Clawix/PlanQuestionCard.swift"],
       "classification": "pattern",
       "patterns": ["chat-surface", "composer-chrome", "sidebar-row", "sheet-chrome", "toast", "search-field", "icon-chip-button", "right-sidebar-surface", "entity-card"],
@@ -53,7 +53,6 @@
         "macos/Sources/Clawix/Apps/**",
         "macos/Sources/Clawix/Browser/**",
         "macos/Sources/Clawix/Calendar/**",
-        "macos/Sources/Clawix/ClawJS/**",
         "macos/Sources/Clawix/Contacts/**",
         "macos/Sources/Clawix/Database/**",
         "macos/Sources/Clawix/Drive/**",
@@ -98,6 +97,7 @@
         "macos/Sources/Clawix/Audio/**",
         "macos/Sources/Clawix/Bridge/**",
         "macos/Sources/Clawix/Connections/**",
+        "macos/Sources/Clawix/Diagnostics/**",
         "macos/Sources/Clawix/MacUtilities/**",
         "macos/Sources/Clawix/Persistence/**",
         "macos/Sources/Clawix/Personalities/**"
