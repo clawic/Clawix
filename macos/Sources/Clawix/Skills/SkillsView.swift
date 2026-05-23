@@ -13,9 +13,9 @@ struct SkillsView: View {
 
     private var store: SkillsStore { appState.skillsStore ?? localStore }
 
-    @State private var hoveringNew = false
     @State private var creatingNew = false
     @State private var searchQuery = ""
+    @FocusState private var searchFocused: Bool
     @State private var kindFilter: SkillKind? = nil
     @State private var scopeFilter: SkillScopeKind? = nil
     @State private var tagFilter: String? = nil
@@ -38,6 +38,7 @@ struct SkillsView: View {
             .padding(.bottom, 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .thinScrollers()
         .sheet(isPresented: $creatingNew) {
             SkillNewSheet(store: store, onClose: {
                 creatingNew = false
@@ -59,72 +60,76 @@ struct SkillsView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Skills")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundColor(.primary)
+                    .font(BodyFont.system(size: 22, weight: .semibold))
+                    .foregroundColor(Palette.textPrimary)
                 Text("Your central library. Activate per chat, project or globally. Sync to other agents on toggle.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textSecondary)
             }
             Spacer(minLength: 12)
             searchField
-                .frame(maxWidth: 320)
+                .frame(maxWidth: 280)
             syncButton
-            newSkillButton
+            IconChipButton(symbol: "plus", label: "New skill", isPrimary: true) {
+                creatingNew = true
+            }
         }
     }
 
     private var searchField: some View {
         HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.secondary)
+            IconImage("magnifyingglass", size: 12)
+                .foregroundColor(Palette.textSecondary)
             TextField("Search skills…", text: $searchQuery)
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
+                .textFieldStyle(.plain)
+                .font(BodyFont.system(size: 12.5))
+                .foregroundColor(Palette.textPrimary)
+                .focused($searchFocused)
             if !searchQuery.isEmpty {
-                Button { searchQuery = "" } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
+                IconCircleButton(symbol: "xmark", size: 18, symbolSize: 9) {
+                    searchQuery = ""
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .frame(height: 28)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.gray.opacity(0.12))
+            Capsule(style: .continuous)
+                .fill(Color.white.opacity(searchFocused ? 0.08 : 0.06))
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(searchFocused ? Palette.pastelBlue.opacity(0.6) : .clear, lineWidth: 1)
+                )
         )
     }
 
     private var syncButton: some View {
-        Button {
-            Task { await store.syncNow() }
-        } label: {
-            HStack(spacing: 6) {
-                if store.pendingOperation != nil {
+        Group {
+            if store.pendingOperation != nil {
+                HStack(spacing: 6) {
                     ProgressView().controlSize(.mini)
-                } else {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 12, weight: .medium))
+                    Text("Syncing…")
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Palette.textPrimary)
                 }
-                Text("Sync now")
-                    .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 11)
+                .frame(height: 28)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color(white: 0.135))
+                        .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                )
+                .help(syncHelpText)
+            } else {
+                IconChipButton(symbol: "arrow.triangle.2.circlepath", label: "Sync now") {
+                    Task { await store.syncNow() }
+                }
+                .help(syncHelpText)
             }
-            .foregroundColor(.primary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.gray.opacity(0.12))
-            )
         }
-        .buttonStyle(.plain)
-        .help(syncHelpText)
     }
 
     private var syncHelpText: String {
@@ -136,57 +141,20 @@ struct SkillsView: View {
         }
     }
 
-    private var newSkillButton: some View {
-        Button { creatingNew = true } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .semibold))
-                Text("New skill")
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.accentColor.opacity(hoveringNew ? 0.95 : 0.85))
-            )
-        }
-        .buttonStyle(.plain)
-        .onHover { hoveringNew = $0 }
-    }
-
     // MARK: - Filter strip
 
     private var filterStrip: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                kindChip(nil, label: "All kinds")
+                FilterChip(label: "All kinds", active: kindFilter == nil) { kindFilter = nil }
                 ForEach(SkillKind.allCases) { kind in
-                    kindChip(kind, label: kind.label)
+                    FilterChip(label: kind.label, active: kindFilter == kind) { kindFilter = kind }
                 }
                 Spacer(minLength: 12)
                 resetFiltersButton
             }
             tagCloud
         }
-    }
-
-    private func kindChip(_ kind: SkillKind?, label: String) -> some View {
-        Button {
-            kindFilter = kind
-        } label: {
-            Text(label)
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundColor(kindFilter == kind ? .white : .primary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    Capsule()
-                        .fill(kindFilter == kind ? Color.accentColor : Color.gray.opacity(0.12))
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     private var resetFiltersButton: some View {
@@ -197,8 +165,8 @@ struct SkillsView: View {
             searchQuery = ""
         } label: {
             Text("Reset filters")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(BodyFont.system(size: 11, wght: 500))
+                .foregroundColor(Palette.textSecondary)
         }
         .buttonStyle(.plain)
         .opacity(hasAnyFilter ? 1 : 0)
@@ -213,27 +181,12 @@ struct SkillsView: View {
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(tags.prefix(40), id: \.self) { tag in
-                    tagChip(tag)
+                    FilterChip(label: "#\(tag)", active: tagFilter == tag) {
+                        tagFilter = (tagFilter == tag) ? nil : tag
+                    }
                 }
             }
         }
-    }
-
-    private func tagChip(_ tag: String) -> some View {
-        Button {
-            tagFilter = (tagFilter == tag) ? nil : tag
-        } label: {
-            Text("#\(tag)")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(tagFilter == tag ? .white : .secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(tagFilter == tag ? Color.accentColor.opacity(0.85) : Color.gray.opacity(0.10))
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Grid
@@ -271,31 +224,21 @@ struct SkillsView: View {
 
     private var emptyState: some View {
         VStack(spacing: 14) {
-            Image(systemName: "wand.and.stars")
-                .font(.system(size: 40, weight: .light))
-                .foregroundColor(.secondary)
+            IconImage("wand.and.stars", size: 36)
+                .foregroundColor(Palette.textSecondary)
             Text(hasAnyFilter ? "No skills match these filters." : "No skills yet.")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.primary)
+                .font(BodyFont.system(size: 15, weight: .semibold))
+                .foregroundColor(Palette.textPrimary)
             Text(hasAnyFilter
                  ? "Try clearing some filters above, or create a new skill."
                  : "Create your first skill, or wait for the auto-importer to pull from \(ClawixSkillsRoutes.defaultExternalDirectoriesSummary).")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
+                .font(BodyFont.system(size: 12))
+                .foregroundColor(Palette.textSecondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
-            Button { creatingNew = true } label: {
-                Text("New skill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.accentColor)
-                    )
+            IconChipButton(symbol: "plus", label: "New skill", isPrimary: true) {
+                creatingNew = true
             }
-            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
     }
@@ -318,76 +261,52 @@ private struct SkillCardView: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Image(systemName: skill.kind.icon)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
+                    IconImage(skill.kind.icon, size: 13)
+                        .foregroundColor(Palette.textSecondary)
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.gray.opacity(0.12))
+                                .fill(Color.white.opacity(0.06))
                         )
                     Text(skill.name)
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .font(BodyFont.system(size: 13.5, weight: .semibold))
+                        .foregroundColor(Palette.textPrimary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     if globalActive {
                         Text("Active")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
+                            .font(BodyFont.system(size: 10, wght: 600))
+                            .foregroundColor(Palette.pastelBlue)
+                            .padding(.horizontal, 7)
                             .padding(.vertical, 2)
                             .background(
-                                Capsule().fill(Color.green.opacity(0.85))
+                                Capsule().fill(Palette.pastelBlue.opacity(0.16))
                             )
                     }
                 }
                 Text(skill.description)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .font(BodyFont.system(size: 12))
+                    .foregroundColor(Palette.textSecondary)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                 HStack(spacing: 4) {
-                    Text(skill.kind.label)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule().fill(Color.gray.opacity(0.12))
-                        )
+                    metaPill(skill.kind.label)
                     if skill.builtin {
-                        Text("Built-in")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.gray.opacity(0.12)))
+                        metaPill("Built-in")
                     }
                     if let importedFrom = skill.importedFrom {
-                        Text("via \(importedFrom)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.gray.opacity(0.12)))
+                        metaPill("via \(importedFrom)")
                     }
                     if skill.isInstance {
-                        Text("instance")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.gray.opacity(0.12)))
+                        metaPill("instance")
                     }
                     Spacer(minLength: 4)
                     if !skill.syncTo.isEmpty {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
+                        IconImage("arrow.triangle.2.circlepath", size: 10)
+                            .foregroundColor(Palette.textSecondary)
                         Text("\(skill.syncTo.count)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.secondary)
+                            .font(BodyFont.system(size: 10, wght: 500))
+                            .foregroundColor(Palette.textSecondary)
                     }
                 }
             }
@@ -395,15 +314,25 @@ private struct SkillCardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(hovered ? Color.gray.opacity(0.10) : Color.gray.opacity(0.06))
+                    .fill(hovered ? Palette.cardHover : Palette.cardFill)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.gray.opacity(hovered ? 0.20 : 0.10), lineWidth: 0.5)
+                    .stroke(hovered ? Palette.border : Palette.popupStroke, lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+
+    private func metaPill(_ text: String) -> some View {
+        Text(text)
+            .font(BodyFont.system(size: 10, wght: 500))
+            .foregroundColor(Palette.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(Color.white.opacity(0.06)))
     }
 }
 
@@ -428,50 +357,62 @@ private struct SkillNewSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("New skill")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(BodyFont.system(size: 18, weight: .semibold))
+                    .foregroundColor(Palette.textPrimary)
                 Spacer()
-                Button("Close") { onClose() }
-                    .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
+                IconCircleButton(symbol: "xmark") { onClose() }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Kind").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-                Picker("", selection: $kind) {
-                    ForEach(SkillKind.allCases) { k in
-                        Text(k.label).tag(k)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                fieldLabel("Kind")
+                SlidingSegmented(
+                    selection: $kind,
+                    options: SkillKind.allCases.map { ($0, $0.label) }
+                )
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Slug").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                fieldLabel("Slug")
                 TextField("e.g. my-cold-email", text: $slug)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
                     .font(.system(size: 13, design: .monospaced))
+                    .foregroundColor(Palette.textPrimary)
+                    .modifier(SheetFieldChrome())
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Name").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                fieldLabel("Name")
                 TextField("Display name shown in the catalog", text: $name)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .font(BodyFont.system(size: 13))
+                    .foregroundColor(Palette.textPrimary)
+                    .modifier(SheetFieldChrome())
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Description").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                fieldLabel("Description")
                 TextField("One-liner shown on the card", text: $description)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .font(BodyFont.system(size: 13))
+                    .foregroundColor(Palette.textPrimary)
+                    .modifier(SheetFieldChrome())
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Body (markdown)").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
+                fieldLabel("Body (markdown)")
                 TextEditor(text: $skillBody)
                     .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(Palette.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
                     .frame(minHeight: 160)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous).stroke(Color.gray.opacity(0.20), lineWidth: 0.5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            )
                     )
             }
 
@@ -481,13 +422,13 @@ private struct SkillNewSheet: View {
                     submit()
                 } label: {
                     Text("Create")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .font(BodyFont.system(size: 13, wght: 600))
+                        .foregroundColor(canSubmit ? Color.black : Color.white.opacity(0.55))
+                        .padding(.horizontal, 18)
+                        .frame(height: 30)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(canSubmit ? Color.accentColor : Color.gray)
+                            Capsule(style: .continuous)
+                                .fill(canSubmit ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
                         )
                 }
                 .buttonStyle(.plain)
@@ -496,6 +437,13 @@ private struct SkillNewSheet: View {
         }
         .padding(20)
         .frame(width: 520)
+        .background(Palette.background)
+    }
+
+    private func fieldLabel(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(BodyFont.system(size: 11, wght: 600))
+            .foregroundColor(Palette.textSecondary)
     }
 
     private func submit() {
@@ -523,5 +471,23 @@ private struct SkillNewSheet: View {
         )
         store.upsert(skill)
         onClose()
+    }
+}
+
+/// Canonical single-line input chrome for sheet text fields: soft dark
+/// fill, hairline stroke, squircle corners (section 6.8).
+private struct SheetFieldChrome: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.white.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    )
+            )
     }
 }
