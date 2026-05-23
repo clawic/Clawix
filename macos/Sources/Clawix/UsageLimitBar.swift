@@ -39,8 +39,8 @@ struct UsageLimitBar: View {
         if shouldShow, let worst {
             let reached = worst.percent >= 100
             let accent = reached
-                ? Color(red: 0.92, green: 0.45, blue: 0.45)
-                : Color(red: 0.95, green: 0.62, blue: 0.32)
+                ? Palette.danger
+                : Palette.warning
             HStack(spacing: 8) {
                 LucideIcon(.triangleAlert, size: 12)
                     .foregroundColor(accent)
@@ -54,7 +54,7 @@ struct UsageLimitBar: View {
                         withAnimation(.easeOut(duration: 0.16)) { dismissedAtPercent = worst.percent }
                     } label: {
                         XIcon(size: 10)
-                            .foregroundColor(Color.white.opacity(0.5))
+                            .foregroundColor(Color.overlay(0.5))
                             .frame(width: 18, height: 18)
                             .contentShape(Rectangle())
                     }

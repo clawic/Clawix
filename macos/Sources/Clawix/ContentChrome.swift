@@ -25,7 +25,7 @@ struct LoggedOutChrome: View {
                 .background(Palette.background, in: contentShape)
                 .overlay(
                     contentShape
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.7)
                 )
         }
     }
@@ -63,7 +63,7 @@ struct UpdateChip: View {
         Button(action: onTap) {
             Text("Update")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(.white.opacity(hovered ? 1.0 : 0.94))
+                .foregroundColor(Color.overlay(hovered ? 1.0 : 0.94))
                 .padding(.horizontal, 11)
                 .padding(.vertical, 4)
                 .background(
@@ -185,11 +185,11 @@ struct ContentTopChrome: View {
                     .padding(.top, 6)
                 Button { chatActionsOpen.toggle() } label: {
                     LucideIcon(.ellipsis, size: 18)
-                        .foregroundColor(Color(white: hoverEllipsis ? 0.78 : 0.55))
+                        .foregroundColor((hoverEllipsis ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55)))
                         .frame(width: 24, height: 24)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(hoverEllipsis ? Color(white: 0.16) : Color.clear)
+                                .fill(hoverEllipsis ? Color.gray(light: 0.92, dark: 0.16) : Color.clear)
                         )
                         .contentShape(Rectangle())
                 }
@@ -377,11 +377,11 @@ struct ContentBodyWithTerminal<Content: View>: View {
                             ZStack(alignment: .top) {
                                 ZStack(alignment: .top) {
                                     Rectangle()
-                                        .fill(Color.white.opacity(0.18))
+                                        .fill(Color.overlay(0.18))
                                         .frame(height: 0.7)
                                         .mask(terminalSeparatorMask)
                                     Rectangle()
-                                        .fill(Color.white.opacity(0.38))
+                                        .fill(Color.overlay(0.38))
                                         .frame(height: 0.7)
                                         .mask(terminalSeparatorMask)
                                         .opacity(resizeHovered ? 1 : 0)
@@ -430,12 +430,12 @@ struct RightSidebarColumn: View {
                         } label: {
                             Text("iOS")
                                 .font(BodyFont.system(size: 11, wght: 700))
-                                .foregroundColor(Color(white: 0.86))
+                                .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
                                 .padding(.horizontal, 9)
                                 .frame(height: 26)
                                 .background(
                                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .fill(Color.white.opacity(0.08))
+                                        .fill(Color.overlay(0.08))
                                 )
                         }
                         .buttonStyle(.plain)
@@ -446,12 +446,12 @@ struct RightSidebarColumn: View {
                         } label: {
                             Text("Android")
                                 .font(BodyFont.system(size: 11, wght: 700))
-                                .foregroundColor(Color(white: 0.86))
+                                .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
                                 .padding(.horizontal, 9)
                                 .frame(height: 26)
                                 .background(
                                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .fill(Color.white.opacity(0.08))
+                                        .fill(Color.overlay(0.08))
                                 )
                         }
                         .buttonStyle(.plain)
@@ -486,15 +486,15 @@ struct RightSidebarTopChrome: View {
         HStack(spacing: 0) {
             Button { addMenuOpen.toggle() } label: {
                 LucideIcon(.plus, size: 13)
-                    .foregroundColor(Color(white: 0.78))
+                    .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                     .frame(width: 26, height: 26)
                     .background(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(hoverAdd ? Color(white: 0.16) : Color(white: 0.115))
+                            .fill(hoverAdd ? Color.gray(light: 0.92, dark: 0.16) : Color.gray(light: 0.945, dark: 0.115))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .stroke(Color(white: 0.20), lineWidth: 0.7)
+                            .stroke(Color.gray(light: 0.88, dark: 0.20), lineWidth: 0.7)
                     )
             }
             .buttonStyle(.plain)
@@ -515,7 +515,7 @@ struct RightSidebarTopChrome: View {
                     variant: panelExpanded ? .collapsed : .expanded,
                     lineWidth: 1.6
                 )
-                .foregroundColor(hoverExpand ? Color(white: 0.78) : Color(white: 0.55))
+                .foregroundColor(hoverExpand ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55))
                 .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
@@ -568,7 +568,7 @@ struct RightSidebarBody: View {
             Color.clear
             Text("Nothing here yet")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -19,7 +19,7 @@ struct WorkSummaryHeader: View {
         VStack(alignment: .leading, spacing: 8) {
             disclosure
             Rectangle()
-                .fill(Color(white: 0.18))
+                .fill(Color.gray(light: 0.905, dark: 0.18))
                 .frame(height: 0.5)
                 .frame(maxWidth: .infinity)
         }
@@ -52,9 +52,9 @@ struct WorkSummaryHeader: View {
         HStack(spacing: 6) {
             Text(verbatim: L10n.workedFor(seconds: summary.elapsedSeconds(asOf: date)))
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             LucideIcon(.chevronRight, size: 11)
-                .foregroundColor(Color(white: 0.42))
+                .foregroundColor(Color.gray(light: 0.52, dark: 0.42))
                 .rotationEffect(.degrees(expanded ? 90 : 0))
                 .animation(.easeOut(duration: 0.16), value: expanded)
         }

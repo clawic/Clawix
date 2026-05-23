@@ -215,7 +215,7 @@ final class ThinScroller: NSScroller {
         let radius = min(thumb.width, thumb.height) / 2
         let path = NSBezierPath(roundedRect: thumb, xRadius: radius, yRadius: radius)
         let alpha: CGFloat = mouseInside ? 0.18 : 0.10
-        NSColor(white: 1.0, alpha: alpha).setFill()
+        NSColor.dynamicGray(light: 0.0, dark: 1.0, alpha: alpha).setFill()
         path.fill()
     }
 

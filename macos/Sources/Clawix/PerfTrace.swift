@@ -124,7 +124,7 @@ private struct PerfTraceIndicator: View {
     var body: some View {
         HStack(spacing: 8) {
             Circle()
-                .fill(Color(red: 0.92, green: 0.32, blue: 0.32))
+                .fill(Palette.danger)
                 .frame(width: 8, height: 8)
                 .opacity(pulse ? 0.45 : 1)
                 .onAppear {
@@ -141,16 +141,16 @@ private struct PerfTraceIndicator: View {
             Button(L10n.t("Stop")) { controller.stop() }
                 .buttonStyle(.plain)
                 .font(BodyFont.system(size: 12, wght: 600))
-                .foregroundColor(Color(white: 0.06))
+                .foregroundColor(Color.gray(light: 0.96, dark: 0.06))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 3)
-                .background(Capsule().fill(Color(white: 0.94)))
+                .background(Capsule().fill(Color.gray(light: 0.12, dark: 0.94)))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: 0.12))
+                .fill(Color.gray(light: 0.945, dark: 0.12))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)

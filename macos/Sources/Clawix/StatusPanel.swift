@@ -27,7 +27,7 @@ struct StatusPanel: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -37,7 +37,7 @@ struct StatusPanel: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -82,9 +82,9 @@ struct StatusPanel: View {
                 infoRow(L10n.t("Left"), "\(pct)%  ·  \(short(usage.usedTokens))/\(short(window))")
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.08))
+                        Capsule().fill(Color.overlay(0.08))
                         Capsule()
-                            .fill(usage.usedFraction > 0.9 ? Color(red: 0.95, green: 0.62, blue: 0.32) : Palette.pastelBlue)
+                            .fill(usage.usedFraction > 0.9 ? Palette.warning : Palette.pastelBlue)
                             .frame(width: max(2, proxy.size.width * usage.usedFraction))
                     }
                 }

@@ -12,10 +12,17 @@ let appDisplayName: String = {
 }()
 
 /// Identifier used for UserDefaults suites and Application Support paths.
-/// Resolves to whatever bundle id the binary was packaged with, so a fork
-/// that builds with its own BUNDLE_ID gets isolated prefs without touching
-/// the code. Falls back to a stable string when the binary runs unbundled.
-let appPrefsSuite: String = Bundle.main.bundleIdentifier ?? "clawix.desktop"
+/// `CLAWIX_DEFAULTS_SUITE` overrides it first, so per-instance agent runs
+/// launched by the dev provisioner get isolated prefs without a separate
+/// bundle id. Otherwise resolves to whatever bundle id the binary was packaged
+/// with, so a fork that builds with its own BUNDLE_ID gets isolated prefs
+/// without touching the code. Falls back to a stable string when unbundled.
+let appPrefsSuite: String = {
+    if let suite = ProcessInfo.processInfo.environment["CLAWIX_DEFAULTS_SUITE"], !suite.isEmpty {
+        return suite
+    }
+    return Bundle.main.bundleIdentifier ?? "clawix.desktop"
+}()
 
 // Shared between debug and release bundles so the window position survives
 // switching between them.

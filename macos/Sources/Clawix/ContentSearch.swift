@@ -25,7 +25,7 @@ struct SearchPopoverOverlay: View {
     @State private var contentNaturalHeight: CGFloat = 220
 
     private static let popupCornerRadius: CGFloat = 26
-    private static let popupStrokeColor = Color.white.opacity(0.18)
+    private static let popupStrokeColor = Color.overlay(0.18)
     private static let popupStrokeWidth: CGFloat = 0.9
     /// Cap on the result list. Past this, the inner content scrolls.
     private static let contentAreaMaxHeight: CGFloat = 350
@@ -148,7 +148,7 @@ struct SearchPopoverOverlay: View {
     private var searchField: some View {
         HStack(spacing: 10) {
             SearchIcon(size: 14)
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
             if let project = scopedProject {
                 ScopeChip(
                     name: project.name,
@@ -174,7 +174,7 @@ struct SearchPopoverOverlay: View {
                     appState.searchQuery = ""
                 } label: {
                     LucideIcon(.circleX, size: 13)
-                        .foregroundColor(Color(white: 0.45))
+                        .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                 }
                 .buttonStyle(.plain)
             }
@@ -192,7 +192,7 @@ struct SearchPopoverOverlay: View {
             }
         } label: {
             FolderOpenIcon(size: 14)
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }
@@ -204,7 +204,7 @@ struct SearchPopoverOverlay: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.06))
+            .fill(Color.overlay(0.06))
             .frame(height: 1)
     }
 
@@ -461,7 +461,7 @@ struct SearchQueryTextField: NSViewRepresentable {
         field.drawsBackground = false
         field.focusRingType = .none
         field.font = NSFont.systemFont(ofSize: 15, weight: .medium)
-        field.textColor = NSColor(white: 0.94, alpha: 1)
+        field.textColor = NSColor.dynamicGray(light: 0.16, dark: 0.94)
         field.placeholderString = placeholder
         field.delegate = context.coordinator
         field.onEscape = onEscape
@@ -592,15 +592,15 @@ struct ScopeChip: View {
     var body: some View {
         HStack(spacing: 6) {
             FolderOpenIcon(size: 11)
-                .foregroundColor(Color(white: 0.65))
+                .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
             Text(name)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.88))
+                .foregroundColor(Color.gray(light: 0.17, dark: 0.88))
                 .lineLimit(1)
                 .truncationMode(.tail)
             Button(action: onRemove) {
                 LucideIcon(.x, size: 10)
-                    .foregroundColor(Color(white: 0.62))
+                    .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                     .padding(.horizontal, 3)
                     .padding(.vertical, 2)
                     .contentShape(Rectangle())
@@ -612,11 +612,11 @@ struct ScopeChip: View {
         .padding(.vertical, 4)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.07))
+                .fill(Color.overlay(0.07))
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
         .fixedSize()
     }
@@ -747,7 +747,7 @@ struct ShortcutGlyph: View {
             .padding(.vertical, 2)
             .background(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.overlay(0.05))
             )
             .frame(minWidth: 28, alignment: .center)
     }

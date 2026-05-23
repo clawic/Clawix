@@ -135,16 +135,16 @@ private struct SurfaceRouteHost<Content: View>: View {
                 }
                 Text(message ?? "Loading surface")
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.72))
+                    .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
             }
             .padding(18)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(white: 0.08).opacity(0.86))
+                    .fill(Color.gray(light: 0.955, dark: 0.08).opacity(0.86))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.7)
             )
             .allowsHitTesting(false)
         case .partial(let surfaceID, let message) where surfaceID == descriptor.id:
@@ -152,16 +152,16 @@ private struct SurfaceRouteHost<Content: View>: View {
                 Spacer()
                 Text(message)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.72))
+                    .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color(white: 0.08).opacity(0.78))
+                            .fill(Color.gray(light: 0.955, dark: 0.08).opacity(0.78))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.7)
                     )
                     .padding(.bottom, 16)
             }
@@ -191,13 +191,13 @@ private struct SurfaceRouteHost<Content: View>: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                .foregroundColor(Palette.warning)
             Text(title)
                 .font(BodyFont.system(size: 17, wght: 600))
                 .foregroundColor(Palette.textPrimary)
             Text(message)
                 .font(BodyFont.system(size: 13.5, wght: 400))
-                .foregroundColor(Color(white: 0.66))
+                .foregroundColor(Color.gray(light: 0.37, dark: 0.66))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
             Button("Retry") {
@@ -322,20 +322,20 @@ private struct AppVariantOriginalRouteControl: View {
                     .lineLimit(1)
                 Text(presentation.scopeLabel)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Color.gray(light: 0.43, dark: 0.58))
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.10).opacity(0.88))
+                .fill(Color.gray(light: 0.95, dark: 0.10).opacity(0.88))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 0.7)
+                .stroke(Color.overlay(0.12), lineWidth: 0.7)
         )
-        .foregroundColor(Color(white: 0.92))
+        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
         .buttonStyle(.plain)
         .help(presentation.helpText)
     }

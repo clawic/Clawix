@@ -29,9 +29,9 @@ enum HoverHintConfig {
     // Single-line bubble height with our padding (vertical 5 + ~13pt text + 5)
     // is roughly 23pt. Use a fixed value so we don't need to measure async.
     static let bubbleHeight: CGFloat      = 23
-    static let textColor                  = Color(white: 0.98)
-    static let fill                       = Color(white: 0.18)
-    static let stroke                     = Color.white.opacity(0.22)
+    static let textColor                  = Color.gray(light: 0.08, dark: 0.98)
+    static let fill                       = Color.gray(light: 0.905, dark: 0.18)
+    static let stroke                     = Color.overlay(0.22)
     static let strokeWidth: CGFloat       = 0.6
     static let shadow                     = Color.black.opacity(0.30)
     static let shadowRadius: CGFloat      = 8

@@ -113,12 +113,12 @@ private struct ToastPill: View {
 
             Text(item.message)
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(Color(white: 0.98))
+                .foregroundColor(Color.gray(light: 0.08, dark: 0.98))
                 .fixedSize(horizontal: true, vertical: false)
 
             Button(action: onDismiss) {
                 LucideIcon(.x, size: 11)
-                    .foregroundColor(hoverClose ? Color(white: 0.95) : Color(white: 0.62))
+                    .foregroundColor(hoverClose ? Color.gray(light: 0.11, dark: 0.95) : Color.gray(light: 0.40, dark: 0.62))
                     .frame(width: 18, height: 18)
                     .contentShape(Rectangle())
             }
@@ -132,7 +132,7 @@ private struct ToastPill: View {
         .background(
             ZStack {
                 Capsule(style: .continuous)
-                    .fill(Color(white: 0.115).opacity(0.92))
+                    .fill(Color.gray(light: 0.945, dark: 0.115).opacity(0.92))
                 VisualEffectBlur(material: .hudWindow, blendingMode: .withinWindow, state: .active)
                     .clipShape(Capsule(style: .continuous))
                     .opacity(0.55)
@@ -140,7 +140,7 @@ private struct ToastPill: View {
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                .stroke(Color.overlay(0.10), lineWidth: 0.6)
         )
         .shadow(color: Color.black.opacity(0.34), radius: 18, x: 0, y: 8)
     }
@@ -150,16 +150,16 @@ private struct ToastPill: View {
         switch item.icon {
         case .checkCircle:
             LucideIcon(.circleCheck, size: 14)
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
         case .info:
             LucideIcon(.circleAlert, size: 14)
-                .foregroundColor(Color(white: 0.92))
+                .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
         case .warning:
             LucideIcon(.circleAlert, size: 14)
                 .foregroundColor(Color(red: 0.95, green: 0.78, blue: 0.40))
         case .error:
             LucideIcon(.circleAlert, size: 14)
-                .foregroundColor(Color(red: 0.95, green: 0.45, blue: 0.45))
+                .foregroundColor(Palette.danger)
         case .none:
             EmptyView()
         }

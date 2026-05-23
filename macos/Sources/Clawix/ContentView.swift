@@ -188,7 +188,10 @@ struct ContentView: View {
             // corners of the content panel reveal the sidebar colour
             // (not a transparent gap to the wallpaper).
             VisualEffectBlur(material: .sidebar, blendingMode: .behindWindow, state: .active)
-                .overlay(Color.black.opacity(0.26))
+                // Darkens the sidebar material to the dark-theme tone. In
+                // light mode the material is already light, so only a faint
+                // tint keeps the column subtly distinct from the white panel.
+                .overlay(Color.dynamic(light: Color.black.opacity(0.04), dark: Color.black.opacity(0.26)))
                 .ignoresSafeArea()
 
             if !appState.auth.isLoggedIn {
@@ -256,14 +259,14 @@ struct ContentView: View {
                     ZStack {
                         // Always-visible faint border around the whole panel.
                         contentShape
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.7)
                         // Left-edge brightening on resize hover. Faded both
                         // horizontally (into the top/bottom edges) and
                         // vertically (away from the rounded corners) so the
                         // highlight never meets the base stroke at the apex
                         // of the curve.
                         contentShape
-                            .stroke(Color.white.opacity(0.30), lineWidth: 0.7)
+                            .stroke(Color.overlay(0.30), lineWidth: 0.7)
                             .mask(
                                 HStack(spacing: 0) {
                                     Rectangle().frame(width: 26)
@@ -319,7 +322,7 @@ struct ContentView: View {
                         )
                         .overlay(alignment: .leading) {
                             Rectangle()
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.overlay(0.10))
                                 .frame(width: 0.7)
                                 .opacity(appState.isRightSidebarMaximized ? 0 : 1)
                                 .allowsHitTesting(false)

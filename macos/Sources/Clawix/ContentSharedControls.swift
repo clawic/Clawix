@@ -78,7 +78,7 @@ enum Palette {
     static let cardHover     = Color.dynamic(light: Color(white: 0.915), dark: Color(white: 0.17))
     static let border        = Color.dynamic(light: Color(white: 0.86),  dark: Color(white: 0.20))
     static let borderSubtle  = Color.dynamic(light: Color(white: 0.90),  dark: Color(white: 0.15))
-    static let popupStroke   = Color.dynamic(light: Color.black.opacity(0.10), dark: Color.white.opacity(0.10))
+    static let popupStroke   = Color.overlay(0.10)
     static let popupStrokeWidth: CGFloat = 0.5
     static let selFill       = Color.dynamic(light: Color(white: 0.88),  dark: Color(white: 0.28))
     static let textPrimary   = Color.dynamic(light: Color(white: 0.12),  dark: Color.white)
@@ -86,6 +86,16 @@ enum Palette {
     static let textTertiary  = Color.dynamic(light: Color(white: 0.55),  dark: Color(white: 0.38))
     // Brand accent is identical on both modes (brand consistency, §2.4).
     static let pastelBlue    = Color(red: 0.45, green: 0.65, blue: 1.0)
+
+    // Semantic status colours. The dark branch keeps the soft, light-on-dark
+    // tone the app already used; the light branch deepens the hue so the same
+    // status reads with adequate contrast on a near-white surface.
+    static let danger  = Color.dynamic(light: Color(red: 0.80, green: 0.18, blue: 0.18),
+                                       dark:  Color(red: 0.95, green: 0.45, blue: 0.45))
+    static let warning = Color.dynamic(light: Color(red: 0.78, green: 0.42, blue: 0.08),
+                                       dark:  Color(red: 0.95, green: 0.62, blue: 0.30))
+    static let success = Color.dynamic(light: Color(red: 0.16, green: 0.52, blue: 0.30),
+                                       dark:  Color(red: 0.40, green: 0.85, blue: 0.55))
 }
 
 // MARK: - Standard dropdown / popup menu style

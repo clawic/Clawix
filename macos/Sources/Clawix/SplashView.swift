@@ -72,7 +72,7 @@ struct AppRootView: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.08), lineWidth: 0.5)
                     )
                     .shadow(color: .black.opacity(0.45), radius: 28, y: 12)
             }

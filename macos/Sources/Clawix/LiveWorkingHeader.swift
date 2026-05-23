@@ -27,7 +27,7 @@ struct LiveWorkingHeader: View {
         VStack(alignment: .leading, spacing: 8) {
             label
             Rectangle()
-                .fill(Color(white: 0.18))
+                .fill(Color.gray(light: 0.905, dark: 0.18))
                 .frame(height: 0.5)
                 .frame(maxWidth: .infinity)
         }
@@ -47,12 +47,12 @@ struct LiveWorkingHeader: View {
         if timelineCount <= 1 {
             Text(L10n.working)
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             Text(L10n.workingFor(seconds: summary.elapsedSeconds(asOf: tickDate)))
                 .font(BodyFont.system(size: 13.5, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onReceive(VisualClock.shared.secondsPublisher) { tickDate = $0 }
         }
