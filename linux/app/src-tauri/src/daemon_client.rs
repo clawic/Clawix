@@ -175,6 +175,14 @@ impl DaemonClient {
         Ok(())
     }
 
+    pub async fn request_rate_limits(&self) -> Result<()> {
+        self.send_intent(serde_json::json!({
+            "type": "requestRateLimits"
+        }))
+        .await?;
+        Ok(())
+    }
+
     pub async fn start_pairing(&self) -> Result<PairingPayload> {
         // The daemon mints a fresh pairing payload via `pairingStart`.
         // The frame round-trips back as `pairingPayload`; the WS reader

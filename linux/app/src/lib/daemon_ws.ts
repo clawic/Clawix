@@ -17,6 +17,8 @@ const [hasMoreMessages, setHasMoreMessages] = createSignal<Record<string, boolea
 const [fileSnapshots, setFileSnapshots] = createSignal<Record<string, unknown>>({});
 const [generatedImages, setGeneratedImages] = createSignal<Record<string, unknown>>({});
 const [audioById, setAudioById] = createSignal<Record<string, unknown>>({});
+const [rateLimits, setRateLimits] = createSignal<unknown | null>(null);
+const [rateLimitsByLimitId, setRateLimitsByLimitId] = createSignal<Record<string, unknown>>({});
 const [bridgeState, setBridgeState] = createSignal<string>("booting");
 
 export const daemonStore = {
@@ -29,6 +31,8 @@ export const daemonStore = {
   fileSnapshots,
   generatedImages,
   audioById,
+  rateLimits,
+  rateLimitsByLimitId,
   bridgeState,
   send: (body: BridgeFrame["body"]) => invoke("send_intent", { body })
 };
@@ -39,6 +43,9 @@ export function useDaemonStream(): void {
       const unlisten = await listen<BridgeFrame[]>("bridge:frames", (event) => {
         for (const frame of event.payload) {
           switch (frame.type) {
+            case "authOk":
+              void requestRateLimits();
+              break;
             case "sessionsSnapshot":
               setChats((frame.sessions as unknown[]) ?? []);
               break;
@@ -102,6 +109,11 @@ export function useDaemonStream(): void {
                     : { error: frame.errorMessage ?? "Audio no longer available" }
                 }));
               }
+              break;
+            case "rateLimitsSnapshot":
+            case "rateLimitsUpdated":
+              setRateLimits(frame.rateLimits ?? null);
+              setRateLimitsByLimitId(isRecord(frame.rateLimitsByLimitId) ? frame.rateLimitsByLimitId : {});
               break;
             case "bridgeState":
               setBridgeState((frame.state as string) ?? "booting");
@@ -220,6 +232,14 @@ export async function requestAudio(audioId: string): Promise<void> {
   }
 }
 
+export async function requestRateLimits(): Promise<void> {
+  try {
+    await invoke("request_rate_limits");
+  } catch (_) {
+    setRateLimits(null);
+  }
+}
+
 export async function sendMessage(text: string, sessionId?: string): Promise<void> {
   await invoke("send_message", { args: { sessionId, text } });
 }
@@ -229,4 +249,8 @@ function titleForSession(sessions: unknown[], sessionId: string): string | null 
     return typeof session === "object" && session !== null && !Array.isArray(session) && "id" in session && session.id === sessionId;
   });
   return typeof match === "object" && match !== null && "title" in match && typeof match.title === "string" ? match.title : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

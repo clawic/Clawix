@@ -76,6 +76,7 @@ pub fn run() {
             commands::read_file,
             commands::request_generated_image,
             commands::request_audio,
+            commands::request_rate_limits,
             commands::start_pairing,
             commands::list_audio_inputs,
             commands::start_dictation,
@@ -259,6 +260,14 @@ mod commands {
     ) -> Result<(), String> {
         let client = state.daemon.lock().await;
         client.request_audio(&audio_id).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn request_rate_limits(
+        state: State<'_, AppState>,
+    ) -> Result<(), String> {
+        let client = state.daemon.lock().await;
+        client.request_rate_limits().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]

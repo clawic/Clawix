@@ -1,5 +1,7 @@
 import { For, Show, createSignal, onMount } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
+import { daemonStore, requestRateLimits } from "../lib/daemon_ws";
+import { rateLimitRows, type RateLimitSnapshot } from "../lib/rate_limits_model";
 
 interface DaemonStatus {
   installed: boolean;
@@ -16,6 +18,7 @@ export default function SettingsView() {
   onMount(async () => {
     const s = await invoke<DaemonStatus>("daemon_status");
     setStatus(s);
+    void requestRateLimits();
     const stored = await invoke<string | null>("get_setting", { key: "ui.hotkey" });
     if (stored) setHotkey(stored);
     const t = await invoke<string | null>("get_setting", { key: "ui.theme" });
@@ -73,12 +76,29 @@ export default function SettingsView() {
           </Show>
         </Section>
 
+        <Section title="Rate limits">
+          <Show
+            when={rateLimitRows(daemonStore.rateLimits() as RateLimitSnapshot | null).length > 0}
+            fallback={<div class="text-sm text-zinc-500">No data yet.</div>}
+          >
+            <div class="space-y-2">
+              <For each={rateLimitRows(daemonStore.rateLimits() as RateLimitSnapshot | null)}>
+                {(row) => (
+                  <Field label={row.label}>
+                    <code class="text-xs text-zinc-600 dark:text-zinc-400">{row.value}</code>
+                  </Field>
+                )}
+              </For>
+            </div>
+          </Show>
+        </Section>
+
         <details
           class="border-t border-zinc-200/60 dark:border-zinc-800/60 pt-4"
           open={advancedOpen()}
           onToggle={(e) => setAdvancedOpen(e.currentTarget.open)}
         >
-          <summary class="text-sm text-zinc-500 cursor-pointer select-none">Advanced</summary>
+          <summary class="text-sm text-zinc-500 select-none">Advanced</summary>
           <div class="mt-4 space-y-4">
             <Section title="Diagnostics">
               <Field label="Bridge port">
