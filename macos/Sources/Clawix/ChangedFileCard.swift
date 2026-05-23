@@ -578,8 +578,8 @@ private enum ChangedFileOpenAction: Identifiable {
                          fallbackPath: e.fallbackPath,
                          size: 18)
         case .openInFolder:
-            AppIconImage(bundleId: "com.apple.finder",
-                         fallbackPath: "/System/Library/CoreServices/Finder.app",
+            AppIconImage(bundleId: ClawixKnownAppRoutes.finder.bundleId,
+                         fallbackPath: ClawixKnownAppRoutes.finder.fallbackPath,
                          size: 18)
         }
     }
@@ -616,18 +616,6 @@ private enum ChangedFileOpenAction: Identifiable {
 
     /// Editor entries shown in the dropdown, in the same order as Codex
     /// Desktop's "Open with" menu.
-    static let editorActions: [ChangedFileOpenAction] = [
-        .editor(.init(bundleId: "com.microsoft.VSCode", name: "VS Code",
-                      fallbackPath: "/Applications/Visual Studio Code.app")),
-        .editor(.init(bundleId: "com.todesktop.230313mzl4w4u92", name: "Cursor",
-                      fallbackPath: "/Applications/Cursor.app")),
-        .editor(.init(bundleId: "com.apple.Terminal", name: "Terminal",
-                      fallbackPath: "/System/Applications/Utilities/Terminal.app")),
-        .editor(.init(bundleId: "com.mitchellh.ghostty", name: "Ghostty",
-                      fallbackPath: "/Applications/Ghostty.app")),
-        .editor(.init(bundleId: "com.apple.dt.Xcode", name: "Xcode",
-                      fallbackPath: "/Applications/Xcode.app")),
-        .editor(.init(bundleId: "com.google.android.studio", name: "Android Studio",
-                      fallbackPath: "/Applications/Android Studio.app")),
-    ]
+    static let editorActions: [ChangedFileOpenAction] =
+        ClawixKnownAppRoutes.changedFileEditorOptions.map { .editor($0) }
 }

@@ -15,6 +15,10 @@ struct ChatTranscriptScrollerView: View {
     let chatTailId: String
     let publishingReady: Bool
 
+    /// True once the reader has scrolled meaningfully above the tail of
+    /// an overflowing transcript; gates the scroll-to-bottom button.
+    @State private var awayFromBottom = false
+
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
             get: { bottomId },
@@ -78,11 +82,26 @@ struct ChatTranscriptScrollerView: View {
                     handleScrollUpTrigger(proxy: proxy)
                 }
             ))
+            .modifier(ChatScrollBottomSentinel(
+                threshold: 220,
+                awayFromBottom: $awayFromBottom
+            ))
+            .overlay(alignment: .bottom) {
+                if awayFromBottom {
+                    ScrollToBottomButton {
+                        returnToTail(proxy: proxy)
+                    }
+                    .padding(.bottom, 16)
+                    .transition(.softNudge(y: 6))
+                }
+            }
+            .animation(.easeOut(duration: 0.18), value: awayFromBottom)
             .onAppear {
                 appState.ensureSelectedChat()
                 visibleMessageLimit = ChatView.initialVisibleMessageLimit
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
+                awayFromBottom = false
             }
             .onChange(of: chatId) { _, _ in
                 appState.ensureSelectedChat()
@@ -90,6 +109,7 @@ struct ChatTranscriptScrollerView: View {
                 visibleMessageLimit = ChatView.initialVisibleMessageLimit
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
+                awayFromBottom = false
             }
             .onChange(of: appState.currentFindIndex) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
@@ -122,6 +142,16 @@ struct ChatTranscriptScrollerView: View {
               let match = appState.currentFindMatch else { return }
         withAnimation(.easeOut(duration: 0.20)) {
             proxy.scrollTo(match.messageId, anchor: .center)
+        }
+    }
+
+    /// Snaps the transcript back to its tail and re-arms the bottom
+    /// anchor so subsequent streaming keeps following the bottom.
+    private func returnToTail(proxy: ScrollViewProxy) {
+        awayFromBottom = false
+        bottomId = chatTailId
+        withAnimation(.easeOut(duration: 0.25)) {
+            proxy.scrollTo(chatTailId, anchor: .bottom)
         }
     }
 

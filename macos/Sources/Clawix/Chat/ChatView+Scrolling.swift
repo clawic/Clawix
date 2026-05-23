@@ -36,6 +36,36 @@ struct ChatScrollUpSentinel: ViewModifier {
     }
 }
 
+/// Reports whether the reader has scrolled meaningfully away from the
+/// bottom of an overflowing transcript, driving the scroll-to-bottom
+/// button's visibility. macOS 15+ only (mirrors `ChatScrollUpSentinel`);
+/// on macOS 14 the flag stays `false` and the button never shows, which
+/// is acceptable degradation.
+struct ChatScrollBottomSentinel: ViewModifier {
+    /// Distance from the tail, in points, past which the button appears.
+    let threshold: CGFloat
+    @Binding var awayFromBottom: Bool
+
+    func body(content: Content) -> some View {
+        if #available(macOS 15, *) {
+            content.onScrollGeometryChange(for: Bool.self) { geom in
+                let visible = geom.containerSize.height
+                    - geom.contentInsets.top - geom.contentInsets.bottom
+                let realOverflow = geom.contentSize.height > visible + 1
+                let distanceFromBottom = geom.contentSize.height
+                    - (geom.contentOffset.y + visible)
+                return realOverflow && distanceFromBottom > threshold
+            } action: { _, isAway in
+                if awayFromBottom != isAway {
+                    awayFromBottom = isAway
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
 struct WorkPillAnchorKey: PreferenceKey {
     static var defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
