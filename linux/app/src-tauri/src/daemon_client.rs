@@ -257,6 +257,26 @@ impl DaemonClient {
         Ok(request_id)
     }
 
+    pub async fn transcribe_audio(
+        &self,
+        audio_base64: &str,
+        mime_type: &str,
+        language: Option<&str>,
+    ) -> Result<String> {
+        let request_id = uuid_v4();
+        let mut frame = serde_json::json!({
+            "type": "transcribeAudio",
+            "requestId": request_id,
+            "audioBase64": audio_base64,
+            "mimeType": mime_type
+        });
+        if let Some(language) = language {
+            frame["language"] = serde_json::Value::String(language.to_string());
+        }
+        self.send_intent(frame).await?;
+        Ok(request_id)
+    }
+
     pub async fn request_rate_limits(&self) -> Result<()> {
         self.send_intent(serde_json::json!({
             "type": "requestRateLimits"

@@ -82,6 +82,7 @@ pub fn run() {
             commands::audio_attach_transcript,
             commands::audio_list,
             commands::audio_delete,
+            commands::transcribe_audio,
             commands::request_rate_limits,
             commands::request_clawjs_service_statuses,
             commands::start_pairing,
@@ -329,6 +330,20 @@ mod commands {
     ) -> Result<String, String> {
         let client = state.daemon.lock().await;
         client.audio_delete(&audio_id, &app_id).await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    pub async fn transcribe_audio(
+        audio_base64: String,
+        mime_type: String,
+        language: Option<String>,
+        state: State<'_, AppState>,
+    ) -> Result<String, String> {
+        let client = state.daemon.lock().await;
+        client
+            .transcribe_audio(&audio_base64, &mime_type, language.as_deref())
+            .await
+            .map_err(|e| e.to_string())
     }
 
     #[tauri::command]

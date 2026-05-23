@@ -29,6 +29,7 @@ const [audioById, setAudioById] = createSignal<Record<string, unknown>>({});
 const [audioRequestIds, setAudioRequestIds] = createSignal<Record<string, string>>({});
 const [audioDeleteRequestIds, setAudioDeleteRequestIds] = createSignal<Record<string, string>>({});
 const [audioCatalog, setAudioCatalog] = createSignal(emptyAudioCatalogState);
+const [transcriptionsByRequestId, setTranscriptionsByRequestId] = createSignal<Record<string, unknown>>({});
 const [rateLimits, setRateLimits] = createSignal<unknown | null>(null);
 const [rateLimitsByLimitId, setRateLimitsByLimitId] = createSignal<Record<string, unknown>>({});
 const [clawJSServiceStatuses, setClawJSServiceStatuses] = createSignal<unknown[]>([]);
@@ -49,6 +50,7 @@ export const daemonStore = {
   rolloutAttachments,
   audioById,
   audioCatalog,
+  transcriptionsByRequestId,
   rateLimits,
   rateLimitsByLimitId,
   clawJSServiceStatuses,
@@ -193,6 +195,17 @@ export function useDaemonStream(): void {
                   delete next[frame.requestId as string];
                   return next;
                 });
+              }
+              break;
+            case "transcriptionResult":
+              if (typeof frame.requestId === "string") {
+                setTranscriptionsByRequestId((prev) => ({
+                  ...prev,
+                  [frame.requestId as string]: {
+                    text: frame.text,
+                    errorMessage: frame.errorMessage
+                  }
+                }));
               }
               break;
             case "rateLimitsSnapshot":
@@ -383,6 +396,14 @@ export async function deleteAudioAsset(audioId: string, appId = "clawix"): Promi
     }
   } catch (_) {
     /* preview mode or bridge unavailable */
+  }
+}
+
+export async function transcribeAudio(audioBase64: string, mimeType: string, language?: string): Promise<string | null> {
+  try {
+    return await invoke<string>("transcribe_audio", { audioBase64, mimeType, language });
+  } catch (_) {
+    return null;
   }
 }
 

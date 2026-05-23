@@ -42,6 +42,8 @@ export const supportedLinuxBridgeV1FixtureTypes = [
   "audioAttachTranscriptResult",
   "audioListResult",
   "audioDeleteResult",
+  "transcribeAudio",
+  "transcriptionResult",
   "requestGeneratedImage",
   "generatedImageSnapshot",
   "requestRolloutAttachment",
@@ -55,10 +57,7 @@ export const supportedLinuxBridgeV1FixtureTypes = [
   "clawJSServiceStatusUpdated"
 ] as const;
 
-export const pendingLinuxBridgeV1FixtureTypes = [
-  "transcribeAudio",
-  "transcriptionResult",
-] as const;
+export const pendingLinuxBridgeV1FixtureTypes = [] as const;
 
 export interface BridgeFixtureCoverage {
   supported: string[];
